@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-11-09 17:37+0200\n"
+"POT-Creation-Date: 2018-11-12 14:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,26 +18,86 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: actions/models.py:6 actions/models.py:18
+#: actions/models.py:10 actions/models.py:31
 msgid "name"
 msgstr "nimi"
 
-#: actions/models.py:7
+#: actions/models.py:11 actions/models.py:38
 msgid "identifier"
 msgstr "tunniste"
 
-#: actions/models.py:10
+#: actions/models.py:15 actions/models.py:29
 msgid "plan"
 msgstr "toimenpideohjelma"
 
-#: actions/models.py:11
+#: actions/models.py:16
 msgid "plans"
 msgstr "toimenpideohjelmat"
 
-#: actions/models.py:21
+#: actions/models.py:34
+msgid "official name"
+msgstr "virallinen nimi"
+
+#: actions/models.py:35
+msgid "The name as approved by an official party"
+msgstr "Virallisen tahon hyväksymä nimi"
+
+#: actions/models.py:39
+msgid "The identifier for this action (e.g. number)"
+msgstr "Toimenpiteen tunniste (esim. numero)"
+
+#: actions/models.py:43
+msgid "description"
+msgstr "kuvaus"
+
+#: actions/models.py:44
+msgid "What does this action involve in more detail?"
+msgstr "Mitä toimenpiteeseen tarkemmin liittyy?"
+
+#: actions/models.py:47
+msgid "impact"
+msgstr "vaikutus"
+
+#: actions/models.py:48
+msgid "The impact this action has in measurable quantity (e.g. t CO₂e)"
+msgstr "Tämän toimenpiteen vaikutus jossain mitattavassa suureessa (esim. t CO₂e)"
+
+#: actions/models.py:52
+msgid "schedule"
+msgstr "aikajänne"
+
+#: actions/models.py:56
+msgid "responsible parties"
+msgstr "vastuutahot"
+
+#: actions/models.py:60 actions/models.py:135
+msgid "categories"
+msgstr "luokat"
+
+#: actions/models.py:66
 msgid "action"
 msgstr "toimenpide"
 
-#: actions/models.py:22
+#: actions/models.py:67
 msgid "actions"
 msgstr "toimenpiteet"
+
+#: actions/models.py:102
+msgid "action schedule"
+msgstr "toimenpiteiden aikataulu"
+
+#: actions/models.py:103
+msgid "action schedules"
+msgstr "toimenpiteiden aikataulut"
+
+#: actions/models.py:117
+msgid "category type"
+msgstr "luokan tyyppi"
+
+#: actions/models.py:118
+msgid "category types"
+msgstr "luokan tyypit"
+
+#: actions/models.py:134
+msgid "category"
+msgstr "luokka"

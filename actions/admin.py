@@ -1,6 +1,7 @@
 from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
+from markdownx.admin import MarkdownxModelAdmin
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty
 
 
@@ -29,7 +30,7 @@ class ActionResponsiblePartyAdmin(OrderedTabularInline):
 
 
 @admin.register(Action)
-class ActionAdmin(OrderedModelAdmin):
+class ActionAdmin(OrderedModelAdmin, MarkdownxModelAdmin):
     filter_horizontal = ('schedule',)
     inlines = [
         ActionResponsiblePartyAdmin

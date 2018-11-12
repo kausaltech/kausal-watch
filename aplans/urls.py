@@ -15,8 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.csrf import csrf_exempt
+from markdownx.views import ImageUploadView, MarkdownifyView
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('markdownx/upload/', ImageUploadView.as_view(), name='markdownx_upload'),
+    path('markdownx/markdownify/', csrf_exempt(MarkdownifyView.as_view()), name='markdownx_markdownify'),
     path('', include('social_django.urls', namespace='social'))
 ]
