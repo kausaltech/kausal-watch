@@ -1,0 +1,6 @@
+django
+-e git+https://github.com/City-of-Helsinki/django-orghierarchy.git#egg=django-orghierarchy
+djangorestframework
+django-helusers
+social-auth-app-django
+psycopg2
