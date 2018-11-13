@@ -31,7 +31,7 @@ class ActionResponsiblePartyAdmin(OrderedTabularInline):
 
 @admin.register(Action)
 class ActionAdmin(OrderedModelAdmin, MarkdownxModelAdmin):
-    filter_horizontal = ('schedule',)
+    #filter_horizontal = ('schedule',)
     inlines = [
         ActionResponsiblePartyAdmin
     ]

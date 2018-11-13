@@ -61,8 +61,10 @@ class Action(OrderedModel):
         verbose_name=_('responsible parties')
     )
     categories = models.ManyToManyField(
-        'Category', blank=True,
-        verbose_name=_('categories')
+        'Category', blank=True, verbose_name=_('categories')
+    )
+    indicators = models.ManyToManyField(
+        'indicators.Indicator', blank=True, verbose_name=_('indicators')
     )
 
     order_with_respect_to = 'plan'
@@ -143,4 +145,22 @@ class Category(OrderedModel):
         verbose_name_plural = _('categories')
 
     def __str__(self):
-        return "%s (%s) [%s]" % (self.name, self.identifier, self.type)
+        return "%s %s" % (self.identifier, self.name)
+
+
+class Scenario(models.Model):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='plans',
+        verbose_name=_('plan')
+    )
+    name = models.CharField(max_length=100, verbose_name=_('plan'))
+    identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
+    description = models.TextField(null=True, blank=True, verbose_name=_('decsription'))
+
+    class Meta:
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('secnario')
+        verbose_name_plural = _('scenarios')
+
+    def __str__(self):
+        return self.name
