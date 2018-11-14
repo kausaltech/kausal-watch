@@ -143,6 +143,7 @@ class Category(OrderedModel):
         unique_together = (('type', 'identifier'),)
         verbose_name = _('category')
         verbose_name_plural = _('categories')
+        ordering = ('type', 'identifier')
 
     def __str__(self):
         return "%s %s" % (self.identifier, self.name)
@@ -153,13 +154,13 @@ class Scenario(models.Model):
         Plan, on_delete=models.CASCADE, related_name='plans',
         verbose_name=_('plan')
     )
-    name = models.CharField(max_length=100, verbose_name=_('plan'))
+    name = models.CharField(max_length=100, verbose_name=_('nimi'))
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
-    description = models.TextField(null=True, blank=True, verbose_name=_('decsription'))
+    description = models.TextField(null=True, blank=True, verbose_name=_('description'))
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
-        verbose_name = _('secnario')
+        verbose_name = _('scenario')
         verbose_name_plural = _('scenarios')
 
     def __str__(self):

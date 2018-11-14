@@ -19,12 +19,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'pgike2uhc^1r*2+lf@#rg&sog=zix@xurdfssn-i4i1+)snf!y'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
+DEBUG = False
 ALLOWED_HOSTS = []
 
 
@@ -42,6 +37,7 @@ INSTALLED_APPS = [
     'ordered_model',
     'markdownx',
     'mptt',
+    'django_extensions',
 
     'django_orghierarchy',
 

@@ -5,3 +5,4 @@ django-helusers
 social-auth-app-django
 psycopg2
 -e git+https://github.com/neutronX/django-markdownx.git#egg=django-markdownx
+django-extensions
