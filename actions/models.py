@@ -34,7 +34,7 @@ class Action(OrderedModel):
         Plan, on_delete=models.CASCADE, default=latest_plan,
         verbose_name=_('plan')
     )
-    name = models.CharField(max_length=200, verbose_name=_('name'))
+    name = models.CharField(max_length=1000, verbose_name=_('name'))
     official_name = models.CharField(
         max_length=100, null=True, blank=True,
         verbose_name=_('official name'),
