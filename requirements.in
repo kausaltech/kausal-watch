@@ -13,3 +13,5 @@ django-environ
 markdown
 django-filter
 djangorestframework-jsonapi
+lxml
+django-cors-headers
