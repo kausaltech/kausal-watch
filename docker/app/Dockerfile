@@ -2,8 +2,11 @@ FROM python:3.7
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+ENV STATIC_ROOT /srv/static
+ENV MEDIA_ROOT /srv/media
 
 RUN mkdir /code
+RUN mkdir -p /srv/media
 
 RUN pip install --upgrade pip
 # RUN apt-get update && apt-get install -y libxml2-dev
@@ -14,6 +17,8 @@ RUN pip install gunicorn
 
 COPY . /code/
 WORKDIR /code
+RUN rm -f local_settings.py
+RUN ./manage.py collectstatic --no-input
+COPY ./docker/app/docker-entrypoint.sh /
 
-CMD ./manage.py collectstatic --no-input
-CMD gunicorn --bind :8000 aplans.wsgi:application
+ENTRYPOINT ["/bin/bash", "/docker-entrypoint.sh"]

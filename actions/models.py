@@ -16,6 +16,7 @@ class Plan(models.Model):
         verbose_name = _('plan')
         verbose_name_plural = _('plans')
         get_latest_by = 'created_at'
+        ordering = ('created_at',)
 
     def __str__(self):
         return self.name

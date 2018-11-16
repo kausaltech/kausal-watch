@@ -2,19 +2,27 @@ version: '3'
 services:
   db:
     container_name: aplans-db
-    image: postgres:latest
+    build:
+      context: .
+      dockerfile: ./docker/db/Dockerfile
     restart: always
+    environment:
+      - POSTGRES_USER=aplans
     volumes:
       - db_data:/var/lib/postgresql/data/
 
   app:
     container_name: aplans
-    build: .
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
     restart: always
     volumes:
-      - .:/code
+      - aplans_media:/srv/media
     environment:
-      - DATABASE_URL=postgres://db/aplans
+      - DATABASE_URL=postgres://aplans@db/aplans
+      - DEBUG
+      - ALLOWED_HOSTS
     ports:
       - "${HOST_PORT}:8000"
     depends_on:
@@ -22,3 +30,4 @@ services:
 
 volumes:
   db_data:
+  aplans_media:

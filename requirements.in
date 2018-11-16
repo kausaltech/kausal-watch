@@ -12,3 +12,4 @@ django-ordered-model
 django-environ
 markdown
 django-filter
+djangorestframework-jsonapi

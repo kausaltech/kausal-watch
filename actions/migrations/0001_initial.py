@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('django_orghierarchy', '0007_auto_20181111_2316'),
+        ('django_orghierarchy', '0006_add_user_editable_to_data_source'),
     ]
 
     operations = [
