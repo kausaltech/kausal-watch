@@ -17,11 +17,21 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.decorators.csrf import csrf_exempt
 from markdownx.views import ImageUploadView, MarkdownifyView
+from rest_framework import routers
+
+from actions.api import all_views as actions_api_views
+from indicators.api import all_views as indicators_api_views
+
+
+router = routers.DefaultRouter()
+for view in actions_api_views + indicators_api_views:
+    router.register(view['name'], view['class'])
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('markdownx/upload/', ImageUploadView.as_view(), name='markdownx_upload'),
     path('markdownx/markdownify/', csrf_exempt(MarkdownifyView.as_view()), name='markdownx_markdownify'),
+    path('v1/', include(router.urls)),
     path('', include('social_django.urls', namespace='social'))
 ]

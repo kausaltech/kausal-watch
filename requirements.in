@@ -1,8 +1,14 @@
 django
--e git+https://github.com/City-of-Helsinki/django-orghierarchy.git#egg=django-orghierarchy
+-e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
 djangorestframework
+-e git+https://github.com/city-of-helsinki/django-helusers.git#egg=django-helusers
 django-helusers
 social-auth-app-django
-psycopg2
--e git+https://github.com/neutronX/django-markdownx.git#egg=django-markdownx
+psycopg2-binary
+django-markdownx
 django-extensions
+whitenoise
+django-ordered-model
+django-environ
+markdown
+django-filter

@@ -11,16 +11,40 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import environ
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
+root = environ.Path(__file__) - 2  # two folders back
+env = environ.Env(
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, ''),
+    ALLOWED_HOSTS=(list, []),
+    DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
+    MEDIA_ROOT=(environ.Path(), root('media')),
+    STATIC_ROOT=(environ.Path(), root('static')),
+    MEDIA_URL=(str, '/media/'),
+    STATIC_URL=(str, '/static/'),
+    SENTRY_DSN=(str, ''),
+    COOKIE_PREFIX=(str, 'aplans'),
+    INTERNAL_IPS=(list, []),
+)
 
-DEBUG = False
-ALLOWED_HOSTS = []
+BASE_DIR = root()
+
+if os.path.exists(os.path.join(BASE_DIR, '.env')):
+    environ.Env.read_env()
+
+
+DEBUG = env('DEBUG')
+ALLOWED_HOSTS = env('ALLOWED_HOSTS')
+INTERNAL_IPS = env.list('INTERNAL_IPS',
+                        default=(['127.0.0.1'] if DEBUG else []))
+DATABASES = {
+    'default': env.db()
+}
+DATABASES['default']['ATOMIC_REQUESTS'] = True
+
+SITE_ID = 1
 
 
 # Application definition
@@ -32,12 +56,15 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     'social_django',
     'ordered_model',
     'markdownx',
     'mptt',
     'django_extensions',
+    'rest_framework',
+    'django_filters',
 
     'django_orghierarchy',
 
@@ -48,6 +75,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -76,18 +104,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'aplans.wsgi.application'
-
-
-# Database
-# https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
-}
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -119,6 +135,39 @@ AUTHENTICATION_BACKENDS = (
 AUTH_USER_MODEL = 'users.User'
 LOGIN_REDIRECT_URL = '/'
 
+CSRF_COOKIE_NAME = '%s-csrftoken' % env.str('COOKIE_PREFIX')
+SESSION_COOKIE_NAME = '%s-sessionid' % env.str('COOKIE_PREFIX')
+
+#
+# REST Framework
+#
+REST_FRAMEWORK = {
+    'PAGE_SIZE': 50,
+    'EXCEPTION_HANDLER': 'rest_framework_json_api.exceptions.exception_handler',
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework_json_api.pagination.JsonApiPageNumberPagination',
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework_json_api.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ),
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework_json_api.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer'
+    ),
+    'DEFAULT_METADATA_CLASS': 'rest_framework_json_api.metadata.JSONAPIMetadata',
+    'DEFAULT_FILTER_BACKENDS': (
+        'rest_framework_json_api.filters.QueryParameterValidationFilter',
+        'rest_framework_json_api.filters.OrderingFilter',
+        'rest_framework_json_api.django_filters.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ),
+    'SEARCH_PARAM': 'filter[search]',
+    'TEST_REQUEST_RENDERER_CLASSES': (
+        'rest_framework_json_api.renderers.JSONRenderer',
+    ),
+    'TEST_REQUEST_DEFAULT_FORMAT': 'vnd.api+json'
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
@@ -146,7 +195,10 @@ LOCALE_PATHS = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = env('STATIC_URL')
+MEDIA_URL = env('MEDIA_URL')
+STATIC_ROOT = env('STATIC_ROOT')
+MEDIA_ROOT = env('MEDIA_ROOT')
 
 
 # local_settings.py can be used to override environment-specific settings

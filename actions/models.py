@@ -76,7 +76,7 @@ class Action(OrderedModel):
         index_together = (('plan', 'order'),)
 
     def __str__(self):
-        return self.name
+        return "%s. %s" % (self.identifier, self.name)
 
     def clean(self):
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
