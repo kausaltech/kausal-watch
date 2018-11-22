@@ -15,3 +15,4 @@ django-filter
 djangorestframework-jsonapi
 lxml
 django-cors-headers
+python-jose
