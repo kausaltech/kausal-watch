@@ -2,7 +2,8 @@ from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
 from markdownx.admin import MarkdownxModelAdmin
-from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario
+from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
+    Category, CategoryType
 
 
 class ActionScheduleAdmin(OrderedTabularInline):
@@ -18,10 +19,15 @@ class ScenarioAdmin(admin.StackedInline):
     extra = 0
 
 
+class CategoryTypeAdmin(admin.StackedInline):
+    model = CategoryType
+    extra = 0
+
+
 @admin.register(Plan)
 class PlanAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     inlines = [
-        ActionScheduleAdmin, ScenarioAdmin
+        ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
 
 
@@ -40,3 +46,8 @@ class ActionAdmin(OrderedModelAdmin, MarkdownxModelAdmin):
     inlines = [
         ActionResponsiblePartyAdmin
     ]
+
+
+@admin.register(Category)
+class CategoryAdmin(OrderedModelAdmin):
+    pass

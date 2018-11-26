@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-11-26 19:13+0200\n"
+"POT-Creation-Date: 2018-11-26 19:16+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,16 +22,17 @@ msgstr ""
 msgid "Actions"
 msgstr "Toimenpiteet"
 
-#: actions/models.py:11 actions/models.py:37 actions/models.py:158
-#: indicators/models.py:19 indicators/models.py:42
+#: actions/models.py:11 actions/models.py:37 actions/models.py:138
+#: actions/models.py:160 indicators/models.py:19 indicators/models.py:42
 msgid "name"
 msgstr "nimi"
 
-#: actions/models.py:12 actions/models.py:44 actions/models.py:159
+#: actions/models.py:12 actions/models.py:44 actions/models.py:137
+#: actions/models.py:161
 msgid "identifier"
 msgstr "tunniste"
 
-#: actions/models.py:16 actions/models.py:35 actions/models.py:156
+#: actions/models.py:16 actions/models.py:35 actions/models.py:158
 #: indicators/models.py:40
 msgid "plan"
 msgstr "toimenpideohjelma"
@@ -52,7 +53,7 @@ msgstr "Virallisen tahon hyväksymä nimi"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Toimenpiteen tunniste (esim. numero)"
 
-#: actions/models.py:49 actions/models.py:160 indicators/models.py:47
+#: actions/models.py:49 actions/models.py:162 indicators/models.py:47
 msgid "description"
 msgstr "kuvaus"
 
@@ -77,7 +78,7 @@ msgstr "aikajänne"
 msgid "responsible parties"
 msgstr "vastuutahot"
 
-#: actions/models.py:65 actions/models.py:146
+#: actions/models.py:65 actions/models.py:148
 msgid "categories"
 msgstr "luokat"
 
@@ -109,15 +110,23 @@ msgstr "luokan tyyppi"
 msgid "category types"
 msgstr "luokan tyypit"
 
-#: actions/models.py:145
+#: actions/models.py:136
+msgid "type"
+msgstr "tyyppi"
+
+#: actions/models.py:140
+msgid "parent category"
+msgstr "yläluokka"
+
+#: actions/models.py:147
 msgid "category"
 msgstr "luokka"
 
-#: actions/models.py:164 indicators/models.py:73
+#: actions/models.py:166 indicators/models.py:73
 msgid "scenario"
 msgstr "skenaario"
 
-#: actions/models.py:165
+#: actions/models.py:167
 msgid "scenarios"
 msgstr "skenaariot"
 

@@ -133,10 +133,12 @@ class CategoryType(models.Model):
 
 
 class Category(OrderedModel):
-    type = models.ForeignKey(CategoryType, on_delete=models.CASCADE)
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL)
-    name = models.CharField(max_length=100)
-    identifier = models.CharField(max_length=50)
+    type = models.ForeignKey(CategoryType, on_delete=models.CASCADE, verbose_name=_('type'))
+    identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    parent = models.ForeignKey(
+        'self', null=True, blank=True, on_delete=models.SET_NULL, verbose_name=_('parent category')
+    )
 
     order_with_respect_to = 'type'
 
