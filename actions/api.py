@@ -70,7 +70,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Organization
-        fields = ('id', 'name')
+        fields = ('id', 'name', 'abbreviation', 'parent')
 
 
 @register_view
