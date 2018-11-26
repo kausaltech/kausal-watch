@@ -155,7 +155,7 @@ class Scenario(models.Model):
         Plan, on_delete=models.CASCADE, related_name='plans',
         verbose_name=_('plan')
     )
-    name = models.CharField(max_length=100, verbose_name=_('nimi'))
+    name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
     description = models.TextField(null=True, blank=True, verbose_name=_('description'))
 
