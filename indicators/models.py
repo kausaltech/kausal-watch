@@ -65,14 +65,14 @@ class IndicatorEstimate(models.Model):
         verbose_name=_('indicator')
     )
     result_low = models.FloatField(verbose_name=_('low estimate'))
-    result_high = models.FloatField(verbose_name=_('high estimate'))
+    result_high = models.FloatField(verbose_name=_('high estimate'), null=True, blank=True)
     begins_at = models.DateField(verbose_name=_('begins at'))
     ends_at = models.DateField(verbose_name=_('ends at'), null=True, blank=True)
     scenario = models.ForeignKey(
         'actions.Scenario', related_name='estimates', on_delete=models.CASCADE,
         verbose_name=_('scenario')
     )
-    rationale = models.TextField(null=True, blank=True)
+    rationale = models.TextField(null=True, blank=True, verbose_name=_('rationale'))
 
     updated_at = models.DateTimeField(auto_now=True, editable=False)
     updated_by = models.ForeignKey(
@@ -86,7 +86,9 @@ class IndicatorEstimate(models.Model):
 
     def __str__(self):
         indicator = self.indicator.name
-        result = self.result
+        result = str(self.result_low)
+        if self.result_high is not None:
+            result = "%s–%s" % (self.result_low, self.result_high)
         begins_at = self.begins_at
         scenario = str(self.scenario)
 
