@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework_json_api import serializers
 from .models import (
-    Plan, Action, ActionSchedule, Category, CategoryType
+    Plan, Action, ActionSchedule, Category, CategoryType, Scenario
 )
 from aplans.utils import register_view_helper
 from django_orghierarchy.models import Organization
@@ -100,3 +100,15 @@ class ActionViewSet(viewsets.ModelViewSet):
         'plan': ('exact',),
         'categories': ('exact',)
     }
+
+
+class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Scenario
+        fields = '__all__'
+
+
+@register_view
+class ScenarioViewSet(viewsets.ModelViewSet):
+    queryset = Scenario.objects.all()
+    serializer_class = ScenarioSerializer
