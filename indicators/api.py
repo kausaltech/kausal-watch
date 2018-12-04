@@ -37,7 +37,10 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Indicator
-        fields = ('plan', 'name', 'unit', 'unit_name', 'description', 'categories', 'time_resolution')
+        fields = (
+            'plan', 'name', 'unit', 'unit_name', 'description', 'categories',
+            'time_resolution', 'estimates'
+        )
 
 
 @register_view
