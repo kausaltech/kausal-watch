@@ -1,15 +1,22 @@
+from datetime import date
+
 from django.db import models
 from django.db.models import Q
+from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 
 from django_orghierarchy.models import Organization
 from ordered_model.models import OrderedModel
 from markdownx.models import MarkdownxField
+from aplans.utils import IdentifierField
+
+
+User = get_user_model()
 
 
 class Plan(models.Model):
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    identifier = models.CharField(max_length=50, unique=True, verbose_name=_('identifier'))
+    identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
     class Meta:
@@ -20,6 +27,9 @@ class Plan(models.Model):
 
     def __str__(self):
         return self.name
+
+    def natural_key(self):
+        return self.identifier
 
 
 def latest_plan():
@@ -40,8 +50,7 @@ class Action(OrderedModel):
         verbose_name=_('official name'),
         help_text=_('The name as approved by an official party')
     )
-    identifier = models.CharField(
-        max_length=50, verbose_name=_('identifier'),
+    identifier = IdentifierField(
         help_text=_('The identifier for this action (e.g. number)')
     )
     description = MarkdownxField(
@@ -52,6 +61,14 @@ class Action(OrderedModel):
         null=True, blank=True,
         verbose_name=_('impact'),
         help_text=_('The impact this action has in measurable quantity (e.g. t CO₂e)')
+    )
+    status = models.ForeignKey(
+        'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('status'),
+    )
+    completion = models.PositiveIntegerField(
+        null=True, blank=True, verbose_name=_('completion'), editable=False,
+        help_text=_('The completion percentage for this action')
     )
     schedule = models.ManyToManyField(
         'ActionSchedule', blank=True,
@@ -84,6 +101,48 @@ class Action(OrderedModel):
         # same action plan.
         super().clean()
 
+    def _calculate_completion(self, tasks):
+        n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
+        return n_completed * 100 / len(tasks)
+
+    def _determine_status(self, tasks):
+        statuses = self.plan.action_statuses.all()
+        by_id = {x.identifier: x for x in statuses}
+        KNOWN_IDS = {'not_started', 'on_time', 'late', 'severely_late'}
+        # If the status set is not something we can handle, bail out.
+        if not KNOWN_IDS.issubset(set(by_id.keys())):
+            return None
+
+        today = date.today()
+
+        def is_late(task):
+            if task.due_at is None or task.completed_at is not None:
+                return False
+            return today > task.due_at
+
+        late_tasks = list(filter(is_late, tasks))
+        if not late_tasks:
+            completed_tasks = list(filter(lambda x: x.completed_at is not None, tasks))
+            if not completed_tasks:
+                return by_id['not_started']
+            else:
+                return by_id['on_time']
+
+        if len(late_tasks) == len(tasks) and len(late_tasks) > 1:
+            return by_id['severely_late']
+        else:
+            return by_id['late']
+
+    def task_updated(self, task):
+        tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
+        self.completion = self._calculate_completion(tasks)
+        update_fields = ['completion']
+        status = self._determine_status(tasks)
+        if status is not None:
+            self.status = status
+            update_fields.append('status')
+        self.save(update_fields=update_fields)
+
 
 class ActionResponsibleParty(OrderedModel):
     action = models.ForeignKey(Action, on_delete=models.CASCADE)
@@ -100,7 +159,7 @@ class ActionResponsibleParty(OrderedModel):
 
 
 class ActionSchedule(OrderedModel):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
@@ -117,10 +176,65 @@ class ActionSchedule(OrderedModel):
         return self.name
 
 
+class ActionStatus(models.Model):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='action_statuses',
+        verbose_name=_('plan')
+    )
+    name = models.CharField(max_length=50, verbose_name=_('name'))
+    identifier = IdentifierField(max_length=20)
+
+    class Meta:
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('action status')
+        verbose_name_plural = _('action statuses')
+
+    def __str__(self):
+        return self.name
+
+
+class ActionTask(models.Model):
+    ACTIVE = 'active'
+    CANCELLED = 'cancelled'
+    STATES = (
+        (ACTIVE, _('active')),
+        (CANCELLED, _('cancelled')),
+    )
+
+    action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, related_name='tasks',
+        verbose_name=_('action')
+    )
+    name = models.CharField(max_length=200, verbose_name=_('name'))
+    state = models.CharField(max_length=20, choices=STATES, verbose_name=_('state'))
+    comment = models.TextField(null=True, blank=True, verbose_name=_('comment'))
+    due_at = models.DateField(null=True, blank=True, verbose_name=_('due date'))
+    completed_at = models.DateField(null=True, blank=True, verbose_name=_('completion date'))
+
+    completed_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        verbose_name=_('completed by'), editable=False
+    )
+    created_at = models.DateTimeField(auto_now_add=True, editable=False, verbose_name=_('created at'))
+    modified_at = models.DateTimeField(auto_now=True, editable=False, verbose_name=_('modified at'))
+
+    class Meta:
+        ordering = ('action', 'due_at')
+        verbose_name = _('action task')
+        verbose_name_plural = _('action tasks')
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.action.task_updated(self)
+
+
 class CategoryType(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
     name = models.CharField(max_length=50)
-    identifier = models.CharField(max_length=50)
+    identifier = IdentifierField()
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -133,11 +247,15 @@ class CategoryType(models.Model):
 
 
 class Category(OrderedModel):
-    type = models.ForeignKey(CategoryType, on_delete=models.CASCADE, verbose_name=_('type'))
-    identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
+    type = models.ForeignKey(
+        CategoryType, on_delete=models.CASCADE, related_name='categories',
+        verbose_name=_('type')
+    )
+    identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
     parent = models.ForeignKey(
-        'self', null=True, blank=True, on_delete=models.SET_NULL, verbose_name=_('parent category')
+        'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
+        verbose_name=_('parent category')
     )
 
     order_with_respect_to = 'type'
@@ -154,11 +272,11 @@ class Category(OrderedModel):
 
 class Scenario(models.Model):
     plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, related_name='plans',
+        Plan, on_delete=models.CASCADE, related_name='scenarios',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
+    identifier = IdentifierField()
     description = models.TextField(null=True, blank=True, verbose_name=_('description'))
 
     class Meta:

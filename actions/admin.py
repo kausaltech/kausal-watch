@@ -3,7 +3,7 @@ from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMix
     OrderedModelAdmin
 from markdownx.admin import MarkdownxModelAdmin
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
-    Category, CategoryType
+    Category, CategoryType, ActionTask, ActionStatus
 
 
 class ActionScheduleAdmin(OrderedTabularInline):
@@ -19,6 +19,11 @@ class ScenarioAdmin(admin.StackedInline):
     extra = 0
 
 
+class ActionStatusAdmin(admin.TabularInline):
+    model = ActionStatus
+    extra = 0
+
+
 class CategoryTypeAdmin(admin.StackedInline):
     model = CategoryType
     extra = 0
@@ -27,7 +32,7 @@ class CategoryTypeAdmin(admin.StackedInline):
 @admin.register(Plan)
 class PlanAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
     inlines = [
-        ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
+        ActionStatusAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
 
 
@@ -41,10 +46,15 @@ class ActionResponsiblePartyAdmin(OrderedTabularInline):
     autocomplete_fields = ('org',)
 
 
+class ActionTaskAdmin(admin.TabularInline):
+    model = ActionTask
+    extra = 0
+
+
 @admin.register(Action)
 class ActionAdmin(OrderedModelAdmin, MarkdownxModelAdmin):
     inlines = [
-        ActionResponsiblePartyAdmin
+        ActionResponsiblePartyAdmin, ActionTaskAdmin
     ]
 
 
