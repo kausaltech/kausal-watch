@@ -2,6 +2,7 @@ django
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
 djangorestframework
 -e git+https://github.com/city-of-helsinki/django-helusers.git#egg=django-helusers
+-e git+https://github.com/juyrjola/django-rest-framework-json-api.git#egg=djangorestframework-jsonapi
 django-helusers
 social-auth-app-django
 psycopg2-binary
@@ -12,7 +13,6 @@ django-ordered-model
 django-environ
 markdown
 django-filter
-djangorestframework-jsonapi
 lxml
 django-cors-headers
 python-jose
