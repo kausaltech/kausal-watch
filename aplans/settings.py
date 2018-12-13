@@ -169,6 +169,7 @@ REST_FRAMEWORK = {
     ),
     'TEST_REQUEST_DEFAULT_FORMAT': 'vnd.api+json'
 }
+JSON_API_FORMAT_TYPES = 'underscore'
 
 CORS_ORIGIN_ALLOW_ALL = True
 
