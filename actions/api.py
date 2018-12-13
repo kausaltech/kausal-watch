@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework_json_api import serializers
+from rest_framework_json_api import views
 from .models import (
     Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
     ActionTask
@@ -111,8 +112,13 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 @register_view
-class ActionViewSet(viewsets.ModelViewSet):
+class ActionViewSet(views.ModelViewSet):
     queryset = Action.objects.all()
+    prefetch_for_includes = {
+        '__all__': ['indicators', 'responsible_parties', 'schedule', 'categories', 'tasks'],
+        'plan': ['plan'],
+        'status': ['status'],
+    }
     serializer_class = ActionSerializer
     filterset_fields = {
         'plan': ('exact',),
