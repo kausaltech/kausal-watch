@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM ubuntu:18.04
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -8,9 +8,13 @@ ENV MEDIA_ROOT /srv/media
 RUN mkdir /code
 RUN mkdir -p /srv/media
 
+RUN apt-get update && apt-get install -y python3.7 python3-pip \
+	postgresql-client-common postgresql-client gettext \
+	libpq-dev
+RUN apt-get install -y git-core
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN ln -s /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
-RUN apt-get update && apt-get install -y postgresql-client-common gettext
-
 COPY requirements.txt /code/
 RUN pip install -r /code/requirements.txt
 RUN pip install gunicorn
