@@ -34,14 +34,14 @@ class Plan(models.Model):
 
 def latest_plan():
     if Plan.objects.exists():
-        return Plan.objects.latest()
+        return Plan.objects.latest().id
     else:
         return None
 
 
 class Action(OrderedModel):
     plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, default=latest_plan,
+        Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
@@ -74,6 +74,10 @@ class Action(OrderedModel):
         'ActionSchedule', blank=True,
         verbose_name=_('schedule')
     )
+    decision_level = models.ForeignKey(
+        'ActionDecisionLevel', blank=True, null=True, related_name='actions', on_delete=models.SET_NULL,
+        verbose_name=_('decision-making level')
+    )
     responsible_parties = models.ManyToManyField(
         Organization, through='ActionResponsibleParty', blank=True,
         verbose_name=_('responsible parties')
@@ -83,6 +87,9 @@ class Action(OrderedModel):
     )
     indicators = models.ManyToManyField(
         'indicators.Indicator', blank=True, verbose_name=_('indicators')
+    )
+    contact_persons = models.ManyToManyField(
+        'people.Person', blank=True, verbose_name=_('contact persons')
     )
 
     order_with_respect_to = 'plan'
@@ -188,6 +195,21 @@ class ActionStatus(models.Model):
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('action status')
         verbose_name_plural = _('action statuses')
+
+    def __str__(self):
+        return self.name
+
+
+class ActionDecisionLevel(models.Model):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='action_decision_levels',
+        verbose_name=_('plan')
+    )
+    name = models.CharField(max_length=200, verbose_name=_('name'))
+    identifier = IdentifierField()
+
+    class Meta:
+        unique_together = (('plan', 'identifier'),)
 
     def __str__(self):
         return self.name

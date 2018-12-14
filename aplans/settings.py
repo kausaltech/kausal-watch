@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'users',
     'actions',
     'indicators',
+    'people',
 ]
 
 MIDDLEWARE = [

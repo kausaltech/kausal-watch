@@ -3,7 +3,7 @@ from rest_framework_json_api import serializers
 from rest_framework_json_api import views
 from .models import (
     Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
-    ActionTask
+    ActionTask, ActionDecisionLevel
 )
 from aplans.utils import register_view_helper
 from django_orghierarchy.models import Organization
@@ -52,6 +52,18 @@ class ActionStatusSerializer(serializers.HyperlinkedModelSerializer):
 class ActionStatusViewSet(viewsets.ModelViewSet):
     queryset = ActionStatus.objects.all()
     serializer_class = ActionStatusSerializer
+
+
+class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = ActionDecisionLevel
+        fields = '__all__'
+
+
+@register_view
+class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
+    queryset = ActionDecisionLevel.objects.all()
+    serializer_class = ActionDecisionLevelSerializer
 
 
 class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -103,8 +115,19 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer):
         'responsible_parties': OrganizationSerializer,
         'tasks': 'actions.api.ActionTaskSerializer',
         'indicators': 'indicators.api.IndicatorSerializer',
+        'decision_level': ActionDecisionLevelSerializer,
     }
     tasks = ResourceRelatedField(queryset=ActionTask.objects, many=True)
+    contact_persons = serializers.SerializerMethodField()
+
+    def get_contact_persons(self, obj):
+        # Quick hack to return the data only when in detail view
+        if self.parent is not None:
+            return None
+        return [
+            dict(first_name=x.first_name, last_name=x.last_name, avatar_url=x.get_avatar_url())
+            for x in obj.contact_persons.all()
+        ]
 
     class Meta:
         model = Action
@@ -115,9 +138,13 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer):
 class ActionViewSet(views.ModelViewSet):
     queryset = Action.objects.all()
     prefetch_for_includes = {
-        '__all__': ['indicators', 'responsible_parties', 'schedule', 'categories', 'tasks'],
+        '__all__': [
+            'indicators', 'responsible_parties', 'schedule', 'categories', 'tasks',
+            'contact_persons',
+        ],
         'plan': ['plan'],
         'status': ['status'],
+        'decision_level': ['decision_level'],
     }
     serializer_class = ActionSerializer
     filterset_fields = {
