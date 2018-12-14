@@ -9,7 +9,7 @@ RUN mkdir /code
 RUN mkdir -p /srv/media
 
 RUN pip install --upgrade pip
-RUN apt-get update && apt-get install -y postgresql-client-common
+RUN apt-get update && apt-get install -y postgresql-client-common gettext
 
 COPY requirements.txt /code/
 RUN pip install -r /code/requirements.txt
