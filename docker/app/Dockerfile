@@ -8,10 +8,15 @@ ENV MEDIA_ROOT /srv/media
 RUN mkdir /code
 RUN mkdir -p /srv/media
 
-RUN apt-get update && apt-get install -y python3.7 python3-pip \
-	postgresql-client-common postgresql-client gettext \
-	libpq-dev
-RUN apt-get install -y git-core
+# Install PostgreSQL 11
+RUN apt-get update
+RUN apt-get install -y gnupg wget lsb-release
+RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add -
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/postgres.list
+RUN apt-get update
+RUN apt-get install -y python3.7 python3-pip \
+	postgresql-client-common postgresql-client libpq-dev \
+	gettext git-core
 RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN ln -s /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
