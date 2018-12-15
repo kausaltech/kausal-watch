@@ -1,4 +1,6 @@
-from rest_framework import viewsets, permissions, parsers
+from plotly.graph_objs import Figure
+from plotly.exceptions import PlotlyError
+from rest_framework import viewsets, permissions
 from rest_framework_json_api import serializers
 from .models import (
     Unit, Indicator, IndicatorEstimate, IndicatorGraph
@@ -26,6 +28,22 @@ class UnitViewSet(viewsets.ModelViewSet):
 
 
 class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
+    def validate_data(self, value):
+        ALLOWED_KEYS = {'data', 'layout', 'frames'}
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Expecting JSON object")
+        if not set(value.keys()).issubset(ALLOWED_KEYS):
+            keys = ['"%s"' % x for x in ALLOWED_KEYS]
+            raise serializers.ValidationError("Only allowed keys are: %s" % ', '.join(keys))
+
+        try:
+            figure = Figure(**value).to_dict()
+        except PlotlyError as err:
+            raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
+        if not figure['data']:
+            raise serializers.ValidationError("No Plotly data given in data.data")
+        return value
+
     def create(self, validated_data):
         ret = super().create(validated_data)
         ret.indicator.latest_graph = ret

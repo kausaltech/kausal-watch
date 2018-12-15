@@ -16,3 +16,4 @@ django-filter
 lxml
 django-cors-headers
 python-jose
+plotly
