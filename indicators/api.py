@@ -38,7 +38,7 @@ class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
 
         try:
             figure = Figure(**value).to_dict()
-        except PlotlyError as err:
+        except (PlotlyError, ValueError) as err:
             raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
         if not figure['data']:
             raise serializers.ValidationError("No Plotly data given in data.data")
