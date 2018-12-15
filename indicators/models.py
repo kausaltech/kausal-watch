@@ -2,6 +2,8 @@ from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import JSONField
+from aplans.utils import IdentifierField
 
 
 User = get_user_model()
@@ -34,12 +36,22 @@ class Unit(models.Model):
 class Indicator(models.Model):
     TIME_RESOLUTIONS = (
         ('year', _('year')),
+        ('month', _('month')),
+        ('week', _('week')),
+        ('day', _('day'))
     )
+    LEVELS = (
+        ('strategic', _('strategic')),
+        ('operational', _('operational')),
+    )
+
     plan = models.ForeignKey(
         'actions.Plan', related_name='indicators', on_delete=models.CASCADE, default=latest_plan,
         verbose_name=_('plan')
     )
+    identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    level = models.CharField(max_length=30, verbose_name=_('level'), choices=LEVELS, null=True, blank=True)
     unit = models.ForeignKey(
         Unit, related_name='indicators', on_delete=models.CASCADE,
         verbose_name=_('unit')
@@ -50,13 +62,32 @@ class Indicator(models.Model):
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
         verbose_name=_('time resolution')
     )
+    latest_graph = models.ForeignKey(
+        'IndicatorGraph', null=True, blank=True, related_name='+',
+        on_delete=models.SET_NULL, editable=False
+    )
 
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')
 
+    def get_latest_graph(self):
+        return self.graphs.latest()
+
     def __str__(self):
         return self.name
+
+
+class IndicatorGraph(models.Model):
+    indicator = models.ForeignKey(Indicator, related_name='graphs', on_delete=models.CASCADE)
+    data = JSONField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        get_latest_by = 'created_at'
+
+    def __str__(self):
+        return "%s (%s)" % (self.indicator, self.created_at)
 
 
 class IndicatorEstimate(models.Model):
@@ -68,6 +99,10 @@ class IndicatorEstimate(models.Model):
     result_high = models.FloatField(verbose_name=_('high estimate'), null=True, blank=True)
     begins_at = models.DateField(verbose_name=_('begins at'))
     ends_at = models.DateField(verbose_name=_('ends at'), null=True, blank=True)
+    forecast = models.BooleanField(
+        verbose_name=_('measured'), default=False,
+        help_text=_('Is this estimate based on forecast or measurement?')
+    )
     scenario = models.ForeignKey(
         'actions.Scenario', related_name='estimates', on_delete=models.CASCADE,
         verbose_name=_('scenario')

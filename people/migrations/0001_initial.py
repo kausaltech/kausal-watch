@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('django_orghierarchy', '__latest__'),
+        ('django_orghierarchy', '__first__'),
     ]
 
     operations = [

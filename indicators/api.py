@@ -1,7 +1,7 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions, parsers
 from rest_framework_json_api import serializers
 from .models import (
-    Unit, Indicator, IndicatorEstimate
+    Unit, Indicator, IndicatorEstimate, IndicatorGraph
 )
 from aplans.utils import register_view_helper
 
@@ -25,21 +25,46 @@ class UnitViewSet(viewsets.ModelViewSet):
     serializer_class = UnitSerializer
 
 
+class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
+    def create(self, validated_data):
+        ret = super().create(validated_data)
+        ret.indicator.latest_graph = ret
+        ret.indicator.save(update_fields=['latest_graph'])
+        return ret
+
+    def update(self, instance, validated_data):
+        ret = super().update(instance, validated_data)
+        ret.indicator.latest_graph = ret
+        ret.indicator.save(update_fields=['latest_graph'])
+        return ret
+
+    class Meta:
+        model = IndicatorGraph
+        fields = ('indicator', 'data', 'created_at')
+
+
+@register_view
+class IndicatorGraphViewSet(viewsets.ModelViewSet):
+    queryset = IndicatorGraph.objects.all()
+    serializer_class = IndicatorGraphSerializer
+    permission_classes = (permissions.AllowAny,)
+
+
 class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
     unit_name = serializers.CharField(source='unit.name', read_only=True)
-
     included_serializers = {
         'plan': 'actions.api.PlanSerializer',
         'categories': 'actions.api.CategorySerializer',
         'unit': UnitSerializer,
-        'estimates': 'indicators.api.IndicatorEstimateSerializer'
+        'estimates': 'indicators.api.IndicatorEstimateSerializer',
+        'latest_graph': IndicatorGraphSerializer,
     }
 
     class Meta:
         model = Indicator
         fields = (
             'plan', 'name', 'unit', 'unit_name', 'description', 'categories',
-            'time_resolution', 'estimates'
+            'time_resolution', 'estimates', 'latest_graph',
         )
 
 
