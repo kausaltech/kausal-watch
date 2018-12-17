@@ -43,6 +43,7 @@ DATABASES = {
     'default': env.db()
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
+SECRET_KEY = env('SECRET_KEY')
 
 SITE_ID = 1
 
@@ -239,7 +240,7 @@ if os.path.exists(f):
     sys.modules[module_name] = module
     exec(open(f, "rb").read())
 
-if 'SECRET_KEY' not in locals():
+if not locals().get('SECRET_KEY', ''):
     secret_file = os.path.join(BASE_DIR, '.django_secret')
     try:
         SECRET_KEY = open(secret_file).read().strip()
