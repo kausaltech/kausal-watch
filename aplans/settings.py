@@ -209,6 +209,7 @@ SUMMERNOTE_CONFIG = {
         'airMode': False,
         'toolbar': [
             ['font1', ['style', 'clear']],
+            ['insert', ['link']],
             ['style', ['bold', 'italic', 'underline', 'clear']],
             ['font', ['strikethrough', 'superscript', 'subscript']],
             ['para', ['ul', 'ol', 'paragraph']],
