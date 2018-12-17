@@ -3,7 +3,7 @@ from plotly.exceptions import PlotlyError
 from rest_framework import viewsets, permissions
 from rest_framework_json_api import serializers
 from .models import (
-    Unit, Indicator, IndicatorEstimate, IndicatorGraph
+    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator
 )
 from aplans.utils import register_view_helper
 
@@ -70,12 +70,15 @@ class IndicatorGraphViewSet(viewsets.ModelViewSet):
 
 class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
     unit_name = serializers.CharField(source='unit.name', read_only=True)
+
     included_serializers = {
         'plan': 'actions.api.PlanSerializer',
         'categories': 'actions.api.CategorySerializer',
         'unit': UnitSerializer,
         'estimates': 'indicators.api.IndicatorEstimateSerializer',
         'latest_graph': IndicatorGraphSerializer,
+        'related_effects': 'indicators.api.RelatedIndicatorSerializer',
+        'related_causes': 'indicators.api.RelatedIndicatorSerializer',
     }
 
     class Meta:
@@ -83,7 +86,25 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'plan', 'name', 'unit', 'unit_name', 'description', 'categories',
             'time_resolution', 'estimates', 'latest_graph',
+            'related_effects', 'related_causes',
         )
+
+
+class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):
+    included_serializers = {
+        'causal_indicator': IndicatorSerializer,
+        'effect_indicator': IndicatorSerializer,
+    }
+
+    class Meta:
+        model = RelatedIndicator
+        fields = '__all__'
+
+
+@register_view
+class RelatedIndicatorViewSet(viewsets.ModelViewSet):
+    queryset = RelatedIndicator.objects.all()
+    serializer_class = RelatedIndicatorSerializer
 
 
 @register_view
