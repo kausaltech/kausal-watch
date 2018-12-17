@@ -30,8 +30,7 @@ for view in actions_api_views + indicators_api_views:
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('markdownx/upload/', ImageUploadView.as_view(), name='markdownx_upload'),
-    path('markdownx/markdownify/', csrf_exempt(MarkdownifyView.as_view()), name='markdownx_markdownify'),
+    path('summernote/', include('django_summernote.urls')),
     path('v1/', include(router.urls)),
     path('', include('social_django.urls', namespace='social'))
 ]

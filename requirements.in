@@ -6,7 +6,6 @@ djangorestframework
 django-helusers
 social-auth-app-django
 psycopg2-binary
-django-markdownx
 django-extensions
 whitenoise
 django-ordered-model
@@ -17,3 +16,4 @@ lxml
 django-cors-headers
 python-jose
 plotly
+django-summernote

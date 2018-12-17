@@ -42,6 +42,7 @@ class Indicator(models.Model):
     )
     LEVELS = (
         ('strategic', _('strategic')),
+        ('tactical', _('tactical')),
         ('operational', _('operational')),
     )
 
@@ -128,3 +129,45 @@ class IndicatorEstimate(models.Model):
         scenario = str(self.scenario)
 
         return f"{indicator}: {result} ({begins_at} {scenario})"
+
+
+class RelatedIndicator(models.Model):
+    INCREASES = 'increases'
+    DECREASES = 'decreases'
+    EFFECT_TYPES = (
+        (INCREASES, _('increases')),
+        (DECREASES, _('decreases'))
+    )
+
+    HIGH_CONFIDENCE = 'high'
+    MEDIUM_CONFIDENCE = 'medium'
+    LOW_CONFIDENCE = 'low'
+    CONFIDENCE_LEVELS = (
+        (HIGH_CONFIDENCE, _('high')),
+        (MEDIUM_CONFIDENCE, _('medium')),
+        (LOW_CONFIDENCE, _('low'))
+    )
+
+    causal_indicator = models.ForeignKey(
+        Indicator, related_name='related_effects', on_delete=models.CASCADE,
+        verbose_name=_('causal indicator')
+    )
+    effect_indicator = models.ForeignKey(
+        Indicator, related_name='related_causes', on_delete=models.CASCADE,
+        verbose_name=_('effect indicator')
+    )
+    effect_type = models.CharField(
+        max_length=40, choices=EFFECT_TYPES,
+        verbose_name=_('effect type'), help_text=_('What type of causal effect is there between the indicators'))
+    confidence_level = models.CharField(
+        max_length=20, choices=CONFIDENCE_LEVELS,
+        verbose_name=_('confidence level'), help_text=_('How confident we are that the causal effect is present')
+    )
+
+    class Meta:
+        unique_together = (('causal_indicator', 'effect_indicator'),)
+        verbose_name = _('related indicator')
+        verbose_name_plural = _('related indicators')
+
+    def __str__(self):
+        return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)

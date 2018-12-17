@@ -7,7 +7,6 @@ from django.utils.translation import gettext_lazy as _
 
 from django_orghierarchy.models import Organization
 from ordered_model.models import OrderedModel
-from markdownx.models import MarkdownxField
 from aplans.utils import IdentifierField
 
 
@@ -45,15 +44,15 @@ class Action(OrderedModel):
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
-    official_name = models.CharField(
-        max_length=100, null=True, blank=True,
+    official_name = models.TextField(
+        null=True, blank=True,
         verbose_name=_('official name'),
         help_text=_('The name as approved by an official party')
     )
     identifier = IdentifierField(
         help_text=_('The identifier for this action (e.g. number)')
     )
-    description = MarkdownxField(
+    description = models.TextField(
         null=True, blank=True,
         verbose_name=_('description'),
         help_text=_('What does this action involve in more detail?'))

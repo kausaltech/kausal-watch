@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'rest_framework',
     'django_filters',
+    'django_summernote',
 
     'django_orghierarchy',
 
@@ -201,6 +202,20 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale')
 ]
 
+# summernote for rich-text admin fields
+# SUMMERNOTE_THEME = 'bs4'
+SUMMERNOTE_CONFIG = {
+    'summernote': {
+        'airMode': False,
+        'toolbar': [
+            ['font1', ['style', 'clear']],
+            ['style', ['bold', 'italic', 'underline', 'clear']],
+            ['font', ['strikethrough', 'superscript', 'subscript']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+        ]
+    }
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/

@@ -19,6 +19,7 @@ django-js-asset==1.1.0    # via django-mptt
 django-markdownx==2.0.28
 django-mptt==0.9.1
 django-ordered-model==3.1.1
+django-summernote==0.8.11.1
 django==2.1.4
 djangorestframework==3.9.0
 drf-oidc-auth==0.9

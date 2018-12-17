@@ -1,7 +1,10 @@
+from django import forms
 from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
-from markdownx.admin import MarkdownxModelAdmin
+from django_summernote.admin import SummernoteModelAdmin
+from django_summernote.widgets import SummernoteInplaceWidget
+
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
     Category, CategoryType, ActionTask, ActionStatus
 
@@ -52,7 +55,9 @@ class ActionTaskAdmin(admin.TabularInline):
 
 
 @admin.register(Action)
-class ActionAdmin(OrderedModelAdmin, MarkdownxModelAdmin):
+class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
+    official_name = forms.CharField(widget=SummernoteInplaceWidget())
+    summernote_fields = ('description', 'official_name')
     inlines = [
         ActionResponsiblePartyAdmin, ActionTaskAdmin
     ]
