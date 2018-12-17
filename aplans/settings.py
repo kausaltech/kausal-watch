@@ -227,6 +227,9 @@ MEDIA_URL = env('MEDIA_URL')
 STATIC_ROOT = env('STATIC_ROOT')
 MEDIA_ROOT = env('MEDIA_ROOT')
 
+# Reverse proxy stuff
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
