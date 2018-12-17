@@ -3,7 +3,7 @@ from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
 from django_summernote.admin import SummernoteModelAdmin
-from django_summernote.widgets import SummernoteInplaceWidget
+from django_summernote.widgets import SummernoteWidget
 
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
     Category, CategoryType, ActionTask, ActionStatus
@@ -49,14 +49,19 @@ class ActionResponsiblePartyAdmin(OrderedTabularInline):
     autocomplete_fields = ('org',)
 
 
-class ActionTaskAdmin(admin.TabularInline):
+class ActionTaskAdmin(admin.StackedInline):
     model = ActionTask
+    summernote_fields = ('comment',)
     extra = 0
+
+    def get_formset(self, *args, **kwargs):
+        formset = super().get_formset(*args, **kwargs)
+        formset.form.base_fields['comment'].widget = SummernoteWidget()
+        return formset
 
 
 @admin.register(Action)
 class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
-    official_name = forms.CharField(widget=SummernoteInplaceWidget())
     summernote_fields = ('description', 'official_name')
     inlines = [
         ActionResponsiblePartyAdmin, ActionTaskAdmin

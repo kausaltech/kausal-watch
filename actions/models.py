@@ -151,9 +151,9 @@ class Action(OrderedModel):
 
 
 class ActionResponsibleParty(OrderedModel):
-    action = models.ForeignKey(Action, on_delete=models.CASCADE)
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, verbose_name=_('action'))
     org = models.ForeignKey(
-        Organization, on_delete=models.CASCADE,
+        Organization, on_delete=models.CASCADE, verbose_name=_('organization'),
         limit_choices_to=Q(dissolution_date=None)
     )
 
@@ -162,6 +162,8 @@ class ActionResponsibleParty(OrderedModel):
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
+        verbose_name = _('action responsible party')
+        verbose_name_plural = _('action responsible parties')
 
 
 class ActionSchedule(OrderedModel):
