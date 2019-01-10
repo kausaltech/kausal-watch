@@ -134,9 +134,12 @@ class IndicatorEstimate(models.Model):
 class RelatedIndicator(models.Model):
     INCREASES = 'increases'
     DECREASES = 'decreases'
+    PART_OF = 'part_of'
+
     EFFECT_TYPES = (
         (INCREASES, _('increases')),
-        (DECREASES, _('decreases'))
+        (DECREASES, _('decreases')),
+        (PART_OF, _('is a part of')),
     )
 
     HIGH_CONFIDENCE = 'high'

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-12-17 14:44+0200\n"
+"POT-Creation-Date: 2019-01-10 12:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -306,55 +306,59 @@ msgstr "indikaattorin arvio"
 msgid "indicator estimates"
 msgstr "indikaattorin arviot"
 
-#: indicators/models.py:138
+#: indicators/models.py:140
 msgid "increases"
 msgstr "lisää"
 
-#: indicators/models.py:139
+#: indicators/models.py:141
 msgid "decreases"
 msgstr "pienentää"
 
-#: indicators/models.py:146
+#: indicators/models.py:142
+msgid "is a part of"
+msgstr "on osana"
+
+#: indicators/models.py:149
 msgid "high"
 msgstr "korkea"
 
-#: indicators/models.py:147
+#: indicators/models.py:150
 msgid "medium"
 msgstr "keskitaso"
 
-#: indicators/models.py:148
+#: indicators/models.py:151
 msgid "low"
 msgstr "matala"
 
-#: indicators/models.py:153
+#: indicators/models.py:156
 msgid "causal indicator"
 msgstr "vaikuttava indikaattori"
 
-#: indicators/models.py:157
+#: indicators/models.py:160
 msgid "effect indicator"
 msgstr "kohdeindikaattori"
 
-#: indicators/models.py:161
+#: indicators/models.py:164
 msgid "effect type"
 msgstr "vaikutuksen tyyppi"
 
-#: indicators/models.py:161
+#: indicators/models.py:164
 msgid "What type of causal effect is there between the indicators"
 msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
 
-#: indicators/models.py:164
+#: indicators/models.py:167
 msgid "confidence level"
 msgstr "luottamustaso"
 
-#: indicators/models.py:164
+#: indicators/models.py:167
 msgid "How confident we are that the causal effect is present"
 msgstr "Kuinka varmaa on, että mittarilla on kuvattu vaikutus kohteeseen"
 
-#: indicators/models.py:169
+#: indicators/models.py:172
 msgid "related indicator"
 msgstr "liittyvä indikaattori"
 
-#: indicators/models.py:170
+#: indicators/models.py:173
 msgid "related indicators"
 msgstr "liittyvät indikaattorit"
 
