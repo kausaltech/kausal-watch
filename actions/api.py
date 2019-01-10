@@ -149,6 +149,8 @@ class ActionViewSet(views.ModelViewSet):
     serializer_class = ActionSerializer
     filterset_fields = {
         'plan': ('exact',),
+        'plan__identifier': ('exact',),
+        'identifier': ('exact',),
         'categories': ('exact',)
     }
 
