@@ -121,9 +121,6 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer):
     contact_persons = serializers.SerializerMethodField()
 
     def get_contact_persons(self, obj):
-        # Quick hack to return the data only when in detail view
-        if self.parent is not None:
-            return None
         return [
             dict(first_name=x.first_name, last_name=x.last_name, avatar_url=x.get_avatar_url())
             for x in obj.contact_persons.all()
