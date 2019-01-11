@@ -28,6 +28,9 @@ class PlanSerializer(serializers.HyperlinkedModelSerializer):
 class PlanViewSet(viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
+    filterset_fields = {
+        'identifier': ('exact',),
+    }
 
 
 class ActionScheduleSerializer(serializers.HyperlinkedModelSerializer):
@@ -40,6 +43,10 @@ class ActionScheduleSerializer(serializers.HyperlinkedModelSerializer):
 class ActionScheduleViewSet(viewsets.ModelViewSet):
     queryset = ActionSchedule.objects.all()
     serializer_class = ActionScheduleSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
 
 
 class ActionStatusSerializer(serializers.HyperlinkedModelSerializer):
@@ -52,6 +59,10 @@ class ActionStatusSerializer(serializers.HyperlinkedModelSerializer):
 class ActionStatusViewSet(viewsets.ModelViewSet):
     queryset = ActionStatus.objects.all()
     serializer_class = ActionStatusSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
 
 
 class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
@@ -64,6 +75,10 @@ class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
 class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
     queryset = ActionDecisionLevel.objects.all()
     serializer_class = ActionDecisionLevelSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
 
 
 class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
@@ -76,6 +91,10 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
 class CategoryTypeViewSet(viewsets.ModelViewSet):
     queryset = CategoryType.objects.all()
     serializer_class = CategoryTypeSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
 
 
 class CategorySerializer(serializers.HyperlinkedModelSerializer):
@@ -92,6 +111,11 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    filterset_fields = {
+        'type': ('exact', 'in'),
+        'type__plan': ('exact',),
+        'type__plan__identifier': ('exact',),
+    }
 
 
 class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
@@ -166,6 +190,9 @@ class ActionTaskSerializer(serializers.HyperlinkedModelSerializer):
 class ActionTaskViewSet(viewsets.ModelViewSet):
     queryset = ActionTask.objects.all()
     serializer_class = ActionTaskSerializer
+    filterset_fields = {
+        'action': ('exact',),
+    }
 
 
 class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
@@ -178,3 +205,7 @@ class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
 class ScenarioViewSet(viewsets.ModelViewSet):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
