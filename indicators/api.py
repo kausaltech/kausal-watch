@@ -84,7 +84,7 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Indicator
         fields = (
-            'plan', 'name', 'unit', 'unit_name', 'description', 'categories',
+            'plan', 'name', 'unit', 'unit_name', 'level', 'description', 'categories',
             'time_resolution', 'estimates', 'latest_graph',
             'related_effects', 'related_causes',
         )
