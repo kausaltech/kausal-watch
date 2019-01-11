@@ -86,7 +86,7 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'plan', 'name', 'unit', 'unit_name', 'level', 'description', 'categories',
             'time_resolution', 'estimates', 'latest_graph',
-            'related_effects', 'related_causes',
+            'related_effects', 'related_causes', 'updated_at',
         )
 
 

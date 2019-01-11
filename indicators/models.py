@@ -68,6 +68,10 @@ class Indicator(models.Model):
         on_delete=models.SET_NULL, editable=False
     )
 
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at')
+    )
+
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')

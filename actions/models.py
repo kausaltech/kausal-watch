@@ -91,6 +91,10 @@ class Action(OrderedModel):
         'people.Person', blank=True, verbose_name=_('contact persons')
     )
 
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at')
+    )
+
     order_with_respect_to = 'plan'
 
     class Meta:
