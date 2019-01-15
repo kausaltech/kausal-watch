@@ -2,7 +2,6 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
-import markdownx.models
 
 
 class Migration(migrations.Migration):
@@ -22,7 +21,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=200, verbose_name='name')),
                 ('official_name', models.CharField(blank=True, help_text='The name as approved by an official party', max_length=100, null=True, verbose_name='official name')),
                 ('identifier', models.CharField(help_text='The identifier for this action (e.g. number)', max_length=50, verbose_name='identifier')),
-                ('description', markdownx.models.MarkdownxField(blank=True, help_text='What does this action involve in more detail?', null=True, verbose_name='description')),
+                ('description', models.TextField(blank=True, help_text='What does this action involve in more detail?', null=True, verbose_name='description')),
                 ('impact', models.IntegerField(blank=True, help_text='The impact this action has in measurable quantity (e.g. t CO₂e)', null=True, verbose_name='impact')),
             ],
             options={
