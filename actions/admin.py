@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib import admin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
@@ -7,6 +6,7 @@ from django_summernote.widgets import SummernoteWidget
 
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
     Category, CategoryType, ActionTask, ActionStatus
+from indicators.admin import ActionIndicatorAdmin
 
 
 class ActionScheduleAdmin(OrderedTabularInline):
@@ -63,8 +63,29 @@ class ActionTaskAdmin(admin.StackedInline):
 @admin.register(Action)
 class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
     summernote_fields = ('description', 'official_name')
+    search_fields = ('name', 'identifier')
+    readonly_fields = (
+        'official_name', 'identifier', 'status', 'completion',
+        'categories',)
+    autocomplete_fields = ('contact_persons',)
+
+    fieldsets = (
+        (None, {
+            'fields': (
+                'plan', 'identifier', 'official_name', 'name', 'description',
+                'categories', 'contact_persons',
+            )
+        }),
+        (None, {
+            'fields': ('status', 'completion')
+        }),
+        (None, {
+            'fields': ('schedule', 'decision_level')
+        }),
+    )
+
     inlines = [
-        ActionResponsiblePartyAdmin, ActionTaskAdmin
+        ActionResponsiblePartyAdmin, ActionIndicatorAdmin, ActionTaskAdmin
     ]
 
 

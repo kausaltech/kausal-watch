@@ -178,3 +178,26 @@ class RelatedIndicator(models.Model):
 
     def __str__(self):
         return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
+
+
+class ActionIndicator(models.Model):
+    action = models.ForeignKey(
+        'actions.Action', related_name='related_indicators', on_delete=models.CASCADE,
+        verbose_name=_('action')
+    )
+    indicator = models.ForeignKey(
+        Indicator, related_name='related_actions', on_delete=models.CASCADE,
+        verbose_name=_('indicator')
+    )
+    effect_type = models.CharField(
+        max_length=40, choices=RelatedIndicator.EFFECT_TYPES,
+        verbose_name=_('effect type'), help_text=_('What type of effect should the action cause?')
+    )
+
+    class Meta:
+        unique_together = (('action', 'indicator'),)
+        verbose_name = _('action indicator')
+        verbose_name_plural = _('action indicators')
+
+    def __str__(self):
+        return "%s -> %s -> %s" % (self.action, self.effect_type, self.indicator)

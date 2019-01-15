@@ -85,8 +85,10 @@ class Action(OrderedModel):
         'Category', blank=True, verbose_name=_('categories')
     )
     indicators = models.ManyToManyField(
-        'indicators.Indicator', blank=True, verbose_name=_('indicators')
+        'indicators.Indicator', blank=True, verbose_name=_('indicators'),
+        through='indicators.ActionIndicator', related_name='actions'
     )
+
     contact_persons = models.ManyToManyField(
         'people.Person', blank=True, verbose_name=_('contact persons')
     )
