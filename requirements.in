@@ -17,3 +17,4 @@ django-cors-headers
 python-jose
 plotly
 django-summernote
+ipython  # install for development convenience for now
