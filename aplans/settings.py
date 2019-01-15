@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'social_django',
     'ordered_model',
-    'markdownx',
     'mptt',
     'django_extensions',
     'rest_framework',
