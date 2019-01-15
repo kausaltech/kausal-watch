@@ -16,10 +16,10 @@ def make_edge_id(src, target):
 
 
 class GraphGenerator:
-    def __init__(self, url_base=None):
+    def __init__(self, request=None):
         self.nodes = {}
         self.edges = {}
-        self.url_base = url_base
+        self.request = request
 
     def make_node(self, obj):
         d = {}
@@ -31,7 +31,7 @@ class GraphGenerator:
             obj_type = 'indicator'
             d['indicator_level'] = obj.level
 
-        d['url'] = (self.url_base or '') + url
+        d['url'] = self.request.build_absolute_uri(url) if self.request else url
         d['type'] = obj_type
         d['object_id'] = obj.id
         d['name'] = obj.name

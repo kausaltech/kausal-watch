@@ -13,7 +13,7 @@ def register_view(klass, *args, **kwargs):
 
 class InsightViewSet(viewsets.ViewSet):
     def list(self, request):
-        gg = GraphGenerator()
+        gg = GraphGenerator(request=request)
 
         # params = request.query_params
         actions = Action.objects.filter(indicators__isnull=False)
