@@ -65,12 +65,12 @@ class GraphGenerator:
         self.nodes[node_id] = self.make_node(obj)
 
         if isinstance(obj, Action):
-            for indicator in obj.indicators.all():
+            for ri in obj.related_indicators.all():
+                target = ri.indicator
                 self.add_edge(
-                    obj, indicator, RelatedIndicator.INCREASES,
-                    RelatedIndicator.HIGH_CONFIDENCE
+                    obj, target, ri.effect_type, RelatedIndicator.HIGH_CONFIDENCE
                 )
-                self.add_node(indicator)
+                self.add_node(target)
         elif isinstance(obj, Indicator):
             for related in obj.related_effects.all():
                 target = related.effect_indicator
