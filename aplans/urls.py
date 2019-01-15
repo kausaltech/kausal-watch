@@ -15,17 +15,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from django.views.decorators.csrf import csrf_exempt
-from markdownx.views import ImageUploadView, MarkdownifyView
 from rest_framework import routers
 
 from actions.api import all_views as actions_api_views
 from indicators.api import all_views as indicators_api_views
+from insight.api import all_views as insight_api_views
 
 
 router = routers.DefaultRouter()
-for view in actions_api_views + indicators_api_views:
-    router.register(view['name'], view['class'])
+for view in actions_api_views + indicators_api_views + insight_api_views:
+    router.register(view['name'], view['class'], basename=view.get('basename'))
 
 
 urlpatterns = [
