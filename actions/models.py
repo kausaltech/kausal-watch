@@ -7,13 +7,13 @@ from django.utils.translation import gettext_lazy as _
 
 from django_orghierarchy.models import Organization
 from ordered_model.models import OrderedModel
-from aplans.utils import IdentifierField
+from aplans.utils import IdentifierField, ModelWithImage
 
 
 User = get_user_model()
 
 
-class Plan(models.Model):
+class Plan(ModelWithImage, models.Model):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
@@ -38,7 +38,7 @@ def latest_plan():
         return None
 
 
-class Action(OrderedModel):
+class Action(OrderedModel, ModelWithImage):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
@@ -275,7 +275,7 @@ class CategoryType(models.Model):
         return "%s (%s)" % (self.name, self.identifier)
 
 
-class Category(OrderedModel):
+class Category(OrderedModel, ModelWithImage):
     type = models.ForeignKey(
         CategoryType, on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')

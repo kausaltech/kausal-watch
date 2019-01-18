@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'django_summernote',
+    'easy_thumbnails',
+    'image_cropping',
 
     'django_orghierarchy',
 
@@ -217,6 +219,12 @@ SUMMERNOTE_CONFIG = {
         ]
     }
 }
+
+from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
+THUMBNAIL_PROCESSORS = (
+    'image_cropping.thumbnail_processors.crop_corners',
+) + thumbnail_settings.THUMBNAIL_PROCESSORS
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/

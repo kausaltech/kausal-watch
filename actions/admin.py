@@ -3,6 +3,7 @@ from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMix
     OrderedModelAdmin
 from django_summernote.admin import SummernoteModelAdmin
 from django_summernote.widgets import SummernoteWidget
+from image_cropping import ImageCroppingMixin
 
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
     Category, CategoryType, ActionTask, ActionStatus
@@ -33,7 +34,7 @@ class CategoryTypeAdmin(admin.StackedInline):
 
 
 @admin.register(Plan)
-class PlanAdmin(OrderedInlineModelAdminMixin, admin.ModelAdmin):
+class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
     inlines = [
         ActionStatusAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
@@ -61,7 +62,7 @@ class ActionTaskAdmin(admin.StackedInline):
 
 
 @admin.register(Action)
-class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
+class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
     readonly_fields = (
@@ -73,7 +74,7 @@ class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
         (None, {
             'fields': (
                 'plan', 'identifier', 'official_name', 'name', 'description',
-                'categories', 'contact_persons',
+                'categories', 'contact_persons', 'image', 'image_cropping',
             )
         }),
         (None, {
@@ -90,5 +91,5 @@ class ActionAdmin(OrderedModelAdmin, SummernoteModelAdmin):
 
 
 @admin.register(Category)
-class CategoryAdmin(OrderedModelAdmin):
+class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
     pass

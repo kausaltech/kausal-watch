@@ -1,7 +1,9 @@
+import os
 import re
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
+from image_cropping import ImageRatioField
 
 
 def camelcase_to_underscore(name):
@@ -39,3 +41,18 @@ class IdentifierField(models.CharField):
         if 'verbose_name' not in kwargs:
             kwargs['verbose_name'] = _('identifier')
         super().__init__(*args, **kwargs)
+
+
+def image_upload_path(instance, filename):
+    file_extension = os.path.splitext(filename)[1]
+    return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
+
+
+class ModelWithImage(models.Model):
+    image = models.ImageField(
+        blank=True, upload_to=image_upload_path, verbose_name=_('image')
+    )
+    image_cropping = ImageRatioField('image', '1280x720')
+
+    class Meta:
+        abstract = True

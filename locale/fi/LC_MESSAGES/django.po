@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-01-15 17:39+0200\n"
+"POT-Creation-Date: 2019-01-18 15:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -63,8 +63,7 @@ msgstr "vaikutus"
 
 #: actions/models.py:62
 msgid "The impact this action has in measurable quantity (e.g. t CO₂e)"
-msgstr ""
-"Tämän toimenpiteen vaikutus jossain mitattavassa suureessa (esim. t CO₂e)"
+msgstr "Tämän toimenpiteen vaikutus jossain mitattavassa suureessa (esim. t CO₂e)"
 
 #: actions/models.py:66
 msgid "status"
@@ -215,9 +214,13 @@ msgstr "skenaario"
 msgid "scenarios"
 msgstr "skenaariot"
 
-#: aplans/utils.py:40
+#: aplans/utils.py:42
 msgid "identifier"
 msgstr "tunniste"
+
+#: aplans/utils.py:53
+msgid "image"
+msgstr "kuva"
 
 #: indicators/apps.py:7
 msgid "Indicators"
