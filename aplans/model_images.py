@@ -2,7 +2,7 @@ import os
 from mimetypes import guess_type
 
 from django.db import models
-from django.http.response import FileResponse, HttpResponseBadRequest
+from django.http.response import FileResponse, HttpResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 from django.urls import NoReverseMatch
@@ -22,36 +22,15 @@ def image_upload_path(instance, filename):
 
 class ModelWithImage(models.Model):
     image = models.ImageField(
-        blank=True, upload_to=image_upload_path, verbose_name=_('image')
+        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
+        height_field='image_height', width_field='image_width'
     )
     image_cropping = ImageRatioField('image', '1280x720')
+    image_height = models.PositiveIntegerField(null=True, editable=False)
+    image_width = models.PositiveIntegerField(null=True, editable=False)
 
     class Meta:
         abstract = True
-
-
-def parse_dimension_string(dim):
-    """
-    Parse a dimension string ("WxH") into (width, height).
-
-    :param dim: Dimension string
-    :type dim: str
-    :return: Dimension tuple
-    :rtype: tuple[int, int]
-    """
-    a = dim.split('x')
-    if len(a) != 2:
-        raise ValueError('"dim" must be <width>x<height>')
-    width, height = a
-    try:
-        width = int(width)
-        height = int(height)
-    except (ValueError, TypeError) as e:
-        width = height = 0
-    if not (width > 0 and height > 0):
-        raise ValueError("width and height must be positive integers")
-    # FIXME: Check allowed image dimensions better
-    return (width, height)
 
 
 class ModelWithImageSerializerMixin(serializers.Serializer):
@@ -82,31 +61,62 @@ class ModelWithImageSerializerMixin(serializers.Serializer):
         return url
 
 
+def determine_image_dim(image, width, height):
+    for name in ('width', 'height'):
+        x = locals()[name]
+        if x is None:
+            continue
+        try:
+            x = int(x)
+            if x <= 0:
+                raise ValueError()
+            if x > 4000:
+                raise ValueError()
+        except (ValueError, TypeError) as e:
+            raise ValueError("invalid %s dimension: %s" % (name, x))
+
+    if width is not None:
+        width = int(width)
+    if height is not None:
+        height = int(height)
+
+    ratio = image.width / image.height
+    if not height:
+        height = width / ratio
+    elif not width:
+        width = height * ratio
+
+    return (width, height)
+
+
 class ModelWithImageViewMixin:
     @action(detail=True)
     def image(self, request, pk=None):
         qs = self.get_queryset()
         obj = get_object_or_404(qs, pk=pk)
-        dim = request.GET.get('dim', None)
-        if dim:
+        height = request.GET.get('height', None)
+        width = request.GET.get('width', None)
+        image = obj.image
+
+        if height or width:
             try:
-                width, height = parse_dimension_string(dim)
+                dim = determine_image_dim(image, width, height)
             except ValueError as verr:
                 return HttpResponseBadRequest(str(verr))
         else:
-            width = height = None
+            dim = None
 
-        if not width:
+        if not dim:
             out_image = obj.image
             filename = out_image.name
         else:
             out_image = get_thumbnailer(obj.image).get_thumbnail({
-                'size': (width, height),
+                'size': dim,
                 'box': obj.image_cropping,
                 'crop': True,
                 'detail': True,
             })
-            filename = "%s-%dx%d%s" % (obj.image.name, width, height, os.path.splitext(out_image.name)[1])
+            filename = "%s-%dx%d%s" % (obj.image.name, dim[0], dim[1], os.path.splitext(out_image.name)[1])
 
         # FIXME: Use SendFile headers instead of Django output when not in debug mode
         out_image.seek(0)
