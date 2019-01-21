@@ -2,14 +2,14 @@ import os
 from mimetypes import guess_type
 
 from django.db import models
-from django.http.response import FileResponse, HttpResponse, HttpResponseBadRequest
+from django.http.response import FileResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import DetailView
 from django.urls import NoReverseMatch
+from django.views.decorators.cache import cache_control
 
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework import viewsets, serializers
+from rest_framework import serializers
 from rest_framework.reverse import reverse
 from image_cropping import ImageRatioField
 from easy_thumbnails.files import get_thumbnailer
@@ -93,6 +93,7 @@ def determine_image_dim(image, width, height):
 
 
 class ModelWithImageViewMixin:
+    @cache_control(max_age=3600)
     @action(detail=True)
     def image(self, request, pk=None):
         qs = self.get_queryset()
