@@ -7,7 +7,8 @@ from django.utils.translation import gettext_lazy as _
 
 from django_orghierarchy.models import Organization
 from ordered_model.models import OrderedModel
-from aplans.utils import IdentifierField, ModelWithImage
+from aplans.utils import IdentifierField
+from aplans.model_images import ModelWithImage
 
 
 User = get_user_model()

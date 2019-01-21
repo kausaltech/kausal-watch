@@ -6,6 +6,7 @@ from .models import (
     ActionTask, ActionDecisionLevel
 )
 from aplans.utils import register_view_helper
+from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
 from django_orghierarchy.models import Organization
 from rest_framework_json_api import django_filters
 from rest_framework_json_api.relations import ResourceRelatedField
@@ -18,14 +19,14 @@ def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
-class PlanSerializer(serializers.HyperlinkedModelSerializer):
+class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Plan
-        fields = ('name', 'identifier')
+        fields = ('name', 'identifier', 'image')
 
 
 @register_view
-class PlanViewSet(viewsets.ModelViewSet):
+class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
     queryset = Plan.objects.all()
     serializer_class = PlanSerializer
     filterset_fields = {
@@ -97,7 +98,7 @@ class CategoryTypeViewSet(viewsets.ModelViewSet):
     }
 
 
-class CategorySerializer(serializers.HyperlinkedModelSerializer):
+class CategorySerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     included_serializers = {
         'parent': 'actions.api.CategorySerializer',
     }
@@ -108,7 +109,7 @@ class CategorySerializer(serializers.HyperlinkedModelSerializer):
 
 
 @register_view
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.ModelViewSet, ModelWithImageViewMixin):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     filterset_fields = {
@@ -130,7 +131,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
 
 
-class ActionSerializer(serializers.HyperlinkedModelSerializer):
+class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     included_serializers = {
         'plan': PlanSerializer,
         'schedule': ActionScheduleSerializer,
@@ -156,7 +157,7 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer):
 
 
 @register_view
-class ActionViewSet(views.ModelViewSet):
+class ActionViewSet(views.ModelViewSet, ModelWithImageViewMixin):
     queryset = Action.objects.all()
     prefetch_for_includes = {
         '__all__': [
