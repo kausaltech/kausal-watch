@@ -8,7 +8,6 @@ from .models import (
 from aplans.utils import register_view_helper
 from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
 from django_orghierarchy.models import Organization
-from rest_framework_json_api import django_filters
 from rest_framework_json_api.relations import ResourceRelatedField
 
 

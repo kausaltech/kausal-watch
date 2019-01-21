@@ -45,22 +45,19 @@ class ModelWithImageSerializerMixin(serializers.Serializer):
             del self.fields[field]
 
     def get_image_url(self, obj):
-        view = self.context.get('view')
         request = self.context.get('request')
-        if not view or not request:
+        if not request or not obj.image:
             return None
-        if not obj.image:
-            return None
-        url = None
 
-        for act in view.get_extra_actions():
-            if act.url_name != 'image':
-                continue
-            try:
-                url_name = '%s-%s' % (view.basename, act.url_name)
-                url = reverse(url_name, kwargs=dict(pk=obj.pk), request=request)
-            except NoReverseMatch:
-                pass  # URL requires additional arguments, ignore
+        url = None
+        try:
+            url = reverse(
+                '%s-image' % obj._meta.model_name, request=request,
+                kwargs=dict(pk=obj.pk)
+            )
+        except NoReverseMatch:
+            pass
+
         return url
 
 
