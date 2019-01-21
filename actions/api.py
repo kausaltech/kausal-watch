@@ -22,7 +22,7 @@ def register_view(klass, *args, **kwargs):
 class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Plan
-        fields = ('name', 'identifier', 'image')
+        fields = ('name', 'identifier', 'image_url')
 
 
 @register_view

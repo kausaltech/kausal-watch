@@ -34,14 +34,17 @@ class ModelWithImage(models.Model):
 
 
 class ModelWithImageSerializerMixin(serializers.Serializer):
-    image = serializers.SerializerMethodField()
+    image_url = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if 'image_cropping' in self.fields:
-            del self.fields['image_cropping']
+        image_fields = ['image', 'image_cropping', 'image_width', 'image_height']
+        for field in image_fields:
+            if field not in self.fields:
+                continue
+            del self.fields[field]
 
-    def get_image(self, obj):
+    def get_image_url(self, obj):
         view = self.context.get('view')
         request = self.context.get('request')
         if not view or not request:
