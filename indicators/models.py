@@ -200,4 +200,4 @@ class ActionIndicator(models.Model):
         verbose_name_plural = _('action indicators')
 
     def __str__(self):
-        return "%s -> %s -> %s" % (self.action, self.effect_type, self.indicator)
+        return "%s ➜ %s ➜ %s" % (self.action, self.get_effect_type_display(), self.indicator)

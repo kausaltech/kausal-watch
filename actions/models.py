@@ -19,6 +19,12 @@ class Plan(ModelWithImage, models.Model):
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
 
+    general_admins = models.ManyToManyField(
+        User, blank=True, related_name='general_admin_plans',
+        verbose_name=_('general administrators'),
+        help_text=_('Users that can modify everything related to the action plan')
+    )
+
     class Meta:
         verbose_name = _('plan')
         verbose_name_plural = _('plans')
@@ -91,7 +97,8 @@ class Action(OrderedModel, ModelWithImage):
     )
 
     contact_persons = models.ManyToManyField(
-        'people.Person', blank=True, verbose_name=_('contact persons')
+        'people.Person', blank=True, verbose_name=_('contact persons'),
+        related_name='contact_for_actions'
     )
 
     updated_at = models.DateTimeField(
@@ -105,6 +112,9 @@ class Action(OrderedModel, ModelWithImage):
         verbose_name_plural = _('actions')
         ordering = ('plan', 'order')
         index_together = (('plan', 'order'),)
+        permissions = (
+            ('admin_task', _("Can administrate all actions")),
+        )
 
     def __str__(self):
         return "%s. %s" % (self.identifier, self.name)

@@ -1,6 +1,8 @@
 from django.contrib import admin
-from .models import Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator
 from django_summernote.admin import SummernoteModelAdmin
+
+from actions.perms import ActionRelatedAdminPermMixin
+from .models import Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator
 
 
 @admin.register(Unit)
@@ -15,7 +17,7 @@ class RelatedIndicatorAdmin(admin.TabularInline):
     extra = 0
 
 
-class ActionIndicatorAdmin(admin.TabularInline):
+class ActionIndicatorAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     model = ActionIndicator
     autocomplete_fields = ('action', 'indicator',)
     extra = 0

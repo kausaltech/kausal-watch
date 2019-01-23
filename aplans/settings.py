@@ -27,6 +27,9 @@ env = environ.Env(
     SENTRY_DSN=(str, ''),
     COOKIE_PREFIX=(str, 'aplans'),
     INTERNAL_IPS=(list, []),
+    OIDC_ISSUER_URL=(str, ''),
+    OIDC_CLIENT_ID=(str, ''),
+    OIDC_CLIENT_SECRET=(str, ''),
 )
 
 BASE_DIR = root()
@@ -142,6 +145,16 @@ LOGIN_REDIRECT_URL = '/'
 
 CSRF_COOKIE_NAME = '%s-csrftoken' % env.str('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env.str('COOKIE_PREFIX')
+
+TUNNISTAMO_BASE_URL = env.url('OIDC_ISSUER_URL')
+SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
+SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
+SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
+
+from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_AUTH_PIPELINE  # noqa
+SOCIAL_AUTH_PIPELINE = HELUSERS_AUTH_PIPELINE + ('users.pipeline.create_permissions',)
+
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 #
 # REST Framework

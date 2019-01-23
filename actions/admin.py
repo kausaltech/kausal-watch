@@ -5,9 +5,13 @@ from django_summernote.admin import SummernoteModelAdmin
 from django_summernote.widgets import SummernoteWidget
 from image_cropping import ImageCroppingMixin
 
+from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
+from django_orghierarchy.models import Organization
+
+from indicators.admin import ActionIndicatorAdmin
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
     Category, CategoryType, ActionTask, ActionStatus
-from indicators.admin import ActionIndicatorAdmin
+from .perms import ActionRelatedAdminPermMixin
 
 
 class ActionScheduleAdmin(OrderedTabularInline):
@@ -35,12 +39,13 @@ class CategoryTypeAdmin(admin.StackedInline):
 
 @admin.register(Plan)
 class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
+    autocomplete_fields = ('general_admins',)
     inlines = [
         ActionStatusAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
 
 
-class ActionResponsiblePartyAdmin(OrderedTabularInline):
+class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderedTabularInline):
     model = ActionResponsibleParty
     extra = 0
     # fields = ('org', 'move_up_down_links',)
@@ -50,7 +55,7 @@ class ActionResponsiblePartyAdmin(OrderedTabularInline):
     autocomplete_fields = ('org',)
 
 
-class ActionTaskAdmin(admin.StackedInline):
+class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
     model = ActionTask
     summernote_fields = ('comment',)
     extra = 0
@@ -89,7 +94,48 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
         ActionResponsiblePartyAdmin, ActionIndicatorAdmin, ActionTaskAdmin
     ]
 
+    def has_view_permission(self, request, obj=None):
+        if not super().has_view_permission(request, obj):
+            return False
+
+        # The user has view permission to all actions if he is either
+        # a general admin for actions or a contact person for any
+        # actions.
+        user = request.user
+        if user.has_perm('actions.admin_action'):
+            return True
+
+        return user.is_contact_person_for_action(None)
+
+    def has_change_permission(self, request, obj=None):
+        if not super().has_change_permission(request, obj):
+            return False
+
+        user = request.user
+        if user.has_perm('actions.admin_action'):
+            return True
+
+        # The user has change permission to the action he is marked
+        # as a contact person for.
+        return user.is_contact_person_for_action(obj)
+
 
 @admin.register(Category)
 class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
     pass
+
+
+admin.site.unregister(Organization)
+
+
+@admin.register(Organization)
+class OrganizationAdmin(DefaultOrganizationAdmin):
+    search_fields = ('name', 'abbreviation')
+
+    def get_queryset(self, request):
+        # The default OrganizationAdmin is buggy
+        qs = admin.ModelAdmin.get_queryset(self, request).filter(dissolution_date=None)
+        return qs
+
+    def get_actions(self, request):
+        return admin.ModelAdmin.get_actions(self, request)
