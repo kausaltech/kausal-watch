@@ -3,7 +3,7 @@ from plotly.exceptions import PlotlyError
 from rest_framework import viewsets, permissions
 from rest_framework_json_api import serializers
 from .models import (
-    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator
+    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator
 )
 from aplans.utils import register_view_helper
 
@@ -79,15 +79,26 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
         'latest_graph': IndicatorGraphSerializer,
         'related_effects': 'indicators.api.RelatedIndicatorSerializer',
         'related_causes': 'indicators.api.RelatedIndicatorSerializer',
+        'actions': 'actions.api.ActionSerializer',
     }
 
     class Meta:
         model = Indicator
         fields = (
             'plan', 'name', 'unit', 'unit_name', 'level', 'description', 'categories',
-            'time_resolution', 'estimates', 'latest_graph',
+            'time_resolution', 'estimates', 'latest_graph', 'actions',
             'related_effects', 'related_causes', 'updated_at',
         )
+        filterset_fields = {
+            'level': ('exact', 'in'),
+            'plan': ('exact', 'in'),
+        }
+
+
+@register_view
+class IndicatorViewSet(viewsets.ModelViewSet):
+    queryset = Indicator.objects.all().select_related('unit')
+    serializer_class = IndicatorSerializer
 
 
 class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):
@@ -107,10 +118,21 @@ class RelatedIndicatorViewSet(viewsets.ModelViewSet):
     serializer_class = RelatedIndicatorSerializer
 
 
+class ActionIndicatorSerializer(serializers.HyperlinkedModelSerializer):
+    included_serializers = {
+        'action': 'actions.api.ActionSerializer',
+        'indicator': IndicatorSerializer,
+    }
+
+    class Meta:
+        model = ActionIndicator
+        fields = '__all__'
+
+
 @register_view
-class IndicatorViewSet(viewsets.ModelViewSet):
-    queryset = Indicator.objects.all().select_related('unit')
-    serializer_class = IndicatorSerializer
+class ActionIndicatorViewSet(viewsets.ModelViewSet):
+    queryset = ActionIndicator.objects.all()
+    serializer_class = ActionIndicatorSerializer
 
 
 class IndicatorEstimateSerializer(serializers.HyperlinkedModelSerializer):
