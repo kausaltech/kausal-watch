@@ -26,7 +26,6 @@ RUN pip install gunicorn
 
 COPY . /code/
 WORKDIR /code
-RUN rm -f local_settings.py
 RUN ./manage.py collectstatic --no-input
 RUN ./manage.py compilemessages
 COPY ./docker/app/docker-entrypoint.sh /
