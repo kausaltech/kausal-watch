@@ -15,6 +15,6 @@ def create_permissions(details, backend, response, user=None, *args, **kwargs):
     if user.is_general_admin_for_plan():
         add_plan_admin_perms(user)
     else:
-        remove_plan_admin_perms()
+        remove_plan_admin_perms(user)
         if user.is_contact_person_for_action():
             add_contact_person_perms(user)
