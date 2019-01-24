@@ -35,7 +35,7 @@ env = environ.Env(
 BASE_DIR = root()
 
 if os.path.exists(os.path.join(BASE_DIR, '.env')):
-    environ.Env.read_env()
+    environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 
 DEBUG = env('DEBUG')
@@ -146,7 +146,7 @@ LOGIN_REDIRECT_URL = '/'
 CSRF_COOKIE_NAME = '%s-csrftoken' % env.str('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env.str('COOKIE_PREFIX')
 
-TUNNISTAMO_BASE_URL = env.url('OIDC_ISSUER_URL')
+TUNNISTAMO_BASE_URL = env.url('OIDC_ISSUER_URL').geturl()
 SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
 SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
