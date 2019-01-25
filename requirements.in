@@ -7,7 +7,6 @@ django-helusers
 social-auth-app-django
 psycopg2-binary
 django-extensions
-whitenoise
 django-ordered-model
 django-environ
 markdown
