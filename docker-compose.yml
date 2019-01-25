@@ -21,6 +21,7 @@ services:
       - aplans_media:/srv/media
     environment:
       - DATABASE_URL=postgres://aplans@db/aplans
+      - STATIC_ROOT=/srv/static
       - DEBUG
       - ALLOWED_HOSTS
       - COOKIE_PREFIX

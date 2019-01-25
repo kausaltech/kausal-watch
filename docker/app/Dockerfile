@@ -22,7 +22,7 @@ RUN ln -s /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
 COPY requirements.txt /code/
 RUN pip install -r /code/requirements.txt
-RUN pip install gunicorn
+RUN pip install uwsgi
 
 COPY . /code/
 WORKDIR /code
