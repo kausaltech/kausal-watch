@@ -279,6 +279,6 @@ if not locals().get('SECRET_KEY', ''):
             Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)
 
 
-if hasattr(locals(), 'DATABASES'):
+if 'DATABASES' in locals():
     if DATABASES['default']['ENGINE'] in ('django.db.backends.postgresql', 'django.contrib.gis.db.backends.postgis'):
-        SOCIAL_AUTH_POSTGRES_JSONFIELD = True
+        DATABASES['default']['CONN_MAX_AGE'] = 600
