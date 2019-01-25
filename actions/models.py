@@ -113,7 +113,7 @@ class Action(OrderedModel, ModelWithImage):
         ordering = ('plan', 'order')
         index_together = (('plan', 'order'),)
         permissions = (
-            ('admin_task', _("Can administrate all actions")),
+            ('admin_action', _("Can administrate all actions")),
         )
 
     def __str__(self):

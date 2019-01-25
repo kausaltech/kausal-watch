@@ -25,7 +25,7 @@ class ModelWithImage(models.Model):
         blank=True, upload_to=image_upload_path, verbose_name=_('image'),
         height_field='image_height', width_field='image_width'
     )
-    image_cropping = ImageRatioField('image', '1280x720')
+    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
     image_height = models.PositiveIntegerField(null=True, editable=False)
     image_width = models.PositiveIntegerField(null=True, editable=False)
 

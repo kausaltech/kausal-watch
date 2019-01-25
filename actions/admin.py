@@ -102,7 +102,7 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
         # a general admin for actions or a contact person for any
         # actions.
         user = request.user
-        if user.has_perm('actions.admin_action'):
+        if user.is_superuser or user.has_perm('actions.admin_action'):
             return True
 
         return user.is_contact_person_for_action(None)
@@ -112,12 +112,7 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
             return False
 
         user = request.user
-        if user.has_perm('actions.admin_action'):
-            return True
-
-        # The user has change permission to the action he is marked
-        # as a contact person for.
-        return user.is_contact_person_for_action(obj)
+        return user.can_modify_action(obj)
 
 
 @admin.register(Category)

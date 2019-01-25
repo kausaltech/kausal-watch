@@ -47,6 +47,8 @@ class User(AbstractUser):
             return plan.pk in plans
 
     def can_modify_action(user, action=None):
+        if user.is_superuser:
+            return True
         if user.has_perm('actions.admin_action'):
             return True
         return user.is_contact_person_for_action(action)
