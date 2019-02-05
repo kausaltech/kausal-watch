@@ -16,10 +16,18 @@ def make_edge_id(src, target):
 
 
 class GraphGenerator:
-    def __init__(self, request=None):
+    def __init__(self, request=None, plan=None):
         self.nodes = {}
         self.edges = {}
         self.request = request
+        self.plan = plan
+
+    def get_indicator_level(self, obj):
+        for lo in obj.levels.all():
+            if lo.plan_id == self.plan.id:
+                return lo.level
+        else:
+            return ''
 
     def make_node(self, obj):
         d = {}
@@ -29,7 +37,7 @@ class GraphGenerator:
         elif isinstance(obj, Indicator):
             url = reverse('indicator-detail', kwargs={'pk': obj.pk})
             obj_type = 'indicator'
-            d['indicator_level'] = obj.level
+            d['indicator_level'] = self.get_indicator_level(obj)
 
         d['url'] = self.request.build_absolute_uri(url) if self.request else url
         d['type'] = obj_type
@@ -57,6 +65,12 @@ class GraphGenerator:
         edge = self.make_edge(src, target, effect_type, confidence_level)
         self.edges[edge_id] = edge
 
+    def filter_indicators(self, qs, attr_name):
+        if self.plan:
+            filter_name = '%s__levels__plan' % attr_name
+            qs = qs.filter(**{filter_name: self.plan})
+        return qs.select_related(attr_name).prefetch_related('%s__levels' % attr_name)
+
     def add_node(self, obj):
         node_id = make_node_id(obj)
         if node_id in self.nodes:
@@ -72,12 +86,12 @@ class GraphGenerator:
                 )
                 self.add_node(target)
         elif isinstance(obj, Indicator):
-            for related in obj.related_effects.all():
+            for related in self.filter_indicators(obj.related_effects.all(), 'effect_indicator'):
                 target = related.effect_indicator
                 self.add_edge(obj, target, related.effect_type, related.confidence_level)
                 self.add_node(target)
 
-            for related in obj.related_causes.all():
+            for related in self.filter_indicators(obj.related_causes.all(), 'causal_indicator'):
                 source = related.causal_indicator
                 self.add_edge(source, obj, related.effect_type, related.confidence_level)
                 self.add_node(source)
