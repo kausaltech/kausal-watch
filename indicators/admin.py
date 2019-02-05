@@ -1,8 +1,12 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 from django_summernote.admin import SummernoteModelAdmin
 
 from actions.perms import ActionRelatedAdminPermMixin
-from .models import Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator
+from .models import (
+    Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator,
+    IndicatorLevel
+)
 
 
 @admin.register(Unit)
@@ -23,12 +27,22 @@ class ActionIndicatorAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     extra = 0
 
 
+class IndicatorLevelAdmin(admin.TabularInline):
+    model = IndicatorLevel
+    autocomplete_fields = ('indicator',)
+    extra = 0
+
+
 @admin.register(Indicator)
 class IndicatorAdmin(SummernoteModelAdmin):
     summernote_fields = ('description',)
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
-    inlines = [ActionIndicatorAdmin, RelatedIndicatorAdmin]
+    list_display = ('name', 'has_data')
+    list_filter = ('plans',)
+    empty_value_display = _('[nothing]')
+
+    inlines = [IndicatorLevelAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
 
 
 @admin.register(IndicatorEstimate)

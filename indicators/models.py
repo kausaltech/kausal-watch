@@ -46,13 +46,12 @@ class Indicator(models.Model):
         ('operational', _('operational')),
     )
 
-    plan = models.ForeignKey(
-        'actions.Plan', related_name='indicators', on_delete=models.CASCADE, default=latest_plan,
-        verbose_name=_('plan')
+    plans = models.ManyToManyField(
+        'actions.Plan', through='indicators.IndicatorLevel', blank=True,
+        verbose_name=_('plans')
     )
     identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    level = models.CharField(max_length=30, verbose_name=_('level'), choices=LEVELS, null=True, blank=True)
     unit = models.ForeignKey(
         Unit, related_name='indicators', on_delete=models.CASCADE,
         verbose_name=_('unit')
@@ -71,16 +70,43 @@ class Indicator(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True, editable=False, verbose_name=_('updated at')
     )
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at')
+    )
 
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')
+        ordering = ('-updated_at',)
 
     def get_latest_graph(self):
         return self.graphs.latest()
 
+    def has_data(self):
+        return self.latest_graph_id is not None
+    has_data.short_description = _('Has data')
+    has_data.boolean = True
+
     def __str__(self):
         return self.name
+
+
+class IndicatorLevel(models.Model):
+    indicator = models.ForeignKey(
+        Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE
+    )
+    plan = models.ForeignKey(
+        'actions.Plan', related_name='indicator_levels', verbose_name=_('plan'), on_delete=models.CASCADE,
+    )
+    level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS)
+
+    class Meta:
+        unique_together = (('indicator', 'plan'),)
+        verbose_name = _('indicator levels')
+        verbose_name_plural = _('indicator levels')
+
+    def __str__(self):
+        return "%s in %s (%s)" % (self.indicator, self.plan, self.level)
 
 
 class IndicatorGraph(models.Model):

@@ -2,9 +2,12 @@ from plotly.graph_objs import Figure
 from plotly.exceptions import PlotlyError
 from rest_framework import viewsets, permissions
 from rest_framework_json_api import serializers
+import django_filters as filters
 from .models import (
-    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator
+    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator,
+    IndicatorLevel
 )
+from actions.models import Plan
 from aplans.utils import register_view_helper
 
 
@@ -68,11 +71,24 @@ class IndicatorGraphViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.AllowAny,)
 
 
+class IndicatorLevelSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = IndicatorLevel
+        fields = ('plan', 'indicator', 'level')
+
+
+@register_view
+class IndicatorLevelViewSet(viewsets.ModelViewSet):
+    queryset = IndicatorLevel.objects.all()
+    serializer_class = IndicatorLevelSerializer
+
+
 class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
     unit_name = serializers.CharField(source='unit.name', read_only=True)
 
     included_serializers = {
-        'plan': 'actions.api.PlanSerializer',
+        'plans': 'actions.api.PlanSerializer',
+        'levels': IndicatorLevelSerializer,
         'categories': 'actions.api.CategorySerializer',
         'unit': UnitSerializer,
         'estimates': 'indicators.api.IndicatorEstimateSerializer',
@@ -85,20 +101,34 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Indicator
         fields = (
-            'plan', 'name', 'unit', 'unit_name', 'level', 'description', 'categories',
+            'name', 'unit', 'unit_name', 'levels', 'plans', 'description', 'categories',
             'time_resolution', 'estimates', 'latest_graph', 'actions',
             'related_effects', 'related_causes', 'updated_at',
         )
-        filterset_fields = {
-            'level': ('exact', 'in'),
-            'plan': ('exact', 'in'),
-        }
+
+
+class IndicatorFilter(filters.FilterSet):
+    plans = filters.ModelMultipleChoiceFilter(
+        field_name='plans__identifier', to_field_name='identifier',
+        queryset=Plan.objects
+    )
+
+    class Meta:
+        model = Indicator
+        fields = ('plans',)
 
 
 @register_view
 class IndicatorViewSet(viewsets.ModelViewSet):
     queryset = Indicator.objects.all().select_related('unit')
     serializer_class = IndicatorSerializer
+
+    prefetch_for_includes = {
+        '__all__': [
+            'levels', 'levels__plan', 'categories',
+        ]
+    }
+    filterset_class = IndicatorFilter
 
 
 class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):
