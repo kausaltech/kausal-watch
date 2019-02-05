@@ -2,6 +2,7 @@ import os
 from mimetypes import guess_type
 
 from django.db import models
+from django.http import Http404
 from django.http.response import FileResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
 from django.urls import NoReverseMatch
@@ -98,6 +99,8 @@ class ModelWithImageViewMixin:
         height = request.GET.get('height', None)
         width = request.GET.get('width', None)
         image = obj.image
+        if image is None:
+            raise Http404
 
         if height or width:
             try:
