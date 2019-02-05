@@ -74,6 +74,8 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
         'official_name', 'identifier', 'status', 'completion',
         'categories',)
     autocomplete_fields = ('contact_persons',)
+    list_display = ('__str__', 'plan')
+    list_filter = ('plan',)
 
     fieldsets = (
         (None, {
