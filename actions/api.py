@@ -19,9 +19,13 @@ def register_view(klass, *args, **kwargs):
 
 
 class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
+    included_serializers = {
+        'action_schedules': 'actions.api.ActionScheduleSerializer',
+    }
+
     class Meta:
         model = Plan
-        fields = ('name', 'identifier', 'image_url')
+        fields = ('name', 'identifier', 'image_url', 'action_schedules')
 
 
 @register_view
