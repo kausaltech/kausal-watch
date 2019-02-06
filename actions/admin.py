@@ -72,7 +72,8 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     search_fields = ('name', 'identifier')
     readonly_fields = (
         'official_name', 'identifier', 'status', 'completion',
-        'categories',)
+        'categories',
+    )
     autocomplete_fields = ('contact_persons',)
     list_display = ('__str__', 'plan')
     list_filter = ('plan',)
@@ -95,6 +96,15 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     inlines = [
         ActionResponsiblePartyAdmin, ActionIndicatorAdmin, ActionTaskAdmin
     ]
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj is not None:
+            # Limit choices to what's available in the action plan
+            form.base_fields['schedule'].queryset = obj.plan.action_schedules.all()
+            form.base_fields['decision_level'].queryset = obj.plan.action_decision_levels.all()
+
+        return form
 
     def has_view_permission(self, request, obj=None):
         if not super().has_view_permission(request, obj):
