@@ -3,7 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Action, ActionResponsibleParty, ActionTask, Plan, \
     ActionSchedule, ActionStatus, Category, CategoryType
 from django_orghierarchy.models import Organization
-from indicators.models import ActionIndicator, Indicator, RelatedIndicator, Unit
+from indicators.models import ActionIndicator, Indicator, \
+    RelatedIndicator, Unit, IndicatorLevel
 from django.contrib.auth import get_user_model
 from people.models import Person
 
@@ -51,6 +52,7 @@ PLAN_ADMIN_PERMS = (
     (ActionSchedule, ALL_PERMS),
     (CategoryType, ALL_PERMS),
     (Category, ALL_PERMS),
+    (IndicatorLevel, ALL_PERMS),
     (User, ('view',))
 )
 
