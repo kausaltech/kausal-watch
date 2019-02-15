@@ -44,6 +44,7 @@ class GraphGenerator:
         d['object_id'] = obj.id
         d['name'] = obj.name
         d['id'] = make_node_id(obj)
+        d['identifier'] = obj.identifier if obj.identifier else None
         return d
 
     def make_edge(self, src, target, effect_type=None, confidence_level=None):
