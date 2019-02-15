@@ -3,24 +3,30 @@ from actions.models import Action
 from indicators.models import Indicator, RelatedIndicator
 
 
-def make_node_id(obj):
-    if isinstance(obj, Action):
-        type_char = 'a'
-    else:
-        type_char = 'i'
-    return f'{type_char}{obj.id}'
-
-
-def make_edge_id(src, target):
-    return f'{make_node_id(src)}-{make_node_id(target)}'
-
-
 class GraphGenerator:
-    def __init__(self, request=None, plan=None):
+    def __init__(self, request=None):
         self.nodes = {}
         self.edges = {}
         self.request = request
+
+    def get_graph(self):
+        return dict(nodes=list(self.nodes.values()), edges=list(self.edges.values()))
+
+
+class ActionGraphGenerator(GraphGenerator):
+    def __init__(self, request=None, plan=None):
+        super().__init__(request)
         self.plan = plan
+
+    def make_node_id(self, obj):
+        if isinstance(obj, Action):
+            type_char = 'a'
+        else:
+            type_char = 'i'
+        return f'{type_char}{obj.id}'
+
+    def make_edge_id(self, src, target):
+        return f'{self.make_node_id(src)}-{self.make_node_id(target)}'
 
     def get_indicator_level(self, obj):
         for lo in obj.levels.all():
@@ -43,15 +49,15 @@ class GraphGenerator:
         d['type'] = obj_type
         d['object_id'] = obj.id
         d['name'] = obj.name
-        d['id'] = make_node_id(obj)
+        d['id'] = self.make_node_id(obj)
         d['identifier'] = obj.identifier if obj.identifier else None
         return d
 
     def make_edge(self, src, target, effect_type=None, confidence_level=None):
         d = {}
-        d['id'] = make_edge_id(src, target)
-        d['from'] = make_node_id(src)
-        d['to'] = make_node_id(target)
+        d['id'] = self.make_edge_id(src, target)
+        d['from'] = self.make_node_id(src)
+        d['to'] = self.make_node_id(target)
         if effect_type:
             d['effect_type'] = effect_type
         if confidence_level:
@@ -59,7 +65,7 @@ class GraphGenerator:
         return d
 
     def add_edge(self, src, target, effect_type=None, confidence_level=None):
-        edge_id = make_edge_id(src, target)
+        edge_id = self.make_edge_id(src, target)
         if edge_id in self.edges:
             return
 
@@ -73,7 +79,7 @@ class GraphGenerator:
         return qs.select_related(attr_name).prefetch_related('%s__levels' % attr_name)
 
     def add_node(self, obj):
-        node_id = make_node_id(obj)
+        node_id = self.make_node_id(obj)
         if node_id in self.nodes:
             return
 
@@ -97,5 +103,55 @@ class GraphGenerator:
                 self.add_edge(source, obj, related.effect_type, related.confidence_level)
                 self.add_node(source)
 
-    def get_graph(self):
-        return dict(nodes=list(self.nodes.values()), edges=list(self.edges.values()))
+
+class OrganizationGraphGenerator(GraphGenerator):
+    def __init__(self, request=None, orgs=[], classifications=[]):
+        super().__init__(request)
+        self.orgs = {org.id: org for org in orgs}
+        self.org_classes = {kls.id: kls for kls in classifications}
+        for org in orgs:
+            self.add_node(org)
+
+    def make_node_id(self, obj):
+        return f'{obj.id}'
+
+    def make_edge_id(self, src, target):
+        return f'{self.make_node_id(src)}-{self.make_node_id(target)}'
+
+    def make_node(self, obj):
+        d = {}
+        url = reverse('organization-detail', kwargs={'pk': obj.pk})
+        d['url'] = self.request.build_absolute_uri(url) if self.request else url
+        d['abbreviation'] = obj.abbreviation
+        d['type'] = 'organization'
+        d['classification'] = self.org_classes.get(obj.classification_id).name
+        d['object_id'] = obj.id
+        d['name'] = obj.name
+        d['id'] = self.make_node_id(obj)
+        return d
+
+    def make_edge(self, src, target):
+        d = {}
+        d['id'] = self.make_edge_id(src, target)
+        d['from'] = self.make_node_id(src)
+        d['to'] = self.make_node_id(target)
+        return d
+
+    def add_node(self, obj):
+        node_id = self.make_node_id(obj)
+        if node_id in self.nodes:
+            return
+
+        self.nodes[node_id] = self.make_node(obj)
+        if obj.parent_id:
+            parent_obj = self.orgs[obj.parent_id]
+            self.add_node(parent_obj)
+            self.add_edge(parent_obj, obj)
+
+    def add_edge(self, src, target):
+        edge_id = self.make_edge_id(src, target)
+        if edge_id in self.edges:
+            return
+
+        edge = self.make_edge(src, target)
+        self.edges[edge_id] = edge
