@@ -14,18 +14,18 @@ defusedxml==0.5.0         # via python3-openid, social-auth-core
 django-appconf==1.0.2     # via django-image-cropping
 django-cors-headers==2.4.0
 django-environ==0.4.5
-django-extensions==2.1.4
+django-extensions==2.1.5
 django-filter==2.1.0
 django-helusers==0.4.4
 django-image-cropping==1.2.0
-django-js-asset==1.1.0    # via django-mptt
+django-js-asset==1.2.1    # via django-mptt
 django-mptt==0.9.1
 django-ordered-model==3.1.1
 django-summernote==0.8.11.4
-django==2.1.5
+django==2.1.7
 djangorestframework==3.9.1
 drf-oidc-auth==0.9        # via django-helusers
-easy-thumbnails==2.5
+easy-thumbnails==2.6
 ecdsa==0.13               # via python-jose
 future==0.17.1            # via pyjwkest, python-jose
 idna==2.8                 # via requests
@@ -35,16 +35,16 @@ ipython==7.2.0
 jedi==0.13.2              # via ipython
 jsonschema==2.6.0         # via nbformat
 jupyter-core==4.4.0       # via nbformat
-lxml==4.3.0
+lxml==4.3.1
 markdown==3.0.1
 nbformat==4.4.0           # via plotly
 oauthlib==3.0.1           # via requests-oauthlib, social-auth-core
-parso==0.3.2              # via jedi
+parso==0.3.4              # via jedi
 pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pillow==5.4.1
-plotly==3.5.0
-prompt-toolkit==2.0.7     # via ipython
+plotly==3.6.1
+prompt-toolkit==2.0.8     # via ipython
 psycopg2-binary==2.7.7
 ptyprocess==0.6.0         # via pexpect
 pyasn1==0.4.5             # via rsa
