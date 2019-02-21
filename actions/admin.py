@@ -36,6 +36,11 @@ class CategoryTypeAdmin(admin.StackedInline):
     model = CategoryType
     extra = 0
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(plan=plan)
+
 
 @admin.register(Plan)
 class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
@@ -70,13 +75,8 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
 class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
-    readonly_fields = (
-        'official_name', 'identifier', 'status', 'completion',
-        'categories',
-    )
     autocomplete_fields = ('contact_persons',)
     list_display = ('__str__', 'plan')
-    list_filter = ('plan',)
 
     fieldsets = (
         (None, {
@@ -100,11 +100,41 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         if obj is not None:
-            # Limit choices to what's available in the action plan
-            form.base_fields['schedule'].queryset = obj.plan.action_schedules.all()
-            form.base_fields['decision_level'].queryset = obj.plan.action_decision_levels.all()
+            plan = obj.plan
+        else:
+            plan = request.user.get_active_admin_plan()
+
+        # Limit choices to what's available in the action plan
+        form.base_fields['plan'].queryset = Plan.objects.filter(id=plan.id)
+        form.base_fields['schedule'].queryset = plan.action_schedules.all()
+        form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
+        if 'categories' in form.base_fields:
+            categories = Category.objects.filter(type__plan=plan).order_by('identifier')
+            form.base_fields['categories'].queryset = categories
 
         return form
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(plan=plan)
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = ['completion']
+        LOCKED_FIELDS = [
+            'official_name', 'identifier', 'status',
+            'completion', 'categories',
+        ]
+        if obj is None:
+            # This is an add request
+            return readonly_fields
+
+        # If the actions for the plan are locked, restrict modify
+        # access to some official fields.
+        if obj.plan.actions_locked:
+            readonly_fields = readonly_fields + LOCKED_FIELDS
+
+        return readonly_fields
 
     def has_view_permission(self, request, obj=None):
         if not super().has_view_permission(request, obj):
@@ -126,10 +156,63 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
         user = request.user
         return user.can_modify_action(obj)
 
+    def has_delete_permission(self, request, obj=None):
+        user = request.user
+        if not user.can_modify_action(obj):
+            return False
+
+        if obj is not None:
+            plan = obj.plan
+            if plan.actions_locked:
+                return False
+
+        return True
+
+    def has_add_permission(self, request):
+        if not super().has_add_permission(request):
+            return False
+
+        user = request.user
+        if not user.can_modify_action():
+            return False
+
+        plan = user.get_active_admin_plan()
+        if plan.actions_locked:
+            return False
+
+        return True
+
 
 @admin.register(Category)
 class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
-    pass
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(type__plan=plan)
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        plan = request.user.get_active_admin_plan()
+
+        # Limit choices to what's available in the action plan
+        field = form.base_fields['type']
+        field.queryset = field.queryset.filter(plan=plan).distinct()
+
+        field = form.base_fields['parent']
+        if obj is not None:
+            filters = dict(type=obj.type)
+        else:
+            filters = dict(type__plan=plan)
+        field.queryset = field.queryset.filter(**filters).distinct()
+        return form
+
+    def has_delete_permission(self, request, obj=None):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if plan.actions_locked:
+            return False
+
+        return True
 
 
 admin.site.unregister(Organization)

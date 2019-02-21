@@ -46,7 +46,7 @@ def add_contact_person_perms(user):
 
 
 PLAN_ADMIN_PERMS = (
-    (Action, ('admin',)),
+    (Action, ALL_PERMS),
     (Plan, ('view', 'change')),
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),

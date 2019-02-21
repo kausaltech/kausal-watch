@@ -67,6 +67,13 @@ class Indicator(models.Model):
         on_delete=models.SET_NULL, editable=False
     )
 
+    # summaries = models.JSONField(null=True)
+    # E.g.:
+    # {
+    #    "day_when_target_reached": "2079-01-22",
+    #    "yearly_ghg_emission_reductions_left": "1963000",
+    # }
+
     updated_at = models.DateTimeField(
         auto_now=True, editable=False, verbose_name=_('updated at')
     )

@@ -23,6 +23,8 @@ from actions.api import all_views as actions_api_views
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
 
+from users.views import change_admin_plan
+
 
 router = routers.DefaultRouter()
 for view in actions_api_views + indicators_api_views + insight_api_views:
@@ -31,6 +33,7 @@ for view in actions_api_views + indicators_api_views + insight_api_views:
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
     path('summernote/', include('django_summernote.urls')),
     path('v1/', include(router.urls)),
     path('', include('social_django.urls', namespace='social'))

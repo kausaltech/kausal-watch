@@ -18,6 +18,10 @@ class Plan(ModelWithImage, models.Model):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    actions_locked = models.BooleanField(
+        default=False, verbose_name=_('actions locked'),
+        help_text=_('Can actions be added and the official metadata edited?'),
+    )
 
     general_admins = models.ManyToManyField(
         User, blank=True, related_name='general_admin_plans',
@@ -283,7 +287,7 @@ class CategoryType(models.Model):
         verbose_name_plural = _('category types')
 
     def __str__(self):
-        return "%s (%s)" % (self.name, self.identifier)
+        return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
 
 class Category(OrderedModel, ModelWithImage):
