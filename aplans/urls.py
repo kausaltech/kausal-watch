@@ -36,5 +36,6 @@ urlpatterns = [
     path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
     path('summernote/', include('django_summernote.urls')),
     path('v1/', include(router.urls)),
-    path('', include('social_django.urls', namespace='social'))
+    path('', include('social_django.urls', namespace='social')),
+    path('', include('helusers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

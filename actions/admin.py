@@ -49,6 +49,24 @@ class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdm
         ActionStatusAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plans = request.user.get_adminable_plans()
+        return qs.filter(id__in=[x.id for x in plans])
+
+    def has_change_permission(self, request, obj=None):
+        if not super().has_change_permission(request, obj):
+            return False
+        user = request.user
+        return user.is_general_admin_for_plan(obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if not super().has_delete_permission(request, obj):
+            return False
+        if obj and obj.actions_locked:
+            return False
+        return True
+
 
 class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderedTabularInline):
     model = ActionResponsibleParty
@@ -105,9 +123,12 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
             plan = request.user.get_active_admin_plan()
 
         # Limit choices to what's available in the action plan
-        form.base_fields['plan'].queryset = Plan.objects.filter(id=plan.id)
-        form.base_fields['schedule'].queryset = plan.action_schedules.all()
-        form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
+        if 'plan' in form.base_fields:
+            form.base_fields['plan'].queryset = Plan.objects.filter(id=plan.id)
+        if 'schedule' in form.base_fields:
+            form.base_fields['schedule'].queryset = plan.action_schedules.all()
+        if 'decision_level' in form.base_fields:
+            form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
         if 'categories' in form.base_fields:
             categories = Category.objects.filter(type__plan=plan).order_by('identifier')
             form.base_fields['categories'].queryset = categories
@@ -152,7 +173,6 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     def has_change_permission(self, request, obj=None):
         if not super().has_change_permission(request, obj):
             return False
-
         user = request.user
         return user.can_modify_action(obj)
 
@@ -209,7 +229,7 @@ class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
     def has_delete_permission(self, request, obj=None):
         user = request.user
         plan = user.get_active_admin_plan()
-        if plan.actions_locked:
+        if plan is None or plan.actions_locked:
             return False
 
         return True

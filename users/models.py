@@ -78,9 +78,9 @@ class User(AbstractUser):
     def get_adminable_plans(self):
         from actions.models import Plan
 
-        if not self.is_superuser and \
-                not self.is_contact_person_for_action() and \
-                not self.is_general_admin_for_plan():
+        is_contact = self.is_contact_person_for_action()
+        is_general_admin = self.is_general_admin_for_plan()
+        if not self.is_superuser and not is_contact and not is_general_admin:
             return []
 
         plans = set()
@@ -90,19 +90,17 @@ class User(AbstractUser):
             plans.update(Plan.objects.filter(actions__in=self._contact_for_actions).distinct())
             plans.update(Plan.objects.filter(id__in=self._general_admin_for_plans))
 
+        plans = sorted(list(plans), key=lambda x: x.name)
         active_plan = self.get_active_admin_plan(plans)
         for plan in plans:
             if plan == active_plan:
                 plan.is_active_admin = True
             else:
                 plan.is_active_admin = False
-
-        return sorted(list(plans), key=lambda x: x.name)
+        return plans
 
     def can_modify_action(self, action=None):
         if self.is_superuser:
-            return True
-        if self.has_perm('actions.admin_action'):
             return True
         if action is not None:
             if self.is_general_admin_for_plan(action.plan):
