@@ -7,7 +7,7 @@
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
 -e git+https://github.com/juyrjola/django-rest-framework-json-api.git#egg=djangorestframework-jsonapi
 backcall==0.1.0           # via ipython
-certifi==2018.11.29       # via requests
+certifi==2018.11.29       # via requests, sentry-sdk
 chardet==3.0.4            # via requests
 decorator==4.3.2          # via ipython, plotly, traitlets
 defusedxml==0.5.0         # via python3-openid, social-auth-core
@@ -18,7 +18,7 @@ django-extensions==2.1.5
 django-filter==2.1.0
 django-helusers==0.4.4
 django-image-cropping==1.2.0
-django-js-asset==1.2.1    # via django-mptt
+django-js-asset==1.2.2    # via django-mptt
 django-mptt==0.9.1
 django-ordered-model==3.1.1
 django-summernote==0.8.11.4
@@ -31,7 +31,7 @@ future==0.17.1            # via pyjwkest, python-jose
 idna==2.8                 # via requests
 inflection==0.3.1
 ipython-genutils==0.2.0   # via nbformat, traitlets
-ipython==7.2.0
+ipython==7.3.0
 jedi==0.13.2              # via ipython
 jsonschema==2.6.0         # via nbformat
 jupyter-core==4.4.0       # via nbformat
@@ -44,7 +44,7 @@ pexpect==4.6.0            # via ipython
 pickleshare==0.7.5        # via ipython
 pillow==5.4.1
 plotly==3.6.1
-prompt-toolkit==2.0.8     # via ipython
+prompt-toolkit==2.0.9     # via ipython
 psycopg2-binary==2.7.7
 ptyprocess==0.6.0         # via pexpect
 pyasn1==0.4.5             # via rsa
@@ -59,10 +59,11 @@ requests-oauthlib==1.2.0  # via social-auth-core
 requests==2.21.0          # via django-helusers, plotly, pyjwkest, requests-oauthlib, social-auth-core
 retrying==1.3.3           # via plotly
 rsa==4.0                  # via python-jose
+sentry-sdk==0.7.3
 six==1.12.0               # via django-extensions, django-image-cropping, plotly, prompt-toolkit, pyjwkest, python-jose, retrying, social-auth-app-django, social-auth-core, traitlets
 social-auth-app-django==3.1.0
-social-auth-core==3.0.0   # via social-auth-app-django
+social-auth-core==3.1.0   # via social-auth-app-django
 swapper==1.1.0
 traitlets==4.3.2          # via ipython, jupyter-core, nbformat
-urllib3==1.24.1           # via requests
+urllib3==1.24.1           # via requests, sentry-sdk
 wcwidth==0.1.7            # via prompt-toolkit

@@ -20,3 +20,4 @@ ipython  # install for development convenience for now
 django-image-cropping
 easy-thumbnails
 Pillow
+sentry-sdk

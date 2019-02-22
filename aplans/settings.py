@@ -250,6 +250,8 @@ MEDIA_ROOT = env('MEDIA_ROOT')
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+SENTRY_DSN = env('SENTRY_DSN')
+
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
 f = os.path.join(BASE_DIR, "local_settings.py")
@@ -279,6 +281,15 @@ if not locals().get('SECRET_KEY', ''):
         except IOError:
             Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)
 
+if SENTRY_DSN:
+    import sentry_sdk
+    from sentry_sdk.integrations.django import DjangoIntegration
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        send_default_pii=True,
+        integrations=[DjangoIntegration()]
+    )
 
 if 'DATABASES' in locals():
     if DATABASES['default']['ENGINE'] in ('django.db.backends.postgresql', 'django.contrib.gis.db.backends.postgis'):
