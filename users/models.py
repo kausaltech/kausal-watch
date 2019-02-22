@@ -102,7 +102,11 @@ class User(AbstractUser):
     def can_modify_action(self, action=None):
         if self.is_superuser:
             return True
-        if action is not None:
-            if self.is_general_admin_for_plan(action.plan):
+        if action is None:
+            plan = self.get_active_admin_plan()
+        else:
+            plan = action.plan
+        if plan is not None:
+            if self.is_general_admin_for_plan(plan):
                 return True
         return self.is_contact_person_for_action(action)
