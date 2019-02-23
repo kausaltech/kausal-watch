@@ -14,11 +14,13 @@ env:
     - 'DOCKER_CACHE_IMAGE=jyrjola/aplans:latest'
 
 before_install:
-- docker pull $DOCKER_CACHE_IMAGE
-- docker-compose build
+  - docker pull $DOCKER_CACHE_IMAGE
+
+install:
+  - docker-compose build
 
 script:
-- docker-compose run --rm --entrypoint "" app pytest
+  - docker-compose run --rm --entrypoint "" app pytest
 
 after_success:
 - docker image tag aplans_app $DOCKER_CACHE_IMAGE
