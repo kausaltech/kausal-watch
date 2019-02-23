@@ -13,6 +13,7 @@ def each_context(self, request):
         plan = request.user.get_active_admin_plan()
         if plan is not None:
             context['site_header'] = plan.name
+            context['site_title'] = plan.name
     return context
 
 
