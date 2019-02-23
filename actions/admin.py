@@ -36,11 +36,6 @@ class CategoryTypeAdmin(admin.StackedInline):
     model = CategoryType
     extra = 0
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        plan = request.user.get_active_admin_plan()
-        return qs.filter(plan=plan)
-
 
 @admin.register(Plan)
 class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
@@ -212,11 +207,14 @@ class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+        adminable_plans = request.user.get_adminable_plans()
         plan = request.user.get_active_admin_plan()
 
         # Limit choices to what's available in the action plan
         field = form.base_fields['type']
-        field.queryset = field.queryset.filter(plan=plan).distinct()
+        if obj is None:
+            field.initial = plan
+        field.queryset = field.queryset.filter(plan__in=adminable_plans).distinct()
 
         field = form.base_fields['parent']
         if obj is not None:

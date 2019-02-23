@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from django_summernote.admin import SummernoteModelAdmin
 
 from actions.perms import ActionRelatedAdminPermMixin
+from actions.models import Category
 from .models import (
     Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator,
     IndicatorLevel
@@ -56,6 +57,17 @@ class IndicatorAdmin(SummernoteModelAdmin):
     empty_value_display = _('[nothing]')
 
     inlines = [IndicatorLevelAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        if obj is None:
+            plans = [request.user.get_active_admin_plan()]
+        else:
+            plans = obj.plans.all()
+        if 'categories' in form.base_fields:
+            categories = Category.objects.filter(type__plan__in=plans).order_by('type', 'identifier').distinct()
+            form.base_fields['categories'].queryset = categories
+        return form
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
