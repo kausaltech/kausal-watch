@@ -32,7 +32,7 @@ services:
       - OIDC_CLIENT_ID
       - OIDC_CLIENT_SECRET
     ports:
-      - "${HOST_PORT}:8000"
+      - "${HOST_PORT:-8000}:8000"
     depends_on:
       - db
 
