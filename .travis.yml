@@ -1,19 +1,26 @@
 dist: xenial
 
 services:
-  - docker
+- docker
 
 language: python
 python:
-  - '3.7'
-
-cache: pip
+- '3.7'
 
 env:
-  HOST_PORT: 8000
+  global:
+    - secure: zJXxwMKuczo2QeURfZGMNYSdx0Z3wHZAp/oLVTVQO/RTcg4r4fotzWrClcAmpkxaZBdPkVTwdiq545crKUa7NOacS6p3Z8hXdFSq7m2bkuNpXIWnMAebia4arQj0J66gBGiDtZTD2wCaTQjOYcGbdUWe1GSt008+k+V6adE25byS2yCs893pRqXkJx74b/zQ1nDVMp08DuFQSrBLvZ2ri6SZ0YCa5hhx9254jpyrMDh+U5tj+w12nvzwB3oYC20/pbFWzksbqYN/7MEMDobxrivXHPwKCXiDBrTz+T6LdIR9uncRF2WocvER3aFMFXAb2vBWcuwbR9oSbY8XgZg1y6v8riwzEFomGO89LufdvDsOc2gWF2K/EvurcQRDWzR7VZyX5MsPoaBJ/iucaHEA6MHO6R7aZb9gu1myynuDCtcldVL4Nfh9aiQA/udLQ7nQwWcJISC9NCd+VdRoS5fuYOszcBwtjkoFycpmN/K044VZUdJzXm4YA6d4fpXk4aADET0nh1NocxbLkB4w4ViZlnxeMwEkRfASbuaA/f8z7XzjtqsuUHXmMEuWqtT9IcTP/iJbueHRXku0tgriyNKGcfr0kw6DuAlJdzwp07L5Xzga4iuEoLrgtQNMe9K244tUlIpv3weGoIe2z+TdWeh3NZDsT5xjB9GfkUbp2ZhLKoA=
+    - HOST_PORT=8000
+    - 'DOCKER_CACHE_IMAGE=jyrjola/aplans:latest'
 
 before_install:
-  - docker-compose build
+- docker pull $DOCKER_CACHE_IMAGE
+- docker-compose build
 
 script:
-  - docker-compose run --rm --entrypoint "" app pytest
+- docker-compose run --rm --entrypoint "" app pytest
+
+after_success:
+- docker image tag aplans_app $DOCKER_CACHE_IMAGE
+- echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+- docker push $DOCKER_CACHE_IMAGE

@@ -1,4 +1,4 @@
-version: '3'
+version: '3.2'
 services:
   db:
     container_name: aplans-db
@@ -16,6 +16,8 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      cache_from:
+        - ${DOCKER_CACHE_IMAGE:-aplans_app}
     restart: always
     volumes:
       - aplans_media:/srv/media
