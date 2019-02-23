@@ -21,3 +21,5 @@ django-image-cropping
 easy-thumbnails
 Pillow
 sentry-sdk
+pytest-django
+pytest-cov

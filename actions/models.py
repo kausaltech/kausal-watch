@@ -38,9 +38,6 @@ class Plan(ModelWithImage, models.Model):
     def __str__(self):
         return self.name
 
-    def natural_key(self):
-        return self.identifier
-
 
 def latest_plan():
     if Plan.objects.exists():
