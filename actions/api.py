@@ -1,14 +1,17 @@
 from rest_framework import viewsets
 from rest_framework_json_api import serializers
 from rest_framework_json_api import views
+from rest_framework_json_api.relations import ResourceRelatedField
+
+from django_orghierarchy.models import Organization
+
+from aplans.utils import register_view_helper
+from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
+from people.models import Person
 from .models import (
     Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
     ActionTask, ActionDecisionLevel
 )
-from aplans.utils import register_view_helper
-from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
-from django_orghierarchy.models import Organization
-from rest_framework_json_api.relations import ResourceRelatedField
 
 
 all_views = []
@@ -142,6 +145,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
 
 
+class PersonSerializer(serializers.ModelSerializer):
+    avatar_url = serializers.SerializerMethodField()
+
+    def get_avatar_url(self, obj):
+        return obj.get_avatar_url()
+
+    class Meta:
+        model = Person
+        fields = ('first_name', 'last_name', 'avatar_url')
+
+
 class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     included_serializers = {
         'plan': PlanSerializer,
@@ -152,9 +166,10 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
         'tasks': 'actions.api.ActionTaskSerializer',
         'indicators': 'indicators.api.IndicatorSerializer',
         'decision_level': ActionDecisionLevelSerializer,
+        # 'contact_persons': PersonSerializer,
     }
     tasks = ResourceRelatedField(queryset=ActionTask.objects, many=True)
-    contact_persons = serializers.SerializerMethodField()
+    # contact_persons = serializers.SerializerMethodField()
 
     def get_contact_persons(self, obj):
         return [

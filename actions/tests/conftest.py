@@ -1,6 +1,8 @@
+import json
 import pytest
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 
 from actions.models import Plan, Action
 from people.models import Person
@@ -9,9 +11,16 @@ from people.models import Person
 User = get_user_model()
 
 
+class JSONAPIClient(APIClient):
+    def request(self, **kwargs):
+        resp = super().request(**kwargs)
+        resp.json_data = json.loads(resp.content)
+        return resp
+
+
 @pytest.fixture
 def api_client():
-    return APIClient()
+    return JSONAPIClient(default_format='vnd.api+json')
 
 
 @pytest.fixture
@@ -46,3 +55,13 @@ def action_contact_user(action):
     )
     action.contact_persons.add(person)
     return user
+
+
+@pytest.fixture
+def plan_list_url():
+    return reverse('plan-list')
+
+
+@pytest.fixture
+def action_list_url():
+    return reverse('action-list')
