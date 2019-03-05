@@ -89,7 +89,7 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
     autocomplete_fields = ('contact_persons',)
-    list_display = ('__str__', 'plan')
+    list_display = ('__str__', 'has_contact_persons', 'active_task_count')
 
     fieldsets = (
         (None, {

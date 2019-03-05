@@ -167,6 +167,15 @@ class Action(OrderedModel, ModelWithImage):
             update_fields.append('status')
         self.save(update_fields=update_fields)
 
+    def has_contact_persons(self):
+        return self.contact_persons.exists()
+    has_contact_persons.short_description = _('Has contact persons')
+    has_contact_persons.boolean = True
+
+    def active_task_count(self):
+        return self.tasks.exclude(state=ActionTask.CANCELLED).filter(completed_at__isnull=True).count()
+    active_task_count.short_description = _('Active tasks')
+
 
 class ActionResponsibleParty(OrderedModel):
     action = models.ForeignKey(Action, on_delete=models.CASCADE, verbose_name=_('action'))
