@@ -166,10 +166,10 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
         'tasks': 'actions.api.ActionTaskSerializer',
         'indicators': 'indicators.api.IndicatorSerializer',
         'decision_level': ActionDecisionLevelSerializer,
-        # 'contact_persons': PersonSerializer,
+        'contact_persons': PersonSerializer,
     }
     tasks = ResourceRelatedField(queryset=ActionTask.objects, many=True)
-    # contact_persons = serializers.SerializerMethodField()
+    contact_persons = serializers.SerializerMethodField()
 
     def get_contact_persons(self, obj):
         return [
