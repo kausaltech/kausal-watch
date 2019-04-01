@@ -193,17 +193,14 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name_plural = _('action responsible parties')
 
 
-class ActionSchedule(OrderedModel):
+class ActionSchedule(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
 
-    order_with_respect_to = 'plan'
-
     class Meta(OrderedModel.Meta):
-        ordering = ('plan', 'order')
-        index_together = (('plan', 'order'),)
+        ordering = ('plan', 'begins_at')
         verbose_name = _('action schedule')
         verbose_name_plural = _('action schedules')
 

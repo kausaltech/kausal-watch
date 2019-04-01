@@ -36,6 +36,9 @@ class User(AbstractUser):
             return action.pk in actions
 
     def is_general_admin_for_plan(self, plan=None):
+        if self.is_superuser:
+            return True
+
         # Cache the general admin status
         if hasattr(self, '_general_admin_for_plans'):
             plans = self._general_admin_for_plans

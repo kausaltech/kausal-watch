@@ -23,6 +23,7 @@ class Person(models.Model):
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')
+        ordering = ('last_name', 'first_name')
 
     def get_avatar_url(self):
         if not self.email:

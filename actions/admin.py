@@ -14,12 +14,10 @@ from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenar
 from .perms import ActionRelatedAdminPermMixin
 
 
-class ActionScheduleAdmin(OrderedTabularInline):
+class ActionScheduleAdmin(admin.TabularInline):
     model = ActionSchedule
     extra = 0
-    fields = ('name', 'begins_at', 'ends_at', 'move_up_down_links',)
-    readonly_fields = ('move_up_down_links',)
-    ordering = ('order',)
+    fields = ('name', 'begins_at', 'ends_at',)
 
 
 class ScenarioAdmin(admin.StackedInline):
@@ -120,6 +118,8 @@ class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
         # Limit choices to what's available in the action plan
         if 'plan' in form.base_fields:
             form.base_fields['plan'].queryset = Plan.objects.filter(id=plan.id)
+        if 'status' in form.base_fields:
+            form.base_fields['status'].queryset = plan.action_statuses.all()
         if 'schedule' in form.base_fields:
             form.base_fields['schedule'].queryset = plan.action_schedules.all()
         if 'decision_level' in form.base_fields:
