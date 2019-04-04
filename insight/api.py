@@ -30,10 +30,24 @@ class InsightViewSet(viewsets.ViewSet):
                 plan = Plan.objects.get(identifier=plan_id)
             except Plan.DoesNotExist:
                 raise ValidationError("Plan %s does not exist" % plan_id)
-            generator = ActionGraphGenerator(request=request, plan=plan)
-            actions = Action.objects.filter(plan=plan, indicators__isnull=False)
-            for act in actions:
-                generator.add_node(act)
+
+            action_id = params.get('action', '').strip()
+            if action_id:
+                try:
+                    action = Action.objects.get(id=action_id, plan=plan)
+                except Action.DoesNotExist:
+                    raise ValidationError("Action %s does not exist in plan %s" % (action_id, plan_id))
+            else:
+                action = None
+
+            if action is not None:
+                generator = ActionGraphGenerator(request=request, plan=plan, traverse_forward_only=True)
+                generator.add_node(action)
+            else:
+                generator = ActionGraphGenerator(request=request, plan=plan, traverse_forward_only=False)
+                actions = Action.objects.filter(plan=plan, indicators__isnull=False)
+                for act in actions:
+                    generator.add_node(act)
 
         graph = generator.get_graph()
         return Response(graph)

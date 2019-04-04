@@ -14,9 +14,10 @@ class GraphGenerator:
 
 
 class ActionGraphGenerator(GraphGenerator):
-    def __init__(self, request=None, plan=None):
+    def __init__(self, request=None, plan=None, traverse_forward_only=False):
         super().__init__(request)
         self.plan = plan
+        self.traverse_forward_only = traverse_forward_only
 
     def make_node_id(self, obj):
         if isinstance(obj, Action):
@@ -98,10 +99,11 @@ class ActionGraphGenerator(GraphGenerator):
                 self.add_edge(obj, target, related.effect_type, related.confidence_level)
                 self.add_node(target)
 
-            for related in self.filter_indicators(obj.related_causes.all(), 'causal_indicator'):
-                source = related.causal_indicator
-                self.add_edge(source, obj, related.effect_type, related.confidence_level)
-                self.add_node(source)
+            if not self.traverse_forward_only:
+                for related in self.filter_indicators(obj.related_causes.all(), 'causal_indicator'):
+                    source = related.causal_indicator
+                    self.add_edge(source, obj, related.effect_type, related.confidence_level)
+                    self.add_node(source)
 
 
 class OrganizationGraphGenerator(GraphGenerator):
