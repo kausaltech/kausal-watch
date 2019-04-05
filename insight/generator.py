@@ -42,7 +42,7 @@ class ActionGraphGenerator(GraphGenerator):
             indicators[indicator.id] = indicator
         self.indicators = indicators
         indicator_list = indicators.values()
-        query = Q(causal_indicator__in=indicator_list) | Q(effect_indicator__in=indicator_list)
+        query = Q(causal_indicator__in=indicator_list) & Q(effect_indicator__in=indicator_list)
         for edge in RelatedIndicator.objects.filter(query):
             causal = indicators[edge.causal_indicator_id]
             effect = indicators[edge.effect_indicator_id]
