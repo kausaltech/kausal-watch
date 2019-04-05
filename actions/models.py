@@ -157,8 +157,11 @@ class Action(OrderedModel, ModelWithImage):
         else:
             return by_id['late']
 
-    def task_updated(self, task):
+    def recalculate_status(self):
         tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
+        if not tasks:
+            return
+
         self.completion = self._calculate_completion(tasks)
         update_fields = ['completion']
         status = self._determine_status(tasks)
@@ -166,6 +169,9 @@ class Action(OrderedModel, ModelWithImage):
             self.status = status
             update_fields.append('status')
         self.save(update_fields=update_fields)
+
+    def task_updated(self, task):
+        self.recalculate_status()
 
     def has_contact_persons(self):
         return self.contact_persons.exists()
