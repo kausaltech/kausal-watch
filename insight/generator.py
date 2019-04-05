@@ -1,6 +1,7 @@
 from django.urls import reverse
+from django.db.models import Q
 from actions.models import Action
-from indicators.models import Indicator, RelatedIndicator
+from indicators.models import Indicator, RelatedIndicator, ActionIndicator
 
 
 class GraphGenerator:
@@ -14,10 +15,40 @@ class GraphGenerator:
 
 
 class ActionGraphGenerator(GraphGenerator):
-    def __init__(self, request=None, plan=None, traverse_forward_only=False):
+    def __init__(self, request=None, plan=None, traverse_direction='both'):
         super().__init__(request)
         self.plan = plan
-        self.traverse_forward_only = traverse_forward_only
+        assert traverse_direction in ('forward', 'backward', 'both')
+        self.traverse_direction = traverse_direction
+        self.actions = {}
+        self.indicators = {}
+
+    def fetch_data(self):
+        action_qs = self.plan.actions.all()
+        self.actions = {obj.id: obj for obj in action_qs}
+        action_indicators = ActionIndicator.objects.filter(action__in=action_qs)
+        for ai in action_indicators:
+            act = self.actions[ai.action_id]
+            if not hasattr(act, '_indicators'):
+                act._indicators = []
+            act._indicators.append(ai)
+        indicator_levels = self.plan.indicator_levels.all().select_related('indicator')
+        indicators = {}
+        for level in indicator_levels:
+            indicator = level.indicator
+            indicator.level = level.level
+            indicator._effect_relations = []
+            indicator._causal_relations = []
+            indicators[indicator.id] = indicator
+        self.indicators = indicators
+        indicator_list = indicators.values()
+        query = Q(causal_indicator__in=indicator_list) | Q(effect_indicator__in=indicator_list)
+        for edge in RelatedIndicator.objects.filter(query):
+            causal = indicators[edge.causal_indicator_id]
+            effect = indicators[edge.effect_indicator_id]
+
+            causal._effect_relations.append(edge)
+            effect._causal_relations.append(edge)
 
     def make_node_id(self, obj):
         if isinstance(obj, Action):
@@ -30,6 +61,8 @@ class ActionGraphGenerator(GraphGenerator):
         return f'{self.make_node_id(src)}-{self.make_node_id(target)}'
 
     def get_indicator_level(self, obj):
+        if hasattr(obj, 'level'):
+            return obj.level
         for lo in obj.levels.all():
             if lo.plan_id == self.plan.id:
                 return lo.level
@@ -79,6 +112,18 @@ class ActionGraphGenerator(GraphGenerator):
             qs = qs.filter(**{filter_name: self.plan})
         return qs.select_related(attr_name).prefetch_related('%s__levels' % attr_name)
 
+    def get_related_indicators(self, obj, relation_type):
+        if relation_type == 'effect':
+            if hasattr(obj, '_effect_relations'):
+                return obj._effect_relations
+            else:
+                return self.filter_indicators(obj.related_effects.all(), 'effect_indicator')
+        elif relation_type == 'causal':
+            if hasattr(obj, '_causal_relations'):
+                return obj._causal_relations
+            else:
+                return self.filter_indicators(obj.related_causes.all(), 'causal_indicator')
+
     def add_node(self, obj):
         node_id = self.make_node_id(obj)
         if node_id in self.nodes:
@@ -87,21 +132,38 @@ class ActionGraphGenerator(GraphGenerator):
         self.nodes[node_id] = self.make_node(obj)
 
         if isinstance(obj, Action):
-            for ri in obj.related_indicators.all():
-                target = ri.indicator
-                self.add_edge(
-                    obj, target, ri.effect_type, RelatedIndicator.HIGH_CONFIDENCE
-                )
-                self.add_node(target)
+            if obj.id in self.actions:
+                obj = self.actions[obj.id]
+            if self.traverse_direction in ('forward', 'both'):
+                if hasattr(obj, '_indicators'):
+                    related_indicators = obj._indicators
+                else:
+                    related_indicators = obj.related_indicators.all()
+                for ri in related_indicators:
+                    if ri.indicator_id in self.indicators:
+                        target = self.indicators[ri.indicator_id]
+                    else:
+                        target = ri.indicator
+                    self.add_edge(
+                        obj, target, ri.effect_type, RelatedIndicator.HIGH_CONFIDENCE
+                    )
+                    self.add_node(target)
         elif isinstance(obj, Indicator):
-            for related in self.filter_indicators(obj.related_effects.all(), 'effect_indicator'):
-                target = related.effect_indicator
-                self.add_edge(obj, target, related.effect_type, related.confidence_level)
-                self.add_node(target)
+            if obj.id in self.indicators:
+                obj = self.indicators[obj.id]
+            if self.traverse_direction in ('forward', 'both'):
+                for related in self.get_related_indicators(obj, 'effect'):
+                    target = self.indicators.get(related.effect_indicator_id, None)
+                    if target is None:
+                        target = related.effect_indicator
+                    self.add_edge(obj, target, related.effect_type, related.confidence_level)
+                    self.add_node(target)
 
-            if not self.traverse_forward_only:
-                for related in self.filter_indicators(obj.related_causes.all(), 'causal_indicator'):
-                    source = related.causal_indicator
+            if self.traverse_direction in ('backward', 'both'):
+                for related in self.get_related_indicators(obj, 'causal'):
+                    source = self.indicators.get(related.causal_indicator_id, None)
+                    if source is None:
+                        source = related.causal_indicator
                     self.add_edge(source, obj, related.effect_type, related.confidence_level)
                     self.add_node(source)
 

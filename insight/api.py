@@ -4,6 +4,7 @@ from rest_framework.exceptions import ValidationError
 from django_orghierarchy.models import Organization, OrganizationClass
 
 from actions.models import Action, Plan
+from indicators.models import Indicator
 from aplans.utils import register_view_helper
 from .generator import ActionGraphGenerator, OrganizationGraphGenerator
 
@@ -40,14 +41,31 @@ class InsightViewSet(viewsets.ViewSet):
             else:
                 action = None
 
-            if action is not None:
-                generator = ActionGraphGenerator(request=request, plan=plan, traverse_forward_only=True)
-                generator.add_node(action)
+            indicator_id = params.get('indicator', '').strip()
+            if indicator_id:
+                if action_id:
+                    raise ValidationError("You can't give both 'action' and 'indicator'")
+                try:
+                    indicator = Indicator.objects.get(id=indicator_id, plans=plan)
+                except Indicator.DoesNotExist:
+                    raise ValidationError("Indicator %s does not exist in plan %s" % (indicator_id, plan_id))
             else:
-                generator = ActionGraphGenerator(request=request, plan=plan, traverse_forward_only=False)
-                actions = Action.objects.filter(plan=plan, indicators__isnull=False)
-                for act in actions:
-                    generator.add_node(act)
+                indicator = None
+
+            if action is not None:
+                traverse_direction = 'forward'
+                nodes = [action]
+            elif indicator is not None:
+                traverse_direction = 'backward'
+                nodes = [indicator]
+            else:
+                traverse_direction = 'both'
+                nodes = Action.objects.filter(plan=plan, indicators__isnull=False)
+
+            generator = ActionGraphGenerator(request=request, plan=plan, traverse_direction=traverse_direction)
+            generator.fetch_data()
+            for node in nodes:
+                generator.add_node(node)
 
         graph = generator.get_graph()
         return Response(graph)
