@@ -28,15 +28,15 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModel
         'action_schedules': 'actions.api.ActionScheduleSerializer',
     }
 
-    def get_last_action_identifier(self, obj):
-        return obj.actions.order_by('order').values_list('identifier', flat=True).last()
-
     class Meta:
         model = Plan
         fields = (
             'name', 'identifier', 'image_url', 'action_schedules',
             'last_action_identifier'
         )
+
+    def get_last_action_identifier(self, obj):
+        return obj.get_last_action_identifier()
 
 
 @register_view

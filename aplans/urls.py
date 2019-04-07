@@ -17,7 +17,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
+from graphene_django.views import GraphQLView
 
 from actions.api import all_views as actions_api_views
 from indicators.api import all_views as indicators_api_views
@@ -36,6 +38,7 @@ urlpatterns = [
     path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
     path('summernote/', include('django_summernote.urls')),
     path('v1/', include(router.urls)),
+    path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
     path('', include('social_django.urls', namespace='social')),
     path('', include('helusers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

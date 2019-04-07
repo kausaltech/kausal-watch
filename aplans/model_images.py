@@ -30,6 +30,21 @@ class ModelWithImage(models.Model):
     image_height = models.PositiveIntegerField(null=True, editable=False)
     image_width = models.PositiveIntegerField(null=True, editable=False)
 
+    def get_image_url(self, request):
+        if not request or not self.image:
+            return None
+
+        url = None
+        try:
+            url = reverse(
+                '%s-image' % self._meta.model_name, request=request,
+                kwargs=dict(pk=self.pk)
+            )
+        except NoReverseMatch:
+            pass
+
+        return url
+
     class Meta:
         abstract = True
 
@@ -47,19 +62,7 @@ class ModelWithImageSerializerMixin(serializers.Serializer):
 
     def get_image_url(self, obj):
         request = self.context.get('request')
-        if not request or not obj.image:
-            return None
-
-        url = None
-        try:
-            url = reverse(
-                '%s-image' % obj._meta.model_name, request=request,
-                kwargs=dict(pk=obj.pk)
-            )
-        except NoReverseMatch:
-            pass
-
-        return url
+        return obj.get_image_url(request)
 
 
 def determine_image_dim(image, width, height):
@@ -73,7 +76,7 @@ def determine_image_dim(image, width, height):
                 raise ValueError()
             if x > 4000:
                 raise ValueError()
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             raise ValueError("invalid %s dimension: %s" % (name, x))
 
     if width is not None:

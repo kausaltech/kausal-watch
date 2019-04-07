@@ -38,6 +38,9 @@ class Plan(ModelWithImage, models.Model):
     def __str__(self):
         return self.name
 
+    def get_last_action_identifier(self):
+        return self.actions.order_by('order').values_list('identifier', flat=True).last()
+
 
 def latest_plan():
     if Plan.objects.exists():
@@ -46,7 +49,7 @@ def latest_plan():
         return None
 
 
-class Action(OrderedModel, ModelWithImage):
+class Action(ModelWithImage, OrderedModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
@@ -285,7 +288,7 @@ class ActionTask(models.Model):
 
 
 class CategoryType(models.Model):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE)
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='category_types')
     name = models.CharField(max_length=50)
     identifier = IdentifierField()
 

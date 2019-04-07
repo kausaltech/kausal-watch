@@ -23,3 +23,5 @@ Pillow
 sentry-sdk
 pytest-django
 pytest-cov
+graphene-django
+graphene-django-optimizer

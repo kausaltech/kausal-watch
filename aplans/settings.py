@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_summernote',
     'easy_thumbnails',
     'image_cropping',
+    'graphene_django',
 
     'django_orghierarchy',
 
@@ -193,6 +194,13 @@ REST_FRAMEWORK = {
 JSON_API_FORMAT_TYPES = 'underscore'
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+#
+# GraphQL
+#
+GRAPHENE = {
+    'SCHEMA': 'aplans.schema.schema',
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
