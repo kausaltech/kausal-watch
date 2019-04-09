@@ -90,7 +90,7 @@ class Action(ModelWithImage, OrderedModel):
     )
     responsible_parties = models.ManyToManyField(
         Organization, through='ActionResponsibleParty', blank=True,
-        verbose_name=_('responsible parties')
+        related_name='responsible_actions', verbose_name=_('responsible parties')
     )
     categories = models.ManyToManyField(
         'Category', blank=True, verbose_name=_('categories')
@@ -127,6 +127,12 @@ class Action(ModelWithImage, OrderedModel):
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
         # same action plan.
         super().clean()
+
+    def get_next_action(self):
+        return Action.objects.filter(plan=self.plan_id, order__gt=self.order).first()
+
+    def get_previous_action(self):
+        return Action.objects.filter(plan=self.plan_id, order__lt=self.order).order_by('-order').first()
 
     def _calculate_completion(self, tasks):
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))

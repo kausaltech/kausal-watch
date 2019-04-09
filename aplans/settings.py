@@ -200,6 +200,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 #
 GRAPHENE = {
     'SCHEMA': 'aplans.schema.schema',
+    'MIDDLEWARE': ('aplans.graphene_sentry.SentryMiddleware',)
 }
 
 # Internationalization
