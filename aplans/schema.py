@@ -121,7 +121,7 @@ class IndicatorNode(DjangoObjectType):
         only_fields = [
             'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
             'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'latest_value', 'related_indicators', 'action_indicators',
+            'values', 'latest_value', 'related_indicators', 'action_indicators', 'actions',
         ]
         model = Indicator
 
