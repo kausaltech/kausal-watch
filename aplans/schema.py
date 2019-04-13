@@ -1,3 +1,4 @@
+import pytz
 import graphene
 from graphene_django import DjangoObjectType
 import graphene_django_optimizer as gql_optimizer
@@ -12,6 +13,9 @@ from indicators.models import (
 )
 from people.models import Person
 from django_orghierarchy.models import Organization
+
+
+LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
 
 class WithImageMixin:
@@ -117,7 +121,7 @@ class IndicatorNode(DjangoObjectType):
         only_fields = [
             'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
             'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'related_indicators', 'action_indicators',
+            'values', 'latest_value', 'related_indicators', 'action_indicators',
         ]
         model = Indicator
 
@@ -129,9 +133,7 @@ class IndicatorValueNode(DjangoObjectType):
         model = IndicatorValue
 
     def resolve_time(self, info):
-        date = self.time.isoformat()
-        if self.indicator.time_resolution == 'year':
-            return date.split('-')[0]
+        date = self.time.astimezone(LOCAL_TZ).date().isoformat()
         return date
 
 

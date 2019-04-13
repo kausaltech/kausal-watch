@@ -126,7 +126,7 @@ class IndicatorFilter(filters.FilterSet):
 
     class Meta:
         model = Indicator
-        fields = ('plans',)
+        fields = ('plans', 'identifier')
 
 
 @register_view
