@@ -1,14 +1,25 @@
+import aniso8601
+import pytz
+
+from datetime import datetime
 from plotly.graph_objs import Figure
 from plotly.exceptions import PlotlyError
 from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework_json_api import serializers
+from django.conf import settings
 import django_filters as filters
 from .models import (
     Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator,
-    IndicatorLevel
+    IndicatorLevel, IndicatorValue
 )
 from actions.models import Plan
 from aplans.utils import register_view_helper
+
+
+LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 all_views = []
@@ -68,7 +79,7 @@ class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
 class IndicatorGraphViewSet(viewsets.ModelViewSet):
     queryset = IndicatorGraph.objects.all()
     serializer_class = IndicatorGraphSerializer
-    permission_classes = (permissions.AllowAny,)
+    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
 
 class IndicatorLevelSerializer(serializers.HyperlinkedModelSerializer):
@@ -122,6 +133,7 @@ class IndicatorFilter(filters.FilterSet):
 class IndicatorViewSet(viewsets.ModelViewSet):
     queryset = Indicator.objects.all().select_related('unit')
     serializer_class = IndicatorSerializer
+    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
     prefetch_for_includes = {
         '__all__': [
@@ -129,6 +141,63 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         ]
     }
     filterset_class = IndicatorFilter
+
+    @action(detail=True, methods=['get'])
+    def values(self, request, pk=None):
+        indicator = Indicator.objects.get(pk=pk)
+        resp = []
+        for i in range(100):
+            resp.append(dict(time=now + timedelta(seconds=i), value=float(i)))
+        return Response(resp)
+
+    @values.mapping.post
+    def update_values(self, request, pk=None):
+        indicator = Indicator.objects.get(pk=pk)
+        data = request.data['data']
+        min_date = max_date = None
+        values = []
+        for sample in data:
+            time = sample.get('time', '')
+            try:
+                date = aniso8601.parse_date(time)
+            except ValueError as e:
+                raise ValidationError("You must give 'time' in ISO 8601 format (YYYY-mm-dd)")
+
+            if indicator.time_resolution == 'year':
+                if date.day != 1 or date.month != 1:
+                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-01-01" % (time, date.year))
+            elif indicator.time_resolution == 'month':
+                if date.day != 1:
+                    raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (time, date.year, date.month))
+
+            try:
+                value = float(sample.get('value'))
+            except TypeError:
+                raise ValidationError("You must give 'value' as a floating point number")
+
+            date = LOCAL_TZ.localize(datetime.combine(date, datetime.min.time()))
+            if min_date is None or date < min_date:
+                min_date = date
+            if max_date is None or date > max_date:
+                max_date = date
+            values.append(IndicatorValue(indicator=indicator, time=date, value=value))
+
+        dates = {}
+        for value in values:
+            date = value.time.date()
+            if date in dates:
+                raise ValidationError("Duplicate 'time' entry: %s" % (date.isoformat()))
+            dates[date] = True
+
+        n_deleted, _ = indicator.values.filter(time__gte=min_date, time__lte=max_date).delete()
+        created = IndicatorValue.objects.bulk_create(values)
+
+        latest_value = indicator.values.latest()
+        if indicator.latest_value_id != latest_value.id:
+            indicator.latest_value = latest_value
+            indicator.save(update_fields=['latest_value'])
+
+        return Response(dict(deleted=n_deleted, created=len(created)))
 
 
 class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):

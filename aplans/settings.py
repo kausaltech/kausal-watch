@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'mptt',
     'django_extensions',
     'rest_framework',
+    'rest_framework.authtoken',
     'django_filters',
     'django_summernote',
     'easy_thumbnails',
@@ -183,7 +184,10 @@ REST_FRAMEWORK = {
         'rest_framework.filters.SearchFilter',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'aplans.permissions.AnonReadOnly',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.TokenAuthentication',
     ),
     'SEARCH_PARAM': 'filter[search]',
     'TEST_REQUEST_RENDERER_CLASSES': (

@@ -66,6 +66,10 @@ class Indicator(models.Model):
         'IndicatorGraph', null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL, editable=False
     )
+    latest_value = models.ForeignKey(
+        'IndicatorValue', null=True, blank=True, related_name='+',
+        on_delete=models.SET_NULL, editable=False
+    )
 
     # summaries = models.JSONField(null=True)
     # E.g.:
@@ -90,7 +94,7 @@ class Indicator(models.Model):
         return self.graphs.latest()
 
     def has_data(self):
-        return self.latest_graph_id is not None
+        return self.latest_graph_id is not None or self.latest_value_id is not None
     has_data.short_description = _('Has data')
     has_data.boolean = True
 
@@ -126,6 +130,27 @@ class IndicatorGraph(models.Model):
 
     def __str__(self):
         return "%s (%s)" % (self.indicator, self.created_at)
+
+
+class IndicatorValue(models.Model):
+    indicator = models.ForeignKey(
+        Indicator, related_name='values', on_delete=models.CASCADE,
+        verbose_name=_('indicator')
+    )
+    value = models.FloatField()
+    time = models.DateTimeField(verbose_name=_('time'))
+
+    class Meta:
+        verbose_name = _('indicator value')
+        verbose_name_plural = _('indicator values')
+        ordering = ('indicator', 'time')
+        get_latest_by = 'time'
+
+    def __str__(self):
+        indicator = self.indicator
+        time = self.time.isoformat()
+
+        return f"{indicator} {time} {self.value}"
 
 
 class IndicatorEstimate(models.Model):

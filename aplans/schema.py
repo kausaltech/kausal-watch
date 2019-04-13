@@ -7,7 +7,8 @@ from actions.models import (
     ActionTask
 )
 from indicators.models import (
-    Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel
+    Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
+    IndicatorValue
 )
 from people.models import Person
 from django_orghierarchy.models import Organization
@@ -113,7 +114,25 @@ class IndicatorLevelNode(DjangoObjectType):
 
 class IndicatorNode(DjangoObjectType):
     class Meta:
+        only_fields = [
+            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
+            'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
+            'values', 'related_indicators', 'action_indicators',
+        ]
         model = Indicator
+
+
+class IndicatorValueNode(DjangoObjectType):
+    time = graphene.String()
+
+    class Meta:
+        model = IndicatorValue
+
+    def resolve_time(self, info):
+        date = self.time.isoformat()
+        if self.indicator.time_resolution == 'year':
+            return date.split('-')[0]
+        return date
 
 
 class OrganizationNode(DjangoObjectType):
