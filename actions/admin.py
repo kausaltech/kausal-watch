@@ -64,9 +64,8 @@ class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdm
 class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderedTabularInline):
     model = ActionResponsibleParty
     extra = 0
-    # fields = ('org', 'move_up_down_links',)
-    # readonly_fields = ('move_up_down_links',)
-    fields = ('org',)
+    fields = ('org', 'move_up_down_links',)
+    readonly_fields = ('move_up_down_links',)
     ordering = ('order',)
     autocomplete_fields = ('org',)
 
@@ -83,7 +82,7 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
 
 
 @admin.register(Action)
-class ActionAdmin(ImageCroppingMixin, OrderedModelAdmin, SummernoteModelAdmin):
+class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
     autocomplete_fields = ('contact_persons',)
