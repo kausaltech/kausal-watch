@@ -105,7 +105,7 @@ class IndicatorAdmin(SummernoteModelAdmin):
     summernote_fields = ('description',)
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
-    list_display = ('name', 'has_data')
+    list_display = ('name', 'has_data', 'has_graph')
     list_filter = (IndicatorLevelFilter,)
     empty_value_display = _('[nothing]')
 

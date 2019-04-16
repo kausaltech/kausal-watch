@@ -94,9 +94,14 @@ class Indicator(models.Model):
         return self.graphs.latest()
 
     def has_data(self):
-        return self.latest_graph_id is not None or self.latest_value_id is not None
+        return self.latest_value_id is not None
     has_data.short_description = _('Has data')
     has_data.boolean = True
+
+    def has_graph(self):
+        return self.latest_graph_id is not None
+    has_graph.short_description = _('Has a graph')
+    has_graph.boolean = True
 
     def __str__(self):
         return self.name
