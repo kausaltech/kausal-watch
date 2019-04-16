@@ -84,13 +84,26 @@ class IndicatorGoalAdmin(admin.TabularInline):
         return formset
 
 
+class IndicatorLevelFilter(admin.SimpleListFilter):
+    title = _('level')
+    parameter_name = 'level'
+
+    def lookups(self, request, model_admin):
+        return Indicator.LEVELS
+
+    def queryset(self, request, queryset):
+        plan = request.user.get_active_admin_plan()
+        levels = IndicatorLevel.objects.filter(plan=plan, level=self.value())
+        return queryset.filter(levels__in=levels).distinct()
+
+
 @admin.register(Indicator)
 class IndicatorAdmin(SummernoteModelAdmin):
     summernote_fields = ('description',)
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
     list_display = ('name', 'has_data')
-    list_filter = ('plans',)
+    list_filter = (IndicatorLevelFilter,)
     empty_value_display = _('[nothing]')
 
     inlines = [IndicatorLevelAdmin, IndicatorGoalAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
@@ -120,5 +133,5 @@ class IndicatorAdmin(SummernoteModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        plans = request.user.get_adminable_plans()
-        return qs.filter(plans__in=plans).distinct()
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(plans=plan).distinct()
