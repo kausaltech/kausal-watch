@@ -3,8 +3,10 @@ from django.contrib.contenttypes.models import ContentType
 from .models import Action, ActionResponsibleParty, ActionTask, Plan, \
     ActionSchedule, ActionStatus, Category, CategoryType
 from django_orghierarchy.models import Organization
-from indicators.models import ActionIndicator, Indicator, \
-    RelatedIndicator, Unit, IndicatorLevel, IndicatorGraph, IndicatorValue
+from indicators.models import (
+    ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
+    IndicatorGraph, IndicatorGoal, IndicatorValue
+)
 from django.contrib.auth import get_user_model
 from people.models import Person
 
@@ -39,7 +41,7 @@ def add_contact_person_perms(user):
     add_model_perms(Person, user, ('view', 'change', 'add'))
     for model in (
         ActionResponsibleParty, ActionIndicator, Indicator, IndicatorValue,
-        IndicatorGraph, RelatedIndicator, Unit
+        IndicatorGraph, IndicatorGoal, RelatedIndicator, Unit
     ):
         add_model_perms(model, user, ALL_PERMS)
     add_model_perms(Organization, user, ('view',))

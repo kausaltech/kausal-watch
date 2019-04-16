@@ -9,7 +9,7 @@ from actions.models import (
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
-    IndicatorValue
+    IndicatorValue, IndicatorGoal
 )
 from people.models import Person
 from django_orghierarchy.models import Organization
@@ -121,7 +121,8 @@ class IndicatorNode(DjangoObjectType):
         only_fields = [
             'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
             'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'latest_value', 'related_indicators', 'action_indicators', 'actions',
+            'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
+            'actions',
         ]
         model = Indicator
 
@@ -131,6 +132,17 @@ class IndicatorValueNode(DjangoObjectType):
 
     class Meta:
         model = IndicatorValue
+
+    def resolve_time(self, info):
+        date = self.time.astimezone(LOCAL_TZ).date().isoformat()
+        return date
+
+
+class IndicatorGoalNode(DjangoObjectType):
+    time = graphene.String()
+
+    class Meta:
+        model = IndicatorGoal
 
     def resolve_time(self, info):
         date = self.time.astimezone(LOCAL_TZ).date().isoformat()

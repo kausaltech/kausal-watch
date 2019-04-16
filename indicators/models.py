@@ -145,12 +145,39 @@ class IndicatorValue(models.Model):
         verbose_name_plural = _('indicator values')
         ordering = ('indicator', 'time')
         get_latest_by = 'time'
+        unique_together = (('indicator', 'time'),)
 
     def __str__(self):
         indicator = self.indicator
         time = self.time.isoformat()
 
         return f"{indicator} {time} {self.value}"
+
+
+class IndicatorGoal(models.Model):
+    plan = models.ForeignKey(
+        'actions.Plan', related_name='indicator_goals', on_delete=models.CASCADE,
+        verbose_name=_('plan')
+    )
+    indicator = models.ForeignKey(
+        Indicator, related_name='goals', on_delete=models.CASCADE,
+        verbose_name=_('indicator')
+    )
+    value = models.FloatField()
+    date = models.DateField(verbose_name=_('date'))
+
+    class Meta:
+        verbose_name = _('indicator goal')
+        verbose_name_plural = _('indicator goals')
+        ordering = ('indicator', 'date')
+        get_latest_by = 'date'
+        unique_together = (('indicator', 'plan', 'date'),)
+
+    def __str__(self):
+        indicator = self.indicator
+        date = self.date.isoformat()
+
+        return f"{indicator} {date} {self.value}"
 
 
 class IndicatorEstimate(models.Model):

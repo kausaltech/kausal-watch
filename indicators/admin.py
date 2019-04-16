@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django_summernote.admin import SummernoteModelAdmin
@@ -5,8 +6,7 @@ from django_summernote.admin import SummernoteModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
-    Unit, Indicator, IndicatorEstimate, RelatedIndicator, ActionIndicator,
-    IndicatorLevel
+    Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal
 )
 
 
@@ -47,6 +47,43 @@ class IndicatorLevelAdmin(admin.TabularInline):
         return qs.filter(plan=plan)
 
 
+class IndicatorGoalForm(forms.ModelForm):
+    class Meta:
+        model = IndicatorGoal
+        fields = ['indicator', 'date', 'value']
+
+    def save(self, commit):
+        super().save(commit=commit)
+
+
+class IndicatorGoalAdmin(admin.TabularInline):
+    model = IndicatorGoal
+    extra = 0
+    fields = ('plan', 'date', 'value')
+
+    def get_queryset(self, request):
+        plan = request.user.get_active_admin_plan()
+        return super().get_queryset(request).filter(plan=plan)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        form = formset.form
+
+        plan = request.user.get_active_admin_plan()
+
+        field = form.base_fields['date']
+        if obj.time_resolution == 'year':
+            schedules = plan.action_schedules.all()
+            min_year = min([x.begins_at.year for x in schedules])
+            max_year = max([x.ends_at.year for x in schedules])
+            field.widget = forms.Select(choices=[('%s-12-31' % y, str(y)) for y in range(min_year, max_year + 1)])
+
+        field = form.base_fields['plan']
+        field.initial = plan
+
+        return formset
+
+
 @admin.register(Indicator)
 class IndicatorAdmin(SummernoteModelAdmin):
     summernote_fields = ('description',)
@@ -56,25 +93,32 @@ class IndicatorAdmin(SummernoteModelAdmin):
     list_filter = ('plans',)
     empty_value_display = _('[nothing]')
 
-    inlines = [IndicatorLevelAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
+    inlines = [IndicatorLevelAdmin, IndicatorGoalAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+
+        active_plan = request.user.get_active_admin_plan()
+
         if obj is None:
-            plans = [request.user.get_active_admin_plan()]
+            plans = [active_plan]
         else:
             plans = obj.plans.all()
         if 'categories' in form.base_fields:
             categories = Category.objects.filter(type__plan__in=plans).order_by('type', 'identifier').distinct()
             form.base_fields['categories'].queryset = categories
+
         return form
+
+    def get_inline_instances(self, request, obj=None):
+        inlines = super().get_inline_instances(request, obj)
+        if obj is None:
+            for inline in list(inlines):
+                if isinstance(inline, IndicatorGoalAdmin):
+                    inlines.remove(inline)
+        return inlines
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plans = request.user.get_adminable_plans()
         return qs.filter(plans__in=plans).distinct()
-
-
-@admin.register(IndicatorEstimate)
-class IndicatorEstimateAdmin(admin.ModelAdmin):
-    pass
