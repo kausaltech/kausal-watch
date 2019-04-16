@@ -92,6 +92,9 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
         return Indicator.LEVELS
 
     def queryset(self, request, queryset):
+        if not self.value():
+            return queryset
+
         plan = request.user.get_active_admin_plan()
         levels = IndicatorLevel.objects.filter(plan=plan, level=self.value())
         return queryset.filter(levels__in=levels).distinct()
