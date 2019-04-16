@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-03-05 20:42+0200\n"
+"POT-Creation-Date: 2019-04-16 16:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,9 +22,9 @@ msgstr ""
 msgid "Actions"
 msgstr "Toimenpiteet"
 
-#: actions/models.py:18 actions/models.py:54 actions/models.py:219
-#: actions/models.py:236 actions/models.py:258 actions/models.py:305
-#: actions/models.py:328 indicators/models.py:21 indicators/models.py:54
+#: actions/models.py:18 actions/models.py:57 actions/models.py:231
+#: actions/models.py:248 actions/models.py:270 actions/models.py:317
+#: actions/models.py:340 indicators/models.py:21 indicators/models.py:54
 msgid "name"
 msgstr "nimi"
 
@@ -44,8 +44,9 @@ msgstr "pääkäyttäjät"
 msgid "Users that can modify everything related to the action plan"
 msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
 
-#: actions/models.py:33 actions/models.py:52 actions/models.py:217
-#: actions/models.py:234 actions/models.py:326 indicators/models.py:106
+#: actions/models.py:33 actions/models.py:55 actions/models.py:229
+#: actions/models.py:246 actions/models.py:338 indicators/models.py:115
+#: indicators/models.py:165
 msgid "plan"
 msgstr "toimenpideohjelma"
 
@@ -53,192 +54,192 @@ msgstr "toimenpideohjelma"
 msgid "plans"
 msgstr "toimenpideohjelmat"
 
-#: actions/models.py:57
+#: actions/models.py:60
 msgid "official name"
 msgstr "virallinen nimi"
 
-#: actions/models.py:58
+#: actions/models.py:61
 msgid "The name as approved by an official party"
 msgstr "Virallisen tahon hyväksymä nimi"
 
-#: actions/models.py:61
+#: actions/models.py:64
 msgid "The identifier for this action (e.g. number)"
 msgstr "Toimenpiteen tunniste (esim. numero)"
 
-#: actions/models.py:65 actions/models.py:330 indicators/models.py:59
+#: actions/models.py:68 actions/models.py:342 indicators/models.py:59
 msgid "description"
 msgstr "kuvaus"
 
-#: actions/models.py:66
+#: actions/models.py:69
 msgid "What does this action involve in more detail?"
 msgstr "Mitä toimenpiteeseen tarkemmin liittyy?"
 
-#: actions/models.py:69
+#: actions/models.py:72
 msgid "impact"
 msgstr "vaikutus"
 
-#: actions/models.py:70
+#: actions/models.py:73
 msgid "The impact this action has in measurable quantity (e.g. t CO₂e)"
 msgstr "Tämän toimenpiteen vaikutus jossain mitattavassa suureessa (esim. t CO₂e)"
 
-#: actions/models.py:74
+#: actions/models.py:77
 msgid "status"
 msgstr "tila"
 
-#: actions/models.py:77
+#: actions/models.py:80
 msgid "completion"
 msgstr "toteutumisaste"
 
-#: actions/models.py:78
+#: actions/models.py:81
 msgid "The completion percentage for this action"
 msgstr "Toimenpiteen toteutumisaste prosenteissa"
 
-#: actions/models.py:82
+#: actions/models.py:85
 msgid "schedule"
 msgstr "aikajänne"
 
-#: actions/models.py:86
+#: actions/models.py:89
 msgid "decision-making level"
 msgstr "päätöstaso"
 
-#: actions/models.py:90
+#: actions/models.py:93
 msgid "responsible parties"
 msgstr "vastuutahot"
 
-#: actions/models.py:93 actions/models.py:316
+#: actions/models.py:96 actions/models.py:328
 msgid "categories"
 msgstr "luokat"
 
-#: actions/models.py:96 indicators/models.py:86
+#: actions/models.py:99 indicators/models.py:90
 msgid "indicators"
 msgstr "mittarit"
 
-#: actions/models.py:101
+#: actions/models.py:104
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
-#: actions/models.py:106 indicators/models.py:78
+#: actions/models.py:109 indicators/models.py:82
 msgid "updated at"
 msgstr "päivitysaika"
 
-#: actions/models.py:112 actions/models.py:181 actions/models.py:256
-#: indicators/models.py:219
+#: actions/models.py:115 actions/models.py:196 actions/models.py:268
+#: indicators/models.py:276
 msgid "action"
 msgstr "toimenpide"
 
-#: actions/models.py:113
+#: actions/models.py:116
 msgid "actions"
 msgstr "toimenpiteet"
 
-#: actions/models.py:117
+#: actions/models.py:120
 msgid "Can administrate all actions"
 msgstr "Voi ylläpitää kaikkia toimenpiteitä"
 
-#: actions/models.py:172
+#: actions/models.py:187
 msgid "Has contact persons"
 msgstr "Yhteyshenkilöt nimetty"
 
-#: actions/models.py:177
+#: actions/models.py:192
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
 
-#: actions/models.py:183 people/models.py:15
+#: actions/models.py:198 people/models.py:15
 msgid "organization"
 msgstr "organisaatio"
 
-#: actions/models.py:192
+#: actions/models.py:207
 msgid "action responsible party"
 msgstr "toimenpiteen vastuutaho"
 
-#: actions/models.py:193
+#: actions/models.py:208
 msgid "action responsible parties"
 msgstr "toimenpiteen vastuutahot"
 
-#: actions/models.py:207
+#: actions/models.py:219
 msgid "action schedule"
 msgstr "toimenpiteiden aikataulu"
 
-#: actions/models.py:208
+#: actions/models.py:220
 msgid "action schedules"
 msgstr "toimenpiteiden aikataulut"
 
-#: actions/models.py:224
+#: actions/models.py:236
 msgid "action status"
 msgstr "toimenpiteen tila"
 
-#: actions/models.py:225
+#: actions/models.py:237
 msgid "action statuses"
 msgstr "toimenpiteen tilat"
 
-#: actions/models.py:250
+#: actions/models.py:262
 msgid "active"
 msgstr "aktiivinen"
 
-#: actions/models.py:251
+#: actions/models.py:263
 msgid "cancelled"
 msgstr "peruttu"
 
-#: actions/models.py:259
+#: actions/models.py:271
 msgid "state"
 msgstr "tila"
 
-#: actions/models.py:260
+#: actions/models.py:272
 msgid "comment"
 msgstr "kommentti"
 
-#: actions/models.py:261
+#: actions/models.py:273
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
-#: actions/models.py:262
+#: actions/models.py:274
 msgid "completion date"
 msgstr "valmistumispäivämäärä"
 
-#: actions/models.py:266
+#: actions/models.py:278
 msgid "completed by"
 msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
 
-#: actions/models.py:268 indicators/models.py:81
+#: actions/models.py:280 indicators/models.py:85
 msgid "created at"
 msgstr "luomisaika"
 
-#: actions/models.py:269
+#: actions/models.py:281
 msgid "modified at"
 msgstr "muokkausaika"
 
-#: actions/models.py:273
+#: actions/models.py:285
 msgid "action task"
 msgstr "toimenpiteen tehtävä"
 
-#: actions/models.py:274
+#: actions/models.py:286
 msgid "action tasks"
 msgstr "toimenpiteen tehtävät"
 
-#: actions/models.py:292
+#: actions/models.py:304
 msgid "category type"
 msgstr "luokan tyyppi"
 
-#: actions/models.py:293
+#: actions/models.py:305
 msgid "category types"
 msgstr "luokan tyypit"
 
-#: actions/models.py:302
+#: actions/models.py:314
 msgid "type"
 msgstr "tyyppi"
 
-#: actions/models.py:308
+#: actions/models.py:320
 msgid "parent category"
 msgstr "yläluokka"
 
-#: actions/models.py:315
+#: actions/models.py:327
 msgid "category"
 msgstr "luokka"
 
-#: actions/models.py:334 indicators/models.py:146
+#: actions/models.py:346 indicators/models.py:203
 msgid "scenario"
 msgstr "skenaario"
 
-#: actions/models.py:335
+#: actions/models.py:347
 msgid "scenarios"
 msgstr "skenaariot"
 
@@ -254,7 +255,11 @@ msgstr "kuvan rajaus"
 msgid "identifier"
 msgstr "tunniste"
 
-#: indicators/admin.py:57
+#: indicators/admin.py:88 indicators/models.py:117
+msgid "level"
+msgstr "taso"
+
+#: indicators/admin.py:110
 msgid "[nothing]"
 msgstr "[ei mitään]"
 
@@ -306,124 +311,148 @@ msgstr "operationaalinen"
 msgid "time resolution"
 msgstr "aikaresoluutio"
 
-#: indicators/models.py:85 indicators/models.py:103 indicators/models.py:134
-#: indicators/models.py:223
+#: indicators/models.py:89 indicators/models.py:112 indicators/models.py:143
+#: indicators/models.py:169 indicators/models.py:191 indicators/models.py:280
 msgid "indicator"
 msgstr "mittari"
 
-#: indicators/models.py:94
+#: indicators/models.py:98
 msgid "Has data"
 msgstr "On dataa"
 
-#: indicators/models.py:108
-msgid "level"
-msgstr "taso"
+#: indicators/models.py:103
+msgid "Has a graph"
+msgstr "On kaavio"
 
-#: indicators/models.py:112 indicators/models.py:113
+#: indicators/models.py:121 indicators/models.py:122
 msgid "indicator levels"
 msgstr "mittarin tasot"
 
-#: indicators/models.py:136
+#: indicators/models.py:146
+msgid "time"
+msgstr "aika"
+
+#: indicators/models.py:149
+msgid "indicator value"
+msgstr "mittarin arvo"
+
+#: indicators/models.py:150
+msgid "indicator values"
+msgstr "mittarin arvot"
+
+#: indicators/models.py:172
+msgid "date"
+msgstr "päivämäärä"
+
+#: indicators/models.py:175
+msgid "indicator goal"
+msgstr "mittarin tavoite"
+
+#: indicators/models.py:176
+msgid "indicator goals"
+msgstr "mittarin tavoitteet"
+
+#: indicators/models.py:193
 msgid "low estimate"
 msgstr "arvion alaraja"
 
-#: indicators/models.py:137
+#: indicators/models.py:194
 msgid "high estimate"
 msgstr "arvion yläraja"
 
-#: indicators/models.py:138
+#: indicators/models.py:195
 msgid "begins at"
 msgstr "alkaa"
 
-#: indicators/models.py:139
+#: indicators/models.py:196
 msgid "ends at"
 msgstr "päättyy"
 
-#: indicators/models.py:141
+#: indicators/models.py:198
 msgid "measured"
 msgstr "mitattu"
 
-#: indicators/models.py:142
+#: indicators/models.py:199
 msgid "Is this estimate based on forecast or measurement?"
 msgstr "Perustuuko arvio ennustukseen vai mittaamiseen?"
 
-#: indicators/models.py:148
+#: indicators/models.py:205
 msgid "rationale"
 msgstr "perustelut"
 
-#: indicators/models.py:157
+#: indicators/models.py:214
 msgid "indicator estimate"
 msgstr "mittarin arvio"
 
-#: indicators/models.py:158
+#: indicators/models.py:215
 msgid "indicator estimates"
 msgstr "mittarin arviot"
 
-#: indicators/models.py:177
+#: indicators/models.py:234
 msgid "increases"
 msgstr "lisää"
 
-#: indicators/models.py:178
+#: indicators/models.py:235
 msgid "decreases"
 msgstr "pienentää"
 
-#: indicators/models.py:179
+#: indicators/models.py:236
 msgid "is a part of"
 msgstr "on osana"
 
-#: indicators/models.py:186
+#: indicators/models.py:243
 msgid "high"
 msgstr "korkea"
 
-#: indicators/models.py:187
+#: indicators/models.py:244
 msgid "medium"
 msgstr "keskitaso"
 
-#: indicators/models.py:188
+#: indicators/models.py:245
 msgid "low"
 msgstr "matala"
 
-#: indicators/models.py:193
+#: indicators/models.py:250
 msgid "causal indicator"
 msgstr "vaikuttava indikaattori"
 
-#: indicators/models.py:197
+#: indicators/models.py:254
 msgid "effect indicator"
 msgstr "kohdeindikaattori"
 
-#: indicators/models.py:201 indicators/models.py:227
+#: indicators/models.py:258 indicators/models.py:284
 msgid "effect type"
 msgstr "vaikutuksen tyyppi"
 
-#: indicators/models.py:201
+#: indicators/models.py:258
 msgid "What type of causal effect is there between the indicators"
 msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
 
-#: indicators/models.py:204
+#: indicators/models.py:261
 msgid "confidence level"
 msgstr "luottamustaso"
 
-#: indicators/models.py:204
+#: indicators/models.py:261
 msgid "How confident we are that the causal effect is present"
 msgstr "Kuinka varmaa on, että mittarilla on kuvattu vaikutus kohteeseen"
 
-#: indicators/models.py:209
+#: indicators/models.py:266
 msgid "related indicator"
 msgstr "liittyvä indikaattori"
 
-#: indicators/models.py:210
+#: indicators/models.py:267
 msgid "related indicators"
 msgstr "liittyvät indikaattorit"
 
-#: indicators/models.py:227
+#: indicators/models.py:284
 msgid "What type of effect should the action cause?"
 msgstr "Minkälainen vaikutus toimenpiteellä on?"
 
-#: indicators/models.py:232
+#: indicators/models.py:289
 msgid "action indicator"
 msgstr "toimenpiteen mittari"
 
-#: indicators/models.py:233
+#: indicators/models.py:290
 msgid "action indicators"
 msgstr "toimenpiteen mittarit"
 
@@ -470,3 +499,19 @@ msgstr "Valitse toimenpideohjelma"
 #: templates/aplans_admin/index.html:10
 msgid "Action plans"
 msgstr "Toimenpideohjelmat"
+
+#: templates/aplans_admin/index.html:26
+msgid "Recent actions"
+msgstr "Viimeisimmät tapahtumat"
+
+#: templates/aplans_admin/index.html:27
+msgid "My actions"
+msgstr "Omat tapahtumat"
+
+#: templates/aplans_admin/index.html:31
+msgid "None available"
+msgstr "Ei löydy"
+
+#: templates/aplans_admin/index.html:45
+msgid "Unknown content"
+msgstr "Tuntematon sisältö"
