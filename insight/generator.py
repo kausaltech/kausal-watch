@@ -32,7 +32,9 @@ class ActionGraphGenerator(GraphGenerator):
             if not hasattr(act, '_indicators'):
                 act._indicators = []
             act._indicators.append(ai)
-        indicator_levels = self.plan.indicator_levels.all().select_related('indicator')
+        indicator_levels = self.plan.indicator_levels.all().select_related(
+            'indicator', 'indicator__latest_value', 'indicator__unit'
+        )
         indicators = {}
         for level in indicator_levels:
             indicator = level.indicator
@@ -79,12 +81,19 @@ class ActionGraphGenerator(GraphGenerator):
             obj_type = 'indicator'
             d['indicator_level'] = self.get_indicator_level(obj)
 
+            if obj.latest_value is not None:
+                lv = obj.latest_value
+                d['latest_value'] = dict(value=lv.value, time=lv.time, unit=obj.unit.name)
+            else:
+                d['latest_value'] = None
+
         d['url'] = self.request.build_absolute_uri(url) if self.request else url
         d['type'] = obj_type
         d['object_id'] = obj.id
         d['name'] = obj.name
         d['id'] = self.make_node_id(obj)
         d['identifier'] = obj.identifier if obj.identifier else None
+
         return d
 
     def make_edge(self, src, target, effect_type=None, confidence_level=None):
