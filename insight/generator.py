@@ -1,7 +1,12 @@
+import pytz
+from django.conf import settings
 from django.urls import reverse
 from django.db.models import Q
 from actions.models import Action
 from indicators.models import Indicator, RelatedIndicator, ActionIndicator
+
+
+LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 class GraphGenerator:
@@ -80,10 +85,12 @@ class ActionGraphGenerator(GraphGenerator):
             url = reverse('indicator-detail', kwargs={'pk': obj.pk})
             obj_type = 'indicator'
             d['indicator_level'] = self.get_indicator_level(obj)
+            d['time_resolution'] = obj.time_resolution
 
             if obj.latest_value is not None:
                 lv = obj.latest_value
-                d['latest_value'] = dict(value=lv.value, time=lv.time, unit=obj.unit.name)
+                time = lv.time.astimezone(LOCAL_TZ).date().isoformat()
+                d['latest_value'] = dict(value=lv.value, date=time, unit=obj.unit.name)
             else:
                 d['latest_value'] = None
 
