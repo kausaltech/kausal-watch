@@ -116,17 +116,6 @@ class IndicatorLevelNode(DjangoObjectType):
         model = IndicatorLevel
 
 
-class IndicatorNode(DjangoObjectType):
-    class Meta:
-        only_fields = [
-            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
-            'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
-            'actions',
-        ]
-        model = Indicator
-
-
 class IndicatorValueNode(DjangoObjectType):
     time = graphene.String()
 
@@ -139,14 +128,49 @@ class IndicatorValueNode(DjangoObjectType):
 
 
 class IndicatorGoalNode(DjangoObjectType):
-    time = graphene.String()
+    date = graphene.String()
 
     class Meta:
         model = IndicatorGoal
 
-    def resolve_time(self, info):
-        date = self.time.astimezone(LOCAL_TZ).date().isoformat()
-        return date
+
+class IndicatorNode(DjangoObjectType):
+    goals = graphene.List('aplans.schema.IndicatorGoalNode', plan=graphene.ID())
+    level = graphene.String(plan=graphene.ID())
+    actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
+
+    class Meta:
+        only_fields = [
+            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
+            'categories', 'plans', 'levels', 'level', 'identifier', 'latest_graph', 'updated_at',
+            'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
+            'actions',
+        ]
+        model = Indicator
+
+    @gql_optimizer.resolver_hints(
+        model_field='goals',
+    )
+    def resolve_goals(self, info, plan=None):
+        qs = self.goals.all()
+        if plan is not None:
+            qs = qs.filter(plan__identifier=plan)
+        return qs
+
+    @gql_optimizer.resolver_hints(
+        model_field='actions',
+    )
+    def resolve_actions(self, info, plan=None):
+        qs = self.actions.all()
+        if plan is not None:
+            qs = qs.filter(plan__identifier=plan)
+        return qs
+
+    @gql_optimizer.resolver_hints(
+        model_field='levels',
+    )
+    def resolve_level(self, info, plan):
+        return self.levels.get(plan__identifier=plan).level
 
 
 class OrganizationNode(DjangoObjectType):
@@ -159,6 +183,8 @@ class Query(graphene.ObjectType):
     all_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
+    indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
+
     plan_actions = graphene.List(ActionNode, plan=graphene.ID(required=True))
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True))
     plan_organizations = graphene.List(OrganizationNode, plan=graphene.ID(required=True))
@@ -216,6 +242,31 @@ class Query(graphene.ObjectType):
         try:
             obj = qs.get()
         except Action.DoesNotExist:
+            return None
+
+        return obj
+
+    def resolve_indicator(self, info, **kwargs):
+        obj_id = kwargs.get('id')
+        identifier = kwargs.get('identifier')
+        plan = kwargs.get('plan')
+
+        if not identifier and not obj_id:
+            raise Exception("You must supply either 'id' or 'identifier'")
+
+        qs = Indicator.objects.all()
+        if obj_id:
+            qs = qs.filter(id=obj_id)
+        if plan:
+            qs = qs.filter(levels__plan__identifier=plan).distinct()
+        if identifier:
+            qs = qs.filter(identifier=identifier)
+
+        qs = gql_optimizer.query(qs, info)
+
+        try:
+            obj = qs.get()
+        except Indicator.DoesNotExist:
             return None
 
         return obj
