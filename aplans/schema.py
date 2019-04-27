@@ -1,3 +1,4 @@
+import re
 import pytz
 import graphene
 from graphene_django import DjangoObjectType
@@ -25,7 +26,19 @@ class WithImageMixin:
         return self.get_image_url(info.context)
 
 
-class UnitNode(DjangoObjectType):
+class DjangoNode(DjangoObjectType):
+    @classmethod
+    def __init_subclass_with_meta__(cls, **kwargs):
+        if 'name' not in kwargs:
+            # Remove the trailing 'Node' from the object types
+            kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
+        super().__init_subclass_with_meta__(**kwargs)
+
+    class Meta:
+        abstract = True
+
+
+class UnitNode(DjangoNode):
     class Meta:
         model = Unit
         only_fields = [
@@ -33,7 +46,7 @@ class UnitNode(DjangoObjectType):
         ]
 
 
-class PersonNode(DjangoObjectType):
+class PersonNode(DjangoNode):
     avatar_url = graphene.String()
 
     class Meta:
@@ -46,7 +59,7 @@ class PersonNode(DjangoObjectType):
         return self.get_avatar_url()
 
 
-class PlanNode(DjangoObjectType, WithImageMixin):
+class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
 
@@ -59,32 +72,32 @@ class PlanNode(DjangoObjectType, WithImageMixin):
         ]
 
 
-class ActionScheduleNode(DjangoObjectType):
+class ActionScheduleNode(DjangoNode):
     class Meta:
         model = ActionSchedule
 
 
-class ActionStatusNode(DjangoObjectType):
+class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
 
 
-class CategoryTypeNode(DjangoObjectType):
+class CategoryTypeNode(DjangoNode):
     class Meta:
         model = CategoryType
 
 
-class CategoryNode(DjangoObjectType, WithImageMixin):
+class CategoryNode(DjangoNode, WithImageMixin):
     class Meta:
         model = Category
 
 
-class ActionTaskNode(DjangoObjectType):
+class ActionTaskNode(DjangoNode):
     class Meta:
         model = ActionTask
 
 
-class ActionNode(DjangoObjectType, WithImageMixin):
+class ActionNode(DjangoNode, WithImageMixin):
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
 
@@ -104,27 +117,27 @@ class ActionNode(DjangoObjectType, WithImageMixin):
         return self.get_previous_action()
 
 
-class RelatedIndicatorNode(DjangoObjectType):
+class RelatedIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedIndicator
 
 
-class ActionIndicatorNode(DjangoObjectType):
+class ActionIndicatorNode(DjangoNode):
     class Meta:
         model = ActionIndicator
 
 
-class IndicatorGraphNode(DjangoObjectType):
+class IndicatorGraphNode(DjangoNode):
     class Meta:
         model = IndicatorGraph
 
 
-class IndicatorLevelNode(DjangoObjectType):
+class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
 
 
-class IndicatorValueNode(DjangoObjectType):
+class IndicatorValueNode(DjangoNode):
     time = graphene.String()
 
     class Meta:
@@ -135,14 +148,14 @@ class IndicatorValueNode(DjangoObjectType):
         return date
 
 
-class IndicatorGoalNode(DjangoObjectType):
+class IndicatorGoalNode(DjangoNode):
     date = graphene.String()
 
     class Meta:
         model = IndicatorGoal
 
 
-class IndicatorNode(DjangoObjectType):
+class IndicatorNode(DjangoNode):
     goals = graphene.List('aplans.schema.IndicatorGoalNode', plan=graphene.ID())
     level = graphene.String(plan=graphene.ID())
     actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
@@ -181,7 +194,7 @@ class IndicatorNode(DjangoObjectType):
         return self.levels.get(plan__identifier=plan).level
 
 
-class OrganizationNode(DjangoObjectType):
+class OrganizationNode(DjangoNode):
     class Meta:
         model = Organization
 
