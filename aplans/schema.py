@@ -9,7 +9,7 @@ from actions.models import (
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
-    IndicatorValue, IndicatorGoal
+    IndicatorValue, IndicatorGoal, Unit
 )
 from people.models import Person
 from django_orghierarchy.models import Organization
@@ -23,6 +23,14 @@ class WithImageMixin:
 
     def resolve_image_url(self, info, **kwargs):
         return self.get_image_url(info.context)
+
+
+class UnitNode(DjangoObjectType):
+    class Meta:
+        model = Unit
+        only_fields = [
+            'id', 'name',
+        ]
 
 
 class PersonNode(DjangoObjectType):
