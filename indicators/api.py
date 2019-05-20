@@ -1,6 +1,5 @@
 import aniso8601
 import pytz
-
 from datetime import datetime
 from plotly.graph_objs import Figure
 from plotly.exceptions import PlotlyError
@@ -11,6 +10,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework_json_api import serializers
 from django.conf import settings
 import django_filters as filters
+from sentry_sdk import push_scope, capture_exception
+
 from .models import (
     Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator,
     IndicatorLevel, IndicatorValue
@@ -53,6 +54,10 @@ class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
         try:
             figure = Figure(**value).to_dict()
         except (PlotlyError, ValueError) as err:
+            with push_scope() as scope:
+                scope.set_extra('plotly_json', value)
+                scope.level = 'warning'
+                capture_exception(err)
             raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
         if not figure['data']:
             raise serializers.ValidationError("No Plotly data given in data.data")
