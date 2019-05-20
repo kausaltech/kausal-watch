@@ -51,23 +51,14 @@ class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
             keys = ['"%s"' % x for x in ALLOWED_KEYS]
             raise serializers.ValidationError("Only allowed keys are: %s" % ', '.join(keys))
 
-        figure = None
-        # First try the validation without skipping invalid data,
-        # and if validation fails, report it to Sentry.
         try:
-            figure = Figure(**value, skip_invalid=False).to_dict()
+            figure = Figure(**value).to_dict()
         except (PlotlyError, ValueError) as err:
             with push_scope() as scope:
                 scope.set_extra('plotly_json', value)
                 scope.level = 'warning'
                 capture_exception(err)
-
-        if figure is None:
-            try:
-                figure = Figure(**value, skip_invalid=True).to_dict()
-            except (PlotlyError, ValueError) as err:
-                raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
-
+            raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
         if not figure['data']:
             raise serializers.ValidationError("No Plotly data given in data.data")
         return value
