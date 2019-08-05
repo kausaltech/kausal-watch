@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django_summernote.admin import SummernoteModelAdmin
@@ -72,7 +73,7 @@ class IndicatorGoalAdmin(admin.TabularInline):
         plan = request.user.get_active_admin_plan()
 
         field = form.base_fields['date']
-        if obj.time_resolution == 'year':
+        if obj.time_resolution == 'year' and plan.action_schedules.exists():
             schedules = plan.action_schedules.all()
             min_year = min([x.begins_at.year for x in schedules])
             max_year = max([x.ends_at.year for x in schedules])
@@ -137,4 +138,4 @@ class IndicatorAdmin(SummernoteModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(plans=plan).distinct()
+        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct()
