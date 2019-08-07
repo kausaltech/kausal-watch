@@ -155,6 +155,8 @@ SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_AUTH_PIPELINE  # noqa
 SOCIAL_AUTH_PIPELINE = HELUSERS_AUTH_PIPELINE + ('users.pipeline.create_permissions',)
 
+HELUSERS_PASSWORD_LOGIN_DISABLED = True
+
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 
 #
