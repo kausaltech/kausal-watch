@@ -151,8 +151,16 @@ class IndicatorViewSet(viewsets.ModelViewSet):
     def values(self, request, pk=None):
         indicator = Indicator.objects.get(pk=pk)
         resp = []
-        for i in range(100):
-            resp.append(dict(time=now + timedelta(seconds=i), value=float(i)))
+        for obj in indicator.values.all().order_by('time'):
+            resp.append(dict(time=obj.time, value=obj.value))
+        return Response(resp)
+
+    @action(detail=True, methods=['get'])
+    def goals(self, request, pk=None):
+        indicator = Indicator.objects.get(pk=pk)
+        resp = []
+        for obj in indicator.goals.all().order_by('date'):
+            resp.append(dict(time=obj.date, value=obj.value))
         return Response(resp)
 
     @values.mapping.post
@@ -165,7 +173,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
             time = sample.get('time', '')
             try:
                 date = aniso8601.parse_date(time)
-            except ValueError as e:
+            except ValueError:
                 raise ValidationError("You must give 'time' in ISO 8601 format (YYYY-mm-dd)")
 
             if indicator.time_resolution == 'year':
