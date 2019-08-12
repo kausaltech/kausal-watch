@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 
 User = get_user_model()
@@ -24,6 +25,17 @@ class Person(models.Model):
         verbose_name = _('person')
         verbose_name_plural = _('people')
         ordering = ('last_name', 'first_name')
+
+    def validate_unique(self, exclude=None):
+        super().validate_unique(exclude)
+        if self.email:
+            qs = Person.objects.filter(email__iexact=self.email)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if qs.exists():
+            raise ValidationError({
+                'email': _('Person with this email already exists')
+            })
 
     def get_avatar_url(self):
         if not self.email:
