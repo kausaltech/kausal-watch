@@ -307,7 +307,7 @@ class ActionImpact(OrderedModel):
         ordering = ('plan', 'order')
 
     def __str__(self):
-        return '%s [%s]' % (self.name, self.identifier)
+        return '%s (%s)' % (self.name, self.identifier)
 
 
 class CategoryType(models.Model):

@@ -107,7 +107,7 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
             'fields': ('status', 'completion')
         }),
         (None, {
-            'fields': ('schedule', 'decision_level')
+            'fields': ('impact', 'schedule', 'decision_level')
         }),
     )
 
