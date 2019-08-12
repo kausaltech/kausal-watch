@@ -10,7 +10,7 @@ from django_orghierarchy.models import Organization
 
 from indicators.admin import ActionIndicatorAdmin
 from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
-    Category, CategoryType, ActionTask, ActionStatus
+    Category, CategoryType, ActionTask, ActionStatus, ActionImpact
 from .perms import ActionRelatedAdminPermMixin
 
 
@@ -30,6 +30,14 @@ class ActionStatusAdmin(admin.TabularInline):
     extra = 0
 
 
+class ActionImpactAdmin(OrderedTabularInline):
+    model = ActionImpact
+    extra = 0
+    fields = ('name', 'identifier', 'move_up_down_links',)
+    readonly_fields = ('move_up_down_links',)
+    ordering = ('order',)
+
+
 class CategoryTypeAdmin(admin.StackedInline):
     model = CategoryType
     extra = 0
@@ -39,7 +47,7 @@ class CategoryTypeAdmin(admin.StackedInline):
 class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
-        ActionStatusAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
+        ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
     ]
 
     def get_queryset(self, request):

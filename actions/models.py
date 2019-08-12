@@ -67,10 +67,9 @@ class Action(ModelWithImage, OrderedModel):
         null=True, blank=True,
         verbose_name=_('description'),
         help_text=_('What does this action involve in more detail?'))
-    impact = models.IntegerField(
-        null=True, blank=True,
-        verbose_name=_('impact'),
-        help_text=_('The impact this action has in measurable quantity (e.g. t CO₂e)')
+    impact = models.ForeignKey(
+        'ActionImpact', blank=True, null=True, related_name='actions', on_delete=models.SET_NULL,
+        verbose_name=_('impact'), help_text=_('The impact of this action'),
     )
     status = models.ForeignKey(
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
@@ -291,6 +290,24 @@ class ActionTask(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         self.action.task_updated(self)
+
+
+class ActionImpact(OrderedModel):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='action_impacts',
+        verbose_name=_('plan')
+    )
+    name = models.CharField(max_length=200, verbose_name=_('name'))
+    identifier = IdentifierField()
+
+    order_with_respect_to = 'plan'
+
+    class Meta:
+        unique_together = (('plan', 'identifier'),)
+        ordering = ('plan', 'order')
+
+    def __str__(self):
+        return '%s [%s]' % (self.name, self.identifier)
 
 
 class CategoryType(models.Model):
