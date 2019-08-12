@@ -305,7 +305,7 @@ msgstr "taktinen"
 
 #: indicators/models.py:46
 msgid "operational"
-msgstr "operationaalinen"
+msgstr "toiminnallinen"
 
 #: indicators/models.py:63
 msgid "time resolution"
@@ -414,11 +414,11 @@ msgstr "matala"
 
 #: indicators/models.py:250
 msgid "causal indicator"
-msgstr "vaikuttava indikaattori"
+msgstr "vaikuttava mittari"
 
 #: indicators/models.py:254
 msgid "effect indicator"
-msgstr "kohdeindikaattori"
+msgstr "kohdemittari"
 
 #: indicators/models.py:258 indicators/models.py:284
 msgid "effect type"
@@ -438,11 +438,11 @@ msgstr "Kuinka varmaa on, että mittarilla on kuvattu vaikutus kohteeseen"
 
 #: indicators/models.py:266
 msgid "related indicator"
-msgstr "liittyvä indikaattori"
+msgstr "liittyvä mittari"
 
 #: indicators/models.py:267
 msgid "related indicators"
-msgstr "liittyvät indikaattorit"
+msgstr "liittyvät mittarit"
 
 #: indicators/models.py:284
 msgid "What type of effect should the action cause?"
