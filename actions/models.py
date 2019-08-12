@@ -105,7 +105,7 @@ class Action(ModelWithImage, OrderedModel):
     )
 
     updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at')
+        editable=False, verbose_name=_('updated at')
     )
 
     order_with_respect_to = 'plan'

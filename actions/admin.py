@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils import timezone
+
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
 from django_summernote.admin import SummernoteModelAdmin
@@ -203,6 +205,10 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
             return False
 
         return True
+
+    def save_model(self, request, obj, form, change):
+        obj.updated_at = timezone.now()
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(Category)
