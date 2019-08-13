@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from django_orghierarchy.models import Organization
 from ordered_model.models import OrderedModel
@@ -49,6 +50,17 @@ def latest_plan():
         return None
 
 
+class ActionQuerySet(models.QuerySet):
+    def modifiable_by(self, user):
+        if user.is_superuser:
+            return self
+        query = Q(plan__in=user.general_admin_plans.all())
+        person = user.get_corresponding_person()
+        if person is not None:
+            query |= Q(contact_persons=person)
+        return self.filter(query).distinct()
+
+
 class Action(ModelWithImage, OrderedModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
@@ -70,6 +82,12 @@ class Action(ModelWithImage, OrderedModel):
     impact = models.ForeignKey(
         'ActionImpact', blank=True, null=True, related_name='actions', on_delete=models.SET_NULL,
         verbose_name=_('impact'), help_text=_('The impact of this action'),
+    )
+    internal_priority = models.PositiveIntegerField(
+        null=True, verbose_name=_('internal priority')
+    )
+    internal_priority_comment = models.TextField(
+        blank=True, null=True, verbose_name=_('internal priority comment')
     )
     status = models.ForeignKey(
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
@@ -105,10 +123,12 @@ class Action(ModelWithImage, OrderedModel):
     )
 
     updated_at = models.DateTimeField(
-        editable=False, verbose_name=_('updated at')
+        editable=False, verbose_name=_('updated at'), default=timezone.now
     )
 
     order_with_respect_to = 'plan'
+
+    objects = ActionQuerySet.as_manager()
 
     class Meta:
         verbose_name = _('action')
@@ -305,6 +325,8 @@ class ActionImpact(OrderedModel):
     class Meta:
         unique_together = (('plan', 'identifier'),)
         ordering = ('plan', 'order')
+        verbose_name = _('action impact class')
+        verbose_name_plural = _('action impact classes')
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.identifier)

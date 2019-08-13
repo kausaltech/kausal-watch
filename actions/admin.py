@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
     OrderedModelAdmin
@@ -91,12 +93,40 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
         return formset
 
 
+class AllActionsFilter(admin.SimpleListFilter):
+    title = _('non-modifiable actions')
+
+    parameter_name = 'non_modifiable'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, _('Show modifiable')),
+            ('yes', _('Show all')),
+        )
+
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.modifiable_by(request.user)
+        else:
+            return queryset
+
+
 @admin.register(Action)
-class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteModelAdmin):
+class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
     autocomplete_fields = ('contact_persons',)
-    list_display = ('__str__', 'has_contact_persons', 'active_task_count')
+    list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
     fieldsets = (
         (None, {
@@ -105,11 +135,11 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
                 'categories', 'contact_persons', 'image', 'image_cropping',
             )
         }),
-        (None, {
+        (_('Completion'), {
             'fields': ('status', 'completion')
         }),
         (None, {
-            'fields': ('impact', 'schedule', 'decision_level')
+            'fields': ('schedule', 'decision_level')
         }),
     )
 
@@ -144,6 +174,26 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
         plan = request.user.get_active_admin_plan()
         return qs.filter(plan=plan)
 
+    def get_list_display(self, request):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        list_display = list(self.list_display)
+        if user.is_general_admin_for_plan(plan):
+            list_display.insert(1, 'internal_priority')
+        return list_display
+
+    def get_list_filter(self, request):
+        user = request.user
+        plan = user.get_active_admin_plan()
+
+        filters = []
+        if user.is_general_admin_for_plan(plan):
+            filters.append(('internal_priority', RangeNumericFilter))
+        else:
+            filters.append(AllActionsFilter)
+        filters.append('impact')
+        return filters
+
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['completion']
         LOCKED_FIELDS = [
@@ -160,6 +210,17 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
             readonly_fields = readonly_fields + LOCKED_FIELDS
 
         return readonly_fields
+
+    def get_fieldsets(self, request, obj=None):
+        user = request.user
+        plan = user.get_active_admin_plan()
+
+        fieldsets = list(self.fieldsets)
+        if user.is_general_admin_for_plan(plan):
+            fieldsets.insert(1, (_('Internal fields'), {
+                'fields': ('internal_priority', 'internal_priority_comment', 'impact'),
+            }))
+        return fieldsets
 
     def has_view_permission(self, request, obj=None):
         if not super().has_view_permission(request, obj):
