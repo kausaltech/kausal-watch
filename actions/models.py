@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from django_orghierarchy.models import Organization
-from ordered_model.models import OrderedModel
+from ordered_model.models import OrderedModel, OrderedModelQuerySet
 from aplans.utils import IdentifierField
 from aplans.model_images import ModelWithImage
 
@@ -50,7 +50,7 @@ def latest_plan():
         return None
 
 
-class ActionQuerySet(models.QuerySet):
+class ActionQuerySet(OrderedModelQuerySet):
     def modifiable_by(self, user):
         if user.is_superuser:
             return self
