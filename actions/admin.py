@@ -134,7 +134,7 @@ class AllActionsFilter(admin.SimpleListFilter):
 
 @admin.register(Action)
 class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
-    summernote_fields = ('description', 'official_name')
+    summernote_fields = ('description',)
     search_fields = ('name', 'identifier')
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
