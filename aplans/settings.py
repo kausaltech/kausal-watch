@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'helusers',
     'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
+    'admin_site.apps.AdminSiteStatic',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
