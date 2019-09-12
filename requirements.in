@@ -7,7 +7,6 @@ django-helusers
 social-auth-app-django
 psycopg2-binary
 django-extensions
-django-ordered-model
 django-environ
 markdown
 django-filter
@@ -27,3 +26,4 @@ graphene-django
 graphene-django-optimizer
 aniso8601
 django-admin-numeric-filter
+django-admin-ordering

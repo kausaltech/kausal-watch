@@ -7,8 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
 from django_orghierarchy.models import Organization
-from ordered_model.models import OrderedModel, OrderedModelQuerySet
-from aplans.utils import IdentifierField
+from aplans.utils import IdentifierField, OrderedModel
 from aplans.model_images import ModelWithImage
 
 
@@ -50,7 +49,7 @@ def latest_plan():
         return None
 
 
-class ActionQuerySet(OrderedModelQuerySet):
+class ActionQuerySet(models.QuerySet):
     def modifiable_by(self, user):
         if user.is_superuser:
             return self
@@ -125,8 +124,6 @@ class Action(ModelWithImage, OrderedModel):
     updated_at = models.DateTimeField(
         editable=False, verbose_name=_('updated at'), default=timezone.now
     )
-
-    order_with_respect_to = 'plan'
 
     objects = ActionQuerySet.as_manager()
 
@@ -218,13 +215,14 @@ class ActionResponsibleParty(OrderedModel):
         limit_choices_to=Q(dissolution_date=None)
     )
 
-    order_with_respect_to = 'action'
-
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
+
+    def __str__(self):
+        return str(self.org)
 
 
 class ActionSchedule(models.Model):
@@ -320,8 +318,6 @@ class ActionImpact(OrderedModel):
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
 
-    order_with_respect_to = 'plan'
-
     class Meta:
         unique_together = (('plan', 'identifier'),)
         ordering = ('plan', 'order')
@@ -358,8 +354,6 @@ class Category(OrderedModel, ModelWithImage):
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')
     )
-
-    order_with_respect_to = 'type'
 
     class Meta:
         unique_together = (('type', 'identifier'),)

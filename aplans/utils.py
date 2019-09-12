@@ -39,3 +39,10 @@ class IdentifierField(models.CharField):
         if 'verbose_name' not in kwargs:
             kwargs['verbose_name'] = _('identifier')
         super().__init__(*args, **kwargs)
+
+
+class OrderedModel(models.Model):
+    order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
+
+    class Meta:
+        abstract = True

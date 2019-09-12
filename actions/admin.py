@@ -3,8 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
-from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, \
-    OrderedModelAdmin
+from admin_ordering.admin import OrderableAdmin
 from django_summernote.admin import SummernoteModelAdmin
 from django_summernote.widgets import SummernoteWidget
 from image_cropping import ImageCroppingMixin
@@ -34,12 +33,12 @@ class ActionStatusAdmin(admin.TabularInline):
     extra = 0
 
 
-class ActionImpactAdmin(OrderedTabularInline):
+class ActionImpactAdmin(OrderableAdmin, admin.TabularInline):
     model = ActionImpact
     extra = 0
-    fields = ('name', 'identifier', 'move_up_down_links',)
-    readonly_fields = ('move_up_down_links',)
-    ordering = ('order',)
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    fields = ('order', 'name', 'identifier',)
 
 
 class CategoryTypeAdmin(admin.StackedInline):
@@ -48,7 +47,7 @@ class CategoryTypeAdmin(admin.StackedInline):
 
 
 @admin.register(Plan)
-class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdmin):
+class PlanAdmin(ImageCroppingMixin, admin.ModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
         ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
@@ -73,13 +72,14 @@ class PlanAdmin(ImageCroppingMixin, OrderedInlineModelAdminMixin, admin.ModelAdm
         return True
 
 
-class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderedTabularInline):
+class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
     model = ActionResponsibleParty
+    ordering_field = 'order'
+    ordering_field_hide_input = True
     extra = 0
-    fields = ('org', 'move_up_down_links',)
-    readonly_fields = ('move_up_down_links',)
-    ordering = ('order',)
+    fields = ('order', 'org',)
     autocomplete_fields = ('org',)
+    classes = ('collapse',)
 
 
 class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
@@ -122,7 +122,7 @@ class AllActionsFilter(admin.SimpleListFilter):
 
 
 @admin.register(Action)
-class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
+class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
     autocomplete_fields = ('contact_persons',)
@@ -273,7 +273,9 @@ class ActionAdmin(OrderedInlineModelAdminMixin, ImageCroppingMixin, SummernoteMo
 
 
 @admin.register(Category)
-class CategoryAdmin(ImageCroppingMixin, OrderedModelAdmin):
+class CategoryAdmin(ImageCroppingMixin, admin.ModelAdmin):
+    fields = ('type', 'parent', 'identifier', 'name', 'image', 'image_cropping')
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
