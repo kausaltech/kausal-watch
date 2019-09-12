@@ -37,6 +37,9 @@ def get_contact_person_perms():
     new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
     new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
     new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)
+    new_perms += _get_perm_objs(ActionIndicator, ('view',))
+    new_perms += _get_perm_objs(Indicator, ('view',))
+
     for model in (
         ActionResponsibleParty,
     ):
