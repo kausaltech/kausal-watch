@@ -18,6 +18,7 @@ class Plan(ModelWithImage, models.Model):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    site_url = models.URLField(blank=True, null=True, verbose_name=_('site URL'))
     actions_locked = models.BooleanField(
         default=False, verbose_name=_('actions locked'),
         help_text=_('Can actions be added and the official metadata edited?'),

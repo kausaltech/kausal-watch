@@ -21,6 +21,7 @@ class AplansAdminSite(HelusersAdminSite):
             if plan is not None:
                 context['site_header'] = plan.name
                 context['site_title'] = plan.name
+                context['site_url'] = plan.site_url
         return context
 
     def get_app_list(self, request):
