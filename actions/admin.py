@@ -95,10 +95,17 @@ class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admi
 class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
     model = ActionTask
     extra = 0
+    fieldsets = (
+        (None, {
+            'fields': (
+                'name', 'completed_at', 'due_at', 'state', 'comment',
+            )
+        }),
+    )
 
     def get_formset(self, *args, **kwargs):
         formset = super().get_formset(*args, **kwargs)
-        formset.form.base_fields['comment'].widget = CKEditorWidget()
+        formset.form.base_fields['comment'].widget = CKEditorWidget(config_name='lite')
         return formset
 
 

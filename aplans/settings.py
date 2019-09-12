@@ -251,8 +251,21 @@ CKEDITOR_CONFIGS = {
         'extraPlugins': '',
         'toolbar': 'Full',
         'height': 300,
-        'format_tags': 'p;h1;h2;h3;h4;h5;h6;pre'
+        'format_tags': 'p;h3;h4;h5;h6;pre'
+    },
+    'lite': {
+        'skin': 'moono-lisa',
+        'toolbar_Full': [
+            ['Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
+            ['Link', 'Unlink'],
+        ],
+        'removePlugins': 'uploadimage,uploadwidget',
+        'extraPlugins': '',
+        'toolbar': 'Full',
+        'height': 150,
     }
+
 }
 
 
