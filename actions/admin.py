@@ -244,6 +244,17 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
             }))
         return fieldsets
 
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if not user.is_general_admin_for_plan(plan):
+            if 'delete_selected' in actions:
+                del actions['delete_selected']
+
+        return actions
+
     def has_view_permission(self, request, obj=None):
         if not super().has_view_permission(request, obj):
             return False
