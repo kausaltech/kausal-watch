@@ -69,7 +69,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
-    'django_summernote',
+    'ckeditor',
     'easy_thumbnails',
     'image_cropping',
     'graphene_django',
@@ -232,21 +232,29 @@ LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale')
 ]
 
-# summernote for rich-text admin fields
-# SUMMERNOTE_THEME = 'bs4'
-SUMMERNOTE_CONFIG = {
-    'summernote': {
-        'airMode': False,
-        'toolbar': [
-            ['font1', ['style', 'clear']],
-            ['insert', ['link']],
-            ['style', ['bold', 'italic', 'underline', 'clear']],
-            ['font', ['strikethrough', 'superscript', 'subscript']],
-            ['para', ['ul', 'ol', 'paragraph']],
-            ['table', ['table']],
-        ]
+
+# ckeditor for rich-text admin fields
+CKEDITOR_CONFIGS = {
+    'default': {
+        'skin': 'moono-lisa',
+        'toolbar_Basic': [
+            ['Source', '-', 'Bold', 'Italic']
+        ],
+        'toolbar_Full': [
+            ['Format', 'Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
+            ['Link', 'Unlink'],
+            ['HorizontalRule'],
+            ['Source'],
+        ],
+        'removePlugins': 'uploadimage,uploadwidget',
+        'extraPlugins': '',
+        'toolbar': 'Full',
+        'height': 300,
+        'format_tags': 'p;h1;h2;h3;h4;h5;h6;pre'
     }
 }
+
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
 THUMBNAIL_PROCESSORS = (

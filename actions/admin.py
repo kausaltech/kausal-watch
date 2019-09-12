@@ -4,9 +4,8 @@ from django.utils.translation import gettext_lazy as _
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
 from admin_ordering.admin import OrderableAdmin
-from django_summernote.admin import SummernoteModelAdmin
-from django_summernote.widgets import SummernoteWidget
 from image_cropping import ImageCroppingMixin
+from ckeditor.widgets import CKEditorWidget
 
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
@@ -95,12 +94,11 @@ class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admi
 
 class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
     model = ActionTask
-    summernote_fields = ('comment',)
     extra = 0
 
     def get_formset(self, *args, **kwargs):
         formset = super().get_formset(*args, **kwargs)
-        formset.form.base_fields['comment'].widget = SummernoteWidget()
+        formset.form.base_fields['comment'].widget = CKEditorWidget()
         return formset
 
 
@@ -133,8 +131,7 @@ class AllActionsFilter(admin.SimpleListFilter):
 
 
 @admin.register(Action)
-class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
-    summernote_fields = ('description',)
+class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
     search_fields = ('name', 'identifier')
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
@@ -161,6 +158,9 @@ class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAd
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
+
+        form.base_fields['description'].widget = CKEditorWidget()
+
         if obj is not None:
             plan = obj.plan
         else:

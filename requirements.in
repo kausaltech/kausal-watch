@@ -14,7 +14,7 @@ lxml
 django-cors-headers
 python-jose
 plotly
-django-summernote
+django-ckeditor
 ipython  # install for development convenience for now
 django-image-cropping
 easy-thumbnails

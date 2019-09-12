@@ -36,7 +36,6 @@ for view in actions_api_views + indicators_api_views + insight_api_views:
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
-    path('summernote/', include('django_summernote.urls')),
     path('v1/', include(router.urls)),
     path('v1/graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
     path('', include('social_django.urls', namespace='social')),

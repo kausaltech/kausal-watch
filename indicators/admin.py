@@ -2,7 +2,7 @@ from django import forms
 from django.db.models import Q
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from django_summernote.admin import SummernoteModelAdmin
+from ckeditor.widgets import CKEditorWidget
 
 from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
@@ -102,8 +102,7 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
 
 
 @admin.register(Indicator)
-class IndicatorAdmin(SummernoteModelAdmin):
-    summernote_fields = ('description',)
+class IndicatorAdmin(admin.ModelAdmin):
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
     list_display = ('name', 'has_data', 'has_graph')
@@ -121,6 +120,9 @@ class IndicatorAdmin(SummernoteModelAdmin):
             plans = [active_plan]
         else:
             plans = obj.plans.all()
+
+        form.base_fields['description'].widget = CKEditorWidget()
+
         if 'categories' in form.base_fields:
             categories = Category.objects.filter(type__plan__in=plans).order_by('type', 'identifier').distinct()
             form.base_fields['categories'].queryset = categories
