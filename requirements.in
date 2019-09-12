@@ -27,3 +27,4 @@ graphene-django-optimizer
 aniso8601
 django-admin-numeric-filter
 django-admin-ordering
+django-admin-autocomplete-filter

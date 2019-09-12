@@ -136,6 +136,12 @@ class AllActionsFilter(admin.SimpleListFilter):
         else:
             return queryset
 
+from admin_auto_filters.filters import AutocompleteFilter
+
+class ContactPersonFilter(AutocompleteFilter):
+    title = _('Contact person')
+    field_name = 'contact_persons'
+
 
 @admin.register(Action)
 class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
@@ -211,6 +217,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
         else:
             filters.append(AllActionsFilter)
         filters.append('impact')
+        filters.append(ContactPersonFilter)
+
         return filters
 
     def get_readonly_fields(self, request, obj=None):

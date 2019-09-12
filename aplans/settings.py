@@ -63,15 +63,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'social_django',
-    'admin_ordering',
     'mptt',
     'django_extensions',
-    'rest_framework',
-    'rest_framework.authtoken',
-    'django_filters',
+
+    'admin_ordering',
     'ckeditor',
     'easy_thumbnails',
     'image_cropping',
+    'admin_auto_filters',
+
+    'rest_framework',
+    'rest_framework.authtoken',
+    'django_filters',
     'graphene_django',
 
     'django_orghierarchy',

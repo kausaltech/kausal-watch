@@ -15,6 +15,7 @@ chardet==3.0.4            # via requests
 coverage==4.5.4           # via pytest-cov
 decorator==4.4.0          # via ipython, traitlets
 defusedxml==0.6.0         # via python3-openid, social-auth-core
+django-admin-autocomplete-filter==0.3
 django-admin-numeric-filter==0.1.5
 django-admin-ordering==0.11.0
 django-appconf==1.0.3     # via django-image-cropping
