@@ -117,8 +117,8 @@ class Action(ModelWithImage, OrderedModel):
     )
 
     contact_persons = models.ManyToManyField(
-        'people.Person', blank=True, verbose_name=_('contact persons'),
-        related_name='contact_for_actions'
+        'people.Person', through='ActionContactPerson', blank=True,
+        related_name='contact_for_actions', verbose_name=_('contact persons')
     )
 
     updated_at = models.DateTimeField(
@@ -223,6 +223,23 @@ class ActionResponsibleParty(OrderedModel):
 
     def __str__(self):
         return str(self.org)
+
+
+class ActionContactPerson(OrderedModel):
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, verbose_name=_('action'))
+    person = models.ForeignKey(
+        'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
+    )
+
+    class Meta:
+        ordering = ['action', 'order']
+        index_together = (('action', 'order'),)
+        unique_together = (('action', 'person',),)
+        verbose_name = _('action contact person')
+        verbose_name_plural = _('action contact persons')
+
+    def __str__(self):
+        return str(self.person)
 
 
 class ActionSchedule(models.Model):

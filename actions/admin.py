@@ -12,8 +12,10 @@ from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAd
 from django_orghierarchy.models import Organization
 
 from indicators.admin import ActionIndicatorAdmin
-from .models import Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, \
-    Category, CategoryType, ActionTask, ActionStatus, ActionImpact
+from .models import (
+    Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
+    CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson
+)
 from .perms import ActionRelatedAdminPermMixin
 
 
@@ -77,9 +79,18 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('order', 'org',)
+    fields = ('org', 'order',)
     autocomplete_fields = ('org',)
     classes = ('collapse',)
+
+
+class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
+    model = ActionContactPerson
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    extra = 0
+    fields = ('person', 'order',)
+    autocomplete_fields = ('person',)
 
 
 class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
@@ -125,26 +136,27 @@ class AllActionsFilter(admin.SimpleListFilter):
 class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAdmin):
     summernote_fields = ('description', 'official_name')
     search_fields = ('name', 'identifier')
-    autocomplete_fields = ('contact_persons',)
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
     fieldsets = (
         (None, {
             'fields': (
                 'plan', 'identifier', 'official_name', 'name', 'description',
-                'categories', 'contact_persons', 'image', 'image_cropping',
+                'categories',
             )
         }),
-        (_('Completion'), {
-            'fields': ('status', 'completion')
+        (_('Image'), {
+            'fields': ('image', 'image_cropping'),
+            'classes': ('collapse',)
         }),
-        (None, {
-            'fields': ('schedule', 'decision_level')
+        (_('Completion'), {
+            'fields': ('status', 'completion'),
+            'classes': ('collapse',)
         }),
     )
 
     inlines = [
-        ActionResponsiblePartyAdmin, ActionIndicatorAdmin, ActionTaskAdmin
+        ActionResponsiblePartyAdmin, ActionContactPersonAdmin, ActionIndicatorAdmin, ActionTaskAdmin
     ]
 
     def get_form(self, request, obj=None, **kwargs):
@@ -219,6 +231,9 @@ class ActionAdmin(ImageCroppingMixin, SummernoteModelAdmin, NumericFilterModelAd
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
                 'fields': ('internal_priority', 'internal_priority_comment', 'impact'),
+            }))
+            fieldsets.insert(2, (_('Schedule and decision level'), {
+                'fields': ('schedule', 'decision_level')
             }))
         return fieldsets
 

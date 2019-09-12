@@ -1,4 +1,7 @@
-from actions.perms import add_contact_person_perms, add_plan_admin_perms, remove_plan_admin_perms
+from actions.perms import (
+    add_contact_person_perms, remove_contact_person_perms,
+    add_plan_admin_perms, remove_plan_admin_perms
+)
 
 
 def create_permissions(details, backend, response, user=None, *args, **kwargs):
@@ -12,9 +15,12 @@ def create_permissions(details, backend, response, user=None, *args, **kwargs):
         person.user = user
         person.save(update_fields=['user'])
 
+    if user.is_contact_person_for_action():
+        add_contact_person_perms(user)
+    else:
+        remove_contact_person_perms(user)
+
     if user.is_general_admin_for_plan():
         add_plan_admin_perms(user)
     else:
         remove_plan_admin_perms(user)
-        if user.is_contact_person_for_action():
-            add_contact_person_perms(user)
