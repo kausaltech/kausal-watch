@@ -305,7 +305,7 @@ class ActionTask(models.Model):
     name = models.CharField(max_length=200, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=ACTIVE, verbose_name=_('state'))
     comment = models.TextField(null=True, blank=True, verbose_name=_('comment'))
-    due_at = models.DateField(null=True, blank=True, verbose_name=_('due date'))
+    due_at = models.DateField(verbose_name=_('due date'))
     completed_at = models.DateField(null=True, blank=True, verbose_name=_('completion date'))
 
     completed_by = models.ForeignKey(
