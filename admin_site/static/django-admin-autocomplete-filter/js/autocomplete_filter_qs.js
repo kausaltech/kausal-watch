@@ -1,4 +1,4 @@
- (!$) {
+if (!$) {
     $ = django.jQuery;
 };
 
