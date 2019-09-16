@@ -121,7 +121,8 @@ class IndicatorAdmin(admin.ModelAdmin):
         else:
             plans = obj.plans.all()
 
-        form.base_fields['description'].widget = CKEditorWidget()
+        if 'description' in form.base_fields:
+            form.base_fields['description'].widget = CKEditorWidget()
 
         if 'categories' in form.base_fields:
             categories = Category.objects.filter(type__plan__in=plans).order_by('type', 'identifier').distinct()
