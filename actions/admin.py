@@ -224,8 +224,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['completion']
         LOCKED_FIELDS = [
-            'official_name', 'identifier', 'status',
-            'completion', 'categories',
+            'official_name', 'identifier', 'completion', 'categories',
         ]
         if obj is None:
             # This is an add request
@@ -235,6 +234,11 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
         # access to some official fields.
         if obj.plan.actions_locked:
             readonly_fields = readonly_fields + LOCKED_FIELDS
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if not user.is_general_admin_for_plan(plan):
+            readonly_fields.append('status')
 
         return readonly_fields
 
@@ -311,6 +315,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
     def save_model(self, request, obj, form, change):
         obj.updated_at = timezone.now()
         super().save_model(request, obj, form, change)
+        obj.recalculate_status()
 
 
 @admin.register(Category)

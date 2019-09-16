@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-09-12 22:01+0300\n"
+"POT-Creation-Date: 2019-09-16 12:29+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -55,8 +55,8 @@ msgid "Actions"
 msgstr "Toimenpiteet"
 
 #: actions/models.py:18 actions/models.py:69 actions/models.py:266
-#: actions/models.py:283 actions/models.py:305 actions/models.py:336
-#: actions/models.py:370 actions/models.py:391 indicators/models.py:21
+#: actions/models.py:284 actions/models.py:306 actions/models.py:337
+#: actions/models.py:371 actions/models.py:392 indicators/models.py:21
 #: indicators/models.py:54
 msgid "name"
 msgstr "nimi"
@@ -82,7 +82,7 @@ msgid "Users that can modify everything related to the action plan"
 msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
 
 #: actions/models.py:34 actions/models.py:67 actions/models.py:264
-#: actions/models.py:281 actions/models.py:334 actions/models.py:389
+#: actions/models.py:282 actions/models.py:335 actions/models.py:390
 #: indicators/models.py:115 indicators/models.py:165
 msgid "plan"
 msgstr "toimenpideohjelma"
@@ -103,7 +103,7 @@ msgstr "Virallisen tahon hyväksymä nimi"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Toimenpiteen tunniste (esim. numero)"
 
-#: actions/models.py:80 actions/models.py:393 indicators/models.py:59
+#: actions/models.py:80 actions/models.py:394 indicators/models.py:59
 msgid "description"
 msgstr "kuvaus"
 
@@ -151,7 +151,7 @@ msgstr "päätöstaso"
 msgid "responsible parties"
 msgstr "vastuutahot"
 
-#: actions/models.py:113 actions/models.py:379
+#: actions/models.py:113 actions/models.py:380
 msgid "categories"
 msgstr "luokat"
 
@@ -168,7 +168,7 @@ msgid "updated at"
 msgstr "päivitysaika"
 
 #: actions/models.py:132 actions/models.py:213 actions/models.py:230
-#: actions/models.py:303 indicators/models.py:276
+#: actions/models.py:304 indicators/models.py:276
 msgid "action"
 msgstr "toimenpide"
 
@@ -220,91 +220,95 @@ msgstr "toimenpiteiden aikataulu"
 msgid "action schedules"
 msgstr "toimenpiteiden aikataulut"
 
-#: actions/models.py:271
+#: actions/models.py:268
+msgid "is completed"
+msgstr "valmis"
+
+#: actions/models.py:272
 msgid "action status"
 msgstr "toimenpiteen tila"
 
-#: actions/models.py:272
+#: actions/models.py:273
 msgid "action statuses"
 msgstr "toimenpiteen tilat"
 
-#: actions/models.py:297
+#: actions/models.py:298
 msgid "active"
 msgstr "aktiivinen"
 
-#: actions/models.py:298
+#: actions/models.py:299
 msgid "cancelled"
 msgstr "peruttu"
 
-#: actions/models.py:306
+#: actions/models.py:307
 msgid "state"
 msgstr "tila"
 
-#: actions/models.py:307
+#: actions/models.py:308
 msgid "comment"
 msgstr "kommentti"
 
-#: actions/models.py:308
+#: actions/models.py:309
 msgid "due date"
 msgstr "tavoitepäivämäärä"
 
-#: actions/models.py:309
+#: actions/models.py:310
 msgid "completion date"
 msgstr "valmistumispäivämäärä"
 
-#: actions/models.py:313
+#: actions/models.py:314
 msgid "completed by"
 msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
 
-#: actions/models.py:315 indicators/models.py:85
+#: actions/models.py:316 indicators/models.py:85
 msgid "created at"
 msgstr "luomisaika"
 
-#: actions/models.py:316
+#: actions/models.py:317
 msgid "modified at"
 msgstr "muokkausaika"
 
-#: actions/models.py:320
+#: actions/models.py:321
 msgid "action task"
 msgstr "toimenpiteen tehtävä"
 
-#: actions/models.py:321
+#: actions/models.py:322
 msgid "action tasks"
 msgstr "toimenpiteen tehtävät"
 
-#: actions/models.py:342
+#: actions/models.py:343
 msgid "action impact class"
 msgstr "toimenpiteen vaikuttavuusluokka"
 
-#: actions/models.py:343
+#: actions/models.py:344
 msgid "action impact classes"
 msgstr "toimenpiteen vaikuttavuusluokat"
 
-#: actions/models.py:357
+#: actions/models.py:358
 msgid "category type"
 msgstr "luokan tyyppi"
 
-#: actions/models.py:358
+#: actions/models.py:359
 msgid "category types"
 msgstr "luokan tyypit"
 
-#: actions/models.py:367
+#: actions/models.py:368
 msgid "type"
 msgstr "tyyppi"
 
-#: actions/models.py:373
+#: actions/models.py:374
 msgid "parent category"
 msgstr "yläluokka"
 
-#: actions/models.py:378
+#: actions/models.py:379
 msgid "category"
 msgstr "luokka"
 
-#: actions/models.py:397 indicators/models.py:203
+#: actions/models.py:398 indicators/models.py:203
 msgid "scenario"
 msgstr "skenaario"
 
-#: actions/models.py:398
+#: actions/models.py:399
 msgid "scenarios"
 msgstr "skenaariot"
 
@@ -567,7 +571,7 @@ msgstr "Aseta jos henkilöllä on käyttäjätunnus palveluun"
 msgid "people"
 msgstr "henkilöt"
 
-#: people/models.py:37
+#: people/models.py:38
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 

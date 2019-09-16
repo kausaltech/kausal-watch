@@ -184,6 +184,12 @@ class Action(ModelWithImage, OrderedModel):
             return by_id['late']
 
     def recalculate_status(self):
+        if self.status is not None and self.status.is_completed:
+            if self.completion != 100:
+                self.completion = 100
+                self.save(update_fields=['completion'])
+            return
+
         tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
         if not tasks:
             return
@@ -195,9 +201,6 @@ class Action(ModelWithImage, OrderedModel):
             self.status = status
             update_fields.append('status')
         self.save(update_fields=update_fields)
-
-    def task_updated(self, task):
-        self.recalculate_status()
 
     def has_contact_persons(self):
         return self.contact_persons.exists()
@@ -265,6 +268,7 @@ class ActionStatus(models.Model):
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
+    is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -322,10 +326,6 @@ class ActionTask(models.Model):
 
     def __str__(self):
         return self.name
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.action.task_updated(self)
 
 
 class ActionImpact(OrderedModel):
