@@ -10,7 +10,7 @@ User = get_user_model()
 class Person(models.Model):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
-    email = models.EmailField(null=True, blank=True, verbose_name=_('email address'))
+    email = models.EmailField(verbose_name=_('email address'))
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', null=True, blank=True, related_name='people',
         on_delete=models.SET_NULL, verbose_name=_('organization'),
@@ -28,8 +28,9 @@ class Person(models.Model):
 
     def validate_unique(self, exclude=None):
         super().validate_unique(exclude)
+        qs = Person.objects.all()
         if self.email:
-            qs = Person.objects.filter(email__iexact=self.email)
+            qs = qs.filter(email__iexact=self.email)
         if self.pk:
             qs = qs.exclude(pk=self.pk)
         if qs.exists():
