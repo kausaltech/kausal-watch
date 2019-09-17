@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'users',
     'actions',
     'indicators',
+    'content',
     'people',
 ]
 

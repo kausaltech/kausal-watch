@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
 
+from admin_auto_filters.filters import AutocompleteFilter
 from admin_ordering.admin import OrderableAdmin
 from image_cropping import ImageCroppingMixin
 from ckeditor.widgets import CKEditorWidget
@@ -136,7 +137,6 @@ class AllActionsFilter(admin.SimpleListFilter):
         else:
             return queryset
 
-from admin_auto_filters.filters import AutocompleteFilter
 
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')

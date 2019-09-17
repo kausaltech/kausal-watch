@@ -12,6 +12,7 @@ from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
     IndicatorValue, IndicatorGoal, Unit
 )
+from content.models import StaticPage, BlogPost, Question
 from people.models import Person
 from django_orghierarchy.models import Organization
 
@@ -63,12 +64,28 @@ class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
 
+    static_pages = graphene.List('aplans.schema.StaticPageNode')
+    blog_posts = graphene.List('aplans.schema.BlogPostNode')
+
+    @gql_optimizer.resolver_hints(
+        model_field='static_pages',
+    )
+    def resolve_static_pages(self, info):
+        return self.static_pages.filter(is_published=True)
+
+    @gql_optimizer.resolver_hints(
+        model_field='blog_posts',
+    )
+    def resolve_blog_posts(self, info):
+        return self.blog_posts.filter(is_published=True)
+
     class Meta:
         model = Plan
         only_fields = [
             'id', 'name', 'identifier', 'image_url', 'action_schedules',
             'actions', 'category_types', 'action_statuses', 'indicator_levels',
-            'indicators', 'action_impacts',
+            'indicators', 'action_impacts', 'blog_posts', 'static_pages',
+            'questions',
         ]
 
 
@@ -202,6 +219,35 @@ class IndicatorNode(DjangoNode):
 class OrganizationNode(DjangoNode):
     class Meta:
         model = Organization
+
+
+class StaticPageNode(DjangoNode):
+    @classmethod
+    def get_queryset(cls, queryset, info):
+        print('get queryset called')
+        return queryset.filter(is_published=True)
+
+    class Meta:
+        model = StaticPage
+        only_fields = [
+            'id', 'title', 'slug', 'content', 'parent', 'modified_at',
+        ]
+
+
+class BlogPostNode(DjangoNode):
+    class Meta:
+        model = BlogPost
+        only_fields = [
+            'id', 'title', 'slug', 'published_at', 'content',
+        ]
+
+
+class QuestionNode(DjangoNode):
+    class Meta:
+        model = BlogPost
+        only_fields = [
+            'id', 'title', 'answer'
+        ]
 
 
 class Query(graphene.ObjectType):

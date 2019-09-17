@@ -2,7 +2,7 @@ from django.utils.translation import ugettext_lazy as _
 from helusers.admin_site import AdminSite as HelusersAdminSite
 
 
-APP_ORDER = ['actions', 'indicators', 'people']
+APP_ORDER = ['actions', 'indicators', 'content', 'people']
 
 
 class AplansAdminSite(HelusersAdminSite):

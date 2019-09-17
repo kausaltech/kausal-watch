@@ -9,6 +9,9 @@ from indicators.models import (
     ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
     IndicatorGraph, IndicatorGoal, IndicatorValue
 )
+from content.models import (
+    StaticPage, BlogPost, Question
+)
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from people.models import Person
@@ -93,6 +96,7 @@ PLAN_ADMIN_PERMS = (
     (ActionImpact, ALL_PERMS),
     (CategoryType, ALL_PERMS),
     (Category, ALL_PERMS),
+
     (IndicatorLevel, ALL_PERMS),
     (ActionIndicator, ALL_PERMS),
     (Indicator, ALL_PERMS),
@@ -100,6 +104,11 @@ PLAN_ADMIN_PERMS = (
     (IndicatorGoal, ALL_PERMS),
     (RelatedIndicator, ALL_PERMS),
     (Unit, ALL_PERMS),
+
+    (StaticPage, ALL_PERMS),
+    (BlogPost, ALL_PERMS),
+    (Question, ALL_PERMS),
+
     (User, ('view',))
 )
 
