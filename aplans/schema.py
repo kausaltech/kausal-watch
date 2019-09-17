@@ -6,7 +6,7 @@ import graphene_django_optimizer as gql_optimizer
 
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
-    ActionTask, ActionImpact
+    ActionTask, ActionImpact, ActionResponsibleParty
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -97,6 +97,11 @@ class ActionScheduleNode(DjangoNode):
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
+
+
+class ActionResponsiblePartyNode(DjangoNode):
+    class Meta:
+        model = ActionResponsibleParty
 
 
 class ActionImpactNode(DjangoNode):
@@ -244,7 +249,7 @@ class BlogPostNode(DjangoNode):
 
 class QuestionNode(DjangoNode):
     class Meta:
-        model = BlogPost
+        model = Question
         only_fields = [
             'id', 'title', 'answer'
         ]
@@ -287,7 +292,7 @@ class Query(graphene.ObjectType):
         qs = Organization.objects.all()
         plan = kwargs.get('plan')
         if plan is not None:
-            qs = qs.filter(responsible_actions__plan__identifier=plan).distinct()
+            qs = qs.filter(responsible_actions__action__plan__identifier=plan).distinct()
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_indicators(self, info, **kwargs):

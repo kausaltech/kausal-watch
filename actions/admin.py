@@ -79,8 +79,8 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('org', 'order',)
-    autocomplete_fields = ('org',)
+    fields = ('organization', 'order',)
+    autocomplete_fields = ('organization',)
     classes = ('collapse',)
 
 

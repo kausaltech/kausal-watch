@@ -105,10 +105,6 @@ class Action(ModelWithImage, OrderedModel):
         'ActionDecisionLevel', blank=True, null=True, related_name='actions', on_delete=models.SET_NULL,
         verbose_name=_('decision-making level')
     )
-    responsible_parties = models.ManyToManyField(
-        Organization, through='ActionResponsibleParty', blank=True,
-        related_name='responsible_actions', verbose_name=_('responsible parties')
-    )
     categories = models.ManyToManyField(
         'Category', blank=True, verbose_name=_('categories')
     )
@@ -208,15 +204,22 @@ class Action(ModelWithImage, OrderedModel):
     has_contact_persons.boolean = True
 
     def active_task_count(self):
-        return self.tasks.exclude(state=ActionTask.CANCELLED).filter(completed_at__isnull=True).count()
+        def task_active(task):
+            return task.state != ActionTask.CANCELLED and not task.completed_at
+
+        active_tasks = [task for task in self.tasks.all() if task_active(task)]
+        return len(active_tasks)
     active_task_count.short_description = _('Active tasks')
 
 
 class ActionResponsibleParty(OrderedModel):
-    action = models.ForeignKey(Action, on_delete=models.CASCADE, verbose_name=_('action'))
-    org = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, verbose_name=_('organization'),
-        limit_choices_to=Q(dissolution_date=None)
+    action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, related_name='responsible_parties',
+        verbose_name=_('action')
+    )
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name='responsible_actions',
+        limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
     )
 
     class Meta:
@@ -226,7 +229,7 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name_plural = _('action responsible parties')
 
     def __str__(self):
-        return str(self.org)
+        return str(self.organization)
 
 
 class ActionContactPerson(OrderedModel):

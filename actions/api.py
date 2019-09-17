@@ -162,7 +162,7 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
         'schedule': ActionScheduleSerializer,
         'status': ActionStatusSerializer,
         'categories': CategorySerializer,
-        'responsible_parties': OrganizationSerializer,
+        # 'responsible_parties': OrganizationSerializer,
         'tasks': 'actions.api.ActionTaskSerializer',
         'indicators': 'indicators.api.IndicatorSerializer',
         'decision_level': ActionDecisionLevelSerializer,
@@ -187,7 +187,7 @@ class ActionViewSet(views.ModelViewSet, ModelWithImageViewMixin):
     queryset = Action.objects.all()
     prefetch_for_includes = {
         '__all__': [
-            'indicators', 'responsible_parties', 'schedule', 'categories', 'tasks',
+            'indicators', 'schedule', 'categories', 'tasks',
             'contact_persons',
         ],
         'plan': ['plan'],
