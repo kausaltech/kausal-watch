@@ -197,7 +197,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(plan=plan)
+        return qs.filter(plan=plan).prefetch_related('contact_persons', 'tasks').select_related('impact', 'plan')
 
     def get_list_display(self, request):
         user = request.user

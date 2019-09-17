@@ -86,12 +86,17 @@ class User(AbstractUser):
         if not self.is_superuser and not is_contact and not is_general_admin:
             return []
 
-        plans = set()
-        if self.is_superuser:
-            plans.update(Plan.objects.all())
+        # Cache adminable plans for each request
+        if hasattr(self, '_adminable_plans'):
+            plans = self._adminable_plans
         else:
-            plans.update(Plan.objects.filter(actions__in=self._contact_for_actions).distinct())
-            plans.update(Plan.objects.filter(id__in=self._general_admin_for_plans))
+            plans = set()
+            if self.is_superuser:
+                plans.update(Plan.objects.all())
+            else:
+                plans.update(Plan.objects.filter(actions__in=self._contact_for_actions).distinct())
+                plans.update(Plan.objects.filter(id__in=self._general_admin_for_plans))
+            self._adminable_plans = plans
 
         plans = sorted(list(plans), key=lambda x: x.name)
         active_plan = self.get_active_admin_plan(plans)
