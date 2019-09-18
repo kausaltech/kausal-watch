@@ -11,7 +11,10 @@ def camelcase_to_underscore(name):
 
 def register_view_helper(view_list, klass, name=None, basename=None):
     if not name:
-        model = klass.serializer_class.Meta.model
+        if klass.serializer_class:
+            model = klass.serializer_class.Meta.model
+        else:
+            model = klass.queryset.model
         name = camelcase_to_underscore(model._meta.object_name)
 
     entry = {'class': klass, 'name': name}

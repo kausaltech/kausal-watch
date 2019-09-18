@@ -1,13 +1,15 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from aplans.utils import OrderedModel
+from aplans.model_images import ModelWithImage
 
 
 User = get_user_model()
 
 
-class StaticPage(OrderedModel):
+class StaticPage(OrderedModel, ModelWithImage):
     plan = models.ForeignKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='static_pages',
         verbose_name=_('plan')
@@ -16,8 +18,10 @@ class StaticPage(OrderedModel):
         'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children',
         verbose_name=_('parent page'),
     )
-    slug = models.CharField(max_length=30, verbose_name=_('slug'), blank=True)
-    title = models.CharField(max_length=40, verbose_name=_('title'))
+    slug = models.SlugField(max_length=50, verbose_name=_('slug'), blank=True)
+    name = models.CharField(max_length=30, verbose_name=_('name'))
+    title = models.CharField(max_length=50, verbose_name=_('title'))
+    tagline = models.TextField(blank=True, null=True)
     content = models.TextField(verbose_name=_('content'))
 
     is_published = models.BooleanField(default=False, verbose_name=_('is published'))
@@ -38,7 +42,7 @@ class StaticPage(OrderedModel):
         return self.title
 
 
-class BlogPost(models.Model):
+class BlogPost(ModelWithImage):
     plan = models.ForeignKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='blog_posts',
         verbose_name=_('plan')
@@ -67,16 +71,16 @@ class BlogPost(models.Model):
 
 
 class Question(OrderedModel):
-    plan = models.ForeignKey(
-        'actions.Plan', related_name='questions', on_delete=models.CASCADE,
-        verbose_name=_('plan'),
+    page = models.ForeignKey(
+        StaticPage, related_name='questions', on_delete=models.CASCADE,
+        verbose_name=_('page'),
     )
     title = models.CharField(verbose_name=_('question title'), max_length=150)
     answer = models.TextField(verbose_name=_('answer'))
 
     class Meta:
-        unique_together = (('plan', 'title'),)
-        ordering = ('plan', 'order',)
+        unique_together = (('page', 'title'),)
+        ordering = ('page', 'order',)
         verbose_name = _('question')
         verbose_name_plural = _('questions')
 

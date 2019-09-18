@@ -24,12 +24,13 @@ from graphene_django.views import GraphQLView
 from actions.api import all_views as actions_api_views
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
+from content.api import all_views as content_api_views
 
 from users.views import change_admin_plan
 
 
 router = routers.DefaultRouter()
-for view in actions_api_views + indicators_api_views + insight_api_views:
+for view in actions_api_views + indicators_api_views + insight_api_views + content_api_views:
     router.register(view['name'], view['class'], basename=view.get('basename'))
 
 
