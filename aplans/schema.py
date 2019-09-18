@@ -264,6 +264,7 @@ class Query(graphene.ObjectType):
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
+    person = graphene.Field(PersonNode, id=graphene.ID())
 
     plan_actions = graphene.List(ActionNode, plan=graphene.ID(required=True))
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True))
@@ -322,6 +323,18 @@ class Query(graphene.ObjectType):
         try:
             obj = qs.get()
         except Action.DoesNotExist:
+            return None
+
+        return obj
+
+    def resolve_person(self, info, **kwargs):
+        qs = Person.objects.all()
+        obj_id = kwargs.get('id')
+        if obj_id:
+            qs = qs.filter(id=obj_id)
+        try:
+            obj = qs.get()
+        except Person.DoesNotExist:
             return None
 
         return obj
