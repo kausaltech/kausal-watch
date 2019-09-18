@@ -94,9 +94,13 @@ class Person(ModelWithImage):
             capture_exception(err)
             return
 
-        self.image.save('avatar.jpg', io.BytesIO(resp.content))
+        update_fields = ['avatar_updated_at']
+        if not self.image or self.image.read() != resp.content:
+            self.image.save('avatar.jpg', io.BytesIO(resp.content))
+            update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
+
         self.avatar_updated_at = timezone.now()
-        self.save(update_fields=['image', 'image_height', 'image_width', 'image_cropping', 'avatar_updated_at'])
+        self.save(update_fields=update_fields)
 
     def should_update_avatar(self):
         if not self.avatar_updated_at:
