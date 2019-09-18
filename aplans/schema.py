@@ -229,7 +229,7 @@ class OrganizationNode(DjangoNode):
         model = Organization
 
 
-class StaticPageNode(DjangoNode):
+class StaticPageNode(DjangoNode, WithImageMixin):
     @classmethod
     def get_queryset(cls, queryset, info):
         print('get queryset called')
@@ -238,15 +238,15 @@ class StaticPageNode(DjangoNode):
     class Meta:
         model = StaticPage
         only_fields = [
-            'id', 'title', 'slug', 'content', 'parent', 'modified_at',
+            'id', 'title', 'name', 'slug', 'tagline', 'image_url', 'content', 'parent', 'modified_at',
         ]
 
 
-class BlogPostNode(DjangoNode):
+class BlogPostNode(DjangoNode, WithImageMixin):
     class Meta:
         model = BlogPost
         only_fields = [
-            'id', 'title', 'slug', 'published_at', 'content',
+            'id', 'title', 'slug', 'published_at', 'image_url', 'content',
         ]
 
 
