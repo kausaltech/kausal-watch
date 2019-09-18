@@ -53,7 +53,7 @@ class PersonNode(DjangoNode):
     class Meta:
         model = Person
         only_fields = [
-            'id', 'first_name', 'last_name', 'email', 'avatar_url',
+            'id', 'first_name', 'last_name', 'title', 'email', 'organization', 'avatar_url',
         ]
 
     def resolve_avatar_url(self, info):
