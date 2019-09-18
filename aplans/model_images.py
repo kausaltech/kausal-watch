@@ -128,5 +128,4 @@ class ModelWithImageViewMixin:
         # FIXME: Use SendFile headers instead of Django output when not in debug mode
         out_image.seek(0)
         resp = FileResponse(out_image, content_type=guess_type(filename, False)[0])
-        resp["Content-Disposition"] = "attachment; filename=%s" % os.path.basename(filename)
         return resp
