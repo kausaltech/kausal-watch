@@ -69,7 +69,7 @@ class Person(ModelWithImage):
             url = f'https://api.hel.fi/avatar/{self.email}?s={DEFAULT_AVATAR_SIZE}&d=404'
         else:
             md5_hash = hashlib.md5(self.email.encode('utf8')).hexdigest()
-            url = f'https://www.gravatar.com/avatar/{md5_hash}?f=y&s={DEFAULT_AVATAR_SIZE}d=404'
+            url = f'https://www.gravatar.com/avatar/{md5_hash}?f=y&s={DEFAULT_AVATAR_SIZE}&d=404'
 
         try:
             resp = requests.get(url, timeout=5)
