@@ -22,7 +22,7 @@ class StaticPage(OrderedModel, ModelWithImage):
     name = models.CharField(max_length=30, verbose_name=_('name'))
     title = models.CharField(max_length=50, verbose_name=_('title'))
     tagline = models.TextField(blank=True, null=True)
-    content = models.TextField(verbose_name=_('content'))
+    content = models.TextField(blank=True, verbose_name=_('content'))
 
     is_published = models.BooleanField(default=False, verbose_name=_('is published'))
 
