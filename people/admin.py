@@ -7,3 +7,7 @@ class PersonAdmin(admin.ModelAdmin):
     fields = ('first_name', 'last_name', 'email', 'organization')
     search_fields = ('first_name', 'last_name',)
     autocomplete_fields = ('organization',)
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        obj.download_avatar()

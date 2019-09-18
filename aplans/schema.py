@@ -53,11 +53,14 @@ class PersonNode(DjangoNode):
     class Meta:
         model = Person
         only_fields = [
-            'id', 'first_name', 'last_name', 'avatar_url',
+            'id', 'first_name', 'last_name', 'email', 'avatar_url',
         ]
 
     def resolve_avatar_url(self, info):
-        return self.get_avatar_url()
+        request = info.context
+        if not request:
+            return None
+        return self.get_avatar_url(request)
 
 
 class PlanNode(DjangoNode, WithImageMixin):

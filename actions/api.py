@@ -145,15 +145,21 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
 
 
-class PersonSerializer(serializers.ModelSerializer):
+class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     avatar_url = serializers.SerializerMethodField()
 
     def get_avatar_url(self, obj):
-        return obj.get_avatar_url()
+        return obj.get_avatar_url(self.context['request'])
 
     class Meta:
         model = Person
         fields = ('first_name', 'last_name', 'avatar_url')
+
+
+@register_view
+class PersonViewSet(views.ModelViewSet, ModelWithImageViewMixin):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
 
 
 class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
