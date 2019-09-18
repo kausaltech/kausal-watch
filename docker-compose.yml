@@ -24,6 +24,7 @@ services:
     environment:
       - DATABASE_URL=postgres://aplans@db/aplans
       - STATIC_ROOT=/srv/static
+      - LC_CTYPE=C.UTF-8
       - DEBUG
       - ALLOWED_HOSTS
       - COOKIE_PREFIX
