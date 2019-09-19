@@ -266,6 +266,7 @@ class Query(graphene.ObjectType):
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     person = graphene.Field(PersonNode, id=graphene.ID())
+    static_page = graphene.Field(StaticPageNode, plan=graphene.ID(), slug=graphene.ID())
 
     plan_actions = graphene.List(ActionNode, plan=graphene.ID(required=True))
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True))
@@ -365,6 +366,24 @@ class Query(graphene.ObjectType):
         try:
             obj = qs.get()
         except Indicator.DoesNotExist:
+            return None
+
+        return obj
+
+    def resolve_static_page(self, info, **kwargs):
+        slug = kwargs.get('slug')
+        plan = kwargs.get('plan')
+
+        if not slug or not plan:
+            raise Exception("You must supply both 'slug' and 'plan'")
+
+        qs = StaticPage.objects.all()
+        qs = qs.filter(slug=slug, plan__identifier=plan)
+        qs = gql_optimizer.query(qs, info)
+
+        try:
+            obj = qs.get()
+        except StaticPage.DoesNotExist:
             return None
 
         return obj
