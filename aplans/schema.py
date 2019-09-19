@@ -274,7 +274,11 @@ class Query(graphene.ObjectType):
 
     def resolve_plan(self, info, **kwargs):
         qs = Plan.objects.all()
-        return gql_optimizer.query(qs, info).get(identifier=kwargs['id'])
+        try:
+            plan = gql_optimizer.query(qs, info).get(identifier=kwargs['id'])
+        except Plan.DoesNotExist:
+            return None
+        return plan
 
     def resolve_all_plans(self, info):
         return Plan.objects.all()
