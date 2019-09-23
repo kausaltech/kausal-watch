@@ -102,6 +102,7 @@ PLAN_ADMIN_PERMS = (
     (Indicator, ALL_PERMS),
     (IndicatorGraph, ALL_PERMS),
     (IndicatorGoal, ALL_PERMS),
+    (IndicatorValue, ALL_PERMS),
     (RelatedIndicator, ALL_PERMS),
     (Unit, ALL_PERMS),
 

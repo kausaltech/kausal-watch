@@ -168,13 +168,13 @@ class IndicatorLevelNode(DjangoNode):
 
 
 class IndicatorValueNode(DjangoNode):
-    time = graphene.String()
+    date = graphene.String()
 
     class Meta:
         model = IndicatorValue
 
-    def resolve_time(self, info):
-        date = self.time.astimezone(LOCAL_TZ).date().isoformat()
+    def resolve_date(self, info):
+        date = self.date.isoformat()
         return date
 
 

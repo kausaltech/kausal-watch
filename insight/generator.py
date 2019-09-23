@@ -89,8 +89,8 @@ class ActionGraphGenerator(GraphGenerator):
 
             if obj.latest_value is not None:
                 lv = obj.latest_value
-                time = lv.time.astimezone(LOCAL_TZ).date().isoformat()
-                d['latest_value'] = dict(value=lv.value, date=time, unit=obj.unit.name)
+                date = lv.date.isoformat()
+                d['latest_value'] = dict(value=lv.value, date=date, unit=obj.unit.name)
             else:
                 d['latest_value'] = None
 

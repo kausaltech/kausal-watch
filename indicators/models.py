@@ -142,21 +142,21 @@ class IndicatorValue(models.Model):
         Indicator, related_name='values', on_delete=models.CASCADE,
         verbose_name=_('indicator')
     )
-    value = models.FloatField()
-    time = models.DateTimeField(verbose_name=_('time'))
+    value = models.FloatField(verbose_name=_('value'))
+    date = models.DateField(verbose_name=_('date'))
 
     class Meta:
         verbose_name = _('indicator value')
         verbose_name_plural = _('indicator values')
-        ordering = ('indicator', 'time')
-        get_latest_by = 'time'
-        unique_together = (('indicator', 'time'),)
+        ordering = ('indicator', 'date')
+        get_latest_by = 'date'
+        unique_together = (('indicator', 'date'),)
 
     def __str__(self):
         indicator = self.indicator
-        time = self.time.isoformat()
+        date = self.date.isoformat()
 
-        return f"{indicator} {time} {self.value}"
+        return f"{indicator} {date} {self.value}"
 
 
 class IndicatorGoal(models.Model):

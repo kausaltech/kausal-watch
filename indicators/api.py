@@ -151,7 +151,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
     def values(self, request, pk=None):
         indicator = Indicator.objects.get(pk=pk)
         resp = []
-        for obj in indicator.values.all().order_by('time'):
+        for obj in indicator.values.all().order_by('date'):
             resp.append(dict(time=obj.time, value=obj.value))
         return Response(resp)
 
@@ -177,8 +177,8 @@ class IndicatorViewSet(viewsets.ModelViewSet):
                 raise ValidationError("You must give 'time' in ISO 8601 format (YYYY-mm-dd)")
 
             if indicator.time_resolution == 'year':
-                if date.day != 1 or date.month != 1:
-                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-01-01" % (time, date.year))
+                if date.day != 31 or date.month != 12:
+                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (time, date.year))
             elif indicator.time_resolution == 'month':
                 if date.day != 1:
                     raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (time, date.year, date.month))
@@ -188,21 +188,20 @@ class IndicatorViewSet(viewsets.ModelViewSet):
             except TypeError:
                 raise ValidationError("You must give 'value' as a floating point number")
 
-            date = LOCAL_TZ.localize(datetime.combine(date, datetime.min.time()))
             if min_date is None or date < min_date:
                 min_date = date
             if max_date is None or date > max_date:
                 max_date = date
-            values.append(IndicatorValue(indicator=indicator, time=date, value=value))
+            values.append(IndicatorValue(indicator=indicator, date=date, value=value))
 
         dates = {}
         for value in values:
-            date = value.time.date()
+            date = value.date
             if date in dates:
-                raise ValidationError("Duplicate 'time' entry: %s" % (date.isoformat()))
+                raise ValidationError("Duplicate 'date' entry: %s" % (date.isoformat()))
             dates[date] = True
 
-        n_deleted, _ = indicator.values.filter(time__gte=min_date, time__lte=max_date).delete()
+        n_deleted, _ = indicator.values.filter(date__gte=min_date, date__lte=max_date).delete()
         created = IndicatorValue.objects.bulk_create(values)
 
         latest_value = indicator.values.latest()

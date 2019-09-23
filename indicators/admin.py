@@ -1,14 +1,22 @@
+import pytz
+from datetime import date
+
 from django import forms
 from django.db.models import Q
 from django.contrib import admin
+from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from ckeditor.widgets import CKEditorWidget
 
 from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
-    Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal
+    Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
+    IndicatorValue
 )
+
+
+LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 @admin.register(Unit)
@@ -48,15 +56,6 @@ class IndicatorLevelAdmin(admin.TabularInline):
         return qs.filter(plan=plan)
 
 
-class IndicatorGoalForm(forms.ModelForm):
-    class Meta:
-        model = IndicatorGoal
-        fields = ['indicator', 'date', 'value']
-
-    def save(self, commit):
-        super().save(commit=commit)
-
-
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
@@ -85,6 +84,29 @@ class IndicatorGoalAdmin(admin.TabularInline):
         return formset
 
 
+VALUE_MIN_YEAR = 1990
+
+
+class IndicatorValueAdmin(admin.TabularInline):
+    model = IndicatorValue
+    extra = 0
+    fields = ('date', 'value')
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        form = formset.form
+
+        current_year = date.today().year
+
+        field = form.base_fields['date']
+        if obj.time_resolution == 'year':
+            years = list(range(VALUE_MIN_YEAR, current_year + 1))
+            years.reverse()
+            field.widget = forms.Select(choices=[('%s-12-31' % y, str(y)) for y in years])
+
+        return formset
+
+
 class IndicatorLevelFilter(admin.SimpleListFilter):
     title = _('level')
     parameter_name = 'level'
@@ -109,7 +131,7 @@ class IndicatorAdmin(admin.ModelAdmin):
     list_filter = (IndicatorLevelFilter,)
     empty_value_display = _('[nothing]')
 
-    inlines = [IndicatorLevelAdmin, IndicatorGoalAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
+    inlines = [IndicatorLevelAdmin, IndicatorGoalAdmin, IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
