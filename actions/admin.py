@@ -12,6 +12,8 @@ from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAd
 from django_orghierarchy.models import Organization
 
 from indicators.admin import ActionIndicatorAdmin
+from admin_site.admin import AplansModelAdmin
+
 from .models import (
     Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
     CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson
@@ -49,7 +51,7 @@ class CategoryTypeAdmin(admin.StackedInline):
 
 
 @admin.register(Plan)
-class PlanAdmin(ImageCroppingMixin, admin.ModelAdmin):
+class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
         ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
@@ -144,7 +146,7 @@ class ContactPersonFilter(AutocompleteFilter):
 
 
 @admin.register(Action)
-class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin):
+class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin):
     search_fields = ('name', 'identifier')
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 

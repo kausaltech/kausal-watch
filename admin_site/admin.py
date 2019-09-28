@@ -1,5 +1,6 @@
 from django.utils.translation import ugettext_lazy as _
 from helusers.admin_site import AdminSite as HelusersAdminSite
+from django.contrib import admin
 
 
 APP_ORDER = ['actions', 'indicators', 'content', 'people']
@@ -34,3 +35,11 @@ class AplansAdminSite(HelusersAdminSite):
                     app_list.remove(app)
                     break
         return first_apps + app_list
+
+
+class AplansModelAdmin(admin.ModelAdmin):
+    class Media:
+        # Notify if the user is about to leave with unsaved changes.
+        js = (
+            'admin_site/js/unsaved_changes.js',
+        )

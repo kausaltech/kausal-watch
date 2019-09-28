@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from ckeditor.widgets import CKEditorWidget
 
+from admin_site.admin import AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
@@ -124,7 +125,7 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
 
 
 @admin.register(Indicator)
-class IndicatorAdmin(admin.ModelAdmin):
+class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
     list_display = ('name', 'has_data', 'has_graph')
