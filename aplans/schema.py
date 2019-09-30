@@ -10,7 +10,7 @@ from actions.models import (
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
-    IndicatorValue, IndicatorGoal, Unit
+    IndicatorValue, IndicatorGoal, Unit, Quantity
 )
 from content.models import StaticPage, BlogPost, Question
 from people.models import Person
@@ -42,6 +42,14 @@ class DjangoNode(DjangoObjectType):
 class UnitNode(DjangoNode):
     class Meta:
         model = Unit
+        only_fields = [
+            'id', 'name', 'verbose_name'
+        ]
+
+
+class QuantityNode(DjangoNode):
+    class Meta:
+        model = Quantity
         only_fields = [
             'id', 'name',
         ]
@@ -192,7 +200,7 @@ class IndicatorNode(DjangoNode):
 
     class Meta:
         only_fields = [
-            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit',
+            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit', 'quantity',
             'categories', 'plans', 'levels', 'level', 'identifier', 'latest_graph', 'updated_at',
             'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
             'actions',

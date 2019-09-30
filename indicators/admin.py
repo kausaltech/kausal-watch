@@ -13,7 +13,7 @@ from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
-    IndicatorValue
+    IndicatorValue, Quantity
 )
 
 
@@ -23,6 +23,11 @@ LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     search_fields = ('name',)
+
+
+@admin.register(Quantity)
+class QuantityAdmin(admin.ModelAdmin):
+    search_fields = ('quantity',)
 
 
 class RelatedIndicatorAdmin(admin.TabularInline):
@@ -60,7 +65,7 @@ class IndicatorLevelAdmin(admin.TabularInline):
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
-    fields = ('plan', 'date', 'value')
+    fields = ('date', 'value',)
 
     def get_queryset(self, request):
         plan = request.user.get_active_admin_plan()
@@ -73,14 +78,11 @@ class IndicatorGoalAdmin(admin.TabularInline):
         plan = request.user.get_active_admin_plan()
 
         field = form.base_fields['date']
-        if obj.time_resolution == 'year' and plan.action_schedules.exists():
+        if obj is not None and obj.time_resolution == 'year' and plan.action_schedules.exists():
             schedules = plan.action_schedules.all()
             min_year = min([x.begins_at.year for x in schedules])
             max_year = max([x.ends_at.year for x in schedules])
             field.widget = forms.Select(choices=[('%s-12-31' % y, str(y)) for y in range(min_year, max_year + 1)])
-
-        field = form.base_fields['plan']
-        field.initial = plan
 
         return formset
 
@@ -100,7 +102,7 @@ class IndicatorValueAdmin(admin.TabularInline):
         current_year = date.today().year
 
         field = form.base_fields['date']
-        if obj.time_resolution == 'year':
+        if obj is not None and obj.time_resolution == 'year':
             years = list(range(VALUE_MIN_YEAR, current_year + 1))
             years.reverse()
             field.widget = forms.Select(choices=[('%s-12-31' % y, str(y)) for y in years])
@@ -128,11 +130,25 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
 class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
-    list_display = ('name', 'has_data', 'has_graph')
+    list_display = ('name', 'has_data',)
     list_filter = (IndicatorLevelFilter,)
     empty_value_display = _('[nothing]')
 
-    inlines = [IndicatorLevelAdmin, IndicatorGoalAdmin, IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin]
+    inlines = [
+        IndicatorLevelAdmin, IndicatorGoalAdmin, IndicatorValueAdmin, ActionIndicatorAdmin,
+        RelatedIndicatorAdmin
+    ]
+
+    def get_list_display(self, request):
+        plan = request.user.get_active_admin_plan()
+
+        def has_goals(obj):
+            return obj.goals.filter(plan=plan).exists()
+        has_goals.short_description = _('has goals')
+        has_goals.boolean = True
+
+        ret = super().get_list_display(request)
+        return ret + (has_goals,)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -155,9 +171,14 @@ class IndicatorAdmin(AplansModelAdmin):
 
     def get_inline_instances(self, request, obj=None):
         inlines = super().get_inline_instances(request, obj)
+        # If we're adding a new object, we don't show the entries for goals
+        # and values yet, because their rendering depends on what time resolution
+        # the indicator has.
         if obj is None:
             for inline in list(inlines):
                 if isinstance(inline, IndicatorGoalAdmin):
+                    inlines.remove(inline)
+                if isinstance(inline, IndicatorValueAdmin):
                     inlines.remove(inline)
         return inlines
 
@@ -165,3 +186,24 @@ class IndicatorAdmin(AplansModelAdmin):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
         return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct()
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        plan = request.user.get_active_admin_plan()
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            if isinstance(instance, IndicatorGoal):
+                if not instance.plan_id:
+                    instance.plan = plan
+            instance.save()
+        formset.save_m2m()
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        # Remove the 'delete selected' action to prevent catastrophic mistakes.
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+
+        return actions

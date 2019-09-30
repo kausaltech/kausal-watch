@@ -1,6 +1,6 @@
 from django.apps import apps
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from aplans.utils import IdentifierField
@@ -15,6 +15,18 @@ def latest_plan():
         return Plan.objects.latest()
     else:
         return None
+
+
+class Quantity(models.Model):
+    name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
+
+    class Meta:
+        verbose_name = pgettext_lazy('physical', 'quantity')
+        verbose_name_plural = pgettext_lazy('physical', 'quantities')
+        ordering = ('name',)
+
+    def __str__(self):
+        return self.name
 
 
 class Unit(models.Model):
@@ -52,8 +64,12 @@ class Indicator(models.Model):
     )
     identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    quantity = models.ForeignKey(
+        Quantity, related_name='indicators', on_delete=models.PROTECT,
+        verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
+    )
     unit = models.ForeignKey(
-        Unit, related_name='indicators', on_delete=models.CASCADE,
+        Unit, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=_('unit')
     )
     description = models.TextField(null=True, blank=True, verbose_name=_('description'))

@@ -316,8 +316,9 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
 
     def save_model(self, request, obj, form, change):
         obj.updated_at = timezone.now()
-        super().save_model(request, obj, form, change)
+        ret = super().save_model(request, obj, form, change)
         obj.recalculate_status()
+        return ret
 
 
 @admin.register(Category)
