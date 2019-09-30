@@ -2,12 +2,12 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from .models import (
     Action, ActionResponsibleParty, ActionTask, Plan, ActionSchedule,
-    ActionStatus, Category, CategoryType, ActionImpact, ActionContactPerson
+    ActionStatus, Category, CategoryType, ActionImpact, ActionContactPerson,
 )
 from django_orghierarchy.models import Organization
 from indicators.models import (
     ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
-    IndicatorGraph, IndicatorGoal, IndicatorValue
+    IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity
 )
 from content.models import (
     StaticPage, BlogPost, Question
@@ -105,6 +105,7 @@ PLAN_ADMIN_PERMS = (
     (IndicatorValue, ALL_PERMS),
     (RelatedIndicator, ALL_PERMS),
     (Unit, ALL_PERMS),
+    (Quantity, ALL_PERMS),
 
     (StaticPage, ALL_PERMS),
     (BlogPost, ALL_PERMS),
