@@ -203,7 +203,7 @@ class IndicatorNode(DjangoNode):
             'id', 'identifier', 'name', 'description', 'time_resolution', 'unit', 'quantity',
             'categories', 'plans', 'levels', 'level', 'identifier', 'latest_graph', 'updated_at',
             'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
-            'actions',
+            'actions', 'related_causes', 'related_effects',
         ]
         model = Indicator
 
