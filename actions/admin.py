@@ -263,7 +263,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
 
         user = request.user
         plan = user.get_active_admin_plan()
-        if not user.is_general_admin_for_plan(plan):
+        if not user.is_general_admin_for_plan(plan) or plan.actions_locked:
             if 'delete_selected' in actions:
                 del actions['delete_selected']
 
