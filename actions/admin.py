@@ -174,7 +174,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
 
-        form.base_fields['description'].widget = CKEditorWidget()
+        if 'description' in form.base_fields:
+            form.base_fields['description'].widget = CKEditorWidget()
 
         if obj is not None:
             plan = obj.plan
