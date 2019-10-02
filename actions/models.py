@@ -57,7 +57,7 @@ class ActionQuerySet(models.QuerySet):
         query = Q(plan__in=user.general_admin_plans.all())
         person = user.get_corresponding_person()
         if person is not None:
-            query |= Q(contact_persons=person)
+            query |= Q(contact_persons__person=person)
         return self.filter(query).distinct()
 
 
@@ -113,7 +113,7 @@ class Action(ModelWithImage, OrderedModel):
         through='indicators.ActionIndicator', related_name='actions'
     )
 
-    contact_persons = models.ManyToManyField(
+    contact_persons_unordered = models.ManyToManyField(
         'people.Person', through='ActionContactPerson', blank=True,
         related_name='contact_for_actions', verbose_name=_('contact persons')
     )
@@ -233,7 +233,9 @@ class ActionResponsibleParty(OrderedModel):
 
 
 class ActionContactPerson(OrderedModel):
-    action = models.ForeignKey(Action, on_delete=models.CASCADE, verbose_name=_('action'))
+    action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='contact_persons'
+    )
     person = models.ForeignKey(
         'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
     )

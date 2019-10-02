@@ -6,7 +6,7 @@ import graphene_django_optimizer as gql_optimizer
 
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
-    ActionTask, ActionImpact, ActionResponsibleParty
+    ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -113,6 +113,11 @@ class ActionStatusNode(DjangoNode):
 class ActionResponsiblePartyNode(DjangoNode):
     class Meta:
         model = ActionResponsibleParty
+
+
+class ActionContactPersonNode(DjangoNode):
+    class Meta:
+        model = ActionContactPerson
 
 
 class ActionImpactNode(DjangoNode):

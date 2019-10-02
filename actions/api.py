@@ -168,20 +168,11 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
         'schedule': ActionScheduleSerializer,
         'status': ActionStatusSerializer,
         'categories': CategorySerializer,
-        # 'responsible_parties': OrganizationSerializer,
         'tasks': 'actions.api.ActionTaskSerializer',
         'indicators': 'indicators.api.IndicatorSerializer',
         'decision_level': ActionDecisionLevelSerializer,
-        'contact_persons': PersonSerializer,
     }
     tasks = ResourceRelatedField(queryset=ActionTask.objects, many=True)
-    contact_persons = serializers.SerializerMethodField()
-
-    def get_contact_persons(self, obj):
-        return [
-            dict(first_name=x.first_name, last_name=x.last_name, avatar_url=x.get_avatar_url())
-            for x in obj.contact_persons.all()
-        ]
 
     class Meta:
         model = Action
@@ -194,7 +185,6 @@ class ActionViewSet(views.ModelViewSet, ModelWithImageViewMixin):
     prefetch_for_includes = {
         '__all__': [
             'indicators', 'schedule', 'categories', 'tasks',
-            'contact_persons',
         ],
         'plan': ['plan'],
         'status': ['status'],

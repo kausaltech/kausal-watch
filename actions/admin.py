@@ -142,7 +142,7 @@ class AllActionsFilter(admin.SimpleListFilter):
 
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')
-    field_name = 'contact_persons'
+    field_name = 'contact_persons_unordered'
 
 
 @admin.register(Action)
