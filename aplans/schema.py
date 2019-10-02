@@ -14,7 +14,7 @@ from indicators.models import (
 )
 from content.models import StaticPage, BlogPost, Question
 from people.models import Person
-from django_orghierarchy.models import Organization
+from django_orghierarchy.models import Organization, OrganizationClass
 
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
@@ -237,9 +237,22 @@ class IndicatorNode(DjangoNode):
         return self.levels.get(plan__identifier=plan).level
 
 
+class OrganizationClassNode(DjangoNode):
+    class Meta:
+        model = OrganizationClass
+
+
 class OrganizationNode(DjangoNode):
+    ancestors = graphene.List('aplans.schema.OrganizationNode')
+
+    def resolve_ancestors(self, info):
+        return self.get_ancestors()
+
     class Meta:
         model = Organization
+        only_fields = [
+            'id', 'abbreviation', 'parent', 'name', 'classification'
+        ]
 
 
 class StaticPageNode(DjangoNode, WithImageMixin):
