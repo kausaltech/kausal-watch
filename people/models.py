@@ -74,7 +74,7 @@ class Person(ModelWithImage):
 
         try:
             resp = requests.get(url, timeout=5)
-        except requests.exceptions.ConnectionError as err:
+        except requests.exceptions.RequestException as err:
             logger.exception('Connection error downloading avatar for %s' % str(self), exc_info=err)
             capture_exception(err)
             return
