@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import routers
-from graphene_django.views import GraphQLView
+from .graphene_views import SentryGraphQLView
 
 from actions.api import all_views as actions_api_views
 from indicators.api import all_views as indicators_api_views
@@ -38,7 +38,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
     path('v1/', include(router.urls)),
-    path('v1/graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True))),
+    path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True))),
     path('', include('social_django.urls', namespace='social')),
     path('', include('helusers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
