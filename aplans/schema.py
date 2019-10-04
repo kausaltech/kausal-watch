@@ -234,7 +234,11 @@ class IndicatorNode(DjangoNode):
         model_field='levels',
     )
     def resolve_level(self, info, plan):
-        return self.levels.get(plan__identifier=plan).level
+        try:
+            obj = self.levels.get(plan__identifier=plan)
+        except IndicatorLevel.DoesNotExist:
+            return None
+        return obj.level
 
 
 class OrganizationClassNode(DjangoNode):
