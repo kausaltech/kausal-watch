@@ -3,7 +3,7 @@ from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
-from aplans.utils import IdentifierField
+from aplans.utils import IdentifierField, OrderedModel
 
 
 User = get_user_model()
@@ -307,3 +307,22 @@ class ActionIndicator(models.Model):
 
     def __str__(self):
         return "%s ➜ %s ➜ %s" % (self.action, self.get_effect_type_display(), self.indicator)
+
+
+class IndicatorContactPerson(OrderedModel):
+    indicator = models.ForeignKey(
+        Indicator, on_delete=models.CASCADE, verbose_name=_('indicator'), related_name='contact_persons'
+    )
+    person = models.ForeignKey(
+        'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
+    )
+
+    class Meta:
+        ordering = ['indicator', 'order']
+        index_together = (('indicator', 'order'),)
+        unique_together = (('indicator', 'person',),)
+        verbose_name = _('indicator contact person')
+        verbose_name_plural = _('indicator contact persons')
+
+    def __str__(self):
+        return str(self.person)

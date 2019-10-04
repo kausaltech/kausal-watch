@@ -7,7 +7,8 @@ from .models import (
 from django_orghierarchy.models import Organization
 from indicators.models import (
     ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
-    IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity
+    IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity,
+    IndicatorContactPerson
 )
 from content.models import (
     StaticPage, BlogPost, Question
@@ -103,6 +104,7 @@ PLAN_ADMIN_PERMS = (
     (IndicatorGraph, ALL_PERMS),
     (IndicatorGoal, ALL_PERMS),
     (IndicatorValue, ALL_PERMS),
+    (IndicatorContactPerson, ALL_PERMS),
     (RelatedIndicator, ALL_PERMS),
     (Unit, ALL_PERMS),
     (Quantity, ALL_PERMS),

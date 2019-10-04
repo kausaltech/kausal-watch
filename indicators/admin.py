@@ -7,13 +7,14 @@ from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
 from ckeditor.widgets import CKEditorWidget
+from admin_ordering.admin import OrderableAdmin
 
 from admin_site.admin import AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
-    IndicatorValue, Quantity
+    IndicatorValue, Quantity, IndicatorContactPerson
 )
 
 
@@ -126,6 +127,15 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
         return queryset.filter(levels__in=levels).distinct()
 
 
+class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
+    model = IndicatorContactPerson
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    extra = 0
+    fields = ('person', 'order',)
+    autocomplete_fields = ('person',)
+
+
 @admin.register(Indicator)
 class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit',)
@@ -135,8 +145,8 @@ class IndicatorAdmin(AplansModelAdmin):
     empty_value_display = _('[nothing]')
 
     inlines = [
-        IndicatorLevelAdmin, IndicatorGoalAdmin, IndicatorValueAdmin, ActionIndicatorAdmin,
-        RelatedIndicatorAdmin
+        IndicatorLevelAdmin, IndicatorContactPersonAdmin, IndicatorGoalAdmin,
+        IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin
     ]
 
     def get_list_display(self, request):
