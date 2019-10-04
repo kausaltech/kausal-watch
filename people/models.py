@@ -6,7 +6,7 @@ import logging
 from datetime import timedelta
 
 from django.db import models
-from django.utils.translation import pgettext, gettext_lazy as _
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
@@ -26,7 +26,10 @@ class Person(ModelWithImage):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
     email = models.EmailField(verbose_name=_('email address'))
-    title = models.CharField(max_length=100, null=True, blank=True, verbose_name=pgettext("person's role", 'title'))
+    title = models.CharField(
+        max_length=100, null=True, blank=True,
+        verbose_name=pgettext_lazy("person's role", 'title')
+    )
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', null=True, blank=True, related_name='people',
         on_delete=models.SET_NULL, verbose_name=_('organization'),
