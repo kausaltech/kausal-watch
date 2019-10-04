@@ -109,6 +109,16 @@ class Indicator(models.Model):
     def get_latest_graph(self):
         return self.graphs.latest()
 
+    def set_latest_value(self):
+        try:
+            latest_value = self.values.latest()
+        except IndicatorValue.DoesNotExist:
+            latest_value = None
+        if self.latest_value == latest_value:
+            return
+        self.latest_value = latest_value
+        self.save(update_fields=['latest_value'])
+
     def has_data(self):
         return self.latest_value_id is not None
     has_data.short_description = _('Has data')

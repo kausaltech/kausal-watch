@@ -217,3 +217,7 @@ class IndicatorAdmin(AplansModelAdmin):
             del actions['delete_selected']
 
         return actions
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        obj.set_latest_value()
