@@ -88,7 +88,7 @@ class IndicatorGoalAdmin(admin.TabularInline):
         return formset
 
 
-VALUE_MIN_YEAR = 1990
+VALUE_MIN_YEAR = 1970
 
 
 class IndicatorValueAdmin(admin.TabularInline):
