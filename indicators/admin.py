@@ -141,7 +141,7 @@ class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
 class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit',)
     search_fields = ('name',)
-    list_display = ('name', 'has_data',)
+    list_display = ('name', 'unit', 'quantity', 'has_data',)
     list_filter = (IndicatorLevelFilter,)
     empty_value_display = _('[nothing]')
 
@@ -196,7 +196,7 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct()
+        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
