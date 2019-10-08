@@ -281,7 +281,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         if user.is_superuser or user.has_perm('actions.admin_action'):
             return True
 
-        return user.is_contact_person_for_action(None)
+        return user.is_contact_person_for_action(None) or user.is_organization_admin_for_action(None)
 
     def has_change_permission(self, request, obj=None):
         if not super().has_change_permission(request, obj):

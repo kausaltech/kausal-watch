@@ -58,6 +58,7 @@ class ActionQuerySet(models.QuerySet):
         person = user.get_corresponding_person()
         if person is not None:
             query |= Q(contact_persons__person=person)
+        query |= Q(responsible_parties__organization__in=user.get_adminable_organizations())
         return self.filter(query).distinct()
 
 

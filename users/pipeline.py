@@ -15,7 +15,7 @@ def create_permissions(details, backend, response, user=None, *args, **kwargs):
         person.user = user
         person.save(update_fields=['user'])
 
-    if user.is_contact_person_for_action():
+    if user.is_contact_person_for_action() or user.is_organization_admin_for_action():
         add_contact_person_perms(user)
     else:
         remove_contact_person_perms(user)
