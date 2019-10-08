@@ -23,6 +23,7 @@ LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
+    list_display = ('name', 'short_name', 'verbose_name')
     search_fields = ('name',)
 
 

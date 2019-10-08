@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-04 14:14+0300\n"
+"POT-Creation-Date: 2019-10-08 14:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -178,7 +178,7 @@ msgstr "Yhteyshenkilöt nimetty"
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
 
-#: actions/models.py people/models.py
+#: actions/models.py people/models.py users/models.py
 msgid "organization"
 msgstr "organisaatio"
 
@@ -423,8 +423,16 @@ msgid "quantities"
 msgstr "suureet"
 
 #: indicators/models.py
+msgid "short name"
+msgstr "lyhenne"
+
+#: indicators/models.py
 msgid "verbose name"
 msgstr "selite"
+
+#: indicators/models.py
+msgid "verbose name plural"
+msgstr "selite (monikko)"
 
 #: indicators/models.py
 msgid "unit"
@@ -643,7 +651,7 @@ msgstr "titteli"
 msgid "Set if this person is part of an organization"
 msgstr "Aseta jos henkilö on organisaation jäsen"
 
-#: people/models.py
+#: people/models.py users/models.py
 msgid "user"
 msgstr "käyttäjä"
 

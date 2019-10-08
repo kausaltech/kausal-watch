@@ -43,7 +43,7 @@ class UnitNode(DjangoNode):
     class Meta:
         model = Unit
         only_fields = [
-            'id', 'name', 'verbose_name'
+            'id', 'name', 'short_name', 'verbose_name', 'verbose_name_plural',
         ]
 
 
