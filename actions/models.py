@@ -148,11 +148,51 @@ class Action(ModelWithImage, OrderedModel):
     def get_previous_action(self):
         return Action.objects.filter(plan=self.plan_id, order__lt=self.order).order_by('-order').first()
 
+    def _calculate_completion_from_indicators(self):
+        progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
+        total_completion = 0
+        total_indicators = 0
+        for action_ind in progress_indicators:
+            ind = action_ind.indicator
+            try:
+                latest_value = ind.values.latest()
+            except ind.values.model.DoesNotExist:
+                continue
+
+            start_value = ind.values.first()
+
+            try:
+                latest_goal = ind.goals.latest()
+            except ind.goals.model.DoesNotExist:
+                continue
+
+            if latest_goal.value == start_value.value:
+                continue
+
+            completion = (latest_value.value - start_value.value) / (latest_goal.value - start_value.value)
+            total_completion += completion
+            total_indicators += 1
+
+        if not total_indicators:
+            return None
+
+        # Return average completion
+        return (total_completion / total_indicators) * 100
+
     def _calculate_completion(self, tasks):
+        ret = self._calculate_completion_from_indicators()
+        if ret is not None:
+            return ret
+
+        if not tasks:
+            return None
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
         return n_completed * 100 / len(tasks)
 
     def _determine_status(self, tasks):
+        if not tasks:
+            return
+
         statuses = self.plan.action_statuses.all()
         by_id = {x.identifier: x for x in statuses}
         KNOWN_IDS = {'not_started', 'on_time', 'late', 'severely_late'}
@@ -188,15 +228,22 @@ class Action(ModelWithImage, OrderedModel):
             return
 
         tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
-        if not tasks:
-            return
 
-        self.completion = self._calculate_completion(tasks)
-        update_fields = ['completion']
+        update_fields = []
+        new_completion = self._calculate_completion(tasks)
+        if self.completion != new_completion:
+            update_fields.append('completion')
+            self.completion = new_completion
+            self.updated_at = timezone.now()
+            update_fields.append('updated_at')
+
         status = self._determine_status(tasks)
-        if status is not None:
+        if status.id != self.status_id:
             self.status = status
             update_fields.append('status')
+
+        if not update_fields:
+            return
         self.save(update_fields=update_fields)
 
     def has_contact_persons(self):

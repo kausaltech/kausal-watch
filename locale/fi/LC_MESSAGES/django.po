@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-08 14:28+0300\n"
+"POT-Creation-Date: 2019-10-09 16:39+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -611,6 +611,14 @@ msgid "What type of effect should the action cause?"
 msgstr "Minkälainen vaikutus toimenpiteellä on?"
 
 #: indicators/models.py
+msgid "indicates action progress"
+msgstr "mittaa toimenpiteen edistymistä"
+
+#: indicators/models.py
+msgid "Set if the indicator should be used to determine action progress"
+msgstr "Asetettu jos mittaria käytetään toimenpiteen edistymisen mittaamiseen"
+
+#: indicators/models.py
 msgid "action indicator"
 msgstr "toimenpiteen mittari"
 
@@ -695,5 +703,10 @@ msgstr "Tuntematon sisältö"
 msgid "Users"
 msgstr "Käyttäjät"
 
-#~ msgid "time"
-#~ msgstr "aika"
+#: users/models.py
+msgid "admin for organization"
+msgstr "ylläpitäjä organisaatiolle"
+
+#: users/models.py
+msgid "admins for organization"
+msgstr "ylläpitäjät organisaatiolle"

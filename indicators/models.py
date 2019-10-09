@@ -1,3 +1,4 @@
+
 from django.apps import apps
 from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -316,6 +317,10 @@ class ActionIndicator(models.Model):
     effect_type = models.CharField(
         max_length=40, choices=RelatedIndicator.EFFECT_TYPES,
         verbose_name=_('effect type'), help_text=_('What type of effect should the action cause?')
+    )
+    indicates_action_progress = models.BooleanField(
+        default=False, verbose_name=_('indicates action progress'),
+        help_text=_('Set if the indicator should be used to determine action progress')
     )
 
     class Meta:
