@@ -191,7 +191,7 @@ class Action(ModelWithImage, OrderedModel):
 
     def _determine_status(self, tasks):
         if not tasks:
-            return
+            return None
 
         statuses = self.plan.action_statuses.all()
         by_id = {x.identifier: x for x in statuses}
@@ -238,7 +238,7 @@ class Action(ModelWithImage, OrderedModel):
             update_fields.append('updated_at')
 
         status = self._determine_status(tasks)
-        if status.id != self.status_id:
+        if status is not None and status.id != self.status_id:
             self.status = status
             update_fields.append('status')
 
