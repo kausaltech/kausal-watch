@@ -323,10 +323,25 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         return ret
 
 
+class ActionStatusActionFilter(admin.SimpleListFilter):
+    title = _('action')
+    parameter_name = 'action'
+
+    def lookups(self, request, model_admin):
+        plan = request.user.get_active_admin_plan()
+        actions = plan.actions.modifiable_by(request.user).filter(status_updates__isnull=False).distinct()
+        return [(action.id, str(action)) for action in actions]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(action=self.value())
+
+
 @admin.register(ActionStatusUpdate)
 class ActionStatusUpdateAdmin(AplansModelAdmin):
     list_display = ('title', 'date', 'action')
     list_display_links = ('title',)
+    list_filter = (ActionStatusActionFilter,)
     search_fields = ('action', 'title')
     autocomplete_fields = ('action', 'author')
 
