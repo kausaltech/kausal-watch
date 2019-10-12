@@ -6,7 +6,8 @@ import graphene_django_optimizer as gql_optimizer
 
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
-    ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson
+    ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson,
+    ActionStatusUpdate
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -125,6 +126,14 @@ class ActionImpactNode(DjangoNode):
         model = ActionImpact
 
 
+class ActionStatusUpdateNode(DjangoNode):
+    class Meta:
+        model = ActionStatusUpdate
+        only_fields = [
+            'id', 'action', 'title', 'date', 'author', 'content'
+        ]
+
+
 class CategoryTypeNode(DjangoNode):
     class Meta:
         model = CategoryType
@@ -150,7 +159,7 @@ class ActionNode(DjangoNode, WithImageMixin):
             'id', 'plan', 'name', 'official_name', 'identifier', 'description', 'status',
             'completion', 'schedule', 'decision_level', 'responsible_parties',
             'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
-            'related_indicators', 'impact',
+            'related_indicators', 'impact', 'status_updates',
         ]
 
     def resolve_next_action(self, info):

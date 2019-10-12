@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-09 16:39+0300\n"
+"POT-Creation-Date: 2019-10-12 13:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -302,6 +302,34 @@ msgstr "skenaario"
 msgid "scenarios"
 msgstr "skenaariot"
 
+#: actions/models.py content/models.py
+msgid "title"
+msgstr "otsikko"
+
+#: actions/models.py indicators/models.py
+msgid "date"
+msgstr "päivämäärä"
+
+#: actions/models.py
+msgid "author"
+msgstr "tekijä"
+
+#: actions/models.py content/models.py
+msgid "content"
+msgstr "sisältö"
+
+#: actions/models.py
+msgid "created by"
+msgstr "luoja"
+
+#: actions/models.py
+msgid "action status update"
+msgstr "toimenpiteen tilannepäivitys"
+
+#: actions/models.py
+msgid "action status updates"
+msgstr "toimenpiteiden tilannepäivitykset"
+
 #: admin_site/admin.py
 #, python-format
 msgid "Add another %(model)s"
@@ -343,14 +371,6 @@ msgstr "yläsivu"
 #: content/models.py
 msgid "slug"
 msgstr "slugi"
-
-#: content/models.py
-msgid "title"
-msgstr "otsikko"
-
-#: content/models.py
-msgid "content"
-msgstr "sisältö"
 
 #: content/models.py
 msgid "is published"
@@ -492,11 +512,7 @@ msgstr "mittarin tasot"
 
 #: indicators/models.py
 msgid "value"
-msgstr ""
-
-#: indicators/models.py
-msgid "date"
-msgstr "päivämäärä"
+msgstr "arvo"
 
 #: indicators/models.py
 msgid "indicator value"

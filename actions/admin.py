@@ -16,7 +16,8 @@ from admin_site.admin import AplansModelAdmin
 
 from .models import (
     Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
-    CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson
+    CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson,
+    ActionStatusUpdate
 )
 from .perms import ActionRelatedAdminPermMixin
 
@@ -320,6 +321,34 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         ret = super().save_model(request, obj, form, change)
         obj.recalculate_status()
         return ret
+
+
+@admin.register(ActionStatusUpdate)
+class ActionStatusUpdateAdmin(AplansModelAdmin):
+    list_display = ('title', 'date', 'action')
+    list_display_links = ('title',)
+    search_fields = ('action', 'title')
+    autocomplete_fields = ('action', 'author')
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        qs = qs.filter(action__in=Action.objects.filter(plan=plan).modifiable_by(request.user))
+        return qs
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        plan = request.user.get_active_admin_plan()
+        if 'author' in form.base_fields:
+            person = request.user.get_corresponding_person()
+            field = form.base_fields['author']
+            field.initial = person
+        if 'content' in form.base_fields:
+            form.base_fields['content'].widget = CKEditorWidget(config_name='lite')
+        if 'action' in form.base_fields:
+            form.base_fields['action'].queryset = plan.actions.modifiable_by(request.user)
+
+        return form
 
 
 @admin.register(Category)

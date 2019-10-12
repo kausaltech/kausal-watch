@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from .models import (
     Action, ActionResponsibleParty, ActionTask, Plan, ActionSchedule,
     ActionStatus, Category, CategoryType, ActionImpact, ActionContactPerson,
+    ActionStatusUpdate,
 )
 from django_orghierarchy.models import Organization
 from indicators.models import (
@@ -41,6 +42,7 @@ def get_contact_person_perms():
     new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
     new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
     new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)
+    new_perms += _get_perm_objs(ActionStatusUpdate, ALL_PERMS)
     new_perms += _get_perm_objs(ActionIndicator, ('view',))
     new_perms += _get_perm_objs(Indicator, ('view',))
 

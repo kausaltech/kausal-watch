@@ -452,3 +452,36 @@ class Scenario(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class ActionStatusUpdate(models.Model):
+    action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, related_name='status_updates',
+        verbose_name=_('action')
+    )
+    title = models.CharField(max_length=200, verbose_name=_('title'))
+    date = models.DateField(verbose_name=_('date'), default=date.today)
+    author = models.ForeignKey(
+        'people.Person', on_delete=models.SET_NULL, related_name='status_updates',
+        null=True, blank=True, verbose_name=_('author')
+    )
+    content = models.TextField(verbose_name=_('content'))
+
+    created_at = models.DateField(
+        verbose_name=_('created at'), editable=False, auto_now_add=True
+    )
+    modified_at = models.DateField(
+        verbose_name=_('created at'), editable=False, auto_now=True
+    )
+    created_by = models.ForeignKey(
+        User, null=True, blank=True, on_delete=models.SET_NULL,
+        verbose_name=_('created by'), editable=False,
+    )
+
+    class Meta:
+        verbose_name = _('action status update')
+        verbose_name_plural = _('action status updates')
+        ordering = ('-date',)
+
+    def __str__(self):
+        return '%s – %s – %s' % (self.action, self.created_at, self.title)
