@@ -209,6 +209,9 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         list_display = list(self.list_display)
         if user.is_general_admin_for_plan(plan):
             list_display.insert(1, 'internal_priority')
+            list_editable = getattr(self, 'list_editable', tuple())
+            if 'impact' not in self.list_editable:
+                self.list_editable = list_editable + ('impact',)
         return list_display
 
     def get_list_filter(self, request):
