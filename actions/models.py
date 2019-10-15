@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from django.db import models
@@ -11,6 +12,7 @@ from aplans.utils import IdentifierField, OrderedModel
 from aplans.model_images import ModelWithImage
 
 
+logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
@@ -184,20 +186,24 @@ class Action(ModelWithImage, OrderedModel):
         if ret is not None:
             return ret
 
+        return None
+
+        # Disable task-based completion estimation for now
         if not tasks:
             return None
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
         return n_completed * 100 / len(tasks)
 
     def _determine_status(self, tasks):
-        if not tasks:
+        statuses = self.plan.action_statuses.all()
+        if not statuses:
             return None
 
-        statuses = self.plan.action_statuses.all()
         by_id = {x.identifier: x for x in statuses}
-        KNOWN_IDS = {'not_started', 'on_time', 'late', 'severely_late'}
+        KNOWN_IDS = {'not_started', 'on_time', 'late'}
         # If the status set is not something we can handle, bail out.
         if not KNOWN_IDS.issubset(set(by_id.keys())):
+            logger.error('Unknown action status IDs: %s' % set(by_id.keys()))
             return None
 
         today = date.today()
@@ -215,10 +221,7 @@ class Action(ModelWithImage, OrderedModel):
             else:
                 return by_id['on_time']
 
-        if len(late_tasks) == len(tasks) and len(late_tasks) > 1:
-            return by_id['severely_late']
-        else:
-            return by_id['late']
+        return by_id['late']
 
     def recalculate_status(self):
         if self.status is not None and self.status.is_completed:
