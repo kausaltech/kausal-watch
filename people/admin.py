@@ -1,10 +1,11 @@
 from django.contrib import admin
+from image_cropping import ImageCroppingMixin
 from .models import Person
 
 
 @admin.register(Person)
-class PersonAdmin(admin.ModelAdmin):
-    fields = ('first_name', 'last_name', 'email', 'title', 'organization')
+class PersonAdmin(ImageCroppingMixin, admin.ModelAdmin):
+    fields = ('first_name', 'last_name', 'email', 'title', 'organization', 'image', 'image_cropping')
     search_fields = ('first_name', 'last_name',)
     autocomplete_fields = ('organization',)
 
