@@ -516,7 +516,7 @@ msgstr "omistaja"
 
 #: indicators/models.py
 msgid "owner name"
-msgstr "lyhenne"
+msgstr "omistajan nimi"
 
 #: indicators/models.py
 msgid "Set if owner organization is not available"
