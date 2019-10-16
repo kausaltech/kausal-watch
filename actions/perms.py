@@ -9,7 +9,7 @@ from django_orghierarchy.models import Organization
 from indicators.models import (
     ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
     IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity,
-    IndicatorContactPerson
+    IndicatorContactPerson, Dataset, DatasetLicense
 )
 from content.models import (
     StaticPage, BlogPost, Question
@@ -110,6 +110,8 @@ PLAN_ADMIN_PERMS = (
     (RelatedIndicator, ALL_PERMS),
     (Unit, ALL_PERMS),
     (Quantity, ALL_PERMS),
+    (Dataset, ALL_PERMS),
+    (DatasetLicense, ALL_PERMS),
 
     (StaticPage, ALL_PERMS),
     (BlogPost, ALL_PERMS),

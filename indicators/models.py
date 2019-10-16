@@ -54,6 +54,45 @@ class Unit(models.Model):
         return self.name
 
 
+class DatasetLicense(models.Model):
+    name = models.CharField(max_length=50, verbose_name=_('name'), unique=True)
+
+    class Meta:
+        verbose_name = _('dataset license')
+        verbose_name_plural = _('dataset licenses')
+
+    def __str__(self):
+        return self.name
+
+
+class Dataset(models.Model):
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    description = models.TextField(blank=True, verbose_name=_('description'))
+    url = models.URLField(null=True, blank=True, verbose_name=_('URL'))
+    last_retrieved_at = models.DateField(
+        null=True, blank=True, verbose_name=_('last retrieved at')
+    )
+    owner = models.ForeignKey(
+        'django_orghierarchy.Organization', null=True, blank=True, verbose_name=_('owner'),
+        on_delete=models.SET_NULL,
+    )
+    owner_name = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name=_('owner name'),
+        help_text=_('Set if owner organization is not available')
+    )
+    license = models.ForeignKey(
+        DatasetLicense, null=True, blank=True, verbose_name=_('license'),
+        on_delete=models.SET_NULL,
+    )
+
+    class Meta:
+        verbose_name = _('dataset')
+        verbose_name_plural = _('datasets')
+
+    def __str__(self):
+        return self.name
+
+
 class Indicator(models.Model):
     TIME_RESOLUTIONS = (
         ('year', _('year')),
@@ -95,6 +134,9 @@ class Indicator(models.Model):
         'IndicatorValue', null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL, editable=False
     )
+    datasets = models.ManyToManyField(
+        Dataset, blank=True, verbose_name=_('datasets')
+    )
 
     # summaries = models.JSONField(null=True)
     # E.g.:
@@ -127,6 +169,11 @@ class Indicator(models.Model):
             return
         self.latest_value = latest_value
         self.save(update_fields=['latest_value'])
+
+    def has_datasets(self):
+        return self.datasets.exists()
+    has_datasets.short_description = _('Has datasets')
+    has_datasets.boolean = True
 
     def has_data(self):
         return self.latest_value_id is not None

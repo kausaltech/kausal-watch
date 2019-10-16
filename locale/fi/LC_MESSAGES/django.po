@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-12 13:48+0300\n"
+"POT-Creation-Date: 2019-10-16 16:34+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -49,6 +49,10 @@ msgstr "Sisäiset tiedot"
 #: actions/admin.py
 msgid "Schedule and decision level"
 msgstr "Aikataulu ja päätöstaso"
+
+#: actions/admin.py actions/models.py indicators/models.py
+msgid "action"
+msgstr "toimenpide"
 
 #: actions/apps.py
 msgid "Actions"
@@ -157,10 +161,6 @@ msgstr "yhteyshenkilöt"
 #: actions/models.py indicators/models.py
 msgid "updated at"
 msgstr "päivitysaika"
-
-#: actions/models.py indicators/models.py
-msgid "action"
-msgstr "toimenpide"
 
 #: actions/models.py
 msgid "actions"
@@ -416,6 +416,38 @@ msgstr "kysymys"
 msgid "questions"
 msgstr "kysymykset"
 
+#: content/models.py
+msgid "site title"
+msgstr "sivuston otsikko"
+
+#: content/models.py
+msgid "official name description"
+msgstr "virallisen nimen kuvaus"
+
+#: content/models.py
+msgid "The text to show when displaying official content"
+msgstr "Teksti, joka näytetään kun sivustolla näytetään virallista sisältöä"
+
+#: content/models.py
+msgid "copyright text"
+msgstr "copyright-teksti"
+
+#: content/models.py
+msgid "creative commons license"
+msgstr "Creative Commons -lisenssi"
+
+#: content/models.py
+msgid "If the site is under a Creative Commons license, which CC license it is"
+msgstr "Jos sivusto on Creative Commons -lisenssillä, mikä CC-lisenssi on kyseessä"
+
+#: content/models.py
+msgid "Link to GitHub repository for API"
+msgstr "Linkki rajapintaprojektin GitHubiin"
+
+#: content/models.py
+msgid "Link to GitHub repository for UI"
+msgstr "Linkki käyttöliittymäprojektin GitHubiin"
+
 #: indicators/admin.py indicators/models.py
 msgid "level"
 msgstr "taso"
@@ -463,6 +495,46 @@ msgid "units"
 msgstr "yksiköt"
 
 #: indicators/models.py
+msgid "dataset license"
+msgstr "tietoaineiston lisenssi"
+
+#: indicators/models.py
+msgid "dataset licenses"
+msgstr "tietoaineistojen lisenssit"
+
+#: indicators/models.py
+msgid "URL"
+msgstr "URL"
+
+#: indicators/models.py
+msgid "last retrieved at"
+msgstr "viimeksi haettu"
+
+#: indicators/models.py
+msgid "owner"
+msgstr "omistaja"
+
+#: indicators/models.py
+msgid "owner name"
+msgstr "lyhenne"
+
+#: indicators/models.py
+msgid "Set if owner organization is not available"
+msgstr "Aseta jos omistajaorganisaatiota ei löydy"
+
+#: indicators/models.py
+msgid "license"
+msgstr "lisenssi"
+
+#: indicators/models.py
+msgid "dataset"
+msgstr "tietoaineisto"
+
+#: indicators/models.py
+msgid "datasets"
+msgstr "tietoaineistot"
+
+#: indicators/models.py
 msgid "year"
 msgstr "vuosi"
 
@@ -497,6 +569,10 @@ msgstr "aikaresoluutio"
 #: indicators/models.py
 msgid "indicator"
 msgstr "mittari"
+
+#: indicators/models.py
+msgid "Has datasets"
+msgstr "On datasettejä"
 
 #: indicators/models.py
 msgid "Has data"

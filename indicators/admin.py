@@ -14,7 +14,7 @@ from actions.perms import ActionRelatedAdminPermMixin
 from actions.models import Category
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
-    IndicatorValue, Quantity, IndicatorContactPerson
+    IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense
 )
 
 
@@ -139,7 +139,7 @@ class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
 
 @admin.register(Indicator)
 class IndicatorAdmin(AplansModelAdmin):
-    autocomplete_fields = ('unit',)
+    autocomplete_fields = ('unit', 'datasets', 'quantity')
     search_fields = ('name',)
     list_display = ('name', 'unit', 'quantity', 'has_data',)
     list_filter = (IndicatorLevelFilter,)
@@ -159,7 +159,7 @@ class IndicatorAdmin(AplansModelAdmin):
         has_goals.boolean = True
 
         ret = super().get_list_display(request)
-        return ret + (has_goals,)
+        return ret + (has_goals, 'has_datasets',)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -226,3 +226,14 @@ class IndicatorAdmin(AplansModelAdmin):
         for act_ind in actions:
             act = act_ind.action
             act.recalculate_status()
+
+
+@admin.register(Dataset)
+class DatasetAdmin(AplansModelAdmin):
+    autocomplete_fields = ('owner',)
+    search_fields = ('name',)
+
+
+@admin.register(DatasetLicense)
+class DatasetLicenseAdmin(AplansModelAdmin):
+    pass
