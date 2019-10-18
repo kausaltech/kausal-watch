@@ -726,6 +726,10 @@ msgstr "mittarin yhteyshenkilö"
 msgid "indicator contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
+#: people/admin.py
+msgid "contact for actions"
+msgstr "yhteyshenkilönä toimenpiteille"
+
 #: people/apps.py
 msgid "People"
 msgstr "Henkilöt"
