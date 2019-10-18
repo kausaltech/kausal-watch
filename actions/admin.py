@@ -321,7 +321,17 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     def save_model(self, request, obj, form, change):
         obj.updated_at = timezone.now()
         ret = super().save_model(request, obj, form, change)
-        obj.recalculate_status()
+        # Save the object reference so that it can be used in the following
+        # save_related() call.
+        self._saved_object = obj
+        return ret
+
+    def save_related(self, request, form, formsets, change):
+        ret = super().save_related(request, form, formsets, change)
+        obj = getattr(self, '_saved_object', None)
+        # After the tasks have been saved, recalculate status
+        if obj:
+            obj.recalculate_status()
         return ret
 
 
