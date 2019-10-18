@@ -1,3 +1,4 @@
+import math
 import logging
 from datetime import date
 
@@ -150,10 +151,12 @@ class Action(ModelWithImage, OrderedModel):
     def get_previous_action(self):
         return Action.objects.filter(plan=self.plan_id, order__lt=self.order).order_by('-order').first()
 
-    def _calculate_completion_from_indicators(self):
+    def _calculate_status_from_indicators(self):
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
         total_completion = 0
         total_indicators = 0
+        is_late = False
+
         for action_ind in progress_indicators:
             ind = action_ind.indicator
             try:
@@ -164,37 +167,51 @@ class Action(ModelWithImage, OrderedModel):
             start_value = ind.values.first()
 
             try:
-                latest_goal = ind.goals.latest()
+                last_goal = ind.goals.filter(plan=self.plan).latest()
             except ind.goals.model.DoesNotExist:
                 continue
 
-            if latest_goal.value == start_value.value:
+            diff = last_goal.value - start_value.value
+
+            if not diff:
+                # Avoid divide by zero
                 continue
 
-            completion = (latest_value.value - start_value.value) / (latest_goal.value - start_value.value)
+            completion = (latest_value.value - start_value.value) / diff
             total_completion += completion
             total_indicators += 1
+
+            # Figure out if the action is late or not by comparing
+            # the latest measured value to the closest goal
+            try:
+                closest_goal = ind.goals.filter(plan=self.plan, date__gte=latest_value.date).first()
+            except ind.goals.model.DoesNotExist:
+                continue
+
+            # Are we supposed to up or down?
+            if diff > 0:
+                # Up!
+                if closest_goal.value - latest_value.value > 0:
+                    is_late = True
+            else:
+                # Down
+                if closest_goal.value - latest_value.value < 0:
+                    is_late = True
 
         if not total_indicators:
             return None
 
         # Return average completion
-        return (total_completion / total_indicators) * 100
+        completion = int((total_completion / total_indicators) * 100)
+        return dict(completion=completion, is_late=is_late)
 
-    def _calculate_completion(self, tasks):
-        ret = self._calculate_completion_from_indicators()
-        if ret is not None:
-            return ret
-
-        return None
-
-        # Disable task-based completion estimation for now
+    def _calculate_completion_from_tasks(self, tasks):
         if not tasks:
             return None
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
-        return n_completed * 100 / len(tasks)
+        return dict(completion=int(n_completed * 100 / len(tasks)))
 
-    def _determine_status(self, tasks):
+    def _determine_status(self, tasks, indicator_status):
         statuses = self.plan.action_statuses.all()
         if not statuses:
             return None
@@ -205,6 +222,9 @@ class Action(ModelWithImage, OrderedModel):
         if not KNOWN_IDS.issubset(set(by_id.keys())):
             logger.error('Unknown action status IDs: %s' % set(by_id.keys()))
             return None
+
+        if indicator_status is not None and indicator_status.get('is_late'):
+            return by_id['late']
 
         today = date.today()
 
@@ -231,16 +251,21 @@ class Action(ModelWithImage, OrderedModel):
             return
 
         tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
-
         update_fields = []
-        new_completion = self._calculate_completion(tasks)
+
+        indicator_status = self._calculate_status_from_indicators()
+        if indicator_status:
+            new_completion = indicator_status['completion']
+        else:
+            new_completion = None
+
         if self.completion != new_completion:
             update_fields.append('completion')
             self.completion = new_completion
             self.updated_at = timezone.now()
             update_fields.append('updated_at')
 
-        status = self._determine_status(tasks)
+        status = self._determine_status(tasks, indicator_status)
         if status is not None and status.id != self.status_id:
             self.status = status
             update_fields.append('status')
