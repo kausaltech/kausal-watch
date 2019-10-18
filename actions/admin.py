@@ -84,7 +84,6 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     extra = 0
     fields = ('organization', 'order',)
     autocomplete_fields = ('organization',)
-    classes = ('collapse',)
 
 
 class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
