@@ -94,6 +94,7 @@ class SiteGeneralContent(models.Model):
         unique=True
     )
     site_title = models.CharField(max_length=150, verbose_name=_('site title'), blank=True)
+    site_description = models.CharField(max_length=150, verbose_name=_('site description'), blank=True)
     hero_content = models.TextField(blank=True)
     official_name_description = models.CharField(
         max_length=200, verbose_name=_('official name description'),

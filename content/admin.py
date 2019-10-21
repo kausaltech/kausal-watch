@@ -80,8 +80,9 @@ class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
 @admin.register(SiteGeneralContent)
 class SiteGeneralContentAdmin(admin.ModelAdmin):
     fields = [
-        'site_title', 'hero_content', 'official_name_description', 'copyright_text',
-        'creative_commons_license', 'github_api_repository', 'github_ui_repository'
+        'site_title', 'site_description', 'hero_content', 'official_name_description',
+        'copyright_text', 'creative_commons_license', 'github_api_repository',
+        'github_ui_repository'
     ]
 
     def get_queryset(self, request):
