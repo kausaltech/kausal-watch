@@ -35,12 +35,12 @@ msgid "Contact person"
 msgstr "Yhteyshenkilö"
 
 #: actions/admin.py
-msgid "Image"
-msgstr "Kuva"
-
-#: actions/admin.py
 msgid "Completion"
 msgstr "Toteutuminen"
+
+#: actions/admin.py
+msgid "Image"
+msgstr "Kuva"
 
 #: actions/admin.py
 msgid "Internal fields"
@@ -73,6 +73,14 @@ msgstr "toimenpiteet lukittu"
 #: actions/models.py
 msgid "Can actions be added and the official metadata edited?"
 msgstr "Voidaanko toimenpiteitä lisätä ja virallisia tietoja muokata?"
+
+#: actions/models.py
+msgid "allow images for actions"
+msgstr "salli toimenpiteille kuvat"
+
+#: actions/models.py
+msgid "Should custom images for individual actions be allowed"
+msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
 
 #: actions/models.py
 msgid "general administrators"

@@ -157,10 +157,6 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
                 'categories',
             )
         }),
-        (_('Image'), {
-            'fields': ('image', 'image_cropping'),
-            'classes': ('collapse',)
-        }),
         (_('Completion'), {
             'fields': ('status', 'completion'),
             'classes': ('collapse',)
@@ -253,6 +249,12 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         plan = user.get_active_admin_plan()
 
         fieldsets = list(self.fieldsets)
+        if plan.allow_images_for_actions:
+            fieldsets.insert(1, (_('Image'), {
+                'fields': ('image', 'image_cropping'),
+                'classes': ('collapse',)
+            }))
+
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
                 'fields': ('internal_priority', 'internal_priority_comment', 'impact'),

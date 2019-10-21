@@ -26,6 +26,10 @@ class Plan(ModelWithImage, models.Model):
         default=False, verbose_name=_('actions locked'),
         help_text=_('Can actions be added and the official metadata edited?'),
     )
+    allow_images_for_actions = models.BooleanField(
+        default=True, verbose_name=_('allow images for actions'),
+        help_text=_('Should custom images for individual actions be allowed')
+    )
 
     general_admins = models.ManyToManyField(
         User, blank=True, related_name='general_admin_plans',
