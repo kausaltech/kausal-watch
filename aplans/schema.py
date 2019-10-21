@@ -13,7 +13,9 @@ from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
     IndicatorValue, IndicatorGoal, Unit, Quantity
 )
-from content.models import StaticPage, BlogPost, Question
+from content.models import (
+    StaticPage, BlogPost, Question, SiteGeneralContent
+)
 from people.models import Person
 from django_orghierarchy.models import Organization, OrganizationClass
 
@@ -97,7 +99,7 @@ class PlanNode(DjangoNode, WithImageMixin):
             'id', 'name', 'identifier', 'image_url', 'action_schedules',
             'actions', 'category_types', 'action_statuses', 'indicator_levels',
             'indicators', 'action_impacts', 'blog_posts', 'static_pages',
-            'questions',
+            'general_content',
         ]
 
 
@@ -271,7 +273,6 @@ class OrganizationNode(DjangoNode):
 class StaticPageNode(DjangoNode, WithImageMixin):
     @classmethod
     def get_queryset(cls, queryset, info):
-        print('get queryset called')
         return queryset.filter(is_published=True)
 
     class Meta:
@@ -298,13 +299,22 @@ class QuestionNode(DjangoNode):
         ]
 
 
+class SiteGeneralContentNode(DjangoNode):
+    class Meta:
+        model = SiteGeneralContent
+        only_fields = [
+            'site_title', 'hero_content', 'official_name_description', 'copyright_text',
+            'creative_commons_license', 'github_api_repository', 'github_ui_repository'
+        ]
+
+
 class Query(graphene.ObjectType):
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(required=True)))
     all_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
-    person = graphene.Field(PersonNode, id=graphene.ID())
+    person = graphene.Field(PersonNode, id=graphene.ID(required=True))
     static_page = graphene.Field(StaticPageNode, plan=graphene.ID(), slug=graphene.ID())
 
     plan_actions = graphene.List(ActionNode, plan=graphene.ID(required=True))
@@ -375,8 +385,7 @@ class Query(graphene.ObjectType):
     def resolve_person(self, info, **kwargs):
         qs = Person.objects.all()
         obj_id = kwargs.get('id')
-        if obj_id:
-            qs = qs.filter(id=obj_id)
+        qs = qs.filter(id=obj_id)
         try:
             obj = qs.get()
         except Person.DoesNotExist:

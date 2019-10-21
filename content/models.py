@@ -86,3 +86,30 @@ class Question(OrderedModel):
 
     def __str__(self):
         return self.title
+
+
+class SiteGeneralContent(models.Model):
+    plan = models.OneToOneField(
+        'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
+        unique=True
+    )
+    site_title = models.CharField(max_length=150, verbose_name=_('site title'), blank=True)
+    hero_content = models.TextField(blank=True)
+    official_name_description = models.CharField(
+        max_length=200, verbose_name=_('official name description'),
+        help_text=_('The text to show when displaying official content'),
+        blank=True,
+    )
+    copyright_text = models.CharField(max_length=150, verbose_name=_('copyright text'), blank=True)
+    creative_commons_license = models.CharField(
+        blank=True, max_length=150, default='CC BY 4.0', verbose_name=_('creative commons license'),
+        help_text=_('If the site is under a Creative Commons license, which CC license it is'),
+    )
+    github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
+    github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
+
+    def __str__(self):
+        if self.plan:
+            return str(self.plan)
+        else:
+            return '[unknown]'

@@ -4,7 +4,7 @@ from admin_ordering.admin import OrderableAdmin
 from ckeditor.widgets import CKEditorWidget
 from image_cropping import ImageCroppingMixin
 
-from .models import StaticPage, BlogPost, Question
+from .models import StaticPage, BlogPost, Question, SiteGeneralContent
 
 
 @admin.register(BlogPost)
@@ -73,5 +73,31 @@ class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.modified_by = request.user
+        obj.plan = request.user.get_active_admin_plan()
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SiteGeneralContent)
+class SiteGeneralContentAdmin(admin.ModelAdmin):
+    fields = [
+        'site_title', 'hero_content', 'official_name_description', 'copyright_text',
+        'creative_commons_license', 'github_api_repository', 'github_ui_repository'
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(plan=plan)
+
+    def has_add_permission(self, request, obj=None):
+        plan = request.user.get_active_admin_plan()
+        if SiteGeneralContent.objects.filter(plan=plan).exists():
+            return False
+        return request.user.is_general_admin_for_plan(plan)
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def save_model(self, request, obj, form, change):
         obj.plan = request.user.get_active_admin_plan()
         super().save_model(request, obj, form, change)
