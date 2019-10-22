@@ -95,7 +95,9 @@ class SiteGeneralContent(models.Model):
     )
     site_title = models.CharField(max_length=150, verbose_name=_('site title'), blank=True)
     site_description = models.CharField(max_length=150, verbose_name=_('site description'), blank=True)
-    hero_content = models.TextField(blank=True)
+    hero_content = models.TextField(blank=True, verbose_name=_('hero content'))
+    action_list_lead_content = models.TextField(blank=True, verbose_name=_('action list lead content'))
+    indicator_list_lead_content = models.TextField(blank=True, verbose_name=_('indicator list lead content'))
     official_name_description = models.CharField(
         max_length=200, verbose_name=_('official name description'),
         help_text=_('The text to show when displaying official content'),
@@ -108,6 +110,10 @@ class SiteGeneralContent(models.Model):
     )
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
+
+    class Meta:
+        verbose_name = _('site general content')
+        verbose_name_plural = _('site general contents')
 
     def __str__(self):
         if self.plan:

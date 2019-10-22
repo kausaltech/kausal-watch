@@ -80,10 +80,18 @@ class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
 @admin.register(SiteGeneralContent)
 class SiteGeneralContentAdmin(admin.ModelAdmin):
     fields = [
-        'site_title', 'site_description', 'hero_content', 'official_name_description',
+        'site_title', 'site_description', 'hero_content', 'action_list_lead_content',
+        'indicator_list_lead_content', 'official_name_description',
         'copyright_text', 'creative_commons_license', 'github_api_repository',
         'github_ui_repository'
     ]
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['hero_content'].widget = CKEditorWidget()
+        form.base_fields['action_list_lead_content'].widget = CKEditorWidget()
+        form.base_fields['indicator_list_lead_content'].widget = CKEditorWidget()
+        return form
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
