@@ -12,7 +12,7 @@ from indicators.models import (
     IndicatorContactPerson, Dataset, DatasetLicense
 )
 from content.models import (
-    StaticPage, BlogPost, Question
+    StaticPage, BlogPost, Question, SiteGeneralContent
 )
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -116,6 +116,7 @@ PLAN_ADMIN_PERMS = (
     (StaticPage, ALL_PERMS),
     (BlogPost, ALL_PERMS),
     (Question, ALL_PERMS),
+    (SiteGeneralContent, ('add', 'view', 'change')),
 
     (User, ('view',))
 )
