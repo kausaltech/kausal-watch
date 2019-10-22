@@ -2,6 +2,7 @@ import re
 import pytz
 import graphene
 from graphene_django import DjangoObjectType
+from graphene.utils.str_converters import to_snake_case, to_camel_case
 import graphene_django_optimizer as gql_optimizer
 
 from actions.models import (
@@ -152,6 +153,8 @@ class ActionTaskNode(DjangoNode):
 
 
 class ActionNode(DjangoNode, WithImageMixin):
+    ORDERABLE_FIELDS = ['updated_at', 'identifier']
+
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
 
@@ -210,6 +213,8 @@ class IndicatorGoalNode(DjangoNode):
 
 
 class IndicatorNode(DjangoNode):
+    ORDERABLE_FIELDS = ['updated_at']
+
     goals = graphene.List('aplans.schema.IndicatorGoalNode', plan=graphene.ID())
     level = graphene.String(plan=graphene.ID())
     actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
@@ -309,6 +314,25 @@ class SiteGeneralContentNode(DjangoNode):
         ]
 
 
+def order_queryset(qs, node_class, order_by):
+    if order_by is None:
+        return qs
+
+    orderable_fields = node_class.ORDERABLE_FIELDS
+    if order_by[0] == '-':
+        desc = '-'
+        order_by = order_by[1:]
+    else:
+        desc = ''
+    order_by = to_snake_case(order_by)
+    if order_by not in orderable_fields:
+        raise ValueError('Only orderable fields are: %s' % ', '.join(
+            [to_camel_case(x) for x in orderable_fields]
+        ))
+    qs = qs.order_by(desc + order_by)
+    return qs
+
+
 class Query(graphene.ObjectType):
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(required=True)))
     all_plans = graphene.List(PlanNode)
@@ -318,10 +342,16 @@ class Query(graphene.ObjectType):
     person = graphene.Field(PersonNode, id=graphene.ID(required=True))
     static_page = graphene.Field(StaticPageNode, plan=graphene.ID(), slug=graphene.ID())
 
-    plan_actions = graphene.List(ActionNode, plan=graphene.ID(required=True))
+    plan_actions = graphene.List(
+        ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
+        order_by=graphene.String()
+    )
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True))
     plan_organizations = graphene.List(OrganizationNode, plan=graphene.ID(required=True))
-    plan_indicators = graphene.List(IndicatorNode, plan=graphene.ID(required=True))
+    plan_indicators = graphene.List(
+        IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
+        order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
+    )
 
     def resolve_plan(self, info, **kwargs):
         qs = Plan.objects.all()
@@ -334,11 +364,13 @@ class Query(graphene.ObjectType):
     def resolve_all_plans(self, info):
         return Plan.objects.all()
 
-    def resolve_plan_actions(self, info, **kwargs):
+    def resolve_plan_actions(self, info, plan, first=None, order_by=None, **kwargs):
         qs = Action.objects.all()
-        plan = kwargs.get('plan')
-        if plan is not None:
-            qs = qs.filter(plan__identifier=plan)
+        qs = qs.filter(plan__identifier=plan)
+        qs = order_queryset(qs, ActionNode, order_by)
+        if first is not None:
+            qs = qs[0:first]
+
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_categories(self, info, **kwargs):
@@ -355,11 +387,21 @@ class Query(graphene.ObjectType):
             qs = qs.filter(responsible_actions__action__plan__identifier=plan).distinct()
         return gql_optimizer.query(qs, info)
 
-    def resolve_plan_indicators(self, info, **kwargs):
+    def resolve_plan_indicators(
+        self, info, plan, first=None, order_by=None, has_data=None,
+        has_goals=None, **kwargs
+    ):
         qs = Indicator.objects.all()
-        plan = kwargs.get('plan')
-        if plan is not None:
-            qs = qs.filter(levels__plan__identifier=plan).distinct()
+        qs = qs.filter(levels__plan__identifier=plan).distinct()
+
+        if has_data is not None:
+            qs = qs.filter(latest_value__isnull=not has_data)
+
+        if has_goals is not None:
+            qs = qs.filter(goals__plan__identifier=plan).distinct()
+
+        qs = order_queryset(qs, IndicatorNode, order_by)
+
         return gql_optimizer.query(qs, info)
 
     def resolve_action(self, info, **kwargs):
