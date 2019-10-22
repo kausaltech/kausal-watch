@@ -402,6 +402,8 @@ class Query(graphene.ObjectType):
             qs = qs.filter(goals__plan__identifier=plan).distinct()
 
         qs = order_queryset(qs, IndicatorNode, order_by)
+        if first is not None:
+            qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
 
