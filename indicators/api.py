@@ -152,7 +152,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         indicator = Indicator.objects.get(pk=pk)
         resp = []
         for obj in indicator.values.all().order_by('date'):
-            resp.append(dict(time=obj.time, value=obj.value))
+            resp.append(dict(date=obj.date, value=obj.value))
         return Response(resp)
 
     @action(detail=True, methods=['get'])
@@ -160,7 +160,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         indicator = Indicator.objects.get(pk=pk)
         resp = []
         for obj in indicator.goals.all().order_by('date'):
-            resp.append(dict(time=obj.date, value=obj.value))
+            resp.append(dict(date=obj.date, value=obj.value))
         return Response(resp)
 
     @values.mapping.post
@@ -170,18 +170,18 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         min_date = max_date = None
         values = []
         for sample in data:
-            time = sample.get('time', '')
+            date_str = sample.get('date', '')
             try:
-                date = aniso8601.parse_date(time)
+                date = aniso8601.parse_date(date_str)
             except ValueError:
-                raise ValidationError("You must give 'time' in ISO 8601 format (YYYY-mm-dd)")
+                raise ValidationError("You must give 'date' in ISO 8601 format (YYYY-mm-dd)")
 
             if indicator.time_resolution == 'year':
                 if date.day != 31 or date.month != 12:
-                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (time, date.year))
+                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date_str, date.year))
             elif indicator.time_resolution == 'month':
                 if date.day != 1:
-                    raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (time, date.year, date.month))
+                    raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date_str, date.year, date.month))
 
             try:
                 value = float(sample.get('value'))
