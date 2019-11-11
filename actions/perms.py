@@ -113,6 +113,8 @@ PLAN_ADMIN_PERMS = (
     (Dataset, ALL_PERMS),
     (DatasetLicense, ALL_PERMS),
 
+    (Person, ALL_PERMS),  # also delete perm for plan admin
+
     (StaticPage, ALL_PERMS),
     (BlogPost, ALL_PERMS),
     (Question, ALL_PERMS),
