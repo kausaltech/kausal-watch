@@ -66,6 +66,7 @@ INSTALLED_APPS = [
     'social_django',
     'mptt',
     'django_extensions',
+    'import_export',
 
     'admin_ordering',
     'ckeditor',

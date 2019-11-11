@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-10-16 16:34+0300\n"
+"POT-Creation-Date: 2019-11-11 21:23+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -429,6 +429,22 @@ msgid "site title"
 msgstr "sivuston otsikko"
 
 #: content/models.py
+msgid "site description"
+msgstr "sivuston kuvaus"
+
+#: content/models.py
+msgid "hero content"
+msgstr "heron kuvaus"
+
+#: content/models.py
+msgid "action list lead content"
+msgstr "toimenpidelistan ingressi"
+
+#: content/models.py
+msgid "indicator list lead content"
+msgstr "mittarilistan ingressi"
+
+#: content/models.py
 msgid "official name description"
 msgstr "virallisen nimen kuvaus"
 
@@ -455,6 +471,14 @@ msgstr "Linkki rajapintaprojektin GitHubiin"
 #: content/models.py
 msgid "Link to GitHub repository for UI"
 msgstr "Linkki käyttöliittymäprojektin GitHubiin"
+
+#: content/models.py
+msgid "site general content"
+msgstr "sivuston yleisen sisältö"
+
+#: content/models.py
+msgid "site general contents"
+msgstr "sivuston yleiset sisällöt"
 
 #: indicators/admin.py indicators/models.py
 msgid "level"
@@ -733,6 +757,18 @@ msgstr "mittarin yhteyshenkilö"
 #: indicators/models.py
 msgid "indicator contact persons"
 msgstr "mittarin yhteyshenkilöt"
+
+#: people/admin.py
+msgid "Is contact person"
+msgstr "On yhteyshenkilö"
+
+#: people/admin.py
+msgid "Yes"
+msgstr "Kyllä"
+
+#: people/admin.py
+msgid "No"
+msgstr "Ei"
 
 #: people/admin.py
 msgid "contact for actions"
