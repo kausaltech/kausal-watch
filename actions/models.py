@@ -4,6 +4,7 @@ from datetime import date
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -421,6 +422,12 @@ class ActionTask(models.Model):
 
     def __str__(self):
         return self.name
+
+    def clean(self):
+        if self.state == ActionTask.COMPLETED and self.completed_at is None:
+            raise ValidationError({'completed_at': _('Completed tasks must have a completion date')})
+        if self.completed_at is not None and self.completed_at > date.today():
+            raise ValidationError({'completed_at': _("Date can't be in the future")})
 
 
 class ActionImpact(OrderedModel):

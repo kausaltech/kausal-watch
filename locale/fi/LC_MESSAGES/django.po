@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-11-29 12:08+0200\n"
+"POT-Creation-Date: 2019-11-29 15:14+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -289,6 +289,14 @@ msgstr "toimenpiteen tehtävä"
 #: actions/models.py
 msgid "action tasks"
 msgstr "toimenpiteen tehtävät"
+
+#: actions/models.py
+msgid "Completed tasks must have a completion date"
+msgstr "Valmistuneilla tehtävillä pitää olla valmistumispäivämäärä"
+
+#: actions/models.py
+msgid "Date can't be in the future"
+msgstr "Päivämäärä ei voi olla tulevaisuudessa"
 
 #: actions/models.py
 msgid "action impact class"
