@@ -1,4 +1,3 @@
-import math
 import logging
 from datetime import date
 
@@ -380,10 +379,15 @@ class ActionDecisionLevel(models.Model):
 
 
 class ActionTask(models.Model):
-    ACTIVE = 'active'
+    NOT_STARTED = 'not_started'
+    IN_PROGRESS = 'in_progress'
     CANCELLED = 'cancelled'
+    COMPLETED = 'completed'
+
     STATES = (
-        (ACTIVE, _('active')),
+        (NOT_STARTED, _('not started')),
+        (IN_PROGRESS, _('in progress')),
+        (COMPLETED, _('completed')),
         (CANCELLED, _('cancelled')),
     )
 
@@ -392,10 +396,16 @@ class ActionTask(models.Model):
         verbose_name=_('action')
     )
     name = models.CharField(max_length=200, verbose_name=_('name'))
-    state = models.CharField(max_length=20, choices=STATES, default=ACTIVE, verbose_name=_('state'))
+    state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
     comment = models.TextField(null=True, blank=True, verbose_name=_('comment'))
-    due_at = models.DateField(verbose_name=_('due date'))
-    completed_at = models.DateField(null=True, blank=True, verbose_name=_('completion date'))
+    due_at = models.DateField(
+        verbose_name=_('due date'),
+        help_text=_('The date by which the task should be completed (deadline)')
+    )
+    completed_at = models.DateField(
+        null=True, blank=True, verbose_name=_('completion date'),
+        help_text=_('The date when the task was completed')
+    )
 
     completed_by = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL,

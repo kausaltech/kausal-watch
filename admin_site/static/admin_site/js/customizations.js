@@ -1,7 +1,5 @@
 (function() {
-  function onload() {
-    console.log('loaded');
-    var $ = django.jQuery;
+  function initUnsavedChangesNotification() {
     // Store form state at page load
     var form = $('#content-main > form');
 
@@ -39,6 +37,13 @@
         return message;
       }
     });
+  }
+  function onload() {
+    // Fix references to global jQuery objects
+    window.$ = django.jQuery;
+    window.jQuery = django.jQuery;
+
+    initUnsavedChangesNotification();
   }
   if (document.readyState !== 'loading'){
     onload();

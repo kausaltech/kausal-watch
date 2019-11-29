@@ -39,7 +39,9 @@ class AplansAdminSite(HelusersAdminSite):
 
 class AplansModelAdmin(admin.ModelAdmin):
     class Media:
-        # Notify if the user is about to leave with unsaved changes.
+        # Aplans Admin UI customizations:
+        # - Notify if the user is about to leave with unsaved changes.
+        # - Set global jQuery
         js = (
-            'admin_site/js/unsaved_changes.js',
+            'admin_site/js/customizations.js',
         )

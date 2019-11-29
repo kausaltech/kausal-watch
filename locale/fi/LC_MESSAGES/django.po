@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-11-11 21:23+0200\n"
+"POT-Creation-Date: 2019-11-29 12:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -231,8 +231,16 @@ msgid "action statuses"
 msgstr "toimenpiteen tilat"
 
 #: actions/models.py
-msgid "active"
-msgstr "aktiivinen"
+msgid "not started"
+msgstr "ei käynnistynyt"
+
+#: actions/models.py
+msgid "in progress"
+msgstr "käynnissä"
+
+#: actions/models.py
+msgid "completed"
+msgstr "valmis"
 
 #: actions/models.py
 msgid "cancelled"
@@ -251,8 +259,16 @@ msgid "due date"
 msgstr "tavoitepäivämäärä"
 
 #: actions/models.py
+msgid "The date by which the task should be completed (deadline)"
+msgstr "Päivämäärä johon mennessä tehtävän pitäisi valmistua (deadline)"
+
+#: actions/models.py
 msgid "completion date"
 msgstr "valmistumispäivämäärä"
+
+#: actions/models.py
+msgid "The date when the task was completed"
+msgstr "Päivämäärä jolloin tehtävä valmistui"
 
 #: actions/models.py content/models.py
 msgid "completed by"

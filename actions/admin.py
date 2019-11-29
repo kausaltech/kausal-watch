@@ -101,10 +101,15 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
     fieldsets = (
         (None, {
             'fields': (
-                'name', 'completed_at', 'due_at', 'state', 'comment',
+                'name', 'due_at', 'state', 'completed_at', 'comment',
             )
         }),
     )
+
+    class Media:
+        js = (
+            'actions/action-task.js',
+        )
 
     def get_formset(self, *args, **kwargs):
         formset = super().get_formset(*args, **kwargs)

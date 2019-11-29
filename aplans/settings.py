@@ -71,8 +71,8 @@ INSTALLED_APPS = [
     'admin_ordering',
     'ckeditor',
     'easy_thumbnails',
-    'image_cropping',
     'admin_auto_filters',
+    'image_cropping',
 
     'rest_framework',
     'rest_framework.authtoken',
@@ -279,6 +279,7 @@ from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
 THUMBNAIL_PROCESSORS = (
     'image_cropping.thumbnail_processors.crop_corners',
 ) + thumbnail_settings.THUMBNAIL_PROCESSORS
+IMAGE_CROPPING_JQUERY_URL = None
 
 
 # Static files (CSS, JavaScript, Images)
