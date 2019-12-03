@@ -190,6 +190,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             form.base_fields['status'].queryset = plan.action_statuses.all()
         if 'schedule' in form.base_fields:
             form.base_fields['schedule'].queryset = plan.action_schedules.all()
+        if 'impact' in form.base_fields:
+            form.base_fields['impact'].queryset = plan.action_impacts.all()
         if 'decision_level' in form.base_fields:
             form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
         if 'categories' in form.base_fields:
@@ -209,9 +211,13 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         list_display = list(self.list_display)
         if user.is_general_admin_for_plan(plan):
             list_display.insert(1, 'internal_priority')
-            list_editable = getattr(self, 'list_editable', tuple())
-            if 'impact' not in self.list_editable:
-                self.list_editable = list_editable + ('impact',)
+            # FIXME: Enable below if `impact` can be filtered according
+            # to the selected plan.
+            #
+            # list_editable = getattr(self, 'list_editable', tuple())
+            # if 'impact' not in self.list_editable:
+            #    self.list_editable = list_editable + ('impact',)
+
         return list_display
 
     def get_list_filter(self, request):
