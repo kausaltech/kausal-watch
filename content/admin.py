@@ -44,8 +44,8 @@ class QuestionAdmin(OrderableAdmin, admin.StackedInline):
 class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
     list_display = ('title', 'is_published', 'order')
     fields = [
-        'name', 'slug', 'parent', 'order', 'is_published', 'title', 'tagline',
-        'image', 'image_cropping', 'content'
+        'name', 'slug', 'parent', 'order', 'is_published', 'top_menu', 'footer',
+        'title', 'tagline', 'image', 'image_cropping', 'content'
     ]
     ordering_field = 'order'
     ordering_field_hide_input = True

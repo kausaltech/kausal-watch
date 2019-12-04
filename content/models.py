@@ -19,6 +19,9 @@ class StaticPage(OrderedModel, ModelWithImage):
         verbose_name=_('parent page'),
     )
     slug = models.SlugField(max_length=50, verbose_name=_('slug'), blank=True)
+    top_menu = models.BooleanField(default=True, verbose_name=_('visible in top menu'))
+    footer = models.BooleanField(default=True, verbose_name=_('visible in page footer'))
+
     name = models.CharField(max_length=30, verbose_name=_('name'))
     title = models.CharField(max_length=50, verbose_name=_('title'))
     tagline = models.TextField(blank=True, null=True)

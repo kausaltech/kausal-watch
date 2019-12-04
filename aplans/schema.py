@@ -284,7 +284,7 @@ class StaticPageNode(DjangoNode, WithImageMixin):
         model = StaticPage
         only_fields = [
             'id', 'title', 'name', 'slug', 'tagline', 'image_url', 'content', 'parent', 'modified_at',
-            'questions',
+            'questions', 'top_menu', 'footer',
         ]
 
 
