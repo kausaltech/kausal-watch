@@ -17,7 +17,7 @@ RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update
 RUN apt-get install -y python3.8 python3-pip libpython3.8-dev \
 	postgresql-client-common postgresql-client libpq-dev \
-	gettext git-core
+	gettext git-core zlib1g-dev
 RUN ln -fs /usr/bin/python3.8 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
