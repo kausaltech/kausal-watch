@@ -30,6 +30,7 @@ class Person(ModelWithImage):
         max_length=100, null=True, blank=True,
         verbose_name=pgettext_lazy("person's role", 'title')
     )
+    postal_address = models.TextField(max_length=100, verbose_name=_('postal address'), null=True, blank=True)
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', null=True, blank=True, related_name='people',
         on_delete=models.SET_NULL, verbose_name=_('organization'),

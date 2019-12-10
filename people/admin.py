@@ -14,7 +14,10 @@ class PersonResource(resources.ModelResource):
 
     class Meta:
         model = Person
-        fields = ('last_name', 'first_name', 'email', 'title', 'organization__distinct_name', 'contact_for_actions')
+        fields = (
+            'last_name', 'first_name', 'email', 'title', 'organization__distinct_name',
+            'contact_for_actions', 'postal_address'
+        )
         export_order = fields
 
     def __init__(self, request):
@@ -57,7 +60,7 @@ class ExportMixinWithRequest(ExportMixin):
 
 @admin.register(Person)
 class PersonAdmin(ImageCroppingMixin, ExportMixinWithRequest, admin.ModelAdmin):
-    fields = ('first_name', 'last_name', 'email', 'title', 'organization', 'image', 'image_cropping')
+    fields = ('first_name', 'last_name', 'email', 'title', 'postal_address', 'organization', 'image', 'image_cropping')
     search_fields = ('first_name', 'last_name',)
     autocomplete_fields = ('organization',)
 
