@@ -155,7 +155,10 @@ class ActionNotUpdatedNotification(Notification):
 
 
 class NotificationEngine:
-    def __init__(self, plan: Plan, force_to=None, limit=None, only_type=None, noop=False, only_email=None):
+    def __init__(
+        self, plan: Plan, force_to=None, limit=None, only_type=None, noop=False, only_email=None,
+        ignore_actions=None
+    ):
         self.plan = plan
         self.today = date.today()
         self.force_to = force_to
@@ -163,6 +166,7 @@ class NotificationEngine:
         self.only_type = only_type
         self.noop = noop
         self.only_email = only_email
+        self.ignore_actions = set(ignore_actions or [])
 
     def _fetch_data(self):
         qs = ActionTask.objects.filter(action__plan=self.plan)
@@ -173,6 +177,10 @@ class NotificationEngine:
         for act in actions:
             act.plan = self.plan  # prevent DB query
             act._contact_persons = []  # same, filled in later
+            if act.identifier in self.ignore_actions:
+                act._ignore = True
+            else:
+                act._ignore = False
         self.actions_by_id = {act.id: act for act in actions}
 
         for task in self.active_tasks:
@@ -235,10 +243,12 @@ class NotificationEngine:
         self._fetch_data()
 
         for task in self.active_tasks:
+            if task.action._ignore or task.action.status.is_completed:
+                continue
             self.generate_task_notifications(task)
 
         for action in self.actions_by_id.values():
-            if action.status.is_completed:
+            if action._ignore or action.status.is_completed:
                 continue
             self.make_action_notifications(action)
 
@@ -314,6 +324,7 @@ class Command(BaseCommand):
         parser.add_argument('--limit', type=int, help='Do not send more than this many emails')
         parser.add_argument('--only-type', type=str, choices=type_choices, help='Send only notifications of this type')
         parser.add_argument('--only-email', type=str, help='Send only the notifications that go this email')
+        parser.add_argument('--ignore-actions', type=str, help='Comma-separated list of action identifiers to ignore')
         parser.add_argument('--noop', action='store_true', help='Do not actually send the emails')
 
     def handle(self, *args, **options):
@@ -323,12 +334,20 @@ class Command(BaseCommand):
         activate(settings.LANGUAGES[0][0])
 
         plan = Plan.objects.get(identifier=options['plan'])
+        ignore_actions = []
+        for act_id in options['ignore_actions'].split(','):
+            act = plan.actions.filter(identifier=act_id).first()
+            if act is None:
+                raise CommandError('Action %s does not exist' % act_id)
+            ignore_actions.append(act.identifier)
+
         engine = NotificationEngine(
             plan,
             force_to=options['force_to'],
             limit=options['limit'],
             only_type=options['only_type'],
             noop=options['noop'],
-            only_email=options['only_email']
+            only_email=options['only_email'],
+            ignore_actions=ignore_actions
         )
         engine.generate_notifications()
