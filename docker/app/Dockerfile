@@ -24,9 +24,8 @@ RUN ln -fs /usr/bin/python3.8 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
-COPY requirements.txt /code/
-RUN pip install -r /code/requirements.txt
-RUN pip install uwsgi
+COPY requirements.txt requirements-prod.txt /code/
+RUN pip install -r /code/requirements-prod.txt -r /code/requirements.txt
 
 COPY . /code/
 WORKDIR /code

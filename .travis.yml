@@ -1,25 +1,19 @@
 dist: xenial
-
 services:
 - docker
-
 language: minimal
-
 env:
   global:
-    - secure: zJXxwMKuczo2QeURfZGMNYSdx0Z3wHZAp/oLVTVQO/RTcg4r4fotzWrClcAmpkxaZBdPkVTwdiq545crKUa7NOacS6p3Z8hXdFSq7m2bkuNpXIWnMAebia4arQj0J66gBGiDtZTD2wCaTQjOYcGbdUWe1GSt008+k+V6adE25byS2yCs893pRqXkJx74b/zQ1nDVMp08DuFQSrBLvZ2ri6SZ0YCa5hhx9254jpyrMDh+U5tj+w12nvzwB3oYC20/pbFWzksbqYN/7MEMDobxrivXHPwKCXiDBrTz+T6LdIR9uncRF2WocvER3aFMFXAb2vBWcuwbR9oSbY8XgZg1y6v8riwzEFomGO89LufdvDsOc2gWF2K/EvurcQRDWzR7VZyX5MsPoaBJ/iucaHEA6MHO6R7aZb9gu1myynuDCtcldVL4Nfh9aiQA/udLQ7nQwWcJISC9NCd+VdRoS5fuYOszcBwtjkoFycpmN/K044VZUdJzXm4YA6d4fpXk4aADET0nh1NocxbLkB4w4ViZlnxeMwEkRfASbuaA/f8z7XzjtqsuUHXmMEuWqtT9IcTP/iJbueHRXku0tgriyNKGcfr0kw6DuAlJdzwp07L5Xzga4iuEoLrgtQNMe9K244tUlIpv3weGoIe2z+TdWeh3NZDsT5xjB9GfkUbp2ZhLKoA=
-    - HOST_PORT=8000
-    - 'DOCKER_CACHE_IMAGE=jyrjola/aplans:latest'
-
+  - HOST_PORT=8000
+  - DOCKER_CACHE_IMAGE=jyrjola/aplans:latest
+  - secure: rZixSddZHiRTL45JsHKKuo2JaNlvoPQNftZAqNOsUO/ty5C25hPFKeo3COknrKYMg8vepnERlFeYshg5rD/2W9c2HAeP904HYKlBxhVy7SMU5rcVdwqzaPcrh76kDv80ik16pNCK2yDd4ku0NcP04muutXOFj7hRqqZ8OPF/YOOVXIKNujilAkzutpLMH6jXziAq/gCbkLO3gk/LltzrwyOiiQnwm7YIz/u4kG/Htq4xP/YLWZxsMYsI0RXZzFRCw1sdl0jt/kH3RsQQV8nMFANGwCWQoI2iHAmYNWcZ5bzEvT7yMKflLmWofh1N+PCqacqIYldYe4d8yASB9CcXMnK4kZBK2X/HW4zZLqm77Ktjtjta/pAl1aQPq0DBw06DSV4PnlXlYTNXt2TdKBZ88KWvi5ZE0H4tpD1dh7NMIK3fn6cE+k0xodP3eDyTqJXi4U1bLx2BekRUJOlgB3CyLbX6izYOrBki/49tkiTwi2pPgGyja0c1lDOhVWirBEFuwf4amtXDrAJJfS3eJW3olJMZ26JfSAL9gfyE1Tu05sTKBC2KZjseR5Dou1e/SJeaUNyavVCBa1/b33UfV785egEhYuI2AO8HlKI6uXbPzBa3r56FLdgINL3TqpIchCwk0is5q70FhySyQHXPHNAWV51pOrzl9GePoXp5FmG6/hI=
+  - secure: kUtdXVJff9JNIwH1UplArTN8e39EMCgWh67ghWzI97mdom7hlWGlkIjr8q4RDSm3UuRjiMRGxE6Vl1pd6QytHWzbFMfCubbtG/AP5hHz2cBtUZWsY3LpaygkwZz/WdStyMuflOqWkAEVUtjRePkkjZ1n6AtIGujNCz3F2DPdVDW97Hin1iELqIH6Xx4Yi+4XcRUe8i+qjplWDUJ1i79X0mMf9B9hxEqNJZ6cMASLe9k10bxR/KLyTfZbzBHPtp+dExmEcap/4R9vkDESbUVTRm6wCyCaV2cninuYGzfld/Nfb3aaojSLxuCgAqR4aaDFrq659T9RfN9tDIjMzisp/aRDXUmixeEuV/DNzKa08SlCyk1XTWjrleM++KCAGzaeDhbu2hgiuk6QWVbZ7fFzFebSZcv9kK9xQg/C7oaXQx3WyqBanG2pFoLhsUu6B0wyVr5LVHkPARdwJsEtHjoTRTyjMAfXTsGYXMJjgMiKKG7pJcvntPe06NmmVqQAKfIzbNr56c/xVt6Mc1wjfDYVBRM/ocG7iMmdg1bAL/zEz9bgo+ocW038FtfyCt047Kl9EDaSzrB1j/40tBhtIB9ESlIzbMKJgm+aqxpehHIWp3VlajrUh7gZRqxjTcIJipHI5grZI3M10oMDRM5g6XV1VwDukPaNb2yz2KkFj5BntQo=
 before_install:
-  - docker pull $DOCKER_CACHE_IMAGE
-
+- docker pull $DOCKER_CACHE_IMAGE
 install:
-  - docker-compose build
-
+- docker-compose build
 script:
-  - docker-compose run --rm --entrypoint "" app pytest
-
+- docker-compose run --rm --entrypoint "" app pytest
 after_success:
 - docker image tag aplans_app $DOCKER_CACHE_IMAGE
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
