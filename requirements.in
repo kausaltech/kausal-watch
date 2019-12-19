@@ -31,3 +31,5 @@ Jinja2
 django-parler
 django-anymail[mailgun]
 django-reversion
+pytest-django
+pytest-cov
