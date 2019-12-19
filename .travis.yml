@@ -13,7 +13,7 @@ before_install:
 install:
 - docker-compose build
 script:
-- docker-compose run --rm --entrypoint "" app pytest
+- docker-compose run --rm --entrypoint "" app /wait-for-it.sh db:5432 -- pytest
 after_success:
 - docker image tag aplans_app $DOCKER_CACHE_IMAGE
 - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin

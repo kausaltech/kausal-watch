@@ -32,5 +32,6 @@ WORKDIR /code
 RUN ./manage.py collectstatic --no-input
 RUN ./manage.py compilemessages
 COPY ./docker/app/docker-entrypoint.sh /
+COPY ./docker/app/wait-for-it.sh /
 
 ENTRYPOINT ["/bin/bash", "/docker-entrypoint.sh"]

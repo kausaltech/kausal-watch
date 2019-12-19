@@ -2,6 +2,8 @@
 
 set -e
 
+/wait-for-it.sh db:5432
+
 cd /code
 python manage.py migrate --no-input
 # Log to stdout
