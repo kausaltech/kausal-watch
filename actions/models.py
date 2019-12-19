@@ -284,7 +284,10 @@ class Action(ModelWithImage, OrderedModel):
 
     def get_notification_context(self):
         change_url = reverse('admin:actions_action_change', args=(self.id,))
-        return {'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url}
+        return {
+            'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
+            'updated_at': self.updated_at
+        }
 
     def has_contact_persons(self):
         return self.contact_persons.exists()

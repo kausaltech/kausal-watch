@@ -24,18 +24,6 @@ MINIMUM_NOTIFICATION_PERIOD = 5  # days
 TASK_DUE_SOON_DAYS = 30
 
 
-@dataclass
-class NotificationEmail:
-    person: Person
-    type: NotificationType
-    context: dict
-
-    def send(self):
-        print(self.person.email)
-        print(self.type)
-        print(self.context)
-
-
 class Notification:
     type: NotificationType
     plan: Plan
@@ -146,21 +134,44 @@ class NotEnoughTasksNotification(Notification):
 
 
 class ActionNotUpdatedNotification(Notification):
-    pass
+    type = NotificationType.ACTION_NOT_UPDATED
+
+    def __init__(self, action: Action):
+        self.obj = action
+
+    def get_context(self):
+        return dict(action=self.obj.get_notification_context(), last_updated_at=self.obj.updated_at)
+
+    def generate_notifications(self):
+        contacts = self.obj._contact_persons
+        for person in contacts:
+            days_since = self.notification_last_sent(person)
+            if days_since is not None:
+                if days_since < 30:
+                    # We don't want to remind too often
+                    continue
+
+            self._queue_notification(person)
 
 
 class NotificationEngine:
-    def __init__(self, plan: Plan):
+    def __init__(self, plan: Plan, force_to=None, limit=None, only_type=None, noop=False, only_email=None):
         self.plan = plan
         self.today = date.today()
+        self.force_to = force_to
+        self.limit = limit
+        self.only_type = only_type
+        self.noop = noop
+        self.only_email = only_email
 
+    def _fetch_data(self):
         qs = ActionTask.objects.filter(action__plan=self.plan)
         qs = qs.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
         self.active_tasks = list(qs.order_by('due_at'))
 
-        actions = self.plan.actions.all()
+        actions = self.plan.actions.select_related('status')
         for act in actions:
-            act.plan = plan  # prevent DB query
+            act.plan = self.plan  # prevent DB query
             act._contact_persons = []  # same, filled in later
         self.actions_by_id = {act.id: act for act in actions}
 
@@ -197,9 +208,11 @@ class NotificationEngine:
 
     def make_action_notifications(self, action: Action):
         # Generate a notification if action doesn't have at least
-        # three tasks with DLs within 365 days
+        # one active task with DLs within 365 days
         N_DAYS = 365
         TASK_COUNT = 1
+        # Also when the action has not been updated in 90 days
+        LAST_UPDATED_DAYS = 90
 
         active_tasks = action.tasks.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
         today = date.today()
@@ -212,13 +225,15 @@ class NotificationEngine:
             notif = NotEnoughTasksNotification(action)
             notif.generate_notifications()
 
-        if action.updated_at.date() - today >= timedelta(days=3 * 30):
+        if today - action.updated_at.date() >= timedelta(days=LAST_UPDATED_DAYS):
             notif = ActionNotUpdatedNotification(action)
             notif.generate_notifications()
 
         return
 
     def generate_notifications(self):
+        self._fetch_data()
+
         for task in self.active_tasks:
             self.generate_task_notifications(task)
 
@@ -229,11 +244,17 @@ class NotificationEngine:
 
         base_template = self.plan.notification_base_template
         templates_by_type = {t.type: t for t in base_template.templates.all()}
+        notification_count = 0
+
         for person in self.persons_by_id.values():
+            if self.only_email and person.email != self.only_email:
+                continue
             for ttype, notifications in person._notifications.items():
+                if self.only_type and ttype != self.only_type:
+                    continue
                 template = templates_by_type.get(ttype)
                 if template is None:
-                    print('No template for %s' % ttype)
+                    logger.error('No template for %s' % ttype)
                     continue
 
                 cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
@@ -245,16 +266,27 @@ class NotificationEngine:
                     'content_blocks': content_blocks,
                 }
                 rendered = template.render(context)
+                if self.force_to:
+                    to_email = self.force_to
+                else:
+                    to_email = person.email
                 msg = EmailMessage(
                     rendered['subject'],
                     rendered['html_body'],
                     'Helsingin ilmastovahti <noreply@ilmastovahti.fi>',
-                    [person.email]
+                    [to_email]
                 )
                 msg.content_subtype = "html"  # Main content is now text/html
-                logger.info('Sending notification %s to %s' % (ttype, person.email))
-                for n in notifications:
-                    n.mark_sent(person)
+
+                logger.info('Sending notification %s to %s' % (ttype, to_email))
+                if not self.noop:
+                    msg.send()
+                if not self.force_to and not self.noop:
+                    for n in notifications:
+                        n.mark_sent(person)
+                notification_count += 1
+                if self.limit and notification_count >= self.limit:
+                    return
 
 
 class ActionNotification:
@@ -268,7 +300,13 @@ class Command(BaseCommand):
     help = 'Recalculates statuses and completions for all actions'
 
     def add_arguments(self, parser):
+        type_choices = [x.identifier for x in NotificationType]
         parser.add_argument('--plan', type=str, help='Identifier of the action plan')
+        parser.add_argument('--force-to', type=str, help='Rewrite the To field and send all emails to this address')
+        parser.add_argument('--limit', type=int, help='Do not send more than this many emails')
+        parser.add_argument('--only-type', type=str, choices=type_choices, help='Send only notifications of this type')
+        parser.add_argument('--only-email', type=str, help='Send only the notifications that go this email')
+        parser.add_argument('--noop', action='store_true', help='Do not actually send the emails')
 
     def handle(self, *args, **options):
         if not options['plan']:
@@ -277,5 +315,12 @@ class Command(BaseCommand):
         activate(settings.LANGUAGES[0][0])
 
         plan = Plan.objects.get(identifier=options['plan'])
-        engine = NotificationEngine(plan)
+        engine = NotificationEngine(
+            plan,
+            force_to=options['force_to'],
+            limit=options['limit'],
+            only_type=options['only_type'],
+            noop=options['noop'],
+            only_email=options['only_email']
+        )
         engine.generate_notifications()
