@@ -278,7 +278,15 @@ class NotificationEngine:
                 )
                 msg.content_subtype = "html"  # Main content is now text/html
 
-                logger.info('Sending notification %s to %s' % (ttype, to_email))
+                nstr = []
+                for n in notifications:
+                    if isinstance(n.obj, ActionTask):
+                        s = '\t%s: %s' % (n.obj.action, n.obj)
+                    else:
+                        s = '\t%s' % str(n.obj)
+                    nstr.append(s)
+                logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
+
                 if not self.noop:
                     msg.send()
                 if not self.force_to and not self.noop:
