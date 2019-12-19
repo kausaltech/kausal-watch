@@ -1,0 +1,4 @@
+-c requirements.txt
+pywatchman
+pytest-django
+pytest-cov
