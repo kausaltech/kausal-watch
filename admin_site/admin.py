@@ -1,6 +1,7 @@
 from django.utils.translation import ugettext_lazy as _
 from helusers.admin_site import AdminSite as HelusersAdminSite
 from django.contrib import admin
+from reversion.admin import VersionAdmin
 
 
 APP_ORDER = ['actions', 'indicators', 'content', 'people']
@@ -37,7 +38,7 @@ class AplansAdminSite(HelusersAdminSite):
         return first_apps + app_list
 
 
-class AplansModelAdmin(admin.ModelAdmin):
+class AplansModelAdmin(VersionAdmin):
     class Media:
         # Aplans Admin UI customizations:
         # - Notify if the user is about to leave with unsaved changes.

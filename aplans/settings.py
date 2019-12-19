@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'easy_thumbnails',
     'admin_auto_filters',
     'image_cropping',
+    'reversion',
 
     'rest_framework',
     'rest_framework.authtoken',

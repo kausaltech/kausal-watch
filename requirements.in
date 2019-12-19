@@ -30,3 +30,4 @@ django-import-export
 Jinja2
 django-parler
 django-anymail[mailgun]
+django-reversion
