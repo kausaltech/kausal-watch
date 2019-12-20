@@ -209,6 +209,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             form.base_fields['schedule'].queryset = plan.action_schedules.all()
         if 'impact' in form.base_fields:
             form.base_fields['impact'].queryset = plan.action_impacts.all()
+        if 'merged_with' in form.base_fields:
+            form.base_fields['merged_with'].queryset = plan.actions.unmerged()
         if 'decision_level' in form.base_fields:
             form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
         if 'categories' in form.base_fields:
@@ -221,6 +223,11 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
         return qs.filter(plan=plan).prefetch_related('contact_persons', 'tasks').select_related('impact', 'plan')
+
+    def get_search_results(self, request, queryset, search_term):
+        # Autocomplete should only return unmerged actions
+        queryset = queryset.unmerged()
+        return super().get_search_results(request, queryset, search_term)
 
     def get_list_display(self, request):
         user = request.user
@@ -285,7 +292,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
 
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
-                'fields': ('internal_priority', 'internal_priority_comment', 'impact'),
+                'fields': ('internal_priority', 'internal_priority_comment', 'impact', 'merged_with'),
             }))
             fieldsets.insert(2, (_('Schedule and decision level'), {
                 'fields': ('schedule', 'decision_level')
@@ -403,7 +410,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
         if 'content' in form.base_fields:
             form.base_fields['content'].widget = CKEditorWidget(config_name='lite')
         if 'action' in form.base_fields:
-            form.base_fields['action'].queryset = plan.actions.modifiable_by(request.user)
+            form.base_fields['action'].queryset = plan.actions.unmerged().modifiable_by(request.user)
 
         return form
 

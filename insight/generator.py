@@ -29,7 +29,7 @@ class ActionGraphGenerator(GraphGenerator):
         self.indicators = {}
 
     def fetch_data(self):
-        action_qs = self.plan.actions.all()
+        action_qs = self.plan.actions.unmerged()
         self.actions = {obj.id: obj for obj in action_qs}
         action_indicators = ActionIndicator.objects.filter(action__in=action_qs)
         for ai in action_indicators:

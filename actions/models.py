@@ -70,6 +70,12 @@ class ActionQuerySet(models.QuerySet):
         query |= Q(responsible_parties__organization__in=user.get_adminable_organizations())
         return self.filter(query).distinct()
 
+    def unmerged(self):
+        return self.filter(merged_with__isnull=True)
+
+    def active(self):
+        return self.umerged().filter(status__is_completed=False)
+
 
 class Action(ModelWithImage, OrderedModel):
     plan = models.ForeignKey(
@@ -102,6 +108,11 @@ class Action(ModelWithImage, OrderedModel):
     status = models.ForeignKey(
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('status'),
+    )
+    merged_with = models.ForeignKey(
+        'Action', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('merged with action'), help_text=_('Set if this action is merged with another action'),
+        related_name='merged_actions'
     )
     completion = models.PositiveIntegerField(
         null=True, blank=True, verbose_name=_('completion'), editable=False,
@@ -149,15 +160,24 @@ class Action(ModelWithImage, OrderedModel):
         return "%s. %s" % (self.identifier, self.name)
 
     def clean(self):
+        if self.merged_with is not None:
+            other = self.merged_with
+            if other.merged_with == self:
+                raise ValidationError({'merged_with': _('Other action is merged with this one')})
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
         # same action plan.
-        super().clean()
+
+    def is_merged(self):
+        return self.merged_with_id is not None
+
+    def is_active(self):
+        return not self.is_merged() and (self.status is None or not self.status.is_completed)
 
     def get_next_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__gt=self.order).first()
+        return Action.objects.filter(plan=self.plan_id, order__gt=self.order).unmerged().first()
 
     def get_previous_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__lt=self.order).order_by('-order').first()
+        return Action.objects.filter(plan=self.plan_id, order__lt=self.order).unmerged().order_by('-order').first()
 
     def _calculate_status_from_indicators(self):
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
@@ -252,6 +272,9 @@ class Action(ModelWithImage, OrderedModel):
         return by_id['late']
 
     def recalculate_status(self):
+        if self.merged_with is not None:
+            return
+
         if self.status is not None and self.status.is_completed:
             if self.completion != 100:
                 self.completion = 100

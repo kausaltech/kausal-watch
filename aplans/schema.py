@@ -164,7 +164,7 @@ class ActionNode(DjangoNode, WithImageMixin):
             'id', 'plan', 'name', 'official_name', 'identifier', 'description', 'status',
             'completion', 'schedule', 'decision_level', 'responsible_parties',
             'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
-            'related_indicators', 'impact', 'status_updates',
+            'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         ]
 
     def resolve_next_action(self, info):

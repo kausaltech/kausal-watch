@@ -152,6 +152,9 @@ class User(AbstractUser):
         if plan is not None:
             if self.is_general_admin_for_plan(plan):
                 return True
+        if action is not None and action.is_merged():
+            # Merged actions can only be edited by admins
+            return False
         return self.is_contact_person_for_action(action) \
             or self.is_organization_admin_for_action(action)
 

@@ -243,12 +243,12 @@ class NotificationEngine:
         self._fetch_data()
 
         for task in self.active_tasks:
-            if task.action._ignore or task.action.status.is_completed:
+            if task.action._ignore or not task.action.is_active():
                 continue
             self.generate_task_notifications(task)
 
         for action in self.actions_by_id.values():
-            if action._ignore or action.status.is_completed:
+            if action._ignore or not task.action.is_active():
                 continue
             self.make_action_notifications(action)
 
