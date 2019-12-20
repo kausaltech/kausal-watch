@@ -145,6 +145,23 @@ class AllActionsFilter(admin.SimpleListFilter):
             return queryset
 
 
+class ImpactFilter(admin.SimpleListFilter):
+    title = _('impact')
+    parameter_name = 'impact'
+
+    def lookups(self, request, model_admin):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        choices = [(i.id, i.name) for i in plan.action_impacts.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(impact=self.value())
+        else:
+            return queryset
+
+
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')
     field_name = 'contact_persons_unordered'
@@ -229,7 +246,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             filters.append(('internal_priority', RangeNumericFilter))
         else:
             filters.append(AllActionsFilter)
-        filters.append('impact')
+        filters.append(ImpactFilter)
         filters.append(ContactPersonFilter)
 
         return filters
