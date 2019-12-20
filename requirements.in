@@ -21,7 +21,7 @@ easy-thumbnails
 Pillow
 sentry-sdk
 graphene-django
-graphene-django-optimizer
+-e git+https://github.com/juyrjola/graphene-django-optimizer.git#egg=graphene-django-optimizer
 aniso8601
 django-admin-numeric-filter
 django-admin-ordering
