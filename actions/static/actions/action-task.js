@@ -25,14 +25,11 @@
                     var now = new Date();
                     var val = now.strftime(get_format('DATE_INPUT_FORMATS')[0]);
                     inputEl.val(val);
-                    inputEl.data('setAutomatically', true);
                 }
                 completedAt.show();
             } else {
+                inputEl.val('');
                 completedAt.hide();
-                if (inputEl.data('setAutomatically')) {
-                    inputEl.val('');
-                }
             }
         });
     }
