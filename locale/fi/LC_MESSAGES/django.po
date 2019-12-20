@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-12-19 06:25+0200\n"
+"POT-Creation-Date: 2019-12-20 15:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -29,6 +29,10 @@ msgstr "Näytä muokattavat"
 #: actions/admin.py
 msgid "Show all"
 msgstr "Näytä kaikki"
+
+#: actions/admin.py actions/models.py
+msgid "impact"
+msgstr "vaikuttavuus"
 
 #: actions/admin.py
 msgid "Contact person"
@@ -121,10 +125,6 @@ msgid "What does this action involve in more detail?"
 msgstr "Mitä toimenpiteeseen tarkemmin liittyy?"
 
 #: actions/models.py
-msgid "impact"
-msgstr "vaikuttavuus"
-
-#: actions/models.py
 msgid "The impact of this action"
 msgstr "Toimenpiteen vaikuttavuus"
 
@@ -139,6 +139,14 @@ msgstr "sisäisen prioriteetin kommentti"
 #: actions/models.py
 msgid "status"
 msgstr "tila"
+
+#: actions/models.py
+msgid "merged with action"
+msgstr "yhdistetty toimenpiteeseen"
+
+#: actions/models.py
+msgid "Set if this action is merged with another action"
+msgstr "Aseta jos toimenpide on yhdistetty toiseen toimenpiteeseen"
 
 #: actions/models.py
 msgid "completion"
@@ -179,6 +187,10 @@ msgstr "toimenpiteet"
 #: actions/models.py
 msgid "Can administrate all actions"
 msgstr "Voi ylläpitää kaikkia toimenpiteitä"
+
+#: actions/models.py
+msgid "Other action is merged with this one"
+msgstr "Toinen toimenpide on jo yhdistetty tähän"
 
 #: actions/models.py
 msgid "Has contact persons"
