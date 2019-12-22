@@ -155,6 +155,7 @@ class ActionTaskNode(DjangoNode):
 class ActionNode(DjangoNode, WithImageMixin):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
+    categories = graphene.List(CategoryNode, category_type=graphene.ID())
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
 
@@ -172,6 +173,15 @@ class ActionNode(DjangoNode, WithImageMixin):
 
     def resolve_previous_action(self, info):
         return self.get_previous_action()
+
+    @gql_optimizer.resolver_hints(
+        model_field='categories',
+    )
+    def resolve_categories(self, info, category_type=None):
+        qs = self.categories.all()
+        if category_type is not None:
+            qs = qs.filter(type__identifier=category_type)
+        return qs
 
 
 class RelatedIndicatorNode(DjangoNode):
@@ -347,7 +357,7 @@ class Query(graphene.ObjectType):
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String()
     )
-    plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True))
+    plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID())
     plan_organizations = graphene.List(OrganizationNode, plan=graphene.ID(required=True))
     plan_indicators = graphene.List(
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
@@ -374,11 +384,23 @@ class Query(graphene.ObjectType):
 
         return gql_optimizer.query(qs, info)
 
+    def resolve_categories(self, info, category_type):
+        qs = self.categories
+        if type is not None:
+            qs = qs.filter(type__identifier=type)
+        return qs
+
     def resolve_plan_categories(self, info, **kwargs):
         qs = Category.objects.all()
+
         plan = kwargs.get('plan')
         if plan is not None:
             qs = qs.filter(type__plan__identifier=plan)
+
+        category_type = kwargs.get('category_type')
+        if category_type is not None:
+            qs = qs.filter(type__identifier=category_type)
+
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_organizations(self, info, **kwargs):
