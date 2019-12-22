@@ -494,8 +494,16 @@ class ActionImpact(OrderedModel):
 
 class CategoryType(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='category_types')
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
+    editable_for_actions = models.BooleanField(
+        default=False,
+        verbose_name=_('editable for actions'),
+    )
+    editable_for_indicators = models.BooleanField(
+        default=False,
+        verbose_name=_('editable for indicators'),
+    )
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -509,7 +517,7 @@ class CategoryType(models.Model):
 
 class Category(OrderedModel, ModelWithImage):
     type = models.ForeignKey(
-        CategoryType, on_delete=models.CASCADE, related_name='categories',
+        CategoryType, on_delete=models.PROTECT, related_name='categories',
         verbose_name=_('type')
     )
     identifier = IdentifierField()
@@ -526,7 +534,10 @@ class Category(OrderedModel, ModelWithImage):
         ordering = ('type', 'identifier')
 
     def __str__(self):
-        return "%s %s" % (self.identifier, self.name)
+        if self.identifier and self.identifier[0].isnumeric():
+            return "%s %s" % (self.identifier, self.name)
+        else:
+            return self.name
 
 
 class Scenario(models.Model):

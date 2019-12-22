@@ -162,23 +162,38 @@ class IndicatorAdmin(AplansModelAdmin):
         return ret + (has_goals, 'has_datasets',)
 
     def get_form(self, request, obj=None, **kwargs):
+        plan = request.user.get_active_admin_plan()
+
+        # Override the form class with a dynamic class that includes our
+        # type-specific category fields.
+        self.form = type(
+            'IndicatorAdminForm',
+            (forms.ModelForm,),
+            self._get_category_fields(plan, obj, with_initial=True),
+        )
+
         form = super().get_form(request, obj, **kwargs)
-
-        active_plan = request.user.get_active_admin_plan()
-
-        if obj is None:
-            plans = [active_plan]
-        else:
-            plans = obj.plans.all()
 
         if 'description' in form.base_fields:
             form.base_fields['description'].widget = CKEditorWidget()
 
-        if 'categories' in form.base_fields:
-            categories = Category.objects.filter(type__plan__in=plans).order_by('type', 'identifier').distinct()
-            form.base_fields['categories'].queryset = categories
-
         return form
+
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = super().get_fieldsets(request, obj)
+
+        plan = request.user.get_active_admin_plan()
+        category_fields = list(self._get_category_fields(plan, obj).keys())
+
+        fs = fieldsets[0][1]
+        for field_name in ['categories', *category_fields]:
+            if field_name in fs['fields']:
+                fs['fields'].remove(field_name)
+
+        fieldsets.append(
+            (_('Categories'), dict(fields=(x for x in category_fields)))
+        )
+        return fieldsets
 
     def get_inline_instances(self, request, obj=None):
         inlines = super().get_inline_instances(request, obj)
@@ -226,6 +241,18 @@ class IndicatorAdmin(AplansModelAdmin):
         for act_ind in actions:
             act = act_ind.action
             act.recalculate_status()
+
+        plan = request.user.get_active_admin_plan()
+        for field_name, field in self._get_category_fields(plan, obj).items():
+            if field_name not in form.cleaned_data:
+                continue
+            cat_type = field.category_type
+            existing_cats = set(obj.categories.filter(type=cat_type))
+            new_cats = set(form.cleaned_data[field_name])
+            for cat in existing_cats - new_cats:
+                obj.categories.remove(cat)
+            for cat in new_cats - existing_cats:
+                obj.categories.add(cat)
 
 
 @admin.register(Dataset)

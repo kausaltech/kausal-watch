@@ -1,7 +1,10 @@
+from django import forms
 from django.utils.translation import ugettext_lazy as _
 from helusers.admin_site import AdminSite as HelusersAdminSite
-from django.contrib import admin
 from reversion.admin import VersionAdmin
+
+from actions.models import Action
+from indicators.models import Indicator
 
 
 APP_ORDER = ['actions', 'indicators', 'content', 'people']
@@ -39,6 +42,28 @@ class AplansAdminSite(HelusersAdminSite):
 
 
 class AplansModelAdmin(VersionAdmin):
+    def _get_category_fields(self, plan, obj, with_initial=False):
+        fields = {}
+        if self.model == Action:
+            filter_name = 'editable_for_actions'
+        elif self.model == Indicator:
+            filter_name = 'editable_for_indicators'
+        else:
+            raise Exception()
+
+        for cat_type in plan.category_types.filter(**{filter_name: True}):
+            qs = cat_type.categories.all()
+            if obj and with_initial:
+                initial = obj.categories.filter(type=cat_type)
+            else:
+                initial = None
+            field = forms.ModelMultipleChoiceField(
+                qs, label=cat_type.name, initial=initial, required=False,
+            )
+            field.category_type = cat_type
+            fields['categories_%s' % cat_type.identifier] = field
+        return fields
+
     class Media:
         # Aplans Admin UI customizations:
         # - Notify if the user is about to leave with unsaved changes.

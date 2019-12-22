@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -46,7 +47,7 @@ class ActionImpactAdmin(OrderableAdmin, admin.TabularInline):
     fields = ('order', 'name', 'identifier',)
 
 
-class CategoryTypeAdmin(admin.StackedInline):
+class CategoryTypeAdmin(admin.TabularInline):
     model = CategoryType
     extra = 0
 
@@ -176,7 +177,6 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         (None, {
             'fields': (
                 'plan', 'identifier', 'official_name', 'name', 'description',
-                'categories',
             )
         }),
         (_('Completion'), {
@@ -190,15 +190,23 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     ]
 
     def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-
-        if 'description' in form.base_fields:
-            form.base_fields['description'].widget = CKEditorWidget()
-
         if obj is not None:
             plan = obj.plan
         else:
             plan = request.user.get_active_admin_plan()
+
+        # Override the form class with a dynamic class that includes our
+        # type-specific category fields.
+        self.form = type(
+            'ActionAdminForm',
+            (forms.ModelForm,),
+            self._get_category_fields(plan, obj, with_initial=True),
+        )
+
+        form = super().get_form(request, obj, **kwargs)
+
+        if 'description' in form.base_fields:
+            form.base_fields['description'].widget = CKEditorWidget()
 
         # Limit choices to what's available in the action plan
         if 'plan' in form.base_fields:
@@ -213,9 +221,6 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             form.base_fields['merged_with'].queryset = plan.actions.unmerged()
         if 'decision_level' in form.base_fields:
             form.base_fields['decision_level'].queryset = plan.action_decision_levels.all()
-        if 'categories' in form.base_fields:
-            categories = Category.objects.filter(type__plan=plan).order_by('identifier')
-            form.base_fields['categories'].queryset = categories
 
         return form
 
@@ -261,7 +266,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     def get_readonly_fields(self, request, obj=None):
         readonly_fields = ['completion']
         LOCKED_FIELDS = [
-            'official_name', 'identifier', 'completion', 'categories',
+            'official_name', 'identifier', 'completion',
         ]
         if obj is None:
             # This is an add request
@@ -297,6 +302,11 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             fieldsets.insert(2, (_('Schedule and decision level'), {
                 'fields': ('schedule', 'decision_level')
             }))
+
+            fs = fieldsets[0][1]
+            fields = list(fs['fields']) + list(self._get_category_fields(plan, obj).keys())
+            fs['fields'] = fields
+
         return fieldsets
 
     def get_actions(self, request):
@@ -357,18 +367,32 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
 
     def save_model(self, request, obj, form, change):
         obj.updated_at = timezone.now()
-        ret = super().save_model(request, obj, form, change)
+        super().save_model(request, obj, form, change)
+
+        # Update categories
+        plan = obj.plan
+        for field_name, field in self._get_category_fields(plan, obj).items():
+            if field_name not in form.cleaned_data:
+                continue
+            cat_type = field.category_type
+            existing_cats = set(obj.categories.filter(type=cat_type))
+            new_cats = set(form.cleaned_data[field_name])
+            for cat in existing_cats - new_cats:
+                obj.categories.remove(cat)
+            for cat in new_cats - existing_cats:
+                obj.categories.add(cat)
+
         # Save the object reference so that it can be used in the following
         # save_related() call.
         self._saved_object = obj
-        return ret
 
     def save_related(self, request, form, formsets, change):
         ret = super().save_related(request, form, formsets, change)
-        obj = getattr(self, '_saved_object', None)
+
+        obj = self._saved_object
         # After the tasks have been saved, recalculate status
-        if obj:
-            obj.recalculate_status()
+        obj.recalculate_status()
+
         return ret
 
 
