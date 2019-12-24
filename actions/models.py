@@ -305,6 +305,23 @@ class Action(ModelWithImage, OrderedModel):
             return
         self.save(update_fields=update_fields)
 
+    def set_categories(self, type, categories):
+        if isinstance(type, str):
+            type = self.plan.category_types.get(identifier=type)
+        all_cats = {x.identifier: x for x in type.categories.all()}
+
+        existing_cats = set(self.categories.filter(type=type))
+        new_cats = set()
+        for cat in categories:
+            if isinstance(cat, str):
+                cat = all_cats[cat]
+            new_cats.add(cat)
+
+        for cat in existing_cats - new_cats:
+            self.categories.remove(cat)
+        for cat in new_cats - existing_cats:
+            self.categories.add(cat)
+
     def get_notification_context(self):
         change_url = reverse('admin:actions_action_change', args=(self.id,))
         return {

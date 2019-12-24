@@ -288,7 +288,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         user = request.user
         plan = user.get_active_admin_plan()
 
-        fieldsets = list(self.fieldsets)
+        fieldsets = list((name, dict(attrs)) for name, attrs in self.fieldsets)
         if plan.allow_images_for_actions:
             fieldsets.insert(1, (_('Image'), {
                 'fields': ('image', 'image_cropping'),
@@ -375,12 +375,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
             if field_name not in form.cleaned_data:
                 continue
             cat_type = field.category_type
-            existing_cats = set(obj.categories.filter(type=cat_type))
-            new_cats = set(form.cleaned_data[field_name])
-            for cat in existing_cats - new_cats:
-                obj.categories.remove(cat)
-            for cat in new_cats - existing_cats:
-                obj.categories.add(cat)
+            obj.set_categories(cat_type, form.cleaned_data[field_name])
 
         # Save the object reference so that it can be used in the following
         # save_related() call.
@@ -441,6 +436,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
 
 @admin.register(Category)
 class CategoryAdmin(ImageCroppingMixin, admin.ModelAdmin):
+    list_display = ['__str__', 'type']
     fields = ('type', 'parent', 'identifier', 'name', 'image', 'image_cropping')
 
     def get_queryset(self, request):
@@ -450,14 +446,13 @@ class CategoryAdmin(ImageCroppingMixin, admin.ModelAdmin):
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
-        adminable_plans = request.user.get_adminable_plans()
         plan = request.user.get_active_admin_plan()
 
         # Limit choices to what's available in the action plan
         field = form.base_fields['type']
         if obj is None:
             field.initial = plan
-        field.queryset = field.queryset.filter(plan__in=adminable_plans).distinct()
+        field.queryset = field.queryset.filter(plan=plan)
 
         field = form.base_fields['parent']
         if obj is not None:
