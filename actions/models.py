@@ -544,7 +544,7 @@ class Category(OrderedModel, ModelWithImage):
         verbose_name=_('parent category')
     )
     short_description = models.CharField(
-        max_length=100, blank=True, verbose_name=_('short description')
+        max_length=200, blank=True, verbose_name=_('short description')
     )
 
     class Meta:
