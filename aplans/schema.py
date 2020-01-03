@@ -318,10 +318,11 @@ class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
         only_fields = [
-            'site_title', 'site_description', 'hero_content', 'action_list_lead_content',
-            'indicator_list_lead_content', 'official_name_description',
-            'copyright_text', 'creative_commons_license', 'github_api_repository',
-            'github_ui_repository'
+            'site_title', 'site_description', 'hero_content', 'owner_url', 'owner_name',
+            'action_short_description', 'indicator_short_description',
+            'action_list_lead_content', 'indicator_list_lead_content',
+            'official_name_description', 'copyright_text', 'creative_commons_license',
+            'github_api_repository', 'github_ui_repository'
         ]
 
 

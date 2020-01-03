@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2019-12-20 15:20+0200\n"
+"POT-Creation-Date: 2020-01-03 12:41+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -321,6 +321,14 @@ msgid "action impact classes"
 msgstr "toimenpiteen vaikuttavuusluokat"
 
 #: actions/models.py
+msgid "editable for actions"
+msgstr "muokattavissa toimenpiteille"
+
+#: actions/models.py
+msgid "editable for indicators"
+msgstr "muokattavissa mittareille"
+
+#: actions/models.py
 msgid "category type"
 msgstr "luokan tyyppi"
 
@@ -483,6 +491,22 @@ msgid "hero content"
 msgstr "heron kuvaus"
 
 #: content/models.py
+msgid "URL for the owner of the site"
+msgstr "Sivuston omistajaorganisaation URL"
+
+#: content/models.py
+msgid "Name of the owner of the site"
+msgstr "Sivuston omistajaorganisaation nimi"
+
+#: content/models.py
+msgid "Short description for what actions are"
+msgstr "Lyhyt kuvaus mitä toimenpiteet ovat"
+
+#: content/models.py
+msgid "Short description for what indicators are"
+msgstr "Lyhyt kuvaus mitä mittarit ovat"
+
+#: content/models.py
 msgid "action list lead content"
 msgstr "toimenpidelistan ingressi"
 
@@ -537,6 +561,10 @@ msgstr "[ei mitään]"
 #: indicators/admin.py
 msgid "has goals"
 msgstr "on tavoitteita"
+
+#: indicators/admin.py
+msgid "Categories"
+msgstr "Luokat"
 
 #: indicators/apps.py
 msgid "Indicators"
