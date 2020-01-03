@@ -543,6 +543,9 @@ class Category(OrderedModel, ModelWithImage):
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')
     )
+    short_description = models.CharField(
+        max_length=100, blank=True, verbose_name=_('short description')
+    )
 
     class Meta:
         unique_together = (('type', 'identifier'),)
