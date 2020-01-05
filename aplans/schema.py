@@ -1,6 +1,7 @@
 import re
 import pytz
 import graphene
+import libvoikko
 from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
 import graphene_django_optimizer as gql_optimizer
@@ -22,6 +23,31 @@ from django_orghierarchy.models import Organization, OrganizationClass
 
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
+
+
+voikko_fi = libvoikko.Voikko(language='fi')
+voikko_fi.setNoUglyHyphenation(True)
+voikko_fi.setMinHyphenatedWordLength(12)
+
+_hyphenation_cache = {}
+
+
+def hyphenate(s):
+    tokens = voikko_fi.tokens(s)
+    out = ''
+    for t in tokens:
+        if t.tokenTypeName != 'WORD':
+            out += t.tokenText
+            continue
+
+        cached = _hyphenation_cache.get(t.tokenText, None)
+        if cached is not None:
+            out += cached
+        else:
+            val = voikko_fi.hyphenate(t.tokenText, separator='\u00ad')
+            _hyphenation_cache[t.tokenText] = val
+            out += val
+    return out
 
 
 class WithImageMixin:
@@ -155,6 +181,7 @@ class ActionTaskNode(DjangoNode):
 class ActionNode(DjangoNode, WithImageMixin):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
+    name = graphene.String(hyphenated=graphene.Boolean())
     categories = graphene.List(CategoryNode, category_type=graphene.ID())
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
@@ -173,6 +200,17 @@ class ActionNode(DjangoNode, WithImageMixin):
 
     def resolve_previous_action(self, info):
         return self.get_previous_action()
+
+    @gql_optimizer.resolver_hints(
+        model_field='name',
+    )
+    def resolve_name(self, info, hyphenated=False):
+        name = self.name
+        if name is None:
+            return None
+        if hyphenated:
+            name = hyphenate(name)
+        return name
 
     @gql_optimizer.resolver_hints(
         model_field='categories',

@@ -33,3 +33,4 @@ django-anymail[mailgun]
 django-reversion
 pytest-django
 pytest-cov
+libvoikko
