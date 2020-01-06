@@ -27,7 +27,7 @@ LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
 voikko_fi = libvoikko.Voikko(language='fi')
 voikko_fi.setNoUglyHyphenation(True)
-voikko_fi.setMinHyphenatedWordLength(12)
+voikko_fi.setMinHyphenatedWordLength(16)
 
 _hyphenation_cache = {}
 
