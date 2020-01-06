@@ -211,9 +211,8 @@ class Action(ModelWithImage, OrderedModel):
 
             # Figure out if the action is late or not by comparing
             # the latest measured value to the closest goal
-            try:
-                closest_goal = ind.goals.filter(plan=self.plan, date__gte=latest_value.date).first()
-            except ind.goals.model.DoesNotExist:
+            closest_goal = ind.goals.filter(plan=self.plan, date__lte=latest_value.date).last()
+            if closest_goal is None:
                 continue
 
             # Are we supposed to up or down?
