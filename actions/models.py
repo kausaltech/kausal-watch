@@ -39,6 +39,13 @@ class Plan(ModelWithImage, models.Model):
         help_text=_('Users that can modify everything related to the action plan')
     )
 
+    public_fields = [
+        'id', 'name', 'identifier', 'image_url', 'action_schedules',
+        'actions', 'category_types', 'action_statuses', 'indicator_levels',
+        'indicators', 'action_impacts', 'blog_posts', 'static_pages',
+        'general_content',
+    ]
+
     class Meta:
         verbose_name = _('plan')
         verbose_name_plural = _('plans')
@@ -146,6 +153,14 @@ class Action(ModelWithImage, OrderedModel):
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
     objects = ActionQuerySet.as_manager()
+
+    # Used by GraphQL + REST API code
+    public_fields = [
+        'id', 'plan', 'name', 'official_name', 'identifier', 'description', 'status',
+        'completion', 'schedule', 'decision_level', 'responsible_parties',
+        'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
+        'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
+    ]
 
     class Meta:
         verbose_name = _('action')

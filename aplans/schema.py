@@ -122,12 +122,7 @@ class PlanNode(DjangoNode, WithImageMixin):
 
     class Meta:
         model = Plan
-        only_fields = [
-            'id', 'name', 'identifier', 'image_url', 'action_schedules',
-            'actions', 'category_types', 'action_statuses', 'indicator_levels',
-            'indicators', 'action_impacts', 'blog_posts', 'static_pages',
-            'general_content',
-        ]
+        only_fields = Plan.public_fields
 
 
 class ActionScheduleNode(DjangoNode):
@@ -188,12 +183,7 @@ class ActionNode(DjangoNode, WithImageMixin):
 
     class Meta:
         model = Action
-        only_fields = [
-            'id', 'plan', 'name', 'official_name', 'identifier', 'description', 'status',
-            'completion', 'schedule', 'decision_level', 'responsible_parties',
-            'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
-            'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
-        ]
+        only_fields = Action.public_fields
 
     def resolve_next_action(self, info):
         return self.get_next_action()

@@ -2,7 +2,6 @@ django<3.0
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
 djangorestframework
 django-helusers
--e git+https://github.com/juyrjola/django-rest-framework-json-api.git#egg=djangorestframework-jsonapi
 django-helusers
 social-auth-app-django
 psycopg2-binary

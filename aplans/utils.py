@@ -1,3 +1,4 @@
+from typing import Iterable, List
 import re
 from django.db import models
 from django.core.validators import RegexValidator
@@ -7,6 +8,19 @@ from django.utils.translation import gettext_lazy as _
 def camelcase_to_underscore(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def public_fields(
+    model: models.Model,
+    add_fields: Iterable[str] = None,
+    remove_fields: Iterable[str] = None
+) -> List[str]:
+    fields = model.public_fields
+    if remove_fields is not None:
+        fields = [f for f in fields if f not in remove_fields]
+    if add_fields is not None:
+        fields += add_fields
+    return fields
 
 
 def register_view_helper(view_list, klass, name=None, basename=None):

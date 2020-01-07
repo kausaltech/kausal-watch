@@ -1,11 +1,8 @@
-from rest_framework import viewsets
-from rest_framework_json_api import serializers
-from rest_framework_json_api import views
-from rest_framework_json_api.relations import ResourceRelatedField
+from rest_framework import viewsets, serializers, views
 
 from django_orghierarchy.models import Organization
 
-from aplans.utils import register_view_helper
+from aplans.utils import register_view_helper, public_fields
 from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
 from people.models import Person
 from .models import (
@@ -157,39 +154,22 @@ class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
 
 
 @register_view
-class PersonViewSet(views.ModelViewSet, ModelWithImageViewMixin):
+class PersonViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
 
 
 class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
-    included_serializers = {
-        'plan': PlanSerializer,
-        'schedule': ActionScheduleSerializer,
-        'status': ActionStatusSerializer,
-        'categories': CategorySerializer,
-        'tasks': 'actions.api.ActionTaskSerializer',
-        'indicators': 'indicators.api.IndicatorSerializer',
-        'decision_level': ActionDecisionLevelSerializer,
-    }
-    tasks = ResourceRelatedField(queryset=ActionTask.objects, many=True)
-
     class Meta:
         model = Action
-        exclude = ('order',)
+        fields = public_fields(Action, remove_fields=[
+            'responsible_parties', 'contact_persons', 'impact', 'status_updates',
+        ])
 
 
 @register_view
-class ActionViewSet(views.ModelViewSet, ModelWithImageViewMixin):
+class ActionViewSet(viewsets.ModelViewSet, ModelWithImageViewMixin):
     queryset = Action.objects.all()
-    prefetch_for_includes = {
-        '__all__': [
-            'indicators', 'schedule', 'categories', 'tasks',
-        ],
-        'plan': ['plan'],
-        'status': ['status'],
-        'decision_level': ['decision_level'],
-    }
     serializer_class = ActionSerializer
     filterset_fields = {
         'plan': ('exact',),

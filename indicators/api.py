@@ -3,11 +3,10 @@ import pytz
 from datetime import datetime
 from plotly.graph_objs import Figure
 from plotly.exceptions import PlotlyError
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, serializers
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework_json_api import serializers
 from django.conf import settings
 import django_filters as filters
 from sentry_sdk import push_scope, capture_exception
