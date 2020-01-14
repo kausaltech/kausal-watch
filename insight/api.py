@@ -60,7 +60,7 @@ class InsightViewSet(viewsets.ViewSet):
                 nodes = [indicator]
             else:
                 traverse_direction = 'both'
-                nodes = Action.objects.filter(plan=plan, indicators__isnull=False)
+                nodes = Action.objects.filter(plan=plan, indicators__isnull=False).unmerged()
 
             generator = ActionGraphGenerator(request=request, plan=plan, traverse_direction=traverse_direction)
             generator.fetch_data()

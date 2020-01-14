@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-01-03 12:41+0200\n"
+"POT-Creation-Date: 2020-01-14 17:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -345,6 +345,10 @@ msgid "parent category"
 msgstr "yläluokka"
 
 #: actions/models.py
+msgid "short description"
+msgstr "lyhyt kuvaus"
+
+#: actions/models.py
 msgid "category"
 msgstr "luokka"
 
@@ -383,6 +387,22 @@ msgstr "toimenpiteen tilannepäivitys"
 #: actions/models.py
 msgid "action status updates"
 msgstr "toimenpiteiden tilannepäivitykset"
+
+#: actions/models.py
+msgid "parent"
+msgstr "yläluokka"
+
+#: actions/models.py
+msgid "weight"
+msgstr "paino"
+
+#: actions/models.py
+msgid "impact group action"
+msgstr "toimenpiteen vaikuttavuusryhmä"
+
+#: actions/models.py
+msgid "impact group actions"
+msgstr "toimenpiteen vaikuttavuusryhmät"
 
 #: admin_site/admin.py
 #, python-format

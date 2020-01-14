@@ -10,7 +10,9 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
+from parler.models import TranslatableModel, TranslatedFields
 from django_orghierarchy.models import Organization
+
 from aplans.utils import IdentifierField, OrderedModel
 from aplans.model_images import ModelWithImage
 
@@ -42,8 +44,8 @@ class Plan(ModelWithImage, models.Model):
     public_fields = [
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
-        'indicators', 'action_impacts', 'blog_posts', 'static_pages',
-        'general_content',
+        'action_impacts', 'blog_posts', 'static_pages', 'general_content',
+        'impact_groups',
     ]
 
     class Meta:
@@ -160,6 +162,7 @@ class Action(ModelWithImage, OrderedModel):
         'completion', 'schedule', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
+        'impact_groups',
     ]
 
     class Meta:
@@ -623,3 +626,58 @@ class ActionStatusUpdate(models.Model):
 
     def __str__(self):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)
+
+
+class ImpactGroup(TranslatableModel):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='impact_groups',
+        verbose_name=_('plan')
+    )
+    identifier = IdentifierField()
+    parent = models.ForeignKey(
+        'self', on_delete=models.SET_NULL, related_name='children', null=True, blank=True,
+        verbose_name=_('parent')
+    )
+    weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
+
+    translations = TranslatedFields(
+        name=models.CharField(
+            verbose_name=_('name'), max_length=200
+        ),
+    )
+
+    public_fields = [
+        'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'actions',
+    ]
+
+    class Meta:
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('scenario')
+        verbose_name_plural = _('scenarios')
+        ordering = ('plan', '-weight')
+
+    def __str__(self):
+        return self.name
+
+
+class ImpactGroupAction(models.Model):
+    group = models.ForeignKey(
+        ImpactGroup, verbose_name=_('name'), on_delete=models.CASCADE,
+        related_name='actions',
+    )
+    action = models.ForeignKey(
+        Action, verbose_name=_('action'), on_delete=models.CASCADE,
+        related_name='impact_groups',
+    )
+    impact = models.ForeignKey(
+        ActionImpact, verbose_name=_('impact'), on_delete=models.PROTECT,
+        related_name='+',
+    )
+
+    class Meta:
+        unique_together = (('group', 'action'),)
+        verbose_name = _('impact group action')
+        verbose_name_plural = _('impact group actions')
+
+    def __str__(self):
+        return "%s ➜ %s" % (self.action, self.group)

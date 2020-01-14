@@ -6,10 +6,11 @@ from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
 import graphene_django_optimizer as gql_optimizer
 
+from aplans.utils import public_fields
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
     ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson,
-    ActionStatusUpdate
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -91,7 +92,7 @@ class PersonNode(DjangoNode):
     class Meta:
         model = Person
         only_fields = [
-            'id', 'first_name', 'last_name', 'title', 'email', 'organization', 'avatar_url',
+            'id', 'first_name', 'last_name', 'title', 'email', 'organization',
         ]
 
     def resolve_avatar_url(self, info):
@@ -122,7 +123,7 @@ class PlanNode(DjangoNode, WithImageMixin):
 
     class Meta:
         model = Plan
-        only_fields = Plan.public_fields
+        only_fields = public_fields(Plan, remove_fields=['image_url'])
 
 
 class ActionScheduleNode(DjangoNode):
@@ -166,6 +167,19 @@ class CategoryTypeNode(DjangoNode):
 class CategoryNode(DjangoNode, WithImageMixin):
     class Meta:
         model = Category
+
+
+class ImpactGroupNode(DjangoNode, WithImageMixin):
+    name = graphene.String()
+
+    class Meta:
+        model = ImpactGroup
+        only_fields = public_fields(ImpactGroup, remove_fields=['name'])
+
+
+class ImpactGroupActionNode(DjangoNode, WithImageMixin):
+    class Meta:
+        model = ImpactGroupAction
 
 
 class ActionTaskNode(DjangoNode):
@@ -260,8 +274,8 @@ class IndicatorNode(DjangoNode):
     class Meta:
         only_fields = [
             'id', 'identifier', 'name', 'description', 'time_resolution', 'unit', 'quantity',
-            'categories', 'plans', 'levels', 'level', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'goals', 'latest_value', 'related_indicators', 'action_indicators',
+            'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
+            'values', 'goals', 'latest_value', 'related_actions',
             'actions', 'related_causes', 'related_effects',
         ]
         model = Indicator
@@ -321,7 +335,7 @@ class StaticPageNode(DjangoNode, WithImageMixin):
     class Meta:
         model = StaticPage
         only_fields = [
-            'id', 'title', 'name', 'slug', 'tagline', 'image_url', 'content', 'parent', 'modified_at',
+            'id', 'title', 'name', 'slug', 'tagline', 'content', 'parent', 'modified_at',
             'questions', 'top_menu', 'footer',
         ]
 
@@ -330,7 +344,7 @@ class BlogPostNode(DjangoNode, WithImageMixin):
     class Meta:
         model = BlogPost
         only_fields = [
-            'id', 'title', 'slug', 'published_at', 'image_url', 'content',
+            'id', 'title', 'slug', 'published_at', 'content',
         ]
 
 

@@ -1,4 +1,4 @@
-from rest_framework import viewsets, serializers, views
+from rest_framework import viewsets, serializers, permissions
 
 from django_orghierarchy.models import Organization
 
@@ -7,7 +7,7 @@ from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerialize
 from people.models import Person
 from .models import (
     Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
-    ActionTask, ActionDecisionLevel
+    ActionTask, ActionDecisionLevel, ImpactGroup, ImpactGroupAction
 )
 
 
@@ -18,22 +18,27 @@ def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
-class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
-    last_action_identifier = serializers.SerializerMethodField()
+class ActionImpactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ActionDecisionLevel
+        fields = '__all__'
 
-    included_serializers = {
-        'action_schedules': 'actions.api.ActionScheduleSerializer',
-    }
+
+class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
+    action_impacts = ActionImpactSerializer(many=True)
 
     class Meta:
         model = Plan
-        fields = (
-            'name', 'identifier', 'image_url', 'action_schedules',
-            'last_action_identifier'
+        fields = public_fields(
+            Plan,
+            add_fields=['url'],
+            remove_fields=[
+                'static_pages', 'general_content', 'blog_posts', 'indicator_levels',
+            ]
         )
-
-    def get_last_action_identifier(self, obj):
-        return obj.get_last_action_identifier()
+        filterset_fields = {
+            'identifier': ('exact',),
+        }
 
 
 @register_view
@@ -81,6 +86,16 @@ class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ActionDecisionLevel
         fields = '__all__'
+
+
+@register_view
+class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
+    queryset = ActionDecisionLevel.objects.all()
+    serializer_class = ActionDecisionLevelSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
 
 
 @register_view
@@ -208,6 +223,25 @@ class ScenarioSerializer(serializers.HyperlinkedModelSerializer):
 class ScenarioViewSet(viewsets.ModelViewSet):
     queryset = Scenario.objects.all()
     serializer_class = ScenarioSerializer
+    filterset_fields = {
+        'plan': ('exact',),
+        'plan__identifier': ('exact',),
+    }
+
+
+class ImpactGroupSerializer(serializers.HyperlinkedModelSerializer):
+    name = serializers.CharField()  # translated field
+
+    class Meta:
+        model = ImpactGroup
+        fields = public_fields(ImpactGroup, remove_fields=['actions'])
+
+
+@register_view
+class ImpactGroupViewSet(viewsets.ModelViewSet):
+    queryset = ImpactGroup.objects.all()
+    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
+    serializer_class = ImpactGroupSerializer
     filterset_fields = {
         'plan': ('exact',),
         'plan__identifier': ('exact',),

@@ -18,7 +18,7 @@ from admin_site.admin import AplansModelAdmin
 from .models import (
     Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
     CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson,
-    ActionStatusUpdate
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction
 )
 from .perms import ActionRelatedAdminPermMixin
 
@@ -52,11 +52,17 @@ class CategoryTypeAdmin(admin.TabularInline):
     extra = 0
 
 
+class ImpactGroupAdmin(admin.TabularInline):
+    model = ImpactGroup
+    extra = 0
+
+
 @admin.register(Plan)
 class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
-        ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin
+        ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin,
+        ImpactGroupAdmin,
     ]
 
     def get_queryset(self, request):
@@ -94,6 +100,20 @@ class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admi
     extra = 0
     fields = ('person', 'order',)
     autocomplete_fields = ('person',)
+
+
+class ImpactGroupActionAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
+    model = ImpactGroupAction
+    extra = 0
+    fields = ('action', 'group', 'impact',)
+
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        user = request.user
+        plan = user.get_active_admin_plan()
+        formset.form.base_fields['impact'].queryset = plan.action_impacts.all()
+        formset.form.base_fields['group'].queryset = plan.impact_groups.all()
+        return formset
 
 
 class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
@@ -186,7 +206,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     )
 
     inlines = [
-        ActionResponsiblePartyAdmin, ActionContactPersonAdmin, ActionIndicatorAdmin, ActionTaskAdmin
+        ActionResponsiblePartyAdmin, ActionContactPersonAdmin, ImpactGroupActionAdmin,
+        ActionIndicatorAdmin, ActionTaskAdmin
     ]
 
     def get_form(self, request, obj=None, **kwargs):
