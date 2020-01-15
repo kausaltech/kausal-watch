@@ -4,6 +4,7 @@ from admin_ordering.admin import OrderableAdmin
 from ckeditor.widgets import CKEditorWidget
 from image_cropping import ImageCroppingMixin
 
+from aplans.utils import public_fields
 from .models import StaticPage, BlogPost, Question, SiteGeneralContent
 
 
@@ -79,19 +80,14 @@ class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
 
 @admin.register(SiteGeneralContent)
 class SiteGeneralContentAdmin(admin.ModelAdmin):
-    fields = [
-        'site_title', 'site_description', 'hero_content', 'owner_url', 'owner_name',
-        'action_short_description', 'indicator_short_description',
-        'action_list_lead_content', 'indicator_list_lead_content',
-        'official_name_description', 'copyright_text', 'creative_commons_license',
-        'github_api_repository', 'github_ui_repository'
-    ]
+    fields = public_fields(SiteGeneralContent)
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
         form.base_fields['hero_content'].widget = CKEditorWidget()
         form.base_fields['action_list_lead_content'].widget = CKEditorWidget()
         form.base_fields['indicator_list_lead_content'].widget = CKEditorWidget()
+        form.base_fields['dashboard_lead_content'].widget = CKEditorWidget()
         return form
 
     def get_queryset(self, request):
