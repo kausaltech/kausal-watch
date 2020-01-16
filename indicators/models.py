@@ -1,7 +1,7 @@
-
 from django.apps import apps
 from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from aplans.utils import IdentifierField, OrderedModel
@@ -169,6 +169,13 @@ class Indicator(models.Model):
             return
         self.latest_value = latest_value
         self.save(update_fields=['latest_value'])
+
+    def has_current_data(self):
+        return self.latest_value_id is not None
+
+    def has_current_goals(self):
+        now = timezone.now()
+        return self.goals.filter(date__gte=now).exists()
 
     def has_datasets(self):
         return self.datasets.exists()

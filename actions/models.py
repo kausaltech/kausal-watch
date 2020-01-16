@@ -17,6 +17,8 @@ from django_orghierarchy.models import Organization
 from aplans.utils import IdentifierField, OrderedModel
 from aplans.model_images import ModelWithImage
 
+from .monitoring_quality import determine_monitoring_quality
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -304,6 +306,8 @@ class Action(ModelWithImage, OrderedModel):
                 self.save(update_fields=['completion'])
             return
 
+        determine_monitoring_quality(self, self.plan.monitoring_quality_points.all())
+
         tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
         update_fields = []
 
@@ -453,6 +457,11 @@ class ActionDecisionLevel(models.Model):
         return self.name
 
 
+class ActionTaskQuerySet(models.QuerySet):
+    def active(self):
+        return self.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
+
+
 class ActionTask(models.Model):
     NOT_STARTED = 'not_started'
     IN_PROGRESS = 'in_progress'
@@ -490,6 +499,8 @@ class ActionTask(models.Model):
     modified_at = models.DateTimeField(auto_now=True, editable=False, verbose_name=_('modified at'))
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
+
+    objects = ActionTaskQuerySet.as_manager()
 
     class Meta:
         ordering = ('action', 'due_at')
