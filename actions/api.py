@@ -34,6 +34,7 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModel
             add_fields=['url'],
             remove_fields=[
                 'static_pages', 'general_content', 'blog_posts', 'indicator_levels',
+                'monitoring_quality_points'
             ]
         )
         filterset_fields = {
@@ -178,7 +179,7 @@ class ActionSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
     class Meta:
         model = Action
         fields = public_fields(Action, remove_fields=[
-            'responsible_parties', 'contact_persons', 'impact', 'status_updates',
+            'responsible_parties', 'contact_persons', 'impact', 'status_updates', 'monitoring_quality_points'
         ])
 
 
