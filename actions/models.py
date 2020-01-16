@@ -1,3 +1,4 @@
+import re
 import logging
 from datetime import date
 
@@ -628,6 +629,15 @@ class ActionStatusUpdate(models.Model):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)
 
 
+def validate_hex_color(s):
+    match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', s)
+    if not match:
+        raise ValidationError(
+            _('%(color)s is not a hex color (#112233)'),
+            params={'color': s},
+        )
+
+
 class ImpactGroup(TranslatableModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='impact_groups',
@@ -639,6 +649,10 @@ class ImpactGroup(TranslatableModel):
         verbose_name=_('parent')
     )
     weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
+    color = models.CharField(
+        max_length=16, verbose_name=_('color'), null=True, blank=True,
+        validators=[validate_hex_color]
+    )
 
     translations = TranslatedFields(
         name=models.CharField(
@@ -647,7 +661,7 @@ class ImpactGroup(TranslatableModel):
     )
 
     public_fields = [
-        'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'actions',
+        'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
     ]
 
     class Meta:
