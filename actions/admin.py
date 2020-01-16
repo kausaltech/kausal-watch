@@ -8,6 +8,7 @@ from admin_auto_filters.filters import AutocompleteFilter
 from admin_ordering.admin import OrderableAdmin
 from image_cropping import ImageCroppingMixin
 from ckeditor.widgets import CKEditorWidget
+from parler.admin import TranslatableAdmin
 
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
@@ -18,9 +19,30 @@ from admin_site.admin import AplansModelAdmin
 from .models import (
     Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
     CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
 )
 from .perms import ActionRelatedAdminPermMixin
+
+
+class PlanRelatedAdmin(admin.ModelAdmin):
+    def get_exclude(self, request, obj=None):
+        exclude = super().get_exclude(request, obj)
+        if exclude is None:
+            exclude = []
+        else:
+            exclude = list(exclude)
+        if 'plan' not in exclude:
+            exclude.append('plan')
+        return exclude
+
+    def save_model(self, request, obj, form, change):
+        plan = request.user.get_active_admin_plan()
+        if obj.plan_id is not None:
+            if obj.plan != plan:
+                raise Exception('Plan mismatch: %s vs. %s' % (obj.plan, plan))
+        else:
+            obj.plan = plan
+        return super().save_model(request, obj, form, change)
 
 
 class ActionScheduleAdmin(admin.TabularInline):
@@ -52,9 +74,18 @@ class CategoryTypeAdmin(admin.TabularInline):
     extra = 0
 
 
-class ImpactGroupAdmin(admin.TabularInline):
+@admin.register(ImpactGroup)
+class ImpactGroupAdmin(PlanRelatedAdmin, TranslatableAdmin):
     model = ImpactGroup
-    extra = 0
+
+
+@admin.register(MonitoringQualityPoint)
+class MonitoringQualityPointAdmin(TranslatableAdmin, OrderableAdmin, PlanRelatedAdmin):
+    model = MonitoringQualityPoint
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    list_display = ('name', 'order')
+    list_editable = ('order',)
 
 
 @admin.register(Plan)
@@ -62,7 +93,6 @@ class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
         ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin,
-        ImpactGroupAdmin,
     ]
 
     def get_queryset(self, request):

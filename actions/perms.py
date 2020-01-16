@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from .models import (
     Action, ActionResponsibleParty, ActionTask, Plan, ActionSchedule,
     ActionStatus, Category, CategoryType, ActionImpact, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
 )
 from django_orghierarchy.models import Organization
 from indicators.models import (
@@ -104,6 +104,7 @@ PLAN_ADMIN_PERMS = (
     (Category, ALL_PERMS),
     (ImpactGroup, ALL_PERMS),
     (ImpactGroupAction, ALL_PERMS),
+    (MonitoringQualityPoint, ALL_PERMS),
 
     (IndicatorLevel, ALL_PERMS),
     (ActionIndicator, ALL_PERMS),

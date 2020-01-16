@@ -10,7 +10,7 @@ from aplans.utils import public_fields
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
     ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -180,6 +180,15 @@ class ImpactGroupNode(DjangoNode, WithImageMixin):
 class ImpactGroupActionNode(DjangoNode, WithImageMixin):
     class Meta:
         model = ImpactGroupAction
+
+
+class MonitoringQualityPointNode(DjangoNode):
+    name = graphene.String()
+    description_yes = graphene.String()
+    description_no = graphene.String()
+
+    class Meta:
+        model = MonitoringQualityPoint
 
 
 class ActionTaskNode(DjangoNode):

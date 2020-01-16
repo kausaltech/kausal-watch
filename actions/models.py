@@ -46,7 +46,7 @@ class Plan(ModelWithImage, models.Model):
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
-        'impact_groups',
+        'impact_groups', 'monitoring_quality_points',
     ]
 
     class Meta:
@@ -149,6 +149,11 @@ class Action(ModelWithImage, OrderedModel):
         related_name='contact_for_actions', verbose_name=_('contact persons')
     )
 
+    monitoring_quality_points = models.ManyToManyField(
+        'MonitoringQualityPoint', blank=True, related_name='actions',
+        editable=False,
+    )
+
     updated_at = models.DateTimeField(
         editable=False, verbose_name=_('updated at'), default=timezone.now
     )
@@ -163,7 +168,7 @@ class Action(ModelWithImage, OrderedModel):
         'completion', 'schedule', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
-        'impact_groups',
+        'impact_groups', 'monitoring_quality_points',
     ]
 
     class Meta:
@@ -695,3 +700,31 @@ class ImpactGroupAction(models.Model):
 
     def __str__(self):
         return "%s ➜ %s" % (self.action, self.group)
+
+
+class MonitoringQualityPoint(OrderedModel, TranslatableModel):
+    plan = models.ForeignKey(
+        Plan, on_delete=models.CASCADE, related_name='monitoring_quality_points',
+        verbose_name=_('plan')
+    )
+    identifier = IdentifierField()
+    translations = TranslatedFields(
+        name=models.CharField(
+            max_length=100, verbose_name=_('name'),
+        ),
+        description_yes=models.CharField(
+            max_length=200, verbose_name=_("description when action fulfills criteria")
+        ),
+        description_no=models.CharField(
+            max_length=200, verbose_name=_("description when action doesn\'t fulfill criteria")
+        ),
+    )
+
+    class Meta:
+        verbose_name = _('monitoring quality point')
+        verbose_name_plural = _('monitoring quality points')
+        unique_together = (('plan', 'order'),)
+        ordering = ('plan', 'order')
+
+    def __str__(self):
+        return self.name
