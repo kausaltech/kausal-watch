@@ -587,6 +587,16 @@ class Category(OrderedModel, ModelWithImage):
         verbose_name_plural = _('categories')
         ordering = ('type', 'identifier')
 
+    def clean(self):
+        if self.parent_id is not None:
+            seen_categories = {self.id}
+            obj = self.parent
+            while obj is not None:
+                if obj.id in seen_categories:
+                    raise ValidationError({'parent': _('Parent forms a loop. Leave empty if top-level category.')})
+                seen_categories.add(obj.id)
+                obj = obj.parent
+
     def __str__(self):
         if self.identifier and self.identifier[0].isnumeric():
             return "%s %s" % (self.identifier, self.name)
