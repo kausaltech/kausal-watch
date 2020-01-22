@@ -332,7 +332,7 @@ class OrganizationNode(DjangoNode):
     class Meta:
         model = Organization
         only_fields = [
-            'id', 'abbreviation', 'parent', 'name', 'classification'
+            'id', 'abbreviation', 'parent', 'name', 'classification', 'distinct_name',
         ]
 
 
