@@ -278,12 +278,9 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
+        if not request.user.is_general_admin_for_plan(plan):
+            qs = qs.unmerged()
         return qs.filter(plan=plan).prefetch_related('contact_persons', 'tasks').select_related('impact', 'plan')
-
-    def get_search_results(self, request, queryset, search_term):
-        # Autocomplete should only return unmerged actions
-        queryset = queryset.unmerged()
-        return super().get_search_results(request, queryset, search_term)
 
     def get_list_display(self, request):
         user = request.user
