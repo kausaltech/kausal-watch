@@ -6,6 +6,7 @@ from import_export import resources
 from import_export.admin import ExportMixin
 from import_export.fields import Field
 
+from admin_site.admin import AplansModelAdmin
 from .models import Person
 
 
@@ -59,8 +60,11 @@ class ExportMixinWithRequest(ExportMixin):
 
 
 @admin.register(Person)
-class PersonAdmin(ImageCroppingMixin, ExportMixinWithRequest, admin.ModelAdmin):
-    fields = ('first_name', 'last_name', 'email', 'title', 'postal_address', 'organization', 'image', 'image_cropping')
+class PersonAdmin(ImageCroppingMixin, ExportMixinWithRequest, AplansModelAdmin):
+    fields = (
+        'first_name', 'last_name', 'email', 'title', 'postal_address',
+        'organization', 'image', 'image_cropping'
+    )
     search_fields = ('first_name', 'last_name',)
     autocomplete_fields = ('organization',)
 
