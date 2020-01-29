@@ -13,6 +13,11 @@ class User(AbstractUser):
         from people.models import Person
 
         try:
+            return self.person
+        except Person.DoesNotExist:
+            pass
+
+        try:
             return Person.objects.get(email__iexact=self.email)
         except Person.DoesNotExist:
             return None
