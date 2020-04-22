@@ -480,7 +480,7 @@ class ActionTask(models.Model):
         Action, on_delete=models.CASCADE, related_name='tasks',
         verbose_name=_('action')
     )
-    name = models.CharField(max_length=200, verbose_name=_('name'))
+    name = models.CharField(max_length=250, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
     comment = models.TextField(null=True, blank=True, verbose_name=_('comment'))
     due_at = models.DateField(
