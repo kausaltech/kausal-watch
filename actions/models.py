@@ -383,6 +383,7 @@ class ActionResponsibleParty(OrderedModel):
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
+        unique_together = (('action', 'organization'),)
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
 
