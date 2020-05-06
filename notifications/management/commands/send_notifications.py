@@ -248,7 +248,7 @@ class NotificationEngine:
             self.generate_task_notifications(task)
 
         for action in self.actions_by_id.values():
-            if action._ignore or not task.action.is_active():
+            if action._ignore or not action.is_active():
                 continue
             self.make_action_notifications(action)
 
