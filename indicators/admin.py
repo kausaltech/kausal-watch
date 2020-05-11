@@ -29,7 +29,7 @@ class UnitAdmin(admin.ModelAdmin):
 
 @admin.register(Quantity)
 class QuantityAdmin(admin.ModelAdmin):
-    search_fields = ('quantity',)
+    search_fields = ('name',)
 
 
 class RelatedIndicatorAdmin(admin.TabularInline):
