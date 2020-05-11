@@ -128,6 +128,33 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
         return queryset.filter(levels__in=levels).distinct()
 
 
+class DisconnectedIndicatorFilter(admin.SimpleListFilter):
+    title = _('Disconnected indicators')
+    parameter_name = 'disconnected'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, _('No')),
+            ('1', _('Yes')),
+        )
+
+    def queryset(self, request, queryset):
+        if not self.value():
+            plan = request.user.get_active_admin_plan()
+            return queryset.filter(levels__plan=plan)
+        return queryset
+
+    def choices(self, changelist):
+        for lookup, title in self.lookup_choices:
+            if lookup is not None:
+                lookup = str(lookup)
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': changelist.get_query_string({self.parameter_name: lookup}),
+                'display': title,
+            }
+
+
 class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
     model = IndicatorContactPerson
     ordering_field = 'order'
@@ -142,7 +169,7 @@ class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit', 'datasets', 'quantity')
     search_fields = ('name',)
     list_display = ('name', 'unit', 'quantity', 'has_data',)
-    list_filter = (IndicatorLevelFilter,)
+    list_filter = (IndicatorLevelFilter, DisconnectedIndicatorFilter)
     empty_value_display = _('[nothing]')
 
     inlines = [

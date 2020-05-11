@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-01-16 16:30+0200\n"
+"POT-Creation-Date: 2020-05-11 14:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -352,6 +352,10 @@ msgstr "lyhyt kuvaus"
 msgid "category"
 msgstr "luokka"
 
+#: actions/models.py
+msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr ""
+
 #: actions/models.py indicators/models.py
 msgid "scenario"
 msgstr "skenaario"
@@ -602,6 +606,18 @@ msgstr "sivuston yleiset sisällöt"
 #: indicators/admin.py indicators/models.py
 msgid "level"
 msgstr "taso"
+
+#: indicators/admin.py
+msgid "Disconnected indicators"
+msgstr "irralliset mittarit"
+
+#: indicators/admin.py people/admin.py
+msgid "No"
+msgstr "Ei"
+
+#: indicators/admin.py people/admin.py
+msgid "Yes"
+msgstr "Kyllä"
 
 #: indicators/admin.py
 msgid "[nothing]"
@@ -958,14 +974,6 @@ msgid "Is contact person"
 msgstr "On yhteyshenkilö"
 
 #: people/admin.py
-msgid "Yes"
-msgstr "Kyllä"
-
-#: people/admin.py
-msgid "No"
-msgstr "Ei"
-
-#: people/admin.py
 msgid "contact for actions"
 msgstr "yhteyshenkilönä toimenpiteille"
 
@@ -1049,3 +1057,8 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#, fuzzy
+#~| msgid "Yes"
+#~ msgid "yes"
+#~ msgstr "Kyllä"
