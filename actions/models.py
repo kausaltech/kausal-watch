@@ -112,7 +112,7 @@ class Action(ModelWithImage, OrderedModel):
         verbose_name=_('impact'), help_text=_('The impact of this action'),
     )
     internal_priority = models.PositiveIntegerField(
-        null=True, verbose_name=_('internal priority')
+        blank=True, null=True, verbose_name=_('internal priority')
     )
     internal_priority_comment = models.TextField(
         blank=True, null=True, verbose_name=_('internal priority comment')
