@@ -1,4 +1,4 @@
-django<3.0
+django
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
 djangorestframework
 django-helusers
@@ -20,7 +20,7 @@ easy-thumbnails
 Pillow
 sentry-sdk
 graphene-django
--e git+https://github.com/juyrjola/graphene-django-optimizer.git#egg=graphene-django-optimizer
+graphene-django-optimizer
 aniso8601
 django-admin-numeric-filter
 django-admin-ordering

@@ -27,6 +27,11 @@ User = get_user_model()
 class Plan(ModelWithImage, models.Model):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
+    root_org = models.ForeignKey(
+        'django_orghierarchy.Organization', blank=True, null=True, on_delete=models.PROTECT,
+        verbose_name=_('root organization')
+    )
+
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     site_url = models.URLField(blank=True, null=True, verbose_name=_('site URL'))
     actions_locked = models.BooleanField(
@@ -45,7 +50,7 @@ class Plan(ModelWithImage, models.Model):
     )
 
     public_fields = [
-        'id', 'name', 'identifier', 'image_url', 'action_schedules',
+        'id', 'name', 'identifier', 'root_org', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
         'impact_groups', 'monitoring_quality_points',

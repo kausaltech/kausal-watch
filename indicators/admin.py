@@ -6,15 +6,17 @@ from django.db.models import Q
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+
+from parler.admin import TranslatableAdmin, TranslatableTabularInline
 from ckeditor.widgets import CKEditorWidget
 from admin_ordering.admin import OrderableAdmin
 
 from admin_site.admin import AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
-from actions.models import Category
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
-    IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense
+    IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense,
+    CommonIndicator, Dimension, DimensionCategory, IndicatorDimension
 )
 
 
@@ -28,8 +30,9 @@ class UnitAdmin(admin.ModelAdmin):
 
 
 @admin.register(Quantity)
-class QuantityAdmin(admin.ModelAdmin):
-    search_fields = ('name',)
+class QuantityAdmin(TranslatableAdmin):
+    fields = ('name', 'units',)
+    search_fields = ('translations__name',)
 
 
 class RelatedIndicatorAdmin(admin.TabularInline):
@@ -91,7 +94,7 @@ class IndicatorGoalAdmin(admin.TabularInline):
 
 VALUE_MIN_YEAR = 1970
 
-
+"""
 class IndicatorValueAdmin(admin.TabularInline):
     model = IndicatorValue
     extra = 0
@@ -110,6 +113,19 @@ class IndicatorValueAdmin(admin.TabularInline):
             field.widget = forms.Select(choices=[('%s-12-31' % y, str(y)) for y in years])
 
         return formset
+"""
+
+
+class IndicatorValueForm(forms.ModelForm):
+    class Meta:
+        model = IndicatorValue
+        fields = ('date', 'value')
+
+
+class IndicatorValueAdmin(admin.TabularInline):
+    model = IndicatorValue
+    fields = ('date', 'value')
+    form = IndicatorValueForm
 
 
 class IndicatorLevelFilter(admin.SimpleListFilter):
@@ -164,6 +180,20 @@ class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
     autocomplete_fields = ('person',)
 
 
+class IndicatorDimensionAdmin(OrderableAdmin, admin.TabularInline):
+    model = IndicatorDimension
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    extra = 0
+    fields = ('dimension', 'order',)
+    autocomplete_fields = ('dimension',)
+
+
+@admin.register(CommonIndicator)
+class CommonIndicatorAdmin(AplansModelAdmin, TranslatableAdmin):
+    pass
+
+
 @admin.register(Indicator)
 class IndicatorAdmin(AplansModelAdmin):
     autocomplete_fields = ('unit', 'datasets', 'quantity')
@@ -173,8 +203,8 @@ class IndicatorAdmin(AplansModelAdmin):
     empty_value_display = _('[nothing]')
 
     inlines = [
-        IndicatorLevelAdmin, IndicatorContactPersonAdmin, IndicatorGoalAdmin,
-        IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin
+        IndicatorDimensionAdmin, IndicatorLevelAdmin, IndicatorContactPersonAdmin,
+        IndicatorGoalAdmin, IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin
     ]
 
     def get_list_display(self, request):
@@ -216,6 +246,11 @@ class IndicatorAdmin(AplansModelAdmin):
         for field_name in ['categories', *category_fields]:
             if field_name in fs['fields']:
                 fs['fields'].remove(field_name)
+
+        if True or not request.user.is_superuser:
+            for field_name in ('common_indicator', 'org'):
+                if field_name in fs['fields']:
+                    fs['fields'].remove(field_name)
 
         fieldsets.append(
             (_('Categories'), dict(fields=(x for x in category_fields)))
@@ -262,6 +297,8 @@ class IndicatorAdmin(AplansModelAdmin):
         return actions
 
     def save_model(self, request, obj, form, change):
+        plan = request.user.get_active_admin_plan()
+        obj.org = plan.root_org
         super().save_model(request, obj, form, change)
         obj.set_latest_value()
         actions = obj.related_actions.filter(indicates_action_progress=True)
@@ -269,7 +306,6 @@ class IndicatorAdmin(AplansModelAdmin):
             act = act_ind.action
             act.recalculate_status()
 
-        plan = request.user.get_active_admin_plan()
         for field_name, field in self._get_category_fields(plan, obj).items():
             if field_name not in form.cleaned_data:
                 continue
@@ -291,3 +327,19 @@ class DatasetAdmin(AplansModelAdmin):
 @admin.register(DatasetLicense)
 class DatasetLicenseAdmin(AplansModelAdmin):
     pass
+
+
+class DimensionCategoryAdmin(admin.TabularInline, OrderableAdmin, TranslatableTabularInline):
+    model = DimensionCategory
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    extra = 0
+    fields = ('name', 'order',)
+
+
+@admin.register(Dimension)
+class DimensionAdmin(TranslatableAdmin):
+    inlines = [
+        DimensionCategoryAdmin
+    ]
+    search_fields = ('translations__name',)

@@ -4,6 +4,8 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
+from parler.models import TranslatableModel, TranslatedFields
+
 from aplans.utils import IdentifierField, OrderedModel
 
 
@@ -18,13 +20,17 @@ def latest_plan():
         return None
 
 
-class Quantity(models.Model):
-    name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
+class Quantity(TranslatableModel):
+    units = models.ManyToManyField('Unit', blank=True, verbose_name=_('units'))
+
+    translations = TranslatedFields(
+        name=models.CharField(max_length=40, verbose_name=_('name'))
+    )
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
         verbose_name_plural = pgettext_lazy('physical', 'quantities')
-        ordering = ('name',)
+        ordering = ('id',)
 
     def __str__(self):
         return self.name
@@ -93,6 +99,21 @@ class Dataset(models.Model):
         return self.name
 
 
+class CommonIndicator(TranslatableModel):
+    identifier = IdentifierField()
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100, verbose_name=_('name')),
+        description=models.TextField(null=True, blank=True, verbose_name=_('description')),
+    )
+    quantity = models.ForeignKey(
+        Quantity, related_name='common_indicators', on_delete=models.PROTECT,
+        verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class Indicator(models.Model):
     TIME_RESOLUTIONS = (
         ('year', _('year')),
@@ -106,12 +127,21 @@ class Indicator(models.Model):
         ('operational', _('operational')),
     )
 
+    common_indicator = models.ForeignKey(
+        CommonIndicator, null=True, blank=True, on_delete=models.SET_NULL,
+        related_name='indicators',
+    )
+
+    org = models.ForeignKey(
+        'django_orghierarchy.Organization', on_delete=models.CASCADE, verbose_name=_('organization'),
+        related_name='indicators', null=True, blank=True,
+    )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
         verbose_name=_('plans')
     )
     identifier = IdentifierField(null=True, blank=True)
-    name = models.CharField(max_length=100, verbose_name=_('name'))
+    name = models.CharField(max_length=100, verbose_name=_('name'), null=True, blank=True)
     quantity = models.ForeignKey(
         Quantity, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
@@ -196,6 +226,46 @@ class Indicator(models.Model):
         return self.name
 
 
+class Dimension(TranslatableModel):
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100)
+    )
+
+    class Meta:
+        verbose_name = _('dimension')
+        verbose_name_plural = _('dimensions')
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.name
+
+
+class DimensionCategory(OrderedModel, TranslatableModel):
+    dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE)
+    translations = TranslatedFields(
+        name=models.CharField(max_length=100)
+    )
+
+    class Meta:
+        verbose_name = _('dimension category')
+        verbose_name_plural = _('dimension categories')
+        ordering = ['dimension', 'order']
+
+    def __str__(self):
+        return self.name
+
+
+class IndicatorDimension(OrderedModel):
+    dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE, related_name='indicators')
+    indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
+
+    class Meta:
+        verbose_name = _('indicator dimension')
+        verbose_name_plural = _('indicator dimensions')
+        ordering = ['indicator', 'order']
+        unique_together = (('indicator', 'dimension'),)
+
+
 class IndicatorLevel(models.Model):
     indicator = models.ForeignKey(
         Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE
@@ -233,6 +303,7 @@ class IndicatorValue(models.Model):
     )
     value = models.FloatField(verbose_name=_('value'))
     date = models.DateField(verbose_name=_('date'))
+    dimension_categories = models.ManyToManyField(DimensionCategory, blank=True,)
 
     class Meta:
         verbose_name = _('indicator value')

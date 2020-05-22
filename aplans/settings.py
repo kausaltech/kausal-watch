@@ -209,12 +209,12 @@ LANGUAGES = (
 LANGUAGE_CODE = 'fi'
 
 PARLER_LANGUAGES = {
-    None: (
+    1: (
         {'code': 'fi'},
         {'code': 'en'},
     ),
     'default': {
-        'fallback': 'fi',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+        'fallbacks': ['fi'],            # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
     }
 }
