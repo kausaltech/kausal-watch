@@ -38,11 +38,29 @@ class RelatedIndicatorAdmin(admin.TabularInline):
     autocomplete_fields = ('effect_indicator',)
     extra = 0
 
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+        form = formset.form
+        field = form.base_fields['effect_indicator']
+        plan = request.user.get_active_admin_plan()
+        field.queryset = field.queryset.filter(levels__plan=plan)
+        return formset
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(effect_indicator__levels__plan=plan).distinct()
+
 
 class ActionIndicatorAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     model = ActionIndicator
     autocomplete_fields = ('action', 'indicator',)
     extra = 0
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.filter(action__plan=plan)
 
 
 class IndicatorLevelAdmin(admin.TabularInline):
