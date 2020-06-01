@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import environ
+from django.utils.translation import gettext_lazy as _
 
 
 root = environ.Path(__file__) - 2  # two folders back
@@ -72,6 +73,24 @@ INSTALLED_APPS = [
     'django_extensions',
     'import_export',
     'anymail',
+    'modeltrans',
+
+    'wagtail.contrib.forms',
+    'wagtail.contrib.redirects',
+    'wagtail.embeds',
+    'wagtail.sites',
+    'wagtail.users',
+    'wagtail.snippets',
+    'wagtail.documents',
+    'wagtail.images',
+    'wagtail.search',
+    'wagtail.admin',
+    'wagtail.core',
+    'wagtail.contrib.modeladmin',
+    'wagtailautocomplete',
+
+    'modelcluster',
+    'taggit',
 
     'admin_ordering',
     'ckeditor',
@@ -93,6 +112,8 @@ INSTALLED_APPS = [
     'content',
     'people',
     'notifications',
+    'images',
+    'documents',
 ]
 
 MIDDLEWARE = [
@@ -121,6 +142,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'actions.context_processors.current_plan',
+                'wagtail.contrib.settings.context_processors.settings',
             ],
         },
     },
@@ -202,9 +225,11 @@ GRAPHENE = {
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
 LANGUAGES = (
-    ('fi', 'Finnish'),
-    ('en', 'English'),
+    ('fi', _('Finnish')),
+    ('en', _('English')),
 )
+MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
+
 
 LANGUAGE_CODE = 'fi'
 
@@ -277,8 +302,11 @@ CKEDITOR_CONFIGS = {
         'toolbar': 'Full',
         'height': 150,
     }
-
 }
+
+WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
+WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
+WAGTAIL_SITE_NAME = 'Kausal Watch admin'
 
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
@@ -286,6 +314,7 @@ THUMBNAIL_PROCESSORS = (
     'image_cropping.thumbnail_processors.crop_corners',
 ) + thumbnail_settings.THUMBNAIL_PROCESSORS
 IMAGE_CROPPING_JQUERY_URL = None
+THUMBNAIL_HIGH_RESOLUTION = True
 
 
 # Static files (CSS, JavaScript, Images)

@@ -13,6 +13,18 @@ from django.utils import timezone
 
 from parler.models import TranslatableModel, TranslatedFields
 from django_orghierarchy.models import Organization
+from modeltrans.fields import TranslationField
+
+from wagtail.admin.edit_handlers import (
+    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
+)
+from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.core.fields import RichTextField
+from wagtailautocomplete.edit_handlers import AutocompletePanel
+
+
+from modelcluster.models import ClusterableModel
+from modelcluster.fields import ParentalKey
 
 from aplans.utils import IdentifierField, OrderedModel
 from aplans.model_images import ModelWithImage
@@ -43,6 +55,8 @@ class Plan(ModelWithImage, models.Model):
         verbose_name=_('general administrators'),
         help_text=_('Users that can modify everything related to the action plan')
     )
+
+    i18n = TranslationField(fields=['name'])
 
     public_fields = [
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
@@ -89,7 +103,7 @@ class ActionQuerySet(models.QuerySet):
         return self.umerged().filter(status__is_completed=False)
 
 
-class Action(ModelWithImage, OrderedModel):
+class Action(ModelWithImage, OrderedModel, ClusterableModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
@@ -103,7 +117,7 @@ class Action(ModelWithImage, OrderedModel):
     identifier = IdentifierField(
         help_text=_('The identifier for this action (e.g. number)')
     )
-    description = models.TextField(
+    description = RichTextField(
         null=True, blank=True,
         verbose_name=_('description'),
         help_text=_('What does this action involve in more detail?'))
@@ -371,7 +385,7 @@ class Action(ModelWithImage, OrderedModel):
 
 
 class ActionResponsibleParty(OrderedModel):
-    action = models.ForeignKey(
+    action = ParentalKey(
         Action, on_delete=models.CASCADE, related_name='responsible_parties',
         verbose_name=_('action')
     )
@@ -379,6 +393,10 @@ class ActionResponsibleParty(OrderedModel):
         Organization, on_delete=models.CASCADE, related_name='responsible_actions',
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
     )
+
+    panels = [
+        AutocompletePanel('organization'),
+    ]
 
     class Meta:
         ordering = ['action', 'order']
@@ -416,7 +434,7 @@ class ActionSchedule(models.Model):
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
 
-    class Meta(OrderedModel.Meta):
+    class Meta:
         ordering = ('plan', 'begins_at')
         verbose_name = _('action schedule')
         verbose_name_plural = _('action schedules')
@@ -476,13 +494,13 @@ class ActionTask(models.Model):
         (CANCELLED, _('cancelled')),
     )
 
-    action = models.ForeignKey(
+    action = ParentalKey(
         Action, on_delete=models.CASCADE, related_name='tasks',
         verbose_name=_('action')
     )
     name = models.CharField(max_length=250, verbose_name=_('name'))
     state = models.CharField(max_length=20, choices=STATES, default=NOT_STARTED, verbose_name=_('state'))
-    comment = models.TextField(null=True, blank=True, verbose_name=_('comment'))
+    comment = RichTextField(null=True, blank=True, verbose_name=_('comment'))
     due_at = models.DateField(
         verbose_name=_('due date'),
         help_text=_('The date by which the task should be completed (deadline)')
@@ -502,6 +520,13 @@ class ActionTask(models.Model):
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
 
     objects = ActionTaskQuerySet.as_manager()
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('due_at'),
+        FieldPanel('completed_at'),
+        RichTextFieldPanel('comment'),
+    ]
 
     class Meta:
         ordering = ('action', 'due_at')

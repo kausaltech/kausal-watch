@@ -2,6 +2,7 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 from helusers.admin_site import AdminSite as HelusersAdminSite
 from reversion.admin import VersionAdmin
+#from admin_ordering import OrderableAdmin as OriginalOrderableAdmin
 
 from actions.models import Action
 from indicators.models import Indicator
@@ -71,3 +72,10 @@ class AplansModelAdmin(VersionAdmin):
         js = (
             'admin_site/js/customizations.js',
         )
+
+"""
+class OrderableAdmin(OriginalOrderableAdmin):
+    ordering_field = "sort_order"
+    ordering_field_hide_input = False
+    extra = 0
+"""

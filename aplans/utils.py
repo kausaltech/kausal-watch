@@ -60,6 +60,11 @@ class IdentifierField(models.CharField):
 
 class OrderedModel(models.Model):
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
+    sort_order_field = 'order'
+
+    @property
+    def sort_order(self):
+        return self.order
 
     class Meta:
         abstract = True

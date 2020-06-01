@@ -4,6 +4,7 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
+from modeltrans.fields import TranslationField
 from aplans.utils import IdentifierField, OrderedModel
 
 
