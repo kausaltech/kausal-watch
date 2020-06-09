@@ -39,6 +39,6 @@ urlpatterns = [
     path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
     path('v1/', include(router.urls)),
     path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True))),
-    path('', include('social_django.urls', namespace='social')),
+    path('auth/', include('social_django.urls', namespace='social')),
     path('', include('helusers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

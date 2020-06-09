@@ -13,6 +13,7 @@ lxml
 django-cors-headers
 python-jose
 plotly
+cryptography
 django-ckeditor
 ipython  # install for development convenience for now
 django-image-cropping
