@@ -5,6 +5,7 @@ from datetime import date
 from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.urls import reverse
@@ -20,6 +21,7 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.core.fields import RichTextField
+from wagtail.core.models import Collection
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 
 
@@ -56,6 +58,16 @@ class Plan(ModelWithImage, models.Model):
         help_text=_('Users that can modify everything related to the action plan')
     )
 
+    root_collection = models.OneToOneField(
+        Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='plan',
+    )
+    admin_group = models.OneToOneField(
+        Group, null=True, on_delete=models.PROTECT, editable=False, related_name='admin_for_plan',
+    )
+    contact_person_group = models.OneToOneField(
+        Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
+    )
+
     i18n = TranslationField(fields=['name'])
 
     public_fields = [
@@ -76,6 +88,30 @@ class Plan(ModelWithImage, models.Model):
 
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
+
+    def save(self, *args, **kwargs):
+        ret = super().save(*args, **kwargs)
+
+        update_fields = []
+        if self.root_collection is None:
+            obj = Collection(name=self.name)
+            Collection.add_root(instance=obj)
+            self.root_collection = obj
+            update_fields.append('root_collection')
+
+        if self.admin_group is None:
+            obj = Group.objects.create(name='%s admins' % self.name)
+            self.admin_group = obj
+            update_fields.append('admin_group')
+
+        if self.contact_person_group is None:
+            obj = Group.objects.create(name='%s contact persons' % self.name)
+            self.contact_person_group = obj
+            update_fields.append('contact_person_group')
+
+        if update_fields:
+            super().save(update_fields=update_fields)
+        return ret
 
 
 def latest_plan():

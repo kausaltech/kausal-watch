@@ -19,6 +19,7 @@ from notifications.models import (
 )
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from wagtail.core.models import GroupCollectionPermission
 from people.models import Person
 
 
@@ -37,6 +38,23 @@ def _get_perm_objs(model, perms):
     return list(perm_objs)
 
 
+def get_wagtail_perms():
+    perms = []
+    perms += list(Permission.objects.filter(
+        content_type__app_label='wagtaildocs',
+        codename__in=('add_document', 'change_document', 'delete_document')
+    ))
+    perms += list(Permission.objects.filter(
+        content_type__app_label='wagtailimages',
+        codename__in=('add_image', 'change_image', 'delete_image')
+    ))
+    perms += list(Permission.objects.filter(
+        content_type__app_label='wagtailcore',
+        codename__in=['add_collection', 'change_collection', 'delete_collection']
+    ))
+    return perms
+
+
 def get_contact_person_perms():
     new_perms = []
 
@@ -48,6 +66,9 @@ def get_contact_person_perms():
     new_perms += _get_perm_objs(ActionStatusUpdate, ALL_PERMS)
     new_perms += _get_perm_objs(ActionIndicator, ('view',))
     new_perms += _get_perm_objs(Indicator, ('view',))
+
+    new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
+    new_perms += get_wagtail_perms()
 
     for model in (
         ActionResponsibleParty,
@@ -79,6 +100,27 @@ def get_or_create_contact_person_group():
     return group
 
 
+def _sync_contact_person_groups(user):
+    plans = user.get_adminable_plans()
+    user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans).delete()
+    wagtail_perms = get_wagtail_perms()
+
+    for plan in plans:
+        if plan.contact_person_group is None:
+            continue
+        group = plan.contact_person_group
+        user.groups.add(group)
+        if plan.root_collection is None:
+            continue
+
+        current_perms = set([obj.permission for obj in group.collection_permissions.filter(collection=plan.root_collection)])
+        for perm in wagtail_perms:
+            if perm not in current_perms:
+                group.collection_permissions.create(collection=plan.root_collection, permission=perm)
+
+        # FIXME remove stale perms
+
+
 def add_contact_person_perms(user):
     group = get_or_create_contact_person_group()
     user.groups.add(group)
@@ -87,11 +129,13 @@ def add_contact_person_perms(user):
     if not user.is_staff:
         user.is_staff = True
         user.save(update_fields=['is_staff'])
+    _sync_contact_person_groups(user)
 
 
 def remove_contact_person_perms(user):
     group = get_or_create_contact_person_group()
     user.groups.remove(group)
+    _sync_contact_person_groups(user)
 
 
 PLAN_ADMIN_PERMS = (
@@ -146,6 +190,14 @@ def get_or_create_plan_admin_group():
     perms = get_plan_admin_perms()
     group = _get_or_create_group('Plan admins', perms)
     return group
+
+
+def _sync_plan_admin_groups(user):
+    plans = user.get_adminable_plans()
+    user.groups.filter(admin_for_plan__isnull=False).exclude(admin_for_plan__in=plans).delete()
+    for plan in plans:
+        if plan.admin_group is not None:
+            user.groups.add(plan.admin_group)
 
 
 def remove_plan_admin_perms(user):

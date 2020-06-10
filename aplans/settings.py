@@ -307,6 +307,9 @@ CKEDITOR_CONFIGS = {
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
 WAGTAIL_SITE_NAME = 'Kausal Watch admin'
+WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = False
+WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
+WAGTAIL_PASSWORD_RESET_ENABLED = False
 
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa

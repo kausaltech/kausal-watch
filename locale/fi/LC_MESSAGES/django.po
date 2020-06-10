@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-05-11 14:04+0300\n"
+"POT-Creation-Date: 2020-06-10 21:44+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -433,6 +433,18 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Sisäiset tiedot"
+
+#: actions/wagtail_admin.py
+msgid "Basic information"
+msgstr "Perustiedot"
+
+#: actions/wagtail_admin.py
+msgid "Tasks"
+msgstr "Tehtävät"
+
 #: admin_site/admin.py
 #, python-format
 msgid "Add another %(model)s"
@@ -447,13 +459,21 @@ msgstr "Lisää uusi %(verbose_name)s"
 msgid "Login was unsuccessful."
 msgstr "Sisäänkirjautuminen ei onnistunut."
 
-#: aplans/model_images.py
+#: aplans/model_images.py images/models.py
 msgid "image"
 msgstr "kuva"
 
 #: aplans/model_images.py
 msgid "image cropping"
 msgstr "kuvan rajaus"
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English"
+msgstr ""
 
 #: aplans/utils.py notifications/models.py
 msgid "identifier"
@@ -602,6 +622,18 @@ msgstr "sivuston yleisen sisältö"
 #: content/models.py
 msgid "site general contents"
 msgstr "sivuston yleiset sisällöt"
+
+#: documents/models.py
+msgid "document"
+msgstr "asiakirja"
+
+#: documents/models.py
+msgid "documents"
+msgstr "asiakirjat"
+
+#: images/models.py
+msgid "images"
+msgstr "kuvat"
 
 #: indicators/admin.py indicators/models.py
 msgid "level"

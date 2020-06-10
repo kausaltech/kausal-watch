@@ -1,8 +1,9 @@
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
-from django import forms
-from wagtail.admin.forms import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
+
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
 )
@@ -13,45 +14,102 @@ from django_orghierarchy.models import Organization
 from .models import Action, Plan
 
 
-class ActionForm(WagtailAdminModelForm):
+class FormClassMixin:
+    def get_form_class(self):
+        return self.get_edit_handler().get_form_class(self.request)
+
+
+class AplansPermissionHelper(PermissionHelper):
+    def user_can_inspect_obj(self, user, obj):
+        if not super().user_can_inspect_obj(user, obj):
+            return False
+
+        # The user has view permission to all actions if he is either
+        # a general admin for actions or a contact person for any
+        # actions.
+        if user.is_superuser or user.has_perm('actions.admin_action'):
+            return True
+
+        return user.is_contact_person_for_action(None) or user.is_organization_admin_for_action(None)
+
+    def user_can_edit_obj(self, user, obj):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return user.can_modify_action(obj)
+
+    def user_can_delete_obj(self, user, obj):
+        if not super().user_can_delete_obj(user, obj):
+            return False
+
+        if not user.can_modify_action(obj):
+            return False
+
+        plan = obj.plan
+        if plan.actions_locked:
+            return False
+
+        return True
+
+    def user_can_create(self, user):
+        if not super().user_can_create(user):
+            return False
+
+        if not user.can_modify_action(None):
+            return False
+
+        plan = user.get_active_admin_plan()
+        if plan.actions_locked:
+            return False
+
+        return True
+
+
+class AplansEditView(FormClassMixin, EditView):
     pass
 
 
 class ActionEditHandler(TabbedInterface):
     def on_request_bound(self):
-        """
-        for child in list(self.children):
-            if isinstance(child, AdminOnlyPanel):
-                self.children.remove(child)
-        """
-        super().on_request_bound()
-
-    def on_form_bound(self):
-        form = self.form
         user = self.request.user
         plan = user.get_active_admin_plan()
 
+        if not user.is_general_admin_for_plan(plan):
+            for child in list(self.children):
+                if isinstance(child, AdminOnlyPanel):
+                    self.children.remove(child)
+
+        super().on_request_bound()
+
+    def get_form_class(self, request):
+        form_class = super().get_form_class()
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+
         if plan.actions_locked:
-            form.fields['identifier'].disabled = True
-            form.fields['identifier'].required = False
-            form.fields['official_name'].disabled = True
-            form.fields['official_name'].required = False
+            form_class.base_fields['identifier'].disabled = True
+            form_class.base_fields['identifier'].required = False
+            form_class.base_fields['official_name'].disabled = True
+            form_class.base_fields['official_name'].required = False
 
-        if 'impact' in form.fields:
-            form._meta.exclude = ['impact']
-            del form.fields['impact']
+        if not user.is_general_admin_for_plan(plan):
+            del form_class.base_fields['internal_priority']
+            del form_class.base_fields['internal_priority_comment']
+            del form_class.base_fields['impact']
 
-        #f = form.fields['impact']
-        #f.queryset = f.queryset.filter(plan=plan)
-
-        super().on_form_bound()
+        return form_class
 
 
 class AdminOnlyPanel(ObjectList):
     pass
 
 
-class ActionAdmin(ModelAdmin):
+class AplansModelAdmin(ModelAdmin):
+    edit_view_class = AplansEditView
+    permission_helper_class = AplansPermissionHelper
+
+
+class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'wagtail'  # change as required
     menu_order = 201  # will put in 3rd place (000 being 1st, 100 2nd)
@@ -77,7 +135,7 @@ class ActionAdmin(ModelAdmin):
     edit_handler = ActionEditHandler([
         ObjectList(basic_panels, heading=_('Basic information')),
         internal_panel,
-        ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
+        # ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
         ObjectList([InlinePanel('tasks')], heading=_('Tasks')),
     ])
 
@@ -125,7 +183,7 @@ class PlanAdmin(ModelAdmin):
         return handler
 
 
-modeladmin_register(PlanAdmin)
+# modeladmin_register(PlanAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete
