@@ -258,21 +258,31 @@ class IndicatorGoal(models.Model):
         Indicator, related_name='goals', on_delete=models.CASCADE,
         verbose_name=_('indicator')
     )
+    scenario = models.ForeignKey(
+        'actions.Scenario', related_name='indicator_goals', blank=True, null=True,
+        on_delete=models.CASCADE, verbose_name=_('scenario'),
+    )
     value = models.FloatField()
     date = models.DateField(verbose_name=_('date'))
+
+    public_fields = ['id', 'plan', 'indicator', 'scenario', 'value', 'date']
 
     class Meta:
         verbose_name = _('indicator goal')
         verbose_name_plural = _('indicator goals')
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
-        unique_together = (('indicator', 'plan', 'date'),)
+        unique_together = (('indicator', 'plan', 'scenario', 'date'),)
 
     def __str__(self):
         indicator = self.indicator
         date = self.date.isoformat()
+        if self.scenario is not None:
+            scenario_str = ' [%s]' % self.scenario.identifier
+        else:
+            scenario_str = ''
 
-        return f"{indicator} {date} {self.value}"
+        return f"{indicator}{scenario_str} {date} {self.value}"
 
 
 class IndicatorEstimate(models.Model):

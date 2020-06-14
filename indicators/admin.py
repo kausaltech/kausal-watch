@@ -85,17 +85,26 @@ class IndicatorLevelAdmin(admin.TabularInline):
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
-    fields = ('date', 'value',)
+    fields = ('date', 'value', 'scenario')
 
     def get_queryset(self, request):
         plan = request.user.get_active_admin_plan()
         return super().get_queryset(request).filter(plan=plan)
 
     def get_formset(self, request, obj=None, **kwargs):
+        plan = request.user.get_active_admin_plan()
+        if plan.scenarios.count() == 0:
+            if 'scenario' in self.fields:
+                fields = set(self.fields)
+                fields.remove('scenario')
+                self.fields = tuple(fields)
+
         formset = super().get_formset(request, obj, **kwargs)
         form = formset.form
 
-        plan = request.user.get_active_admin_plan()
+        field = form.base_fields.get('scenario')
+        if field is not None:
+            field.queryset = plan.scenarios.all()
 
         field = form.base_fields['date']
         if obj is not None and obj.time_resolution == 'year' and plan.action_schedules.exists():

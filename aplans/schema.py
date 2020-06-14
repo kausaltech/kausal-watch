@@ -10,7 +10,8 @@ from aplans.utils import public_fields
 from actions.models import (
     Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
     ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
+    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint,
+    Scenario
 )
 from indicators.models import (
     Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
@@ -179,6 +180,12 @@ class CategoryNode(DjangoNode, WithImageMixin):
         model = Category
 
 
+class ScenarioNode(DjangoNode):
+    class Meta:
+        model = Scenario
+        only_fields = public_fields(Scenario)
+
+
 class ImpactGroupNode(DjangoNode, WithImageMixin):
     name = graphene.String()
 
@@ -281,6 +288,7 @@ class IndicatorGoalNode(DjangoNode):
 
     class Meta:
         model = IndicatorGoal
+        only_fields = public_fields(IndicatorGoal)
 
 
 class IndicatorNode(DjangoNode):

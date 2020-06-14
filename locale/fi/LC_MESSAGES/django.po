@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-10 21:44+0300\n"
+"POT-Creation-Date: 2020-06-14 15:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -410,6 +410,14 @@ msgid "color"
 msgstr "väri"
 
 #: actions/models.py
+msgid "impact group"
+msgstr "vaikuttavuusryhmä"
+
+#: actions/models.py
+msgid "impact groups"
+msgstr "vaikuttavuusryhmät"
+
+#: actions/models.py
 msgid "impact group action"
 msgstr "toimenpiteen vaikuttavuusryhmä"
 
@@ -454,6 +462,10 @@ msgstr "Lisää uusi %(model)s"
 #, python-format
 msgid "Add another %(verbose_name)s"
 msgstr "Lisää uusi %(verbose_name)s"
+
+#: admin_site/wagtail_hooks.py
+msgid "Choose plan"
+msgstr ""
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -1078,6 +1090,14 @@ msgstr "Ei löydy"
 msgid "Unknown content"
 msgstr "Tuntematon sisältö"
 
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Edit your account"
+msgstr ""
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Log out"
+msgstr ""
+
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
@@ -1089,8 +1109,3 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
-
-#, fuzzy
-#~| msgid "Yes"
-#~ msgid "yes"
-#~ msgstr "Kyllä"

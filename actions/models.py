@@ -74,7 +74,7 @@ class Plan(ModelWithImage, models.Model):
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
-        'impact_groups', 'monitoring_quality_points',
+        'impact_groups', 'monitoring_quality_points', 'scenarios',
     ]
 
     class Meta:
@@ -675,6 +675,10 @@ class Scenario(models.Model):
     identifier = IdentifierField()
     description = models.TextField(null=True, blank=True, verbose_name=_('description'))
 
+    public_fields = [
+        'id', 'plan', 'name', 'identifier', 'description',
+    ]
+
     class Meta:
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('scenario')
@@ -754,8 +758,8 @@ class ImpactGroup(TranslatableModel):
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
-        verbose_name = _('scenario')
-        verbose_name_plural = _('scenarios')
+        verbose_name = _('impact group')
+        verbose_name_plural = _('impact groups')
         ordering = ('plan', '-weight')
 
     def __str__(self):
