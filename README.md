@@ -33,7 +33,14 @@ DATABASES = {
 
 Make sure you have created a Postgres database with the same name (here `aplans`).
 
+Run migrations:
+
+```shell
+python manage.py migrate
+```
+
 Create a superuser:
+> You might need the following translations during the createsuperuser operation: käyttäjätunnus = username, sähköpostiosoite = e-mail
 
 ```shell
 python manage.py createsuperuser
