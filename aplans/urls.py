@@ -18,6 +18,8 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import RedirectView
+
 from rest_framework import routers
 from .graphene_views import SentryGraphQLView
 
@@ -41,14 +43,15 @@ for view in actions_api_views + indicators_api_views + insight_api_views + conte
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('admin/change-admin-plan/', change_admin_plan, name='change-admin-plan'),
+    re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
     path('v1/', include(router.urls)),
-    path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True))),
+    path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True)), name='graphql'),
     re_path(r'^wadmin/', include(wagtailadmin_urls)),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
 
-    path('', include('social_django.urls', namespace='social')),
-    path('', include('helusers.urls')),
+    path('auth/', include('social_django.urls', namespace='social')),
+    path('', include('admin_site.urls')),
+    path('', RedirectView.as_view(pattern_name='graphql'), name='root-redirect'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

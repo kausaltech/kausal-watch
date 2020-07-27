@@ -5,6 +5,10 @@ from helusers.models import AbstractUser
 
 
 class User(AbstractUser):
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+
+    email = models.EmailField(_('email address'), unique=True)
     selected_admin_plan = models.ForeignKey(
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL
     )
