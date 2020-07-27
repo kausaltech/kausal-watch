@@ -49,6 +49,6 @@ urlpatterns = [
     re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
 
-    path('', include('social_django.urls', namespace='social')),
+    path('auth/', include('social_django.urls', namespace='social')),
     path('', include('helusers.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

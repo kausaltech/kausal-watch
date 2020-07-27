@@ -58,6 +58,7 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
+    'watch_auth',
     'helusers',
     'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
@@ -175,6 +176,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
+    'watch_auth.backends.AzureADAuth',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -190,8 +192,8 @@ SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
 SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
-from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_AUTH_PIPELINE  # noqa
-SOCIAL_AUTH_PIPELINE = HELUSERS_AUTH_PIPELINE + ('users.pipeline.create_permissions',)
+#from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_AUTH_PIPELINE  # noqa
+#SOCIAL_AUTH_PIPELINE = HELUSERS_AUTH_PIPELINE + ('users.pipeline.create_permissions',)
 
 HELUSERS_PASSWORD_LOGIN_DISABLED = True
 
