@@ -4,6 +4,7 @@ import graphene
 import libvoikko
 from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
+from graphql.error import GraphQLError
 import graphene_django_optimizer as gql_optimizer
 
 from aplans.utils import public_fields
@@ -415,14 +416,16 @@ class Query(graphene.ObjectType):
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     person = graphene.Field(PersonNode, id=graphene.ID(required=True))
-    static_page = graphene.Field(StaticPageNode, plan=graphene.ID(), slug=graphene.ID())
+    static_page = graphene.Field(StaticPageNode, plan=graphene.ID(required=True), slug=graphene.ID(required=True))
 
     plan_actions = graphene.List(
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String()
     )
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID())
-    plan_organizations = graphene.List(OrganizationNode, plan=graphene.ID(required=True))
+    organizations = graphene.List(
+        OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
+    )
     plan_indicators = graphene.List(
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
@@ -467,11 +470,28 @@ class Query(graphene.ObjectType):
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_plan_organizations(self, info, **kwargs):
+    def resolve_organizations(self, info, plan, with_ancestors, **kwargs):
         qs = Organization.objects.all()
-        plan = kwargs.get('plan')
         if plan is not None:
             qs = qs.filter(responsible_actions__action__plan__identifier=plan).distinct()
+
+        if with_ancestors:
+            # Retrieving ancestors for a queryset doesn't seem to work,
+            # so iterate over parents until we have a set of model IDs
+            # for all children and their ancestors.
+            if plan is None:
+                raise GraphQLError("withAncestors can only be used when 'plan' is set", [info])
+            all_ids = set()
+            while True:
+                vals = qs.values_list('id', 'parent')
+                ids = set((val[0] for val in vals))
+                parent_ids = set((val[1] for val in vals))
+                all_ids.update(ids)
+                if parent_ids.issubset(all_ids):
+                    break
+                qs = Organization.objects.filter(id__in=parent_ids)
+            qs = Organization.objects.filter(id__in=all_ids)
+
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_indicators(
@@ -498,7 +518,7 @@ class Query(graphene.ObjectType):
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
         if identifier and not plan:
-            raise Exception("You must supply the 'plan' argument when using 'identifier'")
+            raise GraphQLError("You must supply the 'plan' argument when using 'identifier'", [info])
         qs = Action.objects.all()
         if obj_id:
             qs = qs.filter(id=obj_id)
@@ -531,7 +551,7 @@ class Query(graphene.ObjectType):
         plan = kwargs.get('plan')
 
         if not identifier and not obj_id:
-            raise Exception("You must supply either 'id' or 'identifier'")
+            raise GraphQLError("You must supply either 'id' or 'identifier'", [info])
 
         qs = Indicator.objects.all()
         if obj_id:
@@ -555,7 +575,7 @@ class Query(graphene.ObjectType):
         plan = kwargs.get('plan')
 
         if not slug or not plan:
-            raise Exception("You must supply both 'slug' and 'plan'")
+            raise GraphQLError("You must supply both 'slug' and 'plan'", [info])
 
         qs = StaticPage.objects.all()
         qs = qs.filter(slug=slug, plan__identifier=plan)
