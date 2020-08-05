@@ -58,11 +58,10 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
-    'watch_auth',
-    'helusers',
     'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
+    'helusers',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -176,7 +175,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
-    'watch_auth.backends.AzureADAuth',
+    'admin_site.backends.AzureADAuth',
     'django.contrib.auth.backends.ModelBackend',
 )
 
@@ -192,8 +191,42 @@ SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
 SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
-#from helusers.defaults import SOCIAL_AUTH_PIPELINE as HELUSERS_AUTH_PIPELINE  # noqa
-#SOCIAL_AUTH_PIPELINE = HELUSERS_AUTH_PIPELINE + ('users.pipeline.create_permissions',)
+SOCIAL_AUTH_PIPELINE = (
+    # Get the information we can about the user and return it in a simple
+    # format to create the user instance later. On some cases the details are
+    # already part of the auth response from the provider, but sometimes this
+    # could hit a provider API.
+    'social_core.pipeline.social_auth.social_details',
+
+    # Get the social uid from whichever service we're authing thru. The uid is
+    # the unique identifier of the given user in the provider.
+    'social_core.pipeline.social_auth.social_uid',
+
+    # Reset logged-in user if UUID differs
+    'helusers.pipeline.ensure_uuid_match',
+
+    # Generate username from UUID
+    'helusers.pipeline.get_username',
+
+    # Checks if the current social-account is already associated in the site.
+    'social_core.pipeline.social_auth.social_user',
+
+    # Get or create the user and update user data
+    'helusers.pipeline.create_or_update_user',
+
+    # Create the record that associated the social account with this user.
+    'social_core.pipeline.social_auth.associate_user',
+
+    # Populate the extra_data field in the social record with the values
+    # specified by settings (and the default ones like access_token, etc).
+    'social_core.pipeline.social_auth.load_extra_data',
+
+    # Store the end session URL in the user's session data so that
+    # we can format logout links properly.
+    'helusers.pipeline.store_end_session_url',
+
+    'users.pipeline.create_permissions',
+)
 
 HELUSERS_PASSWORD_LOGIN_DISABLED = True
 
@@ -308,10 +341,11 @@ CKEDITOR_CONFIGS = {
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
-WAGTAIL_SITE_NAME = 'Kausal Watch admin'
+WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = False
 WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
 WAGTAIL_PASSWORD_RESET_ENABLED = False
+WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
 
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa

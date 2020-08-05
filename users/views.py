@@ -2,15 +2,19 @@ from django.http import HttpResponseRedirect, HttpResponseBadRequest
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
-from actions.models import Plan
 
 
-@require_http_methods(["POST"])
+@require_http_methods(['POST', 'GET'])
 @login_required
-def change_admin_plan(request):
+def change_admin_plan(request, plan_id=None):
     user = request.user
     plans = user.get_adminable_plans()
-    plan = request.POST.get('plan', None)
+
+    if request.method == 'POST':
+        plan = request.POST.get('plan', None)
+    else:
+        plan = plan_id
+
     if plan is None:
         return HttpResponseBadRequest("No plan given")
     try:
@@ -28,4 +32,8 @@ def change_admin_plan(request):
     user.selected_admin_plan = plan
     user.save(update_fields=['selected_admin_plan'])
 
-    return HttpResponseRedirect(reverse('admin:index'))
+    admin_type = request.GET.get('admin', 'django')
+    if admin_type == 'wagtail':
+        return HttpResponseRedirect(reverse('wagtailadmin_home'))
+    else:
+        return HttpResponseRedirect(reverse('admin:index'))
