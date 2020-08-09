@@ -2,8 +2,14 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.template.loader import render_to_string
 from wagtail.core import hooks
+from wagtail.admin.edit_handlers import (
+    FieldPanel
+)
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
+from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from actions.models import Plan
+
+from .models import Client
 
 
 class PlanChooserMenuItem(SubmenuMenuItem):
@@ -63,3 +69,19 @@ class OwnActionsPanel:
 def construct_homepage_panels(request, panels):
     panels.insert(0, OwnActionsPanel(request))
     print(panels)
+
+
+class ClientAdmin(ModelAdmin):
+    model = Client
+    menu_icon = 'wagtail'  # change as required
+    menu_order = 500  # will put in 3rd place (000 being 1st, 100 2nd)
+    list_display = ('name',)
+    search_fields = ('name',)
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('logo'),
+    ]
+
+
+modeladmin_register(ClientAdmin)

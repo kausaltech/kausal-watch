@@ -17,6 +17,8 @@ class Client(models.Model):
     login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200)
     login_button_text = models.CharField(verbose_name=_('login button text'), max_length=200)
 
+    logo = models.FileField(upload_to='client-logos/', null=True, blank=True)
+
     i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
 
     objects = ClientQuerySet.as_manager()
