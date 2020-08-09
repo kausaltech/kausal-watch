@@ -198,7 +198,7 @@ class ActionAdmin(AplansModelAdmin):
         handler = ActionEditHandler([
             ObjectList(panels, heading=_('Basic information')),
             self.internal_panel,
-            # ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
+            ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
             ObjectList([CondensedInlinePanel('tasks')], heading=_('Tasks')),
             *i18n_tabs
         ])
