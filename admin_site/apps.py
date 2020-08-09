@@ -26,6 +26,9 @@ class AdminSiteConfig(AdminConfig):
             _wagtail_collection_save_instance = Create.save_instance
             Create.save_instance = collection_save_instance
 
+        # from wagtail.core import permissions
+        # permissions.collection_permission_policy = 
+
 
 class AdminSiteStatic(AppConfig):
     name = 'admin_site'
