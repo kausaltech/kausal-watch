@@ -6,13 +6,14 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from parler.models import TranslatableModel, TranslatedFields
 from django_orghierarchy.models import Organization
 from modeltrans.fields import TranslationField
 
@@ -38,7 +39,16 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-class Plan(ModelWithImage, models.Model):
+def get_supported_languages():
+    for x in settings.LANGUAGES:
+        yield x
+
+
+def get_default_language():
+    return settings.LANGUAGES[0][0]
+
+
+class Plan(ModelWithImage, ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
@@ -68,6 +78,12 @@ class Plan(ModelWithImage, models.Model):
         Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
     )
 
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
+    other_languages = ArrayField(
+        models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
+        default=list, null=True, blank=True
+    )
+
     i18n = TranslationField(fields=['name'])
 
     public_fields = [
@@ -94,8 +110,7 @@ class Plan(ModelWithImage, models.Model):
 
         update_fields = []
         if self.root_collection is None:
-            obj = Collection(name=self.name)
-            Collection.add_root(instance=obj)
+            obj = Collection.get_first_root_node().add_child(name=self.name)
             self.root_collection = obj
             update_fields.append('root_collection')
 
@@ -211,6 +226,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
     )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
+
+    i18n = TranslationField(fields=('name', 'official_name', 'description'))
 
     objects = ActionQuerySet.as_manager()
 
@@ -465,10 +482,12 @@ class ActionContactPerson(OrderedModel):
 
 
 class ActionSchedule(models.Model):
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
+    plan = ParentalKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
+
+    i18n = TranslationField(fields=('name',))
 
     class Meta:
         ordering = ('plan', 'begins_at')
@@ -480,13 +499,15 @@ class ActionSchedule(models.Model):
 
 
 class ActionStatus(models.Model):
-    plan = models.ForeignKey(
+    plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_statuses',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
+
+    i18n = TranslationField(fields=('name',))
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -504,6 +525,8 @@ class ActionDecisionLevel(models.Model):
     )
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
+
+    i18n = TranslationField(fields=('name',))
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -588,12 +611,14 @@ class ActionTask(models.Model):
 
 
 class ActionImpact(OrderedModel):
-    plan = models.ForeignKey(
+    plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_impacts',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
+
+    i18n = TranslationField(fields=('name',))
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -642,6 +667,8 @@ class Category(OrderedModel, ModelWithImage):
     short_description = models.CharField(
         max_length=200, blank=True, verbose_name=_('short description')
     )
+
+    i18n = TranslationField(fields=('name', 'short_description'))
 
     class Meta:
         unique_together = (('type', 'identifier'),)
@@ -730,11 +757,12 @@ def validate_hex_color(s):
         )
 
 
-class ImpactGroup(TranslatableModel):
+class ImpactGroup(models.Model):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='impact_groups',
         verbose_name=_('plan')
     )
+    name = models.CharField(verbose_name=_('name'), max_length=200)
     identifier = IdentifierField()
     parent = models.ForeignKey(
         'self', on_delete=models.SET_NULL, related_name='children', null=True, blank=True,
@@ -746,11 +774,7 @@ class ImpactGroup(TranslatableModel):
         validators=[validate_hex_color]
     )
 
-    translations = TranslatedFields(
-        name=models.CharField(
-            verbose_name=_('name'), max_length=200
-        ),
-    )
+    i18n = TranslationField(fields=('name',))
 
     public_fields = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
@@ -789,23 +813,18 @@ class ImpactGroupAction(models.Model):
         return "%s ➜ %s" % (self.action, self.group)
 
 
-class MonitoringQualityPoint(OrderedModel, TranslatableModel):
+class MonitoringQualityPoint(OrderedModel):
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    description_yes = models.CharField(max_length=200, verbose_name=_("description when action fulfills criteria"))
+    description_no = models.CharField(max_length=200, verbose_name=_("description when action doesn\'t fulfill criteria"))
+
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='monitoring_quality_points',
         verbose_name=_('plan')
     )
     identifier = IdentifierField()
-    translations = TranslatedFields(
-        name=models.CharField(
-            max_length=100, verbose_name=_('name'),
-        ),
-        description_yes=models.CharField(
-            max_length=200, verbose_name=_("description when action fulfills criteria")
-        ),
-        description_no=models.CharField(
-            max_length=200, verbose_name=_("description when action doesn\'t fulfill criteria")
-        ),
-    )
+
+    i18n = TranslationField(fields=('name', 'description_yes', 'description_no'))
 
     class Meta:
         verbose_name = _('monitoring quality point')

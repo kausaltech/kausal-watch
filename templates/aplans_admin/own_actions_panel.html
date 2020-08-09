@@ -1,0 +1,46 @@
+{% load i18n wagtailadmin_tags %}
+{% if own_actions %}
+<div class="panel nice-padding">
+    <section>
+        <h2>{% trans "Own actions" %}</h2>
+        <table class="listing listing-page">
+            <col width="5%" />
+            <col />
+            <col width="15%"/>
+            <col width="15%"/>
+            <thead>
+                <tr>
+                    <th>{% trans "Identifier" %}</th>
+                    <th class="title">{% trans "Name" %}</th>
+                    <th>{% trans "Last modified" %}</th>
+                    <th>{% trans "Status" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for action in own_actions %}
+                    <tr>
+                        <td>{{ action.identifier }}</td>
+                        <td class="title" valign="top">
+                            <div class="title-wrapper">
+                                <a href="{% url 'actions_action_modeladmin_edit' action.id %}" title="{% trans 'Edit this action' %}">{{ action.name }}</a>
+                            </div>
+                            <ul class="actions">
+                                <li><a href="{% url 'actions_action_modeladmin_edit' action.id %}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
+                                {% if True %}
+                                    {% if page_url is not None %}
+                                        <li><a href="{{ action.url }}" class="button button-small button-secondary" target="_blank" rel="noopener noreferrer">{% trans 'View' %}</a></li>
+                                    {% endif %}
+                                {% endif %}
+                            </ul>
+                        </td>
+                        <td valign="top"><div class="human-readable-date" title="{{ action.updated_at|date }}">{% blocktrans with time_period=action.updated_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div></td>
+                        <td valign="top">
+                            {{ action.status }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endif %}

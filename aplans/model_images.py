@@ -14,6 +14,7 @@ from rest_framework import serializers
 from rest_framework.reverse import reverse
 from image_cropping import ImageRatioField
 from easy_thumbnails.files import get_thumbnailer
+from wagtail.images import get_image_model
 
 
 def image_upload_path(instance, filename):
@@ -29,6 +30,10 @@ class ModelWithImage(models.Model):
     image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
     image_height = models.PositiveIntegerField(null=True, editable=False)
     image_width = models.PositiveIntegerField(null=True, editable=False)
+
+    main_image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
 
     def get_image_url(self, request):
         if not request or not self.image:

@@ -8,7 +8,6 @@ from admin_auto_filters.filters import AutocompleteFilter
 from admin_ordering.admin import OrderableAdmin
 from image_cropping import ImageCroppingMixin
 from ckeditor.widgets import CKEditorWidget
-from parler.admin import TranslatableAdmin
 
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
@@ -75,12 +74,12 @@ class CategoryTypeAdmin(admin.TabularInline):
 
 
 @admin.register(ImpactGroup)
-class ImpactGroupAdmin(PlanRelatedAdmin, TranslatableAdmin):
+class ImpactGroupAdmin(PlanRelatedAdmin):
     model = ImpactGroup
 
 
 @admin.register(MonitoringQualityPoint)
-class MonitoringQualityPointAdmin(TranslatableAdmin, OrderableAdmin, PlanRelatedAdmin):
+class MonitoringQualityPointAdmin(OrderableAdmin, PlanRelatedAdmin):
     model = MonitoringQualityPoint
     ordering_field = 'order'
     ordering_field_hide_input = True
