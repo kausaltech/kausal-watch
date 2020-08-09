@@ -1,25 +1,82 @@
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django import forms
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
-from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
 
 from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
+    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList,
+    MultiFieldPanel
 )
+from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
-from modeltrans.translator import get_i18n_field
 from django_orghierarchy.models import Organization
+from condensedinlinepanel.edit_handlers import CondensedInlinePanel
 
-from .models import Action, Plan
-
-
-class FormClassMixin:
-    def get_form_class(self):
-        return self.get_edit_handler().get_form_class(self.request)
+from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface
+from .admin import AllActionsFilter, ImpactFilter
+from .models import Action, Plan, ActionStatus, ActionImpact
 
 
-class AplansPermissionHelper(PermissionHelper):
+def _get_category_fields(plan, model, obj, with_initial=False):
+    fields = {}
+    if model == Action:
+        filter_name = 'editable_for_actions'
+    # elif self.model == Indicator:
+    #     filter_name = 'editable_for_indicators'
+    else:
+        raise Exception()
+
+    for cat_type in plan.category_types.filter(**{filter_name: True}):
+        qs = cat_type.categories.all()
+        if obj and with_initial:
+            initial = obj.categories.filter(type=cat_type)
+        else:
+            initial = None
+        field = forms.ModelMultipleChoiceField(
+            qs, label=cat_type.name, initial=initial, required=False,
+        )
+        field.category_type = cat_type
+        fields['categories_%s' % cat_type.identifier] = field
+    return fields
+
+
+class CategoryFieldPanel(MultiFieldPanel):
+    def __init__(self, field_name, *args, **kwargs):
+        if 'children' not in kwargs:
+            kwargs['children'] = []
+        self._field_name = field_name
+        if 'heading' not in kwargs:
+            kwargs['heading'] = _('Categories')
+        super().__init__(*args, **kwargs)
+
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        kwargs['field_name'] = self._field_name
+        return kwargs
+
+    def bind_to(self, model=None, instance=None, request=None, form=None):
+        bound_request = request if request is not None else getattr(self, 'request')
+        bound_model = model if model is not None else getattr(self, 'model')
+        if bound_request is not None and bound_model is not None:
+            plan = bound_request.user.get_active_admin_plan()
+            cat_fields = _get_category_fields(plan, bound_model, instance)
+            self.children = [FieldPanel(name, heading=field.label) for name, field in cat_fields.items()]
+        return super().bind_to(model, instance, request, form)
+
+    def render(self):
+        import ipdb
+        ipdb.set_trace()
+        return super().render()
+
+    def required_fields(self):
+        fields = []
+        for handler in self.children:
+            fields.extend(handler.required_fields())
+        return fields
+
+
+class ActionPermissionHelper(PermissionHelper):
     def user_can_inspect_obj(self, user, obj):
         if not super().user_can_inspect_obj(user, obj):
             return False
@@ -27,10 +84,14 @@ class AplansPermissionHelper(PermissionHelper):
         # The user has view permission to all actions if he is either
         # a general admin for actions or a contact person for any
         # actions.
-        if user.is_superuser or user.has_perm('actions.admin_action'):
+        if user.is_superuser or user.is_general_admin_for_plan(obj.plan):
             return True
 
-        return user.is_contact_person_for_action(None) or user.is_organization_admin_for_action(None)
+        adminable_plans = user.get_adminable_plans()
+        if obj.plan in adminable_plans:
+            return True
+
+        return False
 
     def user_can_edit_obj(self, user, obj):
         if not super().user_can_edit_obj(user, obj):
@@ -64,27 +125,19 @@ class AplansPermissionHelper(PermissionHelper):
         return True
 
 
-class AplansEditView(FormClassMixin, EditView):
-    pass
-
-
-class ActionEditHandler(TabbedInterface):
-    def on_request_bound(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        if not user.is_general_admin_for_plan(plan):
-            for child in list(self.children):
-                if isinstance(child, AdminOnlyPanel):
-                    self.children.remove(child)
-
-        super().on_request_bound()
-
-    def get_form_class(self, request):
-        form_class = super().get_form_class()
-
+class ActionEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
         user = request.user
         plan = user.get_active_admin_plan()
+        cat_fields = _get_category_fields(plan, Action, self.instance)
+
+        self.base_form_class = type(
+            'ActionAdminForm',
+            (WagtailAdminModelForm,),
+            cat_fields
+        )
+
+        form_class = super().get_form_class()
 
         if plan.actions_locked:
             form_class.base_fields['identifier'].disabled = True
@@ -93,20 +146,18 @@ class ActionEditHandler(TabbedInterface):
             form_class.base_fields['official_name'].required = False
 
         if not user.is_general_admin_for_plan(plan):
-            del form_class.base_fields['internal_priority']
-            del form_class.base_fields['internal_priority_comment']
-            del form_class.base_fields['impact']
+            for panel in list(self.children):
+                if not isinstance(panel, AdminOnlyPanel):
+                    continue
+                for child in panel.children:
+                    assert isinstance(child, FieldPanel)
+                    del form_class.base_fields[child.field_name]
+
+        field = form_class.base_fields.get('impact')
+        if field is not None:
+            field.queryset = field.queryset.filter(plan=plan)
 
         return form_class
-
-
-class AdminOnlyPanel(ObjectList):
-    pass
-
-
-class AplansModelAdmin(ModelAdmin):
-    edit_view_class = AplansEditView
-    permission_helper_class = AplansPermissionHelper
 
 
 class ActionAdmin(AplansModelAdmin):
@@ -115,9 +166,10 @@ class ActionAdmin(AplansModelAdmin):
     menu_order = 201  # will put in 3rd place (000 being 1st, 100 2nd)
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('identifier', 'name')
-    # list_filter = ('author',)
+    list_filter = (AllActionsFilter, ImpactFilter)
     search_fields = ('identifier', 'name')
     list_display_add_buttons = 'name'
+    permission_helper_class = ActionPermissionHelper
 
     basic_panels = [
         FieldPanel('identifier'),
@@ -132,12 +184,25 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('impact'),
     ], heading=_('Internal information'))
 
-    edit_handler = ActionEditHandler([
-        ObjectList(basic_panels, heading=_('Basic information')),
-        internal_panel,
-        # ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
-        ObjectList([InlinePanel('tasks')], heading=_('Tasks')),
-    ])
+    def get_edit_handler(self, instance, request):
+        panels = list(self.basic_panels)
+
+        cat_fields = _get_category_fields(instance.plan, Action, instance)
+        cat_panels = []
+        for key, field in cat_fields.items():
+            cat_panels.append(FieldPanel(key, heading=field.label))
+        panels.insert(2, MultiFieldPanel(cat_panels, heading=_('Categories')))
+
+        i18n_tabs = self.get_translation_tabs(instance, request)
+
+        handler = ActionEditHandler([
+            ObjectList(panels, heading=_('Basic information')),
+            self.internal_panel,
+            # ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
+            ObjectList([CondensedInlinePanel('tasks')], heading=_('Tasks')),
+            *i18n_tabs
+        ])
+        return handler
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -150,7 +215,21 @@ class ActionAdmin(AplansModelAdmin):
 modeladmin_register(ActionAdmin)
 
 
-class PlanAdmin(ModelAdmin):
+class PlanEditHandler(TabbedInterface):
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        return form_class
+
+    def on_form_bound(self):
+        super().on_form_bound()
+        plan = self.instance
+        f = self.form.fields['main_image']
+        f.queryset = f.queryset.model.objects.filter(
+            collection__in=plan.root_collection.get_descendants(inclusive=True)
+        )
+
+
+class PlanAdmin(AplansModelAdmin):
     model = Plan
     menu_icon = 'wagtail'  # change as required
     menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
@@ -163,27 +242,57 @@ class PlanAdmin(ModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('actions_locked'),
         FieldPanel('allow_images_for_actions'),
+        FieldPanel('primary_language'),
+        FieldPanel('other_languages'),
+        ImageChooserPanel('main_image'),
     ]
 
-    def get_edit_handler(self, instance, request):
-        i18n_field = get_i18n_field(type(instance))
-        tabs = [ObjectList(self.panels, heading='Perustiedot')]
-        if i18n_field:
-            for lang_code, name in settings.LANGUAGES:
-                if lang_code == 'fi':
-                    continue
-                fields = []
-                for field in i18n_field.get_translated_fields():
-                    if field.language != lang_code:
-                        continue
-                    fields.append(FieldPanel(field.name))
-                tabs.append(ObjectList(fields, heading=name))
+    action_status_panels = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+        FieldPanel('is_completed'),
+    ]
 
-        handler = TabbedInterface(tabs)
+    action_impact_panels = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+    ]
+
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        return form_class
+    """
+        if self.instance.actions_locked:
+            form_class.base_fields['identifier'].disabled = True
+            form_class.base_fields['identifier'].required = False
+            form_class.base_fields['official_name'].disabled = True
+            form_class.base_fields['official_name'].required = False
+    """
+
+    def get_edit_handler(self, instance, request):
+        action_status_panels = self.insert_model_translation_tabs(
+            ActionStatus, self.action_status_panels, request, instance
+        )
+        action_impact_panels = self.insert_model_translation_tabs(
+            ActionImpact, self.action_impact_panels, request, instance
+        )
+        panels = self.insert_model_translation_tabs(
+            Plan, self.panels, request, instance
+        )
+
+        tabs = [
+            ObjectList(panels, heading=_('Basic information')),
+            ObjectList([
+                CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
+                CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
+            ], heading=_('Action classifications')),
+        ]
+
+        handler = PlanEditHandler(tabs)
         return handler
 
 
-# modeladmin_register(PlanAdmin)
+modeladmin_register(PlanAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

@@ -2,11 +2,11 @@ from actions.perms import (
     add_contact_person_perms, remove_contact_person_perms,
     add_plan_admin_perms, remove_plan_admin_perms
 )
+from .models import User
 
 
-def create_permissions(details, backend, response, user=None, *args, **kwargs):
-    if user is None:
-        return
+def create_permissions(user, **kwargs):
+    assert isinstance(user, User)
 
     # If there is a person added for this user already in the system,
     # connect the models here.

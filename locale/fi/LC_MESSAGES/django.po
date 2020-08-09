@@ -919,7 +919,7 @@ msgstr "Minkälainen vaikutus toimenpiteellä on?"
 
 #: indicators/models.py
 msgid "indicates action progress"
-msgstr "mittaa toimenpiteen edistymistä"
+msgstr "mittaa toimenpiteen etenemistä"
 
 #: indicators/models.py
 msgid "Set if the indicator should be used to determine action progress"

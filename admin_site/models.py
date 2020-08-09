@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from parler.models import TranslatableModel, TranslatedFields
+from modeltrans.fields import TranslationField
 
 
 class ClientQuerySet(models.QuerySet):
@@ -11,17 +11,13 @@ class ClientQuerySet(models.QuerySet):
         return self.filter(admin_hostnames__hostname=hostname)
 
 
-class Client(TranslatableModel):
+class Client(models.Model):
     name = models.CharField(max_length=100)
     azure_ad_tenant_id = models.CharField(max_length=200)
-    translations = TranslatedFields(
-        login_header_text=models.CharField(
-            verbose_name=_('login header text'), max_length=200
-        ),
-        login_button_text=models.CharField(
-            verbose_name=_('login button text'), max_length=200
-        ),
-    )
+    login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200)
+    login_button_text = models.CharField(verbose_name=_('login button text'), max_length=200)
+
+    i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
 
     objects = ClientQuerySet.as_manager()
 

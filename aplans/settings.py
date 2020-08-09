@@ -69,7 +69,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'social_django',
     'mptt',
-    'parler',
     'django_extensions',
     'import_export',
     'anymail',
@@ -88,6 +87,7 @@ INSTALLED_APPS = [
     'wagtail.core',
     'wagtail.contrib.modeladmin',
     'wagtailautocomplete',
+    'condensedinlinepanel',
 
     'modelcluster',
     'taggit',
@@ -224,8 +224,6 @@ SOCIAL_AUTH_PIPELINE = (
     # Store the end session URL in the user's session data so that
     # we can format logout links properly.
     'helusers.pipeline.store_end_session_url',
-
-    'users.pipeline.create_permissions',
 )
 
 HELUSERS_PASSWORD_LOGIN_DISABLED = True

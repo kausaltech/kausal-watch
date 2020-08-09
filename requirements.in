@@ -22,6 +22,7 @@ sentry-sdk
 graphene-django
 graphene-django-optimizer
 aniso8601
+wagtail-condensedinlinepanel
 django-admin-numeric-filter
 django-admin-ordering
 django-admin-autocomplete-filter
