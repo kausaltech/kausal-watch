@@ -28,14 +28,20 @@ from django_orghierarchy.models import Organization, OrganizationClass
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
 
-voikko_fi = libvoikko.Voikko(language='fi')
-voikko_fi.setNoUglyHyphenation(True)
-voikko_fi.setMinHyphenatedWordLength(16)
+try:
+    voikko_fi = libvoikko.Voikko(language='fi')
+    voikko_fi.setNoUglyHyphenation(True)
+    voikko_fi.setMinHyphenatedWordLength(16)
+except OSError:
+    voikko_fi = None
 
 _hyphenation_cache = {}
 
 
 def hyphenate(s):
+    if voikko_fi is None:
+        return s
+
     tokens = voikko_fi.tokens(s)
     out = ''
     for t in tokens:
