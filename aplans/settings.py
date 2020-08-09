@@ -87,6 +87,7 @@ INSTALLED_APPS = [
     'wagtail.core',
     'wagtail.contrib.modeladmin',
     'wagtailautocomplete',
+    'wagtailfontawesome',
     'condensedinlinepanel',
 
     'modelcluster',
