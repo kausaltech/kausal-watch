@@ -26,6 +26,10 @@
 
         {% block above_login %}{% endblock %}
 
+        {% if form.client and form.client.logo %}
+        <img src="{{ form.client.logo.url }}" alt="{{ form.client.name }}" width="128" />
+        {% endif %}
+
         <h1>{% block branding_login %}{% if form.client and form.client.login_header_text %}{{ form.client.login_header_text }}{% else %}{% trans "Sign in to Kausal Watch" %}{% endif %}{% endblock %}</h1>
 
         <a href="{% url 'auth_login' %}?next={{ request.GET.next }}">
