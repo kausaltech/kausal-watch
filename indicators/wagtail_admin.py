@@ -6,7 +6,7 @@ from .models import Indicator
 
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
-    menu_icon = 'wagtail'  # change as required
+    menu_icon = 'fa-bar-chart'  # change as required
     menu_order = 300  # will put in 3rd place (000 being 1st, 100 2nd)
     list_display = ('name',)
     search_fields = ('name',)

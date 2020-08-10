@@ -162,7 +162,7 @@ class ActionEditHandler(AplansTabbedInterface):
 
 class ActionAdmin(AplansModelAdmin):
     model = Action
-    menu_icon = 'wagtail'  # change as required
+    menu_icon = 'fa-cubes'  # change as required
     menu_order = 201  # will put in 3rd place (000 being 1st, 100 2nd)
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('identifier', 'name')
@@ -231,7 +231,7 @@ class PlanEditHandler(TabbedInterface):
 
 class PlanAdmin(AplansModelAdmin):
     model = Plan
-    menu_icon = 'wagtail'  # change as required
+    menu_icon = 'fa-briefcase'  # change as required
     menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('name',)

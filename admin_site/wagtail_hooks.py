@@ -1,6 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.templatetags.static import static
+from django.utils.html import format_html
 from wagtail.core import hooks
 from wagtail.admin.edit_handlers import (
     FieldPanel
@@ -45,7 +47,7 @@ plan_chooser = PlanChooserMenu(None)
 @hooks.register('register_admin_menu_item')
 def register_plan_chooser():
     return PlanChooserMenuItem(
-        _('Choose plan'), plan_chooser, classnames='icon icon-site', order=9000
+        _('Choose plan'), plan_chooser, classnames='icon icon-fa-check-circle-o', order=9000
     )
 
 
@@ -73,7 +75,7 @@ def construct_homepage_panels(request, panels):
 
 class ClientAdmin(ModelAdmin):
     model = Client
-    menu_icon = 'wagtail'  # change as required
+    menu_icon = 'fa-bank'  # change as required
     menu_order = 500  # will put in 3rd place (000 being 1st, 100 2nd)
     list_display = ('name',)
     search_fields = ('name',)
@@ -85,3 +87,11 @@ class ClientAdmin(ModelAdmin):
 
 
 modeladmin_register(ClientAdmin)
+
+
+@hooks.register("insert_global_admin_css", order=100)
+def global_admin_css():
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("css/custom.css")
+    )
