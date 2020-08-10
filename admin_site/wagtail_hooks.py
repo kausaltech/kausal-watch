@@ -1,6 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.template.loader import render_to_string
+from django.templatetags.static import static
+from django.utils.html import format_html
 from wagtail.core import hooks
 from wagtail.admin.edit_handlers import (
     FieldPanel
@@ -85,3 +87,11 @@ class ClientAdmin(ModelAdmin):
 
 
 modeladmin_register(ClientAdmin)
+
+
+@hooks.register("insert_global_admin_css", order=100)
+def global_admin_css():
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("css/custom.css")
+    )
