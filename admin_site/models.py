@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modeltrans.fields import TranslationField
+from modelcluster.models import ClusterableModel
+from modelcluster.fields import ParentalKey
 
 
 class ClientQuerySet(models.QuerySet):
@@ -11,7 +13,7 @@ class ClientQuerySet(models.QuerySet):
         return self.filter(admin_hostnames__hostname=hostname)
 
 
-class Client(models.Model):
+class Client(ClusterableModel):
     name = models.CharField(max_length=100)
     azure_ad_tenant_id = models.CharField(max_length=200)
     login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200)
@@ -28,7 +30,7 @@ class Client(models.Model):
 
 
 class AdminHostname(models.Model):
-    client = models.ForeignKey(
+    client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='admin_hostnames'
     )
     hostname = models.CharField(max_length=100, unique=True)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-06-14 15:01+0300\n"
+"POT-Creation-Date: 2020-08-11 12:18+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -441,6 +441,10 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
+#: actions/wagtail_admin.py indicators/admin.py
+msgid "Categories"
+msgstr "Luokat"
+
 #: actions/wagtail_admin.py
 msgid "Internal information"
 msgstr "Sisäiset tiedot"
@@ -450,8 +454,28 @@ msgid "Basic information"
 msgstr "Perustiedot"
 
 #: actions/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Yhteyshenkilöt"
+
+#: actions/wagtail_admin.py
+msgid "Responsible parties"
+msgstr "Toimenpiteen vastuutahot"
+
+#: actions/wagtail_admin.py
 msgid "Tasks"
 msgstr "Tehtävät"
+
+#: actions/wagtail_admin.py
+msgid "Action statuses"
+msgstr "Toimenpiteen tilat"
+
+#: actions/wagtail_admin.py
+msgid "Action impacts"
+msgstr "Toimenpiteen vaikuttavuusluokat"
+
+#: actions/wagtail_admin.py
+msgid "Action classifications"
+msgstr "Toimenpiteiden luokittelu"
 
 #: admin_site/admin.py
 #, python-format
@@ -463,9 +487,38 @@ msgstr "Lisää uusi %(model)s"
 msgid "Add another %(verbose_name)s"
 msgstr "Lisää uusi %(verbose_name)s"
 
+#: admin_site/admin.py
+msgid "Django admin"
+msgstr ""
+
+#: admin_site/admin.py
+#, python-format
+msgid "%(site_name)s admin"
+msgstr "%(site_name)s -ylläpito"
+
+#: admin_site/forms.py
+msgid "Enter password"
+msgstr "Syötä salasana"
+
+#: admin_site/forms.py
+msgid "Enter your email address"
+msgstr "Syötä sähköpostiosoitteesi"
+
+#: admin_site/models.py
+msgid "login header text"
+msgstr "sisäänkirjautumisen otsikko"
+
+#: admin_site/models.py
+msgid "login button text"
+msgstr "sisäänkirjautumispainikkeen teksti"
+
+#: admin_site/views.py
+msgid "You have been successfully logged out."
+msgstr "Olet kirjautunut ulos."
+
 #: admin_site/wagtail_hooks.py
 msgid "Choose plan"
-msgstr ""
+msgstr "Valitse ohjelma"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -481,11 +534,11 @@ msgstr "kuvan rajaus"
 
 #: aplans/settings.py
 msgid "Finnish"
-msgstr ""
+msgstr "suomi"
 
 #: aplans/settings.py
 msgid "English"
-msgstr ""
+msgstr "englanti"
 
 #: aplans/utils.py notifications/models.py
 msgid "identifier"
@@ -670,10 +723,6 @@ msgstr "[ei mitään]"
 #: indicators/admin.py
 msgid "has goals"
 msgstr "on tavoitteita"
-
-#: indicators/admin.py
-msgid "Categories"
-msgstr "Luokat"
 
 #: indicators/apps.py
 msgid "Indicators"
@@ -941,6 +990,18 @@ msgstr "mittarin yhteyshenkilö"
 msgid "indicator contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
+#: indicators/wagtail_admin.py
+msgid "Choose a quantity"
+msgstr "Valitse suure"
+
+#: indicators/wagtail_admin.py
+msgid "Choose another quantity"
+msgstr "Valitse toinen suure"
+
+#: indicators/wagtail_admin.py
+msgid "Edit this quantity"
+msgstr "Muokkaa tätä suuretta"
+
 #: notifications/apps.py
 msgid "Notifications"
 msgstr "Herätteet"
@@ -1033,7 +1094,7 @@ msgstr "etunimi"
 msgid "last name"
 msgstr "sukunimi"
 
-#: people/models.py
+#: people/models.py users/models.py
 msgid "email address"
 msgstr "sähköpostiosoite"
 
@@ -1066,6 +1127,22 @@ msgstr "henkilöt"
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
+#: people/wagtail_admin.py
+msgid "Choose person"
+msgstr "Valitse henkilö"
+
+#: people/wagtail_admin.py
+msgid "Choose a person"
+msgstr "Valitse henkilö"
+
+#: people/wagtail_admin.py
+msgid "Choose another person"
+msgstr "Valitse toinen henkilö"
+
+#: people/wagtail_admin.py
+msgid "Edit this person"
+msgstr "Muokkaa tätä henkilöä"
+
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
 msgstr "Valitse toimenpideohjelma"
@@ -1090,13 +1167,83 @@ msgstr "Ei löydy"
 msgid "Unknown content"
 msgstr "Tuntematon sisältö"
 
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Own actions"
+msgstr "Omat toimenpiteet"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr "Tunniste"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Name"
+msgstr "Nimi"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Last modified"
+msgstr "Viimeksi muokattu"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Status"
+msgstr "Tila"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Edit this action"
+msgstr "Muokkaa tätä toimenpidettä"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Edit"
+msgstr "Muokkaa"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "View"
+msgstr "Katsele"
+
+#: templates/aplans_admin/own_actions_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s sitten"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in"
+msgstr "Kirjaudu sisään"
+
+#: templates/wagtailadmin/login.html
+#, python-format
+msgid "Your %(username_field)s and password didn't match. Please try again."
+msgstr "Sisäänkirjautumistiedot (%(username_field)s ja salasana) eivät täsmää."
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in to Kausal Watch"
+msgstr "Kirjaudu sisään Kausal Watch -palveluun"
+
+#: templates/wagtailadmin/login.html
+msgid "Signing in…"
+msgstr "Kirjaudutaan sisään…"
+
+#: templates/wagtailadmin/login.html
+msgid "If you have a separate password, click here to sign in"
+msgstr "Jos sinulla on erillinen salasana, klikkaa tästä kirjautuaksesi sisään"
+
+#: templates/wagtailadmin/login.html
+msgid "Reset your password"
+msgstr "Resetoi salasanasi"
+
+#: templates/wagtailadmin/login.html
+msgid "Forgotten it?"
+msgstr "Unohditko?"
+
 #: templates/wagtailadmin/shared/main_nav.html
 msgid "Edit your account"
-msgstr ""
+msgstr "Muokkaa tiliäsi"
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Account settings"
+msgstr "Tilin asetukset"
 
 #: templates/wagtailadmin/shared/main_nav.html
 msgid "Log out"
-msgstr ""
+msgstr "Kirjaudu ulos"
 
 #: users/apps.py
 msgid "Users"
@@ -1109,3 +1256,6 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Responsibles"
+#~ msgstr "Vastuutahot"

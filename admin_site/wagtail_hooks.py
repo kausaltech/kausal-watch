@@ -5,7 +5,7 @@ from django.templatetags.static import static
 from django.utils.html import format_html
 from wagtail.core import hooks
 from wagtail.admin.edit_handlers import (
-    FieldPanel
+    FieldPanel, InlinePanel
 )
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
@@ -83,15 +83,27 @@ class ClientAdmin(ModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('logo'),
+        FieldPanel('azure_ad_tenant_id'),
+        FieldPanel('login_header_text'),
+        FieldPanel('login_button_text'),
+        InlinePanel('admin_hostnames', heading=_('Admin hostnames')),
     ]
 
 
 modeladmin_register(ClientAdmin)
 
 
-@hooks.register("insert_global_admin_css", order=100)
+@hooks.register("insert_global_admin_css", order=900)
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/custom.css")
+        static("css/wagtail_admin_overrides.css")
+    )
+
+
+@hooks.register("insert_editor_css", order=900)
+def editor_css():
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("css/wagtail_editor_overrides.css")
     )

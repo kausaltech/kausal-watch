@@ -18,12 +18,10 @@ from django_orghierarchy.models import Organization
 from modeltrans.fields import TranslationField
 
 from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
+    FieldPanel, RichTextFieldPanel
 )
-from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.core.fields import RichTextField
-from wagtail.core.models import Collection
-from wagtailautocomplete.edit_handlers import AutocompletePanel
+from wagtail.core.models import Collection, Site
 
 
 from modelcluster.models import ClusterableModel
@@ -68,6 +66,9 @@ class Plan(ModelWithImage, ClusterableModel):
         help_text=_('Users that can modify everything related to the action plan')
     )
 
+    site = models.OneToOneField(
+        Site, null=True, on_delete=models.SET_NULL, editable=False, related_name='plan',
+    )
     root_collection = models.OneToOneField(
         Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='plan',
     )
@@ -113,16 +114,42 @@ class Plan(ModelWithImage, ClusterableModel):
             obj = Collection.get_first_root_node().add_child(name=self.name)
             self.root_collection = obj
             update_fields.append('root_collection')
+        else:
+            if self.root_collection.name != self.name:
+                self.root_collection.name = self.name
+                self.root_collection.save(update_fields=['name'])
 
+        if self.site is None:
+            from pages.models import PlanRootPage
+
+            root_page = PlanRootPage.get_first_root_node().add_child(title=self.name, slug='home', url_path='')
+            site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
+            site.save()
+            self.site = site
+            update_fields.append('site')
+        else:
+            # FIXME: Update Site and PlanRootPage attributes
+            pass
+
+        group_name = '%s admins' % self.name
         if self.admin_group is None:
-            obj = Group.objects.create(name='%s admins' % self.name)
+            obj = Group.objects.create(name='%s admins' % group_name)
             self.admin_group = obj
             update_fields.append('admin_group')
+        else:
+            if self.admin_group.name != group_name:
+                self.admin_group.name = group_name
+                self.admin_group.save()
 
+        group_name = '%s contact persons' % self.name
         if self.contact_person_group is None:
-            obj = Group.objects.create(name='%s contact persons' % self.name)
+            obj = Group.objects.create(name=group_name)
             self.contact_person_group = obj
             update_fields.append('contact_person_group')
+        else:
+            if self.contact_person_group.name != group_name:
+                self.contact_person_group.name = group_name
+                self.contact_person_group.save()
 
         if update_fields:
             super().save(update_fields=update_fields)
@@ -447,10 +474,6 @@ class ActionResponsibleParty(OrderedModel):
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
     )
 
-    panels = [
-        AutocompletePanel('organization'),
-    ]
-
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
@@ -463,7 +486,7 @@ class ActionResponsibleParty(OrderedModel):
 
 
 class ActionContactPerson(OrderedModel):
-    action = models.ForeignKey(
+    action = ParentalKey(
         Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='contact_persons'
     )
     person = models.ForeignKey(
