@@ -86,9 +86,11 @@ INSTALLED_APPS = [
     'wagtail.admin',
     'wagtail.core',
     'wagtail.contrib.modeladmin',
+    'wagtail.contrib.postgres_search',
     'wagtailautocomplete',
     'wagtailfontawesome',
     'condensedinlinepanel',
+    'generic_chooser',
 
     'modelcluster',
     'taggit',
@@ -115,6 +117,7 @@ INSTALLED_APPS = [
     'notifications',
     'images',
     'documents',
+    'pages',
 ]
 
 MIDDLEWARE = [
@@ -212,8 +215,8 @@ SOCIAL_AUTH_PIPELINE = (
     # Checks if the current social-account is already associated in the site.
     'social_core.pipeline.social_auth.social_user',
 
-    # Get or create the user and update user data
-    'helusers.pipeline.create_or_update_user',
+    # Finds user by email address
+    'users.pipeline.find_user_by_email',
 
     # Create the record that associated the social account with this user.
     'social_core.pipeline.social_auth.associate_user',
@@ -221,6 +224,9 @@ SOCIAL_AUTH_PIPELINE = (
     # Populate the extra_data field in the social record with the values
     # specified by settings (and the default ones like access_token, etc).
     'social_core.pipeline.social_auth.load_extra_data',
+
+    # Get or create the user and update user data
+    'users.pipeline.update_user',
 
     # Store the end session URL in the user's session data so that
     # we can format logout links properly.
@@ -345,6 +351,11 @@ WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = False
 WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
 WAGTAIL_PASSWORD_RESET_ENABLED = False
 WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
+WAGTAILSEARCH_BACKENDS = {
+    'default': {
+        'BACKEND': 'wagtail.contrib.postgres_search.backend',
+    }
+}
 
 
 from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa

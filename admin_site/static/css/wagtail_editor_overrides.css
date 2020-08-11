@@ -1,0 +1,11 @@
+.c-wagtailautocomplete__selection {
+    background-color: #fafafa;
+}
+
+.c-wagtailautocomplete__suggestions__item--active {
+    background-color: #7AD7A4;
+}
+
+.button-secondary {
+    color: #fff;
+}

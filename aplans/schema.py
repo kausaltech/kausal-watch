@@ -429,7 +429,7 @@ class Query(graphene.ObjectType):
         order_by=graphene.String()
     )
     plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID())
-    organizations = graphene.List(
+    plan_organizations = graphene.List(
         OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
     )
     plan_indicators = graphene.List(
@@ -476,7 +476,7 @@ class Query(graphene.ObjectType):
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_organizations(self, info, plan, with_ancestors, **kwargs):
+    def resolve_plan_organizations(self, info, plan, with_ancestors, **kwargs):
         qs = Organization.objects.all()
         if plan is not None:
             qs = qs.filter(responsible_actions__action__plan__identifier=plan).distinct()
@@ -595,4 +595,21 @@ class Query(graphene.ObjectType):
         return obj
 
 
-schema = graphene.Schema(query=Query)
+from graphql.type import (
+    specified_directives, GraphQLDirective, DirectiveLocation, GraphQLArgument, GraphQLString,
+    GraphQLNonNull
+)
+
+LocaleDirective = GraphQLDirective(
+    name='locale',
+    description='Select locale in which to return data',
+    args={
+        'lang': GraphQLArgument(
+            type_=GraphQLNonNull(GraphQLString),
+            description='Selected language'
+        )
+    },
+    locations=[DirectiveLocation.QUERY]
+)
+
+schema = graphene.Schema(query=Query, directives=specified_directives + [LocaleDirective])

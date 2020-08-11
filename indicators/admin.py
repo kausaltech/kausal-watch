@@ -291,7 +291,7 @@ class IndicatorAdmin(AplansModelAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
         obj.set_latest_value()
-        obj.save(update_values=['latest_value'])
+        obj.save(update_fields=['latest_value'])
         actions = obj.related_actions.filter(indicates_action_progress=True)
         for act_ind in actions:
             act = act_ind.action

@@ -12,6 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from sentry_sdk import capture_exception
+from wagtail.search import index
 
 from aplans.model_images import ModelWithImage
 
@@ -22,7 +23,7 @@ User = get_user_model()
 DEFAULT_AVATAR_SIZE = 360
 
 
-class Person(ModelWithImage):
+class Person(index.Indexed, ModelWithImage):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
     email = models.EmailField(verbose_name=_('email address'))
@@ -43,6 +44,11 @@ class Person(ModelWithImage):
     )
 
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
+
+    search_fields = [
+        index.SearchField('first_name', partial_match=True),
+        index.SearchField('last_name', partial_match=True),
+    ]
 
     class Meta:
         verbose_name = _('person')

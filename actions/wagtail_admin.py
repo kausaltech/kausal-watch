@@ -10,10 +10,12 @@ from wagtail.admin.edit_handlers import (
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtailautocomplete.edit_handlers import AutocompletePanel
 from django_orghierarchy.models import Organization
 from condensedinlinepanel.edit_handlers import CondensedInlinePanel
 
 from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface
+from people.wagtail_admin import PersonChooser
 from .admin import AllActionsFilter, ImpactFilter
 from .models import Action, Plan, ActionStatus, ActionImpact
 
@@ -157,6 +159,10 @@ class ActionEditHandler(AplansTabbedInterface):
         if field is not None:
             field.queryset = field.queryset.filter(plan=plan)
 
+        field = form_class.base_fields.get('status')
+        if field is not None:
+            field.queryset = field.queryset.filter(plan=plan)
+
         return form_class
 
 
@@ -179,6 +185,7 @@ class ActionAdmin(AplansModelAdmin):
     ]
 
     internal_panel = AdminOnlyPanel([
+        FieldPanel('status'),
         FieldPanel('internal_priority'),
         FieldPanel('internal_priority_comment'),
         FieldPanel('impact'),
@@ -198,7 +205,12 @@ class ActionAdmin(AplansModelAdmin):
         handler = ActionEditHandler([
             ObjectList(panels, heading=_('Basic information')),
             self.internal_panel,
-            ObjectList([InlinePanel('responsible_parties')], heading=_('Responsibles')),
+            ObjectList([
+                CondensedInlinePanel('contact_persons', panels=[FieldPanel('person', widget=PersonChooser)])
+            ], heading=_('Contact persons')),
+            ObjectList([
+                CondensedInlinePanel('responsible_parties', panels=[AutocompletePanel('organization')])
+            ], heading=_('Responsible parties')),
             ObjectList([CondensedInlinePanel('tasks')], heading=_('Tasks')),
             *i18n_tabs
         ])
@@ -285,11 +297,19 @@ class PlanAdmin(AplansModelAdmin):
             ObjectList([
                 CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
                 CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
+
             ], heading=_('Action classifications')),
         ]
 
         handler = PlanEditHandler(tabs)
         return handler
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        if not user.is_superuser:
+            qs = qs.filter(general_admins=user).distinct()
+        return qs
 
 
 modeladmin_register(PlanAdmin)
@@ -297,7 +317,7 @@ modeladmin_register(PlanAdmin)
 
 # Monkeypatch Organization to support Wagtail autocomplete
 def org_autocomplete_label(self):
-    return self.name
+    return self.distinct_name
 
 
 Organization.autocomplete_search_field = 'distinct_name'

@@ -7,6 +7,10 @@ from django.contrib.postgres.fields import JSONField
 from modeltrans.fields import TranslationField
 from aplans.utils import IdentifierField, OrderedModel
 
+from modelcluster.models import ClusterableModel
+from modelcluster.fields import ParentalKey
+from wagtail.core.fields import RichTextField
+
 
 User = get_user_model()
 
@@ -19,8 +23,10 @@ def latest_plan():
         return None
 
 
-class Quantity(models.Model):
+class Quantity(ClusterableModel):
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
+
+    autocomplete_search_field = 'name'
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
@@ -30,8 +36,11 @@ class Quantity(models.Model):
     def __str__(self):
         return self.name
 
+    def autocomplete_label(self):
+        return str(self)
 
-class Unit(models.Model):
+
+class Unit(ClusterableModel):
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
     short_name = models.CharField(
         max_length=40, null=True, blank=True,
@@ -46,6 +55,8 @@ class Unit(models.Model):
         verbose_name=_('verbose name plural')
     )
 
+    autocomplete_search_field = 'name'
+
     class Meta:
         verbose_name = _('unit')
         verbose_name_plural = _('units')
@@ -53,6 +64,9 @@ class Unit(models.Model):
 
     def __str__(self):
         return self.name
+
+    def autocomplete_label(self):
+        return str(self)
 
 
 class DatasetLicense(models.Model):
@@ -66,7 +80,7 @@ class DatasetLicense(models.Model):
         return self.name
 
 
-class Dataset(models.Model):
+class Dataset(ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     description = models.TextField(blank=True, verbose_name=_('description'))
     url = models.URLField(null=True, blank=True, verbose_name=_('URL'))
@@ -113,7 +127,7 @@ class Indicator(models.Model):
     )
     identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    quantity = models.ForeignKey(
+    quantity = ParentalKey(
         Quantity, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
     )
@@ -121,7 +135,7 @@ class Indicator(models.Model):
         Unit, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=_('unit')
     )
-    description = models.TextField(null=True, blank=True, verbose_name=_('description'))
+    description = RichTextField(null=True, blank=True, verbose_name=_('description'))
     categories = models.ManyToManyField('actions.Category', blank=True)
     time_resolution = models.CharField(
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
@@ -197,7 +211,7 @@ class Indicator(models.Model):
         return self.name
 
 
-class IndicatorLevel(models.Model):
+class IndicatorLevel(ClusterableModel):
     indicator = models.ForeignKey(
         Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE
     )
