@@ -38,3 +38,4 @@ django-modeltrans
 wagtail
 wagtail-autocomplete
 wagtailfontawesome
+wagtail-generic-chooser
