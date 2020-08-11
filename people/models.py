@@ -106,10 +106,12 @@ class Person(index.Indexed, ModelWithImage):
             return
 
         update_fields = ['avatar_updated_at']
-        if not self.image or self.image.read() != resp.content:
-            self.image.save('avatar.jpg', io.BytesIO(resp.content))
-            update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
-
+        try:
+            if not self.image or self.image.read() != resp.content:
+                self.image.save('avatar.jpg', io.BytesIO(resp.content))
+                update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
+        except ValueError:
+            pass
         self.avatar_updated_at = timezone.now()
         self.save(update_fields=update_fields)
 
