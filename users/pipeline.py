@@ -26,8 +26,11 @@ def update_user(backend, details, user, *args, **kwargs):
 
     changed = False
     for field in ('first_name', 'last_name', 'email'):
-        if getattr(user, field) != details[field]:
-            setattr(user, field, details[field])
+        val = getattr(user, field)
+        if field in ('first_name', 'last_name') and val is None:
+            val = ''
+        if val != details[field]:
+            setattr(user, field, val)
             changed = True
     if changed:
         user.save()
