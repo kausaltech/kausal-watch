@@ -44,7 +44,7 @@ class LoginView(RedirectView):
         logout(request)
 
         client = Client.objects.for_request(request).first()
-        if client is None:
+        if client is None or client.name.lower == 'helsinki':
             # Fallback to Tunnistamo for now
             url = reverse('social:begin', kwargs=dict(backend='tunnistamo'))
         else:
