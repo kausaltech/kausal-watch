@@ -62,3 +62,16 @@ class LoginView(RedirectView):
             url += '?' + urlencode(query_params)
 
         return url
+
+
+class RootRedirectView(RedirectView):
+    permanent = False
+
+    def get_redirect_url(self, *args, **kwargs):
+        request = self.request
+        client = Client.objects.for_request(request).first()
+        if client is None:
+            url = reverse('graphql')
+        else:
+            url = reverse('wagtailadmin_home')
+        return url
