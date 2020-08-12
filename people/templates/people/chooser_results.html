@@ -1,0 +1,33 @@
+{% load i18n %}
+
+<table class="listing">
+    <col width="10%" />
+    <col />
+    <col width="16%" />
+    <thead>
+        <tr class="table-headers">
+            <th></th>
+            <th>{% trans "Name" %}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            <tr>
+                <td>
+                    {% if row.avatar_url %}
+                    <a class="item-choice" href="{{ row.choose_url }}">{% if row.avatar_url %}<img src="{{ row.avatar_url }}">{% endif %}</a>
+                    {% endif %}
+                </td>
+                <td class="title">
+                    <h2><a class="item-choice" href="{{ row.choose_url }}">{{ row.name }}</a></h2>
+                </td>
+                <td>{{ row.title|default:'' }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% if is_paginated %}
+    {% include "generic_chooser/_ajax_pagination_nav.html" with items=page %}
+{% endif %}
