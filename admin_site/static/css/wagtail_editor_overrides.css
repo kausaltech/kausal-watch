@@ -9,3 +9,7 @@
 .button-secondary {
     color: #fff;
 }
+
+footer .actions {
+    width: 300px;
+}

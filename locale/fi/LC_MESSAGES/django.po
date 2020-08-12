@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-11 12:18+0300\n"
+"POT-Creation-Date: 2020-08-11 14:49+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -516,9 +516,17 @@ msgstr "sisäänkirjautumispainikkeen teksti"
 msgid "You have been successfully logged out."
 msgstr "Olet kirjautunut ulos."
 
+#: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+msgid "Edit"
+msgstr "Muokkaa"
+
 #: admin_site/wagtail_hooks.py
 msgid "Choose plan"
 msgstr "Valitse ohjelma"
+
+#: admin_site/wagtail_hooks.py
+msgid "Admin hostnames"
+msgstr ""
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -1192,10 +1200,6 @@ msgid "Edit this action"
 msgstr "Muokkaa tätä toimenpidettä"
 
 #: templates/aplans_admin/own_actions_panel.html
-msgid "Edit"
-msgstr "Muokkaa"
-
-#: templates/aplans_admin/own_actions_panel.html
 msgid "View"
 msgstr "Katsele"
 
@@ -1203,6 +1207,22 @@ msgstr "Katsele"
 #, python-format
 msgid "%(time_period)s ago"
 msgstr "%(time_period)s sitten"
+
+#: templates/modeladmin/edit.html
+msgid "Saving…"
+msgstr "Tallennetaan…"
+
+#: templates/modeladmin/edit.html
+msgid "Save"
+msgstr "Tallenna ja poistu"
+
+#: templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Tallenna ja jatka muokkaamista"
+
+#: templates/modeladmin/edit.html
+msgid "Delete"
+msgstr "Poista"
 
 #: templates/wagtailadmin/login.html
 msgid "Sign in"

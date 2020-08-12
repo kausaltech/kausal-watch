@@ -1,4 +1,6 @@
 from django.conf import settings
+from django.contrib.admin.utils import quote
+from django.utils.translation import gettext as _
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from modeltrans.translator import get_i18n_field
 from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
@@ -9,6 +11,7 @@ from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.admin.edit_handlers import (
     ObjectList
 )
+from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 
 
@@ -42,7 +45,25 @@ class FormClassMixin:
             return handler.get_form_class()
 
 
-class AplansEditView(FormClassMixin, EditView):
+class ContinueEditingMixin:
+    def get_success_url(self):
+        if '_continue' in self.request.POST:
+            # Save and continue editing
+            return self.url_helper.get_action_url('edit', self.pk_quoted)
+        else:
+            return super().get_success_url()
+
+    def get_success_message_buttons(self, instance):
+        if '_continue' in self.request.POST:
+            # Save and continue editing -> No edit button required
+            return []
+        button_url = self.url_helper.get_action_url('edit', quote(instance.pk))
+        return [
+            messages.button(button_url, _('Edit'))
+        ]
+
+
+class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         form_valid_return = super().form_valid(form, *args, **kwargs)
 
@@ -54,7 +75,7 @@ class AplansEditView(FormClassMixin, EditView):
         return form_valid_return
 
 
-class AplansCreateView(CreateView):
+class AplansCreateView(ContinueEditingMixin, CreateView):
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)
         return ret
