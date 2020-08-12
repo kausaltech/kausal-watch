@@ -60,10 +60,13 @@ def hyphenate(s):
 
 
 class WithImageMixin:
-    image_url = graphene.String()
+    image_url = graphene.String(size=graphene.String())
 
-    def resolve_image_url(self, info, **kwargs):
-        return self.get_image_url(info.context)
+    def resolve_image_url(self, info, size=None, **kwargs):
+        request = info.context
+        if not request:
+            return None
+        return self.get_image_url(request, size)
 
 
 class OrderableModelMixin:
@@ -105,7 +108,7 @@ class QuantityNode(DjangoNode):
 
 
 class PersonNode(DjangoNode):
-    avatar_url = graphene.String()
+    avatar_url = graphene.String(size=graphene.String())
 
     class Meta:
         model = Person
@@ -113,11 +116,11 @@ class PersonNode(DjangoNode):
             'id', 'first_name', 'last_name', 'title', 'email', 'organization',
         ]
 
-    def resolve_avatar_url(self, info):
+    def resolve_avatar_url(self, info, size=None):
         request = info.context
         if not request:
             return None
-        return self.get_avatar_url(request)
+        return self.get_avatar_url(request, size)
 
 
 class PlanNode(DjangoNode, WithImageMixin):
