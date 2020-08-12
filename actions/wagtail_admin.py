@@ -179,6 +179,7 @@ class CondensedPanelSingleSelect(Select):
 class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
+    menu_label = _('Actions')
     menu_order = 1
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('identifier', 'name')
@@ -268,6 +269,7 @@ class PlanEditHandler(TabbedInterface):
 class PlanAdmin(AplansModelAdmin):
     model = Plan
     menu_icon = 'fa-briefcase'
+    menu_label = _('Plans')
     menu_order = 2
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('name',)

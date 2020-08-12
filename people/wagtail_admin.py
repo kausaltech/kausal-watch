@@ -33,6 +33,7 @@ class PersonEditHandler(ObjectList):
 class PersonAdmin(AplansModelAdmin):
     model = Person
     menu_icon = 'user'
+    menu_label = _('People')
     menu_order = 10
     exclude_from_explorer = False
     list_display = ('first_name', 'last_name')
