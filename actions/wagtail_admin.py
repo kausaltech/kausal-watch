@@ -165,6 +165,17 @@ class ActionEditHandler(AplansTabbedInterface):
         return form_class
 
 
+from django.forms.widgets import Select
+
+
+class CondensedPanelSingleSelect(Select):
+    def format_value(self, value):
+        """Return selected values as a list."""
+        if value is None:
+            return ''
+        return str(value)
+
+
 class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
@@ -193,7 +204,7 @@ class ActionAdmin(AplansModelAdmin):
     task_panels = [
         FieldPanel('name'),
         FieldPanel('due_at'),
-        FieldPanel('status'),
+        FieldPanel('state', widget=CondensedPanelSingleSelect),
         FieldPanel('completed_at'),
         RichTextFieldPanel('comment'),
     ]
@@ -222,7 +233,9 @@ class ActionAdmin(AplansModelAdmin):
             ObjectList([
                 CondensedInlinePanel('responsible_parties', panels=[AutocompletePanel('organization')])
             ], heading=_('Responsible parties')),
-            ObjectList([CondensedInlinePanel('tasks')], heading=_('Tasks')),
+            ObjectList([
+                CondensedInlinePanel('tasks', panels=self.task_panels)
+            ], heading=_('Tasks')),
             *i18n_tabs
         ])
         return handler

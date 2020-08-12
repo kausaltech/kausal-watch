@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.utils.translation import gettext as _
+from django.utils.text import capfirst
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from modeltrans.translator import get_i18n_field
 from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
@@ -74,6 +75,14 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
             set_user(self.request.user)
 
         return form_valid_return
+
+    def get_error_message(self):
+        if hasattr(self.instance, 'verbose_name_partitive'):
+            model_name = self.instance.verbose_name_partitive
+        else:
+            model_name = self.verbose_name
+
+        return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
 class AplansCreateView(ContinueEditingMixin, CreateView):
