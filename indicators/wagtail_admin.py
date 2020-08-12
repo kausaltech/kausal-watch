@@ -90,6 +90,7 @@ class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     menu_icon = 'fa-bar-chart'  # change as required
     menu_order = 3
+    menu_label = _('Indicators')
     list_display = ('name', 'unit', 'quantity', 'has_data',)
     list_filter = (DisconnectedIndicatorFilter,)
     search_fields = ('name',)
