@@ -7,3 +7,10 @@ __pycache__/
 /local_settings.py
 /static
 /tmp
+/*.bz2
+/*.xlsx
+/.env
+/Attic/
+/media/
+/*.sublime-project
+/*.sublime-workspace
