@@ -603,13 +603,6 @@ class ActionTask(models.Model):
 
     objects = ActionTaskQuerySet.as_manager()
 
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('due_at'),
-        FieldPanel('completed_at'),
-        RichTextFieldPanel('comment'),
-    ]
-
     class Meta:
         ordering = ('action', 'due_at')
         verbose_name = _('action task')

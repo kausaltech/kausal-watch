@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-11 14:49+0300\n"
+"POT-Creation-Date: 2020-08-12 20:53+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -181,6 +181,11 @@ msgid "updated at"
 msgstr "päivitysaika"
 
 #: actions/models.py
+msgctxt "partitive"
+msgid "action"
+msgstr "toimenpidettä"
+
+#: actions/models.py
 msgid "actions"
 msgstr "toimenpiteet"
 
@@ -295,6 +300,11 @@ msgstr "luomisaika"
 #: actions/models.py content/models.py
 msgid "modified at"
 msgstr "muokkausaika"
+
+#: actions/models.py
+msgctxt "partitive"
+msgid "action task"
+msgstr "toimenpiteen tehtävää"
 
 #: actions/models.py
 msgid "action task"
@@ -520,6 +530,21 @@ msgstr "Olet kirjautunut ulos."
 msgid "Edit"
 msgstr "Muokkaa"
 
+#: admin_site/wagtail.py
+#, python-format
+msgid "%s could not be created due to errors."
+msgstr "%s ei voitu tallentaa virheiden takia."
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(related_verbose_name)s"
+msgstr "Lisää uusi %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "New %(related_verbose_name)s"
+msgstr "Uusi %(related_verbose_name)s"
+
 #: admin_site/wagtail_hooks.py
 msgid "Choose plan"
 msgstr "Valitse ohjelma"
@@ -532,11 +557,11 @@ msgstr ""
 msgid "Login was unsuccessful."
 msgstr "Sisäänkirjautuminen ei onnistunut."
 
-#: aplans/model_images.py images/models.py
+#: aplans/model_images.py images/models.py people/models.py
 msgid "image"
 msgstr "kuva"
 
-#: aplans/model_images.py
+#: aplans/model_images.py people/models.py
 msgid "image cropping"
 msgstr "kuvan rajaus"
 
@@ -1094,6 +1119,22 @@ msgstr "yhteyshenkilönä toimenpiteille"
 msgid "People"
 msgstr "Henkilöt"
 
+#: people/chooser.py
+msgid "Choose person"
+msgstr "Valitse henkilö"
+
+#: people/chooser.py
+msgid "Choose a person"
+msgstr "Valitse henkilö"
+
+#: people/chooser.py
+msgid "Choose another person"
+msgstr "Valitse toinen henkilö"
+
+#: people/chooser.py
+msgid "Edit this person"
+msgstr "Muokkaa tätä henkilöä"
+
 #: people/models.py
 msgid "first name"
 msgstr "etunimi"
@@ -1135,21 +1176,10 @@ msgstr "henkilöt"
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
-#: people/wagtail_admin.py
-msgid "Choose person"
-msgstr "Valitse henkilö"
-
-#: people/wagtail_admin.py
-msgid "Choose a person"
-msgstr "Valitse henkilö"
-
-#: people/wagtail_admin.py
-msgid "Choose another person"
-msgstr "Valitse toinen henkilö"
-
-#: people/wagtail_admin.py
-msgid "Edit this person"
-msgstr "Muokkaa tätä henkilöä"
+#: people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Name"
+msgstr "Nimi"
 
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
@@ -1184,10 +1214,6 @@ msgid "Identifier"
 msgstr "Tunniste"
 
 #: templates/aplans_admin/own_actions_panel.html
-msgid "Name"
-msgstr "Nimi"
-
-#: templates/aplans_admin/own_actions_panel.html
 msgid "Last modified"
 msgstr "Viimeksi muokattu"
 
@@ -1208,15 +1234,15 @@ msgstr "Katsele"
 msgid "%(time_period)s ago"
 msgstr "%(time_period)s sitten"
 
-#: templates/modeladmin/edit.html
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
 msgstr "Tallennetaan…"
 
-#: templates/modeladmin/edit.html
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Save"
 msgstr "Tallenna ja poistu"
 
-#: templates/modeladmin/edit.html
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Save and continue editing"
 msgstr "Tallenna ja jatka muokkaamista"
 

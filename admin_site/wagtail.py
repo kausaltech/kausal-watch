@@ -13,6 +13,7 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 
 
 class AdminOnlyPanel(ObjectList):
@@ -168,3 +169,15 @@ class AplansModelAdmin(ModelAdmin):
             field.category_type = cat_type
             fields['categories_%s' % cat_type.identifier] = field
         return fields
+
+
+class CondensedInlinePanel(WagtailCondensedInlinePanel):
+    def on_instance_bound(self):
+        label = self.label
+        new_card_header_text = self.new_card_header_text
+        super().on_instance_bound()
+        related_name = {
+            'related_verbose_name': self.db_field.related_model._meta.verbose_name,
+        }
+        self.label = label or _('Add %(related_verbose_name)s') % related_name
+        self.new_card_header_text = new_card_header_text or _('New %(related_verbose_name)s') % related_name

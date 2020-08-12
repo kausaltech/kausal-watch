@@ -23,6 +23,18 @@ class PersonChooserMixin(ModelChooserMixin):
 
         return object_list
 
+    def get_row_data(self, item):
+        avatar_url = item.get_avatar_url(self.request, '50x50')
+        return {
+            'choose_url': self.get_chosen_url(item),
+            'name': self.get_object_string(item),
+            'title': item.title,
+            'avatar_url': avatar_url,
+        }
+
+    def get_results_template(self):
+        return 'people/chooser_results.html'
+
 
 class PersonChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = PersonChooserMixin

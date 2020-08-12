@@ -12,9 +12,8 @@ from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from django_orghierarchy.models import Organization
-from condensedinlinepanel.edit_handlers import CondensedInlinePanel
 
-from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface
+from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
 from people.chooser import PersonChooser
 from .admin import AllActionsFilter, ImpactFilter
 from .models import Action, Plan, ActionStatus, ActionImpact
@@ -191,6 +190,14 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('impact'),
     ], heading=_('Internal information'))
 
+    task_panels = [
+        FieldPanel('name'),
+        FieldPanel('due_at'),
+        FieldPanel('status'),
+        FieldPanel('completed_at'),
+        RichTextFieldPanel('comment'),
+    ]
+
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
 
@@ -198,7 +205,8 @@ class ActionAdmin(AplansModelAdmin):
         cat_panels = []
         for key, field in cat_fields.items():
             cat_panels.append(FieldPanel(key, heading=field.label))
-        panels.insert(2, MultiFieldPanel(cat_panels, heading=_('Categories')))
+        if cat_panels:
+            panels.insert(2, MultiFieldPanel(cat_panels, heading=_('Categories')))
 
         i18n_tabs = self.get_translation_tabs(instance, request)
 
@@ -206,7 +214,10 @@ class ActionAdmin(AplansModelAdmin):
             ObjectList(panels, heading=_('Basic information')),
             self.internal_panel,
             ObjectList([
-                CondensedInlinePanel('contact_persons', panels=[FieldPanel('person', widget=PersonChooser)])
+                CondensedInlinePanel(
+                    'contact_persons',
+                    panels=[FieldPanel('person', widget=PersonChooser)]
+                )
             ], heading=_('Contact persons')),
             ObjectList([
                 CondensedInlinePanel('responsible_parties', panels=[AutocompletePanel('organization')])

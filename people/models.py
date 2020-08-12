@@ -91,8 +91,8 @@ class Person(index.Indexed, models.Model):
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
     search_fields = [
-        index.SearchField('first_name', partial_match=True),
-        index.SearchField('last_name', partial_match=True),
+        index.AutocompleteField('first_name', partial_match=True),
+        index.AutocompleteField('last_name', partial_match=True),
     ]
 
     class Meta:
