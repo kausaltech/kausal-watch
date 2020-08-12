@@ -11,7 +11,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.urls import reverse
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
 
 from django_orghierarchy.models import Organization
@@ -122,7 +122,7 @@ class Plan(ModelWithImage, ClusterableModel):
         if self.site is None:
             from pages.models import PlanRootPage
 
-            root_page = PlanRootPage.get_first_root_node().add_child(title=self.name, slug='home', url_path='')
+            root_page = PlanRootPage.get_first_root_node().add_child(title=self.name, slug=self.identifier, url_path='')
             site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
             site.save()
             self.site = site
@@ -266,6 +266,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points',
     ]
+
+    verbose_name_partitive = pgettext_lazy('partitive', 'action')
 
     class Meta:
         verbose_name = _('action')
@@ -603,8 +605,10 @@ class ActionTask(models.Model):
 
     objects = ActionTaskQuerySet.as_manager()
 
+    verbose_name_partitive = pgettext_lazy('partitive', 'action task')
+
     class Meta:
-        ordering = ('action', 'due_at')
+        ordering = ('action', '-due_at')
         verbose_name = _('action task')
         verbose_name_plural = _('action tasks')
 
