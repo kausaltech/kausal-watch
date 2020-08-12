@@ -18,6 +18,7 @@ from image_cropping import ImageRatioField
 from sentry_sdk import capture_exception
 from wagtail.search import index
 from wagtail.images.rect import Rect
+from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
 
 
@@ -221,3 +222,13 @@ class Person(index.Indexed, models.Model):
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
+
+
+# Override wagtail default avatar_url templatetag (registered in people/apps.py)
+def avatar_url(context, user, size=50):
+    person = user.get_corresponding_person()
+    if person is not None:
+        url = person.get_avatar_url(context['request'], '%dx%d' % (size, size))
+        if url:
+            return url
+    return wagtail_avatar_url(user, size)
