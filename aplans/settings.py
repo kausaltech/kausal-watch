@@ -358,10 +358,11 @@ WAGTAILSEARCH_BACKENDS = {
 }
 
 
-from easy_thumbnails.conf import Settings as thumbnail_settings  # noqa
 THUMBNAIL_PROCESSORS = (
-    'image_cropping.thumbnail_processors.crop_corners',
-) + thumbnail_settings.THUMBNAIL_PROCESSORS
+    'easy_thumbnails.processors.colorspace',
+    'images.processors.scale_and_crop',
+    'easy_thumbnails.processors.filters',
+)
 IMAGE_CROPPING_JQUERY_URL = None
 THUMBNAIL_HIGH_RESOLUTION = True
 

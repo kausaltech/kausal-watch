@@ -1,4 +1,5 @@
 import os
+import re
 from mimetypes import guess_type
 
 from django.db import models
@@ -20,54 +21,6 @@ from wagtail.images import get_image_model
 def image_upload_path(instance, filename):
     file_extension = os.path.splitext(filename)[1]
     return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
-
-
-class ModelWithImage(models.Model):
-    image = models.ImageField(
-        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
-        height_field='image_height', width_field='image_width'
-    )
-    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
-    image_height = models.PositiveIntegerField(null=True, editable=False)
-    image_width = models.PositiveIntegerField(null=True, editable=False)
-
-    main_image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
-    )
-
-    def get_image_url(self, request):
-        if not request or not self.image:
-            return None
-
-        url = None
-        try:
-            url = reverse(
-                '%s-image' % self._meta.model_name, request=request,
-                kwargs=dict(pk=self.pk)
-            )
-        except NoReverseMatch:
-            pass
-
-        return url
-
-    class Meta:
-        abstract = True
-
-
-class ModelWithImageSerializerMixin(serializers.Serializer):
-    image_url = serializers.SerializerMethodField()
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        image_fields = ['image', 'image_cropping', 'image_width', 'image_height']
-        for field in image_fields:
-            if field not in self.fields:
-                continue
-            del self.fields[field]
-
-    def get_image_url(self, obj):
-        request = self.context.get('request')
-        return obj.get_image_url(request)
 
 
 def determine_image_dim(image, width, height):
@@ -96,6 +49,63 @@ def determine_image_dim(image, width, height):
         width = height * ratio
 
     return (width, height)
+
+
+class ModelWithImage(models.Model):
+    image = models.ImageField(
+        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
+        height_field='image_height', width_field='image_width'
+    )
+    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
+    image_height = models.PositiveIntegerField(null=True, editable=False)
+    image_width = models.PositiveIntegerField(null=True, editable=False)
+
+    main_image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+
+    def get_image_url(self, request, size=None):
+        if not request or not self.image:
+            return None
+
+        if size is None:
+            url = self.image.url
+        else:
+            m = re.match(r'(\d+)?(x(\d+))?', size)
+            if not m:
+                raise ValueError('Invalid size argument (should be "<width>x<height>")')
+            width, _, height = m.groups()
+
+            dim = determine_image_dim(self.image, width, height)
+
+            out_image = get_thumbnailer(self.image).get_thumbnail({
+                'size': dim,
+                'box': self.image_cropping,
+                'crop': True,
+                'detail': True,
+            })
+            url = out_image.url
+
+        return request.build_absolute_uri(url)
+
+    class Meta:
+        abstract = True
+
+
+class ModelWithImageSerializerMixin(serializers.Serializer):
+    image_url = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        image_fields = ['image', 'image_cropping', 'image_width', 'image_height']
+        for field in image_fields:
+            if field not in self.fields:
+                continue
+            del self.fields[field]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        return obj.get_image_url(request)
 
 
 class ModelWithImageViewMixin:
