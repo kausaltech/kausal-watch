@@ -18,7 +18,6 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, re_path, include
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import RedirectView
 
 from rest_framework import routers
 from .graphene_views import SentryGraphQLView
@@ -34,6 +33,7 @@ from insight.api import all_views as insight_api_views
 from content.api import all_views as content_api_views
 
 from users.views import change_admin_plan
+from admin_site.views import RootRedirectView
 
 
 router = routers.DefaultRouter()
@@ -53,5 +53,5 @@ urlpatterns = [
 
     path('auth/', include('social_django.urls', namespace='social')),
     path('', include('admin_site.urls')),
-    path('', RedirectView.as_view(pattern_name='graphql'), name='root-redirect'),
+    path('', RootRedirectView.as_view(), name='root-redirect'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
