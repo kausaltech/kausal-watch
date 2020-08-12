@@ -1,3 +1,5 @@
+import os
+import re
 import io
 import hashlib
 import requests
@@ -11,10 +13,12 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+from easy_thumbnails.files import get_thumbnailer
+from image_cropping import ImageRatioField
 from sentry_sdk import capture_exception
 from wagtail.search import index
-
-from aplans.model_images import ModelWithImage
+from wagtail.images.rect import Rect
+import willow
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +27,40 @@ User = get_user_model()
 DEFAULT_AVATAR_SIZE = 360
 
 
-class Person(index.Indexed, ModelWithImage):
+def determine_image_dim(image, width, height):
+    for name in ('width', 'height'):
+        x = locals()[name]
+        if x is None:
+            continue
+        try:
+            x = int(x)
+            if x <= 0:
+                raise ValueError()
+            if x > 4000:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise ValueError("invalid %s dimension: %s" % (name, x))
+
+    if width is not None:
+        width = int(width)
+    if height is not None:
+        height = int(height)
+
+    ratio = image.width / image.height
+    if not height:
+        height = width / ratio
+    elif not width:
+        width = height * ratio
+
+    return (width, height)
+
+
+def image_upload_path(instance, filename):
+    file_extension = os.path.splitext(filename)[1]
+    return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
+
+
+class Person(index.Indexed, models.Model):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
     email = models.EmailField(verbose_name=_('email address'))
@@ -43,6 +80,13 @@ class Person(index.Indexed, ModelWithImage):
         help_text=_('Set if the person has an user account')
     )
 
+    image = models.ImageField(
+        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
+        height_field='image_height', width_field='image_width'
+    )
+    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
+    image_height = models.PositiveIntegerField(null=True, editable=False)
+    image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
     search_fields = [
@@ -120,8 +164,57 @@ class Person(index.Indexed, ModelWithImage):
             return True
         return (timezone.now() - self.avatar_updated_at) > timedelta(minutes=60)
 
-    def get_avatar_url(self, request):
-        return self.get_image_url(request)
+    def update_focal_point(self):
+        if not self.image:
+            return
+        with self.image.open() as f:
+            image = willow.Image.open(f)
+            faces = image.detect_faces()
+
+        if not faces:
+            logger.warning('No faces detected for %s' % self)
+            return
+
+        left = min(face[0] for face in faces)
+        top = min(face[1] for face in faces)
+        right = max(face[2] for face in faces)
+        bottom = max(face[3] for face in faces)
+        self.image_cropping = ','.join([str(x) for x in (left, top, right, bottom)])
+
+    def get_avatar_url(self, request, size=None):
+        if not request or not self.image:
+            return None
+
+        if size is None:
+            url = self.image.url
+        else:
+            m = re.match(r'(\d+)?(x(\d+))?', size)
+            if not m:
+                raise ValueError('Invalid size argument (should be "<width>x<height>")')
+            width, _, height = m.groups()
+
+            dim = determine_image_dim(self.image, width, height)
+
+            tn_args = {
+                'size': dim,
+            }
+            if self.image_cropping:
+                tn_args['focal_point'] = Rect(*[int(x) for x in self.image_cropping.split(',')])
+                tn_args['crop'] = 30
+
+            out_image = get_thumbnailer(self.image).get_thumbnail(tn_args)
+            url = out_image.url
+
+        return request.build_absolute_uri(url)
+
+    def save(self, *args, **kwargs):
+        old_cropping = self.image_cropping
+        ret = super().save(*args, **kwargs)
+        if self.image and not old_cropping:
+            self.update_focal_point()
+            if self.image_cropping != old_cropping:
+                super().save(update_fields=['image_cropping'])
+        return ret
 
     def get_notification_context(self):
         return dict(first_name=self.first_name, last_name=self.last_name)

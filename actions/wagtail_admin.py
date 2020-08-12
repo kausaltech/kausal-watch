@@ -15,7 +15,7 @@ from django_orghierarchy.models import Organization
 from condensedinlinepanel.edit_handlers import CondensedInlinePanel
 
 from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface
-from people.wagtail_admin import PersonChooser
+from people.chooser import PersonChooser
 from .admin import AllActionsFilter, ImpactFilter
 from .models import Action, Plan, ActionStatus, ActionImpact
 
@@ -169,7 +169,7 @@ class ActionEditHandler(AplansTabbedInterface):
 class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
-    menu_order = 201  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_order = 1
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('identifier', 'name')
     list_filter = (AllActionsFilter, ImpactFilter)
@@ -243,8 +243,8 @@ class PlanEditHandler(TabbedInterface):
 
 class PlanAdmin(AplansModelAdmin):
     model = Plan
-    menu_icon = 'fa-briefcase'  # change as required
-    menu_order = 200  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_icon = 'fa-briefcase'
+    menu_order = 2
     exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('name',)
     search_fields = ('name',)
