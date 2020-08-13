@@ -245,7 +245,10 @@ class ActionAdmin(AplansModelAdmin):
                 )
             ], heading=_('Contact persons')),
             ObjectList([
-                CondensedInlinePanel('responsible_parties', panels=[AutocompletePanel('organization')])
+                InlinePanel(
+                    'responsible_parties',
+                    panels=[AutocompletePanel('organization')]
+                )
             ], heading=_('Responsible parties')),
             ObjectList([
                 CondensedInlinePanel('tasks', panels=self.task_panels)
