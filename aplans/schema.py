@@ -2,6 +2,7 @@ import re
 import pytz
 import graphene
 import libvoikko
+from django.urls import reverse
 from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
 from graphql.error import GraphQLError
@@ -23,6 +24,7 @@ from content.models import (
 )
 from people.models import Person
 from django_orghierarchy.models import Organization, OrganizationClass
+from wagtail.core.rich_text import RichText
 
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
@@ -126,6 +128,7 @@ class PersonNode(DjangoNode):
 class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
+    serve_file_base_url = graphene.String()
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
@@ -141,6 +144,10 @@ class PlanNode(DjangoNode, WithImageMixin):
     )
     def resolve_blog_posts(self, info):
         return self.blog_posts.filter(is_published=True)
+
+    def resolve_serve_file_base_url(self, info):
+        request = info.context
+        return request.build_absolute_uri('/').rstrip('/')
 
     class Meta:
         model = Plan
@@ -251,6 +258,16 @@ class ActionNode(DjangoNode, WithImageMixin):
         if hyphenated:
             name = hyphenate(name)
         return name
+
+    @gql_optimizer.resolver_hints(
+        model_field='description',
+    )
+    def resolve_description(self, info):
+        description = self.description
+        if description is None:
+            return None
+
+        return RichText(description)
 
     @gql_optimizer.resolver_hints(
         model_field='categories',
