@@ -1,5 +1,6 @@
 django
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
+-e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster
 djangorestframework
 django-helusers
 social-auth-app-django
