@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-12 20:53+0300\n"
+"POT-Creation-Date: 2020-08-13 13:29+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -58,7 +58,7 @@ msgstr "Aikataulu ja päätöstaso"
 msgid "action"
 msgstr "toimenpide"
 
-#: actions/apps.py
+#: actions/apps.py actions/wagtail_admin.py
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -364,7 +364,7 @@ msgstr "luokka"
 
 #: actions/models.py
 msgid "Parent forms a loop. Leave empty if top-level category."
-msgstr ""
+msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
 
 #: actions/models.py indicators/models.py
 msgid "scenario"
@@ -405,7 +405,7 @@ msgstr "toimenpiteiden tilannepäivitykset"
 #: actions/models.py
 #, python-format
 msgid "%(color)s is not a hex color (#112233)"
-msgstr ""
+msgstr "%(color)s ei ole heksamuodossa (#112233)"
 
 #: actions/models.py
 msgid "parent"
@@ -459,6 +459,11 @@ msgstr "Luokat"
 msgid "Internal information"
 msgstr "Sisäiset tiedot"
 
+#: actions/wagtail_admin.py people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Name"
+msgstr "Nimi"
+
 #: actions/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
@@ -474,6 +479,10 @@ msgstr "Toimenpiteen vastuutahot"
 #: actions/wagtail_admin.py
 msgid "Tasks"
 msgstr "Tehtävät"
+
+#: actions/wagtail_admin.py
+msgid "Plans"
+msgstr "Toimenpideohjelmat"
 
 #: actions/wagtail_admin.py
 msgid "Action statuses"
@@ -499,7 +508,7 @@ msgstr "Lisää uusi %(verbose_name)s"
 
 #: admin_site/admin.py
 msgid "Django admin"
-msgstr ""
+msgstr "Django-ylläpito"
 
 #: admin_site/admin.py
 #, python-format
@@ -551,7 +560,7 @@ msgstr "Valitse ohjelma"
 
 #: admin_site/wagtail_hooks.py
 msgid "Admin hostnames"
-msgstr ""
+msgstr "Ylläpidon palvelinnimet"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -729,9 +738,41 @@ msgstr "asiakirja"
 msgid "documents"
 msgstr "asiakirjat"
 
+#: documents/templates/wagtaildocs/chooser/chooser.html
+msgid "Choose a document"
+msgstr "Valitse asiakirja"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload from computer"
+msgstr "Lataa tietokoneelta"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Search from the service"
+msgstr "Hae palvelusta"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Uploading…"
+msgstr "Lähetetään…"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload"
+msgstr "Lähetä"
+
 #: images/models.py
 msgid "images"
 msgstr "kuvat"
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Choose an image"
+msgstr "Valitse kuva"
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Popular tags"
+msgstr "Suositut tagit"
 
 #: indicators/admin.py indicators/models.py
 msgid "level"
@@ -757,7 +798,7 @@ msgstr "[ei mitään]"
 msgid "has goals"
 msgstr "on tavoitteita"
 
-#: indicators/apps.py
+#: indicators/apps.py indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
 
@@ -1115,7 +1156,7 @@ msgstr "On yhteyshenkilö"
 msgid "contact for actions"
 msgstr "yhteyshenkilönä toimenpiteille"
 
-#: people/apps.py
+#: people/apps.py people/wagtail_admin.py
 msgid "People"
 msgstr "Henkilöt"
 
@@ -1175,11 +1216,6 @@ msgstr "henkilöt"
 #: people/models.py
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
-
-#: people/templates/people/chooser_results.html
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Name"
-msgstr "Nimi"
 
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
@@ -1302,6 +1338,3 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
-
-#~ msgid "Responsibles"
-#~ msgstr "Vastuutahot"
