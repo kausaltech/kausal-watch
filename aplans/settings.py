@@ -80,7 +80,9 @@ INSTALLED_APPS = [
     'wagtail.sites',
     'wagtail.users',
     'wagtail.snippets',
+    'documents',
     'wagtail.documents',
+    'images',
     'wagtail.images',
     'wagtail.search',
     'wagtail.admin',
@@ -115,8 +117,6 @@ INSTALLED_APPS = [
     'content',
     'people',
     'notifications',
-    'images',
-    'documents',
     'pages',
 ]
 
