@@ -20,17 +20,26 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
     }
 
 
-def update_user(backend, details, user, *args, **kwargs):
+def create_or_update_user(backend, details, user, *args, **kwargs):
     if user is None:
-        return
+        user = User(uuid=details['uuid'])
 
     changed = False
     for field in ('first_name', 'last_name', 'email'):
-        val = getattr(user, field)
-        if field in ('first_name', 'last_name') and val is None:
-            val = ''
-        if val != details[field]:
-            setattr(user, field, val)
+        old_val = getattr(user, field)
+        new_val = details.get(field)
+        if field in ('first_name', 'last_name'):
+            if old_val is None:
+                old_val = ''
+            if new_val is None:
+                new_val = ''
+
+        if new_val != old_val:
+            setattr(user, field, new_val)
             changed = True
     if changed:
         user.save()
+
+    return {
+        'user': user,
+    }
