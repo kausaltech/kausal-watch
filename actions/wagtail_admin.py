@@ -181,11 +181,10 @@ class ActionAdmin(AplansModelAdmin):
     menu_icon = 'fa-cubes'  # change as required
     menu_label = _('Actions')
     menu_order = 1
-    exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
-    list_display = ('identifier', 'name')
+    list_display = ('identifier', 'name_link')
+    list_display_add_buttons = 'name_link'
     list_filter = (AllActionsFilter, ImpactFilter)
     search_fields = ('identifier', 'name')
-    list_display_add_buttons = 'name'
     permission_helper_class = ActionPermissionHelper
 
     basic_panels = [
@@ -209,6 +208,20 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('completed_at'),
         RichTextFieldPanel('comment'),
     ]
+
+    def get_list_display(self, request):
+        def name_link(obj):
+            from django.utils.html import format_html
+
+            if self.permission_helper.user_can_edit_obj(request.user, obj):
+                url = self.url_helper.get_action_url('edit', obj.pk)
+                return format_html('<a href="{}">{}</a>', url, obj.name)
+            else:
+                return obj.name
+        name_link.short_description = _('Name')
+        self.name_link = name_link
+
+        return ('identifier', 'name_link')
 
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
