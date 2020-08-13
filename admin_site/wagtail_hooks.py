@@ -70,7 +70,6 @@ class OwnActionsPanel:
 @hooks.register('construct_homepage_panels')
 def construct_homepage_panels(request, panels):
     panels.insert(0, OwnActionsPanel(request))
-    print(panels)
 
 
 class ClientAdmin(ModelAdmin):
