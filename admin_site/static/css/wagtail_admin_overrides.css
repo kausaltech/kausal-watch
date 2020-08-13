@@ -130,3 +130,71 @@ header .button:hover {
 .objects .object>.title-wrapper:before {
     background-color: #7AD7A4;
 }
+
+/* Condensed inline panel override */
+
+/* Do not let panel rows overflow the parent */
+
+.object .object-layout_big-part {
+    max-width: 100%;
+}
+
+.condensed-inline-panel__card-header > h2 {
+    font-size: 1rem;
+}
+
+/* Contact persons list override */
+
+/* Add fa-icons and highlight main contact person,
+expects main contact as 3rd element in container */
+
+#id_contact_persons .condensed-inline-panel__card:nth-child(3) > .condensed-inline-panel__card-header h2::before {
+    content: "\f2bd";
+    color: #0A5E43;
+}
+
+#id_contact_persons .condensed-inline-panel__card-header h2::before,
+#id_contact_persons .condensed-inline-panel__card-header::before {
+    font-family: FontAwesome;
+    font-style: normal;
+    content: "\f2be";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-weight: 400;
+    font-variant: normal;
+    text-transform: none;
+    speak: none;
+    text-decoration: none;
+    width: 1.3em;
+    line-height: 1em;
+    text-align: left;
+    vertical-align: middle;
+    margin-right: .5em;
+    color: #aaaaaa;
+}
+
+/* Add drag fa-icon as pseudo-element */
+
+#id_contact_persons .condensed-inline-panel__card-header h2 {
+    margin-left: 1.25rem;
+}
+
+#id_contact_persons .condensed-inline-panel__card-header::before {
+    content: "\f047";
+    position: absolute;
+    left: 0;
+    top: 0;
+    padding: 1.25rem .75rem;
+    margin: 0;
+    width: .5rem;
+}
+
+#id_contact_persons .condensed-inline-panel__card:hover .condensed-inline-panel__card-header::before {
+    color: #0A5E43;
+}
+
+/* Prevent calendar icon from blocking datefield clicks */
+
+.date_field .input::before, .date_time_field .input::before {
+    pointer-events: none;
+}
