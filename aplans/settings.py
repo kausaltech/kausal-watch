@@ -218,15 +218,15 @@ SOCIAL_AUTH_PIPELINE = (
     # Finds user by email address
     'users.pipeline.find_user_by_email',
 
+    # Get or create the user and update user data
+    'users.pipeline.create_or_update_user',
+
     # Create the record that associated the social account with this user.
     'social_core.pipeline.social_auth.associate_user',
 
     # Populate the extra_data field in the social record with the values
     # specified by settings (and the default ones like access_token, etc).
     'social_core.pipeline.social_auth.load_extra_data',
-
-    # Get or create the user and update user data
-    'users.pipeline.update_user',
 
     # Store the end session URL in the user's session data so that
     # we can format logout links properly.
