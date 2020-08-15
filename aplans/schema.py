@@ -2,11 +2,13 @@ import re
 import pytz
 import graphene
 import libvoikko
-from django.urls import reverse
+import functools
+from django.utils.translation import get_language
 from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
 from graphql.error import GraphQLError
 import graphene_django_optimizer as gql_optimizer
+from modeltrans.translator import get_i18n_field
 
 from aplans.utils import public_fields
 from actions.models import (
@@ -81,6 +83,36 @@ class OrderableModelMixin:
         return self.sort_order
 
 
+def get_i18n_field_with_fallback(field_name, obj, info):
+    fallback_value = getattr(obj, field_name)
+    fallback_lang = 'fi'  # FIXME
+
+    fallback = (fallback_value, fallback_lang)
+
+    active_language = getattr(info.context, '_graphql_query_language', None)
+    if not active_language:
+        return fallback
+
+    i18n_field = get_i18n_field(obj._meta.model)
+
+    i18n_values = getattr(obj, i18n_field.name)
+    if i18n_values is None or active_language == fallback_lang:
+        return fallback
+
+    lang_field_name = '%s_%s' % (field_name, active_language)
+    trans_value = i18n_values.get(lang_field_name)
+    if not trans_value:
+        return fallback
+
+    trans_value = i18n_values.get(lang_field_name, getattr(obj, field_name))
+    return trans_value, active_language
+
+
+def resolve_i18n_field(field_name, obj, info):
+    value, lang = get_i18n_field_with_fallback(field_name, obj, info)
+    return value
+
+
 class DjangoNode(DjangoObjectType):
     @classmethod
     def __init_subclass_with_meta__(cls, **kwargs):
@@ -88,6 +120,17 @@ class DjangoNode(DjangoObjectType):
             # Remove the trailing 'Node' from the object types
             kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
         super().__init_subclass_with_meta__(**kwargs)
+
+        # Set default resolvers for i18n fields
+        i18n_field = get_i18n_field(cls._meta.model)
+        if i18n_field is not None:
+            fields = cls._meta.fields
+            for translated_field_name in i18n_field.fields:
+                field = fields[translated_field_name]
+                if field.resolver is None:
+                    resolver = functools.partial(resolve_i18n_field, translated_field_name)
+                    apply_hints = gql_optimizer.resolver_hints(only=[translated_field_name, i18n_field.name])
+                    field.resolver = apply_hints(resolver)
 
     class Meta:
         abstract = True
@@ -157,26 +200,31 @@ class PlanNode(DjangoNode, WithImageMixin):
 class ActionScheduleNode(DjangoNode):
     class Meta:
         model = ActionSchedule
+        only_fields = public_fields(ActionSchedule)
 
 
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
+        only_fields = public_fields(ActionStatus)
 
 
 class ActionResponsiblePartyNode(DjangoNode):
     class Meta:
         model = ActionResponsibleParty
+        only_fields = public_fields(ActionResponsibleParty)
 
 
 class ActionContactPersonNode(DjangoNode):
     class Meta:
         model = ActionContactPerson
+        only_fields = public_fields(ActionContactPerson)
 
 
 class ActionImpactNode(DjangoNode):
     class Meta:
         model = ActionImpact
+        only_fields = public_fields(ActionImpact)
 
 
 class ActionStatusUpdateNode(DjangoNode):
@@ -195,6 +243,7 @@ class CategoryTypeNode(DjangoNode):
 class CategoryNode(DjangoNode, WithImageMixin):
     class Meta:
         model = Category
+        only_fields = public_fields(Category)
 
 
 class ScenarioNode(DjangoNode):
@@ -435,6 +484,23 @@ def order_queryset(qs, node_class, order_by):
     return qs
 
 
+def set_active_plan(info, plan):
+    info.context._graphql_active_plan = plan
+
+
+def get_plan_from_context(info, plan_identifier):
+    cache = getattr(info.context, '_plan_cache', None)
+    if cache is None:
+        cache = info.context._plan_cache = {}
+
+    if plan_identifier in cache:
+        return cache[plan_identifier]
+    plan = Plan.objects.filter(identifier=plan_identifier).first()
+    cache[plan_identifier] = plan
+    set_active_plan(info, plan)
+    return plan
+
+
 class Query(graphene.ObjectType):
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(required=True)))
     all_plans = graphene.List(PlanNode)
@@ -448,7 +514,9 @@ class Query(graphene.ObjectType):
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String()
     )
-    plan_categories = graphene.List(CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID())
+    plan_categories = graphene.List(
+        CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
+    )
     plan_organizations = graphene.List(
         OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
     )
@@ -463,14 +531,19 @@ class Query(graphene.ObjectType):
             plan = gql_optimizer.query(qs, info).get(identifier=kwargs['id'])
         except Plan.DoesNotExist:
             return None
+
+        set_active_plan(info, plan)
         return plan
 
     def resolve_all_plans(self, info):
         return Plan.objects.all()
 
     def resolve_plan_actions(self, info, plan, first=None, order_by=None, **kwargs):
-        qs = Action.objects.all()
-        qs = qs.filter(plan__identifier=plan)
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        qs = Action.objects.filter(plan=plan_obj)
         qs = order_queryset(qs, ActionNode, order_by)
         if first is not None:
             qs = qs[0:first]
@@ -483,12 +556,12 @@ class Query(graphene.ObjectType):
             qs = qs.filter(type__identifier=type)
         return qs
 
-    def resolve_plan_categories(self, info, **kwargs):
-        qs = Category.objects.all()
+    def resolve_plan_categories(self, info, plan, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
 
-        plan = kwargs.get('plan')
-        if plan is not None:
-            qs = qs.filter(type__plan__identifier=plan)
+        qs = Category.objects.filter(type__plan=plan_obj)
 
         category_type = kwargs.get('category_type')
         if category_type is not None:
@@ -497,9 +570,13 @@ class Query(graphene.ObjectType):
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_organizations(self, info, plan, with_ancestors, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
         qs = Organization.objects.all()
         if plan is not None:
-            qs = qs.filter(responsible_actions__action__plan__identifier=plan).distinct()
+            qs = qs.filter(responsible_actions__action__plan=plan_obj).distinct()
 
         if with_ancestors:
             # Retrieving ancestors for a queryset doesn't seem to work,
@@ -524,8 +601,12 @@ class Query(graphene.ObjectType):
         self, info, plan, first=None, order_by=None, has_data=None,
         has_goals=None, **kwargs
     ):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
         qs = Indicator.objects.all()
-        qs = qs.filter(levels__plan__identifier=plan).distinct()
+        qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
             qs = qs.filter(latest_value__isnull=not has_data)
@@ -545,11 +626,15 @@ class Query(graphene.ObjectType):
         plan = kwargs.get('plan')
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'", [info])
+
         qs = Action.objects.all()
         if obj_id:
             qs = qs.filter(id=obj_id)
         if identifier:
-            qs = qs.filter(identifier=identifier, plan__identifier=plan)
+            plan_obj = get_plan_from_context(info, plan)
+            if not plan_obj:
+                return None
+            qs = qs.filter(identifier=identifier, plan=plan_obj)
 
         qs = gql_optimizer.query(qs, info)
 
@@ -557,6 +642,9 @@ class Query(graphene.ObjectType):
             obj = qs.get()
         except Action.DoesNotExist:
             return None
+
+        if not identifier:
+            set_active_plan(info, obj.plan)
 
         return obj
 
@@ -583,7 +671,10 @@ class Query(graphene.ObjectType):
         if obj_id:
             qs = qs.filter(id=obj_id)
         if plan:
-            qs = qs.filter(levels__plan__identifier=plan).distinct()
+            plan_obj = get_plan_from_context(info, plan)
+            if not plan_obj:
+                return None
+            qs = qs.filter(levels__plan=plan_obj).distinct()
         if identifier:
             qs = qs.filter(identifier=identifier)
 
@@ -596,15 +687,13 @@ class Query(graphene.ObjectType):
 
         return obj
 
-    def resolve_static_page(self, info, **kwargs):
-        slug = kwargs.get('slug')
-        plan = kwargs.get('plan')
-
-        if not slug or not plan:
-            raise GraphQLError("You must supply both 'slug' and 'plan'", [info])
+    def resolve_static_page(self, info, slug, plan, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if not plan_obj:
+            return None
 
         qs = StaticPage.objects.all()
-        qs = qs.filter(slug=slug, plan__identifier=plan)
+        qs = qs.filter(slug=slug, plan=plan_obj)
         qs = gql_optimizer.query(qs, info)
 
         try:
@@ -620,16 +709,20 @@ from graphql.type import (
     GraphQLNonNull
 )
 
-LocaleDirective = GraphQLDirective(
-    name='locale',
-    description='Select locale in which to return data',
-    args={
-        'lang': GraphQLArgument(
-            type_=GraphQLNonNull(GraphQLString),
-            description='Selected language'
-        )
-    },
-    locations=[DirectiveLocation.QUERY]
-)
 
-schema = graphene.Schema(query=Query, directives=specified_directives + [LocaleDirective])
+class LocaleDirective(GraphQLDirective):
+    def __init__(self):
+        super().__init__(
+            name='locale',
+            description='Select locale in which to return data',
+            args={
+                'lang': GraphQLArgument(
+                    type_=GraphQLNonNull(GraphQLString),
+                    description='Selected language'
+                )
+            },
+            locations=[DirectiveLocation.QUERY]
+        )
+
+
+schema = graphene.Schema(query=Query, directives=specified_directives + [LocaleDirective()])
