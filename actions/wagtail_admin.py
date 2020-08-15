@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from django.conf import settings
+from django.forms.widgets import Select
 from django import forms
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 
@@ -165,12 +166,8 @@ class ActionEditHandler(AplansTabbedInterface):
         return form_class
 
 
-from django.forms.widgets import Select
-
-
 class CondensedPanelSingleSelect(Select):
     def format_value(self, value):
-        """Return selected values as a list."""
         if value is None:
             return ''
         return str(value)
@@ -244,7 +241,7 @@ class ActionAdmin(AplansModelAdmin):
                     panels=[FieldPanel('person', widget=PersonChooser)]
                 )
             ], heading=_('Contact persons')),
-            ObjectList([
+            AdminOnlyPanel([
                 InlinePanel(
                     'responsible_parties',
                     panels=[AutocompletePanel('organization')]
