@@ -6,7 +6,6 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.conf import settings
@@ -17,9 +16,6 @@ from django.utils import timezone
 from django_orghierarchy.models import Organization
 from modeltrans.fields import TranslationField
 
-from wagtail.admin.edit_handlers import (
-    FieldPanel, RichTextFieldPanel
-)
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
 
@@ -27,7 +23,7 @@ from wagtail.core.models import Collection, Site
 from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
 
-from aplans.utils import IdentifierField, OrderedModel
+from aplans.utils import IdentifierField, OrderedModel, ChoiceArrayField
 from aplans.model_images import ModelWithImage
 
 from .monitoring_quality import determine_monitoring_quality
@@ -80,7 +76,7 @@ class Plan(ModelWithImage, ClusterableModel):
     )
 
     primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
-    other_languages = ArrayField(
+    other_languages = ChoiceArrayField(
         models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
         default=list, null=True, blank=True
     )
@@ -105,6 +101,10 @@ class Plan(ModelWithImage, ClusterableModel):
 
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
+
+    def clean(self):
+        if self.primary_language in self.other_languages:
+            raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
@@ -476,6 +476,10 @@ class ActionResponsibleParty(OrderedModel):
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
     )
 
+    public_fields = [
+        'id', 'action', 'organization', 'order',
+    ]
+
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
@@ -495,6 +499,10 @@ class ActionContactPerson(OrderedModel):
         'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
     )
 
+    public_fields = [
+        'id', 'action', 'person', 'order',
+    ]
+
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
@@ -513,6 +521,10 @@ class ActionSchedule(models.Model):
     ends_at = models.DateField(null=True, blank=True)
 
     i18n = TranslationField(fields=('name',))
+
+    public_fields = [
+        'id', 'plan', 'name', 'begins_at', 'ends_at'
+    ]
 
     class Meta:
         ordering = ('plan', 'begins_at')
@@ -534,6 +546,10 @@ class ActionStatus(models.Model):
 
     i18n = TranslationField(fields=('name',))
 
+    public_fields = [
+        'id', 'plan', 'name', 'identifier', 'is_completed'
+    ]
+
     class Meta:
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('action status')
@@ -552,6 +568,10 @@ class ActionDecisionLevel(models.Model):
     identifier = IdentifierField()
 
     i18n = TranslationField(fields=('name',))
+
+    public_fields = [
+        'id', 'plan', 'name', 'identifier',
+    ]
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -607,6 +627,10 @@ class ActionTask(models.Model):
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action task')
 
+    public_fields = [
+        'id', 'action', 'name', 'state', 'comment', 'due_at', 'completed_at', 'created_at', 'modified_at',
+    ]
+
     class Meta:
         ordering = ('action', '-due_at')
         verbose_name = _('action task')
@@ -640,6 +664,10 @@ class ActionImpact(OrderedModel):
 
     i18n = TranslationField(fields=('name',))
 
+    public_fields = [
+        'id', 'plan', 'name', 'identifier',
+    ]
+
     class Meta:
         unique_together = (('plan', 'identifier'),)
         ordering = ('plan', 'order')
@@ -662,6 +690,10 @@ class CategoryType(models.Model):
         default=False,
         verbose_name=_('editable for indicators'),
     )
+
+    public_fields = [
+        'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators'
+    ]
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -689,6 +721,10 @@ class Category(OrderedModel, ModelWithImage):
     )
 
     i18n = TranslationField(fields=('name', 'short_description'))
+
+    public_fields = [
+        'id', 'type', 'identifier', 'name', 'parent', 'short_description'
+    ]
 
     class Meta:
         unique_together = (('type', 'identifier'),)
@@ -759,6 +795,10 @@ class ActionStatusUpdate(models.Model):
         verbose_name=_('created by'), editable=False,
     )
 
+    public_fields = [
+        'id', 'action', 'title', 'date', 'author', 'content', 'created_at', 'modified_at',
+    ]
+
     class Meta:
         verbose_name = _('action status update')
         verbose_name_plural = _('action status updates')
@@ -824,6 +864,10 @@ class ImpactGroupAction(models.Model):
         related_name='+',
     )
 
+    public_fields = [
+        'id', 'group', 'action', 'impact',
+    ]
+
     class Meta:
         unique_together = (('group', 'action'),)
         verbose_name = _('impact group action')
@@ -845,6 +889,10 @@ class MonitoringQualityPoint(OrderedModel):
     identifier = IdentifierField()
 
     i18n = TranslationField(fields=('name', 'description_yes', 'description_no'))
+
+    public_fields = [
+        'id', 'name', 'description_yes', 'description_no', 'plan', 'identifier',
+    ]
 
     class Meta:
         verbose_name = _('monitoring quality point')
