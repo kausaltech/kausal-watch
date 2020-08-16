@@ -106,3 +106,19 @@ def editor_css():
         '<link rel="stylesheet" href="{}">',
         static("css/wagtail_editor_overrides.css")
     )
+
+
+@hooks.register("construct_explorer_page_queryset")
+def restrict_pages_to_plan(parent_page, pages, request):
+    plan = request.user.get_active_admin_plan()
+    if not plan.site_id:
+        return pages.none()
+    return pages.descendant_of(plan.site.root_page, inclusive=True)
+
+
+@hooks.register("construct_page_chooser_queryset")
+def restrict_chooser_pages_to_plan(pages, request):
+    plan = request.user.get_active_admin_plan()
+    if not plan.site_id:
+        return pages.none()
+    return pages.descendant_of(plan.site.root_page, inclusive=True)
