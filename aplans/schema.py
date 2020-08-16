@@ -1,14 +1,13 @@
-import re
 import pytz
 import graphene
 import libvoikko
-import functools
-from django.utils.translation import get_language
-from graphene_django import DjangoObjectType
 from graphene.utils.str_converters import to_snake_case, to_camel_case
 from graphql.error import GraphQLError
 import graphene_django_optimizer as gql_optimizer
-from modeltrans.translator import get_i18n_field
+from graphql.type import (
+    specified_directives, GraphQLDirective, DirectiveLocation, GraphQLArgument, GraphQLString,
+    GraphQLNonNull
+)
 
 from aplans.utils import public_fields
 from actions.models import (
@@ -24,9 +23,14 @@ from indicators.models import (
 from content.models import (
     StaticPage, BlogPost, Question, SiteGeneralContent
 )
+from pages.schema import Page as PageInterface, types as pages_types
+from pages.models import AplansPage
+
 from people.models import Person
 from django_orghierarchy.models import Organization, OrganizationClass
 from wagtail.core.rich_text import RichText
+
+from .graphql_types import DjangoNode
 
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
@@ -83,59 +87,6 @@ class OrderableModelMixin:
         return self.sort_order
 
 
-def get_i18n_field_with_fallback(field_name, obj, info):
-    fallback_value = getattr(obj, field_name)
-    fallback_lang = 'fi'  # FIXME
-
-    fallback = (fallback_value, fallback_lang)
-
-    active_language = getattr(info.context, '_graphql_query_language', None)
-    if not active_language:
-        return fallback
-
-    i18n_field = get_i18n_field(obj._meta.model)
-
-    i18n_values = getattr(obj, i18n_field.name)
-    if i18n_values is None or active_language == fallback_lang:
-        return fallback
-
-    lang_field_name = '%s_%s' % (field_name, active_language)
-    trans_value = i18n_values.get(lang_field_name)
-    if not trans_value:
-        return fallback
-
-    trans_value = i18n_values.get(lang_field_name, getattr(obj, field_name))
-    return trans_value, active_language
-
-
-def resolve_i18n_field(field_name, obj, info):
-    value, lang = get_i18n_field_with_fallback(field_name, obj, info)
-    return value
-
-
-class DjangoNode(DjangoObjectType):
-    @classmethod
-    def __init_subclass_with_meta__(cls, **kwargs):
-        if 'name' not in kwargs:
-            # Remove the trailing 'Node' from the object types
-            kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
-        super().__init_subclass_with_meta__(**kwargs)
-
-        # Set default resolvers for i18n fields
-        i18n_field = get_i18n_field(cls._meta.model)
-        if i18n_field is not None:
-            fields = cls._meta.fields
-            for translated_field_name in i18n_field.fields:
-                field = fields[translated_field_name]
-                if field.resolver is None:
-                    resolver = functools.partial(resolve_i18n_field, translated_field_name)
-                    apply_hints = gql_optimizer.resolver_hints(only=[translated_field_name, i18n_field.name])
-                    field.resolver = apply_hints(resolver)
-
-    class Meta:
-        abstract = True
-
-
 class UnitNode(DjangoNode):
     class Meta:
         model = Unit
@@ -172,6 +123,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
+    pages = graphene.List(PageInterface)
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
@@ -191,6 +143,13 @@ class PlanNode(DjangoNode, WithImageMixin):
     def resolve_serve_file_base_url(self, info):
         request = info.context
         return request.build_absolute_uri('/').rstrip('/')
+
+    def resolve_pages(self, info):
+        if not self.site_id:
+            return
+        if not self.site.root_page:
+            return
+        return self.site.root_page.get_descendants(inclusive=True).live().public().type(AplansPage).specific()
 
     class Meta:
         model = Plan
@@ -704,12 +663,6 @@ class Query(graphene.ObjectType):
         return obj
 
 
-from graphql.type import (
-    specified_directives, GraphQLDirective, DirectiveLocation, GraphQLArgument, GraphQLString,
-    GraphQLNonNull
-)
-
-
 class LocaleDirective(GraphQLDirective):
     def __init__(self):
         super().__init__(
@@ -725,4 +678,8 @@ class LocaleDirective(GraphQLDirective):
         )
 
 
-schema = graphene.Schema(query=Query, directives=specified_directives + [LocaleDirective()])
+schema = graphene.Schema(
+    query=Query,
+    directives=specified_directives + [LocaleDirective()],
+    types=[] + pages_types
+)
