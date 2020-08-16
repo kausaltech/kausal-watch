@@ -80,6 +80,7 @@ INSTALLED_APPS = [
     'wagtail.sites',
     'wagtail.users',
     'wagtail.snippets',
+    'wagtail_react_streamfield',  # must be before documents, images and wagtail.admin
     'documents',
     'wagtail.documents',
     'images',
@@ -381,6 +382,10 @@ USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 SENTRY_DSN = env('SENTRY_DSN')
+
+SILENCED_SYSTEM_CHECKS = [
+    'fields.W904',  # postgres JSONField -> django JSONField
+]
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
