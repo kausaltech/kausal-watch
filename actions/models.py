@@ -121,8 +121,11 @@ class Plan(ModelWithImage, ClusterableModel):
 
         if self.site is None:
             from pages.models import PlanRootPage
+            from wagtail.core.models import Page
 
-            root_page = PlanRootPage.get_first_root_node().add_child(title=self.name, slug=self.identifier, url_path='')
+            root_page = Page.get_first_root_node().add_child(
+                instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
+            )
             site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
             site.save()
             self.site = site
@@ -665,7 +668,7 @@ class ActionImpact(OrderedModel):
     i18n = TranslationField(fields=('name',))
 
     public_fields = [
-        'id', 'plan', 'name', 'identifier',
+        'id', 'plan', 'name', 'identifier', 'order',
     ]
 
     class Meta:
