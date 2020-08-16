@@ -28,7 +28,7 @@ User = get_user_model()
 DEFAULT_AVATAR_SIZE = 360
 
 
-def determine_image_dim(image, width, height):
+def determine_image_dim(image_width, image_height, width, height):
     for name in ('width', 'height'):
         x = locals()[name]
         if x is None:
@@ -47,7 +47,7 @@ def determine_image_dim(image, width, height):
     if height is not None:
         height = int(height)
 
-    ratio = image.width / image.height
+    ratio = image_width / image_height
     if not height:
         height = width / ratio
     elif not width:
@@ -194,7 +194,7 @@ class Person(index.Indexed, models.Model):
                 raise ValueError('Invalid size argument (should be "<width>x<height>")')
             width, _, height = m.groups()
 
-            dim = determine_image_dim(self.image, width, height)
+            dim = determine_image_dim(self.image_width, self.image_height, width, height)
 
             tn_args = {
                 'size': dim,
