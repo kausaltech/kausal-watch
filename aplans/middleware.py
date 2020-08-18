@@ -1,3 +1,4 @@
+
 import sentry_sdk
 from django.urls import reverse
 from django.conf import settings
@@ -26,3 +27,13 @@ class SocialAuthExceptionMiddleware(MiddlewareMixin):
         message = _('Login was unsuccessful.')
         messages.error(request, message, extra_tags='social-auth ' + backend_name)
         return redirect(reverse('admin:login'))
+
+
+class AdminMiddleware(MiddlewareMixin):
+    def process_view(self, request, *args, **kwargs):
+        if not request.user or not request.user.is_authenticated or not request.user.is_staff:
+            return
+        plan = request.user.get_active_admin_plan()
+        if not plan.site_id:
+            return
+        request._wagtail_site = plan.site

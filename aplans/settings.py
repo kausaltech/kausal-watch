@@ -132,6 +132,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'aplans.middleware.SocialAuthExceptionMiddleware',
+    'aplans.middleware.AdminMiddleware',
 ]
 
 ROOT_URLCONF = 'aplans.urls'
