@@ -127,7 +127,7 @@ class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admi
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('person', 'order',)
+    fields = ('person',  'primary_contact', 'order')
     autocomplete_fields = ('person',)
 
 

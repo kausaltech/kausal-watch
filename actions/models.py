@@ -507,9 +507,14 @@ class ActionContactPerson(OrderedModel):
     person = models.ForeignKey(
         'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
     )
+    primary_contact = models.BooleanField(
+        default=False,
+        verbose_name=_('primary contact person'),
+        help_text=_('Is this person the primary contact person for the action?'),
+    )
 
     public_fields = [
-        'id', 'action', 'person', 'order',
+        'id', 'action', 'person', 'order', 'primary_contact',
     ]
 
     class Meta:
