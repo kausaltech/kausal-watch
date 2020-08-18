@@ -84,6 +84,18 @@ class AplansAdminSite(admin.AdminSite):
 
 
 class AplansModelAdmin(VersionAdmin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    @property
+    def media(self):
+        media = super().media
+        for jsl in media._js_lists:
+            if 'admin/js/jquery.init.js' in jsl:
+                jsl.remove('admin/js/jquery.init.js')
+                break
+        return media
+
     def _get_category_fields(self, plan, obj, with_initial=False):
         fields = {}
         if self.model == Action:
