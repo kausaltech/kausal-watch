@@ -23,7 +23,7 @@ from indicators.models import (
 from content.models import (
     StaticPage, BlogPost, Question, SiteGeneralContent
 )
-from pages.schema import Page as PageInterface, types as pages_types
+from pages.schema import MenuNode, Page as PageInterface, types as pages_types
 from pages.models import AplansPage
 
 from people.models import Person
@@ -127,6 +127,8 @@ class PlanNode(DjangoNode, WithImageMixin):
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
+
+    main_menu = MenuNode.create_plan_menu_field()
 
     @gql_optimizer.resolver_hints(
         model_field='static_pages',

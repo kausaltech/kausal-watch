@@ -24,7 +24,7 @@ class AplansPage(Page):
         FieldPanel('title', classname="full title"),
     ]
 
-    promote_panels = [
+    settings_panels = [
         MultiFieldPanel([
             FieldPanel('slug'),
             FieldPanel('seo_title'),
@@ -32,6 +32,8 @@ class AplansPage(Page):
             FieldPanel('search_description'),
         ], _('Common page configuration')),
     ]
+
+    promote_panels = []
 
     class Meta:
         abstract = True
