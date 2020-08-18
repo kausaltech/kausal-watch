@@ -80,7 +80,7 @@ class StaticPageAdmin(ImageCroppingMixin, admin.ModelAdmin, OrderableAdmin):
 
 @admin.register(SiteGeneralContent)
 class SiteGeneralContentAdmin(admin.ModelAdmin):
-    fields = public_fields(SiteGeneralContent)
+    fields = list(set(public_fields(SiteGeneralContent)) - set(['id']))
 
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
