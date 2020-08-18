@@ -66,11 +66,6 @@ class CategoryFieldPanel(MultiFieldPanel):
             self.children = [FieldPanel(name, heading=field.label) for name, field in cat_fields.items()]
         return super().bind_to(model, instance, request, form)
 
-    def render(self):
-        import ipdb
-        ipdb.set_trace()
-        return super().render()
-
     def required_fields(self):
         fields = []
         for handler in self.children:
@@ -238,7 +233,10 @@ class ActionAdmin(AplansModelAdmin):
             ObjectList([
                 CondensedInlinePanel(
                     'contact_persons',
-                    panels=[FieldPanel('person', widget=PersonChooser)]
+                    panels=[
+                        FieldPanel('person', widget=PersonChooser),
+                        FieldPanel('primary_contact')
+                    ]
                 )
             ], heading=_('Contact persons')),
             AdminOnlyPanel([
