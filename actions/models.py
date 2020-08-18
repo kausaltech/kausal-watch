@@ -106,6 +106,12 @@ class Plan(ModelWithImage, ClusterableModel):
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
+    @property
+    def root_page(self):
+        if self.site_id is None:
+            return None
+        return self.site.root_page
+
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
 
@@ -685,6 +691,14 @@ class CategoryType(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='category_types')
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
+    usable_for_actions = models.BooleanField(
+        default=False,
+        verbose_name=_('usable for action categorization'),
+    )
+    usable_for_indicators = models.BooleanField(
+        default=False,
+        verbose_name=_('usable for indicator categorization'),
+    )
     editable_for_actions = models.BooleanField(
         default=False,
         verbose_name=_('editable for actions'),
@@ -695,7 +709,8 @@ class CategoryType(models.Model):
     )
 
     public_fields = [
-        'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators'
+        'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
+        'usable_for_indicators', 'usable_for_actions'
     ]
 
     class Meta:
