@@ -40,11 +40,17 @@
   }
   function onload() {
     // Fix references to global jQuery objects
-    window.$ = django.jQuery;
-    window.jQuery = django.jQuery;
+    if (!window.$)
+      window.$ = django.jQuery;
+    if (!window.jQuery)
+      window.jQuery = django.jQuery;
 
     initUnsavedChangesNotification();
   }
+
+  if (!window.django) window.django = {};
+  window.django.jQuery = jQuery;
+
   if (document.readyState !== 'loading'){
     onload();
   } else {
