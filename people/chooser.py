@@ -1,8 +1,11 @@
-from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
+from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin, ModelChooserCreateTabMixin
 from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
+from django.forms.models import modelform_factory
+from wagtailautocomplete.widgets import Autocomplete as AutocompleteWidget
 from wagtail.search.backends import get_search_backend
 from wagtail.core import hooks
+from django_orghierarchy.models import Organization
 
 from .models import Person
 
@@ -36,14 +39,35 @@ class PersonChooserMixin(ModelChooserMixin):
         return 'people/chooser_results.html'
 
 
+class PersonModelChooserCreateTabMixin(ModelChooserCreateTabMixin):
+    create_tab_label = _("Create new")
+
+    def get_form_class(self):
+        if self.form_class:
+            return self.form_class
+
+        Widget = type(
+            'OrganizationAutocomplete',
+            (AutocompleteWidget,),
+            dict(target_model=Organization, can_create=False, is_single=True),
+        )
+
+        self.form_class = modelform_factory(self.model, fields=self.fields, widgets=dict(
+            organization=Widget
+        ))
+        return self.form_class
+
+
 class PersonChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = PersonChooserMixin
+    create_tab_mixin_class = PersonModelChooserCreateTabMixin
+
     icon = 'user'
     model = Person
     page_title = _("Choose person")
     per_page = 10
     order_by = ('last_name', 'first_name')
-    fields = ['first_name', 'last_name', 'email']
+    fields = ['first_name', 'last_name', 'email', 'title', 'organization']
 
 
 class PersonChooser(AdminChooser):
