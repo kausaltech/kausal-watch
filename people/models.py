@@ -186,6 +186,13 @@ class Person(index.Indexed, models.Model):
         if not request or not self.image:
             return None
 
+        try:
+            with self.image.open() as file:  # noqa
+                pass
+        except FileNotFoundError:
+            logger.error('Avatar file for %s not found' % self)
+            return None
+
         if size is None:
             url = self.image.url
         else:
