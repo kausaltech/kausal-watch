@@ -239,6 +239,16 @@ class ActionTaskNode(DjangoNode):
     class Meta:
         model = ActionTask
 
+    @gql_optimizer.resolver_hints(
+        model_field='comment',
+    )
+    def resolve_comment(self, info):
+        comment = self.comment
+        if comment is None:
+            return None
+
+        return RichText(comment)
+
 
 class ActionNode(DjangoNode, WithImageMixin):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
