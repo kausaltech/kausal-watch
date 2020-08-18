@@ -37,6 +37,11 @@ def create_or_update_user(backend, details, user, *args, **kwargs):
         if new_val != old_val:
             setattr(user, field, new_val)
             changed = True
+
+    if user.has_usable_password():
+        user.set_unusable_password()
+        changed = True
+
     if changed:
         user.save()
 
