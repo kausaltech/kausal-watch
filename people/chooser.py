@@ -18,7 +18,8 @@ class PersonChooserMixin(ModelChooserMixin):
         return objects
 
     def get_object_list(self, search_term=None, **kwargs):
-        object_list = self.get_unfiltered_object_list()
+        plan = self.request.user.get_active_admin_plan()
+        object_list = self.get_unfiltered_object_list().available_for_plan(plan)
 
         if search_term:
             search_backend = get_search_backend()
@@ -32,6 +33,7 @@ class PersonChooserMixin(ModelChooserMixin):
             'choose_url': self.get_chosen_url(item),
             'name': self.get_object_string(item),
             'title': item.title,
+            'organization': item.organization,
             'avatar_url': avatar_url,
         }
 

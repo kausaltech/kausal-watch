@@ -12,6 +12,7 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.db.models import Q
 
 from easy_thumbnails.files import get_thumbnailer
 from image_cropping import ImageRatioField
@@ -61,6 +62,13 @@ def image_upload_path(instance, filename):
     return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
 
 
+class PersonQuerySet(models.QuerySet):
+    def available_for_plan(self, plan):
+        all_related = plan.related_organizations.all() | plan.related_organizations.all().get_descendants()
+        q = Q(organization__isnull=True) | Q(organization__in=all_related)
+        return self.filter(q)
+
+
 class Person(index.Indexed, models.Model):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
@@ -90,9 +98,12 @@ class Person(index.Indexed, models.Model):
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
+    objects = models.Manager.from_queryset(PersonQuerySet)()
+
     search_fields = [
         index.AutocompleteField('first_name', partial_match=True),
         index.AutocompleteField('last_name', partial_match=True),
+        index.FilterField('organization'),
     ]
 
     class Meta:

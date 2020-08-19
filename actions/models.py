@@ -81,6 +81,10 @@ class Plan(ModelWithImage, ClusterableModel):
         default=list, null=True, blank=True
     )
 
+    related_organizations = models.ManyToManyField(
+        'django_orghierarchy.Organization', blank=True, related_name='related_plans'
+    )
+
     i18n = TranslationField(fields=['name'])
 
     public_fields = [
