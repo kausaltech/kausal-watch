@@ -40,6 +40,11 @@ class PersonAdmin(AplansModelAdmin):
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title')
 
+    def get_queryset(self, request):
+        plan = request.user.get_active_admin_plan()
+        qs = super().get_queryset(request).available_for_plan(plan)
+        return qs
+
     def get_list_display(self, request):
         def edit_url(obj):
             if self.permission_helper.user_can_edit_obj(request.user, obj):

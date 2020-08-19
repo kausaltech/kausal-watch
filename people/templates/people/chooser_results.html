@@ -9,6 +9,7 @@
             <th></th>
             <th>{% trans "Name" %}</th>
             <th></th>
+            <th>{% trans "Organization" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -23,6 +24,7 @@
                     <h2><a class="item-choice" href="{{ row.choose_url }}">{{ row.name }}</a></h2>
                 </td>
                 <td>{{ row.title|default:'' }}</td>
+                <td>{{ row.organization.distinct_name|default:'' }}</td>
             </tr>
         {% endfor %}
     </tbody>

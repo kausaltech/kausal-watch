@@ -72,6 +72,11 @@ class PersonAdmin(ImageCroppingMixin, ExportMixinWithRequest, AplansModelAdmin):
     list_filter = (IsContactPersonFilter,)
     resource_class = PersonResource
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        plan = request.user.get_active_admin_plan()
+        return qs.available_for_plan(plan)
+
     def get_list_display(self, request):
         def contact_for_actions(obj):
             return '; '.join([str(act) for act in obj.plan_contact_for_actions])
