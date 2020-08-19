@@ -4,6 +4,7 @@ from django.utils.translation import gettext as _
 from django.utils.text import capfirst
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from modeltrans.translator import get_i18n_field
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
@@ -190,3 +191,31 @@ class CondensedInlinePanel(WagtailCondensedInlinePanel):
         }
         self.label = label or _('Add %(related_verbose_name)s') % related_name
         self.new_card_header_text = new_card_header_text or _('New %(related_verbose_name)s') % related_name
+
+
+class PlanRelatedPermissionHelper(PermissionHelper):
+    def get_plans(self, obj):
+        raise NotImplementedError('implement in subclass')
+
+    def _obj_matches_active_plan(self, user, obj):
+        obj_plans = self.get_plans(obj)
+        active_plan = user.get_active_admin_plan()
+        for obj_plan in obj_plans:
+            if obj_plan == active_plan:
+                return True
+        return False
+
+    def user_can_inspect_obj(self, user, obj):
+        if not super().user_can_inspect_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)
+
+    def user_can_edit_obj(self, user, obj):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)
+
+    def user_can_delete_obj(self, user, obj):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)

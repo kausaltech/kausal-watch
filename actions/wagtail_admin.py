@@ -1,20 +1,20 @@
 from django.utils.translation import gettext_lazy as _
-from django.conf import settings
 from django.forms.widgets import Select
 from django import forms
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList,
     MultiFieldPanel
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from django_orghierarchy.models import Organization
 
-from admin_site.wagtail import AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+from admin_site.wagtail import (
+    AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
+)
 from people.chooser import PersonChooser
 from .admin import AllActionsFilter, ImpactFilter
 from .models import Action, Plan, ActionStatus, ActionImpact
@@ -73,26 +73,14 @@ class CategoryFieldPanel(MultiFieldPanel):
         return fields
 
 
-class ActionPermissionHelper(PermissionHelper):
-    def user_can_inspect_obj(self, user, obj):
-        if not super().user_can_inspect_obj(user, obj):
-            return False
-
-        # The user has view permission to all actions if he is either
-        # a general admin for actions or a contact person for any
-        # actions.
-        if user.is_superuser or user.is_general_admin_for_plan(obj.plan):
-            return True
-
-        adminable_plans = user.get_adminable_plans()
-        if obj.plan in adminable_plans:
-            return True
-
-        return False
+class ActionPermissionHelper(PlanRelatedPermissionHelper):
+    def get_plans(self, obj):
+        return [obj.plan]
 
     def user_can_edit_obj(self, user, obj):
         if not super().user_can_edit_obj(user, obj):
             return False
+
         return user.can_modify_action(obj)
 
     def user_can_delete_obj(self, user, obj):
