@@ -22,7 +22,8 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
 
 def create_or_update_user(backend, details, user, *args, **kwargs):
     if user is None:
-        user = User(uuid=details['uuid'])
+        uuid = details.get('uuid') or kwargs.get('uid')
+        user = User(uuid=uuid)
 
     changed = False
     for field in ('first_name', 'last_name', 'email'):
