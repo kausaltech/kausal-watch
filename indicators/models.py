@@ -126,7 +126,7 @@ class Indicator(models.Model):
         verbose_name=_('plans')
     )
     identifier = IdentifierField(null=True, blank=True)
-    name = models.CharField(max_length=100, verbose_name=_('name'))
+    name = models.CharField(max_length=200, verbose_name=_('name'))
     quantity = ParentalKey(
         Quantity, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
