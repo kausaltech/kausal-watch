@@ -750,7 +750,7 @@ class Category(OrderedModel, ModelWithImage):
     i18n = TranslationField(fields=('name', 'short_description'))
 
     public_fields = [
-        'id', 'type', 'identifier', 'name', 'parent', 'short_description'
+        'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description'
     ]
 
     class Meta:
