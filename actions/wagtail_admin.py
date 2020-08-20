@@ -43,6 +43,7 @@ def _get_category_fields(plan, model, obj, with_initial=False):
     return fields
 
 
+"""
 class CategoryFieldPanel(MultiFieldPanel):
     def __init__(self, field_name, *args, **kwargs):
         if 'children' not in kwargs:
@@ -62,7 +63,7 @@ class CategoryFieldPanel(MultiFieldPanel):
         bound_model = model if model is not None else getattr(self, 'model')
         if bound_request is not None and bound_model is not None:
             plan = bound_request.user.get_active_admin_plan()
-            cat_fields = _get_category_fields(plan, bound_model, instance)
+            cat_fields = _get_category_fields(plan, bound_model, instance, with_initial=True)
             self.children = [FieldPanel(name, heading=field.label) for name, field in cat_fields.items()]
         return super().bind_to(model, instance, request, form)
 
@@ -71,6 +72,14 @@ class CategoryFieldPanel(MultiFieldPanel):
         for handler in self.children:
             fields.extend(handler.required_fields())
         return fields
+"""
+
+
+class CategoryFieldPanel(FieldPanel):
+    def on_form_bound(self):
+        super().on_form_bound()
+        cat_fields = _get_category_fields(self.instance.plan, self.model, self.instance, with_initial=True)
+        self.form.fields[self.field_name].initial = cat_fields[self.field_name].initial
 
 
 class ActionPermissionHelper(PlanRelatedPermissionHelper):
@@ -114,7 +123,7 @@ class ActionEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
         user = request.user
         plan = user.get_active_admin_plan()
-        cat_fields = _get_category_fields(plan, Action, self.instance)
+        cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
 
         self.base_form_class = type(
             'ActionAdminForm',
@@ -206,10 +215,10 @@ class ActionAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
 
-        cat_fields = _get_category_fields(instance.plan, Action, instance)
+        cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
         cat_panels = []
         for key, field in cat_fields.items():
-            cat_panels.append(FieldPanel(key, heading=field.label))
+            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
         if cat_panels:
             panels.insert(2, MultiFieldPanel(cat_panels, heading=_('Categories')))
 
