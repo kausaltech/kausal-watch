@@ -144,8 +144,12 @@ class ActionEditHandler(AplansTabbedInterface):
                 if not isinstance(panel, AdminOnlyPanel):
                     continue
                 for child in panel.children:
-                    assert isinstance(child, FieldPanel)
-                    del form_class.base_fields[child.field_name]
+                    if isinstance(child, FieldPanel):
+                        del form_class.base_fields[child.field_name]
+                    elif isinstance(child, InlinePanel):
+                        del form_class.formsets[child.relation_name]
+                    else:
+                        raise Exception('Invalid child panel: %s' % child)
 
         field = form_class.base_fields.get('impact')
         if field is not None:
