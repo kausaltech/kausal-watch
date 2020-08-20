@@ -124,6 +124,11 @@ class PlanNode(DjangoNode, WithImageMixin):
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
     pages = graphene.List(PageInterface)
+    category_types = graphene.List(
+        'aplans.schema.CategoryTypeNode',
+        usable_for_indicators=graphene.Boolean(),
+        usable_for_actions=graphene.Boolean()
+    )
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
@@ -141,6 +146,17 @@ class PlanNode(DjangoNode, WithImageMixin):
     )
     def resolve_blog_posts(self, info):
         return self.blog_posts.filter(is_published=True)
+
+    @gql_optimizer.resolver_hints(
+        model_field='category_types',
+    )
+    def resolve_category_types(self, info, usable_for_indicators=None, usable_for_actions=None):
+        qs = self.category_types.all()
+        if usable_for_indicators is not None:
+            qs = qs.filter(usable_for_indicators=usable_for_indicators)
+        if usable_for_indicators is not None:
+            qs = qs.filter(usable_for_indicators=usable_for_indicators)
+        return qs
 
     def resolve_serve_file_base_url(self, info):
         request = info.context
