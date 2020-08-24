@@ -382,7 +382,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         KNOWN_IDS = {'not_started', 'on_time', 'late'}
         # If the status set is not something we can handle, bail out.
         if not KNOWN_IDS.issubset(set(by_id.keys())):
-            logger.error('Unknown action status IDs: %s (plan %s)' % (set(by_id.keys()), self.plan.identifier))
+            logger.warning('Unable to determine action statuses for plan %s: right statuses missing' % self.plan.identifier)
             return None
 
         if indicator_status is not None and indicator_status.get('is_late'):
