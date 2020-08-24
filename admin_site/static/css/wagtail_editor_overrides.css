@@ -13,3 +13,8 @@
 footer .actions {
     width: 300px;
 }
+
+.action-task-header-state {
+    font-weight: 400;
+    font-size: 0.9em;
+}

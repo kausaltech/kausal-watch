@@ -199,6 +199,7 @@ class CondensedPanelSingleSelect(Select):
         return str(value)
 
 
+
 class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
@@ -233,6 +234,27 @@ class ActionAdmin(AplansModelAdmin):
         RichTextFieldPanel('comment'),
     ]
 
+    task_header_from_js = '''
+        function getHeader(task) {
+            var f = task.fields;
+            var out = '';
+            var stateMap = %(state_map)s;
+            if (f.name.length > 80) {
+                out = f.name.slice(0, 80) + '...';
+            } else {
+                out = f.name;
+            }
+            var stateStr = stateMap[f.state];
+            if (f.state != 'completed' && f.state != 'cancelled' && f.due_at) {
+                stateStr += ', DL: ' + f.due_at;
+            }
+            out += ' <span class="action-task-header-state">(' + stateStr + ')</span>'
+            return out;
+        }
+        console.log(form);
+        getHeader(form);
+    '''
+
     def get_list_display(self, request):
         def name_link(obj):
             from django.utils.html import format_html
@@ -246,6 +268,11 @@ class ActionAdmin(AplansModelAdmin):
         self.name_link = name_link
 
         return ('identifier', 'name_link')
+
+    def get_task_header_formatter(self):
+        states = {key: str(label) for key, label in list(ActionTask.STATES)}
+        out = self.task_header_from_js % dict(state_map=json.dumps(states))
+        return out
 
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
@@ -278,7 +305,11 @@ class ActionAdmin(AplansModelAdmin):
                 )
             ], heading=_('Responsible parties')),
             ObjectList([
-                CondensedInlinePanel('tasks', panels=self.task_panels)
+                CondensedInlinePanel(
+                    'tasks',
+                    panels=self.task_panels,
+                    card_header_from_js_safe=self.get_task_header_formatter()
+                )
             ], heading=_('Tasks')),
             *i18n_tabs
         ])
