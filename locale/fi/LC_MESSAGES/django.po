@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-18 18:30+0300\n"
+"POT-Creation-Date: 2020-08-24 11:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -106,7 +106,7 @@ msgstr "toimenpideohjelmat"
 
 #: actions/models.py
 msgid "Primary language must not be selected"
-msgstr ""
+msgstr "Ensisijainen kieli ei voi olla valittuna"
 
 #: actions/models.py
 msgid "official name"
@@ -471,9 +471,14 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
-#: actions/wagtail_admin.py indicators/admin.py
-msgid "Categories"
-msgstr "Luokat"
+#: actions/wagtail_admin.py
+msgid "View live"
+msgstr "Näytä julkaistu"
+
+#: actions/wagtail_admin.py
+#, python-format
+msgid "View %s live"
+msgstr "Näytä julkaistu %s"
 
 #: actions/wagtail_admin.py
 msgid "Internal information"
@@ -483,6 +488,10 @@ msgstr "Sisäiset tiedot"
 #: templates/aplans_admin/own_actions_panel.html
 msgid "Name"
 msgstr "Nimi"
+
+#: actions/wagtail_admin.py indicators/admin.py
+msgid "Categories"
+msgstr "Luokat"
 
 #: actions/wagtail_admin.py
 msgid "Basic information"
@@ -1260,11 +1269,11 @@ msgstr "Valitse toinen henkilö"
 msgid "Edit this person"
 msgstr "Muokkaa tätä henkilöä"
 
-#: people/models.py
+#: people/models.py people/wagtail_admin.py
 msgid "first name"
 msgstr "etunimi"
 
-#: people/models.py
+#: people/models.py people/wagtail_admin.py
 msgid "last name"
 msgstr "sukunimi"
 
@@ -1300,6 +1309,10 @@ msgstr "henkilöt"
 #: people/models.py
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
+
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisaatio"
 
 #: templates/aplans_admin/index.html
 msgid "Select action plan"

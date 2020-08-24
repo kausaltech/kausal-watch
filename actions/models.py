@@ -478,6 +478,15 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         return len(active_tasks)
     active_task_count.short_description = _('Active tasks')
 
+    def get_view_url(self):
+        plan = self.plan
+        if not plan or not plan.site_url:
+            return None
+        if plan.site_url.startswith('http'):
+            return '{}/actions/{}'.format(plan.site_url, self.identifier)
+        else:
+            return 'https://{}/actions/{}'.format(plan.site_url, self.identifier)
+
 
 class ActionResponsibleParty(OrderedModel):
     action = ParentalKey(
