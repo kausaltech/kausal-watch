@@ -15,7 +15,10 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
+from condensedinlinepanel.edit_handlers import (
+    CondensedInlinePanel as WagtailCondensedInlinePanel,
+    BaseCondensedInlinePanelFormSet
+)
 
 
 class AdminOnlyPanel(ObjectList):
@@ -181,7 +184,48 @@ class AplansModelAdmin(ModelAdmin):
         return fields
 
 
+class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):
+    """Remove empty new forms from data"""
+
+    def process_post_data(self, data, *args, **kwargs):
+        prefix = kwargs['prefix']
+
+        initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
+        total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
+        order = data.get('%s-ORDER' % prefix, None)
+        if order is not None and order != '':
+            order = [int(x) for x in order.lstrip('[').rstrip(']').split(',')]
+
+        if total_forms:
+            to_delete = []
+            for idx in range(initial_forms, total_forms):
+                keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
+                for key in keys:
+                    if data[key]:
+                        break
+                else:
+                    to_delete.append(idx)
+
+            if to_delete:
+                data = data.copy()
+
+                data['%s-TOTAL_FORMS' % prefix] = str(total_forms - len(to_delete))
+                if order is not None and order != '':
+                    data['%s-ORDER' % prefix] = '[%s]' % (','.join([str(x) for x in order]))
+
+            for idx in to_delete:
+                keys = list(filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys()))
+                for key in keys:
+                    del data[key]
+                if order:
+                    order.remove(idx)
+
+        return super().process_post_data(data, *args, **kwargs)
+
+
 class CondensedInlinePanel(WagtailCondensedInlinePanel):
+    formset_class = EmptyFromTolerantBaseCondensedInlinePanelFormSet
+
     def on_instance_bound(self):
         label = self.label
         new_card_header_text = self.new_card_header_text
