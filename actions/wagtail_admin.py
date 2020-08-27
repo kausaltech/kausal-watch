@@ -143,7 +143,9 @@ class ActionButtonHelper(ButtonHelper):
     def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None,
                             classnames_exclude=None):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
-        view_live_button = self.view_live_button(obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude)
+        view_live_button = self.view_live_button(
+            obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude
+        )
         if view_live_button:
             buttons.append(view_live_button)
         return buttons

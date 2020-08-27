@@ -1,0 +1,316 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n wagtailadmin_tags static %}
+
+{% block titletag %}{{ view.get_meta_title }}{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+
+    {{ edit_handler.form.media.css }}
+
+    {{ view.media.css }}
+    <link rel="stylesheet" href="{% static 'ag-grid-community/dist/styles/ag-grid.css' %}">
+    <link rel="stylesheet" href="{% static 'ag-grid-community/dist/styles/ag-theme-alpine.css' %}">
+    <style>
+        .ag-sort-ascending-icon {
+            display: none;
+        }
+        .section {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            margin-left: 1rem;
+        }
+        .ag-cell.value-changed {
+            background-color: #efe;
+        }
+        .ag-cell.value-required {
+            background-color: #fee;
+        }
+    </style>
+{% endblock %}
+
+{% block extra_js %}
+    {{ block.super }}
+
+    {{ edit_handler.form.media.js }}
+    {{ edit_handler.html_declarations }}
+
+    {{ view.media.js }}
+    <script src="{% static 'ag-grid-community/dist/ag-grid-community.noStyle.js' %}"></script>
+    {% comment %}
+    <script src="{% static 'moment/dist/moment.js' %}"></script>
+    <script src="{% static 'moment/dist/locale/fi.js' %}"></script>
+    <script src="{% static 'moment/dist/locale/en-gb.js' %}"></script>
+    <script src="{% static 'moment/dist/locale/sv.js' %}"></script>
+    {% endcomment %}
+{% endblock %}
+
+
+{% block content %}
+    {% csrf_token %}
+    {% get_current_language as current_language %}
+    {% block header %}
+        {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon tabbed=1 merged=1 %}
+    {% endblock %}
+
+    <div id="data-grid" class="ag-theme-alpine section"></div>
+    <div id="data-grid-controls" class="section">
+        <button onclick="addRow()" type="button" class="button bicolor button--icon" id="add-row-button">
+            <span class="icon-wrapper"><svg class="icon icon-plus" aria-hidden="true" focusable="false"><use href="#icon-plus"></use></svg></span>
+            {% trans "Add row" %}
+        </button>
+        <button onclick="onRemoveSelected()" type="button" class="button bicolor button--icon no" id="remove-selected">
+            <span class="icon-wrapper"><svg class="icon icon-bin" aria-hidden="true" focusable="false"><use href="#icon-bin"></use></svg></span>
+            {% trans "Remove row" %}
+        </button>
+        <button onclick="saveChanges()" type="button" class="button bicolor button--icon" id="remove-selected">
+            <span class="icon-wrapper"><svg class="icon icon-tick" aria-hidden="true" focusable="false"><use href="#icon-tick"></use></svg></span>
+            {% trans "Save changes" %}
+        </button>
+    </div>
+
+    <script type="text/javascript" charset="utf-8">
+        var dimensions = {{dimensions|safe}};
+        var values = {{values|safe}};
+        var timeResolution = '{{ instance.time_resolution }}';
+        var currentLanguage = '{{ current_language }}';
+        let rows = {};
+
+        for (let val of values) {
+            if (!(val.date in rows))
+                rows[val.date] = {date: val.date};
+            const row = rows[val.date];
+            val.categories.sort();
+            var key = val.categories.length ? val.categories.join('-') : 'default';
+            row[key] = val.value;
+        }
+
+        rows = Object.values(rows);
+
+        function yearGetter(params) {
+            const val = params.data.date;
+            if (!val) return;
+            return parseInt(params.data.date.split('-')[0], 10);
+        }
+        function yearSetter(params) {
+            const val = parseInt(params.newValue, 10);
+            if (val < 1900 || val > 2200 || isNaN(val)) return false;
+            params.data.date = val.toString() + '-12-31';
+            return true;
+        }
+
+        function dateGetter(params) {
+            const val = params.data.date;
+            if (!val) return;
+            return val;
+        }
+        function dateSetter(params) {
+            const val = params.newValue;
+
+            if (!val || typeof val !== 'string') return false;
+            var ts = Date.parse(val);
+            if (isNaN(ts)) return false;
+            var date = new Date(ts);
+            if (date.getFullYear() < 1900 || date.getFullYear() > 2200) return false;
+            params.data.date = date.toISOString().split('T')[0];
+            return true;
+        }
+
+        function valueGetter(params) {
+            const { node, data, colDef } = params;
+            let val = data[colDef.field];
+            if (val == undefined) val = null;
+
+            if (data._initial == undefined)
+                data._initial = {...data};
+            return val;
+        }
+
+        function valueSetter(params) {
+            const { newValue, oldValue, colDef, data, node } = params;
+            let val;
+
+            val = newValue;
+            if (val == undefined || val == '')
+                val = null;
+
+            if (val != null) {
+                val = parseFloat(val);
+                if (isNaN(val)) return false;
+            }
+            if (val == null)
+                delete data[colDef.field];
+            else
+                data[colDef.field] = val;
+            return true;
+        }
+
+        var dateColumn = {
+            editable: true,
+            sortable: true,
+            sortingOrder: ['asc'],
+            field: 'date',
+            checkboxSelection: true,
+            minWidth: 150,
+            comparator: function(valA, valB, nodeA, nodeB, isInverted) {
+                if (!valA) return 1;
+                if (!valB) return -1;
+
+                if (typeof valA === 'string') {
+                    return valA.localeCompare(valB);
+                } else {
+                    return valA - valB;
+                }
+            }
+        };
+
+        if (timeResolution === 'year') {
+            dateColumn.headerName = "{% trans 'Year'|escape %}";
+            dateColumn.valueGetter = yearGetter;
+            dateColumn.valueSetter = yearSetter;
+        } else {
+            dateColumn.headerName = "{% trans 'Date'|escape %}";
+            dateColumn.valueGetter = dateGetter;
+            dateColumn.valueSetter = dateSetter;
+        }
+
+        var columnDefs = [dateColumn];
+        var columnGroup = {};
+        var current = columnGroup;
+        const valueColDef = {
+            valueGetter,
+            valueSetter,
+            cellClassRules: {
+                'value-required': ({ data, colDef, value }) => {
+                    let valueRequired;
+
+                    if (Object.keys(data).length > 3 || colDef.field === 'default')
+                        valueRequired = true;
+
+                    if (valueRequired && (value == null || value == undefined))
+                        return true;
+                    },
+                'value-changed': ({ data, colDef, value }) => {
+                    return value != data._initial[colDef.field];
+                },
+            },
+            type: 'numericColumn',
+        }
+
+        function fillChildren(parentChildren, dims, fieldIds) {
+            var dim = dims[0];
+
+            for (var cat of dim.categories) {
+                var rest = dims.slice(1);
+                var ids = fieldIds.concat([cat.id]);
+                var out = {
+                    headerName: cat.name,
+                    headerTooltip: dim.name,
+                }
+
+                if (!rest.length) {
+                    out.field = ids.join('-');
+                    Object.assign(out, valueColDef);
+                } else {
+                    out.children = [];
+                    fillChildren(out.children, rest, ids);
+                }
+                parentChildren.push(out);
+            }
+        }
+
+        if (dimensions.length)
+            fillChildren(columnDefs, dimensions, []);
+
+        // specify the columns
+        columnDefs.push({
+            headerName: "{{ instance.unit.verbose_name_plural|default:instance.unit.name|capfirst|escape }}",
+            field: 'default',
+            ...valueColDef,
+        });
+
+        // let the grid know which columns and what data to use
+        var gridOptions = {
+            columnDefs: columnDefs,
+            rowData: rows,
+            domLayout: "autoHeight",
+            animateRows: true,
+            undoRedoCellEditing: true,
+            undoRedoCellEditingLimit: 30,
+            defaultColDef: {
+                resizable: true,
+                editable: true,
+            },
+            rowSelection: 'multiple',
+            suppressRowClickSelection: true,
+            stopEditingWhenGridLosesFocus: true,
+        };
+
+        // lookup the container we want the Grid to use
+        var eGridDiv = document.querySelector('#data-grid');
+
+        // create the grid passing in the div to use together with the columns & data we want to use
+        var grid = new agGrid.Grid(eGridDiv, gridOptions);
+
+        gridOptions.api.setSortModel([{colId: 'date', sort: 'asc'}]);
+
+        const allColumnIds = gridOptions.columnApi.getAllColumns().map((col) => col.colId);
+        gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
+
+        gridOptions.api.addEventListener('cellEditingStopped', (ev) => {
+            gridOptions.api.onSortChanged();
+            ev.api.refreshCells(ev.node);
+        });
+
+        function addRow() {
+            var lastDate, newItem = {};
+
+            gridOptions.api.forEachNode(function(node) {
+                if (!lastDate || node.data.date > lastDate) {
+                    lastDate = node.data.date;
+                }
+            });
+
+            if (lastDate && timeResolution === 'year') {
+                var date = new Date(Date.parse(lastDate));
+                date.setYear(date.getFullYear() + 1);
+                newItem.date = date.getFullYear() + '-12-31';
+            }
+            gridOptions.api.applyTransaction({ add: [newItem] });
+        }
+
+        function onRemoveSelected() {
+            var selectedData = gridOptions.api.getSelectedRows();
+            gridOptions.api.applyTransaction({ remove: selectedData });
+        }
+
+        function saveChanges() {
+            var uri = "{{ post_values_uri|escape }}";
+            const data = [];
+
+            gridOptions.api.forEachNode((node) => {
+                const { data: row } = node;
+                const date = row.date;
+
+                Object.entries(row).forEach(([key, val]) => {
+                    let catIds = [];
+                    if (key === '_initial' || key === 'date')
+                        return;
+                    if (key !== 'default')
+                        catIds = key.split('-').map((x) => parseInt(x));
+                    data.push({date, value: val, categories: catIds });
+                });
+            });
+
+            $.post({
+                url: uri,
+                data: JSON.stringify(data),
+                contentType: 'application/json',
+                dataType: 'json',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            });
+        }
+    </script>
+{% endblock %}

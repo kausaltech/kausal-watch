@@ -55,14 +55,23 @@ class ContinueEditingMixin:
     def get_success_url(self):
         if '_continue' in self.request.POST:
             # Save and continue editing
-            return self.url_helper.get_action_url('edit', self.pk_quoted)
+            if not hasattr(self, 'pk_quoted'):
+                pk = self.instance.pk
+            else:
+                pk = self.pk_quoted
+            return self.url_helper.get_action_url('edit', pk)
         else:
             return super().get_success_url()
 
     def get_success_message_buttons(self, instance):
         if '_continue' in self.request.POST:
+            # Store a reference to instance here for get_success_url() above to
+            # work in CreateView
+            if not hasattr(self, 'pk_quoted') and not hasattr(self, 'instance'):
+                self.instance = instance
             # Save and continue editing -> No edit button required
             return []
+
         button_url = self.url_helper.get_action_url('edit', quote(instance.pk))
         return [
             messages.button(button_url, _('Edit'))
