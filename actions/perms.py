@@ -10,6 +10,7 @@ from indicators.models import (
     ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
     IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity,
     IndicatorContactPerson, Dataset, DatasetLicense,
+    Dimension, DimensionCategory, IndicatorDimension
 )
 from content.models import (
     StaticPage, BlogPost, Question, SiteGeneralContent
@@ -175,6 +176,9 @@ PLAN_ADMIN_PERMS = (
     (Quantity, ALL_PERMS),
     (Dataset, ALL_PERMS),
     (DatasetLicense, ALL_PERMS),
+    (Dimension, ALL_PERMS),
+    (DimensionCategory, ALL_PERMS),
+    (IndicatorDimension, ALL_PERMS),
 
     (Person, ALL_PERMS),  # also delete perm for plan admin
 

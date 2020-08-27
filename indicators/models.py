@@ -5,11 +5,12 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from modeltrans.fields import TranslationField
-from aplans.utils import IdentifierField, OrderedModel
-
 from modelcluster.models import ClusterableModel
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
+import reversion
 from wagtail.core.fields import RichTextField
+
+from aplans.utils import IdentifierField, OrderedModel
 
 
 User = get_user_model()
@@ -108,7 +109,63 @@ class Dataset(ClusterableModel):
         return self.name
 
 
-class Indicator(models.Model):
+class Framework(ClusterableModel):
+    name = models.CharField(max_length=200, verbose_name=_('name'))
+
+    i18n = TranslationField(fields=['name'])
+
+    class Meta:
+        verbose_name = _('framework')
+        verbose_name_plural = _('frameworks')
+
+    def __str__(self):
+        return self.åname
+
+
+class CommonIndicator(ClusterableModel):
+    identifier = IdentifierField()
+    name = models.CharField(max_length=200, verbose_name=_('name'))
+    description = RichTextField(null=True, blank=True, verbose_name=_('description'))
+
+    quantity = ParentalKey(
+        Quantity, related_name='common_indicators', on_delete=models.PROTECT,
+        verbose_name=pgettext_lazy('physical', 'quantity'),
+    )
+    unit = ParentalKey(
+        Unit, related_name='common_indicators', on_delete=models.PROTECT,
+        verbose_name=_('unit')
+    )
+
+    i18n = TranslationField(fields=['name', 'description'])
+
+    class Meta:
+        verbose_name = _('common indicator')
+        verbose_name_plural = _('common indicators')
+
+    def __str__(self):
+        return self.name
+
+
+class FrameworkIndicator(models.Model):
+    identifier = IdentifierField(null=True, blank=True)
+    common_indicator = ParentalKey(
+        CommonIndicator, related_name='frameworks', on_delete=models.CASCADE,
+        verbose_name=_('common indicator')
+    )
+    framework = ParentalKey(
+        Framework, related_name='common_indicators', on_delete=models.CASCADE,
+        verbose_name=_('framework')
+    )
+
+    class Meta:
+        verbose_name = _('framework indicator')
+        verbose_name_plural = _('framework indicators')
+
+    def __str__(self):
+        return '%s ∈ %s' % (str(self.common_indicator), str(self.framework))
+
+
+class Indicator(ClusterableModel):
     TIME_RESOLUTIONS = (
         ('year', _('year')),
         ('month', _('month')),
@@ -121,6 +178,14 @@ class Indicator(models.Model):
         ('operational', _('operational')),
     )
 
+    common = models.ForeignKey(
+        CommonIndicator, null=True, blank=True, related_name='instances',
+        on_delete=models.PROTECT, verbose_name=_('common indicator')
+    )
+    organization = models.ForeignKey(
+        'django_orghierarchy.Organization', related_name='indicators', null=True, blank=True,
+        on_delete=models.PROTECT, verbose_name=_('organization'),
+    )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
         verbose_name=_('plans')
@@ -131,7 +196,7 @@ class Indicator(models.Model):
         Quantity, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=pgettext_lazy('physical', 'quantity'), null=True, blank=True
     )
-    unit = models.ForeignKey(
+    unit = ParentalKey(
         Unit, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=_('unit')
     )
@@ -211,6 +276,38 @@ class Indicator(models.Model):
         return self.name
 
 
+@reversion.register()
+class Dimension(ClusterableModel):
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    def __str__(self):
+        return self.name
+
+
+class DimensionCategory(OrderedModel):
+    dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='categories')
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    class Meta:
+        ordering = ['dimension', 'order']
+
+    def __str__(self):
+        return self.name
+
+
+class IndicatorDimension(OrderedModel):
+    dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
+    indicator = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
+
+    class Meta:
+        ordering = ['indicator', 'order']
+        index_together = (('indicator', 'order'),)
+        unique_together = (('indicator', 'dimension'),)
+
+    def __str__(self):
+        return "%s ∈ %s" % (str(self.dimension), str(self.indicator))
+
+
 class IndicatorLevel(ClusterableModel):
     indicator = models.ForeignKey(
         Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE
@@ -241,10 +338,13 @@ class IndicatorGraph(models.Model):
         return "%s (%s)" % (self.indicator, self.created_at)
 
 
-class IndicatorValue(models.Model):
-    indicator = models.ForeignKey(
+class IndicatorValue(ClusterableModel):
+    indicator = ParentalKey(
         Indicator, related_name='values', on_delete=models.CASCADE,
         verbose_name=_('indicator')
+    )
+    categories = models.ManyToManyField(
+        DimensionCategory, related_name='values', blank=True, verbose_name=_('categories')
     )
     value = models.FloatField(verbose_name=_('value'))
     date = models.DateField(verbose_name=_('date'))
@@ -254,7 +354,10 @@ class IndicatorValue(models.Model):
         verbose_name_plural = _('indicator values')
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
-        unique_together = (('indicator', 'date'),)
+
+    def clean(self):
+        super().clean()
+        # FIXME: Check for duplicates on categories
 
     def __str__(self):
         indicator = self.indicator
@@ -297,46 +400,6 @@ class IndicatorGoal(models.Model):
             scenario_str = ''
 
         return f"{indicator}{scenario_str} {date} {self.value}"
-
-
-class IndicatorEstimate(models.Model):
-    indicator = models.ForeignKey(
-        Indicator, related_name='estimates', on_delete=models.CASCADE,
-        verbose_name=_('indicator')
-    )
-    result_low = models.FloatField(verbose_name=_('low estimate'))
-    result_high = models.FloatField(verbose_name=_('high estimate'), null=True, blank=True)
-    begins_at = models.DateField(verbose_name=_('begins at'))
-    ends_at = models.DateField(verbose_name=_('ends at'), null=True, blank=True)
-    forecast = models.BooleanField(
-        verbose_name=_('measured'), default=False,
-        help_text=_('Is this estimate based on forecast or measurement?')
-    )
-    scenario = models.ForeignKey(
-        'actions.Scenario', related_name='estimates', on_delete=models.CASCADE,
-        verbose_name=_('scenario')
-    )
-    rationale = models.TextField(null=True, blank=True, verbose_name=_('rationale'))
-
-    updated_at = models.DateTimeField(auto_now=True, editable=False)
-    updated_by = models.ForeignKey(
-        User, editable=False, related_name='estimates', on_delete=models.SET_NULL,
-        null=True, blank=True,
-    )
-
-    class Meta:
-        verbose_name = _('indicator estimate')
-        verbose_name_plural = _('indicator estimates')
-
-    def __str__(self):
-        indicator = self.indicator.name
-        result = str(self.result_low)
-        if self.result_high is not None:
-            result = "%s–%s" % (self.result_low, self.result_high)
-        begins_at = self.begins_at
-        scenario = str(self.scenario)
-
-        return f"{indicator}: {result} ({begins_at} {scenario})"
 
 
 class RelatedIndicator(models.Model):
@@ -394,7 +457,7 @@ class ActionIndicator(models.Model):
         verbose_name=_('indicator')
     )
     effect_type = models.CharField(
-        max_length=40, choices=RelatedIndicator.EFFECT_TYPES,
+        max_length=40, choices=[(val, name) for val, name in RelatedIndicator.EFFECT_TYPES if val != 'part_of'],
         verbose_name=_('effect type'), help_text=_('What type of effect should the action cause?')
     )
     indicates_action_progress = models.BooleanField(

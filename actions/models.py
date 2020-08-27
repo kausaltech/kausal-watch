@@ -55,6 +55,10 @@ class Plan(ModelWithImage, ClusterableModel):
         default=True, verbose_name=_('allow images for actions'),
         help_text=_('Should custom images for individual actions be allowed')
     )
+    organization = models.ForeignKey(
+        'django_orghierarchy.Organization', blank=True, null=True, related_name='plans',
+        on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
+    )
 
     general_admins = models.ManyToManyField(
         User, blank=True, related_name='general_admin_plans',

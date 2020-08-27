@@ -3,16 +3,17 @@ import pytz
 from datetime import datetime
 from plotly.graph_objs import Figure
 from plotly.exceptions import PlotlyError
-from rest_framework import viewsets, permissions, serializers
+from rest_framework import viewsets, permissions, serializers, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from django.db import transaction
 from django.conf import settings
 import django_filters as filters
 from sentry_sdk import push_scope, capture_exception
 
 from .models import (
-    Unit, Indicator, IndicatorEstimate, IndicatorGraph, RelatedIndicator, ActionIndicator,
+    Unit, Indicator, IndicatorGraph, RelatedIndicator, ActionIndicator,
     IndicatorLevel, IndicatorValue
 )
 from actions.models import Plan
@@ -106,7 +107,6 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
         'levels': IndicatorLevelSerializer,
         'categories': 'actions.api.CategorySerializer',
         'unit': UnitSerializer,
-        'estimates': 'indicators.api.IndicatorEstimateSerializer',
         'latest_graph': IndicatorGraphSerializer,
         'related_effects': 'indicators.api.RelatedIndicatorSerializer',
         'related_causes': 'indicators.api.RelatedIndicatorSerializer',
@@ -117,7 +117,7 @@ class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
         model = Indicator
         fields = (
             'name', 'unit', 'unit_name', 'levels', 'plans', 'description', 'categories',
-            'time_resolution', 'estimates', 'latest_graph', 'actions',
+            'time_resolution', 'latest_graph', 'actions',
             'related_effects', 'related_causes', 'updated_at',
         )
 
@@ -131,6 +131,104 @@ class IndicatorFilter(filters.FilterSet):
     class Meta:
         model = Indicator
         fields = ('plans', 'identifier')
+
+
+class IndicatorValueListSerializer(serializers.ListSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        indicator = self.context['indicator']
+
+        dims = [x.dimension for x in indicator.dimensions.all()]
+        cat_by_id = {}
+        for dim in dims:
+            for cat in dim.categories.all():
+                cat_by_id[cat.id] = cat
+
+        data_by_date = {}
+
+        for sample in data:
+            date = sample['date']
+            categories = tuple(sorted([x.id for x in sample['categories']]))
+            dd = data_by_date.setdefault(date, {})
+            if categories in dd:
+                raise ValidationError("duplicate categories for %s: %s" % (date, categories))
+            dd[categories] = True
+
+        for date, vals in data_by_date.items():
+            if tuple() not in vals:
+                raise ValidationError("no default value provided for %s" % date)
+
+        return data
+
+    def create(self, validated_data):
+        indicator = self.context['indicator']
+        created_objs = []
+
+        with transaction.atomic():
+            n_deleted, _ = indicator.values.all().delete()
+
+            print('here')
+            print(validated_data)
+
+            for data in validated_data:
+                categories = data.pop('categories', [])
+                obj = IndicatorValue(indicator=indicator, **data)
+                obj.save()
+                print(obj, obj.id)
+                if categories:
+                    obj.categories.set(categories)
+                created_objs.append(obj)
+
+            if len(created_objs):
+                latest_value = indicator.values.filter(categories__isnull=True).latest()
+            else:
+                latest_value = None
+
+            if indicator.latest_value != latest_value:
+                indicator.latest_value = latest_value
+                indicator.save(update_fields=['latest_value'])
+
+        return created_objs
+
+
+class IndicatorValueSerializer(serializers.ModelSerializer):
+    def validate_date(self, date):
+        indicator = self.context['indicator']
+        if indicator.time_resolution == 'year':
+            if date.day != 31 or date.month != 12:
+                raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date, date.year))
+        elif indicator.time_resolution == 'month':
+            if date.day != 1:
+                raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month))
+        return date
+
+    def validate_categories(self, cats):
+        indicator = self.context['indicator']
+
+        dims = [x.dimension for x in indicator.dimensions.all()]
+        cat_by_id = {}
+        for dim in dims:
+            for cat in dim.categories.all():
+                cat_by_id[cat.id] = cat
+
+        found_dims = set()
+        for cat in cats:
+            cat = cat_by_id.get(cat.id)
+            if cat is None:
+                raise ValidationError("category %d not found in indicator dimensions" % cat.id)
+            if cat.dimension_id in found_dims:
+                raise ValidationError("dimension already present for category %s" % cat.id)
+            found_dims.add(cat.dimension_id)
+
+        if len(found_dims) and len(found_dims) != len(dims):
+            raise ValidationError("not all dimensions found for %s: %s" % (self.data['date'], [cat.id for cat in cats]))
+
+        return cats
+
+    class Meta:
+        model = IndicatorValue
+        fields = ['date', 'value', 'categories']
+        list_serializer_class = IndicatorValueListSerializer
 
 
 @register_view
@@ -148,11 +246,10 @@ class IndicatorViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def values(self, request, pk=None):
-        indicator = Indicator.objects.get(pk=pk)
-        resp = []
-        for obj in indicator.values.all().order_by('date'):
-            resp.append(dict(date=obj.date, value=obj.value))
-        return Response(resp)
+        indicator = self.get_object()
+        objs = indicator.values.all().order_by('date').prefetch_related('categories')
+        serializer = IndicatorValueSerializer(objs, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def goals(self, request, pk=None):
@@ -164,51 +261,16 @@ class IndicatorViewSet(viewsets.ModelViewSet):
 
     @values.mapping.post
     def update_values(self, request, pk=None):
-        indicator = Indicator.objects.get(pk=pk)
-        data = request.data['data']
-        min_date = max_date = None
-        values = []
-        for sample in data:
-            date_str = sample.get('date', '')
-            try:
-                date = aniso8601.parse_date(date_str)
-            except ValueError:
-                raise ValidationError("You must give 'date' in ISO 8601 format (YYYY-mm-dd)")
+        indicator = Indicator.objects.prefetch_related(
+            'dimensions', 'dimensions__dimension', 'dimensions__dimension__categories'
+        ).get(pk=pk)
+        serializer = IndicatorValueSerializer(data=request.data, many=True, context={'indicator': indicator})
+        if serializer.is_valid():
+            serializer.create(serializer.validated_data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-            if indicator.time_resolution == 'year':
-                if date.day != 31 or date.month != 12:
-                    raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date_str, date.year))
-            elif indicator.time_resolution == 'month':
-                if date.day != 1:
-                    raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date_str, date.year, date.month))
-
-            try:
-                value = float(sample.get('value'))
-            except TypeError:
-                raise ValidationError("You must give 'value' as a floating point number")
-
-            if min_date is None or date < min_date:
-                min_date = date
-            if max_date is None or date > max_date:
-                max_date = date
-            values.append(IndicatorValue(indicator=indicator, date=date, value=value))
-
-        dates = {}
-        for value in values:
-            date = value.date
-            if date in dates:
-                raise ValidationError("Duplicate 'date' entry: %s" % (date.isoformat()))
-            dates[date] = True
-
-        n_deleted, _ = indicator.values.filter(date__gte=min_date, date__lte=max_date).delete()
-        created = IndicatorValue.objects.bulk_create(values)
-
-        latest_value = indicator.values.latest()
-        if indicator.latest_value_id != latest_value.id:
-            indicator.latest_value = latest_value
-            indicator.save(update_fields=['latest_value'])
-
-        return Response(dict(deleted=n_deleted, created=len(created)))
+        return Response()
 
 
 class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):
@@ -243,21 +305,3 @@ class ActionIndicatorSerializer(serializers.HyperlinkedModelSerializer):
 class ActionIndicatorViewSet(viewsets.ModelViewSet):
     queryset = ActionIndicator.objects.all()
     serializer_class = ActionIndicatorSerializer
-
-
-class IndicatorEstimateSerializer(serializers.HyperlinkedModelSerializer):
-    scenario_identifier = serializers.CharField(source='scenario.identifier', read_only=True)
-    included_serializers = {
-        'indicator': IndicatorSerializer,
-        'scenario': 'actions.api.ScenarioSerializer',
-    }
-
-    class Meta:
-        model = IndicatorEstimate
-        exclude = ('updated_by',)
-
-
-@register_view
-class IndicatorEstimateViewSet(viewsets.ModelViewSet):
-    queryset = IndicatorEstimate.objects.all().select_related('scenario')
-    serializer_class = IndicatorEstimateSerializer
