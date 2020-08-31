@@ -167,9 +167,6 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
         with transaction.atomic():
             n_deleted, _ = indicator.values.all().delete()
 
-            print('here')
-            print(validated_data)
-
             for data in validated_data:
                 categories = data.pop('categories', [])
                 obj = IndicatorValue(indicator=indicator, **data)
@@ -180,13 +177,13 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
                 created_objs.append(obj)
 
             if len(created_objs):
-                latest_value = indicator.values.filter(categories__isnull=True).latest()
+                latest_value_id = indicator.values.filter(categories__isnull=True).latest().id
             else:
-                latest_value = None
+                latest_value_id = None
 
-            if indicator.latest_value != latest_value:
-                indicator.latest_value = latest_value
-                indicator.save(update_fields=['latest_value'])
+            if indicator.latest_value_id != latest_value_id:
+                indicator.latest_value_id = latest_value_id
+                indicator.save(update_fields=['latest_value_id'])
 
         return created_objs
 
@@ -270,7 +267,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response()
+        return Response({})
 
 
 class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):

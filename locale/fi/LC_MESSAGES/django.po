@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-24 11:32+0300\n"
+"POT-Creation-Date: 2020-08-31 12:20+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,6 +86,10 @@ msgstr "salli toimenpiteille kuvat"
 #: actions/models.py
 msgid "Should custom images for individual actions be allowed"
 msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
+
+#: actions/models.py
+msgid "main organization for the plan"
+msgstr "toimenpideohjelman pääorganisaatio"
 
 #: actions/models.py
 msgid "general administrators"
@@ -168,7 +172,7 @@ msgstr "aikajänne"
 msgid "decision-making level"
 msgstr "päätöstaso"
 
-#: actions/models.py
+#: actions/models.py indicators/models.py
 msgid "categories"
 msgstr "luokat"
 
@@ -209,7 +213,7 @@ msgstr "Yhteyshenkilöt nimetty"
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
 
-#: actions/models.py people/models.py users/models.py
+#: actions/models.py indicators/models.py people/models.py users/models.py
 msgid "organization"
 msgstr "organisaatio"
 
@@ -472,15 +476,6 @@ msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
 #: actions/wagtail_admin.py
-msgid "View live"
-msgstr "Näytä julkaistu"
-
-#: actions/wagtail_admin.py
-#, python-format
-msgid "View %s live"
-msgstr "Näytä julkaistu %s"
-
-#: actions/wagtail_admin.py
 msgid "Internal information"
 msgstr "Sisäiset tiedot"
 
@@ -563,6 +558,15 @@ msgstr "sisäänkirjautumispainikkeen teksti"
 #: admin_site/views.py
 msgid "You have been successfully logged out."
 msgstr "Olet kirjautunut ulos."
+
+#: admin_site/wagtail.py
+msgid "View live"
+msgstr "Näytä julkaistu"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "View %s live"
+msgstr "Näytä julkaistu %s"
 
 #: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
 msgid "Edit"
@@ -827,7 +831,8 @@ msgstr "[ei mitään]"
 msgid "has goals"
 msgstr "on tavoitteita"
 
-#: indicators/apps.py indicators/wagtail_admin.py
+#: indicators/apps.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
 
@@ -902,6 +907,30 @@ msgid "datasets"
 msgstr "tietoaineistot"
 
 #: indicators/models.py
+msgid "framework"
+msgstr "raportointikehys"
+
+#: indicators/models.py
+msgid "frameworks"
+msgstr "reportointikehykset"
+
+#: indicators/models.py
+msgid "common indicator"
+msgstr "yleinen mittari"
+
+#: indicators/models.py
+msgid "common indicators"
+msgstr "yleiset mittarit"
+
+#: indicators/models.py
+msgid "framework indicator"
+msgstr "kehykseen liittyvä mittari"
+
+#: indicators/models.py
+msgid "framework indicators"
+msgstr "kehykseen liittyvät mittarit"
+
+#: indicators/models.py
 msgid "year"
 msgstr "vuosi"
 
@@ -972,42 +1001,6 @@ msgstr "mittarin tavoite"
 #: indicators/models.py
 msgid "indicator goals"
 msgstr "mittarin tavoitteet"
-
-#: indicators/models.py
-msgid "low estimate"
-msgstr "arvion alaraja"
-
-#: indicators/models.py
-msgid "high estimate"
-msgstr "arvion yläraja"
-
-#: indicators/models.py
-msgid "begins at"
-msgstr "alkaa"
-
-#: indicators/models.py
-msgid "ends at"
-msgstr "päättyy"
-
-#: indicators/models.py
-msgid "measured"
-msgstr "mitattu"
-
-#: indicators/models.py
-msgid "Is this estimate based on forecast or measurement?"
-msgstr "Perustuuko arvio ennustukseen vai mittaamiseen?"
-
-#: indicators/models.py
-msgid "rationale"
-msgstr "perustelut"
-
-#: indicators/models.py
-msgid "indicator estimate"
-msgstr "mittarin arvio"
-
-#: indicators/models.py
-msgid "indicator estimates"
-msgstr "mittarin arviot"
 
 #: indicators/models.py
 msgid "increases"
@@ -1093,6 +1086,54 @@ msgstr "mittarin yhteyshenkilö"
 msgid "indicator contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
+#: indicators/templates/indicators/edit_values.html
+msgid "Home"
+msgstr "Etusivu"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Indicator data"
+msgstr "Mittarin data"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Observations"
+msgstr "Havainnot"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Goals"
+msgstr "Tavoitteet"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Add row"
+msgstr "Lisää rivi"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Remove row"
+msgstr "Poista rivi"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Save changes"
+msgstr "Tallenna muutokset"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Year"
+msgstr "Vuosi"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Date"
+msgstr "Pvm"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Your changes have not been saved. Are you sure you want to exit?"
+msgstr "Muutoksiasi ei ole tallennettu. Haluatko varmasti poistua?"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Unable to save changes"
+msgstr "Muutoksia ei voitu tallentaa"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Changes were saved"
+msgstr "Muutokset tallennettu"
+
 #: indicators/wagtail_admin.py
 msgid "Choose a quantity"
 msgstr "Valitse suure"
@@ -1104,6 +1145,18 @@ msgstr "Valitse toinen suure"
 #: indicators/wagtail_admin.py
 msgid "Edit this quantity"
 msgstr "Muokkaa tätä suuretta"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator dimensions"
+msgstr "Mittarin dimensiot"
+
+#: indicators/wagtail_admin.py
+msgid "Edit data"
+msgstr "Muokkaa dataa"
+
+#: indicators/wagtail_admin.py
+msgid "Edit indicator data"
+msgstr "Muokkaa mittarin dataa"
 
 #: notifications/apps.py
 msgid "Notifications"
@@ -1435,3 +1488,30 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "low estimate"
+#~ msgstr "arvion alaraja"
+
+#~ msgid "high estimate"
+#~ msgstr "arvion yläraja"
+
+#~ msgid "begins at"
+#~ msgstr "alkaa"
+
+#~ msgid "ends at"
+#~ msgstr "päättyy"
+
+#~ msgid "measured"
+#~ msgstr "mitattu"
+
+#~ msgid "Is this estimate based on forecast or measurement?"
+#~ msgstr "Perustuuko arvio ennustukseen vai mittaamiseen?"
+
+#~ msgid "rationale"
+#~ msgstr "perustelut"
+
+#~ msgid "indicator estimate"
+#~ msgstr "mittarin arvio"
+
+#~ msgid "indicator estimates"
+#~ msgstr "mittarin arviot"

@@ -1,38 +1,29 @@
 import json
-import itertools
-from datetime import datetime
 
-from django.utils.translation import gettext_lazy as _
-from django.utils.functional import cached_property
-from django.http.response import HttpResponseBadRequest, HttpResponse
+from django.contrib.admin.utils import quote
 from django.db.models import Q
 from django.urls import re_path, reverse
-from wagtail.core import hooks
-from wagtail.contrib.modeladmin.options import (
-    modeladmin_register, ModelAdminGroup
-)
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.views import InstanceSpecificView
-from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, 
-)
-from wagtailautocomplete.edit_handlers import AutocompletePanel
+from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
+from wagtail.admin.edit_handlers import FieldPanel, RichTextFieldPanel
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
+from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
+from wagtail.contrib.modeladmin.views import InstanceSpecificView
+from wagtail.core import hooks
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface,
-    CondensedInlinePanel
+    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
 )
+
 from .admin import DisconnectedIndicatorFilter
-from .models import (
-    Indicator, Quantity, Dataset, Dimension
-)
-from .api import IndicatorValueSerializer, IndicatorViewSet
+from .api import IndicatorValueSerializer
+from .models import Dataset, Dimension, Indicator, Quantity
 
 
 class IndicatorPermissionHelper(PermissionHelper):
-    def user_can_inspect_obj(self, user, obj):
+    def user_can_inspect_obj(self, user, obj) -> bool:
         if not super().user_can_inspect_obj(user, obj):
             return False
 
@@ -125,7 +116,6 @@ class EditValuesView(InstanceSpecificView):
         obj = self.instance
         context = super().get_context_data(**kwargs)
         dims = self.get_dimensions(obj)
-        dims_by_id = {dim.id: dim for dim in dims}
 
         dims_out = [{
             'id': dim.id,
@@ -137,24 +127,6 @@ class EditValuesView(InstanceSpecificView):
 
         value_qs = obj.values.order_by('date').prefetch_related('categories')
         data = IndicatorValueSerializer(value_qs, many=True).data
-
-        """
-        def make_key(obj):
-            cats = list(obj.categories.all())
-            if not cats:
-                return 'default'
-
-            cat_ids = [None] * len(dims)
-            for cat in cats:
-                dim = dims_by_id[cat.dimension_id]
-                assert cat_ids[dim.order] is None
-                cat_ids[dim.order] = cat.id
-            return ('-'.join([str(x) for x in cat_ids]))
-
-        for date, values in itertools.groupby(value_qs, key=lambda x: x.date.isoformat()):
-            d = {make_key(obj): obj.value for obj in values}
-            out.append(dict(date=date, **d))
-        """
 
         context['values'] = json.dumps(data)
         context['post_values_uri'] = reverse('indicator-values', kwargs=dict(pk=self.pk_quoted))
@@ -174,6 +146,36 @@ class DimensionAdmin(AplansModelAdmin):
     ]
 
 
+class IndicatorButtonHelper(AplansButtonHelper):
+    def edit_values_button(self, pk, obj, classnames_add=None, classnames_exclude=None):
+        classnames_add = classnames_add or []
+        return {
+            'url': self.url_helper.get_action_url('edit_values', quote(pk)),
+            'label': _('Edit data'),
+            'classname': self.finalise_classname(
+                classnames_add=classnames_add + ['icon', 'icon-table'],
+                classnames_exclude=classnames_exclude
+            ),
+            'title': _('Edit indicator data'),
+        }
+
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None,
+                            classnames_exclude=None):
+        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        ph = self.permission_helper
+        pk = getattr(obj, self.opts.pk.attname)
+        if exclude is None:
+            exclude = []
+        if ('edit_values' not in exclude and obj is not None and ph.user_can_edit_obj(self.request.user, obj)):
+            edit_values_button = self.edit_values_button(
+                pk, obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude
+            )
+            if edit_values_button:
+                buttons.insert(1, edit_values_button)
+
+        return buttons
+
+
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     menu_icon = 'fa-bar-chart'
@@ -183,6 +185,7 @@ class IndicatorAdmin(AplansModelAdmin):
     list_filter = (DisconnectedIndicatorFilter,)
     search_fields = ('name',)
     permission_helper_class = IndicatorPermissionHelper
+    button_helper_class = IndicatorButtonHelper
 
     panels = [
         FieldPanel('name'),

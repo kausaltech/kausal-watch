@@ -1,8 +1,12 @@
-import re
 import functools
-from graphene_django import DjangoObjectType
+import re
+
 import graphene_django_optimizer as gql_optimizer
+from graphene.utils.str_converters import to_camel_case, to_snake_case
+from graphene_django import DjangoObjectType
 from modeltrans.translator import get_i18n_field
+
+from actions.models import Plan
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -56,3 +60,39 @@ class DjangoNode(DjangoObjectType):
 
     class Meta:
         abstract = True
+
+
+def set_active_plan(info, plan):
+    info.context._graphql_active_plan = plan
+
+
+def get_plan_from_context(info, plan_identifier):
+    cache = getattr(info.context, '_plan_cache', None)
+    if cache is None:
+        cache = info.context._plan_cache = {}
+
+    if plan_identifier in cache:
+        return cache[plan_identifier]
+    plan = Plan.objects.filter(identifier=plan_identifier).first()
+    cache[plan_identifier] = plan
+    set_active_plan(info, plan)
+    return plan
+
+
+def order_queryset(qs, node_class, order_by):
+    if order_by is None:
+        return qs
+
+    orderable_fields = node_class.ORDERABLE_FIELDS
+    if order_by[0] == '-':
+        desc = '-'
+        order_by = order_by[1:]
+    else:
+        desc = ''
+    order_by = to_snake_case(order_by)
+    if order_by not in orderable_fields:
+        raise ValueError('Only orderable fields are: %s' % ', '.join(
+            [to_camel_case(x) for x in orderable_fields]
+        ))
+    qs = qs.order_by(desc + order_by)
+    return qs
