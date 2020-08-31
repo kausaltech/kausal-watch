@@ -1,37 +1,26 @@
-import pytz
 import graphene
-import libvoikko
-from graphene.utils.str_converters import to_snake_case, to_camel_case
-from graphql.error import GraphQLError
 import graphene_django_optimizer as gql_optimizer
-from graphql.type import (
-    specified_directives, GraphQLDirective, DirectiveLocation, GraphQLArgument, GraphQLString,
-    GraphQLNonNull
-)
-
-from aplans.utils import public_fields
-from actions.models import (
-    Plan, Action, ActionSchedule, ActionStatus, Category, CategoryType,
-    ActionTask, ActionImpact, ActionResponsibleParty, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint,
-    Scenario
-)
-from indicators.models import (
-    Indicator, RelatedIndicator, ActionIndicator, IndicatorGraph, IndicatorLevel,
-    IndicatorValue, IndicatorGoal, Unit, Quantity
-)
-from content.models import (
-    StaticPage, BlogPost, Question, SiteGeneralContent
-)
-from pages.schema import MenuNode, Page as PageInterface, types as pages_types
-from pages.models import AplansPage
-
-from people.models import Person
+import libvoikko
+import pytz
 from django_orghierarchy.models import Organization, OrganizationClass
+from graphql.error import GraphQLError
+from graphql.type import (
+    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+)
 from wagtail.core.rich_text import RichText
 
-from .graphql_types import DjangoNode
+from actions.models import (
+    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
+)
+from aplans.utils import public_fields
+from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
+from indicators import schema as indicators_schema
+from pages import schema as pages_schema
+from pages.models import AplansPage
+from people.models import Person
 
+from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
@@ -87,22 +76,6 @@ class OrderableModelMixin:
         return self.sort_order
 
 
-class UnitNode(DjangoNode):
-    class Meta:
-        model = Unit
-        only_fields = [
-            'id', 'name', 'short_name', 'verbose_name', 'verbose_name_plural',
-        ]
-
-
-class QuantityNode(DjangoNode):
-    class Meta:
-        model = Quantity
-        only_fields = [
-            'id', 'name',
-        ]
-
-
 class PersonNode(DjangoNode):
     avatar_url = graphene.String(size=graphene.String())
 
@@ -123,7 +96,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
-    pages = graphene.List(PageInterface)
+    pages = graphene.List(pages_schema.Page)
     category_types = graphene.List(
         'aplans.schema.CategoryTypeNode',
         usable_for_indicators=graphene.Boolean(),
@@ -133,7 +106,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
 
-    main_menu = MenuNode.create_plan_menu_field()
+    main_menu = pages_schema.MenuNode.create_plan_menu_field()
 
     @gql_optimizer.resolver_hints(
         model_field='static_pages',
@@ -315,90 +288,6 @@ class ActionNode(DjangoNode, WithImageMixin):
         return qs
 
 
-class RelatedIndicatorNode(DjangoNode):
-    class Meta:
-        model = RelatedIndicator
-
-
-class ActionIndicatorNode(DjangoNode):
-    class Meta:
-        model = ActionIndicator
-
-
-class IndicatorGraphNode(DjangoNode):
-    class Meta:
-        model = IndicatorGraph
-
-
-class IndicatorLevelNode(DjangoNode):
-    class Meta:
-        model = IndicatorLevel
-
-
-class IndicatorValueNode(DjangoNode):
-    date = graphene.String()
-
-    class Meta:
-        model = IndicatorValue
-
-    def resolve_date(self, info):
-        date = self.date.isoformat()
-        return date
-
-
-class IndicatorGoalNode(DjangoNode):
-    date = graphene.String()
-
-    class Meta:
-        model = IndicatorGoal
-        only_fields = public_fields(IndicatorGoal)
-
-
-class IndicatorNode(DjangoNode):
-    ORDERABLE_FIELDS = ['updated_at']
-
-    goals = graphene.List('aplans.schema.IndicatorGoalNode', plan=graphene.ID())
-    level = graphene.String(plan=graphene.ID())
-    actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
-
-    class Meta:
-        only_fields = [
-            'id', 'identifier', 'name', 'description', 'time_resolution', 'unit', 'quantity',
-            'categories', 'plans', 'levels', 'identifier', 'latest_graph', 'updated_at',
-            'values', 'goals', 'latest_value', 'related_actions',
-            'actions', 'related_causes', 'related_effects',
-        ]
-        model = Indicator
-
-    @gql_optimizer.resolver_hints(
-        model_field='goals',
-    )
-    def resolve_goals(self, info, plan=None):
-        qs = self.goals.all()
-        if plan is not None:
-            qs = qs.filter(plan__identifier=plan)
-        return qs
-
-    @gql_optimizer.resolver_hints(
-        model_field='actions',
-    )
-    def resolve_actions(self, info, plan=None):
-        qs = self.actions.all()
-        if plan is not None:
-            qs = qs.filter(plan__identifier=plan)
-        return qs
-
-    @gql_optimizer.resolver_hints(
-        model_field='levels',
-    )
-    def resolve_level(self, info, plan):
-        try:
-            obj = self.levels.get(plan__identifier=plan)
-        except IndicatorLevel.DoesNotExist:
-            return None
-        return obj.level
-
-
 class OrganizationClassNode(DjangoNode):
     class Meta:
         model = OrganizationClass
@@ -452,48 +341,11 @@ class SiteGeneralContentNode(DjangoNode):
         only_fields = public_fields(SiteGeneralContent)
 
 
-def order_queryset(qs, node_class, order_by):
-    if order_by is None:
-        return qs
-
-    orderable_fields = node_class.ORDERABLE_FIELDS
-    if order_by[0] == '-':
-        desc = '-'
-        order_by = order_by[1:]
-    else:
-        desc = ''
-    order_by = to_snake_case(order_by)
-    if order_by not in orderable_fields:
-        raise ValueError('Only orderable fields are: %s' % ', '.join(
-            [to_camel_case(x) for x in orderable_fields]
-        ))
-    qs = qs.order_by(desc + order_by)
-    return qs
-
-
-def set_active_plan(info, plan):
-    info.context._graphql_active_plan = plan
-
-
-def get_plan_from_context(info, plan_identifier):
-    cache = getattr(info.context, '_plan_cache', None)
-    if cache is None:
-        cache = info.context._plan_cache = {}
-
-    if plan_identifier in cache:
-        return cache[plan_identifier]
-    plan = Plan.objects.filter(identifier=plan_identifier).first()
-    cache[plan_identifier] = plan
-    set_active_plan(info, plan)
-    return plan
-
-
-class Query(graphene.ObjectType):
+class Query(indicators_schema.Query):
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(required=True)))
     all_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
-    indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     person = graphene.Field(PersonNode, id=graphene.ID(required=True))
     static_page = graphene.Field(StaticPageNode, plan=graphene.ID(required=True), slug=graphene.ID(required=True))
 
@@ -506,10 +358,6 @@ class Query(graphene.ObjectType):
     )
     plan_organizations = graphene.List(
         OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
-    )
-    plan_indicators = graphene.List(
-        IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
-        order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
     )
 
     def resolve_plan(self, info, **kwargs):
@@ -584,29 +432,6 @@ class Query(graphene.ObjectType):
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_plan_indicators(
-        self, info, plan, first=None, order_by=None, has_data=None,
-        has_goals=None, **kwargs
-    ):
-        plan_obj = get_plan_from_context(info, plan)
-        if plan_obj is None:
-            return None
-
-        qs = Indicator.objects.all()
-        qs = qs.filter(levels__plan=plan_obj).distinct()
-
-        if has_data is not None:
-            qs = qs.filter(latest_value__isnull=not has_data)
-
-        if has_goals is not None:
-            qs = qs.filter(goals__plan__identifier=plan).distinct()
-
-        qs = order_queryset(qs, IndicatorNode, order_by)
-        if first is not None:
-            qs = qs[0:first]
-
-        return gql_optimizer.query(qs, info)
-
     def resolve_action(self, info, **kwargs):
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
@@ -646,34 +471,6 @@ class Query(graphene.ObjectType):
 
         return obj
 
-    def resolve_indicator(self, info, **kwargs):
-        obj_id = kwargs.get('id')
-        identifier = kwargs.get('identifier')
-        plan = kwargs.get('plan')
-
-        if not identifier and not obj_id:
-            raise GraphQLError("You must supply either 'id' or 'identifier'", [info])
-
-        qs = Indicator.objects.all()
-        if obj_id:
-            qs = qs.filter(id=obj_id)
-        if plan:
-            plan_obj = get_plan_from_context(info, plan)
-            if not plan_obj:
-                return None
-            qs = qs.filter(levels__plan=plan_obj).distinct()
-        if identifier:
-            qs = qs.filter(identifier=identifier)
-
-        qs = gql_optimizer.query(qs, info)
-
-        try:
-            obj = qs.get()
-        except Indicator.DoesNotExist:
-            return None
-
-        return obj
-
     def resolve_static_page(self, info, slug, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if not plan_obj:
@@ -709,5 +506,5 @@ class LocaleDirective(GraphQLDirective):
 schema = graphene.Schema(
     query=Query,
     directives=specified_directives + [LocaleDirective()],
-    types=[] + pages_types
+    types=[] + pages_schema.types
 )

@@ -26,6 +26,9 @@
         .ag-cell.value-required {
             background-color: #fee;
         }
+        #breadcrumb-navi {
+            padding-left: 40px;
+        }
     </style>
 {% endblock %}
 
@@ -51,6 +54,26 @@
     {% get_current_language as current_language %}
     {% block header %}
         {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon tabbed=1 merged=1 %}
+        <section id="breadcrumb-navi">
+            <ul class="breadcrumb">
+                <li class="home"><a href="#" class="icon icon-home text-replace">{% trans "Home" %}</a></li>
+                <li><a href="{% url 'indicators_indicator_modeladmin_index' %}">{% trans "Indicators" %}</a></li>
+                <li><a href="{{ view.edit_url|escape }}">{{ instance.name }}</a></li>
+                <li>{% trans "Indicator data" %}</li>
+            </ul>
+        </section>
+        <header class="merged hasform">
+            <div class="row nice-padding">
+                <div class="left">
+                </div>
+            <div class="right">
+            </div>
+        </header>
+        <ul class="tab-nav merged">
+            <li class="active"><a href="#">{% trans "Observations" %}</a></li>
+            <li><a href="#">{% trans "Goals" %}</a></li>
+        </ul>
+
     {% endblock %}
 
     <div id="data-grid" class="ag-theme-alpine section"></div>
@@ -59,11 +82,11 @@
             <span class="icon-wrapper"><svg class="icon icon-plus" aria-hidden="true" focusable="false"><use href="#icon-plus"></use></svg></span>
             {% trans "Add row" %}
         </button>
-        <button onclick="onRemoveSelected()" type="button" class="button bicolor button--icon no" id="remove-selected">
+        <button onclick="onRemoveSelected()" type="button" class="button bicolor button--icon no disabled" id="remove-selected">
             <span class="icon-wrapper"><svg class="icon icon-bin" aria-hidden="true" focusable="false"><use href="#icon-bin"></use></svg></span>
             {% trans "Remove row" %}
         </button>
-        <button onclick="saveChanges()" type="button" class="button bicolor button--icon" id="remove-selected">
+        <button id="save-changes-button" type="button" class="button bicolor button--icon">
             <span class="icon-wrapper"><svg class="icon icon-tick" aria-hidden="true" focusable="false"><use href="#icon-tick"></use></svg></span>
             {% trans "Save changes" %}
         </button>
@@ -85,44 +108,47 @@
             row[key] = val.value;
         }
 
-        rows = Object.values(rows);
+        rows = Object.values(rows).map((row) => {
+            return {
+                ...row,
+                _initial: {...row},
+            }
+        });
 
-        function yearGetter(params) {
-            const val = params.data.date;
-            if (!val) return;
-            return parseInt(params.data.date.split('-')[0], 10);
-        }
-        function yearSetter(params) {
-            const val = parseInt(params.newValue, 10);
-            if (val < 1900 || val > 2200 || isNaN(val)) return false;
-            params.data.date = val.toString() + '-12-31';
-            return true;
-        }
-
-        function dateGetter(params) {
-            const val = params.data.date;
-            if (!val) return;
-            return val;
+        function dateGetter({ data }) {
+            if (timeResolution === 'year') {
+                const val = data.date;
+                if (!val) return;
+                return parseInt(data.date.split('-')[0], 10);
+            } else {
+                const val = data.date;
+                if (!val) return;
+                return val;
+            }
         }
         function dateSetter(params) {
-            const val = params.newValue;
+            if (timeResolution === 'year') {
+                const val = parseInt(params.newValue, 10);
+                if (val < 1900 || val > 2200 || isNaN(val)) return false;
+                params.data.date = val.toString() + '-12-31';
+                return true;
+            } else {
+                const val = params.newValue;
 
-            if (!val || typeof val !== 'string') return false;
-            var ts = Date.parse(val);
-            if (isNaN(ts)) return false;
-            var date = new Date(ts);
-            if (date.getFullYear() < 1900 || date.getFullYear() > 2200) return false;
-            params.data.date = date.toISOString().split('T')[0];
-            return true;
+                if (!val || typeof val !== 'string') return false;
+                var ts = Date.parse(val);
+                if (isNaN(ts)) return false;
+                var date = new Date(ts);
+                if (date.getFullYear() < 1900 || date.getFullYear() > 2200) return false;
+                params.data.date = date.toISOString().split('T')[0];
+                return true;
+            }
         }
 
         function valueGetter(params) {
             const { node, data, colDef } = params;
             let val = data[colDef.field];
             if (val == undefined) val = null;
-
-            if (data._initial == undefined)
-                data._initial = {...data};
             return val;
         }
 
@@ -145,6 +171,30 @@
             return true;
         }
 
+        const cellClassRules = {
+            'value-required': ({ data, colDef, value }) => {
+                let valueRequired;
+
+                dimKeys = Object.keys(data).filter((key) => key !== 'default' && key !== 'date' && key !== '_initial');
+                if (Object.keys(dimKeys).length || colDef.field === 'default' || colDef.field === 'date')
+                    valueRequired = true;
+
+                if (valueRequired && (value == null || value == undefined))
+                    return true;
+                },
+            'value-changed': ({ data, colDef, value }) => {
+                if (!data._initial) return true;
+                let initialValue;
+                if (colDef.field == 'date') {
+                    initialValue = dateGetter({ data: data._initial });
+                } else {
+                    initialValue = data._initial[colDef.field];
+                    if (initialValue == undefined) initialValue = null;
+                }
+                return value != initialValue;
+            },
+        };
+
         var dateColumn = {
             editable: true,
             sortable: true,
@@ -152,6 +202,9 @@
             field: 'date',
             checkboxSelection: true,
             minWidth: 150,
+            valueGetter: dateGetter,
+            valueSetter: dateSetter,
+            cellClassRules,
             comparator: function(valA, valB, nodeA, nodeB, isInverted) {
                 if (!valA) return 1;
                 if (!valB) return -1;
@@ -166,12 +219,8 @@
 
         if (timeResolution === 'year') {
             dateColumn.headerName = "{% trans 'Year'|escape %}";
-            dateColumn.valueGetter = yearGetter;
-            dateColumn.valueSetter = yearSetter;
         } else {
             dateColumn.headerName = "{% trans 'Date'|escape %}";
-            dateColumn.valueGetter = dateGetter;
-            dateColumn.valueSetter = dateSetter;
         }
 
         var columnDefs = [dateColumn];
@@ -180,22 +229,20 @@
         const valueColDef = {
             valueGetter,
             valueSetter,
-            cellClassRules: {
-                'value-required': ({ data, colDef, value }) => {
-                    let valueRequired;
-
-                    if (Object.keys(data).length > 3 || colDef.field === 'default')
-                        valueRequired = true;
-
-                    if (valueRequired && (value == null || value == undefined))
-                        return true;
-                    },
-                'value-changed': ({ data, colDef, value }) => {
-                    return value != data._initial[colDef.field];
-                },
-            },
+            cellClassRules,
             type: 'numericColumn',
         }
+
+        // specify the columns
+        columnDefs.push({
+            headerName: "{{ instance.quantity.name|default:''|capfirst|escape }}",
+            children: [{
+                headerName: "{{ instance.unit.verbose_name_plural|default:instance.unit.name|capfirst|escape }}",
+                field: 'default',
+                ...valueColDef,
+            }],
+        });
+
 
         function fillChildren(parentChildren, dims, fieldIds) {
             var dim = dims[0];
@@ -209,7 +256,7 @@
                 }
 
                 if (!rest.length) {
-                    out.field = ids.join('-');
+                    out.field = ids.sort().join('-');
                     Object.assign(out, valueColDef);
                 } else {
                     out.children = [];
@@ -222,13 +269,6 @@
         if (dimensions.length)
             fillChildren(columnDefs, dimensions, []);
 
-        // specify the columns
-        columnDefs.push({
-            headerName: "{{ instance.unit.verbose_name_plural|default:instance.unit.name|capfirst|escape }}",
-            field: 'default',
-            ...valueColDef,
-        });
-
         // let the grid know which columns and what data to use
         var gridOptions = {
             columnDefs: columnDefs,
@@ -240,6 +280,7 @@
             defaultColDef: {
                 resizable: true,
                 editable: true,
+                suppressMovable: true,
             },
             rowSelection: 'multiple',
             suppressRowClickSelection: true,
@@ -252,20 +293,52 @@
         // create the grid passing in the div to use together with the columns & data we want to use
         var grid = new agGrid.Grid(eGridDiv, gridOptions);
 
-        gridOptions.api.setSortModel([{colId: 'date', sort: 'asc'}]);
+        const { api, columnApi } = gridOptions;
 
-        const allColumnIds = gridOptions.columnApi.getAllColumns().map((col) => col.colId);
-        gridOptions.columnApi.autoSizeColumns(allColumnIds, false);
+        if (!api.getModel().getRowCount()) {
+            // Add initial row
+            addRow();
+        }
 
-        gridOptions.api.addEventListener('cellEditingStopped', (ev) => {
-            gridOptions.api.onSortChanged();
-            ev.api.refreshCells(ev.node);
+        api.setSortModel([{colId: 'date', sort: 'asc'}]);
+
+        const allColumnIds = columnApi.getAllColumns().map((col) => col.colId);
+        columnApi.autoSizeColumns(allColumnIds, false);
+
+        const saveChangesButton = $('#save-changes-button');
+        const removeRowsButton = $('#remove-selected');
+
+        function setSaveButtonState() {
+            if ($('.ag-cell.value-required').length || !$('.ag-cell.value-changed').length) {
+                saveChangesButton.addClass('disabled');
+            } else {
+                saveChangesButton.removeClass('disabled');
+            }
+        }
+        setSaveButtonState();
+
+        api.addEventListener('cellEditingStopped', (ev) => {
+            api.onSortChanged();
+            api.refreshCells(ev.node);
+            setSaveButtonState();
+        });
+        api.addEventListener('selectionChanged', (ev) => {
+            if (!api.getSelectedRows().length)
+                removeRowsButton.addClass('disabled');
+            else
+                removeRowsButton.removeClass('disabled');
+        });
+        saveChangesButton.on('click', (ev) => {
+            if (saveChangesButton.hasClass('disabled')) {
+                return false;
+            }
+            saveChanges();
         });
 
         function addRow() {
             var lastDate, newItem = {};
 
-            gridOptions.api.forEachNode(function(node) {
+            api.forEachNode(function(node) {
                 if (!lastDate || node.data.date > lastDate) {
                     lastDate = node.data.date;
                 }
@@ -276,19 +349,31 @@
                 date.setYear(date.getFullYear() + 1);
                 newItem.date = date.getFullYear() + '-12-31';
             }
-            gridOptions.api.applyTransaction({ add: [newItem] });
+            api.applyTransaction({ add: [newItem] });
         }
 
         function onRemoveSelected() {
-            var selectedData = gridOptions.api.getSelectedRows();
-            gridOptions.api.applyTransaction({ remove: selectedData });
+            var selectedData = api.getSelectedRows();
+            api.applyTransaction({ remove: selectedData });
         }
+
+        window.addEventListener('beforeunload', (event) => {
+            const isDirty = $('.ag-cell.value-changed').length > 0;
+
+            if (isDirty) {
+                const confirmationMessage =
+                    '{% trans "Your changes have not been saved. Are you sure you want to exit?"|escape %}';
+                event.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+
 
         function saveChanges() {
             var uri = "{{ post_values_uri|escape }}";
             const data = [];
 
-            gridOptions.api.forEachNode((node) => {
+            api.forEachNode((node) => {
                 const { data: row } = node;
                 const date = row.date;
 
@@ -302,6 +387,9 @@
                 });
             });
 
+            $('.icon', saveChangesButton).removeClass('icon-tick').addClass('icon-spinner')
+                .find('use').attr('href', '#icon-spinner');
+
             $.post({
                 url: uri,
                 data: JSON.stringify(data),
@@ -309,6 +397,27 @@
                 dataType: 'json',
                 headers: {
                     'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                },
+                complete: (xhr, status) => {
+                    console.log('complete');
+                    $('.icon', saveChangesButton).removeClass('icon-spinner').addClass('icon-tick')
+                        .find('use').attr('href', '#icon-tick');
+                    if (status !== 'success') {
+                        alert("{% trans 'Unable to save changes'|escape %}");
+                    } else {
+                        api.forEachNode((node) => {
+                            const { data } = node;
+                            const { _initial, ...rest } = data;
+                            data._initial = { ...rest };
+                            api.refreshCells(node);
+                        });
+                        saveChangesButton.addClass('disabled')
+                        addMessage('success', '{% icon name="success" class_name="messages-icon"|escape %}{% trans "Changes were saved"|escape %}');
+                        const clearMessages = setTimeout(function() {
+                            $('.messages').empty();
+                            clearTimeout(clearMessages);
+                        }, 2000);
+                    }
                 }
             });
         }

@@ -8,7 +8,6 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList,
     MultiFieldPanel
 )
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
@@ -121,36 +120,6 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
         return True
 
 
-class ActionButtonHelper(ButtonHelper):
-    edit_button_classnames = ['button-primary', 'icon', 'icon-edit']
-
-    def view_live_button(self, obj, classnames_add=None, classnames_exclude=None):
-        url = obj.get_view_url()
-        if not url:
-            return None
-        classnames_add = classnames_add or []
-        return {
-            'url': url,
-            'label': _('View live'),
-            'classname': self.finalise_classname(
-                classnames_add=classnames_add + ['icon', 'icon-view'],
-                classnames_exclude=classnames_exclude
-            ),
-            'title': _('View %s live') % self.verbose_name,
-            'target': '_blank',
-        }
-
-    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None,
-                            classnames_exclude=None):
-        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
-        view_live_button = self.view_live_button(
-            obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude
-        )
-        if view_live_button:
-            buttons.append(view_live_button)
-        return buttons
-
-
 class ActionEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
         user = request.user
@@ -201,7 +170,6 @@ class CondensedPanelSingleSelect(Select):
         return str(value)
 
 
-
 class ActionAdmin(AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
@@ -212,7 +180,6 @@ class ActionAdmin(AplansModelAdmin):
     list_filter = (AllActionsFilter, ImpactFilter)
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
-    button_helper_class = ActionButtonHelper
 
     basic_panels = [
         FieldPanel('identifier'),

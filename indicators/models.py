@@ -114,6 +114,8 @@ class Framework(ClusterableModel):
 
     i18n = TranslationField(fields=['name'])
 
+    public_fields = ['id', 'name']
+
     class Meta:
         verbose_name = _('framework')
         verbose_name_plural = _('frameworks')
@@ -138,6 +140,8 @@ class CommonIndicator(ClusterableModel):
 
     i18n = TranslationField(fields=['name', 'description'])
 
+    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit']
+
     class Meta:
         verbose_name = _('common indicator')
         verbose_name_plural = _('common indicators')
@@ -156,6 +160,8 @@ class FrameworkIndicator(models.Model):
         Framework, related_name='common_indicators', on_delete=models.CASCADE,
         verbose_name=_('framework')
     )
+
+    public_fields = ['id', 'identifier', 'common_indicator', 'framework']
 
     class Meta:
         verbose_name = _('framework indicator')
@@ -232,6 +238,13 @@ class Indicator(ClusterableModel):
         auto_now_add=True, editable=False, verbose_name=_('created at')
     )
 
+    public_fields = [
+        'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
+        'categories', 'time_resolution', 'latest_value', 'datasets', 'updated_at', 'created_at',
+        'values', 'plans', 'goals', 'latest_value', 'related_actions', 'actions', 'related_causes',
+        'related_effects', 'dimensions',
+    ]
+
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')
@@ -280,6 +293,8 @@ class Indicator(ClusterableModel):
 class Dimension(ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
+    public_fields = ['id', 'name', 'categories']
+
     def __str__(self):
         return self.name
 
@@ -287,6 +302,8 @@ class Dimension(ClusterableModel):
 class DimensionCategory(OrderedModel):
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    public_fields = ['id', 'dimension', 'name', 'order']
 
     class Meta:
         ordering = ['dimension', 'order']
@@ -298,6 +315,8 @@ class DimensionCategory(OrderedModel):
 class IndicatorDimension(OrderedModel):
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
     indicator = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
+
+    public_fields = ['id', 'dimension', 'indicator', 'order']
 
     class Meta:
         ordering = ['indicator', 'order']
@@ -348,6 +367,8 @@ class IndicatorValue(ClusterableModel):
     )
     value = models.FloatField(verbose_name=_('value'))
     date = models.DateField(verbose_name=_('date'))
+
+    public_fields = ['id', 'indicator', 'categories', 'value', 'date']
 
     class Meta:
         verbose_name = _('indicator value')

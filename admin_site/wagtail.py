@@ -1,24 +1,17 @@
+from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
+from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from django.conf import settings
 from django.contrib.admin.utils import quote
-from django.utils.translation import gettext as _
 from django.utils.text import capfirst
-from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
+from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
-from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList
-)
-from wagtail.contrib.modeladmin.options import ModelAdmin
-from wagtail.admin.edit_handlers import (
-    ObjectList
-)
+from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from condensedinlinepanel.edit_handlers import (
-    CondensedInlinePanel as WagtailCondensedInlinePanel,
-    BaseCondensedInlinePanelFormSet
-)
+from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
+from wagtail.contrib.modeladmin.options import ModelAdmin
+from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
 
 
 class AdminOnlyPanel(ObjectList):
@@ -27,6 +20,39 @@ class AdminOnlyPanel(ObjectList):
 
 class AplansAdminModelForm(WagtailAdminModelForm):
     pass
+
+
+class AplansButtonHelper(ButtonHelper):
+    edit_button_classnames = ['button-primary', 'icon', 'icon-edit']
+
+    def view_live_button(self, obj, classnames_add=None, classnames_exclude=None):
+        if obj is None or not hasattr(obj, 'get_view_url'):
+            return None
+        url = obj.get_view_url()
+        if not url:
+            return None
+
+        classnames_add = classnames_add or []
+        return {
+            'url': url,
+            'label': _('View live'),
+            'classname': self.finalise_classname(
+                classnames_add=classnames_add + ['icon', 'icon-view'],
+                classnames_exclude=classnames_exclude
+            ),
+            'title': _('View %s live') % self.verbose_name,
+            'target': '_blank',
+        }
+
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None,
+                            classnames_exclude=None):
+        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        view_live_button = self.view_live_button(
+            obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude
+        )
+        if view_live_button:
+            buttons.append(view_live_button)
+        return buttons
 
 
 class AplansTabbedInterface(TabbedInterface):
@@ -119,6 +145,7 @@ class AplansCreateView(ContinueEditingMixin, CreateView):
 class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
+    button_helper_class = AplansButtonHelper
 
     def get_translation_tabs(self, instance, request):
         i18n_field = get_i18n_field(type(instance))
