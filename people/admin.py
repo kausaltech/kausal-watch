@@ -6,7 +6,8 @@ from import_export import resources
 from import_export.admin import ExportMixin
 from import_export.fields import Field
 
-from admin_site.admin import AplansModelAdmin
+from admin_site.admin import AplansExportMixin, AplansModelAdmin
+
 from .models import Person
 
 
@@ -54,13 +55,8 @@ class IsContactPersonFilter(admin.SimpleListFilter):
         return queryset.distinct()
 
 
-class ExportMixinWithRequest(ExportMixin):
-    def get_resource_kwargs(self, request, *args, **kwargs):
-        return dict(request=request)
-
-
 @admin.register(Person)
-class PersonAdmin(ImageCroppingMixin, ExportMixinWithRequest, AplansModelAdmin):
+class PersonAdmin(ImageCroppingMixin, AplansExportMixin, AplansModelAdmin):
     fields = (
         'first_name', 'last_name', 'email', 'title', 'postal_address',
         'organization', 'image', 'image_cropping'

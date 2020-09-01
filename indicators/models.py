@@ -240,7 +240,7 @@ class Indicator(ClusterableModel):
 
     public_fields = [
         'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
-        'categories', 'time_resolution', 'latest_value', 'datasets', 'updated_at', 'created_at',
+        'categories', 'time_resolution', 'latest_value', 'latest_graph', 'datasets', 'updated_at', 'created_at',
         'values', 'plans', 'goals', 'latest_value', 'related_actions', 'actions', 'related_causes',
         'related_effects', 'dimensions',
     ]
@@ -252,6 +252,10 @@ class Indicator(ClusterableModel):
 
     def get_latest_graph(self):
         return self.graphs.latest()
+
+    def get_level_for_plan(self, plan):
+        level = self.levels.filter(plan=plan).first()
+        return level.level if level is not None else None
 
     def set_latest_value(self):
         try:

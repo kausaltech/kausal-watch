@@ -1,12 +1,12 @@
 from django import forms
-from django.utils.translation import ugettext_lazy as _
-from django.contrib import admin
 from django.conf import settings
-from django.views.decorators.cache import never_cache
-from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.urls import reverse
+from django.contrib import admin
 from django.http import HttpResponseRedirect
-
+from django.urls import reverse
+from django.utils.translation import ugettext_lazy as _
+from django.views.decorators.cache import never_cache
+from import_export.admin import ExportMixin
+from import_export.resources import ModelResource
 from reversion.admin import VersionAdmin
 
 from actions.models import Action
@@ -81,6 +81,20 @@ class AplansAdminSite(admin.AdminSite):
 
         from wagtail.admin.views.account import LoginView
         return LoginView.as_view()(request)
+
+
+class AplansExportMixin(ExportMixin):
+    # For import/export functionality
+    def get_resource_kwargs(self, request, *args, **kwargs):
+        out = super().get_resource_kwargs(request, *args, **kwargs)
+        out['request'] = request
+        return out
+
+
+class AplansResource(ModelResource):
+    def __init__(self, request):
+        self.request = request
+        super().__init__()
 
 
 class AplansModelAdmin(VersionAdmin):

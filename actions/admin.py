@@ -1,24 +1,22 @@
+from admin_auto_filters.filters import AutocompleteFilter
+from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
+from admin_ordering.admin import OrderableAdmin
+from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from admin_numeric_filter.admin import RangeNumericFilter, NumericFilterModelAdmin
-
-from admin_auto_filters.filters import AutocompleteFilter
-from admin_ordering.admin import OrderableAdmin
-from image_cropping import ImageCroppingMixin
-from ckeditor.widgets import CKEditorWidget
-
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
+from image_cropping import ImageCroppingMixin
 
+from admin_site.admin import AplansExportMixin, AplansModelAdmin
 from indicators.admin import ActionIndicatorAdmin
-from admin_site.admin import AplansModelAdmin
 
+from .export import ActionResource
 from .models import (
-    Plan, Action, ActionSchedule, ActionResponsibleParty, Scenario, Category,
-    CategoryType, ActionTask, ActionStatus, ActionImpact, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
+    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from .perms import ActionRelatedAdminPermMixin
 
@@ -218,7 +216,7 @@ class ContactPersonFilter(AutocompleteFilter):
 
 
 @admin.register(Action)
-class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin):
+class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin, AplansModelAdmin):
     search_fields = ('name', 'identifier')
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
@@ -238,6 +236,9 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansModelAdmin)
         ActionResponsiblePartyAdmin, ActionContactPersonAdmin, ImpactGroupActionAdmin,
         ActionIndicatorAdmin, ActionTaskAdmin
     ]
+
+    # For exporting
+    resource_class = ActionResource
 
     def get_form(self, request, obj=None, **kwargs):
         if obj is not None:
