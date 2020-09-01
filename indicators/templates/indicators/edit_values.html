@@ -19,15 +19,13 @@
             margin-top: 1rem;
             margin-bottom: 1rem;
             margin-left: 1rem;
+            max-width: 100%;
         }
         .ag-cell.value-changed {
             background-color: #efe;
         }
         .ag-cell.value-required {
             background-color: #fee;
-        }
-        #breadcrumb-navi {
-            padding-left: 40px;
         }
     </style>
 {% endblock %}
@@ -53,15 +51,15 @@
     {% csrf_token %}
     {% get_current_language as current_language %}
     {% block header %}
-        {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon tabbed=1 merged=1 %}
-        <section id="breadcrumb-navi">
+        <header class="merged no-border nice-padding no-v-padding">
             <ul class="breadcrumb">
                 <li class="home"><a href="#" class="icon icon-home text-replace">{% trans "Home" %}</a></li>
                 <li><a href="{% url 'indicators_indicator_modeladmin_index' %}">{% trans "Indicators" %}</a></li>
                 <li><a href="{{ view.edit_url|escape }}">{{ instance.name }}</a></li>
                 <li>{% trans "Indicator data" %}</li>
             </ul>
-        </section>
+        </header>
+        {% include "wagtailadmin/shared/header.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon tabbed=1 merged=1 %}
         <header class="merged hasform">
             <div class="row nice-padding">
                 <div class="left">
