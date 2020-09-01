@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-08-31 12:20+0300\n"
+"POT-Creation-Date: 2020-09-01 17:03+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -30,7 +30,19 @@ msgstr "Näytä muokattavat"
 msgid "Show all"
 msgstr "Näytä kaikki"
 
-#: actions/admin.py actions/models.py
+#: actions/admin.py
+msgid "merged actions"
+msgstr "yhdistetyt toimenpiteet"
+
+#: actions/admin.py
+msgid "Show only un-merged actions"
+msgstr "Ei yhdistettyjä toimenpiteitä"
+
+#: actions/admin.py
+msgid "Show also merged actions"
+msgstr "Näytä myös yhdistetyt toimenpiteet"
+
+#: actions/admin.py actions/export.py actions/models.py
 msgid "impact"
 msgstr "vaikuttavuus"
 
@@ -62,10 +74,26 @@ msgstr "toimenpide"
 msgid "Actions"
 msgstr "Toimenpiteet"
 
-#: actions/models.py content/models.py indicators/models.py
+#: actions/export.py aplans/utils.py notifications/models.py
+msgid "identifier"
+msgstr "tunniste"
+
+#: actions/export.py actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
 msgid "name"
 msgstr "nimi"
+
+#: actions/export.py actions/models.py
+msgid "status"
+msgstr "tila"
+
+#: actions/export.py actions/models.py indicators/models.py
+msgid "indicators"
+msgstr "mittarit"
+
+#: actions/export.py actions/models.py
+msgid "contact persons"
+msgstr "yhteyshenkilöt"
 
 #: actions/models.py
 msgid "site URL"
@@ -145,10 +173,6 @@ msgid "internal priority comment"
 msgstr "sisäisen prioriteetin kommentti"
 
 #: actions/models.py
-msgid "status"
-msgstr "tila"
-
-#: actions/models.py
 msgid "merged with action"
 msgstr "yhdistetty toimenpiteeseen"
 
@@ -175,14 +199,6 @@ msgstr "päätöstaso"
 #: actions/models.py indicators/models.py
 msgid "categories"
 msgstr "luokat"
-
-#: actions/models.py indicators/models.py
-msgid "indicators"
-msgstr "mittarit"
-
-#: actions/models.py
-msgid "contact persons"
-msgstr "yhteyshenkilöt"
 
 #: actions/models.py indicators/models.py
 msgid "updated at"
@@ -614,10 +630,6 @@ msgstr "suomi"
 #: aplans/settings.py
 msgid "English"
 msgstr "englanti"
-
-#: aplans/utils.py notifications/models.py
-msgid "identifier"
-msgstr "tunniste"
 
 #: aplans/utils.py
 msgid "order"
