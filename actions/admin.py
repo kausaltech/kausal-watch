@@ -165,7 +165,7 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
         return formset
 
 
-class AllActionsFilter(admin.SimpleListFilter):
+class ModifiableActionsFilter(admin.SimpleListFilter):
     title = _('non-modifiable actions')
 
     parameter_name = 'non_modifiable'
@@ -189,6 +189,34 @@ class AllActionsFilter(admin.SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value() is None:
             return queryset.modifiable_by(request.user)
+        else:
+            return queryset
+
+
+class MergedActionsFilter(admin.SimpleListFilter):
+    title = _('merged actions')
+
+    parameter_name = 'merged'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, _('Show only un-merged actions')),
+            ('yes', _('Show also merged actions')),
+        )
+
+    def choices(self, cl):
+        for lookup, title in self.lookup_choices:
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': cl.get_query_string({
+                    self.parameter_name: lookup,
+                }, []),
+                'display': title,
+            }
+
+    def queryset(self, request, queryset):
+        if self.value() is None:
+            return queryset.unmerged()
         else:
             return queryset
 
@@ -305,9 +333,10 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
         if user.is_general_admin_for_plan(plan):
             filters.append(('internal_priority', RangeNumericFilter))
         else:
-            filters.append(AllActionsFilter)
+            filters.append(ModifiableActionsFilter)
         filters.append(ImpactFilter)
         filters.append(ContactPersonFilter)
+        filters.append(MergedActionsFilter)
 
         return filters
 

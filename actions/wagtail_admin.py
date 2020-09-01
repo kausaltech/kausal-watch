@@ -17,7 +17,7 @@ from admin_site.wagtail import (
     AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
 )
 from people.chooser import PersonChooser
-from .admin import AllActionsFilter, ImpactFilter
+from .admin import ModifiableActionsFilter, MergedActionsFilter, ImpactFilter
 from .models import Action, Plan, ActionStatus, ActionImpact, ActionTask
 
 
@@ -177,7 +177,7 @@ class ActionAdmin(AplansModelAdmin):
     menu_order = 1
     list_display = ('identifier', 'name_link')
     list_display_add_buttons = 'name_link'
-    list_filter = (AllActionsFilter, ImpactFilter)
+    list_filter = (ModifiableActionsFilter, ImpactFilter, MergedActionsFilter)
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
 
