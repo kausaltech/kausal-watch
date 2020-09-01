@@ -138,6 +138,10 @@ class IndicatorValueAdmin(admin.TabularInline):
 
         return formset
 
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.filter(categories__isnull=True).distinct()
+
 
 class IndicatorLevelFilter(admin.SimpleListFilter):
     title = _('level')
