@@ -9,6 +9,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('wagtailimages', '0022_uploadedimage'),
         ('actions', '0050_add_supported_languages_to_plan'),
+        ('images', '0001_initial'),
     ]
 
     operations = [
