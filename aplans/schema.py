@@ -102,6 +102,7 @@ class PlanNode(DjangoNode, WithImageMixin):
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
+    impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
@@ -131,9 +132,14 @@ class PlanNode(DjangoNode, WithImageMixin):
             qs = qs.filter(usable_for_indicators=usable_for_indicators)
         return qs
 
-    def resolve_serve_file_base_url(self, info):
-        request = info.context
-        return request.build_absolute_uri('/').rstrip('/')
+    @gql_optimizer.resolver_hints(
+        model_field='impact_groups',
+    )
+    def resolve_impact_groups(self, info, first=None):
+        qs = self.impact_groups.all()
+        if first is not None:
+            qs = qs[0:first]
+        return qs
 
     def resolve_pages(self, info):
         if not self.site_id:
