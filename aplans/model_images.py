@@ -8,11 +8,12 @@ from django.http.response import FileResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import cache_control
 
+from easy_thumbnails.files import get_thumbnailer
+from image_cropping import ImageRatioField
+from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
-from rest_framework import serializers
-from image_cropping import ImageRatioField
-from easy_thumbnails.files import get_thumbnailer
+from sentry_sdk import capture_exception
 
 
 def image_upload_path(instance, filename):
@@ -73,7 +74,12 @@ class ModelWithImage(models.Model):
                 raise ValueError('Invalid size argument (should be "<width>x<height>")')
             width, _, height = m.groups()
 
-            dim = determine_image_dim(self.image, width, height)
+            try:
+                dim = determine_image_dim(self.image, width, height)
+            except OSError as e:
+                # Treat this as a non-fatal error but report it to Sentry anyway
+                capture_exception(e)
+                return None
 
             out_image = get_thumbnailer(self.image).get_thumbnail({
                 'size': dim,
