@@ -7,19 +7,20 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail.admin.edit_handlers import FieldPanel, RichTextFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
+from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
 
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
 )
+from people.chooser import PersonChooser
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
-from .models import Dataset, Dimension, Indicator, Quantity
+from .models import Dataset, Dimension, Indicator, Quantity, Unit
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -137,12 +138,13 @@ class EditValuesView(InstanceSpecificView):
 class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
+    menu_icon = 'fa-arrows-h'
     menu_label = _('Indicator dimensions')
     list_display = ('name',)
 
     panels = [
         FieldPanel('name'),
-        CondensedInlinePanel('categories', panels=[FieldPanel('name')]),
+        InlinePanel('categories', panels=[FieldPanel('name')], heading=_('Categories')),
     ]
 
 
@@ -176,26 +178,64 @@ class IndicatorButtonHelper(AplansButtonHelper):
         return buttons
 
 
+class UnitAdmin(ModelAdmin):
+    model = Unit
+    menu_icon = 'fa-eur'
+    menu_order = 5
+    menu_label = _('Units')
+    list_display = ('name', 'short_name')
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('short_name'),
+        FieldPanel('verbose_name'),
+        FieldPanel('verbose_name_plural'),
+    ]
+
+
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     menu_icon = 'fa-bar-chart'
     menu_order = 3
     menu_label = _('Indicators')
-    list_display = ('name', 'unit', 'quantity', 'has_data',)
+    list_display = ('name', 'unit_display', 'quantity', 'has_data',)
     list_filter = (DisconnectedIndicatorFilter,)
     search_fields = ('name',)
     permission_helper_class = IndicatorPermissionHelper
     button_helper_class = IndicatorButtonHelper
 
-    panels = [
+    edit_handler = AplansTabbedInterface
+
+    basic_panels = [
         FieldPanel('name'),
         FieldPanel('quantity'),
         FieldPanel('unit'),
         FieldPanel('time_resolution'),
         RichTextFieldPanel('description'),
         FieldPanel('datasets'),
-        CondensedInlinePanel('dimensions'),
+        CondensedInlinePanel('dimensions', panels=[
+            FieldPanel('dimension')
+        ]),
     ]
+
+    edit_handler = AplansTabbedInterface(children=[
+        ObjectList(basic_panels, heading=_('Basic information')),
+        ObjectList([
+            CondensedInlinePanel(
+                'contact_persons',
+                panels=[
+                    FieldPanel('person', widget=PersonChooser),
+                ]
+            )
+        ], heading=_('Contact persons')),
+    ])
+
+    def unit_display(self, obj):
+        unit = obj.unit
+        if not unit:
+            return ''
+        return unit.short_name or unit.name
+    unit_display.short_description = _('Unit')
 
     def edit_values_view(self, request, instance_pk):
         kwargs = {'model_admin': self, 'instance_pk': instance_pk}
@@ -223,7 +263,7 @@ class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'fa-bar-chart'
     menu_order = 3
-    items = (IndicatorAdmin, DimensionAdmin,)
+    items = (IndicatorAdmin, DimensionAdmin, UnitAdmin)
 
 
 modeladmin_register(IndicatorGroup)

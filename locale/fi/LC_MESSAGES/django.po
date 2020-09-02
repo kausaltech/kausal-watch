@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-01 17:03+0300\n"
+"POT-Creation-Date: 2020-09-02 09:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -500,15 +500,15 @@ msgstr "Sisäiset tiedot"
 msgid "Name"
 msgstr "Nimi"
 
-#: actions/wagtail_admin.py indicators/admin.py
+#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
 msgid "Categories"
 msgstr "Luokat"
 
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
 
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
@@ -991,6 +991,30 @@ msgid "Has a graph"
 msgstr "On kaavio"
 
 #: indicators/models.py
+msgid "dimension"
+msgstr "dimensio"
+
+#: indicators/models.py
+msgid "dimensions"
+msgstr "mittarin dimensiot"
+
+#: indicators/models.py
+msgid "dimension category"
+msgstr "dimension luokka"
+
+#: indicators/models.py
+msgid "dimension categories"
+msgstr "dimension luokat"
+
+#: indicators/models.py
+msgid "indicator dimension"
+msgstr "mittarin dimensio"
+
+#: indicators/models.py
+msgid "indicator dimensions"
+msgstr "mittarin dimensiot"
+
+#: indicators/models.py
 msgid "indicator levels"
 msgstr "mittarin tasot"
 
@@ -1169,6 +1193,14 @@ msgstr "Muokkaa dataa"
 #: indicators/wagtail_admin.py
 msgid "Edit indicator data"
 msgstr "Muokkaa mittarin dataa"
+
+#: indicators/wagtail_admin.py
+msgid "Units"
+msgstr "Yksiköt"
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Yksikkö"
 
 #: notifications/apps.py
 msgid "Notifications"

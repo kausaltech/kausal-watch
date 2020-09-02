@@ -1,12 +1,9 @@
-from django.utils.translation import gettext_lazy as _
-from django.utils.html import format_html
 from django.contrib.admin.widgets import AdminFileWidget
-from wagtail.contrib.modeladmin.options import modeladmin_register
-
-from wagtail.admin.edit_handlers import (
-    FieldPanel, ObjectList
-)
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 

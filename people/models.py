@@ -16,6 +16,7 @@ from django.db.models import Q
 
 from easy_thumbnails.files import get_thumbnailer
 from image_cropping import ImageRatioField
+from modelcluster.models import ClusterableModel
 from sentry_sdk import capture_exception
 from wagtail.search import index
 from wagtail.images.rect import Rect
@@ -69,7 +70,7 @@ class PersonQuerySet(models.QuerySet):
         return self.filter(q)
 
 
-class Person(index.Indexed, models.Model):
+class Person(index.Indexed, ClusterableModel):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
     email = models.EmailField(verbose_name=_('email address'))
