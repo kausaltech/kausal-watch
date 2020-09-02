@@ -21,6 +21,7 @@ class AplansAdminSite(admin.AdminSite):
     index_template = 'aplans_admin/index.html'
     login_template = 'wagtailadmin/login.html'
     login_form = AuthenticationForm
+    enable_nav_sidebar = False
 
     def _replace_translations(self):
         # These translations are here just so that they can be found by
