@@ -1,9 +1,26 @@
 {% extends "wagtailadmin/base.html" %}
-{% load static %}
+{% load static wagtailadmin_tags %}
 
 {% block branding_logo %}
     {% if active_client and active_client.logo %}
     <img src="{{ active_client.logo.url }}" alt="{{ active_client.name }}" width="80" />
     <h5>{{ active_plan.name }}</h5>
     {% endif %}
+{% endblock %}
+
+{% block js %}
+    {% if sentry_dsn %}
+    <script src="{% versioned_static '@sentry/browser/build/bundle.min.js' %}"></script>
+    <script>
+        Sentry.init({
+            dsn: '{{ sentry_dsn }}',
+        });
+        Sentry.configureScope(function(scope) {
+            scope.setUser({ email: '{{ request.user.email }}' });
+            scope.setTag('plan', '{{ active_plan.identifier }}');
+            scope.setTag('client', '{{ active_client.name|default:"none"|escape }}');
+        });
+    </script>
+    {% endif %}
+    {{ block.super }}
 {% endblock %}

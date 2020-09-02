@@ -11,9 +11,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+
 import environ
 from django.utils.translation import gettext_lazy as _
-
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.Env(
@@ -149,6 +149,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'actions.context_processors.current_plan',
+                'admin_site.context_processors.sentry',
                 'wagtail.contrib.settings.context_processors.settings',
             ],
         },
@@ -167,7 +168,10 @@ NPM_FILE_PATTERNS = {
     ],
     'moment': [
         'dist/moment.js', 'dist/locale/*.js'
-    ]
+    ],
+    '@sentry/browser': [
+        'build/bundle.min.js*'
+    ],
 }
 
 WSGI_APPLICATION = 'aplans.wsgi.application'
