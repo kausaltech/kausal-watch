@@ -12,19 +12,28 @@ class ActionResource(AplansResource):
     name = Field(attribute='name', column_name=_('name'))
     impact = Field(attribute='impact__name', column_name=_('impact'))
     status = Field(attribute='status__name', column_name=_('status'))
-    indicators = Field(attribute='indicators', column_name=_('indicators'))
+    progress_indicators = Field(attribute='related_indicators', column_name=_('progress indicators'))
+    indicators = Field(attribute='related_indicators', column_name=_('other indicators'))
     contact_persons = Field(attribute='contact_persons', column_name=_('contact persons'))
 
     class Meta:
         model = Action
         fields = (
-            'identifier', 'name', 'impact', 'status', 'indicators', 'contact_persons',
+            'identifier', 'name', 'impact', 'status', 'progress_indicators', 'indicators', 'contact_persons',
         )
         export_order = fields
 
-    def dehydrate_indicators(self, obj):
+    def _dehydrate_indicators(self, obj, qs):
         plan = self.request.user.get_active_admin_plan()
-        return '; '.join(['%s [%s]' % (str(indicator), indicator.get_level_for_plan(plan)) for indicator in obj.indicators.all()])
+        return '; '.join(['%s [%s]' % (str(ai.indicator), ai.indicator.get_level_for_plan(plan)) for ai in qs])
+
+    def dehydrate_progress_indicators(self, obj):
+        qs = obj.related_indicators.filter(indicates_action_progress=True)
+        return self._dehydrate_indicators(obj, qs)
+
+    def dehydrate_indicators(self, obj):
+        qs = obj.related_indicators.filter(indicates_action_progress=False)
+        return self._dehydrate_indicators(obj, qs)
 
     def dehydrate_contact_persons(self, obj):
         return '; '.join(['%s' % str(cp.person) for cp in obj.contact_persons.all()])

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-02 09:19+0300\n"
+"POT-Creation-Date: 2020-09-02 11:56+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -87,9 +87,13 @@ msgstr "nimi"
 msgid "status"
 msgstr "tila"
 
-#: actions/export.py actions/models.py indicators/models.py
-msgid "indicators"
-msgstr "mittarit"
+#: actions/export.py
+msgid "progress indicators"
+msgstr "etenemismittarit"
+
+#: actions/export.py
+msgid "other indicators"
+msgstr "muut mittarit"
 
 #: actions/export.py actions/models.py
 msgid "contact persons"
@@ -199,6 +203,10 @@ msgstr "päätöstaso"
 #: actions/models.py indicators/models.py
 msgid "categories"
 msgstr "luokat"
+
+#: actions/models.py indicators/models.py
+msgid "indicators"
+msgstr "mittarit"
 
 #: actions/models.py indicators/models.py
 msgid "updated at"
