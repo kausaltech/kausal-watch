@@ -5,9 +5,8 @@ from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
-from wagtailautocomplete.edit_handlers import AutocompletePanel
 
-from admin_site.wagtail import AplansModelAdmin
+from admin_site.wagtail import AplansModelAdmin, AutocompletePanel
 
 from .models import Person
 
@@ -84,7 +83,7 @@ class PersonAdmin(AplansModelAdmin):
         FieldPanel('last_name'),
         FieldPanel('email'),
         FieldPanel('title'),
-        AutocompletePanel('organization'),
+        AutocompletePanel('organization', placeholder_text=_('Input organization name')),
         FieldPanel('image', widget=AvatarWidget),
     ], base_form_class=PersonForm)
 
