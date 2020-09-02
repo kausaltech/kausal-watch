@@ -207,8 +207,11 @@ class ActionAdmin(AplansModelAdmin):
         function getHeader(task) {
             var f = task.fields;
             var out = '';
+            if (!f.name) {
+                return '';
+            }
             var stateMap = %(state_map)s;
-            if (f.name.length > 80) {
+            if (f.name && f.name.length > 80) {
                 out = f.name.slice(0, 80) + '...';
             } else {
                 out = f.name;
@@ -220,7 +223,6 @@ class ActionAdmin(AplansModelAdmin):
             out += ' <span class="action-task-header-state">(' + stateStr + ')</span>'
             return out;
         }
-        console.log(form);
         getHeader(form);
     '''
 
