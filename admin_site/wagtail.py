@@ -56,6 +56,9 @@ class AplansButtonHelper(ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
+    def get_form_class(self, request=None):
+        return super().get_form_class()
+
     def on_request_bound(self):
         user = self.request.user
         plan = user.get_active_admin_plan()
@@ -230,7 +233,11 @@ class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelF
         total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
         order = data.get('%s-ORDER' % prefix, None)
         if order is not None and order != '':
-            order = [int(x) for x in order.lstrip('[').rstrip(']').split(',')]
+            order = order.lstrip('[').rstrip(']')
+            if order == '':
+                order = []
+            else:
+                order = [int(x) for x in order.split(',')]
 
         if total_forms:
             to_delete = []

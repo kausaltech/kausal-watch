@@ -299,6 +299,10 @@ class Dimension(ClusterableModel):
 
     public_fields = ['id', 'name', 'categories']
 
+    class Meta:
+        verbose_name = _('dimension')
+        verbose_name_plural = _('dimensions')
+
     def __str__(self):
         return self.name
 
@@ -310,6 +314,8 @@ class DimensionCategory(OrderedModel):
     public_fields = ['id', 'dimension', 'name', 'order']
 
     class Meta:
+        verbose_name = _('dimension category')
+        verbose_name_plural = _('dimension categories')
         ordering = ['dimension', 'order']
 
     def __str__(self):
@@ -323,6 +329,8 @@ class IndicatorDimension(OrderedModel):
     public_fields = ['id', 'dimension', 'indicator', 'order']
 
     class Meta:
+        verbose_name = _('indicator dimension')
+        verbose_name_plural = _('indicator dimensions')
         ordering = ['indicator', 'order']
         index_together = (('indicator', 'order'),)
         unique_together = (('indicator', 'dimension'),)
@@ -500,10 +508,10 @@ class ActionIndicator(models.Model):
 
 
 class IndicatorContactPerson(OrderedModel):
-    indicator = models.ForeignKey(
+    indicator = ParentalKey(
         Indicator, on_delete=models.CASCADE, verbose_name=_('indicator'), related_name='contact_persons'
     )
-    person = models.ForeignKey(
+    person = ParentalKey(
         'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
     )
 
