@@ -7,11 +7,13 @@ from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel, TabbedInterface
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin
-from wagtail.contrib.modeladmin.views import CreateView, EditView, InspectView
+from wagtail.contrib.modeladmin.views import CreateView, EditView
+from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
+from wagtailautocomplete.widgets import Autocomplete as WagtailAutocomplete
 
 
 class AdminOnlyPanel(ObjectList):
@@ -306,3 +308,38 @@ class PlanRelatedPermissionHelper(PermissionHelper):
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
+
+
+class AutocompletePanel(WagtailAutocompletePanel):
+    def __init__(self, field_name, target_model=None, placeholder_text=None, **kwargs):
+        self.placeholder_text = placeholder_text
+        super().__init__(field_name, target_model, **kwargs)
+
+    def clone(self):
+        return self.__class__(
+            field_name=self.field_name,
+            target_model=self.target_model_kwarg,
+            placeholder_text=self.placeholder_text,
+        )
+
+    def on_model_bound(self):
+        super().on_model_bound()
+        self.widget.placeholder_text = self.placeholder_text
+
+        old_get_context = self.widget.get_context
+
+        def get_context(self, *args, **kwargs):
+            context = old_get_context(self, *args, **kwargs)
+            context['widget']['placeholder_text'] = self.placeholder_text
+            return context
+
+        old_render_js_init = self.widget.render_js_init
+
+        def render_js_init(self, id):
+            ret = old_render_js_init(self, id)
+            if self.placeholder_text:
+                ret += "\nsetTimeout(function() { $('#%s').attr('placeholder', '%s'); }, 5000);" % (id, quote(self.placeholder_text))
+            return ret
+
+        self.widget.get_context = get_context
+        self.widget.render_js_init = render_js_init
