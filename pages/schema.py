@@ -1,17 +1,17 @@
 import functools
-import graphene
 
+import graphene
+from aplans.graphql_types import DjangoNode
 from graphene.types.generic import GenericScalar
 from graphene_django.converter import convert_django_field
+from pages.models import AplansPage, PlanRootPage
+from pages.models import StaticPage as WStaticPage
+from wagtail.core.blocks import StaticBlock as WagtailStaticBlock
+from wagtail.core.blocks import field_block
 from wagtail.core.fields import StreamField as WagtailStreamField
-from wagtail.core.blocks import field_block, StaticBlock as WagtailStaticBlock
 from wagtail.core.models import Page as WagtailPage
 
-from aplans.graphql_types import DjangoNode
-
 from . import blocks as pages_blocks
-from pages.models import AplansPage, StaticPage as WStaticPage, PlanRootPage
-
 
 BASE_PAGE_FIELDS = [
     'id', 'slug', 'title', 'url_path',
@@ -186,7 +186,7 @@ class MenuNode(graphene.ObjectType):
     def resolve_from_plan(cls, plan, info):
         root_page = plan.root_page
         if root_page is None:
-            return []
+            return None
         return root_page
 
     @classmethod
@@ -194,6 +194,8 @@ class MenuNode(graphene.ObjectType):
         return MenuItemNode(page=page)
 
     def resolve_items(self, info, with_descendants):
+        if not self:
+            return []
         if with_descendants:
             pages = self.get_descendants(inclusive=False)
         else:
