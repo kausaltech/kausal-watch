@@ -306,9 +306,12 @@ class PlanEditHandler(TabbedInterface):
         super().on_form_bound()
         plan = self.instance
         f = self.form.fields['main_image']
-        f.queryset = f.queryset.model.objects.filter(
-            collection__in=plan.root_collection.get_descendants(inclusive=True)
-        )
+        if plan.root_collection is None:
+            f.queryset = f.queryset.none()
+        else:
+            f.queryset = f.queryset.model.objects.filter(
+                collection__in=plan.root_collection.get_descendants(inclusive=True)
+            )
 
 
 class PlanAdmin(AplansModelAdmin):
