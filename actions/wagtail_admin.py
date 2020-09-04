@@ -328,6 +328,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('actions_locked'),
         FieldPanel('allow_images_for_actions'),
+        FieldPanel('site_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
         ImageChooserPanel('main_image'),
