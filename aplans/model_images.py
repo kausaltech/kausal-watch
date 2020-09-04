@@ -7,7 +7,6 @@ from django.http import Http404
 from django.http.response import FileResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import cache_control
-
 from easy_thumbnails.files import get_thumbnailer
 from image_cropping import ImageRatioField
 from rest_framework import serializers
@@ -97,6 +96,7 @@ class ModelWithImage(models.Model):
 
 class ModelWithImageSerializerMixin(serializers.Serializer):
     image_url = serializers.SerializerMethodField()
+    main_image = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -109,6 +109,9 @@ class ModelWithImageSerializerMixin(serializers.Serializer):
     def get_image_url(self, obj):
         request = self.context.get('request')
         return obj.get_image_url(request)
+
+    def get_main_image(self, obj):
+        return None
 
 
 class ModelWithImageViewMixin:
