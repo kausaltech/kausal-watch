@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from wagtail.images.models import AbstractImage, Image as WagtailImage, AbstractRendition
+
+from wagtail.images.models import AbstractImage, AbstractRendition
+from wagtail.images.models import Image as WagtailImage
 
 
 class AplansImage(AbstractImage):

@@ -2,6 +2,7 @@ import graphene
 from graphql.error import GraphQLError
 
 from aplans.graphql_types import DjangoNode
+
 from .models import AplansImage
 
 
@@ -30,14 +31,14 @@ class ImageNode(DjangoNode):
 
             try:
                 width = int(width)
-                if width <= 100 or width > 1200:
+                if width <= 100 or width > 1600:
                     raise Exception()
             except Exception:
                 raise GraphQLError('invalid width: %d' % width, [info])
 
             try:
                 height = int(height)
-                if height <= 100 or height > 1200:
+                if height <= 100 or height > 1600:
                     raise Exception()
             except Exception:
                 raise GraphQLError('invalid height: %d' % height, [info])

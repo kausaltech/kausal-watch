@@ -58,6 +58,7 @@ def hyphenate(s):
 
 class WithImageMixin:
     image_url = graphene.String(size=graphene.String())
+    main_image = graphene.Field('images.schema.ImageNode')
 
     def resolve_image_url(self, info, size=None, **kwargs):
         request = info.context
