@@ -1,33 +1,29 @@
-import re
 import logging
+import re
 from datetime import date
 
-from django.db import models
-from django.db.models import Q
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
-from django.conf import settings
+from django.db import models
+from django.db.models import Q
 from django.urls import reverse
-from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 
+from aplans.model_images import ModelWithImage
+from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 from django_orghierarchy.models import Organization
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
 
-
-from modelcluster.models import ClusterableModel
-from modelcluster.fields import ParentalKey
-
-from aplans.utils import IdentifierField, OrderedModel, ChoiceArrayField
-from aplans.model_images import ModelWithImage
-
 from .monitoring_quality import determine_monitoring_quality
-
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -95,7 +91,7 @@ class Plan(ModelWithImage, ClusterableModel):
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
-        'impact_groups', 'monitoring_quality_points', 'scenarios',
+        'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
     ]
 
     class Meta:
