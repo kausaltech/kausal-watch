@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from helusers.models import AbstractUser
 
 
@@ -12,6 +13,10 @@ class User(AbstractUser):
     selected_admin_plan = models.ForeignKey(
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL
     )
+
+    autocomplete_search_field = 'email'
+    def autocomplete_label(self):
+        return self.email
 
     def get_corresponding_person(self):
         from people.models import Person

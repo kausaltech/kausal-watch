@@ -331,6 +331,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('site_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
+        AutocompletePanel('general_admins'),
         ImageChooserPanel('main_image'),
     ]
 
