@@ -289,19 +289,20 @@ GRAPHENE = {
 LANGUAGES = (
     ('fi', _('Finnish')),
     ('en', _('English')),
+    ('sv', _('Swedish')),
 )
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
 
-
-LANGUAGE_CODE = 'fi'
+LANGUAGE_CODE = 'en'
 
 PARLER_LANGUAGES = {
     None: (
         {'code': 'fi'},
         {'code': 'en'},
+        {'code': 'sv'},
     ),
     'default': {
-        'fallback': 'fi',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+        'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
         'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
     }
 }
