@@ -2,23 +2,22 @@ import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
 import pytz
-from django_orghierarchy.models import Organization, OrganizationClass
-from graphql.error import GraphQLError
-from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
-)
-from wagtail.core.rich_text import RichText
-
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
+from django_orghierarchy.models import Organization, OrganizationClass
+from graphql.error import GraphQLError
+from graphql.type import (
+    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+)
 from indicators import schema as indicators_schema
 from pages import schema as pages_schema
 from pages.models import AplansPage
 from people.models import Person
+from wagtail.core.rich_text import RichText
 
 from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan
 
@@ -97,6 +96,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
+    primary_language = graphene.String()
     pages = graphene.List(pages_schema.Page)
     category_types = graphene.List(
         'aplans.schema.CategoryTypeNode',
