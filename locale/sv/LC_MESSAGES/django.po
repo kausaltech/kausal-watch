@@ -1,0 +1,1577 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+# Translators:
+# Juha Yrjölä <juha.yrjola@kausal.tech>, 2020
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-09-07 20:34+0300\n"
+"PO-Revision-Date: 2020-09-07 15:50+0000\n"
+"Last-Translator: Juha Yrjölä <juha.yrjola@kausal.tech>, 2020\n"
+"Language-Team: Swedish (https://www.transifex.com/kausal-tech/teams/113123/sv/)\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: actions/admin.py
+msgid "non-modifiable actions"
+msgstr "icke-modifierbara åtgärder"
+
+#: actions/admin.py
+msgid "Show modifiable"
+msgstr "Visa modifierbar"
+
+#: actions/admin.py
+msgid "Show all"
+msgstr "Visa allt"
+
+#: actions/admin.py
+msgid "merged actions"
+msgstr "sammanslagna åtgärder"
+
+#: actions/admin.py
+msgid "Show only un-merged actions"
+msgstr "Visa endast icke-sammanslagna åtgärder"
+
+#: actions/admin.py
+msgid "Show also merged actions"
+msgstr "Visa också sammanslagna åtgärder"
+
+#: actions/admin.py actions/export.py actions/models.py
+msgid "impact"
+msgstr "påverkan"
+
+#: actions/admin.py
+msgid "Contact person"
+msgstr "Kontaktperson"
+
+#: actions/admin.py
+msgid "Completion"
+msgstr "Komplettering"
+
+#: actions/admin.py
+msgid "Image"
+msgstr "Bild"
+
+#: actions/admin.py
+msgid "Internal fields"
+msgstr "Interna fält"
+
+#: actions/admin.py
+msgid "Schedule and decision level"
+msgstr "Schema och beslutsnivå"
+
+#: actions/admin.py actions/models.py indicators/models.py
+msgid "action"
+msgstr "handling"
+
+#: actions/apps.py actions/wagtail_admin.py
+msgid "Actions"
+msgstr "Handlingar"
+
+#: actions/export.py aplans/utils.py notifications/models.py
+msgid "identifier"
+msgstr "identifierare"
+
+#: actions/export.py actions/models.py content/models.py indicators/models.py
+#: notifications/models.py
+msgid "name"
+msgstr "namn"
+
+#: actions/export.py actions/models.py
+msgid "status"
+msgstr "status"
+
+#: actions/export.py
+msgid "progress indicators"
+msgstr "framstegsindikatorer"
+
+#: actions/export.py
+msgid "other indicators"
+msgstr "andra indikatorer"
+
+#: actions/export.py actions/models.py
+msgid "contact persons"
+msgstr "kontaktpersoner"
+
+#: actions/models.py
+msgid "site URL"
+msgstr "webbadress"
+
+#: actions/models.py
+msgid "actions locked"
+msgstr "åtgärder låsta"
+
+#: actions/models.py
+msgid "Can actions be added and the official metadata edited?"
+msgstr "Kan åtgärder läggas till och de officiella metadata redigeras?"
+
+#: actions/models.py
+msgid "allow images for actions"
+msgstr "tillåta bilder för åtgärder"
+
+#: actions/models.py
+msgid "Should custom images for individual actions be allowed"
+msgstr "Skulle anpassade bilder för enskilda åtgärder vara tillåtna"
+
+#: actions/models.py
+msgid "main organization for the plan"
+msgstr "huvudorganisation för planen"
+
+#: actions/models.py
+msgid "general administrators"
+msgstr "allmänna administratörer"
+
+#: actions/models.py
+msgid "Users that can modify everything related to the action plan"
+msgstr "Användare som kan ändra allt relaterat till handlingsplanen"
+
+#: actions/models.py content/models.py indicators/models.py
+#: notifications/models.py
+msgid "plan"
+msgstr "planen"
+
+#: actions/models.py indicators/models.py
+msgid "plans"
+msgstr "planer"
+
+#: actions/models.py
+msgid "Primary language must not be selected"
+msgstr "Primärspråk får inte väljas"
+
+#: actions/models.py
+msgid "host name"
+msgstr "värdnamn"
+
+#: actions/models.py
+msgid "Hostname must be a fully qualified domain name in lower-case only"
+msgstr "Värdnamn måste endast vara ett fullständigt kvalificerat domännamn i gemener"
+
+#: actions/models.py
+msgid "plan domain"
+msgstr "plandomän"
+
+#: actions/models.py
+msgid "plan domains"
+msgstr "planera domäner"
+
+#: actions/models.py
+msgid "official name"
+msgstr "officiellt namn"
+
+#: actions/models.py
+msgid "The name as approved by an official party"
+msgstr "Namnet som godkänt av en officiell part"
+
+#: actions/models.py
+msgid "The identifier for this action (e.g. number)"
+msgstr "Identifieraren för denna åtgärd (t.ex. nummer)"
+
+#: actions/models.py indicators/models.py
+msgid "description"
+msgstr "beskrivning"
+
+#: actions/models.py
+msgid "What does this action involve in more detail?"
+msgstr "Vad innebär denna åtgärd mer detaljerat?"
+
+#: actions/models.py
+msgid "The impact of this action"
+msgstr "Effekten av denna åtgärd"
+
+#: actions/models.py
+msgid "internal priority"
+msgstr "intern prioritering"
+
+#: actions/models.py
+msgid "internal priority comment"
+msgstr "intern prioriteringskommentar"
+
+#: actions/models.py
+msgid "merged with action"
+msgstr "slogs samman med handling"
+
+#: actions/models.py
+msgid "Set if this action is merged with another action"
+msgstr "Ange om den här åtgärden slås samman med en annan åtgärd"
+
+#: actions/models.py
+msgid "completion"
+msgstr "komplettering"
+
+#: actions/models.py
+msgid "The completion percentage for this action"
+msgstr "Slutförandeprocenten för denna åtgärd"
+
+#: actions/models.py
+msgid "schedule"
+msgstr "schema"
+
+#: actions/models.py
+msgid "decision-making level"
+msgstr "beslutsnivå"
+
+#: actions/models.py indicators/models.py
+msgid "categories"
+msgstr "kategorier"
+
+#: actions/models.py indicators/models.py
+msgid "indicators"
+msgstr "indikatorer"
+
+#: actions/models.py indicators/models.py
+msgid "updated at"
+msgstr "uppdaterad kl"
+
+#: actions/models.py
+msgctxt "partitive"
+msgid "action"
+msgstr "handling"
+
+#: actions/models.py
+msgid "actions"
+msgstr "handlingar"
+
+#: actions/models.py
+msgid "Can administrate all actions"
+msgstr "Kan administrera alla åtgärder"
+
+#: actions/models.py
+msgid "Other action is merged with this one"
+msgstr "Andra åtgärder slås samman med den här"
+
+#: actions/models.py
+msgid "Has contact persons"
+msgstr "Har kontaktpersoner"
+
+#: actions/models.py
+msgid "Active tasks"
+msgstr "Aktiva uppgifter"
+
+#: actions/models.py indicators/models.py people/models.py users/models.py
+msgid "organization"
+msgstr "organisation"
+
+#: actions/models.py
+msgid "action responsible party"
+msgstr "åtgärdsansvarig part"
+
+#: actions/models.py
+msgid "action responsible parties"
+msgstr "åtgärdsansvariga parter"
+
+#: actions/models.py indicators/models.py people/models.py
+msgid "person"
+msgstr "person"
+
+#: actions/models.py
+msgid "primary contact person"
+msgstr "primär kontaktperson"
+
+#: actions/models.py
+msgid "Is this person the primary contact person for the action?"
+msgstr "Är den här personen den primära kontaktpersonen för åtgärden?"
+
+#: actions/models.py
+msgid "action contact person"
+msgstr "handlingskontaktperson"
+
+#: actions/models.py
+msgid "action contact persons"
+msgstr "åtgärder kontaktpersoner"
+
+#: actions/models.py
+msgid "action schedule"
+msgstr "handlingsschema"
+
+#: actions/models.py
+msgid "action schedules"
+msgstr "handlingsscheman"
+
+#: actions/models.py
+msgid "is completed"
+msgstr "är klart"
+
+#: actions/models.py
+msgid "action status"
+msgstr "åtgärdsstatus"
+
+#: actions/models.py
+msgid "action statuses"
+msgstr "åtgärdsstatus"
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "not started"
+msgstr "ej påbörjad"
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "in progress"
+msgstr "pågående"
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "completed"
+msgstr "avslutad"
+
+#: actions/models.py
+msgid "cancelled"
+msgstr "inställt"
+
+#: actions/models.py
+msgid "state"
+msgstr "stat"
+
+#: actions/models.py
+msgid "comment"
+msgstr "kommentar"
+
+#: actions/models.py
+msgid "due date"
+msgstr "förfallodatum"
+
+#: actions/models.py
+msgid "The date by which the task should be completed (deadline)"
+msgstr "Datum då uppgiften ska slutföras (deadline)"
+
+#: actions/models.py
+msgid "completion date"
+msgstr "slutdatum"
+
+#: actions/models.py
+msgid "The date when the task was completed"
+msgstr "Datumet då uppgiften slutfördes"
+
+#: actions/models.py content/models.py
+msgid "completed by"
+msgstr "fullgjord av"
+
+#: actions/models.py content/models.py indicators/models.py
+msgid "created at"
+msgstr "skapad vid"
+
+#: actions/models.py content/models.py
+msgid "modified at"
+msgstr "modifierad kl"
+
+#: actions/models.py
+msgctxt "partitive"
+msgid "action task"
+msgstr "åtgärd uppgift"
+
+#: actions/models.py
+msgid "action task"
+msgstr "åtgärd uppgift"
+
+#: actions/models.py
+msgid "action tasks"
+msgstr "åtgärdsuppgifter"
+
+#: actions/models.py
+msgid "Completed tasks must have a completion date"
+msgstr "Slutförda uppgifter måste ha ett slutdatum"
+
+#: actions/models.py
+msgid "Date can't be in the future"
+msgstr "Datum kan inte vara i framtiden"
+
+#: actions/models.py
+msgid "action impact class"
+msgstr "åtgärdseffektklass"
+
+#: actions/models.py
+msgid "action impact classes"
+msgstr "åtgärder påverkan klasser"
+
+#: actions/models.py
+msgid "usable for action categorization"
+msgstr "användbar för kategorisering av åtgärder"
+
+#: actions/models.py
+msgid "usable for indicator categorization"
+msgstr "användbar för kategorisering av indikatorer"
+
+#: actions/models.py
+msgid "editable for actions"
+msgstr "redigerbar för åtgärder"
+
+#: actions/models.py
+msgid "editable for indicators"
+msgstr "redigerbar för indikatorer"
+
+#: actions/models.py
+msgid "category type"
+msgstr "kategorityp"
+
+#: actions/models.py
+msgid "category types"
+msgstr "kategorityper"
+
+#: actions/models.py notifications/models.py
+msgid "type"
+msgstr "typ"
+
+#: actions/models.py
+msgid "parent category"
+msgstr "Föräldrakategori"
+
+#: actions/models.py
+msgid "short description"
+msgstr "kort beskrivning"
+
+#: actions/models.py
+msgid "category"
+msgstr "kategori"
+
+#: actions/models.py
+msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr "Förälder bildar en slinga. Lämna tomt om kategori på högsta nivå."
+
+#: actions/models.py indicators/models.py
+msgid "scenario"
+msgstr "scenario"
+
+#: actions/models.py
+msgid "scenarios"
+msgstr "scenarier"
+
+#: actions/models.py content/models.py
+msgid "title"
+msgstr "titel"
+
+#: actions/models.py indicators/models.py
+msgid "date"
+msgstr "datum"
+
+#: actions/models.py
+msgid "author"
+msgstr "författare"
+
+#: actions/models.py content/models.py notifications/models.py
+msgid "content"
+msgstr "innehåll"
+
+#: actions/models.py
+msgid "created by"
+msgstr "skapad av"
+
+#: actions/models.py
+msgid "action status update"
+msgstr "åtgärdsuppdatering"
+
+#: actions/models.py
+msgid "action status updates"
+msgstr "åtgärdsstatusuppdateringar"
+
+#: actions/models.py
+#, python-format
+msgid "%(color)s is not a hex color (#112233)"
+msgstr "%(color)s är inte en hexfärg (# 112233)"
+
+#: actions/models.py
+msgid "parent"
+msgstr "förälder"
+
+#: actions/models.py
+msgid "weight"
+msgstr "vikt"
+
+#: actions/models.py
+msgid "color"
+msgstr "Färg"
+
+#: actions/models.py
+msgid "impact group"
+msgstr "påverkan grupp"
+
+#: actions/models.py
+msgid "impact groups"
+msgstr "påverkningsgrupper"
+
+#: actions/models.py
+msgid "impact group action"
+msgstr "påverkan på gruppåtgärder"
+
+#: actions/models.py
+msgid "impact group actions"
+msgstr "påverkan på gruppåtgärder"
+
+#: actions/models.py
+msgid "description when action fulfills criteria"
+msgstr "beskrivning när åtgärden uppfyller kriterierna"
+
+#: actions/models.py
+msgid "description when action doesn't fulfill criteria"
+msgstr "beskrivning när åtgärden inte uppfyller kriterierna"
+
+#: actions/models.py
+msgid "monitoring quality point"
+msgstr "övervakningskvalitetspunkt"
+
+#: actions/models.py
+msgid "monitoring quality points"
+msgstr "övervakning av kvalitetspunkter"
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Intern information"
+
+#: actions/wagtail_admin.py people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Name"
+msgstr "namn"
+
+#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Kategorier"
+
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
+msgid "Basic information"
+msgstr "Grundläggande information"
+
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Kontaktpersoner"
+
+#: actions/wagtail_admin.py
+msgid "Responsible parties"
+msgstr "Ansvariga parter"
+
+#: actions/wagtail_admin.py
+msgid "Tasks"
+msgstr "Uppgifter"
+
+#: actions/wagtail_admin.py
+msgid "late"
+msgstr "sent"
+
+#: actions/wagtail_admin.py
+msgid "Plans"
+msgstr "Planer"
+
+#: actions/wagtail_admin.py
+msgid "Domains"
+msgstr "Domäner"
+
+#: actions/wagtail_admin.py
+msgid "Action statuses"
+msgstr "Åtgärdsstatus"
+
+#: actions/wagtail_admin.py
+msgid "Action impacts"
+msgstr "Åtgärdseffekter"
+
+#: actions/wagtail_admin.py
+msgid "Action classifications"
+msgstr "Actionklassificeringar"
+
+#: admin_site/admin.py
+#, python-format
+msgid "Add another %(model)s"
+msgstr "Lägg till ytterligare %(model)s"
+
+#: admin_site/admin.py
+#, python-format
+msgid "Add another %(verbose_name)s"
+msgstr "Lägg till ytterligare %(verbose_name)s"
+
+#: admin_site/admin.py
+msgid "Django admin"
+msgstr "Django admin"
+
+#: admin_site/admin.py
+#, python-format
+msgid "%(site_name)s admin"
+msgstr "%(site_name)s admin"
+
+#: admin_site/forms.py
+msgid "Enter password"
+msgstr "Skriv in lösenord"
+
+#: admin_site/forms.py
+msgid "Enter your email address"
+msgstr "Skriv in din mailadress"
+
+#: admin_site/models.py
+msgid "login header text"
+msgstr "inloggningshuvudtext"
+
+#: admin_site/models.py
+msgid "login button text"
+msgstr "inloggningsknappstext"
+
+#: admin_site/views.py
+msgid "You have been successfully logged out."
+msgstr "Du har loggat ut."
+
+#: admin_site/wagtail.py
+msgid "View live"
+msgstr "Visa live"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "View %s live"
+msgstr "Visa %s live"
+
+#: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+msgid "Edit"
+msgstr "Redigera"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "%s could not be created due to errors."
+msgstr "%s kunde inte skapas på grund av fel."
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(related_verbose_name)s"
+msgstr "Lägg till %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "New %(related_verbose_name)s"
+msgstr "Ny %(related_verbose_name)s"
+
+#: admin_site/wagtail_hooks.py
+msgid "Choose plan"
+msgstr "Välj plan"
+
+#: admin_site/wagtail_hooks.py
+msgid "Admin hostnames"
+msgstr "Admin värdnamn"
+
+#: aplans/middleware.py
+msgid "Login was unsuccessful."
+msgstr "Inloggningen misslyckades."
+
+#: aplans/model_images.py images/models.py people/models.py
+msgid "image"
+msgstr "bild"
+
+#: aplans/model_images.py people/models.py
+msgid "image cropping"
+msgstr "bildbeskärning"
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr "Finska"
+
+#: aplans/settings.py
+msgid "English"
+msgstr "engelsk"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "svenska"
+
+#: aplans/utils.py
+msgid "order"
+msgstr "ordning"
+
+#: content/apps.py
+msgid "Content"
+msgstr "Innehåll"
+
+#: content/models.py
+msgid "parent page"
+msgstr "föräldersida"
+
+#: content/models.py
+msgid "slug"
+msgstr "snigel"
+
+#: content/models.py
+msgid "visible in top menu"
+msgstr "synlig i toppmenyn"
+
+#: content/models.py
+msgid "visible in page footer"
+msgstr "synlig i sidfot"
+
+#: content/models.py
+msgid "is published"
+msgstr "Publiceras"
+
+#: content/models.py
+msgid "content page"
+msgstr "innehållssida"
+
+#: content/models.py
+msgid "content pages"
+msgstr "innehållssidor"
+
+#: content/models.py
+msgid "published at"
+msgstr "publicerad på"
+
+#: content/models.py
+msgid "blog post"
+msgstr "blogginlägg"
+
+#: content/models.py
+msgid "blog posts"
+msgstr "blogginlägg"
+
+#: content/models.py
+msgid "page"
+msgstr "sida"
+
+#: content/models.py
+msgid "question title"
+msgstr "frågetitel"
+
+#: content/models.py
+msgid "answer"
+msgstr "svar"
+
+#: content/models.py
+msgid "question"
+msgstr "fråga"
+
+#: content/models.py
+msgid "questions"
+msgstr "frågor"
+
+#: content/models.py
+msgid "site title"
+msgstr "Sidans Titel"
+
+#: content/models.py
+msgid "site description"
+msgstr "webbplatsbeskrivning"
+
+#: content/models.py
+msgid "hero content"
+msgstr "hjälteinnehåll"
+
+#: content/models.py
+msgid "URL for the owner of the site"
+msgstr "URL för webbplatsens ägare"
+
+#: content/models.py
+msgid "Name of the owner of the site"
+msgstr "Namnet på webbplatsens ägare"
+
+#: content/models.py
+msgid "Short description for what actions are"
+msgstr "Kort beskrivning för vad åtgärder är"
+
+#: content/models.py
+msgid "Short description for what indicators are"
+msgstr "Kort beskrivning för vad indikatorer är"
+
+#: content/models.py
+msgid "action list lead content"
+msgstr "åtgärdslista blyinnehåll"
+
+#: content/models.py
+msgid "indicator list lead content"
+msgstr "indikatorlista blyinnehåll"
+
+#: content/models.py
+msgid "dashboard lead content"
+msgstr "innehåll på instrumentbrädan"
+
+#: content/models.py
+msgid "official name description"
+msgstr "officiell namnbeskrivning"
+
+#: content/models.py
+msgid "The text to show when displaying official content"
+msgstr "Texten som ska visas när officiellt innehåll visas"
+
+#: content/models.py
+msgid "copyright text"
+msgstr "copyright-text"
+
+#: content/models.py
+msgid "creative commons license"
+msgstr "Creative Commons-licens"
+
+#: content/models.py
+msgid "If the site is under a Creative Commons license, which CC license it is"
+msgstr "Om webbplatsen är under en Creative Commons-licens, vilken CC-licens det är"
+
+#: content/models.py
+msgid "Link to GitHub repository for API"
+msgstr "Länk till GitHub-arkiv för API"
+
+#: content/models.py
+msgid "Link to GitHub repository for UI"
+msgstr "Länk till GitHub-förvar för UI"
+
+#: content/models.py
+msgid "site general content"
+msgstr "webbplatsens allmänna innehåll"
+
+#: content/models.py
+msgid "site general contents"
+msgstr "webbplatsens allmänna innehåll"
+
+#: documents/models.py
+msgid "document"
+msgstr "dokumentera"
+
+#: documents/models.py
+msgid "documents"
+msgstr "dokument"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+msgid "Choose a document"
+msgstr "Välj ett dokument"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload from computer"
+msgstr "Ladda upp från dator"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Search from the service"
+msgstr "Sök från tjänsten"
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Uploading…"
+msgstr "Laddar upp ..."
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload"
+msgstr "Ladda upp"
+
+#: images/models.py
+msgid "images"
+msgstr "bilder"
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Choose an image"
+msgstr "Välj en bild"
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Popular tags"
+msgstr "Populära taggar"
+
+#: indicators/admin.py indicators/models.py
+msgid "level"
+msgstr "nivå"
+
+#: indicators/admin.py
+msgid "Disconnected indicators"
+msgstr "Frånkopplade indikatorer"
+
+#: indicators/admin.py people/admin.py
+msgid "No"
+msgstr "Nej"
+
+#: indicators/admin.py people/admin.py
+msgid "Yes"
+msgstr "Ja"
+
+#: indicators/admin.py
+msgid "[nothing]"
+msgstr "[ingenting]"
+
+#: indicators/admin.py
+msgid "has goals"
+msgstr "har mål"
+
+#: indicators/apps.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr "Indikatorer"
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantity"
+msgstr "kvantitet"
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantities"
+msgstr "kvantiteter"
+
+#: indicators/models.py
+msgid "short name"
+msgstr "kort namn"
+
+#: indicators/models.py
+msgid "verbose name"
+msgstr "detaljerat namn"
+
+#: indicators/models.py
+msgid "verbose name plural"
+msgstr "omfattande namn plural"
+
+#: indicators/models.py
+msgid "unit"
+msgstr "enhet"
+
+#: indicators/models.py
+msgid "units"
+msgstr "enheter"
+
+#: indicators/models.py
+msgid "dataset license"
+msgstr "dataset-licens"
+
+#: indicators/models.py
+msgid "dataset licenses"
+msgstr "datasetlicenser"
+
+#: indicators/models.py
+msgid "URL"
+msgstr "URL"
+
+#: indicators/models.py
+msgid "last retrieved at"
+msgstr "senast hämtad kl"
+
+#: indicators/models.py
+msgid "owner"
+msgstr "ägare"
+
+#: indicators/models.py
+msgid "owner name"
+msgstr "ägarnamn"
+
+#: indicators/models.py
+msgid "Set if owner organization is not available"
+msgstr "Ange om ägareorganisation inte är tillgänglig"
+
+#: indicators/models.py
+msgid "license"
+msgstr "licens"
+
+#: indicators/models.py
+msgid "dataset"
+msgstr "dataset"
+
+#: indicators/models.py
+msgid "datasets"
+msgstr "datauppsättningar"
+
+#: indicators/models.py
+msgid "framework"
+msgstr "ramverk"
+
+#: indicators/models.py
+msgid "frameworks"
+msgstr "ramar"
+
+#: indicators/models.py
+msgid "common indicator"
+msgstr "gemensam indikator"
+
+#: indicators/models.py
+msgid "common indicators"
+msgstr "gemensamma indikatorer"
+
+#: indicators/models.py
+msgid "framework indicator"
+msgstr "ramindikator"
+
+#: indicators/models.py
+msgid "framework indicators"
+msgstr "ramindikatorer"
+
+#: indicators/models.py
+msgid "year"
+msgstr "år"
+
+#: indicators/models.py
+msgid "month"
+msgstr "månad"
+
+#: indicators/models.py
+msgid "week"
+msgstr "vecka"
+
+#: indicators/models.py
+msgid "day"
+msgstr "dag"
+
+#: indicators/models.py
+msgid "strategic"
+msgstr "strategisk"
+
+#: indicators/models.py
+msgid "tactical"
+msgstr "taktisk"
+
+#: indicators/models.py
+msgid "operational"
+msgstr "operativ"
+
+#: indicators/models.py
+msgid "time resolution"
+msgstr "tidsupplösning"
+
+#: indicators/models.py
+msgid "indicator"
+msgstr "indikator"
+
+#: indicators/models.py
+msgid "Has datasets"
+msgstr "Har datamängder"
+
+#: indicators/models.py
+msgid "Has data"
+msgstr "Har data"
+
+#: indicators/models.py
+msgid "Has a graph"
+msgstr "Har en graf"
+
+#: indicators/models.py
+msgid "dimension"
+msgstr "dimensionera"
+
+#: indicators/models.py
+msgid "dimensions"
+msgstr "mått"
+
+#: indicators/models.py
+msgid "dimension category"
+msgstr "dimensionskategori"
+
+#: indicators/models.py
+msgid "dimension categories"
+msgstr "dimensionskategorier"
+
+#: indicators/models.py
+msgid "indicator dimension"
+msgstr "indikator dimension"
+
+#: indicators/models.py
+msgid "indicator dimensions"
+msgstr "indikator dimensioner"
+
+#: indicators/models.py
+msgid "indicator levels"
+msgstr "indikatornivåer"
+
+#: indicators/models.py
+msgid "value"
+msgstr "värde"
+
+#: indicators/models.py
+msgid "indicator value"
+msgstr "indikatorvärde"
+
+#: indicators/models.py
+msgid "indicator values"
+msgstr "indikatorvärden"
+
+#: indicators/models.py
+msgid "indicator goal"
+msgstr "indikatormål"
+
+#: indicators/models.py
+msgid "indicator goals"
+msgstr "indikatormål"
+
+#: indicators/models.py
+msgid "increases"
+msgstr "ökar"
+
+#: indicators/models.py
+msgid "decreases"
+msgstr "minskar"
+
+#: indicators/models.py
+msgid "is a part of"
+msgstr "är en del av"
+
+#: indicators/models.py
+msgid "high"
+msgstr "hög"
+
+#: indicators/models.py
+msgid "medium"
+msgstr "medium"
+
+#: indicators/models.py
+msgid "low"
+msgstr "låg"
+
+#: indicators/models.py
+msgid "causal indicator"
+msgstr "kausal indikator"
+
+#: indicators/models.py
+msgid "effect indicator"
+msgstr "effektindikator"
+
+#: indicators/models.py
+msgid "effect type"
+msgstr "effekttyp"
+
+#: indicators/models.py
+msgid "What type of causal effect is there between the indicators"
+msgstr "Vilken typ av kausal effekt finns det mellan indikatorerna"
+
+#: indicators/models.py
+msgid "confidence level"
+msgstr "självförtroendenivå"
+
+#: indicators/models.py
+msgid "How confident we are that the causal effect is present"
+msgstr "Hur säker vi är på att kausaleffekten är närvarande"
+
+#: indicators/models.py
+msgid "related indicator"
+msgstr "relaterad indikator"
+
+#: indicators/models.py
+msgid "related indicators"
+msgstr "relaterade indikatorer"
+
+#: indicators/models.py
+msgid "What type of effect should the action cause?"
+msgstr "Vilken typ av effekt ska åtgärden orsaka?"
+
+#: indicators/models.py
+msgid "indicates action progress"
+msgstr "indikerar åtgärdens framsteg"
+
+#: indicators/models.py
+msgid "Set if the indicator should be used to determine action progress"
+msgstr "Ställ in om indikatorn ska användas för att bestämma framsteg"
+
+#: indicators/models.py
+msgid "action indicator"
+msgstr "åtgärdsindikator"
+
+#: indicators/models.py
+msgid "action indicators"
+msgstr "åtgärdsindikatorer"
+
+#: indicators/models.py
+msgid "indicator contact person"
+msgstr "indikator kontaktperson"
+
+#: indicators/models.py
+msgid "indicator contact persons"
+msgstr "kontaktpersoner"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Home"
+msgstr "Hem"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Indicator data"
+msgstr "Indikatordata"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Observations"
+msgstr "Observationer"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Goals"
+msgstr "Mål"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Add row"
+msgstr "Lägg till rad"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Remove row"
+msgstr "Ta bort raden"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Save changes"
+msgstr "Spara ändringar"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Year"
+msgstr "År"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Date"
+msgstr "Datum"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Your changes have not been saved. Are you sure you want to exit?"
+msgstr "Dina ändringar har inte sparats. Är du säker på att du vill avsluta?"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Unable to save changes"
+msgstr "Det går inte att spara ändringarna"
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Changes were saved"
+msgstr "Ändringar sparades"
+
+#: indicators/wagtail_admin.py
+msgid "Choose a quantity"
+msgstr "Välj en mängd"
+
+#: indicators/wagtail_admin.py
+msgid "Choose another quantity"
+msgstr "Välj en annan mängd"
+
+#: indicators/wagtail_admin.py
+msgid "Edit this quantity"
+msgstr "Redigera denna kvantitet"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator dimensions"
+msgstr "Indikator dimensioner"
+
+#: indicators/wagtail_admin.py
+msgid "Edit data"
+msgstr "Redigera data"
+
+#: indicators/wagtail_admin.py
+msgid "Edit indicator data"
+msgstr "Redigera indikatordata"
+
+#: indicators/wagtail_admin.py
+msgid "Units"
+msgstr "Enheter"
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Enhet"
+
+#: notifications/apps.py
+msgid "Notifications"
+msgstr "Meddelanden"
+
+#: notifications/models.py
+msgid "Task is late"
+msgstr "Uppgiften är sen"
+
+#: notifications/models.py
+msgid "Task is due soon"
+msgstr "Uppgiften beror snart"
+
+#: notifications/models.py
+msgid "Action metadata has not been updated recently"
+msgstr "Handlingsmetadata har inte uppdaterats nyligen"
+
+#: notifications/models.py
+msgid "Action doesn't have enough in-progress tasks"
+msgstr "Åtgärd har inte tillräckligt med pågående uppgifter"
+
+#: notifications/models.py
+msgid "HTML body"
+msgstr "HTML-kropp"
+
+#: notifications/models.py
+msgid "base template"
+msgstr "basmall"
+
+#: notifications/models.py
+msgid "base templates"
+msgstr "basmallar"
+
+#: notifications/models.py
+msgid "subject"
+msgstr "ämne"
+
+#: notifications/models.py
+msgid "Subject for email notifications"
+msgstr "Ämne för e-postaviseringar"
+
+#: notifications/models.py
+msgid "HTML body for email notifications"
+msgstr "HTML-text för e-postaviseringar"
+
+#: notifications/models.py
+msgid "notification template"
+msgstr "anmälningsmall"
+
+#: notifications/models.py
+msgid "notification templates"
+msgstr "anmälningsmallar"
+
+#: notifications/models.py
+msgid "template"
+msgstr "mall"
+
+#: notifications/models.py
+msgid "Do not set if content block is used in multiple templates"
+msgstr "Ställ inte in om innehållsblock används i flera mallar"
+
+#: notifications/models.py
+msgid "HTML content for the block"
+msgstr "HTML-innehåll för blocket"
+
+#: notifications/models.py
+msgid "content block"
+msgstr "innehållsblock"
+
+#: notifications/models.py
+msgid "content blocks"
+msgstr "innehåll blockerar"
+
+#: pages/blocks.py
+msgid "Title"
+msgstr "Titel"
+
+#: pages/blocks.py
+msgid "Question"
+msgstr "Fråga"
+
+#: pages/blocks.py
+msgid "Answer"
+msgstr "Svar"
+
+#: pages/blocks.py
+msgid "Questions"
+msgstr "Frågor"
+
+#: pages/blocks.py
+msgid "Big image"
+msgstr "Stor bild"
+
+#: pages/blocks.py
+msgid "Small image"
+msgstr "Liten bild"
+
+#: pages/blocks.py pages/models.py
+msgid "Heading"
+msgstr "Rubrik"
+
+#: pages/blocks.py
+msgid "Lead"
+msgstr "Leda"
+
+#: pages/models.py
+msgid "Common page configuration"
+msgstr "Vanlig sidkonfiguration"
+
+#: pages/models.py
+msgid "Header image"
+msgstr "Rubrikbild"
+
+#: pages/models.py
+msgid "Image to use in the header for this page"
+msgstr "Bild som ska användas i rubriken för den här sidan"
+
+#: pages/models.py
+msgid "Lead paragraph"
+msgstr "Ledavsnitt"
+
+#: pages/models.py
+msgid "Lead paragraph right under the heading"
+msgstr "Led punkt direkt under rubriken"
+
+#: pages/models.py
+msgid "Paragraph"
+msgstr "Paragraf"
+
+#: pages/models.py
+msgid "Questions & Answers"
+msgstr "Frågor"
+
+#: people/admin.py
+msgid "Is contact person"
+msgstr "Är kontaktperson"
+
+#: people/admin.py
+msgid "contact for actions"
+msgstr "kontakt för åtgärder"
+
+#: people/apps.py people/wagtail_admin.py
+msgid "People"
+msgstr "människor"
+
+#: people/chooser.py
+msgid "Create new"
+msgstr "Skapa ny"
+
+#: people/chooser.py
+msgid "Choose person"
+msgstr "Välj person"
+
+#: people/chooser.py
+msgid "Choose a person"
+msgstr "Välj en person"
+
+#: people/chooser.py
+msgid "Choose another person"
+msgstr "Välj en annan person"
+
+#: people/chooser.py
+msgid "Edit this person"
+msgstr "Redigera den här personen"
+
+#: people/models.py people/wagtail_admin.py
+msgid "first name"
+msgstr "förnamn"
+
+#: people/models.py people/wagtail_admin.py
+msgid "last name"
+msgstr "efternamn"
+
+#: people/models.py users/models.py
+msgid "email address"
+msgstr "e-postadress"
+
+#: people/models.py
+msgctxt "person's role"
+msgid "title"
+msgstr "titel"
+
+#: people/models.py
+msgid "postal address"
+msgstr "postadress"
+
+#: people/models.py
+msgid "Set if this person is part of an organization"
+msgstr "Ange om personen är en del av en organisation"
+
+#: people/models.py users/models.py
+msgid "user"
+msgstr "användare"
+
+#: people/models.py
+msgid "Set if the person has an user account"
+msgstr "Ange om personen har ett användarkonto"
+
+#: people/models.py
+msgid "people"
+msgstr "människor"
+
+#: people/models.py
+msgid "Person with this email already exists"
+msgstr "Personen med det här e-postmeddelandet finns redan"
+
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisation"
+
+#: people/wagtail_admin.py
+msgid "Input organization name"
+msgstr "Ange organisationsnamn"
+
+#: templates/aplans_admin/index.html
+msgid "Select action plan"
+msgstr "Välj handlingsplan"
+
+#: templates/aplans_admin/index.html
+msgid "Action plans"
+msgstr "Handlingsplaner"
+
+#: templates/aplans_admin/index.html
+msgid "Recent actions"
+msgstr "Senaste åtgärder"
+
+#: templates/aplans_admin/index.html
+msgid "My actions"
+msgstr "Mina handlingar"
+
+#: templates/aplans_admin/index.html
+msgid "None available"
+msgstr "Ingen tillgänglig"
+
+#: templates/aplans_admin/index.html
+msgid "Unknown content"
+msgstr "Okänt innehåll"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Own actions"
+msgstr "Egna handlingar"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr "Identifierare"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Last modified"
+msgstr "Senast ändrad"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Status"
+msgstr "Status"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Edit this action"
+msgstr "Redigera den här åtgärden"
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "View"
+msgstr "Se"
+
+#: templates/aplans_admin/own_actions_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s sedan"
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Saving…"
+msgstr "Sparande…"
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Save"
+msgstr "Spara"
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Spara och fortsätt redigera"
+
+#: templates/modeladmin/edit.html
+msgid "Delete"
+msgstr "Radera"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in"
+msgstr "Logga in"
+
+#: templates/wagtailadmin/login.html
+#, python-format
+msgid "Your %(username_field)s and password didn't match. Please try again."
+msgstr "Ditt %(username_field)s och lösenord matchade inte. Var god försök igen."
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in to Kausal Watch"
+msgstr "Logga in på Kausal Watch"
+
+#: templates/wagtailadmin/login.html
+msgid "Signing in…"
+msgstr "Loggar in…"
+
+#: templates/wagtailadmin/login.html
+msgid "If you have a separate password, click here to sign in"
+msgstr "Om du har ett separat lösenord, klicka här för att logga in"
+
+#: templates/wagtailadmin/login.html
+msgid "Reset your password"
+msgstr "Återställ ditt lösenord"
+
+#: templates/wagtailadmin/login.html
+msgid "Forgotten it?"
+msgstr "Glömt det?"
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Edit your account"
+msgstr "Redigera ditt konto"
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Account settings"
+msgstr "Kontoinställningar"
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Log out"
+msgstr "Logga ut"
+
+#: users/apps.py
+msgid "Users"
+msgstr "Användare"
+
+#: users/models.py
+msgid "admin for organization"
+msgstr "admin för organisation"
+
+#: users/models.py
+msgid "admins for organization"
+msgstr "administratörer för organisation"
