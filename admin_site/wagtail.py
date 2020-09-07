@@ -129,7 +129,7 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class AplansCreateView(ContinueEditingMixin, CreateView):
+class AplansCreateView(ContinueEditingMixin, FormClassMixin, CreateView):
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)
         return ret

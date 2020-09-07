@@ -1,5 +1,5 @@
 import json
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext, gettext_lazy as _
 from django.forms.widgets import Select
 from django import forms
 from wagtail.contrib.modeladmin.options import modeladmin_register
@@ -15,6 +15,7 @@ from django_orghierarchy.models import Organization
 
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
+    AplansCreateView,
 )
 from people.chooser import PersonChooser
 from .admin import ModifiableActionsFilter, MergedActionsFilter, ImpactFilter
@@ -314,8 +315,21 @@ class PlanEditHandler(TabbedInterface):
             )
 
 
+class PlanCreateView(AplansCreateView):
+    def get_instance(self):
+        instance = super().get_instance()
+        instance.action_statuses = [
+            ActionStatus(identifier='not_started', name=gettext('not started').capitalize()),
+            ActionStatus(identifier='in_progress', name=gettext('in progress').capitalize()),
+            ActionStatus(identifier='late', name=gettext('late').capitalize()),
+            ActionStatus(identifier='completed', name=gettext('completed').capitalize(), is_completed=True),
+        ]
+        return instance
+
+
 class PlanAdmin(AplansModelAdmin):
     model = Plan
+    create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
     menu_label = _('Plans')
     menu_order = 2
@@ -349,13 +363,6 @@ class PlanAdmin(AplansModelAdmin):
     def get_form_class(self, request=None):
         form_class = super().get_form_class()
         return form_class
-    """
-        if self.instance.actions_locked:
-            form_class.base_fields['identifier'].disabled = True
-            form_class.base_fields['identifier'].required = False
-            form_class.base_fields['official_name'].disabled = True
-            form_class.base_fields['official_name'].required = False
-    """
 
     def get_edit_handler(self, instance, request):
         action_status_panels = self.insert_model_translation_tabs(
