@@ -104,6 +104,7 @@ class Plan(ModelWithImage, ClusterableModel):
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
         'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
+        'primary_language', 'other_languages',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
