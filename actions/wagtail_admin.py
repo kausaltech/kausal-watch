@@ -367,6 +367,8 @@ class PlanAdmin(AplansModelAdmin):
         panels = self.insert_model_translation_tabs(
             Plan, self.panels, request, instance
         )
+        if request.user.is_superuser:
+            panels.append(InlinePanel('domains', panels=[FieldPanel('hostname')], heading=_('Domains')))
 
         tabs = [
             ObjectList(panels, heading=_('Basic information')),

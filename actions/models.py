@@ -38,6 +38,18 @@ def get_default_language():
     return settings.LANGUAGES[0][0]
 
 
+class PlanQuerySet(models.QuerySet):
+    def for_hostname(self, hostname):
+        hostname = hostname.lower()
+
+        # Support localhost-based URLs for development
+        parts = hostname.split('.')
+        if len(parts) == 2 and parts[1] == 'localhost':
+            return self.filter(identifier=parts[0])
+
+        return self.filter(domains__hostname=hostname.lower())
+
+
 class Plan(ModelWithImage, ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
@@ -93,6 +105,8 @@ class Plan(ModelWithImage, ClusterableModel):
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
         'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
     ]
+
+    objects = models.Manager.from_queryset(PlanQuerySet)()
 
     class Meta:
         verbose_name = _('plan')
@@ -167,6 +181,38 @@ class Plan(ModelWithImage, ClusterableModel):
         if update_fields:
             super().save(update_fields=update_fields)
         return ret
+
+
+class PlanDomain(models.Model):
+    plan = ParentalKey(
+        Plan, on_delete=models.CASCADE, related_name='domains', verbose_name=_('plan')
+    )
+    hostname = models.CharField(max_length=200, verbose_name=_('host name'), unique=True, db_index=True)
+
+    def validate_hostname(self):
+        dn = self.hostname
+        if not isinstance(dn, str):
+            return False
+        if not dn.islower():
+            return False
+        if dn.endswith('.'):
+            dn = dn[:-1]
+        if len(dn) < 1 or len(dn) > 253:
+            return False
+        ldh_re = re.compile('^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$',
+                            re.IGNORECASE)
+        return all(ldh_re.match(x) for x in dn.split('.'))
+
+    def clean(self):
+        if not self.validate_hostname():
+            raise ValidationError({'hostname': _('Hostname must be a fully qualified domain name in lower-case only')})
+
+    def __str__(self):
+        return str(self.hostname)
+
+    class Meta:
+        verbose_name = _('plan domain')
+        verbose_name_plural = _('plan domains')
 
 
 def latest_plan():

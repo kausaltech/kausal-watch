@@ -142,6 +142,10 @@ class PlanNode(DjangoNode, WithImageMixin):
             qs = qs[0:first]
         return qs
 
+    def resolve_serve_file_base_url(self, info):
+        request = info.context
+        return request.build_absolute_uri('/').rstrip('/')
+
     def resolve_pages(self, info):
         if not self.site_id:
             return
@@ -349,7 +353,7 @@ class SiteGeneralContentNode(DjangoNode):
 
 
 class Query(indicators_schema.Query):
-    plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(required=True)))
+    plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
     all_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
@@ -367,11 +371,18 @@ class Query(indicators_schema.Query):
         OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
     )
 
-    def resolve_plan(self, info, **kwargs):
+    def resolve_plan(self, info, id=None, domain=None, **kwargs):
+        if not id and not domain:
+            raise GraphQLError("You must supply either id or domain as arguments to 'plan'", [info])
+
         qs = Plan.objects.all()
-        try:
-            plan = gql_optimizer.query(qs, info).get(identifier=kwargs['id'])
-        except Plan.DoesNotExist:
+        if id:
+            qs = qs.filter(identifier=id.lower())
+        if domain:
+            qs = qs.for_hostname(domain.lower())
+
+        plan = gql_optimizer.query(qs, info).first()
+        if not plan:
             return None
 
         set_active_plan(info, plan)
