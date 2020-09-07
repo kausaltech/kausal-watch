@@ -1,0 +1,1573 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2020-09-07 20:41+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: actions/admin.py
+msgid "non-modifiable actions"
+msgstr ""
+
+#: actions/admin.py
+msgid "Show modifiable"
+msgstr ""
+
+#: actions/admin.py
+msgid "Show all"
+msgstr ""
+
+#: actions/admin.py
+msgid "merged actions"
+msgstr ""
+
+#: actions/admin.py
+msgid "Show only un-merged actions"
+msgstr ""
+
+#: actions/admin.py
+msgid "Show also merged actions"
+msgstr ""
+
+#: actions/admin.py actions/export.py actions/models.py
+msgid "impact"
+msgstr ""
+
+#: actions/admin.py
+msgid "Contact person"
+msgstr ""
+
+#: actions/admin.py
+msgid "Completion"
+msgstr ""
+
+#: actions/admin.py
+msgid "Image"
+msgstr ""
+
+#: actions/admin.py
+msgid "Internal fields"
+msgstr ""
+
+#: actions/admin.py
+msgid "Schedule and decision level"
+msgstr ""
+
+#: actions/admin.py actions/models.py indicators/models.py
+msgid "action"
+msgstr ""
+
+#: actions/apps.py actions/wagtail_admin.py
+msgid "Actions"
+msgstr ""
+
+#: actions/export.py aplans/utils.py notifications/models.py
+msgid "identifier"
+msgstr ""
+
+#: actions/export.py actions/models.py content/models.py indicators/models.py
+#: notifications/models.py
+msgid "name"
+msgstr ""
+
+#: actions/export.py actions/models.py
+msgid "status"
+msgstr ""
+
+#: actions/export.py
+msgid "progress indicators"
+msgstr ""
+
+#: actions/export.py
+msgid "other indicators"
+msgstr ""
+
+#: actions/export.py actions/models.py
+msgid "contact persons"
+msgstr ""
+
+#: actions/models.py
+msgid "site URL"
+msgstr ""
+
+#: actions/models.py
+msgid "actions locked"
+msgstr ""
+
+#: actions/models.py
+msgid "Can actions be added and the official metadata edited?"
+msgstr ""
+
+#: actions/models.py
+msgid "allow images for actions"
+msgstr ""
+
+#: actions/models.py
+msgid "Should custom images for individual actions be allowed"
+msgstr ""
+
+#: actions/models.py
+msgid "main organization for the plan"
+msgstr ""
+
+#: actions/models.py
+msgid "general administrators"
+msgstr ""
+
+#: actions/models.py
+msgid "Users that can modify everything related to the action plan"
+msgstr ""
+
+#: actions/models.py content/models.py indicators/models.py
+#: notifications/models.py
+msgid "plan"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "plans"
+msgstr ""
+
+#: actions/models.py
+msgid "Primary language must not be selected"
+msgstr ""
+
+#: actions/models.py
+msgid "host name"
+msgstr ""
+
+#: actions/models.py
+msgid "Hostname must be a fully qualified domain name in lower-case only"
+msgstr ""
+
+#: actions/models.py
+msgid "plan domain"
+msgstr ""
+
+#: actions/models.py
+msgid "plan domains"
+msgstr ""
+
+#: actions/models.py
+msgid "official name"
+msgstr ""
+
+#: actions/models.py
+msgid "The name as approved by an official party"
+msgstr ""
+
+#: actions/models.py
+msgid "The identifier for this action (e.g. number)"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "description"
+msgstr ""
+
+#: actions/models.py
+msgid "What does this action involve in more detail?"
+msgstr ""
+
+#: actions/models.py
+msgid "The impact of this action"
+msgstr ""
+
+#: actions/models.py
+msgid "internal priority"
+msgstr ""
+
+#: actions/models.py
+msgid "internal priority comment"
+msgstr ""
+
+#: actions/models.py
+msgid "merged with action"
+msgstr ""
+
+#: actions/models.py
+msgid "Set if this action is merged with another action"
+msgstr ""
+
+#: actions/models.py
+msgid "completion"
+msgstr ""
+
+#: actions/models.py
+msgid "The completion percentage for this action"
+msgstr ""
+
+#: actions/models.py
+msgid "schedule"
+msgstr ""
+
+#: actions/models.py
+msgid "decision-making level"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "categories"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "indicators"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "updated at"
+msgstr ""
+
+#: actions/models.py
+msgctxt "partitive"
+msgid "action"
+msgstr ""
+
+#: actions/models.py
+msgid "actions"
+msgstr ""
+
+#: actions/models.py
+msgid "Can administrate all actions"
+msgstr ""
+
+#: actions/models.py
+msgid "Other action is merged with this one"
+msgstr ""
+
+#: actions/models.py
+msgid "Has contact persons"
+msgstr ""
+
+#: actions/models.py
+msgid "Active tasks"
+msgstr ""
+
+#: actions/models.py indicators/models.py people/models.py users/models.py
+msgid "organization"
+msgstr ""
+
+#: actions/models.py
+msgid "action responsible party"
+msgstr ""
+
+#: actions/models.py
+msgid "action responsible parties"
+msgstr ""
+
+#: actions/models.py indicators/models.py people/models.py
+msgid "person"
+msgstr ""
+
+#: actions/models.py
+msgid "primary contact person"
+msgstr ""
+
+#: actions/models.py
+msgid "Is this person the primary contact person for the action?"
+msgstr ""
+
+#: actions/models.py
+msgid "action contact person"
+msgstr ""
+
+#: actions/models.py
+msgid "action contact persons"
+msgstr ""
+
+#: actions/models.py
+msgid "action schedule"
+msgstr ""
+
+#: actions/models.py
+msgid "action schedules"
+msgstr ""
+
+#: actions/models.py
+msgid "is completed"
+msgstr ""
+
+#: actions/models.py
+msgid "action status"
+msgstr ""
+
+#: actions/models.py
+msgid "action statuses"
+msgstr ""
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "not started"
+msgstr ""
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "in progress"
+msgstr ""
+
+#: actions/models.py actions/wagtail_admin.py
+msgid "completed"
+msgstr ""
+
+#: actions/models.py
+msgid "cancelled"
+msgstr ""
+
+#: actions/models.py
+msgid "state"
+msgstr ""
+
+#: actions/models.py
+msgid "comment"
+msgstr ""
+
+#: actions/models.py
+msgid "due date"
+msgstr ""
+
+#: actions/models.py
+msgid "The date by which the task should be completed (deadline)"
+msgstr ""
+
+#: actions/models.py
+msgid "completion date"
+msgstr ""
+
+#: actions/models.py
+msgid "The date when the task was completed"
+msgstr ""
+
+#: actions/models.py content/models.py
+msgid "completed by"
+msgstr ""
+
+#: actions/models.py content/models.py indicators/models.py
+msgid "created at"
+msgstr ""
+
+#: actions/models.py content/models.py
+msgid "modified at"
+msgstr ""
+
+#: actions/models.py
+msgctxt "partitive"
+msgid "action task"
+msgstr ""
+
+#: actions/models.py
+msgid "action task"
+msgstr ""
+
+#: actions/models.py
+msgid "action tasks"
+msgstr ""
+
+#: actions/models.py
+msgid "Completed tasks must have a completion date"
+msgstr ""
+
+#: actions/models.py
+msgid "Date can't be in the future"
+msgstr ""
+
+#: actions/models.py
+msgid "action impact class"
+msgstr ""
+
+#: actions/models.py
+msgid "action impact classes"
+msgstr ""
+
+#: actions/models.py
+msgid "usable for action categorization"
+msgstr ""
+
+#: actions/models.py
+msgid "usable for indicator categorization"
+msgstr ""
+
+#: actions/models.py
+msgid "editable for actions"
+msgstr ""
+
+#: actions/models.py
+msgid "editable for indicators"
+msgstr ""
+
+#: actions/models.py
+msgid "category type"
+msgstr ""
+
+#: actions/models.py
+msgid "category types"
+msgstr ""
+
+#: actions/models.py notifications/models.py
+msgid "type"
+msgstr ""
+
+#: actions/models.py
+msgid "parent category"
+msgstr ""
+
+#: actions/models.py
+msgid "short description"
+msgstr ""
+
+#: actions/models.py
+msgid "category"
+msgstr ""
+
+#: actions/models.py
+msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "scenario"
+msgstr ""
+
+#: actions/models.py
+msgid "scenarios"
+msgstr ""
+
+#: actions/models.py content/models.py
+msgid "title"
+msgstr ""
+
+#: actions/models.py indicators/models.py
+msgid "date"
+msgstr ""
+
+#: actions/models.py
+msgid "author"
+msgstr ""
+
+#: actions/models.py content/models.py notifications/models.py
+msgid "content"
+msgstr ""
+
+#: actions/models.py
+msgid "created by"
+msgstr ""
+
+#: actions/models.py
+msgid "action status update"
+msgstr ""
+
+#: actions/models.py
+msgid "action status updates"
+msgstr ""
+
+#: actions/models.py
+#, python-format
+msgid "%(color)s is not a hex color (#112233)"
+msgstr ""
+
+#: actions/models.py
+msgid "parent"
+msgstr ""
+
+#: actions/models.py
+msgid "weight"
+msgstr ""
+
+#: actions/models.py
+msgid "color"
+msgstr ""
+
+#: actions/models.py
+msgid "impact group"
+msgstr ""
+
+#: actions/models.py
+msgid "impact groups"
+msgstr ""
+
+#: actions/models.py
+msgid "impact group action"
+msgstr ""
+
+#: actions/models.py
+msgid "impact group actions"
+msgstr ""
+
+#: actions/models.py
+msgid "description when action fulfills criteria"
+msgstr ""
+
+#: actions/models.py
+msgid "description when action doesn't fulfill criteria"
+msgstr ""
+
+#: actions/models.py
+msgid "monitoring quality point"
+msgstr ""
+
+#: actions/models.py
+msgid "monitoring quality points"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr ""
+
+#: actions/wagtail_admin.py people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Name"
+msgstr ""
+
+#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
+msgid "Categories"
+msgstr ""
+
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
+msgid "Basic information"
+msgstr ""
+
+#: actions/wagtail_admin.py indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Responsible parties"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Tasks"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "late"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Plans"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Domains"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Action statuses"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Action impacts"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Action classifications"
+msgstr ""
+
+#: admin_site/admin.py
+#, python-format
+msgid "Add another %(model)s"
+msgstr ""
+
+#: admin_site/admin.py
+#, python-format
+msgid "Add another %(verbose_name)s"
+msgstr ""
+
+#: admin_site/admin.py
+msgid "Django admin"
+msgstr ""
+
+#: admin_site/admin.py
+#, python-format
+msgid "%(site_name)s admin"
+msgstr ""
+
+#: admin_site/forms.py
+msgid "Enter password"
+msgstr ""
+
+#: admin_site/forms.py
+msgid "Enter your email address"
+msgstr ""
+
+#: admin_site/models.py
+msgid "login header text"
+msgstr ""
+
+#: admin_site/models.py
+msgid "login button text"
+msgstr ""
+
+#: admin_site/views.py
+msgid "You have been successfully logged out."
+msgstr ""
+
+#: admin_site/wagtail.py
+msgid "View live"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "View %s live"
+msgstr ""
+
+#: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+msgid "Edit"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "%s could not be created due to errors."
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(related_verbose_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "New %(related_verbose_name)s"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "Choose plan"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "Admin hostnames"
+msgstr ""
+
+#: aplans/middleware.py
+msgid "Login was unsuccessful."
+msgstr ""
+
+#: aplans/model_images.py images/models.py people/models.py
+msgid "image"
+msgstr ""
+
+#: aplans/model_images.py people/models.py
+msgid "image cropping"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr ""
+
+#: aplans/utils.py
+msgid "order"
+msgstr ""
+
+#: content/apps.py
+msgid "Content"
+msgstr ""
+
+#: content/models.py
+msgid "parent page"
+msgstr ""
+
+#: content/models.py
+msgid "slug"
+msgstr ""
+
+#: content/models.py
+msgid "visible in top menu"
+msgstr ""
+
+#: content/models.py
+msgid "visible in page footer"
+msgstr ""
+
+#: content/models.py
+msgid "is published"
+msgstr ""
+
+#: content/models.py
+msgid "content page"
+msgstr ""
+
+#: content/models.py
+msgid "content pages"
+msgstr ""
+
+#: content/models.py
+msgid "published at"
+msgstr ""
+
+#: content/models.py
+msgid "blog post"
+msgstr ""
+
+#: content/models.py
+msgid "blog posts"
+msgstr ""
+
+#: content/models.py
+msgid "page"
+msgstr ""
+
+#: content/models.py
+msgid "question title"
+msgstr ""
+
+#: content/models.py
+msgid "answer"
+msgstr ""
+
+#: content/models.py
+msgid "question"
+msgstr ""
+
+#: content/models.py
+msgid "questions"
+msgstr ""
+
+#: content/models.py
+msgid "site title"
+msgstr ""
+
+#: content/models.py
+msgid "site description"
+msgstr ""
+
+#: content/models.py
+msgid "hero content"
+msgstr ""
+
+#: content/models.py
+msgid "URL for the owner of the site"
+msgstr ""
+
+#: content/models.py
+msgid "Name of the owner of the site"
+msgstr ""
+
+#: content/models.py
+msgid "Short description for what actions are"
+msgstr ""
+
+#: content/models.py
+msgid "Short description for what indicators are"
+msgstr ""
+
+#: content/models.py
+msgid "action list lead content"
+msgstr ""
+
+#: content/models.py
+msgid "indicator list lead content"
+msgstr ""
+
+#: content/models.py
+msgid "dashboard lead content"
+msgstr ""
+
+#: content/models.py
+msgid "official name description"
+msgstr ""
+
+#: content/models.py
+msgid "The text to show when displaying official content"
+msgstr ""
+
+#: content/models.py
+msgid "copyright text"
+msgstr ""
+
+#: content/models.py
+msgid "creative commons license"
+msgstr ""
+
+#: content/models.py
+msgid "If the site is under a Creative Commons license, which CC license it is"
+msgstr ""
+
+#: content/models.py
+msgid "Link to GitHub repository for API"
+msgstr ""
+
+#: content/models.py
+msgid "Link to GitHub repository for UI"
+msgstr ""
+
+#: content/models.py
+msgid "site general content"
+msgstr ""
+
+#: content/models.py
+msgid "site general contents"
+msgstr ""
+
+#: documents/models.py
+msgid "document"
+msgstr ""
+
+#: documents/models.py
+msgid "documents"
+msgstr ""
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+msgid "Choose a document"
+msgstr ""
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload from computer"
+msgstr ""
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Search from the service"
+msgstr ""
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Uploading…"
+msgstr ""
+
+#: documents/templates/wagtaildocs/chooser/chooser.html
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Upload"
+msgstr ""
+
+#: images/models.py
+msgid "images"
+msgstr ""
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Choose an image"
+msgstr ""
+
+#: images/templates/wagtailimages/chooser/chooser.html
+msgid "Popular tags"
+msgstr ""
+
+#: indicators/admin.py indicators/models.py
+msgid "level"
+msgstr ""
+
+#: indicators/admin.py
+msgid "Disconnected indicators"
+msgstr ""
+
+#: indicators/admin.py people/admin.py
+msgid "No"
+msgstr ""
+
+#: indicators/admin.py people/admin.py
+msgid "Yes"
+msgstr ""
+
+#: indicators/admin.py
+msgid "[nothing]"
+msgstr ""
+
+#: indicators/admin.py
+msgid "has goals"
+msgstr ""
+
+#: indicators/apps.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr ""
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantity"
+msgstr ""
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantities"
+msgstr ""
+
+#: indicators/models.py
+msgid "short name"
+msgstr ""
+
+#: indicators/models.py
+msgid "verbose name"
+msgstr ""
+
+#: indicators/models.py
+msgid "verbose name plural"
+msgstr ""
+
+#: indicators/models.py
+msgid "unit"
+msgstr ""
+
+#: indicators/models.py
+msgid "units"
+msgstr ""
+
+#: indicators/models.py
+msgid "dataset license"
+msgstr ""
+
+#: indicators/models.py
+msgid "dataset licenses"
+msgstr ""
+
+#: indicators/models.py
+msgid "URL"
+msgstr ""
+
+#: indicators/models.py
+msgid "last retrieved at"
+msgstr ""
+
+#: indicators/models.py
+msgid "owner"
+msgstr ""
+
+#: indicators/models.py
+msgid "owner name"
+msgstr ""
+
+#: indicators/models.py
+msgid "Set if owner organization is not available"
+msgstr ""
+
+#: indicators/models.py
+msgid "license"
+msgstr ""
+
+#: indicators/models.py
+msgid "dataset"
+msgstr ""
+
+#: indicators/models.py
+msgid "datasets"
+msgstr ""
+
+#: indicators/models.py
+msgid "framework"
+msgstr ""
+
+#: indicators/models.py
+msgid "frameworks"
+msgstr ""
+
+#: indicators/models.py
+msgid "common indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "common indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "framework indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "framework indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "year"
+msgstr ""
+
+#: indicators/models.py
+msgid "month"
+msgstr ""
+
+#: indicators/models.py
+msgid "week"
+msgstr ""
+
+#: indicators/models.py
+msgid "day"
+msgstr ""
+
+#: indicators/models.py
+msgid "strategic"
+msgstr ""
+
+#: indicators/models.py
+msgid "tactical"
+msgstr ""
+
+#: indicators/models.py
+msgid "operational"
+msgstr ""
+
+#: indicators/models.py
+msgid "time resolution"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "Has datasets"
+msgstr ""
+
+#: indicators/models.py
+msgid "Has data"
+msgstr ""
+
+#: indicators/models.py
+msgid "Has a graph"
+msgstr ""
+
+#: indicators/models.py
+msgid "dimension"
+msgstr ""
+
+#: indicators/models.py
+msgid "dimensions"
+msgstr ""
+
+#: indicators/models.py
+msgid "dimension category"
+msgstr ""
+
+#: indicators/models.py
+msgid "dimension categories"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator dimension"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator dimensions"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator levels"
+msgstr ""
+
+#: indicators/models.py
+msgid "value"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator value"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator values"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator goal"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator goals"
+msgstr ""
+
+#: indicators/models.py
+msgid "increases"
+msgstr ""
+
+#: indicators/models.py
+msgid "decreases"
+msgstr ""
+
+#: indicators/models.py
+msgid "is a part of"
+msgstr ""
+
+#: indicators/models.py
+msgid "high"
+msgstr ""
+
+#: indicators/models.py
+msgid "medium"
+msgstr ""
+
+#: indicators/models.py
+msgid "low"
+msgstr ""
+
+#: indicators/models.py
+msgid "causal indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "effect indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "effect type"
+msgstr ""
+
+#: indicators/models.py
+msgid "What type of causal effect is there between the indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "confidence level"
+msgstr ""
+
+#: indicators/models.py
+msgid "How confident we are that the causal effect is present"
+msgstr ""
+
+#: indicators/models.py
+msgid "related indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "related indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "What type of effect should the action cause?"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicates action progress"
+msgstr ""
+
+#: indicators/models.py
+msgid "Set if the indicator should be used to determine action progress"
+msgstr ""
+
+#: indicators/models.py
+msgid "action indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "action indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator contact person"
+msgstr ""
+
+#: indicators/models.py
+msgid "indicator contact persons"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Home"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Indicator data"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Observations"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Goals"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Add row"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Remove row"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Save changes"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Year"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Date"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Your changes have not been saved. Are you sure you want to exit?"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Unable to save changes"
+msgstr ""
+
+#: indicators/templates/indicators/edit_values.html
+msgid "Changes were saved"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Choose a quantity"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Choose another quantity"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Edit this quantity"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Indicator dimensions"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Edit data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Edit indicator data"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Units"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr ""
+
+#: notifications/apps.py
+msgid "Notifications"
+msgstr ""
+
+#: notifications/models.py
+msgid "Task is late"
+msgstr ""
+
+#: notifications/models.py
+msgid "Task is due soon"
+msgstr ""
+
+#: notifications/models.py
+msgid "Action metadata has not been updated recently"
+msgstr ""
+
+#: notifications/models.py
+msgid "Action doesn't have enough in-progress tasks"
+msgstr ""
+
+#: notifications/models.py
+msgid "HTML body"
+msgstr ""
+
+#: notifications/models.py
+msgid "base template"
+msgstr ""
+
+#: notifications/models.py
+msgid "base templates"
+msgstr ""
+
+#: notifications/models.py
+msgid "subject"
+msgstr ""
+
+#: notifications/models.py
+msgid "Subject for email notifications"
+msgstr ""
+
+#: notifications/models.py
+msgid "HTML body for email notifications"
+msgstr ""
+
+#: notifications/models.py
+msgid "notification template"
+msgstr ""
+
+#: notifications/models.py
+msgid "notification templates"
+msgstr ""
+
+#: notifications/models.py
+msgid "template"
+msgstr ""
+
+#: notifications/models.py
+msgid "Do not set if content block is used in multiple templates"
+msgstr ""
+
+#: notifications/models.py
+msgid "HTML content for the block"
+msgstr ""
+
+#: notifications/models.py
+msgid "content block"
+msgstr ""
+
+#: notifications/models.py
+msgid "content blocks"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Title"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Question"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Answer"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Questions"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Big image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Small image"
+msgstr ""
+
+#: pages/blocks.py pages/models.py
+msgid "Heading"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Lead"
+msgstr ""
+
+#: pages/models.py
+msgid "Common page configuration"
+msgstr ""
+
+#: pages/models.py
+msgid "Header image"
+msgstr ""
+
+#: pages/models.py
+msgid "Image to use in the header for this page"
+msgstr ""
+
+#: pages/models.py
+msgid "Lead paragraph"
+msgstr ""
+
+#: pages/models.py
+msgid "Lead paragraph right under the heading"
+msgstr ""
+
+#: pages/models.py
+msgid "Paragraph"
+msgstr ""
+
+#: pages/models.py
+msgid "Questions & Answers"
+msgstr ""
+
+#: people/admin.py
+msgid "Is contact person"
+msgstr ""
+
+#: people/admin.py
+msgid "contact for actions"
+msgstr ""
+
+#: people/apps.py people/wagtail_admin.py
+msgid "People"
+msgstr ""
+
+#: people/chooser.py
+msgid "Create new"
+msgstr ""
+
+#: people/chooser.py
+msgid "Choose person"
+msgstr ""
+
+#: people/chooser.py
+msgid "Choose a person"
+msgstr ""
+
+#: people/chooser.py
+msgid "Choose another person"
+msgstr ""
+
+#: people/chooser.py
+msgid "Edit this person"
+msgstr ""
+
+#: people/models.py people/wagtail_admin.py
+msgid "first name"
+msgstr ""
+
+#: people/models.py people/wagtail_admin.py
+msgid "last name"
+msgstr ""
+
+#: people/models.py users/models.py
+msgid "email address"
+msgstr ""
+
+#: people/models.py
+msgctxt "person's role"
+msgid "title"
+msgstr ""
+
+#: people/models.py
+msgid "postal address"
+msgstr ""
+
+#: people/models.py
+msgid "Set if this person is part of an organization"
+msgstr ""
+
+#: people/models.py users/models.py
+msgid "user"
+msgstr ""
+
+#: people/models.py
+msgid "Set if the person has an user account"
+msgstr ""
+
+#: people/models.py
+msgid "people"
+msgstr ""
+
+#: people/models.py
+msgid "Person with this email already exists"
+msgstr ""
+
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Input organization name"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "Select action plan"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "Action plans"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "Recent actions"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "My actions"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "None available"
+msgstr ""
+
+#: templates/aplans_admin/index.html
+msgid "Unknown content"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Own actions"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Last modified"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Status"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "Edit this action"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+msgid "View"
+msgstr ""
+
+#: templates/aplans_admin/own_actions_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr ""
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Saving…"
+msgstr ""
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Save"
+msgstr ""
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr ""
+
+#: templates/modeladmin/edit.html
+msgid "Delete"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+#, python-format
+msgid "Your %(username_field)s and password didn't match. Please try again."
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in to Kausal Watch"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Signing in…"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "If you have a separate password, click here to sign in"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Reset your password"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Forgotten it?"
+msgstr ""
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Edit your account"
+msgstr ""
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Account settings"
+msgstr ""
+
+#: templates/wagtailadmin/shared/main_nav.html
+msgid "Log out"
+msgstr ""
+
+#: users/apps.py
+msgid "Users"
+msgstr ""
+
+#: users/models.py
+msgid "admin for organization"
+msgstr ""
+
+#: users/models.py
+msgid "admins for organization"
+msgstr ""
