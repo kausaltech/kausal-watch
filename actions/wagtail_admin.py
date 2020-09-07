@@ -318,12 +318,22 @@ class PlanEditHandler(TabbedInterface):
 class PlanCreateView(AplansCreateView):
     def get_instance(self):
         instance = super().get_instance()
-        instance.action_statuses = [
-            ActionStatus(identifier='not_started', name=gettext('not started').capitalize()),
-            ActionStatus(identifier='in_progress', name=gettext('in progress').capitalize()),
-            ActionStatus(identifier='late', name=gettext('late').capitalize()),
-            ActionStatus(identifier='completed', name=gettext('completed').capitalize(), is_completed=True),
+        if self.request.method == 'POST':
+            return instance
+
+        STATUSES = [
+            ('not_started', gettext('not started'), False),
+            ('in_progress', gettext('in progress'), False),
+            ('late', gettext('late'), False),
+            ('completed', gettext('completed'), True),
         ]
+        instance.action_statuses = [ActionStatus(
+            plan=instance,
+            identifier=identifier,
+            name=name.capitalize(),
+            is_completed=is_completed
+        ) for identifier, name, is_completed in STATUSES]
+
         return instance
 
 
