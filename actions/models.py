@@ -14,7 +14,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from django_orghierarchy.models import Organization
-from modelcluster.fields import ParentalKey
+from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
@@ -242,7 +242,7 @@ class ActionQuerySet(models.QuerySet):
 
 
 class Action(ModelWithImage, OrderedModel, ClusterableModel):
-    plan = models.ForeignKey(
+    plan = ParentalKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
     )
