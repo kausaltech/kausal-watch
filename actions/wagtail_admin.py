@@ -33,7 +33,7 @@ def _get_category_fields(plan, model, obj, with_initial=False):
 
     for cat_type in plan.category_types.filter(**{filter_name: True}):
         qs = cat_type.categories.all()
-        if obj and with_initial:
+        if obj and obj.pk and with_initial:
             initial = obj.categories.filter(type=cat_type)
         else:
             initial = None
@@ -121,15 +121,33 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
         return True
 
 
+class CategoriedModelForm(WagtailAdminModelForm):
+    def save(self, commit=True):
+        obj = super().save(commit)
+
+        # Update categories
+        plan = obj.plan
+        for field_name, field in _get_category_fields(plan, Action, obj).items():
+            field_data = self.cleaned_data.get(field_name)
+            if field_data is None:
+                continue
+            cat_type = field.category_type
+            obj.set_categories(cat_type, field_data)
+        return obj
+
+
 class ActionEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
         user = request.user
         plan = user.get_active_admin_plan()
-        cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
+        if user.is_general_admin_for_plan(plan):
+            cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
+        else:
+            cat_fields = {}
 
         self.base_form_class = type(
             'ActionAdminForm',
-            (WagtailAdminModelForm,),
+            (CategoriedModelForm,),
             cat_fields
         )
 
@@ -189,12 +207,12 @@ class ActionAdmin(AplansModelAdmin):
         RichTextFieldPanel('description'),
     ]
 
-    internal_panel = AdminOnlyPanel([
+    admin_panels = [
         FieldPanel('status'),
         FieldPanel('internal_priority'),
         FieldPanel('internal_priority_comment'),
         FieldPanel('impact'),
-    ], heading=_('Internal information'))
+    ]
 
     task_panels = [
         FieldPanel('name'),
@@ -249,18 +267,24 @@ class ActionAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
 
+        admin_panels = list(self.admin_panels)
+
         cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
         cat_panels = []
         for key, field in cat_fields.items():
             cat_panels.append(CategoryFieldPanel(key, heading=field.label))
         if cat_panels:
-            panels.insert(2, MultiFieldPanel(cat_panels, heading=_('Categories')))
+            admin_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
 
         i18n_tabs = self.get_translation_tabs(instance, request)
 
-        handler = ActionEditHandler([
-            ObjectList(panels, heading=_('Basic information')),
-            self.internal_panel,
+        all_tabs = [ObjectList(panels, heading=_('Basic information'))]
+
+        plan = request.user.get_active_admin_plan()
+        if request.user.is_general_admin_for_plan(plan):
+            all_tabs.append(ObjectList(admin_panels, heading=_('Internal information')))
+
+        all_tabs += [
             ObjectList([
                 CondensedInlinePanel(
                     'contact_persons',
@@ -284,8 +308,8 @@ class ActionAdmin(AplansModelAdmin):
                 )
             ], heading=_('Tasks')),
             *i18n_tabs
-        ])
-        return handler
+        ]
+        return ActionEditHandler(all_tabs)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -370,6 +394,10 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('name'),
     ]
 
+    action_ordering_panels = [
+        CondensedInlinePanel('actions', panels=[FieldPanel('identifier'), FieldPanel('name')])
+    ]
+
     def get_form_class(self, request=None):
         form_class = super().get_form_class()
         return form_class
@@ -395,6 +423,9 @@ class PlanAdmin(AplansModelAdmin):
 
             ], heading=_('Action classifications')),
         ]
+
+        if not instance.actions_locked:
+            tabs.append(ObjectList(self.action_ordering_panels, heading=_('Actions')))
 
         handler = PlanEditHandler(tabs)
         return handler
