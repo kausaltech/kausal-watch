@@ -217,6 +217,8 @@ SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
 SOCIAL_AUTH_PIPELINE = (
+    'users.pipeline.log_login_attempt',
+
     # Get the information we can about the user and return it in a simple
     # format to create the user instance later. On some cases the details are
     # already part of the auth response from the provider, but sometimes this
