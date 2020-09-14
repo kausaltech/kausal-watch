@@ -37,6 +37,7 @@ services:
       - MAILGUN_REGION
     ports:
       - "${HOST_PORT:-8000}:8000"
+      - "${UWSGI_SOCKET_PORT:-8001}:8001"
     depends_on:
       - db
 
