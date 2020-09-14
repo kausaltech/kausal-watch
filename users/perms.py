@@ -1,8 +1,12 @@
+import logging
+
 from actions.perms import (
-    add_contact_person_perms, remove_contact_person_perms,
-    add_plan_admin_perms, remove_plan_admin_perms
+    add_contact_person_perms, add_plan_admin_perms, remove_contact_person_perms, remove_plan_admin_perms
 )
+
 from .models import User
+
+logger = logging.getLogger('users.perms')
 
 
 def create_permissions(user, **kwargs):
@@ -15,12 +19,19 @@ def create_permissions(user, **kwargs):
         person.user = user
         person.save(update_fields=['user'])
 
+    if person:
+        logger.info('Found corresponding person: %s (uuid=%s, email=%s)' % (str(person), user.uuid, user.email))
+    else:
+        logger.info('No corresponding person found (uuid=%s, email=%s)' % (user.uuid, user.email))
+
     if user.is_contact_person_for_action() or user.is_organization_admin_for_action():
         add_contact_person_perms(user)
+        logger.info('Adding contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
     else:
         remove_contact_person_perms(user)
 
     if user.is_general_admin_for_plan():
         add_plan_admin_perms(user)
+        logger.info('Adding general admin perms (uuid=%s, email=%s)' % (user.uuid, user.email))
     else:
         remove_plan_admin_perms(user)
