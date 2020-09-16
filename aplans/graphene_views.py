@@ -1,10 +1,12 @@
-import sentry_sdk
-from graphql.error import GraphQLError
-from graphene_django.views import GraphQLView
-from django.conf import settings
+import logging
 
+import sentry_sdk
+from django.conf import settings
+from graphene_django.views import GraphQLView
+from graphql.error import GraphQLError
 
 SUPPORTED_LANGUAGES = {x[0] for x in settings.LANGUAGES}
+logger = logging.getLogger(__name__)
 
 
 class LocaleMiddleware:
@@ -34,15 +36,19 @@ class SentryGraphQLView(GraphQLView):
 
     def execute_graphql_request(self, request, data, query, *args, **kwargs):
         """Extract any exceptions and send them to Sentry"""
+        request._referer = self.request.META.get('HTTP_REFERER')
+        logger.info('GraphQL request from %s' % request._referer)
         result = super().execute_graphql_request(request, data, query, *args, **kwargs)
         # If 'invalid' is set, it's a bad request
         if result and result.errors and not result.invalid:
-            self._capture_sentry_exceptions(result.errors, query)
+            self._capture_sentry_exceptions(result.errors, query, data.get('variables'), request)
         return result
 
-    def _capture_sentry_exceptions(self, errors, query):
+    def _capture_sentry_exceptions(self, errors, query, variables, request):
         with sentry_sdk.configure_scope() as scope:
+            scope.set_extra('graphql_variables', variables)
             scope.set_extra('graphql_query', query)
+            scope.set_extra('referer', request._referer)
             for error in errors:
                 if hasattr(error, 'original_error'):
                     error = error.original_error
