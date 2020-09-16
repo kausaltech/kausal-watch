@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import JSONField
 from modeltrans.fields import TranslationField
 from modelcluster.models import ClusterableModel
-from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modelcluster.fields import ParentalKey
 import reversion
 from wagtail.core.fields import RichTextField
 
@@ -194,7 +194,7 @@ class Indicator(ClusterableModel):
     )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
-        verbose_name=_('plans')
+        verbose_name=_('plans'), related_name='indicators',
     )
     identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name=_('name'))
@@ -236,6 +236,11 @@ class Indicator(ClusterableModel):
     )
     created_at = models.DateTimeField(
         auto_now_add=True, editable=False, verbose_name=_('created at')
+    )
+
+    contact_persons_unordered = models.ManyToManyField(
+        'people.Person', through='IndicatorContactPerson', blank=True,
+        related_name='contact_for_indicators', verbose_name=_('contact persons')
     )
 
     public_fields = [
@@ -512,7 +517,7 @@ class IndicatorContactPerson(OrderedModel):
         Indicator, on_delete=models.CASCADE, verbose_name=_('indicator'), related_name='contact_persons'
     )
     person = ParentalKey(
-        'people.Person', on_delete=models.CASCADE, verbose_name=_('person')
+        'people.Person', on_delete=models.CASCADE, verbose_name=_('person'),
     )
 
     class Meta:

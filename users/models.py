@@ -51,6 +51,25 @@ class User(AbstractUser):
         else:
             return action.pk in actions
 
+    def is_contact_person_for_indicator(self, indicator=None):
+        if hasattr(self, '_contact_for_indicators'):
+            indicators = self._contact_for_indicators
+            if indicator is None:
+                return bool(indicators)
+            return indicator.pk in indicators
+
+        indicators = set()
+        self._contact_for_indicators = indicators
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        indicators.update({ind.id for ind in person.contact_for_indicators.all()})
+        if indicator is None:
+            return bool(indicators)
+        else:
+            return indicator.pk in indicators
+
     def is_general_admin_for_plan(self, plan=None):
         if self.is_superuser:
             return True
@@ -127,11 +146,12 @@ class User(AbstractUser):
     def get_adminable_plans(self):
         from actions.models import Plan
 
-        is_contact = self.is_contact_person_for_action()
+        is_action_contact = self.is_contact_person_for_action()
+        is_indicator_contact = self.is_contact_person_for_indicator()
         is_general_admin = self.is_general_admin_for_plan()
         is_org_admin = self.is_organization_admin_for_action()
-        if not self.is_superuser and not is_contact and not is_general_admin \
-                and not is_org_admin:
+        if not self.is_superuser and not is_action_contact and not is_general_admin \
+                and not is_org_admin and not is_indicator_contact:
             return []
 
         # Cache adminable plans for each request
@@ -143,6 +163,7 @@ class User(AbstractUser):
                 plans.update(Plan.objects.all())
             else:
                 plans.update(Plan.objects.filter(actions__in=self._contact_for_actions).distinct())
+                plans.update(Plan.objects.filter(indicators__in=self._contact_for_indicators).distinct())
                 plans.update(Plan.objects.filter(id__in=self._general_admin_for_plans))
                 plans.update(Plan.objects.filter(actions__in=self._org_admin_for_actions).distinct())
             self._adminable_plans = plans
@@ -171,6 +192,21 @@ class User(AbstractUser):
             return False
         return self.is_contact_person_for_action(action) \
             or self.is_organization_admin_for_action(action)
+
+    def can_modify_indicator(self, indicator=None):
+        if self.is_superuser:
+            return True
+        if indicator is None:
+            plans = [self.get_active_admin_plan()]
+        else:
+            plans = list(indicator.plans.all())
+
+        if plans is not None:
+            for plan in plans:
+                if self.is_general_admin_for_plan(plan):
+                    return True
+
+        return self.is_contact_person_for_indicator(indicator)
 
 
 class OrganizationAdmin(models.Model):

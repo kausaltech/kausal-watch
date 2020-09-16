@@ -1,15 +1,14 @@
-from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
 from django.template.loader import render_to_string
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.html import format_html
-from wagtail.core import hooks
-from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel
-)
+from django.utils.translation import gettext_lazy as _
+
+from actions.models import Plan
+from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
-from actions.models import Plan
+from wagtail.core import hooks
 
 from .models import Client
 
@@ -67,9 +66,26 @@ class OwnActionsPanel:
         }, request=self.request)
 
 
+class OwnIndicatorsPanel:
+    name = 'own_indicators'
+    order = 11
+
+    def __init__(self, request):
+        self.request = request
+
+    def render(self):
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        own_indicators = plan.indicators.filter(contact_persons__person__user=user).distinct()
+        return render_to_string('aplans_admin/own_indicators_panel.html', {
+            'own_indicators': own_indicators,
+        }, request=self.request)
+
+
 @hooks.register('construct_homepage_panels')
 def construct_homepage_panels(request, panels):
     panels.insert(0, OwnActionsPanel(request))
+    panels.insert(1, OwnIndicatorsPanel(request))
 
 
 class ClientAdmin(ModelAdmin):

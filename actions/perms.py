@@ -1,28 +1,23 @@
-from django.contrib.auth.models import Permission
+from functools import lru_cache
+
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from .models import (
-    Action, ActionResponsibleParty, ActionTask, Plan, ActionSchedule,
-    ActionStatus, Category, CategoryType, ActionImpact, ActionContactPerson,
-    ActionStatusUpdate, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint
-)
+
+from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
 from django_orghierarchy.models import Organization
 from indicators.models import (
-    ActionIndicator, Indicator, RelatedIndicator, Unit, IndicatorLevel,
-    IndicatorGraph, IndicatorGoal, IndicatorValue, Quantity,
-    IndicatorContactPerson, Dataset, DatasetLicense,
-    Dimension, DimensionCategory, IndicatorDimension
+    ActionIndicator, Dataset, DatasetLicense, Dimension, DimensionCategory, Indicator, IndicatorContactPerson,
+    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
-from content.models import (
-    StaticPage, BlogPost, Question, SiteGeneralContent
-)
-from notifications.models import (
-    BaseTemplate, NotificationTemplate, ContentBlock
-)
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from wagtail.core.models import GroupCollectionPermission
+from notifications.models import BaseTemplate, ContentBlock, NotificationTemplate
 from people.models import Person
+from wagtail.core.models import GroupCollectionPermission
 
+from .models import (
+    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan
+)
 
 User = get_user_model()
 
@@ -39,6 +34,7 @@ def _get_perm_objs(model, perms):
     return list(perm_objs)
 
 
+@lru_cache
 def get_wagtail_contact_person_perms():
     perms = []
     perms += list(Permission.objects.filter(
@@ -56,6 +52,7 @@ def get_wagtail_contact_person_perms():
     return perms
 
 
+@lru_cache
 def get_wagtail_plan_admin_perms():
     perms = []
     perms += list(Permission.objects.filter(
@@ -65,7 +62,8 @@ def get_wagtail_plan_admin_perms():
     return perms
 
 
-def get_contact_person_perms():
+@lru_cache
+def get_action_contact_person_perms():
     new_perms = []
 
     # Add general permissions
@@ -89,6 +87,21 @@ def get_contact_person_perms():
     return new_perms
 
 
+@lru_cache
+def get_indicator_contact_person_perms():
+    new_perms = []
+
+    new_perms += _get_perm_objs(Action, ('view',))
+    new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
+    new_perms += _get_perm_objs(ActionIndicator, ('view',))
+    new_perms += _get_perm_objs(Indicator, ('view', 'change'))
+    new_perms += _get_perm_objs(IndicatorGoal, ('view', 'change'))
+    new_perms += _get_perm_objs(IndicatorValue, ('view', 'change'))
+    new_perms += _get_perm_objs(IndicatorContactPerson, ALL_PERMS)
+
+    return new_perms
+
+
 def _get_or_create_group(name, perms=None):
     group, _ = Group.objects.get_or_create(name=name)
 
@@ -104,9 +117,17 @@ def _get_or_create_group(name, perms=None):
     return group
 
 
-def get_or_create_contact_person_group():
-    perms = get_contact_person_perms()
+@lru_cache
+def get_or_create_action_contact_person_group():
+    perms = get_action_contact_person_perms()
     group = _get_or_create_group('Action contact persons', perms)
+    return group
+
+
+@lru_cache
+def get_or_create_indicator_contact_person_group():
+    perms = get_indicator_contact_person_perms()
+    group = _get_or_create_group('Indicator contact persons', perms)
     return group
 
 
@@ -122,7 +143,11 @@ def _sync_group_collection_perms(root_collection, group, perms):
 
 def _sync_contact_person_groups(user):
     plans = user.get_adminable_plans()
-    user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans).delete()
+    groups = user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans)
+
+    for group in groups:
+        user.groups.remove(group)
+
     wagtail_perms = get_wagtail_contact_person_perms()
 
     for plan in plans:
@@ -135,8 +160,11 @@ def _sync_contact_person_groups(user):
         _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
 
 
-def add_contact_person_perms(user):
-    group = get_or_create_contact_person_group()
+def add_contact_person_perms(user, model):
+    if model == Action:
+        group = get_or_create_action_contact_person_group()
+    else:
+        group = get_or_create_indicator_contact_person_group()
     user.groups.add(group)
 
     # Make sure user is able to access the admin UI
@@ -146,8 +174,11 @@ def add_contact_person_perms(user):
     _sync_contact_person_groups(user)
 
 
-def remove_contact_person_perms(user):
-    group = get_or_create_contact_person_group()
+def remove_contact_person_perms(user, model):
+    if model == Action:
+        group = get_or_create_action_contact_person_group()
+    else:
+        group = get_or_create_indicator_contact_person_group()
     user.groups.remove(group)
     _sync_contact_person_groups(user)
 
@@ -196,7 +227,8 @@ PLAN_ADMIN_PERMS = (
 
 
 def get_plan_admin_perms():
-    all_perms = get_contact_person_perms()
+    all_perms = get_action_contact_person_perms()
+    all_perms += get_indicator_contact_person_perms()
     for model, perms in PLAN_ADMIN_PERMS:
         all_perms += _get_perm_objs(model, perms)
 
