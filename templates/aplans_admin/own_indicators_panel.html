@@ -1,0 +1,39 @@
+{% load i18n wagtailadmin_tags %}
+{% if own_indicators %}
+<div class="panel nice-padding">
+    <section>
+        <h2>{% trans "Own indicators" %}</h2>
+        <table class="listing listing-page">
+            <col />
+            <col width="15%"/>
+            <col width="15%"/>
+            <thead>
+                <tr>
+                    <th class="title">{% trans "Name" %}</th>
+                    <th>{% trans "Last modified" %}</th>
+                    <th>{% trans "Last data point" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for indicator in own_indicators %}
+                    <tr>
+                        <td class="title" valign="top">
+                            <div class="title-wrapper">
+                                <a href="{% url 'indicators_indicator_modeladmin_edit' indicator.id %}" title="{% trans 'Edit this indicator' %}">{{ indicator.name }}</a>
+                            </div>
+                            <ul class="actions">
+                                <li><a href="{% url 'indicators_indicator_modeladmin_edit' indicator.id %}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
+                                <li><a href="{% url 'indicators_indicator_modeladmin_edit_values' indicator.id %}" class="button button-small button-secondary">{% trans "Edit data" %}</a></li>
+                            </ul>
+                        </td>
+                        <td valign="top"><div class="human-readable-date" title="{{ indicator.updated_at|date }}">{% blocktrans with time_period=indicator.updated_at|timesince %}{{ time_period }} ago{% endblocktrans %}</div></td>
+                        <td valign="top">
+                            {{ indicator.latest_value.date|date }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endif %}

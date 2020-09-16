@@ -29,6 +29,8 @@ def log_login_attempt(backend, details, *args, **kwargs):
             id_parts.append('sub=%s' % sub)
 
     logger.info('Login attempt (%s)' % ', '.join(id_parts))
+    if 'id_token' in response:
+        logger.debug('ID token: %s' % response['id_token'])
 
     if isinstance(backend, OAuthAuth):
         try:

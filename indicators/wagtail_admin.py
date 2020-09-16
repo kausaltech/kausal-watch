@@ -5,18 +5,19 @@ from django.db.models import Q
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+
+from admin_site.wagtail import (
+    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+)
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
+from people.chooser import PersonChooser
+from users.models import User
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
-
-from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
-)
-from people.chooser import PersonChooser
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
@@ -42,7 +43,7 @@ class IndicatorPermissionHelper(PermissionHelper):
 
         return False
 
-    def user_can_edit_obj(self, user, obj):
+    def user_can_edit_obj(self, user: User, obj: Indicator):
         if not super().user_can_edit_obj(user, obj):
             return False
 
@@ -51,14 +52,18 @@ class IndicatorPermissionHelper(PermissionHelper):
             if user.is_general_admin_for_plan(plan):
                 return True
 
-        # FIXME: Indicator contact persons
-        return False
+        return user.is_contact_person_for_indicator(obj)
 
-    def user_can_delete_obj(self, user, obj):
+    def user_can_delete_obj(self, user: User, obj: Indicator):
         if not super().user_can_delete_obj(user, obj):
             return False
 
-        return self.user_can_edit_obj(user, obj)
+        obj_plans = obj.plans.all()
+        admin_for_all = all([user.is_general_admin_for_plan(plan) for plan in obj_plans])
+        if not admin_for_all:
+            return False
+
+        return True
 
     def user_can_create(self, user):
         if not super().user_can_create(user):
@@ -218,17 +223,18 @@ class IndicatorAdmin(AplansModelAdmin):
         ]),
     ]
 
-    edit_handler = AplansTabbedInterface(children=[
-        ObjectList(basic_panels, heading=_('Basic information')),
-        ObjectList([
-            CondensedInlinePanel(
-                'contact_persons',
-                panels=[
-                    FieldPanel('person', widget=PersonChooser),
-                ]
-            )
-        ], heading=_('Contact persons')),
-    ])
+    def get_edit_handler(self, instance, request):
+        return AplansTabbedInterface(children=[
+            ObjectList(self.basic_panels, heading=_('Basic information')),
+            ObjectList([
+                CondensedInlinePanel(
+                    'contact_persons',
+                    panels=[
+                        FieldPanel('person', widget=PersonChooser),
+                    ]
+                )
+            ], heading=_('Contact persons')),
+        ])
 
     def unit_display(self, obj):
         unit = obj.unit

@@ -1,8 +1,10 @@
 import logging
 
+from actions.models import Action
 from actions.perms import (
     add_contact_person_perms, add_plan_admin_perms, remove_contact_person_perms, remove_plan_admin_perms
 )
+from indicators.models import Indicator
 
 from .models import User
 
@@ -25,10 +27,16 @@ def create_permissions(user, **kwargs):
         logger.info('No corresponding person found (uuid=%s, email=%s)' % (user.uuid, user.email))
 
     if user.is_contact_person_for_action() or user.is_organization_admin_for_action():
-        add_contact_person_perms(user)
-        logger.info('Adding contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
+        add_contact_person_perms(user, Action)
+        logger.info('Adding action contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
     else:
-        remove_contact_person_perms(user)
+        remove_contact_person_perms(user, Action)
+
+    if user.is_contact_person_for_indicator():
+        add_contact_person_perms(user, Indicator)
+        logger.info('Adding indicator contact person perms (uuid=%s, email=%s)' % (user.uuid, user.email))
+    else:
+        remove_contact_person_perms(user, Indicator)
 
     if user.is_general_admin_for_plan():
         add_plan_admin_perms(user)

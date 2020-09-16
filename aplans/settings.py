@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 
-import environ
 from django.utils.translation import gettext_lazy as _
+
+import environ
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.Env(
@@ -28,6 +29,7 @@ env = environ.Env(
     SENTRY_DSN=(str, ''),
     COOKIE_PREFIX=(str, 'aplans'),
     SERVER_EMAIL=(str, 'noreply@ilmastovahti.fi'),
+    DEFAULT_FROM_EMAIL=(str, 'noreply@ilmastovahti.fi'),
     INTERNAL_IPS=(list, []),
     OIDC_ISSUER_URL=(str, ''),
     OIDC_CLIENT_ID=(str, ''),
@@ -51,6 +53,9 @@ DATABASES = {
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 SECRET_KEY = env('SECRET_KEY')
+
+SERVER_EMAIL = env('SERVER_EMAIL')
+DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 SITE_ID = 1
 
@@ -372,9 +377,9 @@ CKEDITOR_CONFIGS = {
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
 WAGTAIL_SITE_NAME = 'Kausal Watch'
-WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = False
+WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = True
 WAGTAIL_EMAIL_MANAGEMENT_ENABLED = False
-WAGTAIL_PASSWORD_RESET_ENABLED = False
+WAGTAIL_PASSWORD_RESET_ENABLED = True
 WAGTAILADMIN_PERMITTED_LANGUAGES = list(LANGUAGES)
 WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
 WAGTAILSEARCH_BACKENDS = {
