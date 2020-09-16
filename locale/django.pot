@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-07 20:41+0300\n"
+"POT-Creation-Date: 2020-09-16 20:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -94,7 +94,7 @@ msgstr ""
 msgid "other indicators"
 msgstr ""
 
-#: actions/export.py actions/models.py
+#: actions/export.py actions/models.py indicators/models.py
 msgid "contact persons"
 msgstr ""
 
@@ -514,12 +514,9 @@ msgstr ""
 msgid "monitoring quality points"
 msgstr ""
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr ""
-
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
 msgstr ""
 
@@ -529,6 +526,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
 msgstr ""
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
@@ -616,6 +617,7 @@ msgid "View %s live"
 msgstr ""
 
 #: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Edit"
 msgstr ""
 
@@ -1221,7 +1223,7 @@ msgstr ""
 msgid "Indicator dimensions"
 msgstr ""
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
 msgid "Edit data"
 msgstr ""
 
@@ -1483,6 +1485,7 @@ msgid "Identifier"
 msgstr ""
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Last modified"
 msgstr ""
 
@@ -1499,8 +1502,21 @@ msgid "View"
 msgstr ""
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 #, python-format
 msgid "%(time_period)s ago"
+msgstr ""
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Own indicators"
+msgstr ""
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Last data point"
+msgstr ""
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Edit this indicator"
 msgstr ""
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
