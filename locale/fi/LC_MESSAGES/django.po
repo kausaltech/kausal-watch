@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-02 14:47+0300\n"
+"POT-Creation-Date: 2020-09-16 20:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -95,7 +95,7 @@ msgstr "etenemismittarit"
 msgid "other indicators"
 msgstr "muut mittarit"
 
-#: actions/export.py actions/models.py
+#: actions/export.py actions/models.py indicators/models.py
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
@@ -143,6 +143,22 @@ msgstr "toimenpideohjelmat"
 #: actions/models.py
 msgid "Primary language must not be selected"
 msgstr "Ensisijainen kieli ei voi olla valittuna"
+
+#: actions/models.py
+msgid "host name"
+msgstr "domain-osoite"
+
+#: actions/models.py
+msgid "Hostname must be a fully qualified domain name in lower-case only"
+msgstr "Nimen pitää olla kelvollinen FQDN"
+
+#: actions/models.py
+msgid "plan domain"
+msgstr ""
+
+#: actions/models.py
+msgid "plan domains"
+msgstr ""
 
 #: actions/models.py
 msgid "official name"
@@ -289,15 +305,15 @@ msgstr "toimenpiteen tila"
 msgid "action statuses"
 msgstr "toimenpiteen tilat"
 
-#: actions/models.py
+#: actions/models.py actions/wagtail_admin.py
 msgid "not started"
 msgstr "ei käynnistynyt"
 
-#: actions/models.py
+#: actions/models.py actions/wagtail_admin.py
 msgid "in progress"
 msgstr "käynnissä"
 
-#: actions/models.py
+#: actions/models.py actions/wagtail_admin.py
 msgid "completed"
 msgstr "valmis"
 
@@ -499,12 +515,9 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr "Sisäiset tiedot"
-
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
 msgstr "Nimi"
 
@@ -515,6 +528,10 @@ msgstr "Luokat"
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Sisäiset tiedot"
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
@@ -529,8 +546,16 @@ msgid "Tasks"
 msgstr "Tehtävät"
 
 #: actions/wagtail_admin.py
+msgid "late"
+msgstr "myöhässä"
+
+#: actions/wagtail_admin.py
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
+
+#: actions/wagtail_admin.py
+msgid "Domains"
+msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Action statuses"
@@ -593,6 +618,7 @@ msgid "View %s live"
 msgstr "Näytä julkaistu %s"
 
 #: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Edit"
 msgstr "Muokkaa"
 
@@ -638,6 +664,10 @@ msgstr "suomi"
 #: aplans/settings.py
 msgid "English"
 msgstr "englanti"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "ruotsi"
 
 #: aplans/utils.py
 msgid "order"
@@ -1194,7 +1224,7 @@ msgstr "Muokkaa tätä suuretta"
 msgid "Indicator dimensions"
 msgstr "Mittarin dimensiot"
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Muokkaa dataa"
 
@@ -1456,6 +1486,7 @@ msgid "Identifier"
 msgstr "Tunniste"
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Last modified"
 msgstr "Viimeksi muokattu"
 
@@ -1472,9 +1503,22 @@ msgid "View"
 msgstr "Katsele"
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 #, python-format
 msgid "%(time_period)s ago"
 msgstr "%(time_period)s sitten"
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Own indicators"
+msgstr "Omat mittarit"
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Last data point"
+msgstr "Viimeisin datapiste"
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Edit this indicator"
+msgstr "Muokkaa tätä mittaria"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
@@ -1544,6 +1588,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Edit values"
+#~ msgstr "mittarin arvot"
 
 #~ msgid "low estimate"
 #~ msgstr "arvion alaraja"
