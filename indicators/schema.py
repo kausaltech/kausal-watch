@@ -1,9 +1,8 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from graphql.error import GraphQLError
-
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset
 from aplans.utils import public_fields
+from graphql.error import GraphQLError
 from indicators.models import (
     ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
@@ -192,12 +191,18 @@ class Query(graphene.ObjectType):
 
         qs = Indicator.objects.all()
         if obj_id:
+            try:
+                obj_id = int(obj_id)
+            except ValueError:
+                raise GraphQLError("Invalid 'id'", [info])
             qs = qs.filter(id=obj_id)
+
         if plan:
             plan_obj = get_plan_from_context(info, plan)
             if not plan_obj:
                 return None
             qs = qs.filter(levels__plan=plan_obj).distinct()
+
         if identifier:
             qs = qs.filter(identifier=identifier)
 
