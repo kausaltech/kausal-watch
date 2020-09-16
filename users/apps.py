@@ -18,5 +18,16 @@ class UsersConfig(AppConfig):
             if val[0] == wagtail_hooks.register_account_set_profile_picture:
                 break
         else:
-            return
-        account_hooks.remove(val)
+            val = None
+        if val is not None:
+            account_hooks.remove(val)
+
+        from wagtail.admin.wagtail_hooks import register_reports_menu
+        menu_item_hooks = hooks._hooks['register_admin_menu_item']
+        for idx, val in enumerate(menu_item_hooks):
+            if val[0] == register_reports_menu:
+                break
+        else:
+            val = None
+        if val is not None:
+            menu_item_hooks.remove(val)
