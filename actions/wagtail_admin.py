@@ -1,4 +1,5 @@
 import json
+from dal import autocomplete
 from django.utils.translation import get_language, gettext, gettext_lazy as _
 from django.forms.widgets import Select
 from django import forms
@@ -297,7 +298,7 @@ class ActionAdmin(AplansModelAdmin):
             AdminOnlyPanel([
                 InlinePanel(
                     'responsible_parties',
-                    panels=[AutocompletePanel('organization')]
+                    panels=[FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))]
                 )
             ], heading=_('Responsible parties')),
             ObjectList([
