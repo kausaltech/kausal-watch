@@ -66,6 +66,8 @@ INSTALLED_APPS = [
     'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
+    'dal',
+    'dal_select2',
     'helusers',
     'django.contrib.auth',
     'django.contrib.contenttypes',

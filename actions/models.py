@@ -125,6 +125,12 @@ class Plan(ModelWithImage, ClusterableModel):
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
+    def get_related_organizations(self):
+        all_related = self.related_organizations.all() | self.related_organizations.all().get_descendants()
+        if self.organization:
+            all_related |= self.organization | self.organization.get_descendants()
+        return all_related
+
     @property
     def root_page(self):
         if self.site_id is None:
