@@ -1,12 +1,13 @@
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+
+from admin_site.wagtail import AplansModelAdmin, AutocompletePanel
+from dal import autocomplete
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
-
-from admin_site.wagtail import AplansModelAdmin, AutocompletePanel
 
 from .models import Person
 
@@ -83,7 +84,10 @@ class PersonAdmin(AplansModelAdmin):
         FieldPanel('last_name'),
         FieldPanel('email'),
         FieldPanel('title'),
-        AutocompletePanel('organization', placeholder_text=_('Input organization name')),
+        FieldPanel(
+            'organization',
+            widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
+        ),
         FieldPanel('image', widget=AvatarWidget),
     ], base_form_class=PersonForm)
 
