@@ -5,19 +5,19 @@ from django.db.models import Q
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-
-from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
-)
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from people.chooser import PersonChooser
-from users.models import User
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
+
+from admin_site.wagtail import (
+    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+)
+from people.chooser import PersonChooser
+from users.models import User
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
@@ -217,15 +217,18 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('unit'),
         FieldPanel('time_resolution'),
         RichTextFieldPanel('description'),
-        FieldPanel('datasets'),
-        CondensedInlinePanel('dimensions', panels=[
-            FieldPanel('dimension')
-        ]),
     ]
 
     def get_edit_handler(self, instance, request):
+        basic_panels = list(self.basic_panels)
+        plan = request.user.get_active_admin_plan()
+        if request.user.is_general_admin_for_plan(plan):
+            basic_panels.append(CondensedInlinePanel('dimensions', panels=[
+                FieldPanel('dimension')
+            ]))
+
         return AplansTabbedInterface(children=[
-            ObjectList(self.basic_panels, heading=_('Basic information')),
+            ObjectList(basic_panels, heading=_('Basic information')),
             ObjectList([
                 CondensedInlinePanel(
                     'contact_persons',
