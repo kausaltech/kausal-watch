@@ -3,16 +3,16 @@ from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
+from django_orghierarchy.models import Organization
+from wagtail.core.models import GroupCollectionPermission
 
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
-from django_orghierarchy.models import Organization
 from indicators.models import (
     ActionIndicator, Dataset, DatasetLicense, Dimension, DimensionCategory, Indicator, IndicatorContactPerson,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
 from notifications.models import BaseTemplate, ContentBlock, NotificationTemplate
 from people.models import Person
-from wagtail.core.models import GroupCollectionPermission
 
 from .models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
@@ -98,6 +98,9 @@ def get_indicator_contact_person_perms():
     new_perms += _get_perm_objs(IndicatorGoal, ('view', 'change'))
     new_perms += _get_perm_objs(IndicatorValue, ('view', 'change'))
     new_perms += _get_perm_objs(IndicatorContactPerson, ALL_PERMS)
+
+    new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
+    new_perms += get_wagtail_contact_person_perms()
 
     return new_perms
 
