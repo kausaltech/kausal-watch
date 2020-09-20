@@ -1,24 +1,22 @@
-import aniso8601
-import pytz
 from datetime import datetime
-from plotly.graph_objs import Figure
+
+import aniso8601
+import django_filters as filters
+import pytz
+from django.conf import settings
+from django.db import transaction
 from plotly.exceptions import PlotlyError
-from rest_framework import viewsets, permissions, serializers, status
-from rest_framework.response import Response
+from plotly.graph_objs import Figure
+from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from django.db import transaction
-from django.conf import settings
-import django_filters as filters
-from sentry_sdk import push_scope, capture_exception
+from rest_framework.response import Response
+from sentry_sdk import capture_exception, push_scope
 
-from .models import (
-    Unit, Indicator, IndicatorGraph, RelatedIndicator, ActionIndicator,
-    IndicatorLevel, IndicatorValue
-)
 from actions.models import Plan
 from aplans.utils import register_view_helper
 
+from .models import ActionIndicator, Indicator, IndicatorGraph, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
@@ -228,6 +226,21 @@ class IndicatorValueSerializer(serializers.ModelSerializer):
         list_serializer_class = IndicatorValueListSerializer
 
 
+class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
+    def has_permission(self, request, view):
+        perms = self.get_required_permissions(request.method, IndicatorValue)
+        return request.user.has_perms(perms)
+
+    def has_object_permission(self, request, view, obj):
+        perms = self.get_required_object_permissions(request.method, IndicatorValue)
+        if not perms and request.method in permissions.SAFE_METHODS:
+            return True
+        user = request.user
+        if not user.has_perms(perms):
+            return False
+        return user.can_modify_indicator(obj)
+
+
 @register_view
 class IndicatorViewSet(viewsets.ModelViewSet):
     queryset = Indicator.objects.all().select_related('unit')
@@ -240,6 +253,13 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         ]
     }
     filterset_class = IndicatorFilter
+
+    def get_permissions(self):
+        if self.action == 'update_values':
+            perms = [IndicatorEditValuesPermission]
+        else:
+            perms = list(self.permission_classes)
+        return [perm() for perm in perms]
 
     @action(detail=True, methods=['get'])
     def values(self, request, pk=None):
