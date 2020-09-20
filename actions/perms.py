@@ -96,7 +96,7 @@ def get_indicator_contact_person_perms():
     new_perms += _get_perm_objs(ActionIndicator, ('view',))
     new_perms += _get_perm_objs(Indicator, ('view', 'change'))
     new_perms += _get_perm_objs(IndicatorGoal, ('view', 'change'))
-    new_perms += _get_perm_objs(IndicatorValue, ('view', 'change'))
+    new_perms += _get_perm_objs(IndicatorValue, ('view', 'change', 'add'))
     new_perms += _get_perm_objs(IndicatorContactPerson, ALL_PERMS)
 
     new_perms += [Permission.objects.get(content_type__app_label='wagtailadmin', codename='access_admin')]
