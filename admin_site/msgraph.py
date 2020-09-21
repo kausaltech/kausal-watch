@@ -26,11 +26,15 @@ def graph_get_json(resource, token):
     return graph_get(resource, token).json()
 
 
-def get_user_data(user):
+def get_user_data(user, principal_name=None):
     token = _get_token(user)
     if not token:
         return
-    data = graph_get_json('me/', token)
+    if principal_name:
+        resource = 'users/%s' % principal_name
+    else:
+        resource = 'me/'
+    data = graph_get_json(resource, token)
     return data
 
 
