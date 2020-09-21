@@ -1,4 +1,5 @@
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
+
 from .models import Client
 
 
@@ -14,6 +15,12 @@ class AzureADAuth(AzureADTenantOAuth2):
         else:
             tenant_id = client.azure_ad_tenant_id
         return self.AUTHORIZATION_URL.format(tenant_id=tenant_id)
+
+    def auth_complete_params(self, state=None):
+        ret = super().auth_complete_params(state)
+        # Request access to the graph API
+        ret['resource'] = 'https://graph.microsoft.com/'
+        return ret
 
     def get_user_id(self, details, response):
         """Use oid claim as unique id."""
