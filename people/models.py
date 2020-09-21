@@ -132,6 +132,17 @@ class Person(index.Indexed, ClusterableModel):
                 'email': _('Person with this email already exists')
             })
 
+    def set_avatar(self, photo):
+        update_fields = ['avatar_updated_at']
+        try:
+            if not self.image or self.image.read() != photo:
+                self.image.save('avatar.jpg', io.BytesIO(photo))
+                update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
+        except ValueError:
+            pass
+        self.avatar_updated_at = timezone.now()
+        self.save(update_fields=update_fields)
+
     def download_avatar(self):
         url = None
         if self.email.endswith('@hel.fi'):
@@ -163,15 +174,7 @@ class Person(index.Indexed, ClusterableModel):
             capture_exception(err)
             return
 
-        update_fields = ['avatar_updated_at']
-        try:
-            if not self.image or self.image.read() != resp.content:
-                self.image.save('avatar.jpg', io.BytesIO(resp.content))
-                update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
-        except ValueError:
-            pass
-        self.avatar_updated_at = timezone.now()
-        self.save(update_fields=update_fields)
+        self.set_avatar(resp.content)
 
     def should_update_avatar(self):
         if not self.avatar_updated_at:

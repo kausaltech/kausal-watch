@@ -1,6 +1,11 @@
+import io
 import logging
 
+from sentry_sdk import capture_exception
 from social_core.backends.oauth import OAuthAuth
+from wagtail.users.models import UserProfile
+
+from admin_site.msgraph import get_user_photo
 
 from .models import User
 
@@ -93,3 +98,34 @@ def create_or_update_user(backend, details, user, *args, **kwargs):
     return {
         'user': user,
     }
+
+
+def update_avatar(backend, details, user, *args, **kwargs):
+    if backend.name != 'azure_ad':
+        return
+    if user is None:
+        return
+
+    logger.info('Updating user photo (uuid=%s, email=%s)' % (user.uuid, details.get('email')))
+
+    try:
+        photo = get_user_photo(user)
+    except Exception as e:
+        logger.error('Failed to get user photo: %s' % str(e))
+        capture_exception(e)
+
+    person = user.get_corresponding_person()
+    if person:
+        try:
+            person.set_avatar(photo.content)
+        except Exception as e:
+            logger.error('Failed to set avatar for person %s: %s' % (str(person), str(e)))
+            capture_exception(e)
+
+    profile = UserProfile.get_for_user(user)
+    try:
+        if not profile.avatar or profile.avatar.read() != photo.content:
+            profile.avatar.save('avatar.jpg', io.BytesIO(photo.content))
+    except Exception as e:
+        logger.error('Failed to set user profile photo: %s' % str(e))
+        capture_exception(e)
