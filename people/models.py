@@ -2,6 +2,7 @@ import os
 import re
 import io
 import hashlib
+import uuid
 import requests
 import logging
 
@@ -238,6 +239,20 @@ class Person(index.Indexed, ClusterableModel):
 
     def get_notification_context(self):
         return dict(first_name=self.first_name, last_name=self.last_name)
+
+    def create_corresponding_user(self):
+        user = User.objects.filter(email__iexact=self.email).first()
+        if not user:
+            user = User(
+                email=self.email.lower(),
+                uuid=uuid.uuid4(),
+            )
+            user.set_password(str(uuid.uuid4()))
+
+        user.first_name = self.first_name
+        user.last_name = self.last_name
+        user.save()
+        return user
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
