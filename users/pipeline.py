@@ -114,6 +114,10 @@ def update_avatar(backend, details, user, *args, **kwargs):
         logger.error('Failed to get user photo: %s' % str(e))
         capture_exception(e)
 
+    if not photo:
+        logger.info('No photo found (uuid=%s, email=%s)' % (user.uuid, details.get('email')))
+        return
+
     person = user.get_corresponding_person()
     if person:
         try:

@@ -17,13 +17,13 @@ def _get_token(user):
 
 def graph_get(resource, token):
     headers = dict(authorization='Bearer %s' % token)
-    res = requests.get('https://graph.microsoft.com/v1.0/%s' % resource, headers=headers, timeout=5)
-    res.raise_for_status()
-    return res
+    return requests.get('https://graph.microsoft.com/v1.0/%s' % resource, headers=headers, timeout=5)
 
 
 def graph_get_json(resource, token):
-    return graph_get(resource, token).json()
+    res = graph_get(resource, token)
+    res.raise_for_status()
+    return res.json()
 
 
 def get_user_data(user, principal_name=None):
@@ -42,5 +42,7 @@ def get_user_photo(user):
     token = _get_token(user)
     if not token:
         return
-    data = graph_get('me/photo/$value', token)
-    return data
+    out = graph_get('me/photo/$value', token)
+    if out.status_code == 404:
+        return
+    return out
