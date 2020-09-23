@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.cache import never_cache
-from import_export.admin import ExportMixin
+from import_export.admin import ExportMixin, ImportExportMixin, ImportMixin
 from import_export.resources import ModelResource
 from reversion.admin import VersionAdmin
 
@@ -92,8 +92,17 @@ class AplansExportMixin(ExportMixin):
         return out
 
 
+class AplansImportExportMixin(ImportMixin, AplansExportMixin):
+    change_list_template = ImportExportMixin.change_list_template
+
+    def get_resource_kwargs(self, request, *args, **kwargs):
+        out = AplansExportMixin.get_resource_kwargs(self, request, *args, **kwargs)
+        out['request'] = request
+        return out
+
+
 class AplansResource(ModelResource):
-    def __init__(self, request):
+    def __init__(self, request=None):
         self.request = request
         super().__init__()
 

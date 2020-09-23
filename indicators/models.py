@@ -1,3 +1,5 @@
+import datetime
+
 from django.apps import apps
 from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -399,9 +401,12 @@ class IndicatorValue(ClusterableModel):
 
     def __str__(self):
         indicator = self.indicator
-        date = self.date.isoformat()
+        if isinstance(self.date, datetime.date):
+            date_str = self.date.isoformat()
+        else:
+            date_str = self.date
 
-        return f"{indicator} {date} {self.value}"
+        return f"{indicator} {date_str} {self.value}"
 
 
 class IndicatorGoal(models.Model):
