@@ -378,6 +378,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('actions_locked'),
         FieldPanel('allow_images_for_actions'),
         FieldPanel('site_url'),
+        FieldPanel('accessibility_statement_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
         AutocompletePanel('general_admins'),

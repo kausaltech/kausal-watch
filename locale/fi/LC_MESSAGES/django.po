@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-16 20:35+0300\n"
+"POT-Creation-Date: 2020-09-23 13:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -130,6 +130,10 @@ msgstr "pääkäyttäjät"
 #: actions/models.py
 msgid "Users that can modify everything related to the action plan"
 msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
+
+#: actions/models.py
+msgid "URL to accessibility statement"
+msgstr "Linkki saavutettavuusselosteeseen"
 
 #: actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
@@ -1449,10 +1453,6 @@ msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 msgid "Organization"
 msgstr "Organisaatio"
 
-#: people/wagtail_admin.py
-msgid "Input organization name"
-msgstr "Syötä organisaation nimi"
-
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
 msgstr "Valitse toimenpideohjelma"
@@ -1588,6 +1588,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Input organization name"
+#~ msgstr "Syötä organisaation nimi"
 
 #~ msgid "Edit values"
 #~ msgstr "mittarin arvot"
