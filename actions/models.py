@@ -13,15 +13,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-
-from aplans.model_images import ModelWithImage
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 from django_orghierarchy.models import Organization
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
+
+from aplans.model_images import ModelWithImage
+from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -92,6 +92,11 @@ class Plan(ModelWithImage, ClusterableModel):
         models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
         default=list, null=True, blank=True
     )
+    accessibility_statement_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name=_('URL to accessibility statement'),
+    )
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
@@ -104,7 +109,7 @@ class Plan(ModelWithImage, ClusterableModel):
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
         'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
-        'primary_language', 'other_languages',
+        'primary_language', 'other_languages', 'accessibility_statement_url'
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()

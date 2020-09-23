@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-07 20:34+0300\n"
+"POT-Creation-Date: 2020-09-23 13:12+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Juha Yrjölä <juha.yrjola@kausal.tech>, 2020\n"
 "Language-Team: Swedish (https://www.transifex.com/kausal-tech/teams/113123/sv/)\n"
@@ -98,7 +98,7 @@ msgstr "framstegsindikatorer"
 msgid "other indicators"
 msgstr "andra indikatorer"
 
-#: actions/export.py actions/models.py
+#: actions/export.py actions/models.py indicators/models.py
 msgid "contact persons"
 msgstr "kontaktpersoner"
 
@@ -133,6 +133,10 @@ msgstr "allmänna administratörer"
 #: actions/models.py
 msgid "Users that can modify everything related to the action plan"
 msgstr "Användare som kan ändra allt relaterat till handlingsplanen"
+
+#: actions/models.py
+msgid "URL to accessibility statement"
+msgstr "URL till illgänglighetsutlåtande"
 
 #: actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
@@ -518,12 +522,9 @@ msgstr "övervakningskvalitetspunkt"
 msgid "monitoring quality points"
 msgstr "övervakning av kvalitetspunkter"
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr "Intern information"
-
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
 msgstr "namn"
 
@@ -534,6 +535,10 @@ msgstr "Kategorier"
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
 msgstr "Grundläggande information"
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Intern information"
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
@@ -620,6 +625,7 @@ msgid "View %s live"
 msgstr "Visa %s live"
 
 #: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Edit"
 msgstr "Redigera"
 
@@ -1225,7 +1231,7 @@ msgstr "Redigera denna kvantitet"
 msgid "Indicator dimensions"
 msgstr "Indikator dimensioner"
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Redigera data"
 
@@ -1450,10 +1456,6 @@ msgstr "Personen med det här e-postmeddelandet finns redan"
 msgid "Organization"
 msgstr "Organisation"
 
-#: people/wagtail_admin.py
-msgid "Input organization name"
-msgstr "Ange organisationsnamn"
-
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
 msgstr "Välj handlingsplan"
@@ -1487,6 +1489,7 @@ msgid "Identifier"
 msgstr "Identifierare"
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 msgid "Last modified"
 msgstr "Senast ändrad"
 
@@ -1503,9 +1506,28 @@ msgid "View"
 msgstr "Se"
 
 #: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
 #, python-format
 msgid "%(time_period)s ago"
 msgstr "%(time_period)s sedan"
+
+#: templates/aplans_admin/own_indicators_panel.html
+#, fuzzy
+#| msgid "indicators"
+msgid "Own indicators"
+msgstr "indikatorer"
+
+#: templates/aplans_admin/own_indicators_panel.html
+#, fuzzy
+#| msgid "Has data"
+msgid "Last data point"
+msgstr "Har data"
+
+#: templates/aplans_admin/own_indicators_panel.html
+#, fuzzy
+#| msgid "Edit this action"
+msgid "Edit this indicator"
+msgstr "Redigera den här åtgärden"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
@@ -1575,3 +1597,6 @@ msgstr "admin för organisation"
 #: users/models.py
 msgid "admins for organization"
 msgstr "administratörer för organisation"
+
+#~ msgid "Input organization name"
+#~ msgstr "Ange organisationsnamn"
