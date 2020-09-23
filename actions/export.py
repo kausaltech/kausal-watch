@@ -1,5 +1,4 @@
 from django.utils.translation import ugettext_lazy as _
-from import_export import resources
 from import_export.fields import Field
 
 from admin_site.admin import AplansResource

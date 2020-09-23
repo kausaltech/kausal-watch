@@ -9,9 +9,9 @@ from django.utils.translation import gettext_lazy as _
 from ckeditor.widgets import CKEditorWidget
 from admin_ordering.admin import OrderableAdmin
 
-from admin_site.admin import AplansModelAdmin
+from admin_site.admin import AplansImportExportMixin, AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
-from actions.models import Category
+from .resources import IndicatorResource
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
     IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense
@@ -196,7 +196,7 @@ class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
 
 
 @admin.register(Indicator)
-class IndicatorAdmin(AplansModelAdmin):
+class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
     autocomplete_fields = ('unit', 'datasets', 'quantity')
     search_fields = ('name',)
     list_display = ('name', 'unit', 'quantity', 'has_data',)
@@ -207,6 +207,9 @@ class IndicatorAdmin(AplansModelAdmin):
         IndicatorLevelAdmin, IndicatorContactPersonAdmin, IndicatorGoalAdmin,
         IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin
     ]
+
+    # For import/export
+    resource_class = IndicatorResource
 
     def get_list_display(self, request):
         plan = request.user.get_active_admin_plan()
