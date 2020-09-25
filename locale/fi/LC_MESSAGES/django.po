@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-23 13:11+0300\n"
+"POT-Creation-Date: 2020-09-25 14:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1164,6 +1164,14 @@ msgstr "mittarin yhteyshenkilö"
 msgid "indicator contact persons"
 msgstr "mittarin yhteyshenkilöt"
 
+#: indicators/resources.py
+msgid "Creating new indicators is not allowed"
+msgstr "Uusien mittareiden luominen ei ole sallittua"
+
+#: indicators/resources.py
+msgid "Permission denied"
+msgstr "Ei käyttövaltuuksia"
+
 #: indicators/templates/indicators/edit_values.html
 msgid "Home"
 msgstr "Etusivu"
@@ -1442,6 +1450,14 @@ msgid "Set if the person has an user account"
 msgstr "Aseta jos henkilöllä on käyttäjätunnus palveluun"
 
 #: people/models.py
+msgid "participated in training"
+msgstr "osallistunut koulutukseen"
+
+#: people/models.py
+msgid "Set to keep track who have attended training sessions"
+msgstr "Aseta pitääksesi kirjaa ketkä ovat osallistuneet koulutuksiin"
+
+#: people/models.py
 msgid "people"
 msgstr "henkilöt"
 
@@ -1452,6 +1468,10 @@ msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 #: people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr "Organisaatio"
+
+#: people/wagtail_admin.py
+msgid "has logged in"
+msgstr "on kirjautunut sisään"
 
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
