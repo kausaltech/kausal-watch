@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-23 13:12+0300\n"
+"POT-Creation-Date: 2020-09-25 14:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1163,6 +1163,14 @@ msgstr ""
 msgid "indicator contact persons"
 msgstr ""
 
+#: indicators/resources.py
+msgid "Creating new indicators is not allowed"
+msgstr ""
+
+#: indicators/resources.py
+msgid "Permission denied"
+msgstr ""
+
 #: indicators/templates/indicators/edit_values.html
 msgid "Home"
 msgstr ""
@@ -1441,6 +1449,14 @@ msgid "Set if the person has an user account"
 msgstr ""
 
 #: people/models.py
+msgid "participated in training"
+msgstr ""
+
+#: people/models.py
+msgid "Set to keep track who have attended training sessions"
+msgstr ""
+
+#: people/models.py
 msgid "people"
 msgstr ""
 
@@ -1450,6 +1466,10 @@ msgstr ""
 
 #: people/templates/people/chooser_results.html
 msgid "Organization"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "has logged in"
 msgstr ""
 
 #: templates/aplans_admin/index.html
