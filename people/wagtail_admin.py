@@ -1,13 +1,14 @@
+from dal import autocomplete
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-
-from admin_site.wagtail import AplansModelAdmin, AutocompletePanel
-from dal import autocomplete
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
+
+from admin_site.wagtail import AplansModelAdmin
+from users.models import User
 
 from .models import Person
 
@@ -77,9 +78,25 @@ class PersonAdmin(AplansModelAdmin):
                 return obj.last_name
         last_name.short_description = _('last name')
 
-        return (avatar, first_name, last_name, 'title', 'organization')
+        fields = [avatar, first_name, last_name, 'title', 'organization']
 
-    edit_handler = PersonEditHandler([
+        def has_logged_in(obj):
+            user = User.objects.filter(email__iexact=obj.email).first()
+            if not user or not user.last_login:
+                return False
+            return True
+        has_logged_in.short_description = _('has logged in')
+        has_logged_in.boolean = True
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            fields.append(has_logged_in)
+            fields.append('participated_in_training')
+
+        return fields
+
+    basic_panels = [
         FieldPanel('first_name'),
         FieldPanel('last_name'),
         FieldPanel('email'),
@@ -89,7 +106,16 @@ class PersonAdmin(AplansModelAdmin):
             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
         ),
         FieldPanel('image', widget=AvatarWidget),
-    ], base_form_class=PersonForm)
+    ]
+
+    def get_edit_handler(self, instance, request):
+        basic_panels = list(self.basic_panels)
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            basic_panels.insert(3, FieldPanel('participated_in_training'))
+
+        return PersonEditHandler(basic_panels, base_form_class=PersonForm)
 
 
 modeladmin_register(PersonAdmin)

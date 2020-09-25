@@ -91,6 +91,11 @@ class Person(index.Indexed, ClusterableModel):
         help_text=_('Set if the person has an user account')
     )
 
+    participated_in_training = models.BooleanField(
+        null=True, default=False, verbose_name=_('participated in training'),
+        help_text=_('Set to keep track who have attended training sessions')
+    )
+
     image = models.ImageField(
         blank=True, upload_to=image_upload_path, verbose_name=_('image'),
         height_field='image_height', width_field='image_width'
