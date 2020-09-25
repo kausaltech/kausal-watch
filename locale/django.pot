@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-25 14:04+0300\n"
+"POT-Creation-Date: 2020-09-25 14:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -868,11 +868,11 @@ msgstr ""
 msgid "Disconnected indicators"
 msgstr ""
 
-#: indicators/admin.py people/admin.py
+#: indicators/admin.py
 msgid "No"
 msgstr ""
 
-#: indicators/admin.py people/admin.py
+#: indicators/admin.py
 msgid "Yes"
 msgstr ""
 
@@ -1388,6 +1388,18 @@ msgid "Is contact person"
 msgstr ""
 
 #: people/admin.py
+msgid "For an action"
+msgstr ""
+
+#: people/admin.py
+msgid "For an indicator"
+msgstr ""
+
+#: people/admin.py
+msgid "Not a contact person"
+msgstr ""
+
+#: people/admin.py people/wagtail_admin.py
 msgid "contact for actions"
 msgstr ""
 
@@ -1470,6 +1482,10 @@ msgstr ""
 
 #: people/wagtail_admin.py
 msgid "has logged in"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "contact for indicators"
 msgstr ""
 
 #: templates/aplans_admin/index.html
