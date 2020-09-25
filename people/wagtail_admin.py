@@ -10,7 +10,15 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from admin_site.wagtail import AplansModelAdmin
 from users.models import User
 
+from .admin import IsContactPersonFilter
 from .models import Person
+
+
+def smart_truncate(content, length=100, suffix='...'):
+    if len(content) <= length:
+        return content
+    else:
+        return ' '.join(content[:length + 1].split(' ')[0:-1]) + suffix
 
 
 class AvatarWidget(AdminFileWidget):
@@ -37,6 +45,7 @@ class PersonAdmin(AplansModelAdmin):
     menu_order = 10
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title')
+    list_filter = (IsContactPersonFilter,)
 
     def get_queryset(self, request):
         plan = request.user.get_active_admin_plan()
@@ -93,6 +102,20 @@ class PersonAdmin(AplansModelAdmin):
         if user.is_general_admin_for_plan(plan):
             fields.append(has_logged_in)
             fields.append('participated_in_training')
+
+        def contact_for_actions(obj):
+            return '; '.join([smart_truncate(str(act), 40) for act in obj.plan_contact_for_actions])
+        contact_for_actions.short_description = _('contact for actions')
+
+        def contact_for_indicators(obj):
+            return '; '.join([smart_truncate(str(ind), 40) for ind in obj.plan_contact_for_indicators])
+        contact_for_indicators.short_description = _('contact for indicators')
+
+        contact_person_filter = request.GET.get('contact_person', '')
+        if contact_person_filter == 'action':
+            fields.append(contact_for_actions)
+        elif contact_person_filter == 'indicator':
+            fields.append(contact_for_indicators)
 
         return fields
 

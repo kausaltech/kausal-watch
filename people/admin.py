@@ -37,8 +37,9 @@ class IsContactPersonFilter(admin.SimpleListFilter):
 
     def lookups(self, request, model_admin):
         return (
-            ('yes', _('Yes')),
-            ('no', _('No'))
+            ('action', _('For an action')),
+            ('indicator', _('For an indicator')),
+            ('none', _('Not a contact person'))
         )
 
     def queryset(self, request, queryset):
@@ -46,12 +47,18 @@ class IsContactPersonFilter(admin.SimpleListFilter):
         queryset = queryset.prefetch_related(
             Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
         )
+        queryset = queryset.prefetch_related(
+            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators')
+        )
         if self.value() is None:
             return queryset
-        if self.value() == 'yes':
+        if self.value() == 'action':
             queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
+        elif self.value() == 'indicator':
+            queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
         else:
-            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())
+            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
+                .exclude(contact_for_indicators__in=plan.indicators.all())
         return queryset.distinct()
 
 
