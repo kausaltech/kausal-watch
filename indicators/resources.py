@@ -97,7 +97,18 @@ class IndicatorResource(AplansResource):
             user = self.request.user
             if not user.can_modify_indicator(instance):
                 raise Exception(_("Permission denied"))
+
+            if instance.latest_value:
+                instance.latest_value = None
+                instance.save(update_fields=['latest_value'])
+
         self._set_yearly_values(instance)
+
+    def after_save_instance(self, instance, using_transactions, dry_run):
+        if dry_run:
+            return
+
+        instance.set_latest_value()
 
     def import_data_inner(self, dataset, *args, **kwargs):
         years = []
