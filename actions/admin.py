@@ -487,7 +487,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
     list_display = ('title', 'date', 'action')
     list_display_links = ('title',)
     list_filter = (ActionStatusActionFilter,)
-    search_fields = ('action', 'title')
+    search_fields = ('action__name', 'title')
     autocomplete_fields = ('action', 'author')
 
     def get_queryset(self, request):
