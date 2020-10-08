@@ -131,7 +131,6 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -216,6 +215,7 @@ LOGOUT_REDIRECT_URL = '/admin/'
 
 CSRF_COOKIE_NAME = '%s-csrftoken' % env.str('COOKIE_PREFIX')
 SESSION_COOKIE_NAME = '%s-sessionid' % env.str('COOKIE_PREFIX')
+LANGUAGE_COOKIE_NAME = '%s-language' % env.str('COOKIE_PREFIX')
 
 TUNNISTAMO_BASE_URL = env.str('OIDC_ISSUER_URL')
 SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
@@ -313,7 +313,7 @@ PARLER_LANGUAGES = {
         {'code': 'sv'},
     ),
     'default': {
-        'fallback': 'en',             # defaults to PARLER_DEFAULT_LANGUAGE_CODE
+        'fallbacks': ['en', 'fi', 'sv'],
         'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
     }
 }
