@@ -1,5 +1,5 @@
 from dal import autocomplete
-
+from django.db.models import Q
 from django_orghierarchy.models import Organization
 
 
@@ -14,6 +14,6 @@ class OrganizationAutocomplete(autocomplete.Select2QuerySetView):
         qs = plan.get_related_organizations().filter(dissolution_date=None)
 
         if self.q:
-            qs = qs.filter(distinct_name__icontains=self.q)
+            qs = qs.filter(Q(distinct_name__icontains=self.q) | Q(name__icontains=self.q))
 
         return qs
