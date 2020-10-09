@@ -40,7 +40,6 @@ class Migration(migrations.Migration):
                 'verbose_name': 'notification template',
                 'verbose_name_plural': 'notification templates',
             },
-            bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
         migrations.CreateModel(
             name='SentNotification',
@@ -70,6 +69,5 @@ class Migration(migrations.Migration):
                 'default_permissions': (),
                 'unique_together': {('language_code', 'master')},
             },
-            bases=(parler.models.TranslatedFieldsModelMixin, models.Model),
         ),
     ]

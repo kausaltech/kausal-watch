@@ -253,6 +253,10 @@ class NotificationEngine:
             self.make_action_notifications(action)
 
         base_template = self.plan.notification_base_template
+        from_address = base_template.from_address or 'noreply@ilmastovahti.fi'
+        from_name = base_template.from_name or 'Helsingin ilmastovahti'
+        email_from = '%s <%s>' % (from_name, from_address)
+
         templates_by_type = {t.type: t for t in base_template.templates.all()}
         notification_count = 0
 
@@ -275,7 +279,7 @@ class NotificationEngine:
                     'person': person.get_notification_context(),
                     'content_blocks': content_blocks,
                 }
-                rendered = template.render(context)
+                rendered = template.render(context, language_code=self.plan.primary_language)
                 if self.force_to:
                     to_email = self.force_to
                 else:
@@ -283,7 +287,7 @@ class NotificationEngine:
                 msg = EmailMessage(
                     rendered['subject'],
                     rendered['html_body'],
-                    'Helsingin ilmastovahti <noreply@ilmastovahti.fi>',
+                    email_from,
                     [to_email]
                 )
                 msg.content_subtype = "html"  # Main content is now text/html
@@ -331,11 +335,12 @@ class Command(BaseCommand):
         if not options['plan']:
             raise CommandError('No plan supplied')
 
-        activate(settings.LANGUAGES[0][0])
-
         plan = Plan.objects.get(identifier=options['plan'])
+        activate(plan.primary_language)
+
         ignore_actions = []
-        for act_id in options['ignore_actions'].split(','):
+        ignore_opt = options['ignore_actions'].split(',') if options['ignore_actions'] else []
+        for act_id in ignore_opt:
             act = plan.actions.filter(identifier=act_id).first()
             if act is None:
                 raise CommandError('Action %s does not exist' % act_id)
