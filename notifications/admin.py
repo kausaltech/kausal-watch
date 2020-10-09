@@ -1,10 +1,10 @@
 from ckeditor.widgets import CKEditorWidget
+from django import forms
 from django.contrib import admin
-from parler.admin import TranslatableAdmin
-from parler.forms import TranslatableModelForm
 
 from admin_site.admin import AplansModelAdmin
-from .models import BaseTemplate, NotificationTemplate, ContentBlock
+
+from .models import BaseTemplate, ContentBlock, NotificationTemplate
 
 
 @admin.register(BaseTemplate)
@@ -23,7 +23,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class NotificationTemplateForm(TranslatableModelForm):
+class NotificationTemplateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Do not allow the admin to choose any of the template types that already
@@ -37,7 +37,7 @@ class NotificationTemplateForm(TranslatableModelForm):
 
 
 @admin.register(NotificationTemplate)
-class NotificationTemplateAdmin(AplansModelAdmin, TranslatableAdmin):
+class NotificationTemplateAdmin(AplansModelAdmin):
     form = NotificationTemplateForm
 
     def get_queryset(self, request):
@@ -52,7 +52,7 @@ class NotificationTemplateAdmin(AplansModelAdmin, TranslatableAdmin):
 
 
 @admin.register(ContentBlock)
-class ContentBlockAdmin(AplansModelAdmin, TranslatableAdmin):
+class ContentBlockAdmin(AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
