@@ -44,3 +44,5 @@ rustface
 wagtail-react-streamfield
 django-npm
 django-autocomplete-light
+coreapi
+pyyaml
