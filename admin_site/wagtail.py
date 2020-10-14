@@ -113,6 +113,9 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         form_valid_return = super().form_valid(form, *args, **kwargs)
 
+        if hasattr(form.instance, 'handle_admin_save'):
+            form.instance.handle_admin_save()
+
         with create_revision():
             set_comment(self.get_success_message(self.instance))
             add_to_revision(self.instance)
@@ -132,19 +135,11 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
 class AplansCreateView(ContinueEditingMixin, FormClassMixin, CreateView):
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)
-        return ret
 
-        """
-        # Call form.save() explicitly to get access to the instance
-        instance = form.save()
-
-        with create_revision():
-            set_comment(self.get_success_message(instance))
-            add_to_revision(instance)
-            set_user(self.request.user)
+        if hasattr(form.instance, 'handle_admin_save'):
+            form.instance.handle_admin_save()
 
         return ret
-        """
 
 
 class AplansModelAdmin(ModelAdmin):

@@ -463,7 +463,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
 
         return by_id['late']
 
-    def recalculate_status(self):
+    def recalculate_status(self, force_update=False):
         if self.merged_with is not None:
             return
 
@@ -484,7 +484,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         else:
             new_completion = None
 
-        if self.completion != new_completion:
+        if self.completion != new_completion or force_update:
             update_fields.append('completion')
             self.completion = new_completion
             self.updated_at = timezone.now()
@@ -498,6 +498,9 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         if not update_fields:
             return
         self.save(update_fields=update_fields)
+
+    def handle_admin_save(self):
+        self.recalculate_status(force_update=True)
 
     def set_categories(self, type, categories):
         if isinstance(type, str):
