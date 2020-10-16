@@ -2,23 +2,26 @@ import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
 import pytz
+from django.db.models import Count, Q
+from django_orghierarchy.models import Organization, OrganizationClass
+from graphql.error import GraphQLError
+from graphql.type import (
+    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+)
+from wagtail.core.rich_text import RichText
+
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
-from django_orghierarchy.models import Organization, OrganizationClass
-from graphql.error import GraphQLError
-from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
-)
 from indicators import schema as indicators_schema
 from pages import schema as pages_schema
 from pages.models import AplansPage
 from people.models import Person
-from wagtail.core.rich_text import RichText
 
+from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
@@ -306,9 +309,25 @@ class OrganizationClassNode(DjangoNode):
 
 class OrganizationNode(DjangoNode):
     ancestors = graphene.List('aplans.schema.OrganizationNode')
+    action_count = graphene.Int(description='Number of actions this organization is responsible for')
+    contact_person_count = graphene.Int(
+        description='Number of contact persons that are associated with this organization'
+    )
 
     def resolve_ancestors(self, info):
         return self.get_ancestors()
+
+    @gql_optimizer.resolver_hints(
+        only=tuple(),
+    )
+    def resolve_action_count(self, info):
+        return getattr(self, 'action_count', None)
+
+    @gql_optimizer.resolver_hints(
+        only=tuple(),
+    )
+    def resolve_contact_person_count(self, info):
+        return getattr(self, 'contact_person_count', None)
 
     class Meta:
         model = Organization
@@ -368,7 +387,10 @@ class Query(indicators_schema.Query):
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
     )
     plan_organizations = graphene.List(
-        OrganizationNode, plan=graphene.ID(), with_ancestors=graphene.Boolean(default_value=False)
+        OrganizationNode, plan=graphene.ID(),
+        with_ancestors=graphene.Boolean(default_value=False),
+        for_responsible_parties=graphene.Boolean(default_value=True),
+        for_contact_persons=graphene.Boolean(default_value=False),
     )
 
     def resolve_plan(self, info, id=None, domain=None, **kwargs):
@@ -422,14 +444,23 @@ class Query(indicators_schema.Query):
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_plan_organizations(self, info, plan, with_ancestors, **kwargs):
+    def resolve_plan_organizations(
+        self, info, plan, with_ancestors, for_responsible_parties, for_contact_persons,
+        **kwargs
+    ):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
         qs = Organization.objects.all()
         if plan is not None:
-            qs = qs.filter(responsible_actions__action__plan=plan_obj).distinct()
+            query = Q()
+            if for_responsible_parties:
+                query |= Q(responsible_actions__action__plan=plan_obj)
+            if for_contact_persons:
+                query |= Q(people__contact_for_actions__plan=plan_obj)
+            qs = qs.filter(query)
+        qs = qs.distinct()
 
         if with_ancestors:
             # Retrieving ancestors for a queryset doesn't seem to work,
@@ -447,6 +478,24 @@ class Query(indicators_schema.Query):
                     break
                 qs = Organization.objects.filter(id__in=parent_ids)
             qs = Organization.objects.filter(id__in=all_ids)
+
+        selections = get_fields(info)
+        if 'actionCount' in selections:
+            if plan_obj is not None:
+                annotate_filter = Q(responsible_actions__action__plan=plan_obj)
+            else:
+                annotate_filter = None
+            qs = qs.annotate(action_count=Count(
+                'responsible_actions__action', distinct=True, filter=annotate_filter
+            ))
+        if 'contactPersonCount' in selections:
+            if plan_obj is not None:
+                annotate_filter = Q(people__contact_for_actions__plan=plan_obj)
+            else:
+                annotate_filter = None
+            qs = qs.annotate(contact_person_count=Count(
+                'people', distinct=True, filter=annotate_filter
+            ))
 
         return gql_optimizer.query(qs, info)
 
