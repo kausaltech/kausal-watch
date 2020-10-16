@@ -210,6 +210,8 @@ class ActionAdmin(AplansModelAdmin):
 
     admin_panels = [
         FieldPanel('status'),
+        FieldPanel('manual_status'),
+        FieldPanel('manual_status_reason'),
         FieldPanel('internal_priority'),
         FieldPanel('internal_priority_comment'),
         FieldPanel('impact'),

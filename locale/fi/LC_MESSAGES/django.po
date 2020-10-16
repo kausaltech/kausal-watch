@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-25 14:28+0300\n"
+"POT-Creation-Date: 2020-10-16 14:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -158,11 +158,11 @@ msgstr "Nimen pitää olla kelvollinen FQDN"
 
 #: actions/models.py
 msgid "plan domain"
-msgstr ""
+msgstr "toimenpideohjelman verkkotunnus"
 
 #: actions/models.py
 msgid "plan domains"
-msgstr ""
+msgstr "toimenpideohjelman verkkotunnukset"
 
 #: actions/models.py
 msgid "official name"
@@ -195,6 +195,22 @@ msgstr "sisäinen prioriteetti"
 #: actions/models.py
 msgid "internal priority comment"
 msgstr "sisäisen prioriteetin kommentti"
+
+#: actions/models.py
+msgid "override status manually"
+msgstr "määritä toimenpiteen tila käsin"
+
+#: actions/models.py
+msgid "Set if you want to prevent the action status from being determined automatically"
+msgstr "Aseta jos haluat estää toimenpiteen tilan automaattisen päivityksen"
+
+#: actions/models.py
+msgid "reason for status override"
+msgstr "syy käsin määritetylle toimenpiteen tilalle"
+
+#: actions/models.py
+msgid "Describe the reason why this action has the overridden status"
+msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
 
 #: actions/models.py
 msgid "merged with action"
@@ -559,7 +575,7 @@ msgstr "Toimenpideohjelmat"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
-msgstr ""
+msgstr "Verkkotunnukset"
 
 #: actions/wagtail_admin.py
 msgid "Action statuses"
@@ -1273,6 +1289,14 @@ msgid "Action doesn't have enough in-progress tasks"
 msgstr "Toimenpiteellä ei ole tarpeeksi käynnissä olevia tehtäviä"
 
 #: notifications/models.py
+msgid "Email From name"
+msgstr "Sähköpostin lähettäjän nimi"
+
+#: notifications/models.py
+msgid "Email From address"
+msgstr "Sähköpostin lähettäjän sähköpostiosoite"
+
+#: notifications/models.py
 msgid "HTML body"
 msgstr "HTML-sisältö"
 
@@ -1305,16 +1329,16 @@ msgid "notification templates"
 msgstr "herätteiden mallinteet"
 
 #: notifications/models.py
+msgid "HTML content for the block"
+msgstr "Lohkon HTML-sisältö"
+
+#: notifications/models.py
 msgid "template"
 msgstr "mallinne"
 
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
 msgstr "Älä aseta jos sisältölohko on käytössä useammassa mallinteessa"
-
-#: notifications/models.py
-msgid "HTML content for the block"
-msgstr "Lohkon HTML-sisältö"
 
 #: notifications/models.py
 msgid "content block"
