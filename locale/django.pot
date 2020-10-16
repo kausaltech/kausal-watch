@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-09-25 14:28+0300\n"
+"POT-Creation-Date: 2020-10-16 14:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -193,6 +193,22 @@ msgstr ""
 
 #: actions/models.py
 msgid "internal priority comment"
+msgstr ""
+
+#: actions/models.py
+msgid "override status manually"
+msgstr ""
+
+#: actions/models.py
+msgid "Set if you want to prevent the action status from being determined automatically"
+msgstr ""
+
+#: actions/models.py
+msgid "reason for status override"
+msgstr ""
+
+#: actions/models.py
+msgid "Describe the reason why this action has the overridden status"
 msgstr ""
 
 #: actions/models.py
@@ -1272,6 +1288,14 @@ msgid "Action doesn't have enough in-progress tasks"
 msgstr ""
 
 #: notifications/models.py
+msgid "Email From name"
+msgstr ""
+
+#: notifications/models.py
+msgid "Email From address"
+msgstr ""
+
+#: notifications/models.py
 msgid "HTML body"
 msgstr ""
 
@@ -1304,15 +1328,15 @@ msgid "notification templates"
 msgstr ""
 
 #: notifications/models.py
+msgid "HTML content for the block"
+msgstr ""
+
+#: notifications/models.py
 msgid "template"
 msgstr ""
 
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
-msgstr ""
-
-#: notifications/models.py
-msgid "HTML content for the block"
 msgstr ""
 
 #: notifications/models.py

@@ -284,6 +284,15 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('status'),
     )
+    manual_status = models.BooleanField(
+        default=False, verbose_name=_('override status manually'),
+        help_text=_('Set if you want to prevent the action status from being determined automatically')
+    )
+    manual_status_reason = models.TextField(
+        blank=True, null=True, verbose_name=_('reason for status override'),
+        help_text=_('Describe the reason why this action has the overridden status')
+    )
+
     merged_with = models.ForeignKey(
         'Action', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('merged with action'), help_text=_('Set if this action is merged with another action'),
@@ -464,7 +473,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         return by_id['late']
 
     def recalculate_status(self, force_update=False):
-        if self.merged_with is not None:
+        if self.merged_with is not None or self.manual_status:
             return
 
         if self.status is not None and self.status.is_completed:
