@@ -208,6 +208,14 @@ class Indicator(ClusterableModel):
         Unit, related_name='indicators', on_delete=models.PROTECT,
         verbose_name=_('unit')
     )
+    min_value = models.FloatField(
+        null=True, verbose_name=_('minimum value'),
+        help_text=_('What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum.')
+    )
+    max_value = models.FloatField(
+        null=True, verbose_name=_('maximum value'),
+        help_text=_('What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum.')
+    )
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
     categories = models.ManyToManyField('actions.Category', blank=True)
     time_resolution = models.CharField(
@@ -247,9 +255,9 @@ class Indicator(ClusterableModel):
 
     public_fields = [
         'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
-        'categories', 'time_resolution', 'latest_value', 'latest_graph', 'datasets', 'updated_at', 'created_at',
-        'values', 'plans', 'goals', 'latest_value', 'related_actions', 'actions', 'related_causes',
-        'related_effects', 'dimensions',
+        'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
+        'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'latest_value',
+        'related_actions', 'actions', 'related_causes', 'related_effects', 'dimensions',
     ]
 
     class Meta:
