@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-16 14:19+0300\n"
+"POT-Creation-Date: 2020-10-19 11:18+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1027,6 +1027,22 @@ msgstr "taktinen"
 #: indicators/models.py
 msgid "operational"
 msgstr "toiminnallinen"
+
+#: indicators/models.py
+msgid "minimum value"
+msgstr "minimiarvo"
+
+#: indicators/models.py
+msgid "What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum."
+msgstr "Mikä on tämän mittarin pienin mahdollinen arvo? Tietoa käytetään mittarin visualisaatioiden Y-akselin minimiarvona."
+
+#: indicators/models.py
+msgid "maximum value"
+msgstr "maksimiarvo"
+
+#: indicators/models.py
+msgid "What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum."
+msgstr "Mikä on tämän mittarin pienin mahdollinen arvo? Tietoa käytetään mittarin visualisaatioiden Y-akselin minimiarvona."
 
 #: indicators/models.py
 msgid "time resolution"

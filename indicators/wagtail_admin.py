@@ -5,19 +5,19 @@ from django.db.models import Q
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+
+from admin_site.wagtail import (
+    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+)
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
+from people.chooser import PersonChooser
+from users.models import User
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
-
-from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
-)
-from people.chooser import PersonChooser
-from users.models import User
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
@@ -216,6 +216,8 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('quantity'),
         FieldPanel('unit'),
         FieldPanel('time_resolution'),
+        FieldPanel('min_value'),
+        FieldPanel('max_value'),
         RichTextFieldPanel('description'),
     ]
 
