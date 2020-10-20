@@ -209,11 +209,11 @@ class Indicator(ClusterableModel):
         verbose_name=_('unit')
     )
     min_value = models.FloatField(
-        null=True, verbose_name=_('minimum value'),
+        null=True, blank=True, verbose_name=_('minimum value'),
         help_text=_('What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum.')
     )
     max_value = models.FloatField(
-        null=True, verbose_name=_('maximum value'),
+        null=True, blank=True, verbose_name=_('maximum value'),
         help_text=_('What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum.')
     )
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
