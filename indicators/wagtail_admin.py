@@ -7,7 +7,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+    AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect
 )
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
@@ -226,7 +226,7 @@ class IndicatorAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         if request.user.is_general_admin_for_plan(plan):
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
-                FieldPanel('dimension')
+                FieldPanel('dimension', widget=CondensedPanelSingleSelect)
             ]))
 
         return AplansTabbedInterface(children=[
