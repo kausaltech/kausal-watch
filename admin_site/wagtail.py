@@ -1,9 +1,11 @@
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from django.conf import settings
 from django.contrib.admin.utils import quote
+from django.forms.widgets import Select
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
+
+from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
+from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from modeltrans.translator import get_i18n_field
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
@@ -13,7 +15,6 @@ from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
-from wagtailautocomplete.widgets import Autocomplete as WagtailAutocomplete
 
 
 class AdminOnlyPanel(ObjectList):
@@ -338,3 +339,10 @@ class AutocompletePanel(WagtailAutocompletePanel):
 
         self.widget.get_context = get_context
         self.widget.render_js_init = render_js_init
+
+
+class CondensedPanelSingleSelect(Select):
+    def format_value(self, value):
+        if value is None:
+            return ''
+        return str(value)

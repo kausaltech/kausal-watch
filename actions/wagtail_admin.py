@@ -1,7 +1,6 @@
 import json
 from dal import autocomplete
-from django.utils.translation import get_language, gettext, gettext_lazy as _
-from django.forms.widgets import Select
+from django.utils.translation import gettext, gettext_lazy as _
 from django import forms
 from wagtail.contrib.modeladmin.options import modeladmin_register
 
@@ -16,7 +15,7 @@ from django_orghierarchy.models import Organization
 
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
-    AplansCreateView,
+    AplansCreateView, CondensedPanelSingleSelect
 )
 from people.chooser import PersonChooser
 from .admin import ModifiableActionsFilter, MergedActionsFilter, ImpactFilter
@@ -181,13 +180,6 @@ class ActionEditHandler(AplansTabbedInterface):
             field.queryset = field.queryset.filter(plan=plan)
 
         return form_class
-
-
-class CondensedPanelSingleSelect(Select):
-    def format_value(self, value):
-        if value is None:
-            return ''
-        return str(value)
 
 
 class ActionAdmin(AplansModelAdmin):
