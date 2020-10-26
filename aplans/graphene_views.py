@@ -1,9 +1,17 @@
+import hashlib
+import json
 import logging
+from time import time
+
+from django.conf import settings
+from django.core.cache import cache
 
 import sentry_sdk
-from django.conf import settings
+from actions.models import Plan
 from graphene_django.views import GraphQLView
 from graphql.error import GraphQLError
+
+from .code_rev import REVISION
 
 SUPPORTED_LANGUAGES = {x[0] for x in settings.LANGUAGES}
 logger = logging.getLogger(__name__)
@@ -34,22 +42,75 @@ class SentryGraphQLView(GraphQLView):
             kwargs['middleware'] = (LocaleMiddleware,)
         super().__init__(*args, **kwargs)
 
-    def execute_graphql_request(self, request, data, query, *args, **kwargs):
-        """Extract any exceptions and send them to Sentry"""
-        request._referer = self.request.META.get('HTTP_REFERER')
-        logger.info('GraphQL request from %s' % request._referer)
-        result = super().execute_graphql_request(request, data, query, *args, **kwargs)
-        # If 'invalid' is set, it's a bad request
-        if result and result.errors and not result.invalid:
-            self._capture_sentry_exceptions(result.errors, query, data.get('variables'), request)
+    def get_cache_key(self, request, data, query, variables):
+        plan_identifier = request.headers.get('x-cache-plan-identifier')
+        plan_domain = request.headers.get('x-cache-plan-domain')
+        if not plan_identifier and not plan_domain:
+            return None
+
+        qs = Plan.objects
+        if plan_identifier:
+            qs = qs.filter(identifier=plan_identifier)
+        if plan_domain:
+            qs = qs.for_hostname(plan_domain)
+        plan = qs.first()
+        if plan is None:
+            return None
+
+        m = hashlib.sha1()
+        m.update(REVISION.encode('utf8'))
+        m.update(plan.cache_invalidated_at.isoformat().encode('utf8'))
+        m.update(json.dumps(variables).encode('utf8'))
+        m.update(query.encode('utf8'))
+        key = m.hexdigest()
+        return key
+
+    def get_from_cache(self, key):
+        return cache.get(key)
+
+    def store_to_cache(self, key, result):
+        return cache.set(key, result, timeout=600)
+
+    def caching_execute_graphql_request(self, span, request, data, query, variables, operation_name, *args, **kwargs):
+        key = self.get_cache_key(request, data, query, variables)
+        span.set_tag('cache_key', key)
+        if key:
+            result = self.get_from_cache(key)
+            if result is not None:
+                span.set_tag('cache', 'hit')
+                return result
+
+        span.set_tag('cache', 'miss')
+        result = super().execute_graphql_request(request, data, query, variables, operation_name, *args, **kwargs)
+        if key:
+            self.store_to_cache(key, result)
+
         return result
 
-    def _capture_sentry_exceptions(self, errors, query, variables, request):
-        with sentry_sdk.configure_scope() as scope:
-            scope.set_extra('graphql_variables', variables)
-            scope.set_extra('graphql_query', query)
-            scope.set_extra('referer', request._referer)
-            for error in errors:
-                if hasattr(error, 'original_error'):
-                    error = error.original_error
-                sentry_sdk.capture_exception(error)
+    def execute_graphql_request(self, request, data, query, variables, operation_name, *args, **kwargs):
+        """Execute GraphQL request, cache results and send exceptions to Sentry"""
+        request._referer = self.request.META.get('HTTP_REFERER')
+        transaction = sentry_sdk.Hub.current.scope.transaction
+        logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
+
+        with sentry_sdk.push_scope() as scope:
+            scope.set_context('graphql_variables', variables)
+            scope.set_tag('graphql_operation_name', operation_name)
+            scope.set_tag('referer', request._referer)
+
+            with transaction.start_child(op='graphql query', description=operation_name) as span:
+                span.set_data('graphql_variables', variables)
+                span.set_tag('graphql_operation_name', operation_name)
+                span.set_tag('referer', request._referer)
+                result = self.caching_execute_graphql_request(
+                    span, request, data, query, variables, operation_name, *args, **kwargs
+                )
+
+            # If 'invalid' is set, it's a bad request
+            if result and result.errors and not result.invalid:
+                for error in result.errors:
+                    if hasattr(error, 'original_error'):
+                        error = error.original_error
+                    sentry_sdk.capture_exception(error)
+
+        return result

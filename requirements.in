@@ -46,3 +46,4 @@ django-npm
 django-autocomplete-light
 coreapi
 pyyaml
+django_redis
