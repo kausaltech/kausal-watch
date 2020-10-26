@@ -11,6 +11,13 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data/
 
+  redis:
+    container_name: 'redis'
+    build:
+      context: ./docker/redis
+      dockerfile: ./Dockerfile
+    restart: always
+
   app:
     container_name: aplans
     build:
@@ -21,6 +28,7 @@ services:
       - aplans_media:/srv/media
     environment:
       - DATABASE_URL=postgres://aplans@db/aplans
+      - CACHE_URL=rediscache://redis:6379
       - STATIC_ROOT=/srv/static
       - LC_CTYPE=C.UTF-8
       - DEBUG
@@ -40,6 +48,7 @@ services:
       - "${UWSGI_SOCKET_PORT:-8001}:8001"
     depends_on:
       - db
+      - redis
 
 volumes:
   db_data:
