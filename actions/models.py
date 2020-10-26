@@ -102,6 +102,8 @@ class Plan(ModelWithImage, ClusterableModel):
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
     )
 
+    cache_invalidated_at = models.DateTimeField(auto_now=True)
+
     i18n = TranslationField(fields=['name'])
 
     public_fields = [

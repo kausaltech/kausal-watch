@@ -1,6 +1,9 @@
+import re
+
 import sentry_sdk
 from django.conf import settings
 from django.contrib import messages
+from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
@@ -48,3 +51,10 @@ class AdminMiddleware(MiddlewareMixin):
         if not plan.site_id:
             return
         request._wagtail_site = plan.site
+
+        # If it's an admin method that changes something, invalidate Plan-related
+        # GraphQL cache.
+        if request.method in ('POST', 'PUT', 'DELETE') and re.match(r'^/(admin|wadmin)/', request.path):
+            def invalidate_cache():
+                print('invalidate for %s' % plan)
+            transaction.on_commit(invalidate_cache)

@@ -12,8 +12,10 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 
-import environ
 from django.utils.translation import gettext_lazy as _
+
+import environ
+from corsheaders.defaults import default_headers as default_cors_headers  # noqa
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.Env(
@@ -21,6 +23,7 @@ env = environ.Env(
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
     DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
+    CACHE_URL=(str, 'locmemcache://'),
     MEDIA_ROOT=(environ.Path(), root('media')),
     STATIC_ROOT=(environ.Path(), root('static')),
     MEDIA_URL=(str, '/media/'),
@@ -51,6 +54,11 @@ DATABASES = {
     'default': env.db()
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
+
+CACHES = {
+    'default': env.cache(),
+}
+
 SECRET_KEY = env('SECRET_KEY')
 
 SERVER_EMAIL = env('SERVER_EMAIL')
@@ -285,7 +293,13 @@ REST_FRAMEWORK = {
     ),
 }
 
+
 CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = list(default_cors_headers) + [
+    'sentry-trace',
+    'x-cache-plan-identifier',
+    'x-cache-plan-domain',
+]
 
 #
 # GraphQL
@@ -457,7 +471,9 @@ if SENTRY_DSN:
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         send_default_pii=True,
-        integrations=[DjangoIntegration()]
+        traces_sample_rate=1.0,
+        integrations=[DjangoIntegration()],
+        environment='development' if DEBUG else 'production'
     )
 
 if 'DATABASES' in locals():
