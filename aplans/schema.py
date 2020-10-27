@@ -1,12 +1,13 @@
+import pytz
 from django.db.models import Count, Q
 
 import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
-import pytz
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
-    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain,
+    Scenario
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
@@ -96,6 +97,14 @@ class PersonNode(DjangoNode):
         return self.get_avatar_url(request, size)
 
 
+class PlanDomainNode(DjangoNode):
+    class Meta:
+        model = PlanDomain
+        only_fields = [
+            'id', 'hostname', 'google_site_verification_tag', 'matomo_analytics_url',
+        ]
+
+
 class PlanNode(DjangoNode, WithImageMixin):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
@@ -111,6 +120,8 @@ class PlanNode(DjangoNode, WithImageMixin):
 
     static_pages = graphene.List('aplans.schema.StaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
+
+    domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
 
     main_menu = pages_schema.MenuNode.create_plan_menu_field()
 
@@ -156,6 +167,14 @@ class PlanNode(DjangoNode, WithImageMixin):
         if not self.site.root_page:
             return
         return self.site.root_page.get_descendants(inclusive=True).live().public().type(AplansPage).specific()
+
+    @gql_optimizer.resolver_hints(
+        model_field='domains',
+    )
+    def resolve_domain(self, info, hostname=None):
+        if not hostname:
+            return None
+        return self.domains.filter(hostname=hostname).first()
 
     class Meta:
         model = Plan

@@ -207,6 +207,8 @@ class PlanDomain(models.Model):
         Plan, on_delete=models.CASCADE, related_name='domains', verbose_name=_('plan')
     )
     hostname = models.CharField(max_length=200, verbose_name=_('host name'), unique=True, db_index=True)
+    google_site_verification_tag = models.CharField(max_length=50, null=True, blank=True)
+    matomo_analytics_url = models.CharField(max_length=100, null=True, blank=True)
 
     def validate_hostname(self):
         dn = self.hostname
