@@ -1,25 +1,26 @@
+from django.db.models import Count, Q
+
 import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
 import pytz
-from django.db.models import Count, Q
-from django_orghierarchy.models import Organization, OrganizationClass
-from graphql.error import GraphQLError
-from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
-)
-from wagtail.core.rich_text import RichText
-
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
+from django_orghierarchy.models import Organization, OrganizationClass
+from feedback import schema as feedback_schema
+from graphql.error import GraphQLError
+from graphql.type import (
+    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+)
 from indicators import schema as indicators_schema
 from pages import schema as pages_schema
 from pages.models import AplansPage
 from people.models import Person
+from wagtail.core.rich_text import RichText
 
 from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan
@@ -555,6 +556,10 @@ class Query(indicators_schema.Query):
         return obj
 
 
+class Mutation(graphene.ObjectType):
+    create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
+
+
 class LocaleDirective(GraphQLDirective):
     def __init__(self):
         super().__init__(
@@ -572,6 +577,7 @@ class LocaleDirective(GraphQLDirective):
 
 schema = graphene.Schema(
     query=Query,
+    mutation=Mutation,
     directives=specified_directives + [LocaleDirective()],
     types=[] + pages_schema.types
 )
