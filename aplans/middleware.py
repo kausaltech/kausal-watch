@@ -1,6 +1,5 @@
 import re
 
-import sentry_sdk
 from django.conf import settings
 from django.contrib import messages
 from django.db import transaction
@@ -9,6 +8,8 @@ from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate
 from django.utils.translation import ugettext_lazy as _
+
+import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
 from wagtail.users.models import UserProfile
 
@@ -56,5 +57,5 @@ class AdminMiddleware(MiddlewareMixin):
         # GraphQL cache.
         if request.method in ('POST', 'PUT', 'DELETE') and re.match(r'^/(admin|wadmin)/', request.path):
             def invalidate_cache():
-                print('invalidate for %s' % plan)
+                plan.invalidate_cache()
             transaction.on_commit(invalidate_cache)
