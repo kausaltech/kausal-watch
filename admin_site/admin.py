@@ -5,12 +5,12 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.views.decorators.cache import never_cache
-from import_export.admin import ExportMixin, ImportExportMixin, ImportMixin
-from import_export.resources import ModelResource
-from reversion.admin import VersionAdmin
 
 from actions.models import Action
+from import_export.admin import ExportMixin, ImportExportMixin, ImportMixin
+from import_export.resources import ModelResource
 from indicators.models import Indicator
+from reversion.admin import VersionAdmin
 
 from .forms import AuthenticationForm
 
@@ -92,7 +92,14 @@ class AplansExportMixin(ExportMixin):
         return out
 
 
-class AplansImportExportMixin(ImportMixin, AplansExportMixin):
+class AplansImportMixin(ImportMixin):
+    def get_import_data_kwargs(self, request, *args, **kwargs):
+        ret = super().get_import_data_kwargs(request, *args, **kwargs)
+        ret['use_transactions'] = True
+        return ret
+
+
+class AplansImportExportMixin(AplansImportMixin, AplansExportMixin):
     change_list_template = ImportExportMixin.change_list_template
 
     def get_resource_kwargs(self, request, *args, **kwargs):

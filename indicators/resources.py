@@ -4,9 +4,9 @@ from collections import OrderedDict
 from django.db.models import Max, Min
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
-from import_export import fields, widgets
 
 from admin_site.admin import AplansResource
+from import_export import fields, widgets
 
 from .models import Indicator, IndicatorValue
 
@@ -82,6 +82,11 @@ class IndicatorResource(AplansResource):
         self._set_yearly_values(obj)
         return super().export_resource(obj)
 
+    def export(self, queryset=None, *args, **kwargs):
+        if queryset is not None:
+            queryset = queryset.filter(time_resolution='year')
+        return super().export(queryset, *args, **kwargs)
+
     def before_export(self, queryset, *args, **kwargs):
         out = IndicatorValue.objects.filter(indicator__in=queryset).aggregate(Min('date'), Max('date'))
         self.min_year = out['date__min'].year
@@ -121,6 +126,10 @@ class IndicatorResource(AplansResource):
         self.min_year = min(years)
         self.max_year = max(years)
         return super().import_data_inner(dataset, *args, **kwargs)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs.filter(time_resolution='year')
 
     class Meta:
         model = Indicator
