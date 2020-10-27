@@ -409,7 +409,11 @@ class PlanAdmin(AplansModelAdmin):
             Plan, self.panels, request, instance
         )
         if request.user.is_superuser:
-            panels.append(InlinePanel('domains', panels=[FieldPanel('hostname')], heading=_('Domains')))
+            panels.append(InlinePanel('domains', panels=[
+                FieldPanel('hostname'),
+                FieldPanel('google_site_verification_tag'),
+                FieldPanel('matomo_analytics_url'),
+            ], heading=_('Domains')))
 
         tabs = [
             ObjectList(panels, heading=_('Basic information')),
