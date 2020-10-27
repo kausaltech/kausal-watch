@@ -159,9 +159,22 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
             'actions/action-task.js',
         )
 
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = list((name, dict(attrs)) for name, attrs in self.fieldsets)
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if plan.uses_wagtail:
+            fieldsets[0] = list(fieldsets[0])
+            fs = fieldsets[0][1]
+            fs['fields'] = list(fs['fields'])
+            fs['fields'].remove('comment')
+        return fieldsets
+
     def get_formset(self, *args, **kwargs):
         formset = super().get_formset(*args, **kwargs)
-        formset.form.base_fields['comment'].widget = CKEditorWidget(config_name='lite')
+        if 'comment' in formset.form.base_fields:
+            formset.form.base_fields['comment'].widget = CKEditorWidget(config_name='lite')
         return formset
 
 
@@ -366,6 +379,13 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
         plan = user.get_active_admin_plan()
 
         fieldsets = list((name, dict(attrs)) for name, attrs in self.fieldsets)
+
+        if plan.uses_wagtail:
+            fs = fieldsets[0][1]
+            fs['fields'] = list(fs['fields'])
+            if 'description' in fs['fields']:
+                fs['fields'].remove('description')
+
         if plan.allow_images_for_actions:
             fieldsets.insert(1, (_('Image'), {
                 'fields': ('image', 'image_cropping'),
