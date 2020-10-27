@@ -133,6 +133,7 @@ INSTALLED_APPS = [
     'people',
     'notifications',
     'pages',
+    'feedback',
 ]
 
 MIDDLEWARE = [
