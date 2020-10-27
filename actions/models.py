@@ -13,15 +13,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-
-from aplans.model_images import ModelWithImage
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 from django_orghierarchy.models import Organization
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
+
+from aplans.model_images import ModelWithImage
+from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -97,13 +97,13 @@ class Plan(ModelWithImage, ClusterableModel):
         null=True,
         verbose_name=_('URL to accessibility statement'),
     )
+    uses_wagtail = models.BooleanField(default=True)
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
     )
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-
     i18n = TranslationField(fields=['name'])
 
     public_fields = [
