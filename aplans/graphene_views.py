@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import json
 import logging
@@ -98,10 +99,16 @@ class SentryGraphQLView(GraphQLView):
             scope.set_tag('graphql_operation_name', operation_name)
             scope.set_tag('referer', request._referer)
 
-            with transaction.start_child(op='graphql query', description=operation_name) as span:
+            if transaction is not None:
+                span = transaction.start_child(op='graphql query', description=operation_name)
                 span.set_data('graphql_variables', variables)
                 span.set_tag('graphql_operation_name', operation_name)
                 span.set_tag('referer', request._referer)
+            else:
+                # No tracing activated, use an inert Span
+                span = sentry_sdk.tracing.Span()
+
+            with span:
                 result = self.caching_execute_graphql_request(
                     span, request, data, query, variables, operation_name, *args, **kwargs
                 )
