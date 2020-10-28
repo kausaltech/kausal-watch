@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-19 11:18+0300\n"
+"POT-Creation-Date: 2020-10-28 07:44+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -54,7 +54,7 @@ msgstr "Yhteyshenkilö"
 msgid "Completion"
 msgstr "Toteutuminen"
 
-#: actions/admin.py
+#: actions/admin.py pages/blocks.py
 msgid "Image"
 msgstr "Kuva"
 
@@ -877,6 +877,22 @@ msgstr "Valitse kuva"
 msgid "Popular tags"
 msgstr "Suositut tagit"
 
+#: indicators/admin.py
+msgid "Upstream indicator"
+msgstr "Ylävirran mittari"
+
+#: indicators/admin.py
+msgid "Upstream indicators"
+msgstr "Ylävirran mittarit"
+
+#: indicators/admin.py
+msgid "Downstream indicator"
+msgstr "Alavirran mittarit"
+
+#: indicators/admin.py
+msgid "Downstream indicators"
+msgstr "Alavirran mittarit"
+
 #: indicators/admin.py indicators/models.py
 msgid "level"
 msgstr "taso"
@@ -1396,9 +1412,33 @@ msgstr "Otsikko"
 msgid "Lead"
 msgstr "Johdanto"
 
+#: pages/blocks.py
+#, fuzzy
+#| msgid "short description"
+msgid "Short action description"
+msgstr "lyhyt kuvaus"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "short description"
+msgid "Short indicator description"
+msgstr "lyhyt kuvaus"
+
 #: pages/models.py
 msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "parent page"
+msgid "Plan front page"
+msgstr "yläsivu"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "parent page"
+msgid "Plan front pages"
+msgstr "yläsivu"
 
 #: pages/models.py
 msgid "Header image"
@@ -1423,6 +1463,18 @@ msgstr "Kappale"
 #: pages/models.py
 msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "parent page"
+msgid "Static page"
+msgstr "yläsivu"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "content pages"
+msgid "Static pages"
+msgstr "sisältösivut"
 
 #: people/admin.py
 msgid "Is contact person"

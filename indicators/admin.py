@@ -34,14 +34,12 @@ class QuantityAdmin(admin.ModelAdmin):
 
 class RelatedIndicatorAdmin(admin.TabularInline):
     model = RelatedIndicator
-    fk_name = 'causal_indicator'
-    autocomplete_fields = ('effect_indicator',)
     extra = 0
 
     def get_formset(self, request, obj=None, **kwargs):
         formset = super().get_formset(request, obj, **kwargs)
         form = formset.form
-        field = form.base_fields['effect_indicator']
+        field = form.base_fields[self.autocomplete_fields[0]]
         plan = request.user.get_active_admin_plan()
         field.queryset = field.queryset.filter(levels__plan=plan)
         return formset
@@ -49,13 +47,30 @@ class RelatedIndicatorAdmin(admin.TabularInline):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(effect_indicator__levels__plan=plan).distinct()
+        fname = '%s__levels__plan' % self.autocomplete_fields[0]
+        return qs.filter(**{fname: plan}).distinct()
+
+
+class RelatedEffectIndicatorAdmin(RelatedIndicatorAdmin):
+    fk_name = 'causal_indicator'
+    autocomplete_fields = ('effect_indicator',)
+    verbose_name = _('Downstream indicator')
+    verbose_name_plural = _('Downstream indicators')
+
+
+class RelatedCausalIndicatorAdmin(RelatedIndicatorAdmin):
+    fk_name = 'effect_indicator'
+    autocomplete_fields = ('causal_indicator',)
+    verbose_name = _('Upstream indicator')
+    verbose_name_plural = _('Upstream indicators')
 
 
 class ActionIndicatorAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     model = ActionIndicator
     autocomplete_fields = ('action', 'indicator',)
     extra = 0
+    verbose_name = _('Indicator action')
+    verbose_name_plural = _('Indicator actions')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -205,7 +220,8 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
 
     inlines = [
         IndicatorLevelAdmin, IndicatorContactPersonAdmin, IndicatorGoalAdmin,
-        IndicatorValueAdmin, ActionIndicatorAdmin, RelatedIndicatorAdmin
+        IndicatorValueAdmin, ActionIndicatorAdmin, RelatedCausalIndicatorAdmin,
+        RelatedEffectIndicatorAdmin
     ]
 
     # For import/export
