@@ -315,10 +315,8 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         super().save_model(request, obj, form, change)
         obj.set_latest_value()
         obj.save(update_fields=['latest_value'])
-        actions = obj.related_actions.filter(indicates_action_progress=True)
-        for act_ind in actions:
-            act = act_ind.action
-            act.recalculate_status()
+
+        self._update_actions = obj.related_actions.filter(indicates_action_progress=True)
 
         plan = request.user.get_active_admin_plan()
         for field_name, field in self._get_category_fields(plan, obj).items():
@@ -331,6 +329,13 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
                 obj.categories.remove(cat)
             for cat in new_cats - existing_cats:
                 obj.categories.add(cat)
+
+    def save_related(self, request, form, formsets, change):
+        ret = super().save_related(request, form, formsets, change)
+        for act_ind in self._update_actions:
+            act = act_ind.action
+            act.recalculate_status()
+        return ret
 
 
 @admin.register(Dataset)
