@@ -1,20 +1,20 @@
 from datetime import datetime
 
-import aniso8601
-import django_filters as filters
 import pytz
 from django.conf import settings
 from django.db import transaction
 from plotly.exceptions import PlotlyError
 from plotly.graph_objs import Figure
+
+import aniso8601
+import django_filters as filters
+from actions.models import Plan
+from aplans.utils import register_view_helper
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from sentry_sdk import capture_exception, push_scope
-
-from actions.models import Plan
-from aplans.utils import register_view_helper
 
 from .models import ActionIndicator, Indicator, IndicatorGraph, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
 
@@ -169,7 +169,6 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
                 categories = data.pop('categories', [])
                 obj = IndicatorValue(indicator=indicator, **data)
                 obj.save()
-                print(obj, obj.id)
                 if categories:
                     obj.categories.set(categories)
                 created_objs.append(obj)
@@ -182,6 +181,9 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
             if indicator.latest_value_id != latest_value_id:
                 indicator.latest_value_id = latest_value_id
                 indicator.save(update_fields=['latest_value_id'])
+
+            for plan in indicator.plans.all():
+                plan.invalidate_cache()
 
         return created_objs
 
