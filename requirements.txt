@@ -121,7 +121,7 @@ tablib[html,ods,xls,xlsx,yaml]==2.0.0  # via django-import-export, wagtail
 toml==0.10.1              # via pytest
 traitlets==5.0.4          # via ipython
 unidecode==1.1.1          # via graphene-django, wagtail
-uritemplate==3.0.1        # via coreapi
+uritemplate==3.0.1        # via -r requirements.in, coreapi
 urllib3==1.25.10          # via requests, sentry-sdk
 wagtail-autocomplete==0.6  # via -r requirements.in
 wagtail-condensedinlinepanel==0.5.3  # via -r requirements.in

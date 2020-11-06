@@ -18,32 +18,48 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
-
-from actions.api import all_views as actions_api_views
-from admin_site.autocomplete import OrganizationAutocomplete
-from admin_site.views import RootRedirectView
-from content.api import all_views as content_api_views
-from indicators.api import all_views as indicators_api_views
-from insight.api import all_views as insight_api_views
+from django.views.generic import TemplateView
 from rest_framework import routers
-from users.views import change_admin_plan
+from rest_framework.schemas import get_schema_view
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
+from actions.api import all_views as actions_api_views
+from admin_site.autocomplete import OrganizationAutocomplete
+from admin_site.views import RootRedirectView
+from indicators.api import all_views as indicators_api_views
+from insight.api import all_views as insight_api_views
+from users.views import change_admin_plan
+
 from .graphene_views import SentryGraphQLView
 
 router = routers.DefaultRouter()
-for view in actions_api_views + indicators_api_views + insight_api_views + content_api_views:
+for view in actions_api_views + indicators_api_views + insight_api_views:
     router.register(view['name'], view['class'], basename=view.get('basename'))
 
+
+api_urls = path('v1/', include(router.urls))
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
-    path('v1/', include(router.urls)),
+    api_urls,
+    path('v1/docs/', TemplateView.as_view(
+        template_name='swagger-ui.html',
+        extra_context={'schema_url': 'openapi-schema'}
+    ), name='swagger-ui'),
+    path('v1/openapi/', get_schema_view(
+        title="Kausal Watch API",
+        description="API for the Kausal Watch platform.",
+        version="1.0.0",
+        patterns=[api_urls],
+    ), name='openapi-schema'),
     path('v1/graphql/', csrf_exempt(SentryGraphQLView.as_view(graphiql=True)), name='graphql'),
+    path('v1/graphql/docs/', TemplateView.as_view(
+        template_name='graphql-voyager.html',
+    ), name='graphql-voyager'),
     re_path(r'^wadmin/', include(wagtailadmin_urls)),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     re_path(r'^pages/', include(wagtail_urls)),
