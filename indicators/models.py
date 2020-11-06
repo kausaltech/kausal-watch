@@ -27,6 +27,8 @@ def latest_plan():
 
 
 class Quantity(ClusterableModel):
+    """The quantity that an indicator measures."""
+
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
 
     autocomplete_search_field = 'name'
@@ -174,6 +176,8 @@ class FrameworkIndicator(models.Model):
 
 
 class Indicator(ClusterableModel):
+    """An indicator with which to measure actions and progress towards strategic goals."""
+
     TIME_RESOLUTIONS = (
         ('year', _('year')),
         ('month', _('month')),
@@ -310,6 +314,11 @@ class Indicator(ClusterableModel):
 
 @reversion.register()
 class Dimension(ClusterableModel):
+    """A dimension for indicators.
+
+    Dimensions will have several dimension categories.
+    """
+
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
     public_fields = ['id', 'name', 'categories']
@@ -323,6 +332,11 @@ class Dimension(ClusterableModel):
 
 
 class DimensionCategory(OrderedModel):
+    """A category in a dimension.
+
+    Indicator values are grouped with this.
+    """
+
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
@@ -338,6 +352,8 @@ class DimensionCategory(OrderedModel):
 
 
 class IndicatorDimension(OrderedModel):
+    """Mapping of which dimensions an indicator has."""
+
     dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='instances')
     indicator = ParentalKey(Indicator, on_delete=models.CASCADE, related_name='dimensions')
 
@@ -355,6 +371,11 @@ class IndicatorDimension(OrderedModel):
 
 
 class IndicatorLevel(ClusterableModel):
+    """The level for an indicator in an action plan.
+
+    Indicator levels include: operational, tactical and strategic.
+    """
+
     indicator = models.ForeignKey(
         Indicator, related_name='levels', verbose_name=_('indicator'), on_delete=models.CASCADE
     )
@@ -385,6 +406,8 @@ class IndicatorGraph(models.Model):
 
 
 class IndicatorValue(ClusterableModel):
+    """One measurement of an indicator for a certain date/month/year."""
+
     indicator = ParentalKey(
         Indicator, related_name='values', on_delete=models.CASCADE,
         verbose_name=_('indicator')
@@ -418,6 +441,8 @@ class IndicatorValue(ClusterableModel):
 
 
 class IndicatorGoal(models.Model):
+    """The numeric goal which the organization has set for an indicator."""
+
     plan = models.ForeignKey(
         'actions.Plan', related_name='indicator_goals', on_delete=models.CASCADE,
         verbose_name=_('plan')
@@ -454,6 +479,8 @@ class IndicatorGoal(models.Model):
 
 
 class RelatedIndicator(models.Model):
+    """A causal relationship between two indicators."""
+
     INCREASES = 'increases'
     DECREASES = 'decreases'
     PART_OF = 'part_of'
@@ -499,6 +526,8 @@ class RelatedIndicator(models.Model):
 
 
 class ActionIndicator(models.Model):
+    """Link between an action and an indicator."""
+
     action = models.ForeignKey(
         'actions.Action', related_name='related_indicators', on_delete=models.CASCADE,
         verbose_name=_('action')
@@ -526,6 +555,8 @@ class ActionIndicator(models.Model):
 
 
 class IndicatorContactPerson(OrderedModel):
+    """Contact person for an indicator."""
+
     indicator = ParentalKey(
         Indicator, on_delete=models.CASCADE, verbose_name=_('indicator'), related_name='contact_persons'
     )
