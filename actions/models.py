@@ -51,6 +51,10 @@ class PlanQuerySet(models.QuerySet):
 
 
 class Plan(ModelWithImage, ClusterableModel):
+    """The Action Plan under monitoring.
+
+    Most information in this service is linked to a Plan.
+    """
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
@@ -203,6 +207,8 @@ class Plan(ModelWithImage, ClusterableModel):
 
 
 class PlanDomain(models.Model):
+    """A domain (hostname) where an UI for a Plan might live."""
+
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='domains', verbose_name=_('plan')
     )
@@ -262,6 +268,8 @@ class ActionQuerySet(models.QuerySet):
 
 
 class Action(ModelWithImage, OrderedModel, ClusterableModel):
+    """One action/measure tracked in an action plan."""
+
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
         verbose_name=_('plan')
@@ -593,6 +601,8 @@ class ActionResponsibleParty(OrderedModel):
 
 
 class ActionContactPerson(OrderedModel):
+    """A Person acting as a contact for an action"""
+
     action = ParentalKey(
         Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='contact_persons'
     )
@@ -621,6 +631,8 @@ class ActionContactPerson(OrderedModel):
 
 
 class ActionSchedule(models.Model):
+    """A schedule for an action with begin and end dates."""
+
     plan = ParentalKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
@@ -642,6 +654,7 @@ class ActionSchedule(models.Model):
 
 
 class ActionStatus(models.Model):
+    """The current status for the action ("on time", "late", "completed", etc.)."""
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_statuses',
         verbose_name=_('plan')
@@ -692,6 +705,11 @@ class ActionTaskQuerySet(models.QuerySet):
 
 
 class ActionTask(models.Model):
+    """A task that should be completed during the execution of an action.
+
+    The task will have at least a name and an estimate of the due date.
+    """
+
     NOT_STARTED = 'not_started'
     IN_PROGRESS = 'in_progress'
     CANCELLED = 'cancelled'
@@ -761,6 +779,8 @@ class ActionTask(models.Model):
 
 
 class ActionImpact(OrderedModel):
+    """An impact classification for an action in an action plan."""
+
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_impacts',
         verbose_name=_('plan')
@@ -785,6 +805,12 @@ class ActionImpact(OrderedModel):
 
 
 class CategoryType(models.Model):
+    """Type of the categories.
+
+    Is used to group categories together. One action plan can have several
+    category types.
+    """
+
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='category_types')
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
@@ -821,6 +847,8 @@ class CategoryType(models.Model):
 
 
 class Category(OrderedModel, ModelWithImage):
+    """A category for actions and indicators."""
+
     type = models.ForeignKey(
         CategoryType, on_delete=models.PROTECT, related_name='categories',
         verbose_name=_('type')
