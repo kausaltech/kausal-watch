@@ -3,6 +3,7 @@ import re
 
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
+from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
 from modeltrans.translator import get_i18n_field
 
@@ -45,6 +46,12 @@ class DjangoNode(DjangoObjectType):
         if 'name' not in kwargs:
             # Remove the trailing 'Node' from the object types
             kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
+
+        model = kwargs['model']
+        is_autogen = re.match(r'^\w+\([\w_, ]+\)$', model.__doc__)
+        if 'description' not in kwargs and not cls.__doc__ and not is_autogen:
+            kwargs['description'] = trim_docstring(model.__doc__)
+
         super().__init_subclass_with_meta__(**kwargs)
 
         # Set default resolvers for i18n fields
