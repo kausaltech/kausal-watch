@@ -268,7 +268,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
                 fs['fields'].remove(field_name)
 
         fieldsets.append(
-            (_('Categories'), dict(fields=(x for x in category_fields)))
+            (_('Categories'), dict(fields=[x for x in category_fields]))
         )
         return fieldsets
 
