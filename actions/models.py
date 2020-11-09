@@ -275,9 +275,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
-    official_name = models.CharField(
-        null=True, blank=True, max_length=1000,
-        verbose_name=_('official name'),
+    official_name = models.TextField(
+        null=True, blank=True, verbose_name=_('official name'),
         help_text=_('The name as approved by an official party')
     )
     identifier = IdentifierField(
