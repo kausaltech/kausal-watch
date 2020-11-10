@@ -5,24 +5,14 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils import translation
-from django.utils.formats import date_format
 from django.utils.translation import ugettext_lazy as _
-from jinja2 import StrictUndefined
-from jinja2.exceptions import TemplateError
-from jinja2.sandbox import SandboxedEnvironment
 from modeltrans.fields import TranslationField
-from parler.models import TranslatableModel, TranslatedFields
 
 from actions.models import Plan
 from people.models import Person
 
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
-
-
-class NotificationTemplateException(Exception):
-    pass
 
 
 class NotificationType(Enum):
@@ -43,23 +33,6 @@ class NotificationType(Enum):
 def notification_type_choice_builder():
     for val in NotificationType:
         yield (val.identifier, val.verbose_name)
-
-
-def format_date(dt):
-    current_language = translation.get_language()
-    if current_language == 'fi':
-        dt_format = r'j.n.Y'
-    else:
-        # default to English
-        dt_format = r'j/n/Y'
-
-    return date_format(dt, dt_format)
-
-
-def make_jinja_environment():
-    env = SandboxedEnvironment(trim_blocks=True, lstrip_blocks=True, undefined=StrictUndefined)
-    env.filters['format_date'] = format_date
-    return env
 
 
 class SentNotification(models.Model):
@@ -85,7 +58,14 @@ class BaseTemplate(models.Model):
     )
     from_name = models.CharField(verbose_name=_('Email From name'), null=True, blank=True, max_length=200)
     from_address = models.EmailField(verbose_name=_('Email From address'), null=True, blank=True)
-    html_body = models.TextField(verbose_name=_('HTML body'))
+    reply_to = models.CharField(verbose_name=_('Email Reply-To address'), null=True, blank=True, max_length=200)
+
+    brand_dark_color = models.CharField(verbose_name=_('Brand dark color'), null=True, blank=True, max_length=30)
+    logo = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    font_family = models.CharField(verbose_name=_('Font family'), null=True, blank=True, max_length=200)
+    font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True)
 
     i18n = TranslationField(fields=['from_name'])
 
@@ -96,14 +76,12 @@ class BaseTemplate(models.Model):
     def __str__(self):
         return str(self.plan)
 
-    def render(self, content):
-        context = dict(content=content)
-        env = make_jinja_environment()
-        try:
-            html = env.from_string(self.html_body).render(context)
-        except TemplateError as e:
-            raise NotificationTemplateException(e) from e
-        return html
+    def get_notification_context(self):
+        return dict(theme=dict(
+            brand_dark_color=self.brand_dark_color,
+            font_family=self.font_family,
+            font_css_url=self.font_css_url,
+        ))
 
 
 class NotificationTemplate(models.Model):
@@ -111,16 +89,12 @@ class NotificationTemplate(models.Model):
     subject = models.CharField(
         verbose_name=_('subject'), max_length=200, help_text=_('Subject for email notifications')
     )
-    html_body = models.TextField(
-        verbose_name=_('HTML body'), help_text=_('HTML body for email notifications')
-    )
-
     type = models.CharField(
         verbose_name=_('type'), choices=notification_type_choice_builder(),
-        max_length=100, unique=True, db_index=True
+        max_length=100,
     )
 
-    i18n = TranslationField(fields=['subject', 'html_body'])
+    i18n = TranslationField(fields=['subject'])
 
     class Meta:
         verbose_name = _('notification template')
@@ -133,29 +107,12 @@ class NotificationTemplate(models.Model):
                 return str(val.verbose_name)
         return 'N/A'
 
-    def render(self, context, language_code=DEFAULT_LANG):
-        env = make_jinja_environment()
-        logger.debug('Rendering template for notification %s' % self.type)
-        with translation.override(language_code):
-            rendered_notification = {}
-            for attr in ('subject', 'html_body'):
-                try:
-                    rendered_notification[attr] = \
-                        env.from_string(getattr(self, attr)).render(context)
-                except TemplateError as e:
-                    raise NotificationTemplateException(e) from e
-
-        # Include the base template into the body, leave subject as-is
-        rendered_notification['html_body'] = self.base.render(rendered_notification['html_body'])
-
-        return rendered_notification
-
     def clean(self):
         pass
 
 
 class ContentBlock(models.Model):
-    name = models.CharField(verbose_name=_('name'), max_length=100)
+    name = models.CharField(verbose_name=_('name'), max_length=100, null=True, blank=True)
     content = models.TextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
     base = models.ForeignKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
@@ -163,7 +120,11 @@ class ContentBlock(models.Model):
         NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
         verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
     )
-    identifier = models.CharField(max_length=50, verbose_name=_('identifier'))
+    identifier = models.CharField(max_length=50, verbose_name=_('identifier'), choices=(
+        ('intro', _('Introduction block')),
+        ('motivation', _('Motivation block')),
+        ('outro', _('Contact information block')),
+    ))
 
     i18n = TranslationField(fields=['name', 'content'])
 
@@ -172,5 +133,13 @@ class ContentBlock(models.Model):
         verbose_name_plural = _('content blocks')
         unique_together = (('base', 'template', 'identifier'),)
 
+    def save(self, *args, **kwargs):
+        if self.template is not None:
+            if self.template.base != self.base:
+                raise Exception('Mismatch between template base and content block base')
+        return super().save(*args, **kwargs)
+
     def __str__(self):
+        if not self.name:
+            return str(self.identifier)
         return self.name

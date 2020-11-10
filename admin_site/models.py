@@ -1,8 +1,11 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from modeltrans.fields import TranslationField
-from modelcluster.models import ClusterableModel
 from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from modeltrans.fields import TranslationField
+
+from aplans.fields import HostnameField
+from aplans.utils import OrderedModel
 
 
 class ClientQuerySet(models.QuerySet):
@@ -19,7 +22,9 @@ class Client(ClusterableModel):
     login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200)
     login_button_text = models.CharField(verbose_name=_('login button text'), max_length=200)
 
-    logo = models.FileField(upload_to='client-logos/', null=True, blank=True)
+    logo = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
 
     i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
 
@@ -28,24 +33,47 @@ class Client(ClusterableModel):
     def __str__(self):
         return self.name
 
+    def get_admin_url(self):
+        hostnames = self.admin_hostnames.all()
+        if not len(hostnames):
+            raise Exception('No hostnames for client %s' % self)
 
-class AdminHostname(models.Model):
+        return 'https://%s' % hostnames.first()
+
+
+class AdminHostname(OrderedModel, ClusterableModel):
     client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='admin_hostnames'
     )
-    hostname = models.CharField(max_length=100, unique=True)
+    hostname = HostnameField(unique=True)
+
+    class Meta:
+        ordering = ('client', 'order')
 
     def __str__(self):
         return self.hostname
 
 
 class ClientPlan(models.Model):
-    client = models.ForeignKey(
+    client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans'
     )
-    plan = models.ForeignKey(
+    plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients'
     )
 
     def __str__(self):
         return str(self.plan)
+
+
+class EmailDomains(OrderedModel, ClusterableModel):
+    client = ParentalKey(
+        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='email_domains'
+    )
+    domain = HostnameField(unique=True)
+
+    class Meta:
+        ordering = ('client', 'order')
+
+    def __str__(self):
+        return self.domain

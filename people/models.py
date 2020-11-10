@@ -24,6 +24,8 @@ from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
 
+from admin_site.models import Client
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -245,11 +247,57 @@ class Person(index.Indexed, ClusterableModel):
                 super().save(update_fields=['image_cropping'])
         return ret
 
-    def get_notification_context(self):
-        return dict(first_name=self.first_name, last_name=self.last_name)
+    def get_admin_client(self):
+        user = self.get_corresponding_user()
+
+        if user is not None:
+            # FIXME: Determine based on social_auth of last login
+
+            plans = user.get_adminable_plans()
+            if len(plans) < 1:
+                raise Exception('No adminable plans for %s [Person-%d]' % (self.email, self.id))
+            clients = Client.objects.filter(plans__plan__in=plans).distinct()
+            if len(clients) != 1:
+                raise Exception('Invalid number of clients found for %s [Person-%d]: %d' % (
+                    self.email, self.id, len(clients))
+                )
+            client = clients[0]
+        else:
+            # Match based on email domain
+            email_domain = self.email.split('@')[1]
+            clients = Client.objects.filter(email_domains__domain=email_domain.lower())
+            if len(clients) != 1:
+                raise Exception('Unable to find client for email %s [Person-%d]' % (
+                    self.email, self.id)
+                )
+            client = clients[0]
+
+        return client
+
+    def get_notification_context(self, plan=None):
+        client = self.get_admin_client()
+        admin_url = client.get_admin_url()
+        out = dict(
+            first_name=self.first_name,
+            last_name=self.last_name,
+            admin_url=admin_url
+        )
+
+        logo = client.logo
+        if logo is not None:
+            rendition = logo.get_rendition('max-200x50')
+            out['logo_url'] = admin_url + rendition.url
+            out['logo_height'] = rendition.height
+            out['logo_width'] = rendition.width
+            out['logo_alt'] = logo.title
+
+        return out
+
+    def get_corresponding_user(self):
+        return User.objects.filter(email__iexact=self.email).first()
 
     def create_corresponding_user(self):
-        user = User.objects.filter(email__iexact=self.email).first()
+        user = self.get_corresponding_user()
         if not user:
             user = User(
                 email=self.email.lower(),

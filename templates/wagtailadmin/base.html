@@ -1,9 +1,9 @@
 {% extends "wagtailadmin/base.html" %}
-{% load static wagtailadmin_tags %}
+{% load static wagtailimages_tags wagtailadmin_tags %}
 
 {% block branding_logo %}
     {% if active_client and active_client.logo %}
-    <img src="{{ active_client.logo.url }}" alt="{{ active_client.name }}" width="80" />
+    {% image active_client.logo width-120 %}
     <h5>{{ active_plan.name }}</h5>
     {% endif %}
 {% endblock %}

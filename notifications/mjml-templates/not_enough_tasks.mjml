@@ -1,0 +1,15 @@
+{% extends "person_notification.mjml" %}
+
+{% block notification_content %}
+<mj-section css-class="notification-content-section">
+    <mj-column>
+        {% for item in items %}{% with action=item.action %}
+        <mj-text align="left">
+          <strong>Toimenpide {{ item.action.identifier }}. {{ item.action.name }}</strong>
+        </mj-text>
+        {% include 'includes/modify_action_button.mjml' %}
+        {% if not loop.last %}<mj-divider />{% endif %}
+        {% endwith %}{% endfor %}
+    </mj-column>
+</mj-section>
+{% endblock %}

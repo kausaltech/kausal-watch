@@ -200,6 +200,12 @@ class Plan(ModelWithImage, ClusterableModel):
             super().save(update_fields=update_fields)
         return ret
 
+    def get_site_notification_context(self):
+        return dict(
+            view_url=self.site_url,
+            title=self.general_content.site_title
+        )
+
     def invalidate_cache(self):
         logger.info('Invalidate cache for %s' % self)
         self.cache_invalidated_at = timezone.now()
@@ -545,10 +551,14 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
             self.categories.add(cat)
 
     def get_notification_context(self):
-        change_url = reverse('admin:actions_action_change', args=(self.id,))
+        plan = self.plan
+        if plan.uses_wagtail:
+            change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
+        else:
+            change_url = reverse('admin:actions_action_change', args=(self.id,))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
-            'updated_at': self.updated_at
+            'updated_at': self.updated_at, 'view_url': self.get_view_url(),
         }
 
     def has_contact_persons(self):
