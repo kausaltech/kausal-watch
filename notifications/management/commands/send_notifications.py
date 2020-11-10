@@ -1,18 +1,17 @@
 import typing
 from datetime import date, timedelta
-from dataclasses import dataclass
 
 from django.core.mail import EmailMessage
 from django.core.management.base import BaseCommand, CommandError
-from django.conf import settings
 from django.db.models import Q
-from django.utils import timezone
-from django.utils.translation import activate
+from django.utils import timezone, translation
 from markupsafe import Markup
+from sentry_sdk import capture_exception
 
 from actions.models import Plan, ActionTask, Action, ActionContactPerson
 from people.models import Person
 from notifications.models import NotificationType
+from notifications.mjml import render_mjml_from_template
 
 from logging import getLogger
 
@@ -22,6 +21,10 @@ logger = getLogger(__name__)
 
 MINIMUM_NOTIFICATION_PERIOD = 5  # days
 TASK_DUE_SOON_DAYS = 30
+
+
+class InvalidStateException(Exception):
+    pass
 
 
 class Notification:
@@ -157,7 +160,7 @@ class ActionNotUpdatedNotification(Notification):
 class NotificationEngine:
     def __init__(
         self, plan: Plan, force_to=None, limit=None, only_type=None, noop=False, only_email=None,
-        ignore_actions=None
+        ignore_actions=None, dump=None
     ):
         self.plan = plan
         self.today = date.today()
@@ -167,6 +170,7 @@ class NotificationEngine:
         self.noop = noop
         self.only_email = only_email
         self.ignore_actions = set(ignore_actions or [])
+        self.dump = dump
 
     def _fetch_data(self):
         qs = ActionTask.objects.filter(action__plan=self.plan)
@@ -200,8 +204,10 @@ class NotificationEngine:
         return action.sent_notifications.filter(type=type).exists()
 
     def generate_task_notifications(self, task: ActionTask):
-        assert task.state not in (ActionTask.CANCELLED, ActionTask.COMPLETED)
-        assert not task.completed_at
+        if task.state in (ActionTask.CANCELLED, ActionTask.COMPLETED):
+            raise InvalidStateException('Task %s in wrong state: %s' % (str(task), task.state))
+        if task.completed_at:
+            raise InvalidStateException('Task %s already completed' % (str(task),))
 
         diff = (task.due_at - self.today).days
         if diff < 0:
@@ -239,13 +245,36 @@ class NotificationEngine:
 
         return
 
+    def render(self, template, context, language_code=None):
+        if not language_code:
+            language_code = self.plan.primary_language
+
+        logger.debug('Rendering template for notification %s' % template.type)
+
+        context = dict(
+            title=template.subject,
+            **template.base.get_notification_context(),
+            **context
+        )
+
+        with translation.override(language_code):
+            rendered_notification = render_mjml_from_template(
+                template.type, template.subject, context, dump=self.dump
+            )
+
+        return rendered_notification
+
     def generate_notifications(self):
         self._fetch_data()
 
         for task in self.active_tasks:
             if task.action._ignore or not task.action.is_active():
                 continue
-            self.generate_task_notifications(task)
+            try:
+                self.generate_task_notifications(task)
+            except InvalidStateException as e:
+                capture_exception(e)
+                logger.error(str(e))
 
         for action in self.actions_by_id.values():
             if action._ignore or not action.is_active():
@@ -256,6 +285,7 @@ class NotificationEngine:
         from_address = base_template.from_address or 'noreply@ilmastovahti.fi'
         from_name = base_template.from_name or 'Helsingin ilmastovahti'
         email_from = '%s <%s>' % (from_name, from_address)
+        reply_to = [base_template.reply_to] if base_template.reply_to else None
 
         templates_by_type = {t.type: t for t in base_template.templates.all()}
         notification_count = 0
@@ -278,17 +308,21 @@ class NotificationEngine:
                     'items': [x.get_context() for x in notifications],
                     'person': person.get_notification_context(),
                     'content_blocks': content_blocks,
+                    'site': self.plan.get_site_notification_context(),
                 }
-                rendered = template.render(context, language_code=self.plan.primary_language)
+
+                rendered = self.render(template, context)
+
                 if self.force_to:
                     to_email = self.force_to
                 else:
                     to_email = person.email
                 msg = EmailMessage(
-                    rendered['subject'],
-                    rendered['html_body'],
-                    email_from,
-                    [to_email]
+                    subject=rendered['subject'],
+                    body=rendered['html_body'],
+                    from_email=email_from,
+                    to=[to_email],
+                    reply_to=reply_to,
                 )
                 msg.content_subtype = "html"  # Main content is now text/html
 
@@ -330,13 +364,16 @@ class Command(BaseCommand):
         parser.add_argument('--only-email', type=str, help='Send only the notifications that go this email')
         parser.add_argument('--ignore-actions', type=str, help='Comma-separated list of action identifiers to ignore')
         parser.add_argument('--noop', action='store_true', help='Do not actually send the emails')
+        parser.add_argument(
+            '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files'
+        )
 
     def handle(self, *args, **options):
         if not options['plan']:
             raise CommandError('No plan supplied')
 
         plan = Plan.objects.get(identifier=options['plan'])
-        activate(plan.primary_language)
+        translation.activate(plan.primary_language)
 
         ignore_actions = []
         ignore_opt = options['ignore_actions'].split(',') if options['ignore_actions'] else []
@@ -353,6 +390,7 @@ class Command(BaseCommand):
             only_type=options['only_type'],
             noop=options['noop'],
             only_email=options['only_email'],
-            ignore_actions=ignore_actions
+            ignore_actions=ignore_actions,
+            dump=options['dump'],
         )
         engine.generate_notifications()

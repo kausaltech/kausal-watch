@@ -3,12 +3,11 @@ from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-
-from actions.models import Plan
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.core import hooks
+from wagtail.images.edit_handlers import ImageChooserPanel
 
 from .models import Client
 
@@ -97,11 +96,13 @@ class ClientAdmin(ModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        FieldPanel('logo'),
+        ImageChooserPanel('logo'),
         FieldPanel('azure_ad_tenant_id'),
         FieldPanel('login_header_text'),
         FieldPanel('login_button_text'),
-        InlinePanel('admin_hostnames', heading=_('Admin hostnames')),
+        InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
+        InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
+        InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
     ]
 
 

@@ -1,0 +1,1 @@
+<mj-button align="left" href="{{ person.admin_url }}{{ action.change_url }}">Muokkaa toimenpidettä</mj-button>
