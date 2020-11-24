@@ -12,10 +12,9 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 
-from django.utils.translation import gettext_lazy as _
-
 import environ
 from corsheaders.defaults import default_headers as default_cors_headers  # noqa
+from django.utils.translation import gettext_lazy as _
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.Env(
@@ -39,6 +38,7 @@ env = environ.Env(
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
+    SENDGRID_API_KEY=(str, ''),
 )
 
 BASE_DIR = root()
@@ -358,6 +358,10 @@ if env.str('MAILGUN_API_KEY'):
     ANYMAIL['MAILGUN_SENDER_DOMAIN'] = env.str('MAILGUN_SENDER_DOMAIN')
     if env.str('MAILGUN_REGION'):
         ANYMAIL['MAILGUN_API_URL'] = 'https://api.%s.mailgun.net/v3' % env.str('MAILGUN_REGION')
+
+if env.str('SENDGRID_API_KEY'):
+    EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
+    ANYMAIL['SENDGRID_API_KEY'] = env.str('SENDGRID_API_KEY')
 
 # ckeditor for rich-text admin fields
 CKEDITOR_CONFIGS = {
