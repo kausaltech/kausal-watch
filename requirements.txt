@@ -24,7 +24,7 @@ diff-match-patch==20200713  # via django-import-export
 django-admin-autocomplete-filter==0.6.1  # via -r requirements.in
 django-admin-numeric-filter==0.1.6  # via -r requirements.in
 django-admin-ordering==0.13.1  # via -r requirements.in
-django-anymail[mailgun]==8.1  # via -r requirements.in
+django-anymail[mailgun,sendgrid]==8.1  # via -r requirements.in
 django-appconf==1.0.4     # via django-image-cropping
 django-autocomplete-light==3.8.0  # via -r requirements.in
 django-ckeditor==6.0.0    # via -r requirements.in
