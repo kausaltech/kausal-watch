@@ -52,7 +52,7 @@ class NotificationTemplateAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         qs = NotificationTemplate.objects.filter(base__plan=plan).values_list('type', flat=True)
         if obj is not None and obj.type:
-            qs = qs.exclude(id=self.instance.id)
+            qs = qs.exclude(id=obj.id)
         existing_types = set(qs)
 
         choices = [x for x in form.base_fields['type'].choices if x[0] not in existing_types]
