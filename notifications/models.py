@@ -96,8 +96,8 @@ class BaseTemplate(models.Model):
 
 
 class NotificationTemplateManager(models.Manager):
-    def get_by_natural_key(self, base_id, type):
-        return self.get(base__plan__identifier=base_id, type=type)
+    def get_by_natural_key(self, base, type_):
+        return self.get(base__plan__identifier=base[0], type=type_)
 
 
 class NotificationTemplate(models.Model):
@@ -134,10 +134,10 @@ class NotificationTemplate(models.Model):
 
 
 class ContentBlockManager(models.Manager):
-    def get_by_natural_key(self, base_id, template_id, identifier):
+    def get_by_natural_key(self, base, template, identifier):
         return self.get(
-            base__plan__identifier=base_id,
-            template__identifier=template_id,
+            base=base,
+            template=template,
             identifier=identifier
         )
 
