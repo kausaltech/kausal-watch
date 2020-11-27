@@ -1,7 +1,7 @@
 {% extends "base.mjml" %}
 
 {% block content %}
-<mj-section css-class="intro-section" background-color="#f5f5f5">
+<mj-section mj-class="intro-section">
     <mj-column vertical-align="top" width="100%">
         <mj-text align="left">
             <h1 class-name="main-title">{{ title }}</h1>
