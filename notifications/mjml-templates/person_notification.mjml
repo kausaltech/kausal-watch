@@ -1,10 +1,10 @@
 {% extends "base.mjml" %}
 
 {% block content %}
-<mj-section css-class="intro-section">
+<mj-section css-class="intro-section" background-color="#f5f5f5">
     <mj-column vertical-align="top" width="100%">
         <mj-text align="left">
-            <h1>{{ title }}</h1>
+            <h1 class-name="main-title">{{ title }}</h1>
             <p>Hei {{ person.first_name }},</p>
             {% if 'intro' in content_blocks %}{{ content_blocks.intro }}{% endif %}
         </mj-text>
@@ -16,7 +16,7 @@
 </mj-wrapper>
 
 {% if 'motivation' in content_blocks %}
-<mj-section css-class="motivation-section">
+<mj-section css-class="motivation-section" background-color="#f5f5f5">
     <mj-column vertical-align="top" width="100%">
         <mj-divider />
         <mj-text align="left">
@@ -29,7 +29,7 @@
 {% if 'outro' in content_blocks %}
 <mj-section css-class="outro-section">
     <mj-column vertical-align="top" width="100%">
-        <mj-text align="center">
+        <mj-text align="center" css-class="outro-text">
             <mj-raw>{{ content_blocks.outro }}</mj-raw>
         </mj-text>
     </mj-column>
