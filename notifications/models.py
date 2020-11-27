@@ -51,6 +51,11 @@ class SentNotification(models.Model):
         return '%s: %s -> %s' % (self.content_object, self.type, self.person)
 
 
+class BaseTemplateManager(models.Manager):
+    def get_by_natural_key(self, plan_identifier):
+        return self.get(plan__identifier=plan_identifier)
+
+
 class BaseTemplate(models.Model):
     plan = models.OneToOneField(
         Plan, on_delete=models.CASCADE, related_name='notification_base_template',
@@ -69,12 +74,17 @@ class BaseTemplate(models.Model):
 
     i18n = TranslationField(fields=['from_name'])
 
+    objects = BaseTemplateManager()
+
     class Meta:
         verbose_name = _('base template')
         verbose_name_plural = _('base templates')
 
     def __str__(self):
         return str(self.plan)
+
+    def natural_key(self):
+        return (self.plan.identifier,)
 
     def get_notification_context(self):
         return dict(theme=dict(
@@ -83,6 +93,11 @@ class BaseTemplate(models.Model):
             font_css_url=self.font_css_url,
             link_in_brand_bg_color="#ffffff"
         ))
+
+
+class NotificationTemplateManager(models.Manager):
+    def get_by_natural_key(self, base_id, type):
+        return self.get(base__plan__identifier=base_id, type=type)
 
 
 class NotificationTemplate(models.Model):
@@ -97,6 +112,8 @@ class NotificationTemplate(models.Model):
 
     i18n = TranslationField(fields=['subject'])
 
+    objects = NotificationTemplateManager()
+
     class Meta:
         verbose_name = _('notification template')
         verbose_name_plural = _('notification templates')
@@ -108,8 +125,21 @@ class NotificationTemplate(models.Model):
                 return str(val.verbose_name)
         return 'N/A'
 
+    def natural_key(self):
+        return (self.base.natural_key(), self.type)
+    natural_key.dependencies = ['notifications.BaseTemplate']
+
     def clean(self):
         pass
+
+
+class ContentBlockManager(models.Manager):
+    def get_by_natural_key(self, base_id, template_id, identifier):
+        return self.get(
+            base__plan__identifier=base_id,
+            template__identifier=template_id,
+            identifier=identifier
+        )
 
 
 class ContentBlock(models.Model):
@@ -129,10 +159,18 @@ class ContentBlock(models.Model):
 
     i18n = TranslationField(fields=['name', 'content'])
 
+    objects = ContentBlockManager()
+
     class Meta:
         verbose_name = _('content block')
         verbose_name_plural = _('content blocks')
         unique_together = (('base', 'template', 'identifier'),)
+
+    def natural_key(self):
+        return (self.base, self.template, self.identifier)
+    natural_key.dependencies = [
+        'notifications.BaseTemplate', 'notifications.NotificationTemplate'
+    ]
 
     def save(self, *args, **kwargs):
         if self.template is not None:
