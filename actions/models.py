@@ -558,7 +558,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
             change_url = reverse('admin:actions_action_change', args=(self.id,))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
-            'updated_at': self.updated_at, 'view_url': self.get_view_url(),
+            'updated_at': self.updated_at, 'view_url': self.get_view_url(), 'order': self.order,
         }
 
     def has_contact_persons(self):

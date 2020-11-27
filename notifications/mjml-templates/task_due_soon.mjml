@@ -1,12 +1,14 @@
 {% extends "person_notification.mjml" %}
 
 {% block notification_content %}
-<mj-section css-class="notification-content-section">
+<mj-section mj-class="notification-content-section">
     <mj-column>
         {% for action, task_list in items|groupby('task.action.identifier') %}
         {% with action = task_list[0].task.action %}
         <mj-text align="left" css-class="notification-subheader">
-            <a href="{{ action.view_url }}">{% with identifier = action.identifier %}Toimenpide {{ identifier }}</a>{% endwith %}
+            <a href="{{ action.view_url }}">{% with identifier = action.identifier %}
+                <strong style="color: {{ theme.brand_dark_color }}">Toimenpide {{ identifier }}</strong>
+            </a>{% endwith %}
         </mj-text>
         <mj-text align="left" css-class="notification-header">
             <h2>{{ action.name }}</h2>

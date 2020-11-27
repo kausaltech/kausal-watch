@@ -66,11 +66,7 @@ def render_mjml(mjml_in, dump=None):
     return p.stdout
 
 
-def render_mjml_from_template(template_name, subject, context, dump=None):
+def render_mjml_from_template(template_name, context, dump=None):
     env = make_jinja_environment()
     template = env.get_template('%s.mjml' % template_name)
-    ret = dict(html_body=render_mjml(template.render(context), dump=dump))
-
-    if subject is not None:
-        ret['subject'] = env.from_string(subject).render(context)
-    return ret
+    return render_mjml(template.render(context), dump=dump)

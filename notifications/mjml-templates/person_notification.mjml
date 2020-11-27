@@ -1,7 +1,7 @@
 {% extends "base.mjml" %}
 
 {% block content %}
-<mj-section css-class="intro-section">
+<mj-section mj-class="intro-section">
     <mj-column vertical-align="top" width="100%">
         <mj-text align="left">
             <h1>{{ title }}</h1>
@@ -16,7 +16,7 @@
 </mj-wrapper>
 
 {% if 'motivation' in content_blocks %}
-<mj-section css-class="motivation-section">
+<mj-section mj-class="motivation-section">
     <mj-column vertical-align="top" width="100%">
         <mj-divider />
         <mj-text align="left">
@@ -27,7 +27,7 @@
 {% endif %}
 
 {% if 'outro' in content_blocks %}
-<mj-section css-class="outro-section">
+<mj-section mj-class="outro-section">
     <mj-column vertical-align="top" width="100%">
         <mj-text align="center">
             <mj-raw>{{ content_blocks.outro }}</mj-raw>

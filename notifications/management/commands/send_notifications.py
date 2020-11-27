@@ -251,18 +251,21 @@ class NotificationEngine:
 
         logger.debug('Rendering template for notification %s' % template.type)
 
-        context = dict(
-            title=template.subject,
-            **template.base.get_notification_context(),
-            **context
-        )
-
+        rendered = {}
         with translation.override(language_code):
-            rendered_notification = render_mjml_from_template(
-                template.type, template.subject, context, dump=self.dump
+            context = dict(
+                title=template.subject,
+                **template.base.get_notification_context(),
+                **context
             )
 
-        return rendered_notification
+            rendered['html_body'] = render_mjml_from_template(
+                template.type,
+                context, dump=self.dump
+            )
+            rendered['subject'] = template.subject + ' | ' + context['site']['title']
+
+        return rendered
 
     def generate_notifications(self):
         self._fetch_data()

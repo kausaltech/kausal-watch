@@ -18,25 +18,31 @@
 <mjml>
     <mj-head>
         {% if title %}<mj-title>{{ title }} | {{ site.title }}</mj-title>{% endif %}
+        <mj-attributes>
+            <mj-class name="link" color="{{ theme.brand_dark_color }}" />
+            <mj-class name="service-title" padding="0" margin="0" />
+            <mj-class name="logo-section" background-color="{{ theme.brand_dark_color }}" />
+            <mj-class name="intro-section" background-color="#f5f5f5" css-class="intro-section" />
+            <mj-class
+                name="notification-content-section"
+                background-color="#ffffff"
+                border-bottom="1px solid #cccccc"
+                border-right="1px solid #cccccc"
+                padding="20px 0"
+                css-class="notification-content-section"
+            />
+            <mj-class name="motivation-section" background-color="#f5f5f5" css-class="motivation-section" />
+            <mj-class name="outro-section" css-class="outro-section" />
+        </mj-attributes>
         <mj-style inline="inline">
             a {
                 color: {{ theme.brand_dark_color }};
             }
-            .logo-section {
-                background-color: {{ theme.brand_dark_color }};
-            }
             .logo-section a {
-                color: #ffffff;
+                color: {{ theme.link_in_brand_bg_color }};
                 font-weight: bold;
                 font-size: 20px;
                 text-decoration: none;
-            }
-            .service-title {
-                padding: 0;
-                margin: 0;
-            }
-            .intro-section {
-                background-color: #f5f5f5;
             }
             .intro-section h1 {
                 margin-top: 0;
@@ -46,14 +52,8 @@
             }
             .cta-button {
                 background-color: {{ theme.brand_dark_color }};
-                color: #ffffff;
+                color: {{ theme.link_in_brand_bg_color }};
                 font-weight: bold;
-            }
-            .notification-content-section {
-                background-color: #ffffff;
-                border-bottom: 1px solid #cccccc;
-                border-right 1px solid #cccccc;
-                padding: 0;
             }
             .notification-header h2 {
                 font-weight: bold;
@@ -64,9 +64,6 @@
             .notification-subheader a {
                 font-weight: bold;
                 color: {{ theme.brand_dark_color }};
-            }
-            .motivation-section {
-                background-color: #f5f5f5;
             }
             .outro-section p {
                 margin-top: 0;
@@ -107,7 +104,7 @@
             <mj-divider 
                 border-width="2px"
                 border-color="#cccccc"
-                padding="0"
+                padding="20px 0 20px 0"
             />
         </mj-attributes>
     </mj-head>
@@ -118,11 +115,11 @@
                 <mj-spacer height="12px" />
             </mj-column>
         </mj-section>
-        <mj-section css-class="logo-section">
+        <mj-section mj-class="logo-section" css-class="logo-section">
             <mj-group>
                 <mj-column vertical-align="top" width="70%">
-                    <mj-text css-class="service-title" padding="0">
-                        <a href="{{ site.view_url }}">{{ site.title }}</a>
+                    <mj-text mj-class="service-title">
+                        <a href="{{ site.view_url }}"><strong style="color: {{ theme.link_in_brand_bg_color }}">{{ site.title }}</strong></a>
                     </mj-text>
                 </mj-column>
                  <mj-column vertical-align="top" width="30%">

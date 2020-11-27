@@ -81,6 +81,7 @@ class BaseTemplate(models.Model):
             brand_dark_color=self.brand_dark_color,
             font_family=self.font_family,
             font_css_url=self.font_css_url,
+            link_in_brand_bg_color="#ffffff"
         ))
 
 

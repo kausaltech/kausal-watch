@@ -1,9 +1,9 @@
 {% extends "person_notification.mjml" %}
 
 {% block notification_content %}
-<mj-section css-class="notification-content-section">
+<mj-section mj-class="notification-content-section">
     <mj-column>
-        {% for action, task_list in items|groupby('task.action.identifier') %}
+        {% for action, task_list in items|sort(attribute='task.action.order')|groupby('task.action.identifier') %}
         {% with action = task_list[0].task.action %}
         <mj-text align="left" css-class="notification-subheader">
             <a href="{{ action.view_url }}">{% with identifier = action.identifier %}Toimenpide {{ identifier }}{% endwith %}</a>
@@ -20,9 +20,9 @@
             {% endfor %}
             </ul>
         </mj-text>
-    {% include 'includes/modify_action_button.mjml' %}
-    {% if not loop.last %}<mj-divider />{% endif %}
-    {% endwith %}
+        {% include 'includes/modify_action_button.mjml' %}
+        {% if not loop.last %}<mj-divider />{% endif %}
+        {% endwith %}
     {% endfor %}
     </mj-column>
 </mj-section>

@@ -1,7 +1,7 @@
 {% extends "person_notification.mjml" %}
 
 {% block notification_content %}
-<mj-section css-class="notification-content-section">
+<mj-section mj-class="notification-content-section">
     <mj-column>
         {% for item in items %}{% with action=item.action %}
         <mj-text align="left">
