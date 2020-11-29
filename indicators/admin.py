@@ -214,7 +214,6 @@ class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
 class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
     autocomplete_fields = ('unit', 'datasets', 'quantity')
     search_fields = ('name',)
-    list_display = ('name', 'unit', 'quantity', 'has_data',)
     list_filter = (IndicatorLevelFilter, DisconnectedIndicatorFilter)
     empty_value_display = _('[nothing]')
 
@@ -235,8 +234,15 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         has_goals.short_description = _('has goals')
         has_goals.boolean = True
 
-        ret = super().get_list_display(request)
-        return ret + (has_goals, 'has_datasets',)
+        def level(obj):
+            level = obj.levels.filter(plan=plan).first()
+            if not level:
+                return ''
+            else:
+                return level.get_level_display()
+        level.short_description = _('level')
+
+        return ('name', 'unit', 'quantity', level, 'has_data', has_goals, 'has_datasets')
 
     def get_form(self, request, obj=None, **kwargs):
         plan = request.user.get_active_admin_plan()
