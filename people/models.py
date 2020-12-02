@@ -250,12 +250,21 @@ class Person(index.Indexed, ClusterableModel):
     def get_admin_client(self):
         user = self.get_corresponding_user()
 
+        plans = None
         if user is not None:
             # FIXME: Determine based on social_auth of last login
 
             plans = user.get_adminable_plans()
             if len(plans) < 1:
                 raise Exception('No adminable plans for %s [Person-%d]' % (self.email, self.id))
+        else:
+            plans = set()
+            plans.update(list(self.contact_for_actions.all().values_list('plan', flat=True).distinct()))
+            indicators = self.contact_for_indicators.all()
+            for ind in indicators:
+                plans.update(ind.plans.all())
+
+        if plans:
             clients = Client.objects.filter(plans__plan__in=plans).distinct()
             if len(clients) != 1:
                 raise Exception('Invalid number of clients found for %s [Person-%d]: %d' % (
