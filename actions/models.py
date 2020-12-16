@@ -506,7 +506,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
             return
 
         if self.status is not None and self.status.is_completed:
-            if self.completion != 100:
+            if self.status.identifier == 'completed' and self.completion != 100:
                 self.completion = 100
                 self.save(update_fields=['completion'])
             return
