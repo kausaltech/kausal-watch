@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-28 07:44+0200\n"
+"POT-Creation-Date: 2020-12-16 15:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -53,7 +53,7 @@ msgstr ""
 msgid "Completion"
 msgstr ""
 
-#: actions/admin.py pages/blocks.py
+#: actions/admin.py
 msgid "Image"
 msgstr ""
 
@@ -196,6 +196,10 @@ msgid "internal priority comment"
 msgstr ""
 
 #: actions/models.py
+msgid "implementation phase"
+msgstr ""
+
+#: actions/models.py
 msgid "override status manually"
 msgstr ""
 
@@ -204,11 +208,11 @@ msgid "Set if you want to prevent the action status from being determined automa
 msgstr ""
 
 #: actions/models.py
-msgid "reason for status override"
+msgid "reason for status"
 msgstr ""
 
 #: actions/models.py
-msgid "Describe the reason why this action has the overridden status"
+msgid "Describe the reason why this action has has this status"
 msgstr ""
 
 #: actions/models.py
@@ -322,6 +326,14 @@ msgstr ""
 
 #: actions/models.py
 msgid "action statuses"
+msgstr ""
+
+#: actions/models.py
+msgid "action implementation phase"
+msgstr ""
+
+#: actions/models.py
+msgid "action implementation phases"
 msgstr ""
 
 #: actions/models.py actions/wagtail_admin.py
@@ -568,7 +580,7 @@ msgstr ""
 msgid "late"
 msgstr ""
 
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr ""
 
@@ -662,6 +674,18 @@ msgstr ""
 
 #: admin_site/wagtail_hooks.py
 msgid "Admin hostnames"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "Email domains"
+msgstr ""
+
+#: aplans/fields.py
+msgid "Enter a valid hostname."
+msgstr ""
+
+#: aplans/fields.py
+msgid "Fully qualified hostname (FQDN)"
 msgstr ""
 
 #: aplans/middleware.py
@@ -864,6 +888,10 @@ msgstr ""
 msgid "Upload"
 msgstr ""
 
+#: feedback/wagtail_admin.py
+msgid "Feedback"
+msgstr ""
+
 #: images/models.py
 msgid "images"
 msgstr ""
@@ -877,6 +905,14 @@ msgid "Popular tags"
 msgstr ""
 
 #: indicators/admin.py
+msgid "Downstream indicator"
+msgstr ""
+
+#: indicators/admin.py
+msgid "Downstream indicators"
+msgstr ""
+
+#: indicators/admin.py
 msgid "Upstream indicator"
 msgstr ""
 
@@ -885,11 +921,11 @@ msgid "Upstream indicators"
 msgstr ""
 
 #: indicators/admin.py
-msgid "Downstream indicator"
+msgid "Indicator action"
 msgstr ""
 
 #: indicators/admin.py
-msgid "Downstream indicators"
+msgid "Indicator actions"
 msgstr ""
 
 #: indicators/admin.py indicators/models.py
@@ -1328,7 +1364,23 @@ msgid "Email From address"
 msgstr ""
 
 #: notifications/models.py
-msgid "HTML body"
+msgid "Email Reply-To address"
+msgstr ""
+
+#: notifications/models.py
+msgid "Brand dark color"
+msgstr ""
+
+#: notifications/models.py
+msgid "Font family"
+msgstr ""
+
+#: notifications/models.py
+msgid "Font CSS style URL"
+msgstr ""
+
+#: notifications/models.py
+msgid "Maximum amount of days since last action update"
 msgstr ""
 
 #: notifications/models.py
@@ -1345,10 +1397,6 @@ msgstr ""
 
 #: notifications/models.py
 msgid "Subject for email notifications"
-msgstr ""
-
-#: notifications/models.py
-msgid "HTML body for email notifications"
 msgstr ""
 
 #: notifications/models.py
@@ -1369,6 +1417,18 @@ msgstr ""
 
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
+msgstr ""
+
+#: notifications/models.py
+msgid "Introduction block"
+msgstr ""
+
+#: notifications/models.py
+msgid "Motivation block"
+msgstr ""
+
+#: notifications/models.py
+msgid "Contact information block"
 msgstr ""
 
 #: notifications/models.py
@@ -1411,24 +1471,8 @@ msgstr ""
 msgid "Lead"
 msgstr ""
 
-#: pages/blocks.py
-msgid "Short action description"
-msgstr ""
-
-#: pages/blocks.py
-msgid "Short indicator description"
-msgstr ""
-
 #: pages/models.py
 msgid "Common page configuration"
-msgstr ""
-
-#: pages/models.py
-msgid "Plan front page"
-msgstr ""
-
-#: pages/models.py
-msgid "Plan front pages"
 msgstr ""
 
 #: pages/models.py
@@ -1453,14 +1497,6 @@ msgstr ""
 
 #: pages/models.py
 msgid "Questions & Answers"
-msgstr ""
-
-#: pages/models.py
-msgid "Static page"
-msgstr ""
-
-#: pages/models.py
-msgid "Static pages"
 msgstr ""
 
 #: people/admin.py

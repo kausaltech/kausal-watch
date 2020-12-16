@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-10-28 07:44+0200\n"
+"POT-Creation-Date: 2020-12-16 15:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -54,7 +54,7 @@ msgstr "Yhteyshenkilö"
 msgid "Completion"
 msgstr "Toteutuminen"
 
-#: actions/admin.py pages/blocks.py
+#: actions/admin.py
 msgid "Image"
 msgstr "Kuva"
 
@@ -197,6 +197,10 @@ msgid "internal priority comment"
 msgstr "sisäisen prioriteetin kommentti"
 
 #: actions/models.py
+msgid "implementation phase"
+msgstr "toteutusvaihe"
+
+#: actions/models.py
 msgid "override status manually"
 msgstr "määritä toimenpiteen tila käsin"
 
@@ -205,11 +209,11 @@ msgid "Set if you want to prevent the action status from being determined automa
 msgstr "Aseta jos haluat estää toimenpiteen tilan automaattisen päivityksen"
 
 #: actions/models.py
-msgid "reason for status override"
-msgstr "syy käsin määritetylle toimenpiteen tilalle"
+msgid "reason for status"
+msgstr "syy toimenpiteen tilalle"
 
 #: actions/models.py
-msgid "Describe the reason why this action has the overridden status"
+msgid "Describe the reason why this action has has this status"
 msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
 
 #: actions/models.py
@@ -324,6 +328,14 @@ msgstr "toimenpiteen tila"
 #: actions/models.py
 msgid "action statuses"
 msgstr "toimenpiteen tilat"
+
+#: actions/models.py
+msgid "action implementation phase"
+msgstr "toimenpiteen toteutusvaihee"
+
+#: actions/models.py
+msgid "action implementation phases"
+msgstr "toimenpiteen toteutusvaiheet"
 
 #: actions/models.py actions/wagtail_admin.py
 msgid "not started"
@@ -569,7 +581,7 @@ msgstr "Tehtävät"
 msgid "late"
 msgstr "myöhässä"
 
-#: actions/wagtail_admin.py
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
 
@@ -664,6 +676,18 @@ msgstr "Valitse ohjelma"
 #: admin_site/wagtail_hooks.py
 msgid "Admin hostnames"
 msgstr "Ylläpidon palvelinnimet"
+
+#: admin_site/wagtail_hooks.py
+msgid "Email domains"
+msgstr "Sähköpostiosoitteet"
+
+#: aplans/fields.py
+msgid "Enter a valid hostname."
+msgstr ""
+
+#: aplans/fields.py
+msgid "Fully qualified hostname (FQDN)"
+msgstr ""
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -865,6 +889,10 @@ msgstr "Lähetetään…"
 msgid "Upload"
 msgstr "Lähetä"
 
+#: feedback/wagtail_admin.py
+msgid "Feedback"
+msgstr ""
+
 #: images/models.py
 msgid "images"
 msgstr "kuvat"
@@ -878,6 +906,14 @@ msgid "Popular tags"
 msgstr "Suositut tagit"
 
 #: indicators/admin.py
+msgid "Downstream indicator"
+msgstr "Alavirran mittarit"
+
+#: indicators/admin.py
+msgid "Downstream indicators"
+msgstr "Alavirran mittarit"
+
+#: indicators/admin.py
 msgid "Upstream indicator"
 msgstr "Ylävirran mittari"
 
@@ -886,12 +922,12 @@ msgid "Upstream indicators"
 msgstr "Ylävirran mittarit"
 
 #: indicators/admin.py
-msgid "Downstream indicator"
-msgstr "Alavirran mittarit"
+msgid "Indicator action"
+msgstr "Toimenpiteen mittari"
 
 #: indicators/admin.py
-msgid "Downstream indicators"
-msgstr "Alavirran mittarit"
+msgid "Indicator actions"
+msgstr "Toimenpiteiden mittarit"
 
 #: indicators/admin.py indicators/models.py
 msgid "level"
@@ -1329,8 +1365,24 @@ msgid "Email From address"
 msgstr "Sähköpostin lähettäjän sähköpostiosoite"
 
 #: notifications/models.py
-msgid "HTML body"
-msgstr "HTML-sisältö"
+msgid "Email Reply-To address"
+msgstr "Sähköpostin Reply-To-kenttä"
+
+#: notifications/models.py
+msgid "Brand dark color"
+msgstr ""
+
+#: notifications/models.py
+msgid "Font family"
+msgstr ""
+
+#: notifications/models.py
+msgid "Font CSS style URL"
+msgstr ""
+
+#: notifications/models.py
+msgid "Maximum amount of days since last action update"
+msgstr ""
 
 #: notifications/models.py
 msgid "base template"
@@ -1347,10 +1399,6 @@ msgstr "otsikko"
 #: notifications/models.py
 msgid "Subject for email notifications"
 msgstr "Sähköpostiherätteen otsikko"
-
-#: notifications/models.py
-msgid "HTML body for email notifications"
-msgstr "Sähköpostiherätteen HTML-sisältö"
 
 #: notifications/models.py
 msgid "notification template"
@@ -1371,6 +1419,18 @@ msgstr "mallinne"
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
 msgstr "Älä aseta jos sisältölohko on käytössä useammassa mallinteessa"
+
+#: notifications/models.py
+msgid "Introduction block"
+msgstr "Esittelylohko"
+
+#: notifications/models.py
+msgid "Motivation block"
+msgstr "Motivaatiolohko"
+
+#: notifications/models.py
+msgid "Contact information block"
+msgstr "Yhteystietolohko"
 
 #: notifications/models.py
 msgid "content block"
@@ -1412,33 +1472,9 @@ msgstr "Otsikko"
 msgid "Lead"
 msgstr "Johdanto"
 
-#: pages/blocks.py
-#, fuzzy
-#| msgid "short description"
-msgid "Short action description"
-msgstr "lyhyt kuvaus"
-
-#: pages/blocks.py
-#, fuzzy
-#| msgid "short description"
-msgid "Short indicator description"
-msgstr "lyhyt kuvaus"
-
 #: pages/models.py
 msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
-
-#: pages/models.py
-#, fuzzy
-#| msgid "parent page"
-msgid "Plan front page"
-msgstr "yläsivu"
-
-#: pages/models.py
-#, fuzzy
-#| msgid "parent page"
-msgid "Plan front pages"
-msgstr "yläsivu"
 
 #: pages/models.py
 msgid "Header image"
@@ -1463,18 +1499,6 @@ msgstr "Kappale"
 #: pages/models.py
 msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
-
-#: pages/models.py
-#, fuzzy
-#| msgid "parent page"
-msgid "Static page"
-msgstr "yläsivu"
-
-#: pages/models.py
-#, fuzzy
-#| msgid "content pages"
-msgid "Static pages"
-msgstr "sisältösivut"
 
 #: people/admin.py
 msgid "Is contact person"
@@ -1716,6 +1740,42 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "HTML body"
+#~ msgstr "HTML-sisältö"
+
+#~ msgid "HTML body for email notifications"
+#~ msgstr "Sähköpostiherätteen HTML-sisältö"
+
+#, fuzzy
+#~| msgid "short description"
+#~ msgid "Short action description"
+#~ msgstr "lyhyt kuvaus"
+
+#, fuzzy
+#~| msgid "short description"
+#~ msgid "Short indicator description"
+#~ msgstr "lyhyt kuvaus"
+
+#, fuzzy
+#~| msgid "parent page"
+#~ msgid "Plan front page"
+#~ msgstr "yläsivu"
+
+#, fuzzy
+#~| msgid "parent page"
+#~ msgid "Plan front pages"
+#~ msgstr "yläsivu"
+
+#, fuzzy
+#~| msgid "parent page"
+#~ msgid "Static page"
+#~ msgstr "yläsivu"
+
+#, fuzzy
+#~| msgid "content pages"
+#~ msgid "Static pages"
+#~ msgstr "sisältösivut"
 
 #~ msgid "Input organization name"
 #~ msgstr "Syötä organisaation nimi"

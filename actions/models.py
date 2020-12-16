@@ -13,15 +13,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
+
+from aplans.model_images import ModelWithImage
+from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 from django_orghierarchy.models import Organization
 from modelcluster.fields import ParentalKey, ParentalManyToManyField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
-
-from aplans.model_images import ModelWithImage
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -102,6 +102,7 @@ class Plan(ModelWithImage, ClusterableModel):
         verbose_name=_('URL to accessibility statement'),
     )
     uses_wagtail = models.BooleanField(default=True)
+    statuses_updated_manually = models.BooleanField(default=False)
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
@@ -115,7 +116,8 @@ class Plan(ModelWithImage, ClusterableModel):
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'blog_posts', 'static_pages', 'general_content',
         'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
-        'primary_language', 'other_languages', 'accessibility_statement_url'
+        'primary_language', 'other_languages', 'accessibility_statement_url',
+        'action_implementation_phases',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
@@ -306,13 +308,17 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('status'),
     )
+    implementation_phase = models.ForeignKey(
+        'ActionImplementationPhase', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('implementation phase'),
+    )
     manual_status = models.BooleanField(
         default=False, verbose_name=_('override status manually'),
         help_text=_('Set if you want to prevent the action status from being determined automatically')
     )
     manual_status_reason = models.TextField(
-        blank=True, null=True, verbose_name=_('reason for status override'),
-        help_text=_('Describe the reason why this action has the overridden status')
+        blank=True, null=True, verbose_name=_('reason for status'),
+        help_text=_('Describe the reason why this action has has this status')
     )
 
     merged_with = models.ForeignKey(
@@ -366,7 +372,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         'completion', 'schedule', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
-        'impact_groups', 'monitoring_quality_points',
+        'impact_groups', 'monitoring_quality_points', 'implementation_phase',
+        'manual_status_reason',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
@@ -495,7 +502,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         return by_id['late']
 
     def recalculate_status(self, force_update=False):
-        if self.merged_with is not None or self.manual_status:
+        if self.merged_with is not None or self.manual_status or self.plan.statuses_updated_manually:
             return
 
         if self.status is not None and self.status.is_completed:
@@ -682,6 +689,30 @@ class ActionStatus(models.Model):
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('action status')
         verbose_name_plural = _('action statuses')
+
+    def __str__(self):
+        return self.name
+
+
+class ActionImplementationPhase(OrderedModel):
+    plan = ParentalKey(
+        Plan, on_delete=models.CASCADE, related_name='action_implementation_phases',
+        verbose_name=_('plan')
+    )
+    name = models.CharField(max_length=50, verbose_name=_('name'))
+    identifier = IdentifierField(max_length=20)
+
+    i18n = TranslationField(fields=('name',))
+
+    public_fields = [
+        'id', 'plan', 'order', 'name', 'identifier',
+    ]
+
+    class Meta:
+        ordering = ('plan', 'order')
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('action implementation phase')
+        verbose_name_plural = _('action implementation phases')
 
     def __str__(self):
         return self.name

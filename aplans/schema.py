@@ -1,13 +1,13 @@
-import pytz
 from django.db.models import Count, Q
 
 import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
+import pytz
 from actions.models import (
-    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
-    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain,
-    Scenario
+    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
+    MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
@@ -191,6 +191,12 @@ class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
         only_fields = public_fields(ActionStatus)
+
+
+class ActionImplementationPhaseNode(DjangoNode):
+    class Meta:
+        model = ActionImplementationPhase
+        only_fields = public_fields(ActionImplementationPhase)
 
 
 class ActionResponsiblePartyNode(DjangoNode):

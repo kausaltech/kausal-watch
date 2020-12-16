@@ -1,22 +1,23 @@
-from admin_auto_filters.filters import AutocompleteFilter
-from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
-from admin_ordering.admin import OrderableAdmin
-from ckeditor.widgets import CKEditorWidget
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from admin_auto_filters.filters import AutocompleteFilter
+from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
+from admin_ordering.admin import OrderableAdmin
+from admin_site.admin import AplansExportMixin, AplansModelAdmin
+from ckeditor.widgets import CKEditorWidget
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
 from image_cropping import ImageCroppingMixin
-
-from admin_site.admin import AplansExportMixin, AplansModelAdmin
 from indicators.admin import ActionIndicatorAdmin
 
 from .export import ActionResource
 from .models import (
-    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
-    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
+    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
+    MonitoringQualityPoint, Plan, Scenario
 )
 from .perms import ActionRelatedAdminPermMixin
 
@@ -58,6 +59,14 @@ class ActionStatusAdmin(admin.TabularInline):
     extra = 0
 
 
+class ActionImplementationPhaseAdmin(OrderableAdmin, admin.TabularInline):
+    model = ActionImplementationPhase
+    extra = 0
+    ordering_field = 'order'
+    ordering_field_hide_input = True
+    fields = ('order', 'name', 'identifier',)
+
+
 class ActionImpactAdmin(OrderableAdmin, admin.TabularInline):
     model = ActionImpact
     extra = 0
@@ -89,7 +98,8 @@ class MonitoringQualityPointAdmin(OrderableAdmin, PlanRelatedAdmin):
 class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
-        ActionStatusAdmin, ActionImpactAdmin, ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin,
+        ActionStatusAdmin, ActionImplementationPhaseAdmin, ActionImpactAdmin,
+        ActionScheduleAdmin, ScenarioAdmin, CategoryTypeAdmin,
     ]
 
     def get_queryset(self, request):
@@ -125,7 +135,7 @@ class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admi
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('person',  'primary_contact', 'order')
+    fields = ('person', 'primary_contact', 'order')
     autocomplete_fields = ('person',)
 
 
@@ -268,8 +278,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
             )
         }),
         (_('Completion'), {
-            'fields': ('status', 'completion'),
-            'classes': ('collapse',)
+            'fields': ('status', 'manual_status_reason', 'implementation_phase',),
+            # 'classes': ('collapse',)
         }),
     )
 
@@ -305,6 +315,8 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
             form.base_fields['plan'].queryset = Plan.objects.filter(id=plan.id)
         if 'status' in form.base_fields:
             form.base_fields['status'].queryset = plan.action_statuses.all()
+        if 'implementation_phase' in form.base_fields:
+            form.base_fields['implementation_phase'].queryset = plan.action_implementation_phases.all()
         if 'schedule' in form.base_fields:
             form.base_fields['schedule'].queryset = plan.action_schedules.all()
         if 'impact' in form.base_fields:
@@ -354,7 +366,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
         return filters
 
     def get_readonly_fields(self, request, obj=None):
-        readonly_fields = ['completion']
+        readonly_fields = []
         LOCKED_FIELDS = [
             'official_name', 'identifier', 'completion',
         ]
@@ -369,8 +381,13 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
 
         user = request.user
         plan = user.get_active_admin_plan()
-        if not user.is_general_admin_for_plan(plan):
-            readonly_fields.append('status')
+
+        # If action statuses are updated manually, contact persons
+        # are allowed to change the status by themselves.
+        if not obj.plan.statuses_updated_manually:
+            if not user.is_general_admin_for_plan(plan):
+                readonly_fields.append('status')
+                readonly_fields.append('manual_status_reason')
 
         return readonly_fields
 
@@ -385,6 +402,12 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
             fs['fields'] = list(fs['fields'])
             if 'description' in fs['fields']:
                 fs['fields'].remove('description')
+
+        if not plan.action_implementation_phases.count():
+            fs = fieldsets[1][1]
+            fs['fields'] = list(fs['fields'])
+            if 'implementation_phase' in fs['fields']:
+                fs['fields'].remove('implementation_phase')
 
         if plan.allow_images_for_actions:
             fieldsets.insert(1, (_('Image'), {
