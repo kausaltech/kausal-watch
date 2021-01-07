@@ -61,7 +61,7 @@ jedi==0.17.0              # via ipython
 jinja2==2.11.2            # via -r requirements.in
 l18n==2018.5              # via wagtail
 libvoikko==4.3            # via -r requirements.in
-lxml==4.5.1               # via -r requirements.in
+lxml==4.6.2               # via -r requirements.in
 markdown==3.2.2           # via -r requirements.in
 markuppy==1.14            # via tablib
 markupsafe==1.1.1         # via jinja2
