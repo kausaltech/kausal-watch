@@ -25,7 +25,7 @@ def api_client():
 
 @pytest.fixture
 def plan():
-    return Plan.objects.create(name='Test plan', identifier='test')
+    return Plan.objects.create(name='Test plan', identifier='test', site_url='test.org')
 
 
 @pytest.fixture
