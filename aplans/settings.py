@@ -108,6 +108,7 @@ INSTALLED_APPS = [
     'wagtailfontawesome',
     'condensedinlinepanel',
     'generic_chooser',
+    'wagtailorderable',
 
     'modelcluster',
     'taggit',

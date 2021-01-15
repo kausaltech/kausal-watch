@@ -6,6 +6,7 @@
 #
 -e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster  # via -r requirements.in, wagtail
 -e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy  # via -r requirements.in
+-e git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable  # via -r requirements.in
 aniso8601==7.0.0          # via -r requirements.in, graphene
 asgiref==3.2.10           # via django
 attrs==20.2.0             # via pytest
@@ -127,7 +128,7 @@ wagtail-autocomplete==0.6  # via -r requirements.in
 wagtail-condensedinlinepanel==0.5.3  # via -r requirements.in
 wagtail-generic-chooser==0.1.1  # via -r requirements.in
 wagtail-react-streamfield==1.3.6  # via -r requirements.in
-wagtail==2.10.2           # via -r requirements.in, wagtail-autocomplete, wagtail-react-streamfield, wagtailfontawesome
+wagtail==2.10.2           # via -r requirements.in, wagtail-autocomplete, wagtail-orderable, wagtail-react-streamfield, wagtailfontawesome
 wagtailfontawesome==1.2.1  # via -r requirements.in
 wcwidth==0.2.5            # via prompt-toolkit
 webencodings==0.5.1       # via html5lib

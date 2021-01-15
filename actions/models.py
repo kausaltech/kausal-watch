@@ -8,7 +8,7 @@ from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -398,6 +398,13 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
                 raise ValidationError({'merged_with': _('Other action is merged with this one')})
         # FIXME: Make sure FKs and M2Ms point to objects that are within the
         # same action plan.
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            qs = self.plan.objects.actions.all()
+            max_order = qs.aggregate(Max(self.order))['%s__max' % self.order] or 0
+            self.order = max_order
+        return super().save(*args, **kwargs)
 
     def is_merged(self):
         return self.merged_with_id is not None

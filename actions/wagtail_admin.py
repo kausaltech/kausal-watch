@@ -11,6 +11,7 @@ from wagtail.admin.edit_handlers import (
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from wagtailorderable.modeladmin.mixins import OrderableMixin
 from django_orghierarchy.models import Organization
 
 from admin_site.wagtail import (
@@ -182,7 +183,7 @@ class ActionEditHandler(AplansTabbedInterface):
         return form_class
 
 
-class ActionAdmin(AplansModelAdmin):
+class ActionAdmin(OrderableMixin, AplansModelAdmin):
     model = Action
     menu_icon = 'fa-cubes'  # change as required
     menu_label = _('Actions')
@@ -192,6 +193,9 @@ class ActionAdmin(AplansModelAdmin):
     list_filter = (ModifiableActionsFilter, ImpactFilter, MergedActionsFilter)
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
+    index_order_field = 'order'
+
+    ordering = ['order']
 
     basic_panels = [
         FieldPanel('identifier'),
@@ -251,8 +255,12 @@ class ActionAdmin(AplansModelAdmin):
                 return obj.name
         name_link.short_description = _('Name')
         self.name_link = name_link
+        list_display = ['identifier', 'name_link']
+        plan = request.user.get_active_admin_plan()
+        if not plan.actions_locked and request.user.is_general_admin_for_plan(plan):
+            list_display.insert(0, 'index_order')
 
-        return ('identifier', 'name_link')
+        return tuple(list_display)
 
     def get_task_header_formatter(self):
         states = {key: str(label) for key, label in list(ActionTask.STATES)}
