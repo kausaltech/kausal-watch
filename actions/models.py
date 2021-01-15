@@ -383,6 +383,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         verbose_name_plural = _('actions')
         ordering = ('plan', 'order')
         index_together = (('plan', 'order'),)
+        unique_together = (('plan', 'identifier'),)
         permissions = (
             ('admin_action', _("Can administrate all actions")),
         )
