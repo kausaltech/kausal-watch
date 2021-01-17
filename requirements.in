@@ -16,7 +16,6 @@ python-jose
 plotly
 cryptography
 django-ckeditor
-ipython  # install for development convenience for now
 django-image-cropping
 easy-thumbnails
 Pillow

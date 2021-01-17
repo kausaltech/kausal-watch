@@ -1,2 +1,6 @@
 -c requirements.txt
 pywatchman
+python-language-server[Rope,Pyflakes,McCabe,YAPF]
+isort
+autopep8
+ipython

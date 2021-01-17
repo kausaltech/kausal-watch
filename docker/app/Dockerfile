@@ -34,6 +34,9 @@ RUN pip install --upgrade pip
 COPY requirements.txt requirements-prod.txt /code/
 RUN pip install -r /code/requirements-prod.txt -r /code/requirements.txt
 
+# Install ipython for convenience
+RUN pip install ipython
+
 COPY package.json package-lock.json /code/
 WORKDIR /code
 RUN npm install
