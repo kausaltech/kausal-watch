@@ -3,9 +3,12 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
+from users.managers import UserManager
 
 
 class User(AbstractUser):
+    objects = UserManager()
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
