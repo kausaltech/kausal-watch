@@ -183,8 +183,18 @@ class ActionEditHandler(AplansTabbedInterface):
         return form_class
 
 
+class ActionCreateView(AplansCreateView):
+    def get_instance(self):
+        # Override default implementation, which would try to create an
+        # instance of self.model (i.e., Action) without a plan, causing an
+        # error
+        plan = self.request.user.get_active_admin_plan()
+        return getattr(self, 'instance', None) or Action(plan=plan)
+
+
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
     model = Action
+    create_view_class = ActionCreateView
     menu_icon = 'fa-cubes'  # change as required
     menu_label = _('Actions')
     menu_order = 1
