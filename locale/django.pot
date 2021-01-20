@@ -933,15 +933,15 @@ msgid "level"
 msgstr ""
 
 #: indicators/admin.py
-msgid "Disconnected indicators"
+msgid "Show indicators"
 msgstr ""
 
 #: indicators/admin.py
-msgid "No"
+msgid "in active plan"
 msgstr ""
 
 #: indicators/admin.py
-msgid "Yes"
+msgid "all"
 msgstr ""
 
 #: indicators/admin.py

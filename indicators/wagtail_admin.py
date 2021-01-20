@@ -2,7 +2,6 @@ import json
 
 from django import forms
 from django.contrib.admin.utils import quote
-from django.db.models import Q
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -24,7 +23,7 @@ from users.models import User
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
-from .models import Dimension, Indicator, Quantity, Unit
+from .models import Dimension, Indicator, IndicatorLevel, Quantity, Unit
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -202,26 +201,41 @@ class UnitAdmin(ModelAdmin):
 
 
 class IndicatorForm(AplansAdminModelForm):
-    level = forms.ChoiceField(choices=Indicator.LEVELS)
+    LEVEL_CHOICES = (('', _('[not in active plan]')),) + Indicator.LEVELS
+
+    level = forms.ChoiceField(choices=LEVEL_CHOICES, required=False)
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
         # If we are editing an existing indicator, set the `level` field to the proper indicator level in the database
         if self.instance.pk is not None:
-            through_instance = self.instance.plans.through.objects.get(indicator=self.instance, plan=self.plan)
-            self.fields['level'].initial = through_instance.level
+            try:
+                indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
+                self.fields['level'].initial = indicator_level.level
+            except IndicatorLevel.DoesNotExist:
+                # Indicator is not in active plan
+                pass
 
     def _save_m2m(self):
         assert self.plan
-        indicator_level, created = self.instance.plans.through.objects.get_or_create(
-            indicator=self.instance,
-            plan=self.plan,
-            defaults={'level': self.data['level']},
-        )
-        if not created:
-            indicator_level.level = self.data['level']
-            indicator_level.save()
+        chosen_level = self.data['level']
+        # Update related IndicatorLevel object, deleting it if chosen_level is empty or None
+        try:
+            indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
+            if not chosen_level:
+                indicator_level.delete()
+            else:
+                indicator_level.level = chosen_level
+                indicator_level.save()
+        except IndicatorLevel.DoesNotExist:
+            # Indicator was not in active plan
+            if chosen_level:
+                IndicatorLevel.objects.create(
+                    indicator=self.instance,
+                    plan=self.plan,
+                    level=chosen_level,
+                )
         return super()._save_m2m()
 
 
@@ -304,7 +318,7 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
+        return qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()

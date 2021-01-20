@@ -175,13 +175,13 @@ class IndicatorLevelFilter(admin.SimpleListFilter):
 
 
 class DisconnectedIndicatorFilter(admin.SimpleListFilter):
-    title = _('Disconnected indicators')
+    title = _('Show indicators')
     parameter_name = 'disconnected'
 
     def lookups(self, request, model_admin):
         return (
-            (None, _('No')),
-            ('1', _('Yes')),
+            (None, _('in active plan')),
+            ('1', _('all')),
         )
 
     def queryset(self, request, queryset):
