@@ -208,8 +208,9 @@ class IndicatorForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
-        # If we are editing an existing indicator, set the `level` field to the proper indicator level in the database
         if self.instance.pk is not None:
+            # We are editing an existing indicator. If the indicator is in the
+            # active plan, set this form's `level` field to the proper value.
             try:
                 indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
                 self.fields['level'].initial = indicator_level.level
@@ -217,17 +218,22 @@ class IndicatorForm(AplansAdminModelForm):
                 # Indicator is not in active plan
                 pass
 
+    def save(self, commit=True):
+        assert self.instance.organization_id is None or self.instance.organization == self.plan.organization
+        self.instance.organization = self.plan.organization
+        return super().save(commit)
+
     def _save_m2m(self):
         assert self.plan
         chosen_level = self.data['level']
         # Update related IndicatorLevel object, deleting it if chosen_level is empty or None
         try:
             indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
-            if not chosen_level:
-                indicator_level.delete()
-            else:
+            if chosen_level:
                 indicator_level.level = chosen_level
                 indicator_level.save()
+            else:
+                indicator_level.delete()
         except IndicatorLevel.DoesNotExist:
             # Indicator was not in active plan
             if chosen_level:
