@@ -279,7 +279,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
     """One action/measure tracked in an action plan."""
 
     plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, default=latest_plan, related_name='actions',
+        Plan, on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
@@ -401,9 +401,12 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
 
     def save(self, *args, **kwargs):
         if self.pk is None:
-            qs = self.plan.objects.actions.all()
-            max_order = qs.aggregate(Max(self.order))['%s__max' % self.order] or 0
-            self.order = max_order
+            qs = self.plan.actions.values('order').order_by()
+            max_order = qs.aggregate(Max('order'))['order__max']
+            if max_order is None:
+                self.order = 0
+            else:
+                self.order = max_order + 1
         return super().save(*args, **kwargs)
 
     def is_merged(self):
