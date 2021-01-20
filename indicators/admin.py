@@ -94,7 +94,7 @@ class IndicatorLevelAdmin(admin.TabularInline):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
+        return qs.filter(plan=plan)
 
 
 class IndicatorGoalAdmin(admin.TabularInline):
