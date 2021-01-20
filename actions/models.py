@@ -402,8 +402,11 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
     def save(self, *args, **kwargs):
         if self.pk is None:
             qs = self.plan.actions.values('order').order_by()
-            max_order = qs.aggregate(Max('order'))['order__max'] or 0
-            self.order = max_order
+            max_order = qs.aggregate(Max('order'))['order__max']
+            if max_order is None:
+                self.order = 0
+            else:
+                self.order = max_order + 1
         return super().save(*args, **kwargs)
 
     def is_merged(self):
