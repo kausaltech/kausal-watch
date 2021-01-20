@@ -94,7 +94,7 @@ class IndicatorLevelAdmin(admin.TabularInline):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(plan=plan)
+        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
 
 
 class IndicatorGoalAdmin(admin.TabularInline):
@@ -294,7 +294,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
+        return qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
@@ -303,7 +303,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
             obj.delete()
         for instance in instances:
             if isinstance(instance, IndicatorGoal):
-                if not instance.plan_id:
+                if instance.plan_id is None:
                     instance.plan = plan
             instance.save()
         formset.save_m2m()
@@ -318,13 +318,15 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         return actions
 
     def save_model(self, request, obj, form, change):
+        plan = request.user.get_active_admin_plan()
+        assert obj.organization_id is None or obj.organization == plan.organization
+        obj.organization = plan.organization
         super().save_model(request, obj, form, change)
         obj.set_latest_value()
         obj.save(update_fields=['latest_value'])
 
         self._update_actions = obj.related_actions.filter(indicates_action_progress=True)
 
-        plan = request.user.get_active_admin_plan()
         for field_name, field in self._get_category_fields(plan, obj).items():
             if field_name not in form.cleaned_data:
                 continue

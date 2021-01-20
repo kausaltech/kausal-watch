@@ -195,7 +195,7 @@ class Indicator(ClusterableModel):
         on_delete=models.PROTECT, verbose_name=_('common indicator')
     )
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', related_name='indicators',
+        'django_orghierarchy.Organization', related_name='indicators', editable=False,
         on_delete=models.PROTECT, verbose_name=_('organization'),
     )
     plans = models.ManyToManyField(
