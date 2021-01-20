@@ -187,9 +187,11 @@ class ActionCreateView(AplansCreateView):
     def get_instance(self):
         # Override default implementation, which would try to create an
         # instance of self.model (i.e., Action) without a plan, causing an
-        # error
-        plan = self.request.user.get_active_admin_plan()
-        return getattr(self, 'instance', None) or Action(plan=plan)
+        # error when saving it
+        instance = super().get_instance()
+        if not instance.pk:
+            instance.plan = self.request.user.get_active_admin_plan()
+        return instance
 
 
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
