@@ -91,20 +91,11 @@ class IndicatorLevelAdmin(admin.TabularInline):
         field.queryset = field.queryset.filter(id__in=admin_plan_ids)
         return formset
 
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        plan = request.user.get_active_admin_plan()
-        return qs.filter(plan=plan)
-
 
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
-    fields = ('date', 'value', 'scenario')
-
-    def get_queryset(self, request):
-        plan = request.user.get_active_admin_plan()
-        return super().get_queryset(request).filter(plan=plan)
+    fields = ('plan', 'date', 'value', 'scenario')
 
     def get_formset(self, request, obj=None, **kwargs):
         plan = request.user.get_active_admin_plan()
