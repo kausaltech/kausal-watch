@@ -176,7 +176,7 @@ class DisconnectedIndicatorFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
-        if not self.value():
+        if self.value() != '1':
             plan = request.user.get_active_admin_plan()
             return queryset.filter(levels__plan=plan)
         return queryset
