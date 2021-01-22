@@ -934,16 +934,16 @@ msgid "level"
 msgstr "taso"
 
 #: indicators/admin.py
-msgid "Disconnected indicators"
-msgstr "irralliset mittarit"
+msgid "Show indicators"
+msgstr "Näytä mittarit"
 
 #: indicators/admin.py
-msgid "No"
-msgstr "Ei"
+msgid "in active plan"
+msgstr "aktiivisessa toimenpideohjelmassa"
 
 #: indicators/admin.py
-msgid "Yes"
-msgstr "Kyllä"
+msgid "all"
+msgstr "kaikki"
 
 #: indicators/admin.py
 msgid "[nothing]"

@@ -869,16 +869,16 @@ msgid "level"
 msgstr "nivå"
 
 #: indicators/admin.py
-msgid "Disconnected indicators"
-msgstr "Frånkopplade indikatorer"
+msgid "Show indicators"
+msgstr "Visa indikatorer"
 
 #: indicators/admin.py people/admin.py
-msgid "No"
-msgstr "Nej"
+msgid "in active plan"
+msgstr "i aktiv plan"
 
 #: indicators/admin.py people/admin.py
-msgid "Yes"
-msgstr "Ja"
+msgid "all"
+msgstr "alla"
 
 #: indicators/admin.py
 msgid "[nothing]"

@@ -1,27 +1,29 @@
 import json
 
+from django import forms
 from django.contrib.admin.utils import quote
-from django.db.models import Q
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
-
-from admin_site.wagtail import (
-    AplansButtonHelper, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect
-)
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from people.chooser import PersonChooser
-from users.models import User
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
 
+from admin_site.wagtail import (
+    AplansAdminModelForm, AplansButtonHelper, AplansCreateView, AplansEditView,
+    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    CondensedPanelSingleSelect
+)
+from people.chooser import PersonChooser
+from users.models import User
+
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
-from .models import Dataset, Dimension, Indicator, Quantity, Unit
+from .models import Dimension, Indicator, IndicatorLevel, Quantity, Unit
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -198,8 +200,70 @@ class UnitAdmin(ModelAdmin):
     ]
 
 
+class IndicatorForm(AplansAdminModelForm):
+    LEVEL_CHOICES = (('', _('[not in active plan]')),) + Indicator.LEVELS
+
+    level = forms.ChoiceField(choices=LEVEL_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            # We are editing an existing indicator. If the indicator is in the
+            # active plan, set this form's `level` field to the proper value.
+            try:
+                indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
+                self.fields['level'].initial = indicator_level.level
+            except IndicatorLevel.DoesNotExist:
+                # Indicator is not in active plan
+                pass
+
+    def save(self, commit=True):
+        assert self.instance.organization_id is None or self.instance.organization == self.plan.organization
+        self.instance.organization = self.plan.organization
+        return super().save(commit)
+
+    def _save_m2m(self):
+        assert self.plan
+        chosen_level = self.data['level']
+        # Update related IndicatorLevel object, deleting it if chosen_level is empty or None
+        try:
+            indicator_level = IndicatorLevel.objects.get(indicator=self.instance, plan=self.plan)
+            if chosen_level:
+                indicator_level.level = chosen_level
+                indicator_level.save()
+            else:
+                indicator_level.delete()
+        except IndicatorLevel.DoesNotExist:
+            # Indicator was not in active plan
+            if chosen_level:
+                IndicatorLevel.objects.create(
+                    indicator=self.instance,
+                    plan=self.plan,
+                    level=chosen_level,
+                )
+        return super()._save_m2m()
+
+
+class InitializeFormWithPlanMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'plan': self.request.user.get_active_admin_plan()})
+        return kwargs
+
+
+class IndicatorCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+    pass
+
+
+class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
+    pass
+
+
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
+    create_view_class = IndicatorCreateView
+    edit_view_class = IndicatorEditView
     menu_icon = 'fa-bar-chart'
     menu_order = 3
     menu_label = _('Indicators')
@@ -210,6 +274,7 @@ class IndicatorAdmin(AplansModelAdmin):
     button_helper_class = IndicatorButtonHelper
 
     edit_handler = AplansTabbedInterface
+    base_form_class = IndicatorForm
 
     basic_panels = [
         FieldPanel('name'),
@@ -218,6 +283,7 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('time_resolution'),
         FieldPanel('min_value'),
         FieldPanel('max_value'),
+        FieldPanel('level'),
         RichTextFieldPanel('description'),
     ]
 
@@ -229,7 +295,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect)
             ]))
 
-        return AplansTabbedInterface(children=[
+        handler = AplansTabbedInterface(children=[
             ObjectList(basic_panels, heading=_('Basic information')),
             ObjectList([
                 CondensedInlinePanel(
@@ -240,6 +306,8 @@ class IndicatorAdmin(AplansModelAdmin):
                 )
             ], heading=_('Contact persons')),
         ])
+        handler.base_form_class = IndicatorForm
+        return handler
 
     def unit_display(self, obj):
         unit = obj.unit
@@ -256,7 +324,7 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
-        return qs.filter(Q(plans=plan) | Q(plans__isnull=True)).distinct().select_related('unit', 'quantity')
+        return qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
