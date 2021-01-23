@@ -10,9 +10,11 @@ __pycache__/
 /*.bz2
 /*.xlsx
 /.env
+/venv/
 /Attic/
 /media/
 /*.sublime-project
 /*.sublime-workspace
 /data/
 /.vscode/
+/.idea/
