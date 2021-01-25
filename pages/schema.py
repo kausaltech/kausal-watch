@@ -1,16 +1,19 @@
 import functools
 
 import graphene
-from aplans.graphql_types import DjangoNode
 from graphene.types.generic import GenericScalar
 from graphene_django.converter import convert_django_field
-from pages.models import AplansPage, PlanRootPage
-from pages.models import StaticPage as WStaticPage
 from wagtail.core.blocks import StaticBlock as WagtailStaticBlock
 from wagtail.core.blocks import field_block
 from wagtail.core.fields import StreamField as WagtailStreamField
 from wagtail.core.models import Page as WagtailPage
 
+from aplans.graphql_types import DjangoNode
+from pages.models import (
+    AplansPage, PlanRootPage, CategoryPage, StaticPage as WStaticPage
+)
+from indicators import blocks as indicators_blocks
+from actions import blocks as actions_blocks
 from . import blocks as pages_blocks
 
 BASE_PAGE_FIELDS = [
@@ -49,20 +52,36 @@ class StreamFieldBlock(graphene.Interface):
 
     @classmethod
     def resolve_type(cls, instance, info):
+        type_class = None
         if isinstance(instance.block, field_block.CharBlock):
-            return CharBlock
+            type_class = CharBlock
         elif isinstance(instance.block, field_block.RichTextBlock):
-            return RichTextBlock
+            type_class = RichTextBlock
         elif isinstance(instance.block, field_block.ChoiceBlock):
-            return CharBlock
+            type_class = CharBlock
         elif isinstance(instance.block, WagtailStaticBlock):
-            return StaticBlock
+            type_class = StaticBlock
         elif isinstance(instance.block, pages_blocks.QuestionAnswerBlock):
-            return QuestionAnswerBlock
+            type_class = QuestionAnswerBlock
         elif isinstance(instance.block, pages_blocks.FrontPageHeroBlock):
-            return FrontPageHeroBlock
+            type_class = FrontPageHeroBlock
+        elif isinstance(instance.block, indicators_blocks.IndicatorBlock):
+            type_class = IndicatorBlock
+        elif isinstance(instance.block, indicators_blocks.IndicatorHighlightsBlock):
+            type_class = IndicatorHighlightsBlock
+        elif isinstance(instance.block, actions_blocks.CategoryListBlock):
+            type_class = CategoryListBlock
+        elif isinstance(instance.block, actions_blocks.ActionListBlock):
+            type_class = ActionListBlock
         else:
             raise Exception('Unknown type: %s' % instance.block)
+
+        # Fill in the data from the 'value' attribute
+        if hasattr(instance.value, 'items'):
+            for key, value in instance.value.items():
+                setattr(instance, key, value)
+
+        return type_class
 
     def resolve_name(self, info):
         return self.block.name
@@ -85,6 +104,28 @@ class StaticBlock(graphene.ObjectType):
 
 class CharBlock(graphene.ObjectType):
     value = graphene.String(required=True)
+
+    class Meta:
+        interfaces = (StreamFieldBlock,)
+
+
+class IndicatorBlock(graphene.ObjectType):
+    indicator = graphene.Field('indicators.schema.IndicatorNode', required=True)
+    style = graphene.Field(CharBlock, required=True)
+
+    class Meta:
+        interfaces = (StreamFieldBlock,)
+
+
+class ActionListBlock(graphene.ObjectType):
+    category_filter = graphene.Field('aplans.schema.CategoryNode', required=False)
+
+    class Meta:
+        interfaces = (StreamFieldBlock,)
+
+
+class CategoryListBlock(graphene.ObjectType):
+    style = graphene.Field(CharBlock, required=True)
 
     class Meta:
         interfaces = (StreamFieldBlock,)
@@ -141,6 +182,13 @@ class WStaticPageNode(BasePageNode):
     class Meta:
         model = WStaticPage
         only_fields = BASE_PAGE_FIELDS + ['header_image', 'lead_paragraph', 'body']
+        interfaces = (Page,)
+
+
+class CategoryPageNode(BasePageNode):
+    class Meta:
+        model = CategoryPage
+        only_fields = BASE_PAGE_FIELDS + ['category', 'body']
         interfaces = (Page,)
 
 
@@ -209,5 +257,7 @@ class MenuNode(graphene.ObjectType):
 
 
 types = [
-    WStaticPageNode, RootPageNode, CharBlock, StaticBlock, QuestionAnswerBlock, RichTextBlock, FrontPageHeroBlock,
+    WStaticPageNode, RootPageNode, CategoryPageNode,
+    CharBlock, StaticBlock, QuestionAnswerBlock, RichTextBlock, FrontPageHeroBlock,
+    CategoryListBlock, ActionListBlock, IndicatorBlock,
 ]
