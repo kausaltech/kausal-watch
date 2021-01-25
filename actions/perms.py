@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django_orghierarchy.models import Organization
-from wagtail.core.models import GroupCollectionPermission
+from wagtail.core.models import GroupCollectionPermission, GroupPagePermission, PAGE_PERMISSION_TYPES
 
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
 from indicators.models import (
@@ -57,7 +57,9 @@ def get_wagtail_plan_admin_perms():
     perms = []
     perms += list(Permission.objects.filter(
         content_type__app_label='wagtailcore',
-        codename__in=['change_collection', 'delete_collection']
+        codename__in=[
+            'change_collection', 'delete_collection',
+        ]
     ))
     return perms
 
@@ -143,6 +145,18 @@ def _sync_group_collection_perms(root_collection, group, perms):
         if perm not in perms:
             group.collection_permissions.get(collection=root_collection, permission=perm).delete()
 
+
+def _sync_group_page_perms(root_page, group):
+    # Delete all page permissions that are connected to another root page
+    GroupPagePermission.objects.filter(group=group).exclude(page=root_page).delete()
+
+    current_perms = GroupPagePermission.objects.filter(group=group)
+    perm_set = {gpp.permission_type for gpp in current_perms}
+    new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
+    if perm_set != new_perm_set:
+        current_perms.delete()
+        for perm in new_perm_set:
+            GroupPagePermission.objects.create(page=root_page, group=group, permission_type=perm)
 
 def _sync_contact_person_groups(user):
     plans = user.get_adminable_plans()
@@ -257,9 +271,10 @@ def _sync_plan_admin_groups(user):
             continue
 
         user.groups.add(group)
-        if plan.root_collection is None:
-            continue
-        _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+        if plan.root_collection is not None:
+            _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+        if plan.root_page is not None:
+            _sync_group_page_perms(plan.root_page, group)
 
 
 def remove_plan_admin_perms(user):
@@ -274,6 +289,8 @@ def add_plan_admin_perms(user):
     if not user.is_staff:
         user.is_staff = True
         user.save(update_fields=['is_staff'])
+
+    _sync_plan_admin_groups(user)
 
 
 class ActionRelatedAdminPermMixin:

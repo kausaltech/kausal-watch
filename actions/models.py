@@ -272,7 +272,7 @@ class ActionQuerySet(models.QuerySet):
         return self.filter(merged_with__isnull=True)
 
     def active(self):
-        return self.umerged().filter(status__is_completed=False)
+        return self.unmerged().exclude(status__is_completed=True)
 
 
 class Action(ModelWithImage, OrderedModel, ClusterableModel):
@@ -897,6 +897,29 @@ class CategoryType(models.Model):
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
 
+class CategoryLevel(OrderedModel):
+    """Hierarchy level within a CategoryType.
+
+    Root level has order=0, first child level order=1 and so on.
+    """
+    type = models.ForeignKey(
+        CategoryType, on_delete=models.CASCADE, related_name='levels',
+        verbose_name=_('type')
+    )
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    i18n = TranslationField(fields=('name',))
+
+    public_fields = [
+        'id', 'name', 'order', 'type',
+    ]
+
+    class Meta:
+        unique_together = (('type', 'order'),)
+        verbose_name = _('category level')
+        verbose_name_plural = _('category levels')
+        ordering = ('type', 'order')
+
+
 class Category(OrderedModel, ModelWithImage):
     """A category for actions and indicators."""
 
@@ -913,11 +936,16 @@ class Category(OrderedModel, ModelWithImage):
     short_description = models.CharField(
         max_length=200, blank=True, verbose_name=_('short description')
     )
+    # FIXME: Implement validation for color
+    color = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_('theme color'),
+        help_text=_('Set if the category has a theme color')
+    )
 
     i18n = TranslationField(fields=('name', 'short_description'))
 
     public_fields = [
-        'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description'
+        'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description', 'color',
     ]
 
     class Meta:

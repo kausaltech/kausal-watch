@@ -1,18 +1,17 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import (
-    FieldPanel, MultiFieldPanel, StreamFieldPanel,
-)
-from wagtail.core.models import Page
-from wagtail.core.fields import StreamField, RichTextField
+from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
+from wagtail.core.fields import RichTextField, StreamField
+from wagtail.core.models import Page, UserPagePermissionsProxy
 from wagtail.images.edit_handlers import ImageChooserPanel
 
-from .blocks import (
-    QuestionAnswerBlock, IndicatorHighlightsBlock, ActionHighlightsBlock, FrontPageHeroBlock
-)
+from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
+from actions.chooser import CategoryChooser
+from actions.models import Category
+from indicators.blocks import IndicatorBlock, IndicatorHighlightsBlock
 
+from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
@@ -41,9 +40,11 @@ class AplansPage(Page):
 
 class PlanRootPage(AplansPage):
     body = StreamField([
-        ('front_page_hero', FrontPageHeroBlock()),
-        ('indicator_highlights', IndicatorHighlightsBlock()),
-        ('action_highlights', ActionHighlightsBlock()),
+        ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
+        ('category_list', CategoryListBlock(label=_('Category list'))),
+        ('indicator', IndicatorBlock(label=_('Indicator'))),
+        ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
+        ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
     ])
 
     content_panels = AplansPage.content_panels + [
@@ -51,7 +52,6 @@ class PlanRootPage(AplansPage):
     ]
 
     parent_page_types = []
-    subpage_types = ['pages.StaticPage']
 
 
 class StaticPage(AplansPage):
@@ -68,9 +68,28 @@ class StaticPage(AplansPage):
         ('heading', blocks.CharBlock(classname='full title', label=_('Heading'))),
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
-    ])
+    ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
         ImageChooserPanel('header_image'),
         StreamFieldPanel('body'),
     ]
+
+
+class CategoryPage(AplansPage):
+    category = models.ForeignKey(
+        Category, on_delete=models.PROTECT, null=False, verbose_name=_('Category'),
+    )
+    body = StreamField([
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('indicator', IndicatorBlock(label=_('Indicator'))),
+        ('action_list', ActionListBlock(label=_('Action list')))
+    ])
+
+    content_panels = AplansPage.content_panels + [
+        FieldPanel('category', widget=CategoryChooser),
+        StreamFieldPanel('body'),
+    ]
+
+    parent_page_types = [PlanRootPage, StaticPage, 'CategoryPage']
+    subpage_types = [StaticPage, 'CategoryPage']

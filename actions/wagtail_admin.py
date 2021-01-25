@@ -461,6 +461,10 @@ class PlanAdmin(AplansModelAdmin):
 modeladmin_register(PlanAdmin)
 
 
+class CategoryTypeAdmin(AplansModelAdmin):
+    pass
+
+
 # Monkeypatch Organization to support Wagtail autocomplete
 def org_autocomplete_label(self):
     return self.distinct_name

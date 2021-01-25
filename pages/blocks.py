@@ -19,11 +19,3 @@ class FrontPageHeroBlock(blocks.StructBlock):
     image = ImageChooserBlock()
     heading = blocks.CharBlock(classname='full title', label=_('Heading'))
     lead = blocks.RichTextBlock(label=_('Lead'))
-
-
-class IndicatorHighlightsBlock(blocks.StaticBlock):
-    pass
-
-
-class ActionHighlightsBlock(blocks.StaticBlock):
-    pass

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-12-16 15:15+0200\n"
+"POT-Creation-Date: 2021-01-19 12:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: actions/admin.py
 msgid "non-modifiable actions"
@@ -71,6 +72,22 @@ msgstr ""
 
 #: actions/apps.py actions/wagtail_admin.py
 msgid "Actions"
+msgstr ""
+
+#: actions/blocks.py pages/models.py
+msgid "Action list"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Filter on category"
+msgstr ""
+
+#: actions/chooser.py
+msgid "Choose a category"
+msgstr ""
+
+#: actions/chooser.py
+msgid "Choose another category"
 msgstr ""
 
 #: actions/export.py aplans/utils.py notifications/models.py
@@ -546,6 +563,19 @@ msgstr ""
 msgid "monitoring quality points"
 msgstr ""
 
+#: actions/templates/site_summary/actions.html
+#, python-format
+msgid ""
+"\n"
+"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgid_plural ""
+"\n"
+"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgstr[0] ""
+msgstr[1] ""
+
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
@@ -955,6 +985,18 @@ msgstr ""
 #: indicators/apps.py indicators/templates/indicators/edit_values.html
 #: indicators/wagtail_admin.py
 msgid "Indicators"
+msgstr ""
+
+#: indicators/blocks.py pages/models.py
+msgid "Indicator"
+msgstr ""
+
+#: indicators/chooser.py
+msgid "Choose an indicator"
+msgstr ""
+
+#: indicators/chooser.py
+msgid "Choose another indicator"
 msgstr ""
 
 #: indicators/models.py
@@ -1380,10 +1422,6 @@ msgid "Font CSS style URL"
 msgstr ""
 
 #: notifications/models.py
-msgid "Maximum amount of days since last action update"
-msgstr ""
-
-#: notifications/models.py
 msgid "base template"
 msgstr ""
 
@@ -1497,6 +1535,14 @@ msgstr ""
 
 #: pages/models.py
 msgid "Questions & Answers"
+msgstr ""
+
+#: pages/models.py
+msgid "Category"
+msgstr ""
+
+#: pages/models.py
+msgid "Text"
 msgstr ""
 
 #: people/admin.py

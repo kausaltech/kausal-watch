@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-12-16 15:15+0200\n"
+"POT-Creation-Date: 2021-01-19 12:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,6 +73,22 @@ msgstr "toimenpide"
 #: actions/apps.py actions/wagtail_admin.py
 msgid "Actions"
 msgstr "Toimenpiteet"
+
+#: actions/blocks.py pages/models.py
+msgid "Action list"
+msgstr "Toimenpideluettelo"
+
+#: actions/blocks.py
+msgid "Filter on category"
+msgstr "Rajaa luokan mukaan"
+
+#: actions/chooser.py
+msgid "Choose a category"
+msgstr "Valitse luokka"
+
+#: actions/chooser.py
+msgid "Choose another category"
+msgstr "Valitse toinen luokka"
 
 #: actions/export.py aplans/utils.py notifications/models.py
 msgid "identifier"
@@ -547,6 +563,19 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
+#: actions/templates/site_summary/actions.html
+#, python-format
+msgid ""
+"\n"
+"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgid_plural ""
+"\n"
+"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgstr[0] ""
+msgstr[1] ""
+
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
@@ -957,6 +986,18 @@ msgstr "on tavoitteita"
 #: indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
+
+#: indicators/blocks.py pages/models.py
+msgid "Indicator"
+msgstr "Mittari"
+
+#: indicators/chooser.py
+msgid "Choose an indicator"
+msgstr "Valitse mittari"
+
+#: indicators/chooser.py
+msgid "Choose another indicator"
+msgstr "Valitse toinen mittari"
 
 #: indicators/models.py
 msgctxt "physical"
@@ -1381,10 +1422,6 @@ msgid "Font CSS style URL"
 msgstr ""
 
 #: notifications/models.py
-msgid "Maximum amount of days since last action update"
-msgstr ""
-
-#: notifications/models.py
 msgid "base template"
 msgstr "pohjamallinne"
 
@@ -1499,6 +1536,14 @@ msgstr "Kappale"
 #: pages/models.py
 msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
+
+#: pages/models.py
+msgid "Category"
+msgstr "Luokka"
+
+#: pages/models.py
+msgid "Text"
+msgstr "Teksti"
 
 #: people/admin.py
 msgid "Is contact person"

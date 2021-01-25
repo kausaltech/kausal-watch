@@ -1,0 +1,11 @@
+{% load i18n wagtailadmin_tags %}
+
+<li class="icon icon-fa-cubes">
+    <a href="{% url 'actions_action_modeladmin_index' %}">
+    {% blocktrans count counter=total_actions with total_actions|intcomma as total %}
+        <span>{{ total }}</span> actions <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% plural %}
+        <span>{{ total }}</span> actions <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% endblocktrans %}
+    </a>
+</li>
