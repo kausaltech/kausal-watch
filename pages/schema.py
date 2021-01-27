@@ -164,6 +164,8 @@ class QuestionAnswerBlock(StructBlock):
 class FrontPageHeroBlock(StructBlock):
     layout = graphene.String(required=True)
     image = graphene.Field('images.schema.ImageNode')
+    heading = graphene.String(required=True)
+    lead = graphene.String(required=True)
 
 
 class StreamField(graphene.ObjectType):
