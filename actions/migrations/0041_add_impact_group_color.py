@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='impactgroup',
             name='color',
-            field=models.CharField(blank=True, max_length=16, null=True, validators=[actions.models.validate_hex_color], verbose_name='color'),
+            field=models.CharField(blank=True, max_length=16, null=True, validators=[actions.models.validate_css_color], verbose_name='color'),
         ),
     ]
