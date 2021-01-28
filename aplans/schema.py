@@ -422,6 +422,7 @@ class Query(indicators_schema.Query):
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
     )
+    plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
     def resolve_plan(self, info, id=None, domain=None, **kwargs):
         if not id and not domain:
@@ -454,6 +455,17 @@ class Query(indicators_schema.Query):
             qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
+
+    def resolve_plan_page(self, info, plan, path, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        root = plan_obj.root_page
+        if not path.endswith('/'):
+            path = path + '/'
+        qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()
+        return gql_optimizer.query(qs, info).first()
 
     def resolve_categories(self, info, category_type):
         qs = self.categories

@@ -44,7 +44,7 @@ class MenuItemNode(graphene.ObjectType):
         return MenuItemNode(page=parent)
 
     def resolve_children(self, info):
-        return [MenuItemNode(page) for page in self.page.get_children().specific()]
+        return [MenuItemNode(page) for page in self.page.get_children().live().public().specific()]
 
 
 class MenuNode(graphene.ObjectType):
@@ -68,7 +68,7 @@ class MenuNode(graphene.ObjectType):
             pages = self.get_descendants(inclusive=False)
         else:
             pages = self.get_children()
-        pages = pages.specific()
+        pages = pages.live().public().in_menu().specific()
         return [MenuNode.menu_item_from_page(page) for page in pages]
 
     @classmethod
