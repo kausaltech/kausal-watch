@@ -23,7 +23,7 @@ def test_action_no_duplicate_identifier_per_plan(plan):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('color', ['invalid', '#fffffg', 'rgb(255, 255, 256)'])
+@pytest.mark.parametrize('color', ['invalid', '#fffffg', '#00'])
 def test_category_color_invalid(category, color):
     category.color = color
     with pytest.raises(ValidationError):
@@ -31,7 +31,7 @@ def test_category_color_invalid(category, color):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize('color', ['#ffFFff', '#000', 'red', 'rgb(1,2,3)', 'rgba(0, 255, 100%, 0.5)'])
+@pytest.mark.parametrize('color', ['#ffFFff', '#000', 'red', 'rgb(1,2,3)', 'rgba(0%, 100%, 100%, 0.5)'])
 def test_category_color_valid(category, color):
     category.color = color
     category.full_clean()
