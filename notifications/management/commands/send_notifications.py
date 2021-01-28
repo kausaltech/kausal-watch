@@ -226,7 +226,7 @@ class NotificationEngine:
         N_DAYS = 365
         TASK_COUNT = 1
         # Also when the action has not been updated in 90 days
-        LAST_UPDATED_DAYS = 90
+        LAST_UPDATED_DAYS = 180
 
         active_tasks = action.tasks.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
         today = date.today()
