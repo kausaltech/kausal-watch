@@ -28,8 +28,20 @@ def patch_wagtail_page_hierarchy():
     navigation.get_pages_with_direct_explore_permission = filter_plan_pages
 
 
+def resolve_page_url_path(self, info):
+    # Strip the trailing '/'
+    return self.url_path.rstrip('/')
+
+
+def patch_grapple_url_resolvers():
+    from grapple.types.pages import PageInterface
+
+    PageInterface.resolve_url_path = resolve_page_url_path
+
+
 class PagesConfig(AppConfig):
     name = 'pages'
 
     def ready(self):
         patch_wagtail_page_hierarchy()
+        patch_grapple_url_resolvers()

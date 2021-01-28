@@ -49,3 +49,4 @@ coreapi
 pyyaml
 django_redis
 uritemplate
+wagtail_grapple

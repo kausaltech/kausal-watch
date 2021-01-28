@@ -1,5 +1,8 @@
+from indicators.models import IndicatorGraph
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+from grapple.models import GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
@@ -53,6 +56,26 @@ class PlanRootPage(AplansPage):
 
     parent_page_types = []
 
+    graphql_fields = [
+        GraphQLStreamfield('body'),
+    ]
+
+    class Meta:
+        verbose_name = _('Front page')
+        verbose_name_plural = _('Front pages')
+
+    def set_url_path(self, parent):
+        # Ensure the parent is the global root page
+        assert self.depth == 2
+        self.url_path = '/'
+        return self.url_path
+
+
+class EmptyPage(AplansPage):
+    class Meta:
+        verbose_name = _('Empty page')
+        verbose_name_plural = _('Empty pages')
+
 
 class StaticPage(AplansPage):
     header_image = models.ForeignKey(
@@ -75,6 +98,16 @@ class StaticPage(AplansPage):
         StreamFieldPanel('body'),
     ]
 
+    graphql_fields = [
+        GraphQLImage('header_image'),
+        GraphQLString('lead_paragraph'),
+        GraphQLStreamfield('body'),
+    ]
+
+    class Meta:
+        verbose_name = _('Content page')
+        verbose_name_plural = _('Content pages')
+
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
@@ -82,7 +115,8 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
-        ('indicator', IndicatorBlock(label=_('Indicator'))),
+        ('indicator', IndicatorBlock()),
+        ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
     ])
 
@@ -91,5 +125,20 @@ class CategoryPage(AplansPage):
         StreamFieldPanel('body'),
     ]
 
-    parent_page_types = [PlanRootPage, StaticPage, 'CategoryPage']
+    parent_page_types = [PlanRootPage, EmptyPage, StaticPage, 'CategoryPage']
     subpage_types = [StaticPage, 'CategoryPage']
+
+    graphql_fields = [
+        GraphQLForeignKey('category', Category),
+        GraphQLStreamfield('body'),
+    ]
+
+    class Meta:
+        verbose_name = _('Category page')
+        verbose_name_plural = _('Category pages')
+
+    def set_url_path(self, parent):
+        path = f'{slugify(self.category.identifier)}-{self.slug}/'
+        assert parent is not None
+        self.url_path = parent.url_path + path
+        return self.url_path

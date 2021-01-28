@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-19 12:09+0200\n"
+"POT-Creation-Date: 2021-01-28 18:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,13 +74,17 @@ msgstr "toimenpide"
 msgid "Actions"
 msgstr "Toimenpiteet"
 
-#: actions/blocks.py pages/models.py
-msgid "Action list"
-msgstr "Toimenpideluettelo"
-
 #: actions/blocks.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
+
+#: actions/blocks.py
+msgid "Cards"
+msgstr "Kortit"
+
+#: actions/blocks.py
+msgid "Table"
+msgstr "Taulukko"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -463,12 +467,32 @@ msgid "type"
 msgstr "tyyppi"
 
 #: actions/models.py
+msgid "category level"
+msgstr "luokan taso"
+
+#: actions/models.py
+msgid "category levels"
+msgstr "luokan tasot tasot"
+
+#: actions/models.py
 msgid "parent category"
 msgstr "yläluokka"
 
 #: actions/models.py
 msgid "short description"
 msgstr "lyhyt kuvaus"
+
+#: actions/models.py
+#, fuzzy
+#| msgid "color"
+msgid "theme color"
+msgstr "väri"
+
+#: actions/models.py
+#, fuzzy
+#| msgid "Set if the person has an user account"
+msgid "Set if the category has a theme color"
+msgstr "Aseta jos henkilöllä on käyttäjätunnus palveluun"
 
 #: actions/models.py
 msgid "category"
@@ -991,6 +1015,18 @@ msgstr "Mittarit"
 msgid "Indicator"
 msgstr "Mittari"
 
+#: indicators/blocks.py
+msgid "Graph"
+msgstr "Graafi"
+
+#: indicators/blocks.py
+msgid "Progress"
+msgstr "Eteneminen"
+
+#: indicators/blocks.py
+msgid "Animated"
+msgstr "Animoitu"
+
 #: indicators/chooser.py
 msgid "Choose an indicator"
 msgstr "Valitse mittari"
@@ -1374,6 +1410,10 @@ msgid "Units"
 msgstr "Yksiköt"
 
 #: indicators/wagtail_admin.py
+msgid "[not in active plan]"
+msgstr "[ei mukana toimenpideohjelmassa]"
+
+#: indicators/wagtail_admin.py
 msgid "Unit"
 msgstr "Yksikkö"
 
@@ -1514,6 +1554,38 @@ msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
 
 #: pages/models.py
+msgid "Front page hero block"
+msgstr "Etusivun nosto"
+
+#: pages/models.py
+msgid "Category list"
+msgstr "Luokkaluettelo"
+
+#: pages/models.py
+msgid "Indicator highlights"
+msgstr "Mittarinostot"
+
+#: pages/models.py
+msgid "Action highlights"
+msgstr "Toimenpidenostot"
+
+#: pages/models.py
+msgid "Front page"
+msgstr "Etusivu"
+
+#: pages/models.py
+msgid "Front pages"
+msgstr "Etusivut"
+
+#: pages/models.py
+msgid "Empty page"
+msgstr "Tyhjä sivu"
+
+#: pages/models.py
+msgid "Empty pages"
+msgstr "Tyhjät sivut"
+
+#: pages/models.py
 msgid "Header image"
 msgstr "Pääkuva"
 
@@ -1538,12 +1610,32 @@ msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
 
 #: pages/models.py
+msgid "Content page"
+msgstr "Sisältösivu"
+
+#: pages/models.py
+msgid "Content pages"
+msgstr "Sisältösivut"
+
+#: pages/models.py
 msgid "Category"
 msgstr "Luokka"
 
 #: pages/models.py
 msgid "Text"
 msgstr "Teksti"
+
+#: pages/models.py
+msgid "Action list"
+msgstr "Toimenpideluettelo"
+
+#: pages/models.py
+msgid "Category page"
+msgstr "Luokkasivu"
+
+#: pages/models.py
+msgid "Category pages"
+msgstr "Luokkasivut"
 
 #: people/admin.py
 msgid "Is contact person"

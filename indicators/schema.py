@@ -1,6 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset
+from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
 from graphql.error import GraphQLError
 from indicators.models import (
@@ -95,6 +95,7 @@ class IndicatorGoalNode(DjangoNode):
         only_fields = public_fields(IndicatorGoal)
 
 
+@register_django_node
 class IndicatorNode(DjangoNode):
     ORDERABLE_FIELDS = ['updated_at']
 

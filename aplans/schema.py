@@ -1,9 +1,17 @@
-from django.db.models import Count, Q
-
 import graphene
 import graphene_django_optimizer as gql_optimizer
 import libvoikko
 import pytz
+from django.db.models import Count, Q
+from django_orghierarchy.models import Organization, OrganizationClass
+from graphql.error import GraphQLError
+from graphql.type import (
+    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+)
+from grapple.registry import registry as grapple_registry
+from grapple.types.pages import PageInterface
+from wagtail.core.rich_text import RichText
+
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
     ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
@@ -11,20 +19,14 @@ from actions.models import (
 )
 from aplans.utils import public_fields
 from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
-from django_orghierarchy.models import Organization, OrganizationClass
 from feedback import schema as feedback_schema
-from graphql.error import GraphQLError
-from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
-)
 from indicators import schema as indicators_schema
 from pages import schema as pages_schema
 from pages.models import AplansPage
 from people.models import Person
-from wagtail.core.rich_text import RichText
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan
+from .graphql_types import DjangoNode, get_plan_from_context, order_queryset, set_active_plan, register_django_node
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
@@ -110,7 +112,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
     primary_language = graphene.String()
-    pages = graphene.List(pages_schema.Page)
+    pages = graphene.List(PageInterface)
     category_types = graphene.List(
         'aplans.schema.CategoryTypeNode',
         usable_for_indicators=graphene.Boolean(),
@@ -118,7 +120,7 @@ class PlanNode(DjangoNode, WithImageMixin):
     )
     impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
 
-    static_pages = graphene.List('aplans.schema.StaticPageNode')
+    static_pages = graphene.List('aplans.schema.OldStaticPageNode')
     blog_posts = graphene.List('aplans.schema.BlogPostNode')
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
@@ -230,6 +232,7 @@ class CategoryTypeNode(DjangoNode):
         model = CategoryType
 
 
+@register_django_node
 class CategoryNode(DjangoNode, WithImageMixin):
     class Meta:
         model = Category
@@ -279,6 +282,7 @@ class ActionTaskNode(DjangoNode):
         return RichText(comment)
 
 
+@register_django_node
 class ActionNode(DjangoNode, WithImageMixin):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
@@ -362,7 +366,7 @@ class OrganizationNode(DjangoNode):
         ]
 
 
-class StaticPageNode(DjangoNode, WithImageMixin):
+class OldStaticPageNode(DjangoNode, WithImageMixin):
     @classmethod
     def get_queryset(cls, queryset, info):
         return queryset.filter(is_published=True)
@@ -403,7 +407,7 @@ class Query(indicators_schema.Query):
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     person = graphene.Field(PersonNode, id=graphene.ID(required=True))
-    static_page = graphene.Field(StaticPageNode, plan=graphene.ID(required=True), slug=graphene.ID(required=True))
+    static_page = graphene.Field(OldStaticPageNode, plan=graphene.ID(required=True), slug=graphene.ID(required=True))
 
     plan_actions = graphene.List(
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
@@ -604,5 +608,5 @@ schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
     directives=specified_directives + [LocaleDirective()],
-    types=[] + pages_schema.types
+    types=[] + list(grapple_registry.models.values())
 )

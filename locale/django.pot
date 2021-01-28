@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-19 12:09+0200\n"
+"POT-Creation-Date: 2021-01-28 18:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -74,12 +74,16 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
-#: actions/blocks.py pages/models.py
-msgid "Action list"
+#: actions/blocks.py
+msgid "Filter on category"
 msgstr ""
 
 #: actions/blocks.py
-msgid "Filter on category"
+msgid "Cards"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Table"
 msgstr ""
 
 #: actions/chooser.py
@@ -463,11 +467,27 @@ msgid "type"
 msgstr ""
 
 #: actions/models.py
+msgid "category level"
+msgstr ""
+
+#: actions/models.py
+msgid "category levels"
+msgstr ""
+
+#: actions/models.py
 msgid "parent category"
 msgstr ""
 
 #: actions/models.py
 msgid "short description"
+msgstr ""
+
+#: actions/models.py
+msgid "theme color"
+msgstr ""
+
+#: actions/models.py
+msgid "Set if the category has a theme color"
 msgstr ""
 
 #: actions/models.py
@@ -991,6 +1011,18 @@ msgstr ""
 msgid "Indicator"
 msgstr ""
 
+#: indicators/blocks.py
+msgid "Graph"
+msgstr ""
+
+#: indicators/blocks.py
+msgid "Progress"
+msgstr ""
+
+#: indicators/blocks.py
+msgid "Animated"
+msgstr ""
+
 #: indicators/chooser.py
 msgid "Choose an indicator"
 msgstr ""
@@ -1374,6 +1406,10 @@ msgid "Units"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+msgid "[not in active plan]"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Unit"
 msgstr ""
 
@@ -1514,6 +1550,38 @@ msgid "Common page configuration"
 msgstr ""
 
 #: pages/models.py
+msgid "Front page hero block"
+msgstr ""
+
+#: pages/models.py
+msgid "Category list"
+msgstr ""
+
+#: pages/models.py
+msgid "Indicator highlights"
+msgstr ""
+
+#: pages/models.py
+msgid "Action highlights"
+msgstr ""
+
+#: pages/models.py
+msgid "Front page"
+msgstr ""
+
+#: pages/models.py
+msgid "Front pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Empty page"
+msgstr ""
+
+#: pages/models.py
+msgid "Empty pages"
+msgstr ""
+
+#: pages/models.py
 msgid "Header image"
 msgstr ""
 
@@ -1538,11 +1606,31 @@ msgid "Questions & Answers"
 msgstr ""
 
 #: pages/models.py
+msgid "Content page"
+msgstr ""
+
+#: pages/models.py
+msgid "Content pages"
+msgstr ""
+
+#: pages/models.py
 msgid "Category"
 msgstr ""
 
 #: pages/models.py
 msgid "Text"
+msgstr ""
+
+#: pages/models.py
+msgid "Action list"
+msgstr ""
+
+#: pages/models.py
+msgid "Category page"
+msgstr ""
+
+#: pages/models.py
+msgid "Category pages"
 msgstr ""
 
 #: people/admin.py

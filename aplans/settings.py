@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'django_filters',
+    'grapple',
     'graphene_django',
 
     'django_orghierarchy',
@@ -422,6 +423,12 @@ THUMBNAIL_PROCESSORS = (
 IMAGE_CROPPING_JQUERY_URL = None
 THUMBNAIL_HIGH_RESOLUTION = True
 
+
+GRAPPLE_APPS = {
+    'pages': '',
+    'documents': '',
+    'images': '',
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
