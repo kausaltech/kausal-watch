@@ -4,32 +4,71 @@
 #
 #    pip-compile requirements-dev.in
 #
-autopep8==1.5.4           # via -r requirements-dev.in
-backcall==0.2.0           # via ipython
-decorator==4.4.2          # via ipython
-ipython-genutils==0.2.0   # via traitlets
-ipython==7.19.0           # via -r requirements-dev.in
-isort==5.7.0              # via -r requirements-dev.in
-jedi==0.17.2              # via ipython, python-language-server
-mccabe==0.6.1             # via python-language-server
-parso==0.7.1              # via jedi
-pexpect==4.8.0            # via ipython
-pickleshare==0.7.5        # via ipython
-pluggy==0.13.1            # via -c requirements.txt, python-language-server
-prompt-toolkit==3.0.10    # via ipython
-ptyprocess==0.7.0         # via pexpect
-pycodestyle==2.6.0        # via autopep8
-pyflakes==2.2.0           # via python-language-server
-pygments==2.7.4           # via ipython
-python-jsonrpc-server==0.4.0  # via python-language-server
-python-language-server[mccabe,pyflakes,rope,yapf]==0.36.2  # via -r requirements-dev.in
-pywatchman==1.4.1         # via -r requirements-dev.in
-rope==0.18.0              # via python-language-server
-toml==0.10.2              # via -c requirements.txt, autopep8
-traitlets==5.0.5          # via ipython
-ujson==4.0.1              # via python-jsonrpc-server, python-language-server
-wcwidth==0.2.5            # via prompt-toolkit
-yapf==0.30.0              # via python-language-server
+autopep8==1.5.4
+    # via -r requirements-dev.in
+backcall==0.2.0
+    # via ipython
+click==7.1.2
+    # via pip-tools
+decorator==4.4.2
+    # via ipython
+ipython-genutils==0.2.0
+    # via traitlets
+ipython==7.19.0
+    # via -r requirements-dev.in
+isort==5.7.0
+    # via -r requirements-dev.in
+jedi==0.17.2
+    # via
+    #   ipython
+    #   python-language-server
+mccabe==0.6.1
+    # via python-language-server
+parso==0.7.1
+    # via jedi
+pexpect==4.8.0
+    # via ipython
+pickleshare==0.7.5
+    # via ipython
+pip-tools==5.5.0
+    # via -r requirements-dev.in
+pluggy==0.13.1
+    # via
+    #   -c requirements.txt
+    #   python-language-server
+prompt-toolkit==3.0.10
+    # via ipython
+ptyprocess==0.7.0
+    # via pexpect
+pycodestyle==2.6.0
+    # via autopep8
+pyflakes==2.2.0
+    # via python-language-server
+pygments==2.7.4
+    # via ipython
+python-jsonrpc-server==0.4.0
+    # via python-language-server
+python-language-server[mccabe,pyflakes,rope,yapf]==0.36.2
+    # via -r requirements-dev.in
+pywatchman==1.4.1
+    # via -r requirements-dev.in
+rope==0.18.0
+    # via python-language-server
+toml==0.10.2
+    # via
+    #   -c requirements.txt
+    #   autopep8
+traitlets==5.0.5
+    # via ipython
+ujson==4.0.1
+    # via
+    #   python-jsonrpc-server
+    #   python-language-server
+wcwidth==0.2.5
+    # via prompt-toolkit
+yapf==0.30.0
+    # via python-language-server
 
 # The following packages are considered to be unsafe in a requirements file:
+# pip
 # setuptools
