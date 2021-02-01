@@ -7,7 +7,7 @@ class QuestionAnswerBlock(blocks.StructBlock):
     heading = blocks.CharBlock(classname='title', heading=_('Title'))
     questions = blocks.ListBlock(blocks.StructBlock([
         ('question', blocks.CharBlock(heading=_('Question'))),
-        ('answer', blocks.CharBlock(heading=_('Answer'))),
+        ('answer', blocks.RichTextBlock(heading=_('Answer'))),
     ]), heading=_('Questions'))
 
 
