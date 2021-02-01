@@ -38,7 +38,7 @@
             </button>
         </a>
 
-        <p id="password-signin-display-button" style="cursor: pointer;">{% trans "If you have a separate password, click here to sign in" %}</p>
+        <p><a href="#" id="password-signin-display-button" style="cursor: pointer; text-decoration: none; color: inherit">{% trans "If you have a separate password, click here to sign in" %}</a></p>
 
         <form id="password-signin-form" action="{% url 'wagtailadmin_login' %}" method="post" autocomplete="off" novalidate {% if not form.errors %} style="display: none; {% endif %}">
             {% block login_form %}
