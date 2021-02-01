@@ -83,7 +83,7 @@ class SentryGraphQLView(GraphQLView):
 
         span.set_tag('cache', 'miss')
         result = super().execute_graphql_request(request, data, query, variables, operation_name, *args, **kwargs)
-        if key:
+        if key and not result.errors:
             self.store_to_cache(key, result)
 
         return result
