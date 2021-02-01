@@ -108,7 +108,11 @@ def order_queryset(qs, node_class, order_by):
 
 def register_django_node(cls):
     model = cls._meta.model
-    if cls in registry.django_models:
-        return
     registry.django_models[model] = cls
+    return cls
+
+
+def replace_image_node(cls):
+    model = cls._meta.model
+    registry.images[model] = cls
     return cls

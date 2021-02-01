@@ -1,18 +1,25 @@
 import graphene
 from graphql.error import GraphQLError
 
-from aplans.graphql_types import DjangoNode
+from aplans.graphql_types import DjangoNode, replace_image_node
 
-from .models import AplansImage
+from .models import AplansImage, AplansRendition
 
 
-class ImageRendition(graphene.ObjectType):
+class ImageRendition(DjangoNode):
     src = graphene.String(required=True)
     width = graphene.Int(required=True)
     height = graphene.Int(required=True)
     alt = graphene.String(required=True)
 
+    class Meta:
+        model = AplansRendition
+        only_fields = [
+            'src', 'width', 'height', 'alt',
+        ]
 
+
+@replace_image_node
 class ImageNode(DjangoNode):
     rendition = graphene.Field(ImageRendition, required=True, size=graphene.String())
 
