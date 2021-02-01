@@ -82,7 +82,7 @@ class StaticPage(AplansPage):
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
         verbose_name=_('Header image'), help_text=_('Image to use in the header for this page')
     )
-    lead_paragraph = RichTextField(
+    lead_paragraph = models.TextField(
         null=True, blank=True,
         verbose_name=_('Lead paragraph'),
         help_text=_('Lead paragraph right under the heading'),
@@ -95,6 +95,7 @@ class StaticPage(AplansPage):
 
     content_panels = AplansPage.content_panels + [
         ImageChooserPanel('header_image'),
+        FieldPanel('lead_paragraph'),
         StreamFieldPanel('body'),
     ]
 
