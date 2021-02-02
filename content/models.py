@@ -36,6 +36,8 @@ class StaticPage(OrderedModel, ModelWithImage):
     created_at = models.DateTimeField(auto_now_add=True, editable=False, verbose_name=_('created at'))
     modified_at = models.DateTimeField(auto_now=True, editable=False, verbose_name=_('modified at'))
 
+    was_migrated = models.BooleanField(default=False)
+
     class Meta:
         unique_together = (('plan', 'slug'),)
         verbose_name = _('content page')
