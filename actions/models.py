@@ -14,10 +14,12 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 
+from tinycss2.color3 import parse_color
+
 from aplans.model_images import ModelWithImage
 from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
 from django_orghierarchy.models import Organization
-from modelcluster.fields import ParentalKey, ParentalManyToManyField
+from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
@@ -36,6 +38,14 @@ def get_supported_languages():
 
 def get_default_language():
     return settings.LANGUAGES[0][0]
+
+
+def validate_css_color(s):
+    if parse_color(s) is None:
+        raise ValidationError(
+            _('%(color)s is not a CSS color (e.g., "#112233", "red" or "rgb(0, 255, 127)")'),
+            params={'color': s},
+        )
 
 
 class PlanQuerySet(models.QuerySet):
@@ -936,10 +946,10 @@ class Category(OrderedModel, ModelWithImage):
     short_description = models.CharField(
         max_length=200, blank=True, verbose_name=_('short description')
     )
-    # FIXME: Implement validation for color
     color = models.CharField(
         max_length=50, blank=True, null=True, verbose_name=_('theme color'),
-        help_text=_('Set if the category has a theme color')
+        help_text=_('Set if the category has a theme color'),
+        validators=[validate_css_color]
     )
 
     i18n = TranslationField(fields=('name', 'short_description'))
@@ -1030,15 +1040,6 @@ class ActionStatusUpdate(models.Model):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)
 
 
-def validate_hex_color(s):
-    match = re.search(r'^#(?:[0-9a-fA-F]{3}){1,2}$', s)
-    if not match:
-        raise ValidationError(
-            _('%(color)s is not a hex color (#112233)'),
-            params={'color': s},
-        )
-
-
 class ImpactGroup(models.Model):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='impact_groups',
@@ -1053,7 +1054,7 @@ class ImpactGroup(models.Model):
     weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
     color = models.CharField(
         max_length=16, verbose_name=_('color'), null=True, blank=True,
-        validators=[validate_hex_color]
+        validators=[validate_css_color]
     )
 
     i18n = TranslationField(fields=('name',))
