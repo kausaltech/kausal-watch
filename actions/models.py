@@ -114,8 +114,8 @@ class Plan(ModelWithImage, ClusterableModel):
     public_fields = [
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
-        'action_impacts', 'blog_posts', 'static_pages', 'general_content',
-        'impact_groups', 'monitoring_quality_points', 'scenarios', 'main_image',
+        'action_impacts', 'general_content', 'impact_groups',
+        'monitoring_quality_points', 'scenarios', 'main_image',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases',
     ]

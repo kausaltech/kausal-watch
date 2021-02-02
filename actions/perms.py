@@ -4,9 +4,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django_orghierarchy.models import Organization
-from wagtail.core.models import GroupCollectionPermission, GroupPagePermission, PAGE_PERMISSION_TYPES
+from wagtail.core.models import GroupPagePermission, PAGE_PERMISSION_TYPES
 
-from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
+from content.models import SiteGeneralContent
 from indicators.models import (
     ActionIndicator, Dataset, DatasetLicense, Dimension, DimensionCategory, Indicator, IndicatorContactPerson,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
@@ -158,6 +158,7 @@ def _sync_group_page_perms(root_page, group):
         for perm in new_perm_set:
             GroupPagePermission.objects.create(page=root_page, group=group, permission_type=perm)
 
+
 def _sync_contact_person_groups(user):
     plans = user.get_adminable_plans()
     groups = user.groups.filter(contact_person_for_plan__isnull=False).exclude(contact_person_for_plan__in=plans)
@@ -230,9 +231,6 @@ PLAN_ADMIN_PERMS = (
 
     (Person, ALL_PERMS),  # also delete perm for plan admin
 
-    (StaticPage, ALL_PERMS),
-    (BlogPost, ALL_PERMS),
-    (Question, ALL_PERMS),
     (SiteGeneralContent, ('add', 'view', 'change')),
 
     (BaseTemplate, ('add', 'view', 'change')),
