@@ -411,7 +411,7 @@ class Query(indicators_schema.Query):
 
     plan_actions = graphene.List(
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
-        order_by=graphene.String()
+        category=graphene.ID(), order_by=graphene.String()
     )
     plan_categories = graphene.List(
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
@@ -444,12 +444,15 @@ class Query(indicators_schema.Query):
     def resolve_all_plans(self, info):
         return Plan.objects.all()
 
-    def resolve_plan_actions(self, info, plan, first=None, order_by=None, **kwargs):
+    def resolve_plan_actions(self, info, plan, first=None, category=None, order_by=None, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
         qs = Action.objects.filter(plan=plan_obj)
+        if category is not None:
+            qs = qs.filter(categories=category).distinct()
+
         qs = order_queryset(qs, ActionNode, order_by)
         if first is not None:
             qs = qs[0:first]
