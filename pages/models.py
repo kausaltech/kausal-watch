@@ -111,8 +111,9 @@ class StaticPage(AplansPage):
 
 
 class CategoryPage(AplansPage):
-    category = models.ForeignKey(
+    category = models.OneToOneField(
         Category, on_delete=models.PROTECT, null=False, verbose_name=_('Category'),
+        related_name='category_page',
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
