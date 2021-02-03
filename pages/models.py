@@ -1,12 +1,11 @@
-from indicators.models import IndicatorGraph
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from grapple.models import GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
-from wagtail.core.fields import RichTextField, StreamField
-from wagtail.core.models import Page, UserPagePermissionsProxy
+from wagtail.core.fields import StreamField
+from wagtail.core.models import Page
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
@@ -21,6 +20,8 @@ PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
 class AplansPage(Page):
     i18n = models.JSONField(blank=True, null=True)
+    show_in_footer = models.BooleanField(default=False, verbose_name=_('show in footer'),
+                                         help_text=_('Should the page be shown in the footer?'),)
 
     content_panels = [
         FieldPanel('title', classname="full title"),
@@ -31,11 +32,16 @@ class AplansPage(Page):
             FieldPanel('slug'),
             FieldPanel('seo_title'),
             FieldPanel('show_in_menus'),
+            FieldPanel('show_in_footer'),
             FieldPanel('search_description'),
         ], _('Common page configuration')),
     ]
 
     promote_panels = []
+
+    graphql_fields = [
+        GraphQLStreamfield('show_in_footer'),
+    ]
 
     class Meta:
         abstract = True
@@ -56,7 +62,7 @@ class PlanRootPage(AplansPage):
 
     parent_page_types = []
 
-    graphql_fields = [
+    graphql_fields = AplansPage.graphql_fields + [
         GraphQLStreamfield('body'),
     ]
 
@@ -99,7 +105,7 @@ class StaticPage(AplansPage):
         StreamFieldPanel('body'),
     ]
 
-    graphql_fields = [
+    graphql_fields = AplansPage.graphql_fields + [
         GraphQLImage('header_image'),
         GraphQLString('lead_paragraph'),
         GraphQLStreamfield('body'),
@@ -130,7 +136,7 @@ class CategoryPage(AplansPage):
     parent_page_types = [PlanRootPage, EmptyPage, StaticPage, 'CategoryPage']
     subpage_types = [StaticPage, 'CategoryPage']
 
-    graphql_fields = [
+    graphql_fields = AplansPage.graphql_fields + [
         GraphQLForeignKey('category', Category),
         GraphQLStreamfield('body'),
     ]

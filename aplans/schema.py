@@ -18,7 +18,7 @@ from actions.models import (
     MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
-from content.models import BlogPost, Question, SiteGeneralContent, StaticPage
+from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
 from pages import schema as pages_schema
@@ -120,24 +120,9 @@ class PlanNode(DjangoNode, WithImageMixin):
     )
     impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
 
-    static_pages = graphene.List('aplans.schema.OldStaticPageNode')
-    blog_posts = graphene.List('aplans.schema.BlogPostNode')
-
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
 
     main_menu = pages_schema.MenuNode.create_plan_menu_field()
-
-    @gql_optimizer.resolver_hints(
-        model_field='static_pages',
-    )
-    def resolve_static_pages(self, info):
-        return self.static_pages.filter(is_published=True)
-
-    @gql_optimizer.resolver_hints(
-        model_field='blog_posts',
-    )
-    def resolve_blog_posts(self, info):
-        return self.blog_posts.filter(is_published=True)
 
     @gql_optimizer.resolver_hints(
         model_field='category_types',
@@ -366,35 +351,6 @@ class OrganizationNode(DjangoNode):
         ]
 
 
-class OldStaticPageNode(DjangoNode, WithImageMixin):
-    @classmethod
-    def get_queryset(cls, queryset, info):
-        return queryset.filter(is_published=True)
-
-    class Meta:
-        model = StaticPage
-        only_fields = [
-            'id', 'title', 'name', 'slug', 'tagline', 'content', 'parent', 'modified_at',
-            'questions', 'top_menu', 'footer',
-        ]
-
-
-class BlogPostNode(DjangoNode, WithImageMixin):
-    class Meta:
-        model = BlogPost
-        only_fields = [
-            'id', 'title', 'slug', 'published_at', 'content',
-        ]
-
-
-class QuestionNode(DjangoNode):
-    class Meta:
-        model = Question
-        only_fields = [
-            'id', 'title', 'answer'
-        ]
-
-
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
@@ -407,7 +363,6 @@ class Query(indicators_schema.Query):
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     person = graphene.Field(PersonNode, id=graphene.ID(required=True))
-    static_page = graphene.Field(OldStaticPageNode, plan=graphene.ID(required=True), slug=graphene.ID(required=True))
 
     plan_actions = graphene.List(
         ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
@@ -579,22 +534,6 @@ class Query(indicators_schema.Query):
         try:
             obj = qs.get()
         except Person.DoesNotExist:
-            return None
-
-        return obj
-
-    def resolve_static_page(self, info, slug, plan, **kwargs):
-        plan_obj = get_plan_from_context(info, plan)
-        if not plan_obj:
-            return None
-
-        qs = StaticPage.objects.all()
-        qs = qs.filter(slug=slug, plan=plan_obj)
-        qs = gql_optimizer.query(qs, info)
-
-        try:
-            obj = qs.get()
-        except StaticPage.DoesNotExist:
             return None
 
         return obj
