@@ -956,6 +956,7 @@ class Category(OrderedModel, ModelWithImage):
 
     public_fields = [
         'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description', 'color',
+        'children', 'category_page',
     ]
 
     class Meta:
