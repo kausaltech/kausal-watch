@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-28 18:29+0200\n"
+"POT-Creation-Date: 2021-02-04 10:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -98,7 +98,7 @@ msgstr "Valitse toinen luokka"
 msgid "identifier"
 msgstr "tunniste"
 
-#: actions/export.py actions/models.py content/models.py indicators/models.py
+#: actions/export.py actions/models.py indicators/models.py
 #: notifications/models.py
 msgid "name"
 msgstr "nimi"
@@ -118,6 +118,10 @@ msgstr "muut mittarit"
 #: actions/export.py actions/models.py indicators/models.py
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
+
+#: actions/models.py
+msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
+msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 
 #: actions/models.py
 msgid "site URL"
@@ -397,15 +401,15 @@ msgstr "valmistumispäivämäärä"
 msgid "The date when the task was completed"
 msgstr "Päivämäärä jolloin tehtävä valmistui"
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "completed by"
 msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
 
-#: actions/models.py content/models.py indicators/models.py
+#: actions/models.py indicators/models.py
 msgid "created at"
 msgstr "luomisaika"
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "modified at"
 msgstr "muokkausaika"
 
@@ -483,16 +487,12 @@ msgid "short description"
 msgstr "lyhyt kuvaus"
 
 #: actions/models.py
-#, fuzzy
-#| msgid "color"
 msgid "theme color"
-msgstr "väri"
+msgstr "teeman väri"
 
 #: actions/models.py
-#, fuzzy
-#| msgid "Set if the person has an user account"
 msgid "Set if the category has a theme color"
-msgstr "Aseta jos henkilöllä on käyttäjätunnus palveluun"
+msgstr "Aseta jos kategorialla on teemaväri"
 
 #: actions/models.py
 msgid "category"
@@ -510,7 +510,7 @@ msgstr "skenaario"
 msgid "scenarios"
 msgstr "skenaariot"
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "title"
 msgstr "otsikko"
 
@@ -522,7 +522,7 @@ msgstr "päivämäärä"
 msgid "author"
 msgstr "tekijä"
 
-#: actions/models.py content/models.py notifications/models.py
+#: actions/models.py notifications/models.py
 msgid "content"
 msgstr "sisältö"
 
@@ -537,11 +537,6 @@ msgstr "toimenpiteen tilannepäivitys"
 #: actions/models.py
 msgid "action status updates"
 msgstr "toimenpiteiden tilannepäivitykset"
-
-#: actions/models.py
-#, python-format
-msgid "%(color)s is not a hex color (#112233)"
-msgstr "%(color)s ei ole heksamuodossa (#112233)"
 
 #: actions/models.py
 msgid "parent"
@@ -591,14 +586,20 @@ msgstr "seurannan laatupisteet"
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"        <span>%(total)s</span> action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
 "        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
 "    "
 msgstr[0] ""
+"\n"
+"        <span>%(total)s</span> toimenpide <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
+"    "
 msgstr[1] ""
+"\n"
+"        <span>%(total)s</span> toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
+"    "
 
 #: actions/wagtail_admin.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
@@ -773,66 +774,6 @@ msgstr "järjestys"
 #: content/apps.py
 msgid "Content"
 msgstr "Sisältö"
-
-#: content/models.py
-msgid "parent page"
-msgstr "yläsivu"
-
-#: content/models.py
-msgid "slug"
-msgstr "slugi"
-
-#: content/models.py
-msgid "visible in top menu"
-msgstr "näkyy ylävalikossa"
-
-#: content/models.py
-msgid "visible in page footer"
-msgstr "näkyy sivun footerissa"
-
-#: content/models.py
-msgid "is published"
-msgstr "on julkaistu"
-
-#: content/models.py
-msgid "content page"
-msgstr "sisältösivu"
-
-#: content/models.py
-msgid "content pages"
-msgstr "sisältösivut"
-
-#: content/models.py
-msgid "published at"
-msgstr "julkaisuaika"
-
-#: content/models.py
-msgid "blog post"
-msgstr "blogikirjoitus"
-
-#: content/models.py
-msgid "blog posts"
-msgstr "blogikirjoitukset"
-
-#: content/models.py
-msgid "page"
-msgstr "sivu"
-
-#: content/models.py
-msgid "question title"
-msgstr "kysymyksen otsikko"
-
-#: content/models.py
-msgid "answer"
-msgstr "vastaus"
-
-#: content/models.py
-msgid "question"
-msgstr "kysymys"
-
-#: content/models.py
-msgid "questions"
-msgstr "kysymykset"
 
 #: content/models.py
 msgid "site title"
@@ -1518,10 +1459,6 @@ msgid "content blocks"
 msgstr "sisältölohkot"
 
 #: pages/blocks.py
-msgid "Title"
-msgstr "Otsikko"
-
-#: pages/blocks.py
 msgid "Question"
 msgstr "Kysymys"
 
@@ -1530,8 +1467,8 @@ msgid "Answer"
 msgstr "Vastaus"
 
 #: pages/blocks.py
-msgid "Questions"
-msgstr "Kysymykset"
+msgid "Title"
+msgstr "Otsikko"
 
 #: pages/blocks.py
 msgid "Big image"
@@ -1548,6 +1485,14 @@ msgstr "Otsikko"
 #: pages/blocks.py
 msgid "Lead"
 msgstr "Johdanto"
+
+#: pages/models.py
+msgid "show in footer"
+msgstr "näkyy sivun footerissa"
+
+#: pages/models.py
+msgid "Should the page be shown in the footer?"
+msgstr "Näytetäänkö sivu footerissa?"
 
 #: pages/models.py
 msgid "Common page configuration"
@@ -1877,6 +1822,51 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "parent page"
+#~ msgstr "yläsivu"
+
+#~ msgid "slug"
+#~ msgstr "slugi"
+
+#~ msgid "visible in top menu"
+#~ msgstr "näkyy ylävalikossa"
+
+#~ msgid "is published"
+#~ msgstr "on julkaistu"
+
+#~ msgid "content page"
+#~ msgstr "sisältösivu"
+
+#~ msgid "content pages"
+#~ msgstr "sisältösivut"
+
+#~ msgid "published at"
+#~ msgstr "julkaisuaika"
+
+#~ msgid "blog post"
+#~ msgstr "blogikirjoitus"
+
+#~ msgid "blog posts"
+#~ msgstr "blogikirjoitukset"
+
+#~ msgid "page"
+#~ msgstr "sivu"
+
+#~ msgid "question title"
+#~ msgstr "kysymyksen otsikko"
+
+#~ msgid "answer"
+#~ msgstr "vastaus"
+
+#~ msgid "question"
+#~ msgstr "kysymys"
+
+#~ msgid "questions"
+#~ msgstr "kysymykset"
+
+#~ msgid "Questions"
+#~ msgstr "Kysymykset"
 
 #~ msgid "HTML body"
 #~ msgstr "HTML-sisältö"

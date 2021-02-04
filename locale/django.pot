@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-01-28 18:29+0200\n"
+"POT-Creation-Date: 2021-02-04 10:36+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -98,7 +98,7 @@ msgstr ""
 msgid "identifier"
 msgstr ""
 
-#: actions/export.py actions/models.py content/models.py indicators/models.py
+#: actions/export.py actions/models.py indicators/models.py
 #: notifications/models.py
 msgid "name"
 msgstr ""
@@ -117,6 +117,11 @@ msgstr ""
 
 #: actions/export.py actions/models.py indicators/models.py
 msgid "contact persons"
+msgstr ""
+
+#: actions/models.py
+#, python-format
+msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr ""
 
 #: actions/models.py
@@ -397,15 +402,15 @@ msgstr ""
 msgid "The date when the task was completed"
 msgstr ""
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "completed by"
 msgstr ""
 
-#: actions/models.py content/models.py indicators/models.py
+#: actions/models.py indicators/models.py
 msgid "created at"
 msgstr ""
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "modified at"
 msgstr ""
 
@@ -506,7 +511,7 @@ msgstr ""
 msgid "scenarios"
 msgstr ""
 
-#: actions/models.py content/models.py
+#: actions/models.py
 msgid "title"
 msgstr ""
 
@@ -518,7 +523,7 @@ msgstr ""
 msgid "author"
 msgstr ""
 
-#: actions/models.py content/models.py notifications/models.py
+#: actions/models.py notifications/models.py
 msgid "content"
 msgstr ""
 
@@ -532,11 +537,6 @@ msgstr ""
 
 #: actions/models.py
 msgid "action status updates"
-msgstr ""
-
-#: actions/models.py
-#, python-format
-msgid "%(color)s is not a hex color (#112233)"
 msgstr ""
 
 #: actions/models.py
@@ -587,7 +587,7 @@ msgstr ""
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"        <span>%(total)s</span> action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
@@ -768,66 +768,6 @@ msgstr ""
 
 #: content/apps.py
 msgid "Content"
-msgstr ""
-
-#: content/models.py
-msgid "parent page"
-msgstr ""
-
-#: content/models.py
-msgid "slug"
-msgstr ""
-
-#: content/models.py
-msgid "visible in top menu"
-msgstr ""
-
-#: content/models.py
-msgid "visible in page footer"
-msgstr ""
-
-#: content/models.py
-msgid "is published"
-msgstr ""
-
-#: content/models.py
-msgid "content page"
-msgstr ""
-
-#: content/models.py
-msgid "content pages"
-msgstr ""
-
-#: content/models.py
-msgid "published at"
-msgstr ""
-
-#: content/models.py
-msgid "blog post"
-msgstr ""
-
-#: content/models.py
-msgid "blog posts"
-msgstr ""
-
-#: content/models.py
-msgid "page"
-msgstr ""
-
-#: content/models.py
-msgid "question title"
-msgstr ""
-
-#: content/models.py
-msgid "answer"
-msgstr ""
-
-#: content/models.py
-msgid "question"
-msgstr ""
-
-#: content/models.py
-msgid "questions"
 msgstr ""
 
 #: content/models.py
@@ -1514,10 +1454,6 @@ msgid "content blocks"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Title"
-msgstr ""
-
-#: pages/blocks.py
 msgid "Question"
 msgstr ""
 
@@ -1526,7 +1462,7 @@ msgid "Answer"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Questions"
+msgid "Title"
 msgstr ""
 
 #: pages/blocks.py
@@ -1543,6 +1479,14 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Lead"
+msgstr ""
+
+#: pages/models.py
+msgid "show in footer"
+msgstr ""
+
+#: pages/models.py
+msgid "Should the page be shown in the footer?"
 msgstr ""
 
 #: pages/models.py
