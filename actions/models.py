@@ -151,7 +151,7 @@ class Plan(ModelWithImage, ClusterableModel):
     def get_related_organizations(self):
         all_related = self.related_organizations.all() | self.related_organizations.all().get_descendants()
         if self.organization:
-            all_related |= self.organization | self.organization.get_descendants()
+            all_related |= Organization.objects.filter(id=self.id) | self.organization.get_descendants()
         return all_related
 
     @property
