@@ -74,3 +74,55 @@ class MenuNode(graphene.ObjectType):
     @classmethod
     def create_plan_menu_field(cls):
         return graphene.Field(cls, resolver=cls.resolve_from_plan)
+
+
+class FooterItemNode(graphene.ObjectType):
+    id = graphene.ID(required=True)
+    page = graphene.Field(PageInterface, required=False)
+    external_url = graphene.String(required=False)
+    link_text = graphene.String(required=True)
+
+    def resolve_id(self, info):
+        return self.page.id
+
+    def resolve_page(self, info):
+        return self.page.specific
+
+    def resolve_link_text(self, info):
+        return self.page.title
+
+
+class FooterNode(graphene.ObjectType):
+    items = graphene.List(FooterItemNode, required=True)
+
+    @classmethod
+    def resolve_from_plan(cls, plan, info):
+        root_page = plan.root_page
+        if root_page is None:
+            return None
+        return root_page.specific
+
+    @classmethod
+    def footer_item_from_page(self, page):
+        return FooterItemNode(page=page)
+
+    def resolve_items(self, info):
+        if not self:
+            return []
+
+        # FIXME: This doesn't work because show_in_footer is not part of the Wagtail Page model.
+        # pages = self.get_children()
+        # pages = pages.live().public().filter(show_in_footer=True).specific()
+        # return [FooterNode.footer_item_from_page(page) for page in pages]
+
+        # This doesn't work either because AplansPage is abstract and thus has no manager
+        # pages = AplansPage.objects.filter(show_in_footer=True).child_of(self).live().public().specific()
+
+        # As a workaround, run queries separately for each subclass of AplansPage
+        querysets = (Model.objects.filter(show_in_footer=True).child_of(self).live().public().specific()
+                     for Model in AplansPage.get_subclasses())
+        return [FooterNode.footer_item_from_page(page) for pages in querysets for page in pages]
+
+    @classmethod
+    def create_plan_footer_field(cls):
+        return graphene.Field(cls, resolver=cls.resolve_from_plan)
