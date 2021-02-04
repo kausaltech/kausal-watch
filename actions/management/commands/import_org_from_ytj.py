@@ -1,3 +1,4 @@
+import re
 import sys
 import requests
 from django_orghierarchy.models import Organization, DataSource, OrganizationClass
@@ -44,6 +45,9 @@ class Command(BaseCommand):
             org = Organization(data_source=ds, origin_id=data['businessId'])
         org.name = data['name']
         org.classification = OrganizationClass.objects.get(name='Osakeyhtiö')
+        if not org.abbreviation:
+            abbr = re.sub(' [oO][yY]', '', org.name)
+            org.abbreviation = abbr
         org.save()
         print('Imported %s (%s)' % (org.name, org.id))
         if self.plan:
