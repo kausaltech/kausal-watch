@@ -40,7 +40,7 @@ class AplansPage(Page):
     promote_panels = []
 
     graphql_fields = [
-        GraphQLStreamfield('show_in_footer'),
+        GraphQLBoolean('show_in_footer'),
     ]
 
     class Meta:
