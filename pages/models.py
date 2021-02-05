@@ -11,7 +11,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
 from actions.models import Category
-from indicators.blocks import IndicatorBlock, IndicatorHighlightsBlock
+from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock
 
 from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
 
@@ -51,7 +51,7 @@ class PlanRootPage(AplansPage):
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
-        ('indicator', IndicatorBlock(label=_('Indicator'))),
+        ('indicator_group', IndicatorGroupBlock()),
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
     ])
@@ -123,7 +123,7 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
-        ('indicator', IndicatorBlock()),
+        ('indicator_group', IndicatorGroupBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
     ])

@@ -3,7 +3,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLString
-from wagtail.core.blocks import ChoiceBlock, ChooserBlock, StaticBlock, StructBlock
+from wagtail.core.blocks import ChoiceBlock, ChooserBlock, ListBlock, StaticBlock, StructBlock
 
 from .chooser import IndicatorChooser
 from .models import Indicator
@@ -49,3 +49,12 @@ class IndicatorBlock(StructBlock):
 
     class Meta:
         label = _('Indicator')
+
+
+@register_streamfield_block
+class IndicatorGroupBlock(ListBlock):
+    def __init__(self, **kwargs):
+        super().__init__(IndicatorBlock, **kwargs)
+
+    class Meta:
+        label = _('Indicators')
