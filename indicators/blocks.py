@@ -55,3 +55,6 @@ class IndicatorBlock(StructBlock):
 class IndicatorGroupBlock(ListBlock):
     def __init__(self, **kwargs):
         super().__init__(IndicatorBlock, **kwargs)
+
+    class Meta:
+        label = _('Indicators')
