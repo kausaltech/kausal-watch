@@ -51,7 +51,7 @@ class PlanRootPage(AplansPage):
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
-        ('indicator_group', IndicatorGroupBlock(label=_('Indicator group'))),
+        ('indicator_group', IndicatorGroupBlock()),
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
     ])
