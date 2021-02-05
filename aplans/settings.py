@@ -93,8 +93,8 @@ INSTALLED_APPS = [
     'wagtail.embeds',
     'wagtail.sites',
     'wagtail.users',
+    'wagtail_react_streamfield',  # must be before documents, images, snippets and wagtail.admin
     'wagtail.snippets',
-    'wagtail_react_streamfield',  # must be before documents, images and wagtail.admin
     'documents',
     'wagtail.documents',
     'images',
