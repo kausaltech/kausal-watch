@@ -11,8 +11,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
 from actions.models import Category
-from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock
-
+from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock
 from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -53,6 +52,7 @@ class PlanRootPage(AplansPage):
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('indicator_group', IndicatorGroupBlock()),
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
+        ('indicator_showcase', IndicatorShowcaseBlock()),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
     ])
 
