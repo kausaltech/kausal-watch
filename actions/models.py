@@ -953,6 +953,9 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
     def __str__(self):
         return self.name
 
+    def filter_siblings(self, qs):
+        return qs.filter(type=self.type)
+
 
 class CategoryTypeMetadataChoice(OrderedModel):
     metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
