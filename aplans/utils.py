@@ -106,7 +106,9 @@ class PlanRelatedModel:
         self.plan = plan
 
     def filter_siblings(self, qs):
-        return self.filter_by_plan(self.plan, qs)
+        plans = self.get_plans()
+        assert len(plans) == 1
+        return self.filter_by_plan(plans[0], qs)
 
 
 class ChoiceArrayField(ArrayField):

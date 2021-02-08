@@ -1028,10 +1028,9 @@ class Category(ClusterableModel, OrderedModel, ModelWithImage, PlanRelatedModel)
         return qs.filter(type__plan=plan)
 
     def set_plan(self, plan):
-        # The right plan should be set through CategoryType relation.
-        # Just do a sanity check here to make sure this is the cases.
-        if self.type.plan != plan:
-            raise ValidationError({'type': _("Doesn't match the currently active admin plan")})
+        # The right plan should be set through CategoryType relation, so
+        # we do nothing here.
+        pass
 
     def __str__(self):
         if self.identifier and self.identifier[0].isnumeric():
