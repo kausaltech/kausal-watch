@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Q, Max
 from django.urls import reverse
@@ -68,7 +69,10 @@ class Plan(ModelWithImage, ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    site_url = models.URLField(blank=True, null=True, verbose_name=_('site URL'))
+    site_url = models.URLField(
+        blank=True, null=True, verbose_name=_('site URL'),
+        validators=[URLValidator(('http', 'https'))]
+    )
     actions_locked = models.BooleanField(
         default=False, verbose_name=_('actions locked'),
         help_text=_('Can actions be added and the official metadata edited?'),

@@ -5,12 +5,12 @@ from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLImage, Grap
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import StreamField
-from wagtail.core.models import Page
+from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
-from actions.models import Category
+from actions.models import Category, Plan
 from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock
 from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
 
@@ -44,6 +44,15 @@ class AplansPage(Page):
 
     class Meta:
         abstract = True
+
+    def get_url_parts(self, request=None):
+        root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()
+        site = Site.objects.filter(root_page=root_page).first()
+        plan = Plan.objects.filter(site=site).first()
+        if not plan:
+            return super().get_url_parts(request)
+
+        return (site.id, plan.site_url, self.url_path)
 
 
 class PlanRootPage(AplansPage):
