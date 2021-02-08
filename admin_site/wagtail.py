@@ -158,7 +158,20 @@ class ContinueEditingMixin:
         ]
 
 
-class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
+class PlanRelatedViewMixin:
+    def form_valid(self, form, *args, **kwargs):
+        obj = form.instance
+        if isinstance(obj, PlanRelatedModel):
+            # Sanity check to ensure we're saving the model to a currently active
+            # action plan.
+            active_plan = self.request.user.get_active_admin_plan()
+            plans = obj.get_plans()
+            assert active_plan in plans
+
+        return super().form_valid(form, *args, **kwargs)
+
+
+class AplansEditView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         form_valid_return = super().form_valid(form, *args, **kwargs)
 
@@ -181,7 +194,7 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class AplansCreateView(ContinueEditingMixin, FormClassMixin, CreateView):
+class AplansCreateView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, CreateView):
     def get_instance(self):
         instance = super().get_instance()
         # If it is a plan-related model, ensure the 'plan' field gets set correctly.
