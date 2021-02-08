@@ -55,6 +55,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
 class CategoryTypeMetadataAdmin(AplansModelAdmin):
     model = CategoryTypeMetadata
     menu_label = _('Category metadata')
+    list_display = ('name', 'type')
 
     panels = [
         PlanFilteredFieldPanel('type'),
