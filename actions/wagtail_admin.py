@@ -1,26 +1,30 @@
 import json
 from dal import autocomplete
-from django.utils.translation import gettext, gettext_lazy as _
 from django import forms
-from wagtail.contrib.modeladmin.options import modeladmin_register
-
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
+from django_orghierarchy.models import Organization
 from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList,
-    MultiFieldPanel
+    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel, TabbedInterface
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
-from django_orghierarchy.models import Organization
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
-    AplansCreateView, CondensedPanelSingleSelect
+    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    CondensedPanelSingleSelect, PlanRelatedPermissionHelper,
 )
 from people.chooser import PersonChooser
-from .admin import ModifiableActionsFilter, MergedActionsFilter, ImpactFilter
-from .models import Action, Plan, ActionStatus, ActionImpact, ActionTask
+
+from .admin import ImpactFilter, MergedActionsFilter, ModifiableActionsFilter
+from .models import (
+    Action, ActionImpact, ActionStatus, ActionTask, Plan
+)
+
+from . import category_admin  # noqa
 
 
 def _get_category_fields(plan, model, obj, with_initial=False):
@@ -382,7 +386,6 @@ class PlanAdmin(AplansModelAdmin):
     menu_icon = 'fa-briefcase'
     menu_label = _('Plans')
     menu_order = 2
-    exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
     list_display = ('name',)
     search_fields = ('name',)
 
@@ -459,10 +462,6 @@ class PlanAdmin(AplansModelAdmin):
 
 
 modeladmin_register(PlanAdmin)
-
-
-class CategoryTypeAdmin(AplansModelAdmin):
-    pass
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

@@ -261,6 +261,23 @@ class ImpactFilter(admin.SimpleListFilter):
             return queryset
 
 
+class CategoryTypeFilter(admin.SimpleListFilter):
+    title = _('Category type')
+    parameter_name = 'category_type'
+
+    def lookups(self, request, model_admin):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        choices = [(i.id, i.name) for i in plan.category_types.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(type=self.value())
+        else:
+            return queryset
+
+
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')
     field_name = 'contact_persons_unordered'

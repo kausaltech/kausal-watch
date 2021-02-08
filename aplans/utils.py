@@ -72,6 +72,18 @@ class OrderedModel(models.Model):
         abstract = True
 
 
+class PlanRelatedModel:
+    @classmethod
+    def filter_by_plan(cls, plan, qs):
+        return qs.filter(plan=plan)
+
+    def get_plans(self):
+        return [self.plan]
+
+    def set_plan(self, plan):
+        self.plan = plan
+
+
 class ChoiceArrayField(ArrayField):
     """
     A field that allows us to store an array of choices.
