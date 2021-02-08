@@ -8,7 +8,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('django_orghierarchy', '__latest__'),
+        ('django_orghierarchy', '0007_add_abbreviation_field'),
         ('users', '0002_add_selected_admin_plan_field'),
     ]
 
