@@ -229,37 +229,26 @@ class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelF
 
         initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
         total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
-        order = data.get('%s-ORDER' % prefix, None)
-        if order is not None and order != '':
-            order = order.lstrip('[').rstrip(']')
-            if order == '':
-                order = []
+
+        delete = data.get('%s-DELETE' % prefix, None)
+        if delete is not None and delete != '':
+            delete = delete.lstrip('[').rstrip(']')
+            if delete == '':
+                delete = []
             else:
-                order = [int(x) for x in order.split(',')]
+                delete = [int(x) for x in delete.split(',')]
 
-        if total_forms:
-            to_delete = []
-            for idx in range(initial_forms, total_forms):
-                keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
-                for key in keys:
-                    if data[key]:
-                        break
-                else:
-                    to_delete.append(idx)
+        for idx in range(initial_forms, total_forms):
+            keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
+            for key in keys:
+                if data[key]:
+                    break
+            else:
+                delete.append(idx)
 
-            if to_delete:
-                data = data.copy()
-
-                data['%s-TOTAL_FORMS' % prefix] = str(total_forms - len(to_delete))
-                if order is not None and order != '':
-                    data['%s-ORDER' % prefix] = '[%s]' % (','.join([str(x) for x in order]))
-
-            for idx in to_delete:
-                keys = list(filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys()))
-                for key in keys:
-                    del data[key]
-                if order:
-                    order.remove(idx)
+        if delete:
+            data = data.copy()
+            data['%s-DELETE' % prefix] = '[%s]' % (','.join([str(x) for x in sorted(delete)]))
 
         return super().process_post_data(data, *args, **kwargs)
 
