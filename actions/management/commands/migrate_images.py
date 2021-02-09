@@ -1,3 +1,4 @@
+from django.core.exceptions import FieldDoesNotExist
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -74,6 +75,14 @@ class Command(BaseCommand):
         printed and processing may continue with other instances. Such
         instances will have `image_was_migrated` set to True.
         """
+        # Make sure the `image_was_migrated` field is there. If it is not, a FieldDoesNotExist exception is
+        # raised. The reason for the field missing is probably that the user has checked out a version of
+        # the code where the field has been removed. Setting the field to True would have no effect then.
+        try:
+            model._meta.get_field('image_was_migrated')
+        except FieldDoesNotExist as fe:
+            raise FieldDoesNotExist(f"{fe}. Probably you checked out a too recent version of the code.")
+
         for instance in model.objects.filter(HAS_IMAGE & ~HAS_MAIN_IMAGE):
             try:
                 self.migrate_instance(instance, get_collection(instance))

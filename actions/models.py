@@ -23,7 +23,6 @@ from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
 
 from django_orghierarchy.models import Organization
-from aplans.model_images import ModelWithImage
 from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel
 
 from .monitoring_quality import determine_monitoring_quality
@@ -61,13 +60,16 @@ class PlanQuerySet(models.QuerySet):
         return self.filter(domains__hostname=hostname.lower())
 
 
-class Plan(ModelWithImage, ClusterableModel):
+class Plan(ClusterableModel):
     """The Action Plan under monitoring.
 
     Most information in this service is linked to a Plan.
     """
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     site_url = models.URLField(
         blank=True, null=True, verbose_name=_('site URL'),
@@ -125,13 +127,11 @@ class Plan(ModelWithImage, ClusterableModel):
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name'])
 
-    image_was_migrated = models.BooleanField(default=False)
-
     public_fields = [
-        'id', 'name', 'identifier', 'image_url', 'action_schedules',
+        'id', 'name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
-        'monitoring_quality_points', 'scenarios', 'main_image',
+        'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases',
     ]
@@ -291,7 +291,7 @@ class ActionQuerySet(models.QuerySet):
         return self.unmerged().exclude(status__is_completed=True)
 
 
-class Action(ModelWithImage, OrderedModel, ClusterableModel, PlanRelatedModel):
+class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     """One action/measure tracked in an action plan."""
 
     plan = ParentalKey(
@@ -305,6 +305,9 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel, PlanRelatedModel):
     )
     identifier = IdentifierField(
         help_text=_('The identifier for this action (e.g. number)')
+    )
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
     description = RichTextField(
         null=True, blank=True,
@@ -379,8 +382,6 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel, PlanRelatedModel):
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
     i18n = TranslationField(fields=('name', 'official_name', 'description'))
-
-    image_was_migrated = models.BooleanField(default=False)
 
     objects = ActionQuerySet.as_manager()
 
@@ -980,7 +981,7 @@ class CategoryTypeMetadataChoice(OrderedModel):
         return self.name
 
 
-class Category(ClusterableModel, OrderedModel, ModelWithImage, PlanRelatedModel):
+class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
     type = models.ForeignKey(
@@ -989,6 +990,9 @@ class Category(ClusterableModel, OrderedModel, ModelWithImage, PlanRelatedModel)
     )
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')
@@ -1003,8 +1007,6 @@ class Category(ClusterableModel, OrderedModel, ModelWithImage, PlanRelatedModel)
     )
 
     i18n = TranslationField(fields=('name', 'short_description'))
-
-    image_was_migrated = models.BooleanField(default=False)
 
     public_fields = [
         'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description', 'color',
