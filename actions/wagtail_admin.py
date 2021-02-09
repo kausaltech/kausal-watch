@@ -349,7 +349,7 @@ class PlanEditHandler(TabbedInterface):
     def on_form_bound(self):
         super().on_form_bound()
         plan = self.instance
-        f = self.form.fields['main_image']
+        f = self.form.fields['image']
         if plan.root_collection is None:
             f.queryset = f.queryset.none()
         else:
@@ -399,7 +399,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
         AutocompletePanel('general_admins'),
-        ImageChooserPanel('main_image'),
+        ImageChooserPanel('image'),
     ]
 
     action_status_panels = [

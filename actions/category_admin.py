@@ -87,7 +87,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('short_description'),
-        ImageChooserPanel('main_image'),
+        ImageChooserPanel('image'),
         FieldPanel('color'),
     ]
 

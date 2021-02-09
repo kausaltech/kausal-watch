@@ -62,17 +62,6 @@ def hyphenate(s):
     return out
 
 
-class WithImageMixin:
-    image_url = graphene.String(size=graphene.String())
-    main_image = graphene.Field('images.schema.ImageNode')
-
-    def resolve_image_url(self, info, size=None, **kwargs):
-        request = info.context
-        if not request:
-            return None
-        return self.get_image_url(request, size)
-
-
 class OrderableModelMixin:
     order = graphene.Int()
 
@@ -107,7 +96,7 @@ class PlanDomainNode(DjangoNode):
         ]
 
 
-class PlanNode(DjangoNode, WithImageMixin):
+class PlanNode(DjangoNode):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
@@ -119,6 +108,7 @@ class PlanNode(DjangoNode, WithImageMixin):
         usable_for_actions=graphene.Boolean()
     )
     impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
+    image = graphene.Field('images.schema.ImageNode')
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
 
@@ -218,7 +208,9 @@ class CategoryTypeNode(DjangoNode):
 
 
 @register_django_node
-class CategoryNode(DjangoNode, WithImageMixin):
+class CategoryNode(DjangoNode):
+    image = graphene.Field('images.schema.ImageNode')
+
     class Meta:
         model = Category
         only_fields = public_fields(Category)
@@ -230,15 +222,18 @@ class ScenarioNode(DjangoNode):
         only_fields = public_fields(Scenario)
 
 
-class ImpactGroupNode(DjangoNode, WithImageMixin):
+class ImpactGroupNode(DjangoNode):
     name = graphene.String()
+    image = graphene.Field('images.schema.ImageNode')
 
     class Meta:
         model = ImpactGroup
         only_fields = public_fields(ImpactGroup, remove_fields=['name'])
 
 
-class ImpactGroupActionNode(DjangoNode, WithImageMixin):
+class ImpactGroupActionNode(DjangoNode):
+    image = graphene.Field('images.schema.ImageNode')
+
     class Meta:
         model = ImpactGroupAction
 
@@ -268,13 +263,14 @@ class ActionTaskNode(DjangoNode):
 
 
 @register_django_node
-class ActionNode(DjangoNode, WithImageMixin):
+class ActionNode(DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean())
     categories = graphene.List(CategoryNode, category_type=graphene.ID())
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
+    image = graphene.Field('images.schema.ImageNode')
 
     class Meta:
         model = Action
