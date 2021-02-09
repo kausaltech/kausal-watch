@@ -125,6 +125,8 @@ class Plan(ModelWithImage, ClusterableModel):
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name'])
 
+    image_was_migrated = models.BooleanField(default=False)
+
     public_fields = [
         'id', 'name', 'identifier', 'image_url', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
@@ -377,6 +379,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel, PlanRelatedModel):
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
     i18n = TranslationField(fields=('name', 'official_name', 'description'))
+
+    image_was_migrated = models.BooleanField(default=False)
 
     objects = ActionQuerySet.as_manager()
 
@@ -999,6 +1003,8 @@ class Category(ClusterableModel, OrderedModel, ModelWithImage, PlanRelatedModel)
     )
 
     i18n = TranslationField(fields=('name', 'short_description'))
+
+    image_was_migrated = models.BooleanField(default=False)
 
     public_fields = [
         'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description', 'color',
