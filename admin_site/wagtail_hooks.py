@@ -139,3 +139,12 @@ def restrict_chooser_pages_to_plan(pages, request):
     if not plan.site_id:
         return pages.none()
     return pages.descendant_of(plan.site.root_page, inclusive=True)
+
+
+@hooks.register('construct_page_action_menu')
+def reorder_page_action_menu_items(menu_items, request, context):
+    for index, item in enumerate(menu_items):
+        if item.name == 'action-publish':
+            menu_items.pop(index)
+            menu_items.insert(0, item)
+            break
