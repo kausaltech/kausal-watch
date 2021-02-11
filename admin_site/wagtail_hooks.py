@@ -34,7 +34,10 @@ class PlanChooserMenu(Menu):
         for plan in plans:
             url = reverse('change-admin-plan', kwargs=dict(plan_id=plan.id))
             url += '?admin=wagtail'
-            item = PlanItem(plan.name, url)
+            icon_name = ''
+            if plan == user.get_active_admin_plan():
+                icon_name = 'tick'
+            item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
         return items
 
