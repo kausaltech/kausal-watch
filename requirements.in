@@ -35,6 +35,7 @@ django-anymail[sendgrid]
 django-reversion
 pytest-django
 pytest-cov
+pytest-factoryboy
 libvoikko
 django-modeltrans
 wagtail
