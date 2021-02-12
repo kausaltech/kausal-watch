@@ -1,5 +1,7 @@
+import sentry_sdk
 import graphene
 from graphql.error import GraphQLError
+from wagtail.images.models import SourceImageIOError
 
 from aplans.graphql_types import DjangoNode, replace_image_node
 
@@ -21,7 +23,7 @@ class ImageRendition(DjangoNode):
 
 @replace_image_node
 class ImageNode(DjangoNode):
-    rendition = graphene.Field(ImageRendition, required=True, size=graphene.String())
+    rendition = graphene.Field(ImageRendition, size=graphene.String())
 
     class Meta:
         model = AplansImage
@@ -53,5 +55,12 @@ class ImageNode(DjangoNode):
         else:
             size = '800x600'
 
-        rendition = self.get_rendition('fill-%s-c50' % size)
+        try:
+            rendition = self.get_rendition('fill-%s-c50' % size)
+        except (FileNotFoundError, SourceImageIOError) as e:
+            # We ignore the error so that the query will not fail, but report it to
+            # Sentry anyway.
+            sentry_sdk.capture_exception(e)
+            return None
+
         return ImageRendition(**rendition.get_fqdn_attrs(info.context))
