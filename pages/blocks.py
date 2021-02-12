@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLPage, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString
 from wagtail.core import blocks
 from wagtail.images.blocks import ImageChooserBlock
 
@@ -36,6 +36,13 @@ class FrontPageHeroBlock(blocks.StructBlock):
     image = ImageChooserBlock()
     heading = blocks.CharBlock(classname='full title', label=_('Heading'))
     lead = blocks.RichTextBlock(label=_('Lead'))
+
+    graphql_fields = [
+        GraphQLString('layout'),
+        GraphQLImage('image'),
+        GraphQLString('heading'),
+        GraphQLString('lead'),
+    ]
 
 
 @register_streamfield_block
