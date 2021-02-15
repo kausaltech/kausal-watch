@@ -28,7 +28,8 @@ class ImageNode(DjangoNode):
     class Meta:
         model = AplansImage
         only_fields = [
-            'id', 'title'
+            'id', 'title', 'focal_point_x', 'focal_point_y', 'focal_point_width',
+            'focal_point_height'
         ]
 
     def resolve_rendition(self, info, size=None):
