@@ -1,8 +1,31 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString
+from grapple.registry import registry
+from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
+from uuid import UUID
 from wagtail.core import blocks
 from wagtail.images.blocks import ImageChooserBlock
+
+
+class ListBlockWithIncrementingChildIds(GrappleListBlock):
+    def resolve_items(self, info, **kwargs):
+        # Grapple's ListBlock uses self.id also as IDs for the child blocks. We override this to make them unique.
+        # FIXME: This causes problems if we rely on the IDs for anything else except uniqueness.
+        block_type = self.block.child_block
+        id = UUID(self.id).int
+        result = []
+        for item in self.value:
+            id += 1
+            result.append(StructBlockItem(str(UUID(int=id)), block_type, item))
+        return result
+
+
+registry.streamfield_blocks.update(
+    {
+        blocks.ListBlock: ListBlockWithIncrementingChildIds,
+    }
+)
 
 
 @register_streamfield_block
