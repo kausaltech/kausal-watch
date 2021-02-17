@@ -80,3 +80,32 @@ class PageLinkBlock(blocks.StructBlock):
         GraphQLString('text'),
         GraphQLPage('page'),
     ]
+
+
+@register_streamfield_block
+class CardBlock(blocks.StructBlock):
+    image = ImageChooserBlock(required=False)
+    heading = blocks.CharBlock()
+    content = blocks.CharBlock(required=False)
+    # FIXME: We should also be able to choose internal pages
+    link = blocks.CharBlock(required=False)
+
+    graphql_fields = [
+        GraphQLImage('image'),
+        GraphQLString('heading'),
+        GraphQLString('content'),
+        GraphQLString('link'),
+    ]
+
+
+@register_streamfield_block
+class CardListBlock(blocks.StructBlock):
+    heading = blocks.CharBlock()
+    lead = blocks.CharBlock(required=False)
+    cards = blocks.ListBlock(CardBlock())
+
+    graphql_fields = [
+        GraphQLString('heading'),
+        GraphQLString('lead'),
+        GraphQLStreamfield('cards'),
+    ]

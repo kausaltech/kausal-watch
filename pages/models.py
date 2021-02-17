@@ -12,7 +12,7 @@ from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListB
 from actions.chooser import CategoryChooser
 from actions.models import Category, Plan
 from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock
-from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
+from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
@@ -63,6 +63,7 @@ class PlanRootPage(AplansPage):
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
         ('indicator_showcase', IndicatorShowcaseBlock()),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
+        ('cards', CardListBlock()),
     ])
 
     content_panels = AplansPage.content_panels + [
