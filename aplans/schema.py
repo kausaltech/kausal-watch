@@ -10,12 +10,13 @@ from graphql.type import (
 )
 from grapple.registry import registry as grapple_registry
 from grapple.types.pages import PageInterface
+from itertools import chain
 from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
-    MonitoringQualityPoint, Plan, PlanDomain, Scenario
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryMetadataChoice, CategoryMetadataRichText,
+    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
 from content.models import SiteGeneralContent
@@ -202,6 +203,48 @@ class ActionStatusUpdateNode(DjangoNode):
         ]
 
 
+class CategoryMetadataInterface(graphene.Interface):
+    id = graphene.ID(required=True)
+
+    @classmethod
+    def resolve_type(cls, instance, info):
+        if isinstance(instance, CategoryMetadataRichText):
+            return CategoryMetadataRichTextNode
+        elif isinstance(instance, CategoryMetadataChoice):
+            return CategoryMetadataChoiceNode
+
+
+@register_django_node
+class CategoryMetadataChoiceNode(DjangoNode):
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+    value = graphene.String(required=True)
+    value_identifier = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.metadata.name
+
+    def resolve_key_identifier(self, info):
+        return self.metadata.identifier
+
+    def resolve_value(self, info):
+        return self.choice.name
+
+    def resolve_value_identifier(self, info):
+        return self.choice.identifier
+
+    class Meta:
+        model = CategoryMetadataChoice
+        interfaces = (CategoryMetadataInterface,)
+
+
+@register_django_node
+class CategoryMetadataRichTextNode(DjangoNode):
+    class Meta:
+        model = CategoryMetadataRichText
+        interfaces = (CategoryMetadataInterface,)
+
+
 class CategoryTypeNode(DjangoNode):
     class Meta:
         model = CategoryType
@@ -210,6 +253,10 @@ class CategoryTypeNode(DjangoNode):
 @register_django_node
 class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
+    metadata = graphene.List(CategoryMetadataInterface)
+
+    def resolve_metadata(self, info):
+        return chain(self.metadata_richtexts.all(), self.metadata_choices.all())
 
     class Meta:
         model = Category
