@@ -13,8 +13,7 @@ def abort_unless_data_migrated(apps, schema_editor):
         if old_model.objects.filter(has_unmigrated_image).exists():
             raise Exception("There are unmigrated images. Please make sure all other apps are migrated, then run the "
                             "management command migrate_images and retry this migration. For the command to work, "
-                            "you will need to check out a version of the code where the appropriate fields in the "
-                            " models still exist.")
+                            "you will need to check out the commit tagged with migrate-images.")
 
 
 class Migration(migrations.Migration):
