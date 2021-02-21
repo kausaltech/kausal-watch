@@ -240,9 +240,24 @@ class CategoryMetadataChoiceNode(DjangoNode):
 
 @register_django_node
 class CategoryMetadataRichTextNode(DjangoNode):
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+    value = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.metadata.name
+
+    def resolve_key_identifier(self, info):
+        return self.metadata.identifier
+
+    def resolve_value(self, info):
+        return self.text
+
     class Meta:
         model = CategoryMetadataRichText
         interfaces = (CategoryMetadataInterface,)
+        # We expose `value` instead of `text`
+        only_fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
 
 
 class CategoryTypeNode(DjangoNode):

@@ -1056,6 +1056,10 @@ class CategoryMetadataRichText(models.Model):
     category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_richtexts'))
     text = RichTextField(verbose_name=_('Text'))
 
+    public_fields = [
+        'id', 'metadata', 'category', 'text',
+    ]
+
     class Meta:
         unique_together = ('category', 'metadata')
 
