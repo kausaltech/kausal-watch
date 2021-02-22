@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from admin_site.admin import AplansResource
 from import_export import fields, widgets
 
-from .models import Indicator, IndicatorValue
+from .models import Indicator, IndicatorValue, IndicatorLevel, Unit
 
 
 class YearField(fields.Field):
@@ -48,11 +48,30 @@ class YearField(fields.Field):
                 obj._yearly_values[self.year] = ret
 
 
+class UnitWidget(widgets.ForeignKeyWidget):
+    def get_queryset(self, value, row, *args, **kwargs):
+        return super().get_queryset(value, row, *args, **kwargs)
+
+    def clean(self, value, row=None, *args, **kwargs):
+        qs = super().get_queryset(value, row, *args, **kwargs)
+        unit = qs.filter(name=value).first()
+        if not unit:
+            unit = qs.filter(short_name=value).first()
+        if not unit:
+            raise ValueError("Unit '%s' does not exist" % value)
+        return unit
+
+
 class IndicatorResource(AplansResource):
+    unit = fields.Field(
+        column_name='unit',
+        attribute='unit',
+        widget=UnitWidget(Unit, 'name'),
+    )
+
     def get_fields(self, **kwargs):
         out = super().get_fields(**kwargs)
-        for field in out:
-            field.readonly = True
+
         if not hasattr(self, 'yearly_fields'):
             fields = []
             for year in range(self.min_year, self.max_year + 1):
@@ -92,12 +111,23 @@ class IndicatorResource(AplansResource):
         self.min_year = out['date__min'].year
         self.max_year = out['date__max'].year
 
+    def import_field(self, field, obj, data, is_m2m=False):
+        # If the indicator exists, do not allow changing its metadata
+        if obj.pk:
+            if not isinstance(field, YearField):
+                return
+        super().import_field(field, obj, data, is_m2m)
+
     def before_import(self, dataset, using_transactions, dry_run, **kwargs):
         dataset.headers = [force_str(x) for x in dataset.headers]
 
     def after_import_instance(self, instance, new, row_number=None, **kwargs):
+        user = self.request.user
         if new:
-            raise Exception(_("Creating new indicators is not allowed"))
+            plan = user.get_active_admin_plan()
+            if not user.can_create_indicator(plan):
+                raise Exception(_("Creating new indicators is not allowed"))
+            instance.organization = plan.organization
         else:
             user = self.request.user
             if not user.can_modify_indicator(instance):
@@ -114,6 +144,10 @@ class IndicatorResource(AplansResource):
             return
 
         instance.set_latest_value()
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        if not instance.levels.filter(plan=plan).exists():
+            IndicatorLevel.objects.create(indicator=instance, plan=plan, level='tactical')
 
     def import_data_inner(self, dataset, *args, **kwargs):
         years = []
@@ -134,5 +168,5 @@ class IndicatorResource(AplansResource):
     class Meta:
         model = Indicator
         fields = ('id', 'name', 'unit')
-        import_id_fields = ('id', 'name')
+        import_id_fields = ('id',)
         skip_unchanged = True
