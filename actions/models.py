@@ -336,7 +336,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         help_text=_('Set if you want to prevent the action status from being determined automatically')
     )
     manual_status_reason = models.TextField(
-        blank=True, null=True, verbose_name=_('reason for status'),
+        blank=True, null=True, verbose_name=_('specifier for status'),
         help_text=_('Describe the reason why this action has has this status')
     )
 
