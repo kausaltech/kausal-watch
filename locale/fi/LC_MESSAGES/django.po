@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-04 10:36+0200\n"
+"POT-Creation-Date: 2021-02-06 04:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,6 +45,10 @@ msgstr "Näytä myös yhdistetyt toimenpiteet"
 #: actions/admin.py actions/export.py actions/models.py
 msgid "impact"
 msgstr "vaikuttavuus"
+
+#: actions/admin.py
+msgid "Category type"
+msgstr "Luokan tyyppi"
 
 #: actions/admin.py
 msgid "Contact person"
@@ -86,6 +90,23 @@ msgstr "Kortit"
 msgid "Table"
 msgstr "Taulukko"
 
+#: actions/category_admin.py
+msgid "Category types"
+msgstr "Luokkien tyypit"
+
+#: actions/category_admin.py
+msgid "Action and indicator categorization"
+msgstr "Toimenpiteiden ja mittareiden luokittelu"
+
+#: actions/category_admin.py
+msgid "Category metadata"
+msgstr "Luokan metatieto"
+
+#: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Luokat"
+
 #: actions/chooser.py
 msgid "Choose a category"
 msgstr "Valitse luokka"
@@ -120,6 +141,7 @@ msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
 #: actions/models.py
+#, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 
@@ -476,7 +498,35 @@ msgstr "luokan taso"
 
 #: actions/models.py
 msgid "category levels"
-msgstr "luokan tasot tasot"
+msgstr "luokan tasot"
+
+#: actions/models.py
+msgid "Ordered choice"
+msgstr "Järjestetty valinta"
+
+#: actions/models.py
+msgid "Rich text"
+msgstr "Sisältöteksti"
+
+#: actions/models.py
+msgid "Format"
+msgstr "Muoto"
+
+#: actions/models.py
+msgid "category metadata"
+msgstr "luokan metatieto"
+
+#: actions/models.py
+msgid "category metadatas"
+msgstr "luokkien metatiedot"
+
+#: actions/models.py
+msgid "category type metadata choice"
+msgstr "luokan metatiedon valinta"
+
+#: actions/models.py
+msgid "category type metadata choices"
+msgstr "luokan metatietojen valinnat"
 
 #: actions/models.py
 msgid "parent category"
@@ -501,6 +551,22 @@ msgstr "luokka"
 #: actions/models.py
 msgid "Parent forms a loop. Leave empty if top-level category."
 msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
+
+#: actions/models.py
+msgid "category_richtexts"
+msgstr "luokan tekstisisällöt"
+
+#: actions/models.py
+msgid "metadata_richtexts"
+msgstr "metatiedon tekstisisällöt"
+
+#: actions/models.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
+
+#: actions/models.py
+msgid "metadata_choices"
+msgstr "metatiedon valinnat"
 
 #: actions/models.py indicators/models.py
 msgid "scenario"
@@ -606,10 +672,6 @@ msgstr[1] ""
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
 msgstr "Nimi"
-
-#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
-msgid "Categories"
-msgstr "Luokat"
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
@@ -1567,10 +1629,6 @@ msgid "Category"
 msgstr "Luokka"
 
 #: pages/models.py
-msgid "Text"
-msgstr "Teksti"
-
-#: pages/models.py
 msgid "Action list"
 msgstr "Toimenpideluettelo"
 
@@ -1822,6 +1880,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Editing"
+#~ msgstr "Muokkaa"
 
 #~ msgid "parent page"
 #~ msgstr "yläsivu"
