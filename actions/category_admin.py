@@ -99,7 +99,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
 
 class CategoryGroup(ModelAdminGroup):
-    menu_order = 2
+    menu_order = 400
     menu_label = _('Categories')
     items = (CategoryTypeAdmin, CategoryTypeMetadataAdmin, CategoryAdmin)
 

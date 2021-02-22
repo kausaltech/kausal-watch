@@ -385,7 +385,7 @@ class PlanAdmin(AplansModelAdmin):
     create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
     menu_label = _('Plans')
-    menu_order = 2
+    menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
 
