@@ -903,7 +903,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions', 'levels',
+        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories',
     ]
 
     class Meta:

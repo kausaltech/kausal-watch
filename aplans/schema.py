@@ -15,7 +15,7 @@ from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryMetadataChoice, CategoryMetadataRichText,
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice, CategoryMetadataRichText,
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
@@ -260,22 +260,45 @@ class CategoryMetadataRichTextNode(DjangoNode):
         only_fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
 
 
+class CategoryLevelNode(DjangoNode):
+    class Meta:
+        model = CategoryLevel
+        only_fields = public_fields(CategoryLevel)
+
+
 class CategoryTypeNode(DjangoNode):
     class Meta:
         model = CategoryType
+        only_fields = public_fields(CategoryType)
 
 
 @register_django_node
 class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
     metadata = graphene.List(CategoryMetadataInterface)
+    level = graphene.Field(CategoryLevelNode)
 
     def resolve_metadata(self, info):
         return chain(self.metadata_richtexts.all(), self.metadata_choices.all())
 
+    def resolve_level(self, info):
+        depth = 0
+        obj = self
+        # Uh oh, Category is not a tree model yet
+        while obj.parent is not None:
+            obj = obj.parent
+            depth += 1
+            if depth == 5:
+                break
+
+        levels = list(self.type.levels.all())
+        if depth > len(levels):
+            return None
+        return levels[depth]
+
     class Meta:
         model = Category
-        only_fields = public_fields(Category)
+        only_fields = public_fields(Category, add_fields=['level'])
 
 
 class ScenarioNode(DjangoNode):
