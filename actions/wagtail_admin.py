@@ -15,7 +15,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, PlanRelatedPermissionHelper,
+    CondensedPanelSingleSelect, PlanRelatedPermissionHelper, PlanFilteredFieldPanel
 )
 from people.chooser import PersonChooser
 
@@ -220,13 +220,16 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         RichTextFieldPanel('description'),
     ]
 
-    admin_panels = [
-        FieldPanel('status'),
+    progress_panels = [
+        PlanFilteredFieldPanel('implementation_phase'),
+        PlanFilteredFieldPanel('status'),
         FieldPanel('manual_status'),
         FieldPanel('manual_status_reason'),
+    ]
+    admin_panels = [
         FieldPanel('internal_priority'),
         FieldPanel('internal_priority_comment'),
-        FieldPanel('impact'),
+        PlanFilteredFieldPanel('impact'),
     ]
 
     task_panels = [
@@ -285,7 +288,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         panels = list(self.basic_panels)
-
+        progress_panels = list(self.progress_panels)
         admin_panels = list(self.admin_panels)
 
         cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
@@ -297,7 +300,10 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         i18n_tabs = self.get_translation_tabs(instance, request)
 
-        all_tabs = [ObjectList(panels, heading=_('Basic information'))]
+        all_tabs = [
+            ObjectList(panels, heading=_('Basic information')),
+            ObjectList(progress_panels, heading=_('Progress')),
+        ]
 
         plan = request.user.get_active_admin_plan()
         if request.user.is_general_admin_for_plan(plan):
