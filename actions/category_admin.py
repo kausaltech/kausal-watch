@@ -36,7 +36,8 @@ class CategoryTypeAdmin(AplansModelAdmin):
             ]),
         ], heading=_('Action and indicator categorization'), classname='collapsible collapsed'),
         CondensedInlinePanel('levels', panels=[
-            FieldPanel('name',)
+            FieldPanel('name',),
+            FieldPanel('name_plural',)
         ]),
     ]
 

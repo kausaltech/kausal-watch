@@ -927,10 +927,11 @@ class CategoryLevel(OrderedModel):
         verbose_name=_('type')
     )
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
     i18n = TranslationField(fields=('name',))
 
     public_fields = [
-        'id', 'name', 'order', 'type',
+        'id', 'name', 'name_plural', 'order', 'type',
     ]
 
     class Meta:

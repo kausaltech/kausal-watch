@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-06 04:18+0200\n"
+"POT-Creation-Date: 2021-02-22 15:15+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -493,6 +493,10 @@ msgid "type"
 msgstr ""
 
 #: actions/models.py
+msgid "plural name"
+msgstr ""
+
+#: actions/models.py
 msgid "category level"
 msgstr ""
 
@@ -550,6 +554,10 @@ msgstr ""
 
 #: actions/models.py
 msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr ""
+
+#: actions/models.py
+msgid "Parent must be of same type"
 msgstr ""
 
 #: actions/models.py
@@ -669,6 +677,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
+msgstr ""
+
+#: actions/wagtail_admin.py indicators/blocks.py
+msgid "Progress"
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -1003,21 +1015,17 @@ msgstr ""
 msgid "has goals"
 msgstr ""
 
-#: indicators/apps.py indicators/templates/indicators/edit_values.html
-#: indicators/wagtail_admin.py
+#: indicators/apps.py indicators/blocks.py
+#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr ""
 
-#: indicators/blocks.py pages/models.py
+#: indicators/blocks.py
 msgid "Indicator"
 msgstr ""
 
 #: indicators/blocks.py
 msgid "Graph"
-msgstr ""
-
-#: indicators/blocks.py
-msgid "Progress"
 msgstr ""
 
 #: indicators/blocks.py
