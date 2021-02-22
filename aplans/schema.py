@@ -292,7 +292,7 @@ class CategoryNode(DjangoNode):
                 break
 
         levels = list(self.type.levels.all())
-        if depth > len(levels):
+        if depth >= len(levels):
             return None
         return levels[depth]
 
