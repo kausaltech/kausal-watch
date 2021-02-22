@@ -320,8 +320,8 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     internal_priority = models.PositiveIntegerField(
         blank=True, null=True, verbose_name=_('internal priority')
     )
-    internal_priority_comment = models.TextField(
-        blank=True, null=True, verbose_name=_('internal priority comment')
+    internal_notes = models.TextField(
+        blank=True, null=True, verbose_name=_('internal notes')
     )
     status = models.ForeignKey(
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,

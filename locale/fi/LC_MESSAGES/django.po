@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-22 19:45+0200\n"
+"POT-Creation-Date: 2021-02-22 20:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -239,8 +239,8 @@ msgid "internal priority"
 msgstr "sisäinen prioriteetti"
 
 #: actions/models.py
-msgid "internal priority comment"
-msgstr "sisäisen prioriteetin kommentti"
+msgid "internal notes"
+msgstr "sisäiset muistiinpanot"
 
 #: actions/models.py
 msgid "implementation phase"
@@ -689,10 +689,6 @@ msgstr "Perustiedot"
 msgid "Progress"
 msgstr "Eteneminen"
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr "Sisäiset tiedot"
-
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
@@ -704,6 +700,10 @@ msgstr "Toimenpiteen vastuutahot"
 #: actions/wagtail_admin.py
 msgid "Tasks"
 msgstr "Tehtävät"
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Sisäiset tiedot"
 
 #: actions/wagtail_admin.py
 msgid "late"
@@ -1714,8 +1714,8 @@ msgid "postal address"
 msgstr "postiosoite"
 
 #: people/models.py
-msgid "Set if this person is part of an organization"
-msgstr "Aseta jos henkilö on organisaation jäsen"
+msgid "What is this person's organization"
+msgstr "Aseta henkilön organisaatio"
 
 #: people/models.py users/models.py
 msgid "user"
@@ -1888,6 +1888,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "internal priority comment"
+#~ msgstr "sisäisen prioriteetin kommentti"
 
 #~ msgid "Editing"
 #~ msgstr "Muokkaa"

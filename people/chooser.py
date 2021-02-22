@@ -6,7 +6,7 @@ from wagtailautocomplete.widgets import Autocomplete as AutocompleteWidget
 from wagtail.search.backends import get_search_backend
 from wagtail.core import hooks
 from django_orghierarchy.models import Organization
-
+from dal import autocomplete
 from .models import Person
 
 
@@ -44,18 +44,18 @@ class PersonChooserMixin(ModelChooserMixin):
 class PersonModelChooserCreateTabMixin(ModelChooserCreateTabMixin):
     create_tab_label = _("Create new")
 
+    def get_initial(self):
+        plan = self.request.user.get_active_admin_plan()
+        return {'organization': plan.organization}
+
     def get_form_class(self):
         if self.form_class:
             return self.form_class
 
-        Widget = type(
-            'OrganizationAutocomplete',
-            (AutocompleteWidget,),
-            dict(target_model=Organization, can_create=False, is_single=True),
-        )
+        organization_widget = autocomplete.ModelSelect2(url='organization-autocomplete')
 
         self.form_class = modelform_factory(self.model, fields=self.fields, widgets=dict(
-            organization=Widget
+            organization=organization_widget
         ))
         return self.form_class
 

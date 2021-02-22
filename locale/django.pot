@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-22 15:15+0200\n"
+"POT-Creation-Date: 2021-02-22 20:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -239,7 +239,7 @@ msgid "internal priority"
 msgstr ""
 
 #: actions/models.py
-msgid "internal priority comment"
+msgid "internal notes"
 msgstr ""
 
 #: actions/models.py
@@ -255,7 +255,7 @@ msgid "Set if you want to prevent the action status from being determined automa
 msgstr ""
 
 #: actions/models.py
-msgid "reason for status"
+msgid "specifier for status"
 msgstr ""
 
 #: actions/models.py
@@ -683,10 +683,6 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr ""
-
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr ""
@@ -697,6 +693,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Tasks"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -1708,7 +1708,7 @@ msgid "postal address"
 msgstr ""
 
 #: people/models.py
-msgid "Set if this person is part of an organization"
+msgid "What is this person's organization"
 msgstr ""
 
 #: people/models.py users/models.py
