@@ -77,7 +77,7 @@ class CategoryTypeMetadataAdmin(AplansModelAdmin):
 
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
-    list_display = ('name', 'parent', 'type')
+    list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
 
