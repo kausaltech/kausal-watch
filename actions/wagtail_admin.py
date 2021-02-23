@@ -1,6 +1,7 @@
 import json
 from dal import autocomplete
 from django import forms
+from django.utils import timezone
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django_orghierarchy.models import Organization
@@ -129,6 +130,10 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 class CategoriedModelForm(WagtailAdminModelForm):
     def save(self, commit=True):
         obj = super().save(commit)
+
+        if hasattr(obj, 'updated_at'):
+            obj.updated_at = timezone.now()
+            obj.save(update_fields=['updated_at'])
 
         # Update categories
         plan = obj.plan
