@@ -426,12 +426,6 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
             if 'implementation_phase' in fs['fields']:
                 fs['fields'].remove('implementation_phase')
 
-        if plan.allow_images_for_actions:
-            fieldsets.insert(1, (_('Image'), {
-                'fields': ('image', 'image_cropping'),
-                'classes': ('collapse',)
-            }))
-
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
                 'fields': ('internal_priority', 'internal_notes', 'impact', 'merged_with'),
