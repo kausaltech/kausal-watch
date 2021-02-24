@@ -9,13 +9,14 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel, TabbedInterface
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    AdminOnlyPanel, AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     CondensedPanelSingleSelect, PlanRelatedPermissionHelper, PlanFilteredFieldPanel
 )
 from people.chooser import PersonChooser
@@ -484,7 +485,35 @@ class PlanAdmin(AplansModelAdmin):
         return qs
 
 
-modeladmin_register(PlanAdmin)
+# TBD: We might want to keep this for superusers.
+# modeladmin_register(PlanAdmin)
+
+
+class ActivePlanEditView(AplansEditView):
+    def get_success_url(self):
+        # After editing the plan, don't redirect to the index page as AplansEditView does.
+        return self.url_helper.get_action_url('edit', self.instance.pk)
+
+
+class ActivePlanEditMenuItem(ModelAdminMenuItem):
+    def get_context(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        context = super().get_context(request)
+        plan = request.user.get_active_admin_plan()
+        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.pk)
+        return context
+
+
+class ActivePlanAdmin(PlanAdmin):
+    def get_menu_item(self, order=None):
+        return ActivePlanEditMenuItem(self, order or self.get_menu_order())
+
+    edit_view_class = ActivePlanEditView
+    menu_label = _('Plan')
+    add_to_settings_menu = True
+
+
+modeladmin_register(ActivePlanAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete
