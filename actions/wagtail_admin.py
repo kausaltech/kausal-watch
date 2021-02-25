@@ -9,6 +9,7 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel, TabbedInterface
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
@@ -489,6 +490,20 @@ class PlanAdmin(AplansModelAdmin):
 # modeladmin_register(PlanAdmin)
 
 
+class ActivePlanPermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return False
+
+    def user_can_create(self, user):
+        return False
+
+    def user_can_inspect_obj(self, user, obj):
+        return False
+
+    def user_can_delete_obj(self, user, obj):
+        return False
+
+
 class ActivePlanEditView(AplansEditView):
     def get_success_url(self):
         # After editing the plan, don't redirect to the index page as AplansEditView does.
@@ -503,12 +518,19 @@ class ActivePlanEditMenuItem(ModelAdminMenuItem):
         context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.pk)
         return context
 
+    def is_shown(self, request):
+        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
+        # this menu item is about editing a plan, not listing.
+        plan = request.user.get_active_admin_plan()
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan)
+
 
 class ActivePlanAdmin(PlanAdmin):
     def get_menu_item(self, order=None):
         return ActivePlanEditMenuItem(self, order or self.get_menu_order())
 
     edit_view_class = ActivePlanEditView
+    permission_helper_class = ActivePlanPermissionHelper
     menu_label = _('Plan')
     add_to_settings_menu = True
 
