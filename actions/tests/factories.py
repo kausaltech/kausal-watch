@@ -5,6 +5,7 @@ from factory import LazyFunction, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 from actions.models import CategoryTypeMetadata
+from people.tests.factories import PersonFactory
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -145,6 +146,14 @@ class ActionFactory(DjangoModelFactory):
                 extracted = [ActionResponsiblePartyFactory(action=self, organization=self.plan.organization)]
             for responsible_party in extracted:
                 self.responsible_parties.add(responsible_party)
+
+
+class ActionContactPersonFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionContactPerson'
+
+    action = SubFactory(ActionFactory)
+    person = SubFactory(PersonFactory)
 
 
 class ActionResponsiblePartyFactory(DjangoModelFactory):

@@ -510,7 +510,7 @@ class ActivePlanEditView(AplansEditView):
         return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
-class ActivePlanEditMenuItem(ModelAdminMenuItem):
+class ActivePlanMenuItem(ModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
         context = super().get_context(request)
@@ -527,7 +527,7 @@ class ActivePlanEditMenuItem(ModelAdminMenuItem):
 
 class ActivePlanAdmin(PlanAdmin):
     def get_menu_item(self, order=None):
-        return ActivePlanEditMenuItem(self, order or self.get_menu_order())
+        return ActivePlanMenuItem(self, order or self.get_menu_order())
 
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
