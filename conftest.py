@@ -1,7 +1,7 @@
 import json
 import pytest
 from graphene_django.utils.testing import graphql_query
-from pytest_factoryboy import register
+from pytest_factoryboy import LazyFixture, register
 
 from actions.tests import factories as actions_factories
 
@@ -16,6 +16,11 @@ register(actions_factories.CategoryTypeMetadataFactory)
 register(actions_factories.OrganizationFactory)
 register(actions_factories.PlanFactory)
 register(actions_factories.UserFactory)
+register(actions_factories.UserFactory, 'superuser', is_superuser=True)
+register(actions_factories.UserFactory, 'plan_admin_user', general_admin_plans=LazyFixture(lambda plan: [plan]))
+register(actions_factories.PersonFactory,
+         'action_contact_person',
+         contact_for_actions=LazyFixture(lambda action_contact: [action_contact]))
 
 
 @pytest.fixture

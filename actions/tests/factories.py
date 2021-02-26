@@ -174,7 +174,4 @@ class UserFactory(DjangoModelFactory):
     email = Sequence(lambda i: f'user{i}@example.com')
     password = LazyFunction(lambda: make_password('foobar'))
     is_staff = True
-
-
-class SuperuserFactory(UserFactory):
-    is_superuser = True
+    is_superuser = False
