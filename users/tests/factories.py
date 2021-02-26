@@ -11,16 +11,10 @@ class UserFactory(DjangoModelFactory):
     email = Sequence(lambda i: f'user{i}@example.com')
     password = LazyFunction(lambda: make_password('foobar'))
     is_staff = True
+    is_superuser = False
 
     @post_generation
     def general_admin_plans(self, create, extracted, **kwargs):
-        if not create:
-            return
-
-        if extracted:
+        if create and extracted:
             for plan in extracted:
                 self.general_admin_plans.add(plan)
-
-
-class SuperuserFactory(UserFactory):
-    is_superuser = True

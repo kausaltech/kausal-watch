@@ -148,7 +148,10 @@ class ActionFactory(DjangoModelFactory):
                 self.responsible_parties.add(responsible_party)
 
 
-class ActionContactPersonFactory(DjangoModelFactory):
+# FIXME: The factory name does not correspond to the model name because we also want a Person factory whose name
+# should arguably by ActionContactPerson. We might want to consider renaming the model ActionContactPerson to
+# ActionContact or similar.
+class ActionContactFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ActionContactPerson'
 
