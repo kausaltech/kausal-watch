@@ -22,9 +22,9 @@ class PlanFactory(DjangoModelFactory):
         model = 'actions.Plan'
 
     organization = SubFactory(OrganizationFactory)
-    name = "Test plan"
-    identifier = 'test-plan'
-    site_url = 'http://example.com'
+    name = Sequence(lambda i: f'Plan {i}')
+    identifier = Sequence(lambda i: f'plan{i}')
+    site_url = Sequence(lambda i: f'https://plan{i}.example.com')
 
 
 class ActionStatusFactory(DjangoModelFactory):

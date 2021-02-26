@@ -492,7 +492,7 @@ class PlanAdmin(AplansModelAdmin):
 
 class ActivePlanPermissionHelper(PermissionHelper):
     def user_can_list(self, user):
-        return False
+        return user.is_superuser
 
     def user_can_create(self, user):
         return False
