@@ -37,6 +37,8 @@ class SiteGeneralContent(models.Model):
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
 
+    migrated_data_to_pages_app = models.BooleanField(default=False)
+
     public_fields = [
         'id', 'site_title', 'site_description', 'hero_content', 'owner_url', 'owner_name',
         'action_short_description', 'indicator_short_description',

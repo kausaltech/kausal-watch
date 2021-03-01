@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
-from wagtail.core.fields import StreamField
+from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
 
@@ -56,6 +56,14 @@ class AplansPage(Page):
 
 
 class PlanRootPage(AplansPage):
+    hero_content = RichTextField(blank=True, verbose_name=_('hero content'))
+    action_short_description = RichTextField(
+        blank=True, verbose_name=_('Short description for what actions are')
+    )
+    indicator_short_description = RichTextField(
+        blank=True, verbose_name=_('Short description for what indicators are')
+    )
+
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
@@ -160,3 +168,50 @@ class CategoryPage(AplansPage):
         assert parent is not None
         self.url_path = parent.url_path + path
         return self.url_path
+
+
+class FixedSlugPage(AplansPage):
+    """
+    Page with fixed title and slug
+
+    Define `force_slug` and `force_title` in the body of subclasses.
+
+    Since the slug is fixed, there can be at most one child page of the respective type.
+    """
+    class Meta:
+        abstract = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs['slug'] = self.__class__.force_slug
+        kwargs['title'] = self.__class__.force_title
+        super().__init__(*args, **kwargs)
+
+    lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
+
+    content_panels = AplansPage.content_panels + [
+        FieldPanel('lead_content'),
+    ]
+    settings_panels = []
+
+    # Only let this be created programmatically
+    parent_page_types = []
+    subpage_types = []
+
+    graphql_fields = AplansPage.graphql_fields + [
+        GraphQLString('lead_content'),
+    ]
+
+
+class ActionListPage(FixedSlugPage):
+    force_slug = 'actions'
+    force_title = 'Toimenpiteet'
+
+
+class IndicatorListPage(FixedSlugPage):
+    force_slug = 'indicators'
+    force_title = 'Mittarit'
+
+
+class ImpactGroupPage(FixedSlugPage):
+    force_slug = 'impact-groups'
+    force_title = 'Vaikuttavuusryhmät'
