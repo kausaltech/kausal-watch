@@ -966,6 +966,26 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
     def filter_siblings(self, qs):
         return qs.filter(type=self.type)
 
+    def set_category_value(self, category, val):
+        assert category.type == self.type
+
+        if self.format == self.MetadataFormat.ORDERED_CHOICE:
+            existing = self.category_choices.filter(category=category)
+            if existing:
+                existing.delete()
+            if val is not None:
+                self.category_choices.create(category=category, choice=val)
+        elif self.format == self.MetadataFormat.RICH_TEXT:
+            obj = self.category_richtexts.filter(category=category).first()
+            if not val and obj is not None:
+                obj.delete()
+                return
+
+            if obj is None:
+                obj = CategoryMetadataRichText(metadata=self, category=category)
+            obj.text = val
+            obj.save()
+
 
 class CategoryTypeMetadataChoice(OrderedModel):
     metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
@@ -1064,6 +1084,9 @@ class CategoryMetadataRichText(models.Model):
     class Meta:
         unique_together = ('category', 'metadata')
 
+    def __str__(self):
+        return '%s for %s' % (self.metadata, self.category)
+
 
 class CategoryMetadataChoice(models.Model):
     metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_choices')
@@ -1072,6 +1095,9 @@ class CategoryMetadataChoice(models.Model):
 
     class Meta:
         unique_together = ('category', 'metadata')
+
+    def __str__(self):
+        return '%s (%s) for %s' % (self.choice, self.metadata, self.category)
 
 
 class Scenario(models.Model, PlanRelatedModel):

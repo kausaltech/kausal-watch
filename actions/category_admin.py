@@ -1,17 +1,21 @@
 from django.utils.translation import gettext_lazy as _
+from django import forms
 from wagtail.admin.edit_handlers import (
-    FieldPanel, FieldRowPanel, MultiFieldPanel,
+    FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
 from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
+from wagtail.core.fields import RichTextField
+from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.core.rich_text import RichText
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
-    AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel
+    AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel, AplansTabbedInterface
 )
 
 from .admin import CategoryTypeFilter
-from .models import Category, CategoryType, CategoryTypeMetadata
+from .models import Category, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata
 
 
 class CategoryTypeAdmin(AplansModelAdmin):
@@ -76,6 +80,70 @@ class CategoryTypeMetadataAdmin(AplansModelAdmin):
         return qs.filter(type__plan=plan).distinct()
 
 
+def get_metadata_fields(cat_type, obj, with_initial=False):
+    fields = {}
+
+    if not obj or not obj.pk:
+        with_initial = False
+
+    for metadata in cat_type.metadata.all():
+        initial = None
+        if metadata.format == CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE:
+            qs = metadata.choices.all()
+            if with_initial:
+                initial = metadata.category_choices.filter(category=obj).first()
+            field = forms.ModelChoiceField(
+                qs, label=metadata.name, initial=initial, required=False,
+            )
+        else:
+            initial = None
+            if with_initial:
+                val_obj = metadata.category_richtexts.filter(category=obj).first()
+                if val_obj is not None:
+                    initial = val_obj.text
+
+            field = CategoryMetadataRichText._meta.get_field('text').formfield(
+                initial=initial, required=False
+            )
+
+        field.metadata = metadata
+        fields['metadata_%s' % metadata.identifier] = field
+    return fields
+
+
+class MetadataFieldPanel(FieldPanel):
+    def on_form_bound(self):
+        super().on_form_bound()
+        metadata_fields = get_metadata_fields(self.instance.type, self.instance, with_initial=True)
+        self.form.fields[self.field_name].initial = metadata_fields[self.field_name].initial
+
+
+class CategoryAdminForm(WagtailAdminModelForm):
+    def save(self, commit=True):
+        obj = super().save(commit)
+
+        # Update categories
+        for field_name, field in get_metadata_fields(obj.type, obj).items():
+            val = self.cleaned_data.get(field_name)
+            field.metadata.set_category_value(obj, val)
+        return obj
+
+
+class CategoryEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
+        if self.instance is not None:
+            metadata_fields = get_metadata_fields(self.instance.type, self.instance, with_initial=True)
+        else:
+            metadata_fields = {}
+
+        self.base_form_class = type(
+            'CategoryAdminForm',
+            (CategoryAdminForm,),
+            metadata_fields
+        )
+        return super().get_form_class()
+
+
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
     list_display = ('__str__', 'parent', 'type')
@@ -97,6 +165,21 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         user = request.user
         plan = user.get_active_admin_plan()
         return qs.filter(type__plan=plan).distinct()
+
+    def get_edit_handler(self, instance, request):
+        tabs = [ObjectList(self.panels, heading=_('Basic information'))]
+
+        if instance and instance.type:
+            metadata_fields = get_metadata_fields(instance.type, instance, with_initial=True)
+        else:
+            metadata_fields = {}
+
+        metadata_panels = []
+        for key, field in metadata_fields.items():
+            metadata_panels.append(MetadataFieldPanel(key, heading=field.metadata.name))
+
+        tabs.append(ObjectList(metadata_panels, heading=_('Categories')))
+        return CategoryEditHandler(tabs)
 
 
 class CategoryGroup(ModelAdminGroup):
