@@ -87,6 +87,9 @@ class PlanRootPage(AplansPage):
     ])
 
     content_panels = AplansPage.content_panels + [
+        FieldPanel('hero_content'),
+        FieldPanel('action_short_description'),
+        FieldPanel('indicator_short_description'),
         StreamFieldPanel('body'),
     ]
 
