@@ -903,7 +903,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories',
+        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'metadata',
     ]
 
     class Meta:
@@ -955,6 +955,10 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     format = models.CharField(max_length=50, choices=MetadataFormat.choices, verbose_name=_('Format'))
 
+    public_fields = [
+        'identifier', 'name', 'format', 'choices'
+    ]
+
     class Meta:
         unique_together = (('type', 'identifier'), ('type', 'order'))
         verbose_name = _('category metadata')
@@ -991,6 +995,10 @@ class CategoryTypeMetadataChoice(OrderedModel):
     metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    public_fields = [
+        'identifier', 'name'
+    ]
 
     class Meta:
         unique_together = (('metadata', 'identifier'), ('metadata', 'order'),)

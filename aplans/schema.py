@@ -15,8 +15,9 @@ from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice, CategoryMetadataRichText,
-    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice,
+    CategoryMetadataRichText, CategoryType, CategoryTypeMetadata, CategoryTypeMetadataChoice, ImpactGroup,
+    ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
 from content.models import SiteGeneralContent
@@ -278,7 +279,27 @@ class CategoryLevelNode(DjangoNode):
         only_fields = public_fields(CategoryLevel)
 
 
+@register_django_node
+class CategoryTypeMetadataNode(DjangoNode):
+    class Meta:
+        model = CategoryTypeMetadata
+        only_fields = public_fields(CategoryTypeMetadata)
+
+
+@register_django_node
+class CategoryTypeMetadataChoiceNode(DjangoNode):
+    class Meta:
+        model = CategoryTypeMetadataChoice
+        only_fields = public_fields(CategoryTypeMetadataChoice)
+
+
+@register_django_node
 class CategoryTypeNode(DjangoNode):
+    metadata = graphene.List(CategoryTypeMetadataNode)
+
+    def resolve_metadata(self, info):
+        return self.metadata.all()
+
     class Meta:
         model = CategoryType
         only_fields = public_fields(CategoryType)
