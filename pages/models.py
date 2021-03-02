@@ -205,7 +205,9 @@ class FixedSlugPage(AplansPage):
 
     lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
 
-    content_panels = AplansPage.content_panels + [
+    # Omit the title from the editable fields
+    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
+    content_panels = inherited_content_panels + [
         FieldPanel('lead_content'),
     ]
     settings_panels = [
