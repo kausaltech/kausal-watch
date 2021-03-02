@@ -129,11 +129,10 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 
 class CategoriedModelForm(WagtailAdminModelForm):
     def save(self, commit=True):
-        obj = super().save(commit)
+        if hasattr(self.instance, 'updated_at'):
+            self.instance.updated_at = timezone.now()
 
-        if hasattr(obj, 'updated_at'):
-            obj.updated_at = timezone.now()
-            obj.save(update_fields=['updated_at'])
+        obj = super().save(commit)
 
         # Update categories
         plan = obj.plan
