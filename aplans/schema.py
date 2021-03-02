@@ -108,6 +108,7 @@ class PlanNode(DjangoNode):
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
+    actions = graphene.List('aplans.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID())
     impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
     image = graphene.Field('images.schema.ImageNode')
 
@@ -153,6 +154,17 @@ class PlanNode(DjangoNode):
         if not hostname:
             return None
         return self.domains.filter(hostname=hostname).first()
+
+    @gql_optimizer.resolver_hints(
+        model_field='actions',
+    )
+    def resolve_actions(self, info, identifier=None, id=None):
+        qs = self.actions.filter(plan=self)
+        if identifier:
+            qs = qs.filter(identifier=identifier)
+        if id:
+            qs = qs.filter(id=id)
+        return qs
 
     class Meta:
         model = Plan
