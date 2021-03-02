@@ -200,6 +200,9 @@ class FixedSlugPage(AplansPage):
         kwargs['slug'] = self.__class__.force_slug
         super().__init__(*args, **kwargs)
 
+    remove_page_listing_more_button = True
+    remove_page_action_menu_items_except_publish = True
+
     lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
 
     content_panels = AplansPage.content_panels + [
