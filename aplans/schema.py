@@ -295,11 +295,6 @@ class CategoryTypeMetadataChoiceNode(DjangoNode):
 
 @register_django_node
 class CategoryTypeNode(DjangoNode):
-    metadata = graphene.List(CategoryTypeMetadataNode)
-
-    def resolve_metadata(self, info):
-        return self.metadata.all()
-
     class Meta:
         model = CategoryType
         only_fields = public_fields(CategoryType)
