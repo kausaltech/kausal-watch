@@ -1,9 +1,12 @@
 import pytest
 
-from actions.tests.factories import CategoryFactory, CategoryMetadataRichTextFactory, CategoryTypeMetadataFactory
-from pages.models import CategoryPage
-
+from actions.models import CategoryTypeMetadata
+from actions.tests.factories import (
+    CategoryFactory, CategoryTypeFactory, CategoryMetadataRichTextFactory, CategoryTypeMetadataFactory,
+    CategoryTypeMetadataChoiceFactory
+)
 from aplans.schema import hyphenate
+from pages.models import CategoryPage
 
 
 @pytest.mark.django_db
@@ -263,4 +266,60 @@ def test_categorymetadata_order_as_in_categorytypemetadata(graphql_client_query_
     expected_metadata = expected['planPage']['category']['metadata']
     expected_metadata[0], expected_metadata[1] = expected_metadata[1], expected_metadata[0]
     data = graphql_client_query_data(query, variables=query_variables)
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_types(graphql_client_query_data, plan):
+    ct = CategoryTypeFactory(plan=plan)
+    ctm1 = CategoryTypeMetadataFactory(type=ct)
+    ctm2 = CategoryTypeMetadataFactory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    ctm2c1 = CategoryTypeMetadataChoiceFactory(metadata=ctm2)
+    ctm2c2 = CategoryTypeMetadataChoiceFactory(metadata=ctm2)
+    data = graphql_client_query_data(
+        '''
+        {
+            plan(id: "''' f'{plan.identifier}' '''") {
+                categoryTypes {
+                    identifier
+                    name
+                    metadata {
+                        format
+                        identifier
+                        name
+                        choices {
+                            identifier
+                            name
+                        }
+                    }
+                }
+            }
+        }
+        ''',
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'identifier': ct.identifier,
+                'name': ct.name,
+                'metadata': [{
+                    'format': 'RICH_TEXT',
+                    'identifier': ctm1.identifier,
+                    'name': ctm1.name,
+                    'choices': [],
+                }, {
+                    'format': 'ORDERED_CHOICE',
+                    'identifier': ctm2.identifier,
+                    'name': ctm2.name,
+                    'choices': [{
+                        'identifier': ctm2c1.identifier,
+                        'name': ctm2c1.name,
+                    }, {
+                        'identifier': ctm2c2.identifier,
+                        'name': ctm2c2.name,
+                    }],
+                }],
+            }]
+        }
+    }
     assert data == expected

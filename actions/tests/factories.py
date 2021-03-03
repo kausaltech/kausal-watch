@@ -98,6 +98,16 @@ class CategoryFactory(DjangoModelFactory):
     name = Sequence(lambda i: f'Category {i}')
 
 
+class CategoryTypeMetadataFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CategoryTypeMetadata'
+
+    type = SubFactory(CategoryTypeFactory)
+    identifier = Sequence(lambda i: f'category-type-metadata-{i}')
+    name = Sequence(lambda i: f'Category type metadata {i}')
+    format = CategoryTypeMetadata.MetadataFormat.RICH_TEXT
+
+
 class CategoryMetadataRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryMetadataRichText'
