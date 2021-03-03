@@ -12,7 +12,7 @@ from indicators.models import (
 class UnitNode(DjangoNode):
     class Meta:
         model = Unit
-        only_fields = [
+        fields = [
             'id', 'name', 'short_name', 'verbose_name', 'verbose_name_plural',
         ]
 
@@ -20,7 +20,7 @@ class UnitNode(DjangoNode):
 class QuantityNode(DjangoNode):
     class Meta:
         model = Quantity
-        only_fields = [
+        fields = [
             'id', 'name',
         ]
 
@@ -48,31 +48,31 @@ class IndicatorLevelNode(DjangoNode):
 class DimensionNode(DjangoNode):
     class Meta:
         model = Dimension
-        only_fields = public_fields(Dimension)
+        fields = public_fields(Dimension)
 
 
 class DimensionCategoryNode(DjangoNode):
     class Meta:
         model = DimensionCategory
-        only_fields = public_fields(DimensionCategory)
+        fields = public_fields(DimensionCategory)
 
 
 class FrameworkNode(DjangoNode):
     class Meta:
         model = Framework
-        only_fields = public_fields(Framework)
+        fields = public_fields(Framework)
 
 
 class CommonIndicatorNode(DjangoNode):
     class Meta:
         model = CommonIndicator
-        only_fields = public_fields(CommonIndicator)
+        fields = public_fields(CommonIndicator)
 
 
 class FrameworkIndicatorNode(DjangoNode):
     class Meta:
         model = FrameworkIndicator
-        only_fields = public_fields(FrameworkIndicator)
+        fields = public_fields(FrameworkIndicator)
 
 
 class IndicatorValueNode(DjangoNode):
@@ -80,7 +80,7 @@ class IndicatorValueNode(DjangoNode):
 
     class Meta:
         model = IndicatorValue
-        only_fields = public_fields(IndicatorValue)
+        fields = public_fields(IndicatorValue)
 
     def resolve_date(self, info):
         date = self.date.isoformat()
@@ -92,7 +92,7 @@ class IndicatorGoalNode(DjangoNode):
 
     class Meta:
         model = IndicatorGoal
-        only_fields = public_fields(IndicatorGoal)
+        fields = public_fields(IndicatorGoal)
 
 
 @register_django_node
@@ -105,7 +105,7 @@ class IndicatorNode(DjangoNode):
     actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
 
     class Meta:
-        only_fields = public_fields(Indicator)
+        fields = public_fields(Indicator)
         model = Indicator
 
     @gql_optimizer.resolver_hints(
@@ -149,7 +149,7 @@ class IndicatorNode(DjangoNode):
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
         model = IndicatorDimension
-        only_fields = public_fields(IndicatorDimension)
+        fields = public_fields(IndicatorDimension)
 
 
 class Query(graphene.ObjectType):

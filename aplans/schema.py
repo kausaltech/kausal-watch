@@ -79,7 +79,7 @@ class PersonNode(DjangoNode):
 
     class Meta:
         model = Person
-        only_fields = [
+        fields = [
             'id', 'first_name', 'last_name', 'title', 'email', 'organization',
         ]
 
@@ -93,7 +93,7 @@ class PersonNode(DjangoNode):
 class PlanDomainNode(DjangoNode):
     class Meta:
         model = PlanDomain
-        only_fields = [
+        fields = [
             'id', 'hostname', 'google_site_verification_tag', 'matomo_analytics_url',
         ]
 
@@ -169,49 +169,49 @@ class PlanNode(DjangoNode):
 
     class Meta:
         model = Plan
-        only_fields = public_fields(Plan, remove_fields=['image_url'])
+        fields = public_fields(Plan, remove_fields=['image_url'])
 
 
 class ActionScheduleNode(DjangoNode):
     class Meta:
         model = ActionSchedule
-        only_fields = public_fields(ActionSchedule)
+        fields = public_fields(ActionSchedule)
 
 
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
-        only_fields = public_fields(ActionStatus)
+        fields = public_fields(ActionStatus)
 
 
 class ActionImplementationPhaseNode(DjangoNode):
     class Meta:
         model = ActionImplementationPhase
-        only_fields = public_fields(ActionImplementationPhase)
+        fields = public_fields(ActionImplementationPhase)
 
 
 class ActionResponsiblePartyNode(DjangoNode):
     class Meta:
         model = ActionResponsibleParty
-        only_fields = public_fields(ActionResponsibleParty)
+        fields = public_fields(ActionResponsibleParty)
 
 
 class ActionContactPersonNode(DjangoNode):
     class Meta:
         model = ActionContactPerson
-        only_fields = public_fields(ActionContactPerson)
+        fields = public_fields(ActionContactPerson)
 
 
 class ActionImpactNode(DjangoNode):
     class Meta:
         model = ActionImpact
-        only_fields = public_fields(ActionImpact)
+        fields = public_fields(ActionImpact)
 
 
 class ActionStatusUpdateNode(DjangoNode):
     class Meta:
         model = ActionStatusUpdate
-        only_fields = [
+        fields = [
             'id', 'action', 'title', 'date', 'author', 'content'
         ]
 
@@ -270,34 +270,34 @@ class CategoryMetadataRichTextNode(DjangoNode):
         model = CategoryMetadataRichText
         interfaces = (CategoryMetadataInterface,)
         # We expose `value` instead of `text`
-        only_fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
+        fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
 
 
 class CategoryLevelNode(DjangoNode):
     class Meta:
         model = CategoryLevel
-        only_fields = public_fields(CategoryLevel)
+        fields = public_fields(CategoryLevel)
 
 
 @register_django_node
 class CategoryTypeMetadataNode(DjangoNode):
     class Meta:
         model = CategoryTypeMetadata
-        only_fields = public_fields(CategoryTypeMetadata)
+        fields = public_fields(CategoryTypeMetadata)
 
 
 @register_django_node
 class CategoryTypeMetadataChoiceNode(DjangoNode):
     class Meta:
         model = CategoryTypeMetadataChoice
-        only_fields = public_fields(CategoryTypeMetadataChoice)
+        fields = public_fields(CategoryTypeMetadataChoice)
 
 
 @register_django_node
 class CategoryTypeNode(DjangoNode):
     class Meta:
         model = CategoryType
-        only_fields = public_fields(CategoryType)
+        fields = public_fields(CategoryType)
 
 
 @register_django_node
@@ -326,13 +326,13 @@ class CategoryNode(DjangoNode):
 
     class Meta:
         model = Category
-        only_fields = public_fields(Category, add_fields=['level'])
+        fields = public_fields(Category, add_fields=['level'])
 
 
 class ScenarioNode(DjangoNode):
     class Meta:
         model = Scenario
-        only_fields = public_fields(Scenario)
+        fields = public_fields(Scenario)
 
 
 class ImpactGroupNode(DjangoNode):
@@ -341,7 +341,7 @@ class ImpactGroupNode(DjangoNode):
 
     class Meta:
         model = ImpactGroup
-        only_fields = public_fields(ImpactGroup, remove_fields=['name'])
+        fields = public_fields(ImpactGroup, remove_fields=['name'])
 
 
 class ImpactGroupActionNode(DjangoNode):
@@ -387,7 +387,7 @@ class ActionNode(DjangoNode):
 
     class Meta:
         model = Action
-        only_fields = Action.public_fields
+        fields = Action.public_fields
 
     def resolve_next_action(self, info):
         return self.get_next_action()
@@ -455,7 +455,7 @@ class OrganizationNode(DjangoNode):
 
     class Meta:
         model = Organization
-        only_fields = [
+        fields = [
             'id', 'abbreviation', 'parent', 'name', 'classification', 'distinct_name',
         ]
 
@@ -463,7 +463,7 @@ class OrganizationNode(DjangoNode):
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
-        only_fields = public_fields(SiteGeneralContent)
+        fields = public_fields(SiteGeneralContent)
 
 
 class Query(indicators_schema.Query):

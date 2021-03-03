@@ -16,7 +16,7 @@ class ImageRendition(DjangoNode):
 
     class Meta:
         model = AplansRendition
-        only_fields = [
+        fields = [
             'src', 'width', 'height', 'alt',
         ]
 
@@ -27,7 +27,7 @@ class ImageNode(DjangoNode):
 
     class Meta:
         model = AplansImage
-        only_fields = [
+        fields = [
             'id', 'title', 'focal_point_x', 'focal_point_y', 'focal_point_width',
             'focal_point_height', 'height', 'width'
         ]
