@@ -1,5 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
+
 import libvoikko
 import pytz
 from django.db.models import Count, Q
@@ -307,7 +308,8 @@ class CategoryNode(DjangoNode):
     level = graphene.Field(CategoryLevelNode)
 
     def resolve_metadata(self, info):
-        return chain(self.metadata_richtexts.all(), self.metadata_choices.all())
+        metadata = chain(self.metadata_richtexts.all(), self.metadata_choices.all())
+        return sorted(metadata, key=lambda m: m.metadata.order)
 
     def resolve_level(self, info):
         depth = 0
