@@ -960,7 +960,7 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
     ]
 
     class Meta:
-        unique_together = (('type', 'identifier'), ('type', 'order'))
+        unique_together = (('type', 'identifier'),)
         verbose_name = _('category metadata')
         verbose_name_plural = _('category metadatas')
 

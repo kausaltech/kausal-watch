@@ -3,11 +3,13 @@ import pytest
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import register
 
-from actions.tests.factories import OrganizationFactory, PlanFactory, UserFactory
+from actions.tests import factories as actions_factories
 
-register(OrganizationFactory)
-register(PlanFactory)
-register(UserFactory)
+register(actions_factories.CategoryFactory)
+register(actions_factories.CategoryTypeMetadataFactory)
+register(actions_factories.OrganizationFactory)
+register(actions_factories.PlanFactory)
+register(actions_factories.UserFactory)
 
 
 @pytest.fixture

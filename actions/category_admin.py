@@ -57,7 +57,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return qs.filter(plan=plan)
 
 
-class CategoryTypeMetadataAdmin(AplansModelAdmin):
+class CategoryTypeMetadataAdmin(OrderableMixin, AplansModelAdmin):
     model = CategoryTypeMetadata
     menu_label = _('Category metadata')
     list_display = ('name', 'type')
