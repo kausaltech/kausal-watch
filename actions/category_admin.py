@@ -91,7 +91,9 @@ def get_metadata_fields(cat_type, obj, with_initial=False):
         if metadata.format == CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE:
             qs = metadata.choices.all()
             if with_initial:
-                initial = metadata.category_choices.filter(category=obj).first()
+                c = metadata.category_choices.filter(category=obj).first()
+                if c:
+                    initial = c.choice
             field = forms.ModelChoiceField(
                 qs, label=metadata.name, initial=initial, required=False,
             )
