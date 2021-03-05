@@ -7,23 +7,23 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Q, Max
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-
+import reversion
 from tinycss2.color3 import parse_color
-
-from aplans.model_images import ModelWithImage
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel
-from django_orghierarchy.models import Organization
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
+
+from django_orghierarchy.models import Organization
+from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -60,15 +60,21 @@ class PlanQuerySet(models.QuerySet):
         return self.filter(domains__hostname=hostname.lower())
 
 
-class Plan(ModelWithImage, ClusterableModel):
+class Plan(ClusterableModel):
     """The Action Plan under monitoring.
 
     Most information in this service is linked to a Plan.
     """
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    site_url = models.URLField(blank=True, null=True, verbose_name=_('site URL'))
+    site_url = models.URLField(
+        blank=True, null=True, verbose_name=_('site URL'),
+        validators=[URLValidator(('http', 'https'))]
+    )
     actions_locked = models.BooleanField(
         default=False, verbose_name=_('actions locked'),
         help_text=_('Can actions be added and the official metadata edited?'),
@@ -122,10 +128,10 @@ class Plan(ModelWithImage, ClusterableModel):
     i18n = TranslationField(fields=['name'])
 
     public_fields = [
-        'id', 'name', 'identifier', 'image_url', 'action_schedules',
+        'id', 'name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
-        'monitoring_quality_points', 'scenarios', 'main_image',
+        'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases',
     ]
@@ -151,7 +157,7 @@ class Plan(ModelWithImage, ClusterableModel):
     def get_related_organizations(self):
         all_related = self.related_organizations.all() | self.related_organizations.all().get_descendants()
         if self.organization:
-            all_related |= self.organization | self.organization.get_descendants()
+            all_related |= Organization.objects.filter(id=self.id) | self.organization.get_descendants(True)
         return all_related
 
     @property
@@ -285,7 +291,7 @@ class ActionQuerySet(models.QuerySet):
         return self.unmerged().exclude(status__is_completed=True)
 
 
-class Action(ModelWithImage, OrderedModel, ClusterableModel):
+class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     """One action/measure tracked in an action plan."""
 
     plan = ParentalKey(
@@ -300,6 +306,9 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
     identifier = IdentifierField(
         help_text=_('The identifier for this action (e.g. number)')
     )
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
     description = RichTextField(
         null=True, blank=True,
         verbose_name=_('description'),
@@ -311,8 +320,8 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
     internal_priority = models.PositiveIntegerField(
         blank=True, null=True, verbose_name=_('internal priority')
     )
-    internal_priority_comment = models.TextField(
-        blank=True, null=True, verbose_name=_('internal priority comment')
+    internal_notes = models.TextField(
+        blank=True, null=True, verbose_name=_('internal notes')
     )
     status = models.ForeignKey(
         'ActionStatus', blank=True, null=True, on_delete=models.SET_NULL,
@@ -327,7 +336,7 @@ class Action(ModelWithImage, OrderedModel, ClusterableModel):
         help_text=_('Set if you want to prevent the action status from being determined automatically')
     )
     manual_status_reason = models.TextField(
-        blank=True, null=True, verbose_name=_('reason for status'),
+        blank=True, null=True, verbose_name=_('specifier for status'),
         help_text=_('Describe the reason why this action has has this status')
     )
 
@@ -667,7 +676,7 @@ class ActionContactPerson(OrderedModel):
         return str(self.person)
 
 
-class ActionSchedule(models.Model):
+class ActionSchedule(models.Model, PlanRelatedModel):
     """A schedule for an action with begin and end dates."""
 
     plan = ParentalKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
@@ -690,7 +699,7 @@ class ActionSchedule(models.Model):
         return self.name
 
 
-class ActionStatus(models.Model):
+class ActionStatus(models.Model, PlanRelatedModel):
     """The current status for the action ("on time", "late", "completed", etc.)."""
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_statuses',
@@ -715,7 +724,7 @@ class ActionStatus(models.Model):
         return self.name
 
 
-class ActionImplementationPhase(OrderedModel):
+class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='action_implementation_phases',
         verbose_name=_('plan')
@@ -739,7 +748,7 @@ class ActionImplementationPhase(OrderedModel):
         return self.name
 
 
-class ActionDecisionLevel(models.Model):
+class ActionDecisionLevel(models.Model, PlanRelatedModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='action_decision_levels',
         verbose_name=_('plan')
@@ -839,7 +848,7 @@ class ActionTask(models.Model):
         }
 
 
-class ActionImpact(OrderedModel):
+class ActionImpact(OrderedModel, PlanRelatedModel):
     """An impact classification for an action in an action plan."""
 
     plan = ParentalKey(
@@ -865,7 +874,7 @@ class ActionImpact(OrderedModel):
         return '%s (%s)' % (self.name, self.identifier)
 
 
-class CategoryType(models.Model):
+class CategoryType(ClusterableModel, PlanRelatedModel):
     """Type of the categories.
 
     Is used to group categories together. One action plan can have several
@@ -894,7 +903,7 @@ class CategoryType(models.Model):
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions'
+        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'metadata',
     ]
 
     class Meta:
@@ -907,20 +916,22 @@ class CategoryType(models.Model):
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
 
+@reversion.register()
 class CategoryLevel(OrderedModel):
     """Hierarchy level within a CategoryType.
 
     Root level has order=0, first child level order=1 and so on.
     """
-    type = models.ForeignKey(
+    type = ParentalKey(
         CategoryType, on_delete=models.CASCADE, related_name='levels',
         verbose_name=_('type')
     )
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
     i18n = TranslationField(fields=('name',))
 
     public_fields = [
-        'id', 'name', 'order', 'type',
+        'id', 'name', 'name_plural', 'order', 'type',
     ]
 
     class Meta:
@@ -929,8 +940,77 @@ class CategoryLevel(OrderedModel):
         verbose_name_plural = _('category levels')
         ordering = ('type', 'order')
 
+    def __str__(self):
+        return self.name
 
-class Category(OrderedModel, ModelWithImage):
+
+@reversion.register()
+class CategoryTypeMetadata(ClusterableModel, OrderedModel):
+    class MetadataFormat(models.TextChoices):
+        ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
+        RICH_TEXT = 'rich_text', _('Rich text')
+
+    type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='metadata')
+    identifier = IdentifierField()
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    format = models.CharField(max_length=50, choices=MetadataFormat.choices, verbose_name=_('Format'))
+
+    public_fields = [
+        'identifier', 'name', 'format', 'choices'
+    ]
+
+    class Meta:
+        unique_together = (('type', 'identifier'),)
+        verbose_name = _('category metadata')
+        verbose_name_plural = _('category metadatas')
+
+    def __str__(self):
+        return self.name
+
+    def filter_siblings(self, qs):
+        return qs.filter(type=self.type)
+
+    def set_category_value(self, category, val):
+        assert category.type == self.type
+
+        if self.format == self.MetadataFormat.ORDERED_CHOICE:
+            existing = self.category_choices.filter(category=category)
+            if existing:
+                existing.delete()
+            if val is not None:
+                self.category_choices.create(category=category, choice=val)
+        elif self.format == self.MetadataFormat.RICH_TEXT:
+            obj = self.category_richtexts.filter(category=category).first()
+            if not val and obj is not None:
+                obj.delete()
+                return
+
+            if obj is None:
+                obj = CategoryMetadataRichText(metadata=self, category=category)
+            obj.text = val
+            obj.save()
+
+
+class CategoryTypeMetadataChoice(OrderedModel):
+    metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
+    identifier = IdentifierField()
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    public_fields = [
+        'identifier', 'name'
+    ]
+
+    class Meta:
+        unique_together = (('metadata', 'identifier'), ('metadata', 'order'),)
+        ordering = ('metadata', 'order')
+        verbose_name = _('category type metadata choice')
+        verbose_name_plural = _('category type metadata choices')
+
+    def __str__(self):
+        return self.name
+
+
+class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
     type = models.ForeignKey(
@@ -939,11 +1019,14 @@ class Category(OrderedModel, ModelWithImage):
     )
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')
     )
-    short_description = models.CharField(
+    short_description = models.TextField(
         max_length=200, blank=True, verbose_name=_('short description')
     )
     color = models.CharField(
@@ -975,6 +1058,21 @@ class Category(OrderedModel, ModelWithImage):
                 seen_categories.add(obj.id)
                 obj = obj.parent
 
+            if self.parent.type != self.type:
+                raise ValidationError({'parent': _('Parent must be of same type')})
+
+    def get_plans(self):
+        return [self.type.plan]
+
+    @classmethod
+    def filter_by_plan(cls, plan, qs):
+        return qs.filter(type__plan=plan)
+
+    def set_plan(self, plan):
+        # The right plan should be set through CategoryType relation, so
+        # we do nothing here.
+        pass
+
     def __str__(self):
         if self.identifier and self.identifier[0].isnumeric():
             return "%s %s" % (self.identifier, self.name)
@@ -982,7 +1080,35 @@ class Category(OrderedModel, ModelWithImage):
             return self.name
 
 
-class Scenario(models.Model):
+class CategoryMetadataRichText(models.Model):
+    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name=_('category_richtexts'))
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_richtexts'))
+    text = RichTextField(verbose_name=_('Text'))
+
+    public_fields = [
+        'id', 'metadata', 'category', 'text',
+    ]
+
+    class Meta:
+        unique_together = ('category', 'metadata')
+
+    def __str__(self):
+        return '%s for %s' % (self.metadata, self.category)
+
+
+class CategoryMetadataChoice(models.Model):
+    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_choices')
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_choices'))
+    choice = models.ForeignKey(CategoryTypeMetadataChoice, on_delete=models.CASCADE, related_name=_('categories'))
+
+    class Meta:
+        unique_together = ('category', 'metadata')
+
+    def __str__(self):
+        return '%s (%s) for %s' % (self.choice, self.metadata, self.category)
+
+
+class Scenario(models.Model, PlanRelatedModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='scenarios',
         verbose_name=_('plan')
@@ -1041,7 +1167,7 @@ class ActionStatusUpdate(models.Model):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)
 
 
-class ImpactGroup(models.Model):
+class ImpactGroup(models.Model, PlanRelatedModel):
     plan = models.ForeignKey(
         Plan, on_delete=models.CASCADE, related_name='impact_groups',
         verbose_name=_('plan')
@@ -1101,7 +1227,7 @@ class ImpactGroupAction(models.Model):
         return "%s ➜ %s" % (self.action, self.group)
 
 
-class MonitoringQualityPoint(OrderedModel):
+class MonitoringQualityPoint(OrderedModel, PlanRelatedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     description_yes = models.CharField(max_length=200, verbose_name=_("description when action fulfills criteria"))
     description_no = models.CharField(max_length=200, verbose_name=_("description when action doesn\'t fulfill criteria"))

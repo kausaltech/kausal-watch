@@ -1,5 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
+
 import libvoikko
 import pytz
 from django.db.models import Count, Q
@@ -10,12 +11,14 @@ from graphql.type import (
 )
 from grapple.registry import registry as grapple_registry
 from grapple.types.pages import PageInterface
+from itertools import chain
 from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
-    MonitoringQualityPoint, Plan, PlanDomain, Scenario
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice,
+    CategoryMetadataRichText, CategoryType, CategoryTypeMetadata, CategoryTypeMetadataChoice, ImpactGroup,
+    ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from aplans.utils import public_fields
 from content.models import SiteGeneralContent
@@ -62,17 +65,6 @@ def hyphenate(s):
     return out
 
 
-class WithImageMixin:
-    image_url = graphene.String(size=graphene.String())
-    main_image = graphene.Field('images.schema.ImageNode')
-
-    def resolve_image_url(self, info, size=None, **kwargs):
-        request = info.context
-        if not request:
-            return None
-        return self.get_image_url(request, size)
-
-
 class OrderableModelMixin:
     order = graphene.Int()
 
@@ -88,7 +80,7 @@ class PersonNode(DjangoNode):
 
     class Meta:
         model = Person
-        only_fields = [
+        fields = [
             'id', 'first_name', 'last_name', 'title', 'email', 'organization',
         ]
 
@@ -102,12 +94,12 @@ class PersonNode(DjangoNode):
 class PlanDomainNode(DjangoNode):
     class Meta:
         model = PlanDomain
-        only_fields = [
+        fields = [
             'id', 'hostname', 'google_site_verification_tag', 'matomo_analytics_url',
         ]
 
 
-class PlanNode(DjangoNode, WithImageMixin):
+class PlanNode(DjangoNode):
     id = graphene.ID(source='identifier')
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String()
@@ -118,7 +110,9 @@ class PlanNode(DjangoNode, WithImageMixin):
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
+    actions = graphene.List('aplans.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID())
     impact_groups = graphene.List('aplans.schema.ImpactGroupNode', first=graphene.Int())
+    image = graphene.Field('images.schema.ImageNode')
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
 
@@ -164,82 +158,198 @@ class PlanNode(DjangoNode, WithImageMixin):
             return None
         return self.domains.filter(hostname=hostname).first()
 
+    @gql_optimizer.resolver_hints(
+        model_field='actions',
+    )
+    def resolve_actions(self, info, identifier=None, id=None):
+        qs = self.actions.filter(plan=self)
+        if identifier:
+            qs = qs.filter(identifier=identifier)
+        if id:
+            qs = qs.filter(id=id)
+        return qs
+
     class Meta:
         model = Plan
-        only_fields = public_fields(Plan, remove_fields=['image_url'])
+        fields = public_fields(Plan, remove_fields=['image_url'])
 
 
 class ActionScheduleNode(DjangoNode):
     class Meta:
         model = ActionSchedule
-        only_fields = public_fields(ActionSchedule)
+        fields = public_fields(ActionSchedule)
 
 
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
-        only_fields = public_fields(ActionStatus)
+        fields = public_fields(ActionStatus)
 
 
 class ActionImplementationPhaseNode(DjangoNode):
     class Meta:
         model = ActionImplementationPhase
-        only_fields = public_fields(ActionImplementationPhase)
+        fields = public_fields(ActionImplementationPhase)
 
 
 class ActionResponsiblePartyNode(DjangoNode):
     class Meta:
         model = ActionResponsibleParty
-        only_fields = public_fields(ActionResponsibleParty)
+        fields = public_fields(ActionResponsibleParty)
 
 
 class ActionContactPersonNode(DjangoNode):
     class Meta:
         model = ActionContactPerson
-        only_fields = public_fields(ActionContactPerson)
+        fields = public_fields(ActionContactPerson)
 
 
 class ActionImpactNode(DjangoNode):
     class Meta:
         model = ActionImpact
-        only_fields = public_fields(ActionImpact)
+        fields = public_fields(ActionImpact)
 
 
 class ActionStatusUpdateNode(DjangoNode):
     class Meta:
         model = ActionStatusUpdate
-        only_fields = [
+        fields = [
             'id', 'action', 'title', 'date', 'author', 'content'
         ]
 
 
-class CategoryTypeNode(DjangoNode):
-    class Meta:
-        model = CategoryType
+class CategoryMetadataInterface(graphene.Interface):
+    id = graphene.ID(required=True)
+
+    @classmethod
+    def resolve_type(cls, instance, info):
+        if isinstance(instance, CategoryMetadataRichText):
+            return CategoryMetadataRichTextNode
+        elif isinstance(instance, CategoryMetadataChoice):
+            return CategoryMetadataChoiceNode
 
 
 @register_django_node
-class CategoryNode(DjangoNode, WithImageMixin):
+class CategoryMetadataChoiceNode(DjangoNode):
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+    value = graphene.String(required=True)
+    value_identifier = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.metadata.name
+
+    def resolve_key_identifier(self, info):
+        return self.metadata.identifier
+
+    def resolve_value(self, info):
+        return self.choice.name
+
+    def resolve_value_identifier(self, info):
+        return self.choice.identifier
+
+    class Meta:
+        model = CategoryMetadataChoice
+        interfaces = (CategoryMetadataInterface,)
+
+
+@register_django_node
+class CategoryMetadataRichTextNode(DjangoNode):
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+    value = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.metadata.name
+
+    def resolve_key_identifier(self, info):
+        return self.metadata.identifier
+
+    def resolve_value(self, info):
+        return self.text
+
+    class Meta:
+        model = CategoryMetadataRichText
+        interfaces = (CategoryMetadataInterface,)
+        # We expose `value` instead of `text`
+        fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
+
+
+class CategoryLevelNode(DjangoNode):
+    class Meta:
+        model = CategoryLevel
+        fields = public_fields(CategoryLevel)
+
+
+@register_django_node
+class CategoryTypeMetadataNode(DjangoNode):
+    class Meta:
+        model = CategoryTypeMetadata
+        fields = public_fields(CategoryTypeMetadata)
+
+
+@register_django_node
+class CategoryTypeMetadataChoiceNode(DjangoNode):
+    class Meta:
+        model = CategoryTypeMetadataChoice
+        fields = public_fields(CategoryTypeMetadataChoice)
+
+
+@register_django_node
+class CategoryTypeNode(DjangoNode):
+    class Meta:
+        model = CategoryType
+        fields = public_fields(CategoryType)
+
+
+@register_django_node
+class CategoryNode(DjangoNode):
+    image = graphene.Field('images.schema.ImageNode')
+    metadata = graphene.List(CategoryMetadataInterface)
+    level = graphene.Field(CategoryLevelNode)
+
+    def resolve_metadata(self, info):
+        metadata = chain(self.metadata_richtexts.all(), self.metadata_choices.all())
+        return sorted(metadata, key=lambda m: m.metadata.order)
+
+    def resolve_level(self, info):
+        depth = 0
+        obj = self
+        # Uh oh, Category is not a tree model yet
+        while obj.parent is not None:
+            obj = obj.parent
+            depth += 1
+            if depth == 5:
+                break
+
+        levels = list(self.type.levels.all())
+        if depth >= len(levels):
+            return None
+        return levels[depth]
+
     class Meta:
         model = Category
-        only_fields = public_fields(Category)
+        fields = public_fields(Category, add_fields=['level'])
 
 
 class ScenarioNode(DjangoNode):
     class Meta:
         model = Scenario
-        only_fields = public_fields(Scenario)
+        fields = public_fields(Scenario)
 
 
-class ImpactGroupNode(DjangoNode, WithImageMixin):
+class ImpactGroupNode(DjangoNode):
     name = graphene.String()
+    image = graphene.Field('images.schema.ImageNode')
 
     class Meta:
         model = ImpactGroup
-        only_fields = public_fields(ImpactGroup, remove_fields=['name'])
+        fields = public_fields(ImpactGroup, remove_fields=['name'])
 
 
-class ImpactGroupActionNode(DjangoNode, WithImageMixin):
+class ImpactGroupActionNode(DjangoNode):
+    image = graphene.Field('images.schema.ImageNode')
+
     class Meta:
         model = ImpactGroupAction
 
@@ -269,17 +379,18 @@ class ActionTaskNode(DjangoNode):
 
 
 @register_django_node
-class ActionNode(DjangoNode, WithImageMixin):
+class ActionNode(DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean())
     categories = graphene.List(CategoryNode, category_type=graphene.ID())
     next_action = graphene.Field('aplans.schema.ActionNode')
     previous_action = graphene.Field('aplans.schema.ActionNode')
+    image = graphene.Field('images.schema.ImageNode')
 
     class Meta:
         model = Action
-        only_fields = Action.public_fields
+        fields = Action.public_fields
 
     def resolve_next_action(self, info):
         return self.get_next_action()
@@ -347,7 +458,7 @@ class OrganizationNode(DjangoNode):
 
     class Meta:
         model = Organization
-        only_fields = [
+        fields = [
             'id', 'abbreviation', 'parent', 'name', 'classification', 'distinct_name',
         ]
 
@@ -355,7 +466,7 @@ class OrganizationNode(DjangoNode):
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
-        only_fields = public_fields(SiteGeneralContent)
+        fields = public_fields(SiteGeneralContent)
 
 
 class Query(indicators_schema.Query):

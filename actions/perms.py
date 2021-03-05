@@ -16,7 +16,8 @@ from people.models import Person
 
 from .models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
-    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
+    CategoryTypeMetadata, CategoryTypeMetadataChoice, CategoryLevel, CategoryMetadataChoice, CategoryMetadataRichText
 )
 
 User = get_user_model()
@@ -209,6 +210,10 @@ PLAN_ADMIN_PERMS = (
     (ActionImpact, ALL_PERMS),
     (CategoryType, ALL_PERMS),
     (Category, ALL_PERMS),
+    (CategoryTypeMetadata, ALL_PERMS),
+    (CategoryTypeMetadataChoice, ALL_PERMS),
+    (CategoryMetadataChoice, ALL_PERMS),
+    (CategoryMetadataRichText, ALL_PERMS),
     (ImpactGroup, ALL_PERMS),
     (ImpactGroupAction, ALL_PERMS),
     (MonitoringQualityPoint, ALL_PERMS),

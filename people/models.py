@@ -83,9 +83,9 @@ class Person(index.Indexed, ClusterableModel):
     )
     postal_address = models.TextField(max_length=100, verbose_name=_('postal address'), null=True, blank=True)
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', null=True, blank=True, related_name='people',
-        on_delete=models.SET_NULL, verbose_name=_('organization'),
-        help_text=_('Set if this person is part of an organization')
+        'django_orghierarchy.Organization', related_name='people',
+        on_delete=models.PROTECT, verbose_name=_('organization'),
+        help_text=_("What is this person's organization")
     )
     user = models.OneToOneField(
         User, null=True, blank=True, related_name='person', on_delete=models.SET_NULL,

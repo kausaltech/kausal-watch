@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-04 10:36+0200\n"
+"POT-Creation-Date: 2021-02-22 20:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -44,6 +44,10 @@ msgstr ""
 
 #: actions/admin.py actions/export.py actions/models.py
 msgid "impact"
+msgstr ""
+
+#: actions/admin.py
+msgid "Category type"
 msgstr ""
 
 #: actions/admin.py
@@ -84,6 +88,23 @@ msgstr ""
 
 #: actions/blocks.py
 msgid "Table"
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Category types"
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Action and indicator categorization"
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Category metadata"
+msgstr ""
+
+#: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
 msgstr ""
 
 #: actions/chooser.py
@@ -218,7 +239,7 @@ msgid "internal priority"
 msgstr ""
 
 #: actions/models.py
-msgid "internal priority comment"
+msgid "internal notes"
 msgstr ""
 
 #: actions/models.py
@@ -234,7 +255,7 @@ msgid "Set if you want to prevent the action status from being determined automa
 msgstr ""
 
 #: actions/models.py
-msgid "reason for status"
+msgid "specifier for status"
 msgstr ""
 
 #: actions/models.py
@@ -472,11 +493,43 @@ msgid "type"
 msgstr ""
 
 #: actions/models.py
+msgid "plural name"
+msgstr ""
+
+#: actions/models.py
 msgid "category level"
 msgstr ""
 
 #: actions/models.py
 msgid "category levels"
+msgstr ""
+
+#: actions/models.py
+msgid "Ordered choice"
+msgstr ""
+
+#: actions/models.py
+msgid "Rich text"
+msgstr ""
+
+#: actions/models.py
+msgid "Format"
+msgstr ""
+
+#: actions/models.py
+msgid "category metadata"
+msgstr ""
+
+#: actions/models.py
+msgid "category metadatas"
+msgstr ""
+
+#: actions/models.py
+msgid "category type metadata choice"
+msgstr ""
+
+#: actions/models.py
+msgid "category type metadata choices"
 msgstr ""
 
 #: actions/models.py
@@ -501,6 +554,26 @@ msgstr ""
 
 #: actions/models.py
 msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr ""
+
+#: actions/models.py
+msgid "Parent must be of same type"
+msgstr ""
+
+#: actions/models.py
+msgid "category_richtexts"
+msgstr ""
+
+#: actions/models.py
+msgid "metadata_richtexts"
+msgstr ""
+
+#: actions/models.py pages/models.py
+msgid "Text"
+msgstr ""
+
+#: actions/models.py
+msgid "metadata_choices"
 msgstr ""
 
 #: actions/models.py indicators/models.py
@@ -602,16 +675,12 @@ msgstr[1] ""
 msgid "Name"
 msgstr ""
 
-#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
-msgid "Categories"
-msgstr ""
-
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
 msgstr ""
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
+#: actions/wagtail_admin.py indicators/blocks.py
+msgid "Progress"
 msgstr ""
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
@@ -624,6 +693,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Tasks"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -942,21 +1015,17 @@ msgstr ""
 msgid "has goals"
 msgstr ""
 
-#: indicators/apps.py indicators/templates/indicators/edit_values.html
-#: indicators/wagtail_admin.py
+#: indicators/apps.py indicators/blocks.py
+#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr ""
 
-#: indicators/blocks.py pages/models.py
+#: indicators/blocks.py
 msgid "Indicator"
 msgstr ""
 
 #: indicators/blocks.py
 msgid "Graph"
-msgstr ""
-
-#: indicators/blocks.py
-msgid "Progress"
 msgstr ""
 
 #: indicators/blocks.py
@@ -1562,10 +1631,6 @@ msgid "Category"
 msgstr ""
 
 #: pages/models.py
-msgid "Text"
-msgstr ""
-
-#: pages/models.py
 msgid "Action list"
 msgstr ""
 
@@ -1643,7 +1708,7 @@ msgid "postal address"
 msgstr ""
 
 #: people/models.py
-msgid "Set if this person is part of an organization"
+msgid "What is this person's organization"
 msgstr ""
 
 #: people/models.py users/models.py

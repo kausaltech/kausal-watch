@@ -2,6 +2,12 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
+def remove_from_staff_if_no_plan_admin(user, **kwargs):
+    if not user.get_adminable_plans():
+        user.is_staff = False
+        user.save()
+
+
 def remove_default_site_summary_items(hooks):
     # Wagtail shows the number of pages, images and documents in the default summary
     # panel with no option to prevent it. Monkeypatch them away.
@@ -48,5 +54,6 @@ class UsersConfig(AppConfig):
         from wagtail.core import hooks
 
         user_logged_in.connect(create_permissions)
+        user_logged_in.connect(remove_from_staff_if_no_plan_admin)
         remove_user_related_menu_items(hooks)
         remove_default_site_summary_items(hooks)

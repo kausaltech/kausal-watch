@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-04 10:36+0200\n"
+"POT-Creation-Date: 2021-02-22 20:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -45,6 +45,10 @@ msgstr "Näytä myös yhdistetyt toimenpiteet"
 #: actions/admin.py actions/export.py actions/models.py
 msgid "impact"
 msgstr "vaikuttavuus"
+
+#: actions/admin.py
+msgid "Category type"
+msgstr "Luokan tyyppi"
 
 #: actions/admin.py
 msgid "Contact person"
@@ -86,6 +90,23 @@ msgstr "Kortit"
 msgid "Table"
 msgstr "Taulukko"
 
+#: actions/category_admin.py
+msgid "Category types"
+msgstr "Luokkien tyypit"
+
+#: actions/category_admin.py
+msgid "Action and indicator categorization"
+msgstr "Toimenpiteiden ja mittareiden luokittelu"
+
+#: actions/category_admin.py
+msgid "Category metadata"
+msgstr "Luokan metatieto"
+
+#: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Luokat"
+
 #: actions/chooser.py
 msgid "Choose a category"
 msgstr "Valitse luokka"
@@ -120,6 +141,7 @@ msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
 #: actions/models.py
+#, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 
@@ -217,8 +239,8 @@ msgid "internal priority"
 msgstr "sisäinen prioriteetti"
 
 #: actions/models.py
-msgid "internal priority comment"
-msgstr "sisäisen prioriteetin kommentti"
+msgid "internal notes"
+msgstr "sisäiset muistiinpanot"
 
 #: actions/models.py
 msgid "implementation phase"
@@ -233,8 +255,8 @@ msgid "Set if you want to prevent the action status from being determined automa
 msgstr "Aseta jos haluat estää toimenpiteen tilan automaattisen päivityksen"
 
 #: actions/models.py
-msgid "reason for status"
-msgstr "syy toimenpiteen tilalle"
+msgid "specifier for status"
+msgstr "tilan tarkenne"
 
 #: actions/models.py
 msgid "Describe the reason why this action has has this status"
@@ -471,12 +493,44 @@ msgid "type"
 msgstr "tyyppi"
 
 #: actions/models.py
+msgid "plural name"
+msgstr "nimi monikossa"
+
+#: actions/models.py
 msgid "category level"
 msgstr "luokan taso"
 
 #: actions/models.py
 msgid "category levels"
-msgstr "luokan tasot tasot"
+msgstr "luokan tasot"
+
+#: actions/models.py
+msgid "Ordered choice"
+msgstr "Järjestetty valinta"
+
+#: actions/models.py
+msgid "Rich text"
+msgstr "Sisältöteksti"
+
+#: actions/models.py
+msgid "Format"
+msgstr "Muoto"
+
+#: actions/models.py
+msgid "category metadata"
+msgstr "luokan metatieto"
+
+#: actions/models.py
+msgid "category metadatas"
+msgstr "luokkien metatiedot"
+
+#: actions/models.py
+msgid "category type metadata choice"
+msgstr "luokan metatiedon valinta"
+
+#: actions/models.py
+msgid "category type metadata choices"
+msgstr "luokan metatietojen valinnat"
 
 #: actions/models.py
 msgid "parent category"
@@ -501,6 +555,26 @@ msgstr "luokka"
 #: actions/models.py
 msgid "Parent forms a loop. Leave empty if top-level category."
 msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
+
+#: actions/models.py
+msgid "Parent must be of same type"
+msgstr ""
+
+#: actions/models.py
+msgid "category_richtexts"
+msgstr "luokan tekstisisällöt"
+
+#: actions/models.py
+msgid "metadata_richtexts"
+msgstr "metatiedon tekstisisällöt"
+
+#: actions/models.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
+
+#: actions/models.py
+msgid "metadata_choices"
+msgstr "metatiedon valinnat"
 
 #: actions/models.py indicators/models.py
 msgid "scenario"
@@ -607,17 +681,13 @@ msgstr[1] ""
 msgid "Name"
 msgstr "Nimi"
 
-#: actions/wagtail_admin.py indicators/admin.py indicators/wagtail_admin.py
-msgid "Categories"
-msgstr "Luokat"
-
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
 
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr "Sisäiset tiedot"
+#: actions/wagtail_admin.py indicators/blocks.py
+msgid "Progress"
+msgstr "Eteneminen"
 
 #: actions/wagtail_admin.py indicators/wagtail_admin.py
 msgid "Contact persons"
@@ -630,6 +700,10 @@ msgstr "Toimenpiteen vastuutahot"
 #: actions/wagtail_admin.py
 msgid "Tasks"
 msgstr "Tehtävät"
+
+#: actions/wagtail_admin.py
+msgid "Internal information"
+msgstr "Sisäiset tiedot"
 
 #: actions/wagtail_admin.py
 msgid "late"
@@ -947,22 +1021,18 @@ msgstr "[ei mitään]"
 msgid "has goals"
 msgstr "on tavoitteita"
 
-#: indicators/apps.py indicators/templates/indicators/edit_values.html
-#: indicators/wagtail_admin.py
+#: indicators/apps.py indicators/blocks.py
+#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
 
-#: indicators/blocks.py pages/models.py
+#: indicators/blocks.py
 msgid "Indicator"
 msgstr "Mittari"
 
 #: indicators/blocks.py
 msgid "Graph"
 msgstr "Graafi"
-
-#: indicators/blocks.py
-msgid "Progress"
-msgstr "Eteneminen"
 
 #: indicators/blocks.py
 msgid "Animated"
@@ -1567,10 +1637,6 @@ msgid "Category"
 msgstr "Luokka"
 
 #: pages/models.py
-msgid "Text"
-msgstr "Teksti"
-
-#: pages/models.py
 msgid "Action list"
 msgstr "Toimenpideluettelo"
 
@@ -1648,8 +1714,8 @@ msgid "postal address"
 msgstr "postiosoite"
 
 #: people/models.py
-msgid "Set if this person is part of an organization"
-msgstr "Aseta jos henkilö on organisaation jäsen"
+msgid "What is this person's organization"
+msgstr "Aseta henkilön organisaatio"
 
 #: people/models.py users/models.py
 msgid "user"
@@ -1822,6 +1888,12 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "internal priority comment"
+#~ msgstr "sisäisen prioriteetin kommentti"
+
+#~ msgid "Editing"
+#~ msgstr "Muokkaa"
 
 #~ msgid "parent page"
 #~ msgstr "yläsivu"

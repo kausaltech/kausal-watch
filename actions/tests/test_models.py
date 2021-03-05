@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 
-from actions.models import Action, Category, CategoryType
+from actions.models import Action
 
 
 @pytest.mark.django_db

@@ -12,7 +12,7 @@ def test_plan_api_get(api_client, plan_list_url, plan):
     obj = data['results'][0]
     assert obj['name'] == plan.name
     assert obj['identifier'] == plan.identifier
-    assert obj['image_url'] is None
+    # assert obj['image_url'] is None
 
     """
     schedule = ActionSchedule.objects.create(

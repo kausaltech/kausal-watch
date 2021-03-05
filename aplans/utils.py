@@ -68,8 +68,47 @@ class OrderedModel(models.Model):
     def sort_order(self):
         return self.order
 
+    def get_sort_order_max(self):
+        """
+        Method used to get the max sort_order when a new instance is created.
+        If you order depends on a FK (eg. order of books for a specific author),
+        you can override this method to filter on the FK.
+        ```
+        def get_sort_order_max(self):
+            qs = self.__class__.objects.filter(author=self.author)
+            return qs.aggregate(Max(self.sort_order_field))['sort_order__max'] or 0
+        ```
+        """
+        qs = self.__class__.objects.all()
+        if hasattr(self, 'filter_siblings'):
+            qs = self.filter_siblings(qs)
+
+        return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.order = self.get_sort_order_max() + 1
+        super().save(*args, **kwargs)
+
     class Meta:
         abstract = True
+
+
+class PlanRelatedModel:
+    @classmethod
+    def filter_by_plan(cls, plan, qs):
+        return qs.filter(plan=plan)
+
+    def get_plans(self):
+        return [self.plan]
+
+    def set_plan(self, plan):
+        self.plan = plan
+
+    def filter_siblings(self, qs):
+        plans = self.get_plans()
+        assert len(plans) == 1
+        return self.filter_by_plan(plans[0], qs)
 
 
 class ChoiceArrayField(ArrayField):

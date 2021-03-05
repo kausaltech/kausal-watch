@@ -16,6 +16,39 @@ from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
+from aplans.utils import PlanRelatedModel
+
+
+class PlanRelatedPermissionHelper(PermissionHelper):
+    def get_plans(self, obj):
+        if isinstance(obj, PlanRelatedModel):
+            return obj.get_plans()
+        else:
+            raise NotImplementedError('implement in subclass')
+
+    def _obj_matches_active_plan(self, user, obj):
+        obj_plans = self.get_plans(obj)
+        active_plan = user.get_active_admin_plan()
+        for obj_plan in obj_plans:
+            if obj_plan == active_plan:
+                return True
+        return False
+
+    def user_can_inspect_obj(self, user, obj):
+        if not super().user_can_inspect_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)
+
+    def user_can_edit_obj(self, user, obj):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)
+
+    def user_can_delete_obj(self, user, obj):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return self._obj_matches_active_plan(user, obj)
+
 
 class AdminOnlyPanel(ObjectList):
     pass
@@ -23,6 +56,21 @@ class AdminOnlyPanel(ObjectList):
 
 class AplansAdminModelForm(WagtailAdminModelForm):
     pass
+
+
+class PlanFilteredFieldPanel(FieldPanel):
+    """Filters the related model queryset based on the active plan."""
+
+    def on_form_bound(self):
+        super().on_form_bound()
+
+        field = self.bound_field.field
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+
+        related_model = field.queryset.model
+        assert issubclass(related_model, PlanRelatedModel)
+        field.queryset = related_model.filter_by_plan(plan, field.queryset)
 
 
 class AplansButtonHelper(ButtonHelper):
@@ -110,7 +158,20 @@ class ContinueEditingMixin:
         ]
 
 
-class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
+class PlanRelatedViewMixin:
+    def form_valid(self, form, *args, **kwargs):
+        obj = form.instance
+        if isinstance(obj, PlanRelatedModel):
+            # Sanity check to ensure we're saving the model to a currently active
+            # action plan.
+            active_plan = self.request.user.get_active_admin_plan()
+            plans = obj.get_plans()
+            assert active_plan in plans
+
+        return super().form_valid(form, *args, **kwargs)
+
+
+class AplansEditView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         form_valid_return = super().form_valid(form, *args, **kwargs)
 
@@ -133,7 +194,15 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, EditView):
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class AplansCreateView(ContinueEditingMixin, FormClassMixin, CreateView):
+class AplansCreateView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, CreateView):
+    def get_instance(self):
+        instance = super().get_instance()
+        # If it is a plan-related model, ensure the 'plan' field gets set correctly.
+        if isinstance(instance, PlanRelatedModel):
+            if not instance.pk:
+                instance.set_plan(self.request.user.get_active_admin_plan())
+        return instance
+
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)
 
@@ -147,6 +216,11 @@ class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
     button_helper_class = AplansButtonHelper
+
+    def __init__(self, *args, **kwargs):
+        if not self.permission_helper_class and issubclass(self.model, PlanRelatedModel):
+            self.permission_helper_class = PlanRelatedPermissionHelper
+        super().__init__(*args, **kwargs)
 
     def get_translation_tabs(self, instance, request):
         i18n_field = get_i18n_field(type(instance))
@@ -229,37 +303,26 @@ class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelF
 
         initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
         total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
-        order = data.get('%s-ORDER' % prefix, None)
-        if order is not None and order != '':
-            order = order.lstrip('[').rstrip(']')
-            if order == '':
-                order = []
+
+        delete = data.get('%s-DELETE' % prefix, None)
+        if delete is not None and delete != '':
+            delete = delete.lstrip('[').rstrip(']')
+            if delete == '':
+                delete = []
             else:
-                order = [int(x) for x in order.split(',')]
+                delete = [int(x) for x in delete.split(',')]
 
-        if total_forms:
-            to_delete = []
-            for idx in range(initial_forms, total_forms):
-                keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
-                for key in keys:
-                    if data[key]:
-                        break
-                else:
-                    to_delete.append(idx)
+        for idx in range(initial_forms, total_forms):
+            keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
+            for key in keys:
+                if data[key]:
+                    break
+            else:
+                delete.append(idx)
 
-            if to_delete:
-                data = data.copy()
-
-                data['%s-TOTAL_FORMS' % prefix] = str(total_forms - len(to_delete))
-                if order is not None and order != '':
-                    data['%s-ORDER' % prefix] = '[%s]' % (','.join([str(x) for x in order]))
-
-            for idx in to_delete:
-                keys = list(filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys()))
-                for key in keys:
-                    del data[key]
-                if order:
-                    order.remove(idx)
+        if delete:
+            data = data.copy()
+            data['%s-DELETE' % prefix] = '[%s]' % (','.join([str(x) for x in sorted(delete)]))
 
         return super().process_post_data(data, *args, **kwargs)
 
@@ -276,34 +339,6 @@ class CondensedInlinePanel(WagtailCondensedInlinePanel):
         }
         self.label = label or _('Add %(related_verbose_name)s') % related_name
         self.new_card_header_text = new_card_header_text or _('New %(related_verbose_name)s') % related_name
-
-
-class PlanRelatedPermissionHelper(PermissionHelper):
-    def get_plans(self, obj):
-        raise NotImplementedError('implement in subclass')
-
-    def _obj_matches_active_plan(self, user, obj):
-        obj_plans = self.get_plans(obj)
-        active_plan = user.get_active_admin_plan()
-        for obj_plan in obj_plans:
-            if obj_plan == active_plan:
-                return True
-        return False
-
-    def user_can_inspect_obj(self, user, obj):
-        if not super().user_can_inspect_obj(user, obj):
-            return False
-        return self._obj_matches_active_plan(user, obj)
-
-    def user_can_edit_obj(self, user, obj):
-        if not super().user_can_edit_obj(user, obj):
-            return False
-        return self._obj_matches_active_plan(user, obj)
-
-    def user_can_delete_obj(self, user, obj):
-        if not super().user_can_edit_obj(user, obj):
-            return False
-        return self._obj_matches_active_plan(user, obj)
 
 
 class AutocompletePanel(WagtailAutocompletePanel):

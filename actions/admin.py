@@ -261,6 +261,23 @@ class ImpactFilter(admin.SimpleListFilter):
             return queryset
 
 
+class CategoryTypeFilter(admin.SimpleListFilter):
+    title = _('Category type')
+    parameter_name = 'category_type'
+
+    def lookups(self, request, model_admin):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        choices = [(i.id, i.name) for i in plan.category_types.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(type=self.value())
+        else:
+            return queryset
+
+
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')
     field_name = 'contact_persons_unordered'
@@ -409,15 +426,9 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
             if 'implementation_phase' in fs['fields']:
                 fs['fields'].remove('implementation_phase')
 
-        if plan.allow_images_for_actions:
-            fieldsets.insert(1, (_('Image'), {
-                'fields': ('image', 'image_cropping'),
-                'classes': ('collapse',)
-            }))
-
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
-                'fields': ('internal_priority', 'internal_priority_comment', 'impact', 'merged_with'),
+                'fields': ('internal_priority', 'internal_notes', 'impact', 'merged_with'),
             }))
             fieldsets.insert(2, (_('Schedule and decision level'), {
                 'fields': ('schedule', 'decision_level')
@@ -557,7 +568,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(ImageCroppingMixin, AplansModelAdmin):
     list_display = ['__str__', 'type']
-    fields = ('type', 'parent', 'identifier', 'name', 'short_description', 'image', 'image_cropping')
+    fields = ('type', 'parent', 'identifier', 'name', 'short_description', 'color', 'image', 'image_cropping')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

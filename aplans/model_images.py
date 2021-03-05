@@ -107,10 +107,11 @@ class ModelWithImageSerializerMixin(serializers.Serializer):
             del self.fields[field]
 
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        return obj.get_image_url(request)
+        # Disable functionality for now
+        return None
 
     def get_main_image(self, obj):
+        # Disable functionality for now
         return None
 
 

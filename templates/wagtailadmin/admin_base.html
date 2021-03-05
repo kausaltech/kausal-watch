@@ -5,4 +5,7 @@
     <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" />
 {% endblock %}
 
-{% block branding_title %}{% if active_client %}{{ active_client.name }} admin{% endif %}{% endblock %}
+{% block branding_title %}
+    {% if active_client %}{{ active_client.name }} admin{% if active_plan %} - {% endif %}{% endif %}
+    {% if active_plan %}{{ active_plan.name }}{% endif %}
+{% endblock %}

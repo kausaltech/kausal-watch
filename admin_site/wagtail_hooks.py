@@ -34,7 +34,10 @@ class PlanChooserMenu(Menu):
         for plan in plans:
             url = reverse('change-admin-plan', kwargs=dict(plan_id=plan.id))
             url += '?admin=wagtail'
-            item = PlanItem(plan.name, url)
+            icon_name = ''
+            if plan == user.get_active_admin_plan():
+                icon_name = 'tick'
+            item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
         return items
 
@@ -139,3 +142,12 @@ def restrict_chooser_pages_to_plan(pages, request):
     if not plan.site_id:
         return pages.none()
     return pages.descendant_of(plan.site.root_page, inclusive=True)
+
+
+@hooks.register('construct_page_action_menu')
+def reorder_page_action_menu_items(menu_items, request, context):
+    for index, item in enumerate(menu_items):
+        if item.name == 'action-publish':
+            menu_items.pop(index)
+            menu_items.insert(0, item)
+            break

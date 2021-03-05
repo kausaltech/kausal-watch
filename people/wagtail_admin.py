@@ -7,7 +7,7 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 
-from admin_site.wagtail import AplansModelAdmin
+from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm, AplansTabbedInterface
 from users.models import User
 
 from .admin import IsContactPersonFilter
@@ -25,7 +25,7 @@ class AvatarWidget(AdminFileWidget):
     template_name = 'admin/avatar_widget.html'
 
 
-class PersonForm(WagtailAdminModelForm):
+class PersonForm(AplansAdminModelForm):
     def save(self, commit=True):
         if 'image' in self.files:
             self.instance.image_cropping = None
@@ -35,7 +35,11 @@ class PersonForm(WagtailAdminModelForm):
 
 
 class PersonEditHandler(ObjectList):
-    pass
+    def on_form_bound(self):
+        if self.request:
+            plan = self.request.user.get_active_admin_plan()
+            self.form.initial['organization'] = plan.organization
+        super().on_form_bound()
 
 
 class PersonAdmin(AplansModelAdmin):

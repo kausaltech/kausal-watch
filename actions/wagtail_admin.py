@@ -1,26 +1,31 @@
 import json
 from dal import autocomplete
-from django.utils.translation import gettext, gettext_lazy as _
 from django import forms
-from wagtail.contrib.modeladmin.options import modeladmin_register
-
+from django.utils import timezone
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
+from django_orghierarchy.models import Organization
 from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, RichTextFieldPanel, TabbedInterface, ObjectList,
-    MultiFieldPanel
+    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel, TabbedInterface
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
-from django_orghierarchy.models import Organization
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, PlanRelatedPermissionHelper,
-    AplansCreateView, CondensedPanelSingleSelect
+    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    CondensedPanelSingleSelect, PlanRelatedPermissionHelper, PlanFilteredFieldPanel
 )
 from people.chooser import PersonChooser
-from .admin import ModifiableActionsFilter, MergedActionsFilter, ImpactFilter
-from .models import Action, Plan, ActionStatus, ActionImpact, ActionTask
+
+from .admin import ImpactFilter, MergedActionsFilter, ModifiableActionsFilter
+from .models import (
+    Action, ActionImpact, ActionStatus, ActionTask, Plan
+)
+
+from . import category_admin  # noqa
 
 
 def _get_category_fields(plan, model, obj, with_initial=False):
@@ -124,6 +129,9 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 
 class CategoriedModelForm(WagtailAdminModelForm):
     def save(self, commit=True):
+        if hasattr(self.instance, 'updated_at'):
+            self.instance.updated_at = timezone.now()
+
         obj = super().save(commit)
 
         # Update categories
@@ -216,13 +224,14 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         RichTextFieldPanel('description'),
     ]
 
-    admin_panels = [
-        FieldPanel('status'),
+    progress_panels = [
+        PlanFilteredFieldPanel('implementation_phase'),
+        PlanFilteredFieldPanel('status'),
         FieldPanel('manual_status'),
         FieldPanel('manual_status_reason'),
-        FieldPanel('internal_priority'),
-        FieldPanel('internal_priority_comment'),
-        FieldPanel('impact'),
+    ]
+    admin_panels = [
+        FieldPanel('internal_notes'),
     ]
 
     task_panels = [
@@ -280,24 +289,25 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         return out
 
     def get_edit_handler(self, instance, request):
-        panels = list(self.basic_panels)
-
-        admin_panels = list(self.admin_panels)
-
-        cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
-        cat_panels = []
-        for key, field in cat_fields.items():
-            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
-        if cat_panels:
-            admin_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
-
-        i18n_tabs = self.get_translation_tabs(instance, request)
-
-        all_tabs = [ObjectList(panels, heading=_('Basic information'))]
-
         plan = request.user.get_active_admin_plan()
-        if request.user.is_general_admin_for_plan(plan):
-            all_tabs.append(ObjectList(admin_panels, heading=_('Internal information')))
+        assert instance.plan == plan
+
+        all_tabs = []
+
+        panels = list(self.basic_panels)
+        all_tabs.append(ObjectList(panels, heading=_('Basic information')))
+
+        progress_panels = list(self.progress_panels)
+
+        # If all of the action statuses are updated manually, remove the
+        # manual status toggle.
+        if plan.statuses_updated_manually:
+            for panel in progress_panels:
+                if panel.field_name == 'manual_status':
+                    progress_panels.remove(panel)
+                    break
+
+        all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
         all_tabs += [
             ObjectList([
@@ -322,8 +332,25 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                     card_header_from_js_safe=self.get_task_header_formatter()
                 )
             ], heading=_('Tasks')),
-            *i18n_tabs
         ]
+
+        admin_panels = list(self.admin_panels)
+        cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
+        cat_panels = []
+        for key, field in cat_fields.items():
+            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+        if cat_panels:
+            admin_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
+
+        if plan.action_impacts.exists():
+            admin_panels.append(PlanFilteredFieldPanel('impact'))
+
+        if request.user.is_general_admin_for_plan(plan):
+            all_tabs.append(ObjectList(admin_panels, heading=_('Internal information')))
+
+        i18n_tabs = self.get_translation_tabs(instance, request)
+        all_tabs += i18n_tabs
+
         return ActionEditHandler(all_tabs)
 
     def get_queryset(self, request):
@@ -345,7 +372,7 @@ class PlanEditHandler(TabbedInterface):
     def on_form_bound(self):
         super().on_form_bound()
         plan = self.instance
-        f = self.form.fields['main_image']
+        f = self.form.fields['image']
         if plan.root_collection is None:
             f.queryset = f.queryset.none()
         else:
@@ -381,8 +408,7 @@ class PlanAdmin(AplansModelAdmin):
     create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
     menu_label = _('Plans')
-    menu_order = 2
-    exclude_from_explorer = False  # or True to exclude pages of this type from Wagtail's explorer view
+    menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
 
@@ -396,7 +422,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
         AutocompletePanel('general_admins'),
-        ImageChooserPanel('main_image'),
+        ImageChooserPanel('image'),
     ]
 
     action_status_panels = [
@@ -459,10 +485,6 @@ class PlanAdmin(AplansModelAdmin):
 
 
 modeladmin_register(PlanAdmin)
-
-
-class CategoryTypeAdmin(AplansModelAdmin):
-    pass
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

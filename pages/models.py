@@ -5,16 +5,15 @@ from django.utils.translation import gettext_lazy as _
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
-from wagtail.core.fields import StreamField
-from wagtail.core.models import Page
+from wagtail.core.fields import RichTextField, StreamField
+from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
-from actions.models import Category
-from indicators.blocks import IndicatorBlock, IndicatorHighlightsBlock
-
-from .blocks import FrontPageHeroBlock, QuestionAnswerBlock
+from actions.models import Category, Plan
+from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock
+from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
@@ -54,14 +53,33 @@ class AplansPage(Page):
         models = [ct.model_class() for ct in content_types]
         return [model for model in models if (model is not None and issubclass(model, cls) and model is not cls)]
 
+    def get_url_parts(self, request=None):
+        root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()
+        site = Site.objects.filter(root_page=root_page).first()
+        plan = Plan.objects.filter(site=site).first()
+        if not plan:
+            return super().get_url_parts(request)
+
+        return (site.id, plan.site_url, self.url_path)
+
 
 class PlanRootPage(AplansPage):
+    hero_content = RichTextField(blank=True, verbose_name=_('hero content'))
+    action_short_description = RichTextField(
+        blank=True, verbose_name=_('Short description for what actions are')
+    )
+    indicator_short_description = RichTextField(
+        blank=True, verbose_name=_('Short description for what indicators are')
+    )
+
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
-        ('indicator', IndicatorBlock(label=_('Indicator'))),
+        ('indicator_group', IndicatorGroupBlock()),
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
+        ('indicator_showcase', IndicatorShowcaseBlock()),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
+        ('cards', CardListBlock()),
     ])
 
     content_panels = AplansPage.content_panels + [
@@ -131,7 +149,7 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
-        ('indicator', IndicatorBlock()),
+        ('indicator_group', IndicatorGroupBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
     ])
@@ -158,3 +176,50 @@ class CategoryPage(AplansPage):
         assert parent is not None
         self.url_path = parent.url_path + path
         return self.url_path
+
+
+class FixedSlugPage(AplansPage):
+    """
+    Page with fixed title and slug
+
+    Define `force_slug` and `force_title` in the body of subclasses.
+
+    Since the slug is fixed, there can be at most one child page of the respective type.
+    """
+    class Meta:
+        abstract = True
+
+    def __init__(self, *args, **kwargs):
+        kwargs['slug'] = self.__class__.force_slug
+        kwargs['title'] = self.__class__.force_title
+        super().__init__(*args, **kwargs)
+
+    lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
+
+    content_panels = AplansPage.content_panels + [
+        FieldPanel('lead_content'),
+    ]
+    settings_panels = []
+
+    # Only let this be created programmatically
+    parent_page_types = []
+    subpage_types = []
+
+    graphql_fields = AplansPage.graphql_fields + [
+        GraphQLString('lead_content'),
+    ]
+
+
+class ActionListPage(FixedSlugPage):
+    force_slug = 'actions'
+    force_title = 'Toimenpiteet'
+
+
+class IndicatorListPage(FixedSlugPage):
+    force_slug = 'indicators'
+    force_title = 'Mittarit'
+
+
+class ImpactGroupPage(FixedSlugPage):
+    force_slug = 'impact-groups'
+    force_title = 'Vaikuttavuusryhmät'

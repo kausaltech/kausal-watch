@@ -196,6 +196,11 @@ class User(AbstractUser):
         return self.is_contact_person_for_action(action) \
             or self.is_organization_admin_for_action(action)
 
+    def can_create_indicator(self, plan):
+        if self.is_superuser:
+            return True
+        return self.is_general_admin_for_plan(plan)
+
     def can_modify_indicator(self, indicator=None):
         if self.is_superuser:
             return True
