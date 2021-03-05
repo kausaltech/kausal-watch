@@ -5,6 +5,12 @@ from pytest_factoryboy import register
 
 from actions.tests import factories as actions_factories
 
+register(actions_factories.ActionFactory)
+register(actions_factories.ActionScheduleFactory)
+register(actions_factories.ActionStatusFactory)
+register(actions_factories.ActionImplementationPhaseFactory)
+register(actions_factories.ActionImpactFactory)
+register(actions_factories.ActionResponsiblePartyFactory)
 register(actions_factories.CategoryFactory)
 register(actions_factories.CategoryTypeMetadataFactory)
 register(actions_factories.OrganizationFactory)
