@@ -64,8 +64,8 @@ class CategoryFactory(DjangoModelFactory):
         model = 'actions.Category'
 
     type = SubFactory(CategoryTypeFactory)
-    identifier = 'test-category'
-    name = "Test category"
+    identifier = Sequence(lambda i: f'category{i}')
+    name = Sequence(lambda i: f'Category {i}')
 
 
 class CategoryMetadataRichTextFactory(DjangoModelFactory):

@@ -1,17 +1,17 @@
 import pytest
 
-from actions.tests.factories import CategoryMetadataRichTextFactory, CategoryTypeMetadataFactory
+from actions.tests.factories import CategoryFactory, CategoryMetadataRichTextFactory, CategoryTypeMetadataFactory
 from pages.models import CategoryPage
 
 
 @pytest.mark.django_db
-def test_plan_does_not_exist(graphql_client_query_data):
+def test_plan_nonexistent_domain(graphql_client_query_data):
     data = graphql_client_query_data(
         '''
         {
-            plan(domain: "foo.localhost") {
-                id
-            }
+          plan(domain: "foo.localhost") {
+            id
+          }
         }
         ''',
     )
@@ -23,14 +23,67 @@ def test_plan_exists(graphql_client_query_data, plan):
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
-            plan(id: $plan) {
-                id
-            }
+          plan(id: $plan) {
+            id
+          }
         }
         ''',
         variables={'plan': plan.identifier},
     )
     assert data['plan']['id'] == plan.identifier
+
+
+@pytest.mark.django_db
+def test_plan_categories(graphql_client_query_data, plan, category_type):
+    c0 = CategoryFactory(type=category_type)
+    c1 = CategoryFactory(type=category_type, parent=c0)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            categoryTypes {
+              id
+              identifier
+              name
+              usableForActions
+              categories {
+                id
+                identifier
+                name
+                parent {
+                  id
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier},
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'id': str(category_type.id),
+                'identifier': category_type.identifier,
+                'name': category_type.name,
+                'usableForActions': category_type.usable_for_actions,
+                'categories': [{
+                    'id': str(c0.id),
+                    'identifier': c0.identifier,
+                    'name': c0.name,
+                    'parent': None
+                }, {
+                    'id': str(c1.id),
+                    'identifier': c1.identifier,
+                    'name': c1.name,
+                    'parent': {
+                        'id': str(c0.id)
+                    }
+                }]
+            }]
+        }
+    }
+    assert data == expected
 
 
 @pytest.mark.django_db
@@ -45,18 +98,18 @@ def test_categorymetadata_order_as_in_categorytypemetadata(graphql_client_query_
 
     query = '''
         query($plan: ID!, $path: String!) {
-            planPage(plan: $plan, path: $path) {
-                ... on CategoryPage {
-                    category {
-                        metadata {
-                            ... on CategoryMetadataRichText {
-                                keyIdentifier
-                                value
-                            }
-                        }
-                    }
+          planPage(plan: $plan, path: $path) {
+            ... on CategoryPage {
+              category {
+                metadata {
+                  ... on CategoryMetadataRichText {
+                    keyIdentifier
+                    value
+                  }
                 }
+              }
             }
+          }
         }
         '''
     query_variables = {
