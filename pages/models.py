@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -44,6 +45,13 @@ class AplansPage(Page):
 
     class Meta:
         abstract = True
+
+    @classmethod
+    def get_subclasses(cls):
+        """Get implementations of this abstract base class"""
+        content_types = ContentType.objects.filter(app_label=cls._meta.app_label)
+        models = [ct.model_class() for ct in content_types]
+        return [model for model in models if (model is not None and issubclass(model, cls) and model is not cls)]
 
     def get_url_parts(self, request=None):
         root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()

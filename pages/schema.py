@@ -74,3 +74,35 @@ class MenuNode(graphene.ObjectType):
     @classmethod
     def create_plan_menu_field(cls):
         return graphene.Field(cls, resolver=cls.resolve_from_plan)
+
+
+class FooterNode(graphene.ObjectType):
+    items = graphene.List(MenuItemNode, required=True)
+
+    @classmethod
+    def resolve_from_plan(cls, plan, info):
+        root_page = plan.root_page
+        if root_page is None:
+            return None
+        return root_page.specific
+
+    @classmethod
+    def footer_item_from_page(self, page):
+        return MenuItemNode(page=page)
+
+    def resolve_items(self, info):
+        if not self:
+            return []
+
+        # AplansPage is abstract and thus has no manager, so we need to find footer pages for each subclass of
+        # AplansPage individually. Gather IDs first and then make a separate query for footer_pages because the latter
+        # gives us the correct order of the pages.
+        footer_page_ids = [page.id
+                           for Model in AplansPage.get_subclasses()
+                           for page in Model.objects.filter(show_in_footer=True).child_of(self).live().public()]
+        footer_pages = WagtailPage.objects.filter(id__in=footer_page_ids).specific()
+        return [FooterNode.footer_item_from_page(page) for page in footer_pages]
+
+    @classmethod
+    def create_plan_footer_field(cls):
+        return graphene.Field(cls, resolver=cls.resolve_from_plan)

@@ -117,6 +117,7 @@ class PlanNode(DjangoNode):
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
 
     main_menu = pages_schema.MenuNode.create_plan_menu_field()
+    footer = pages_schema.FooterNode.create_plan_footer_field()
 
     @gql_optimizer.resolver_hints(
         model_field='category_types',
