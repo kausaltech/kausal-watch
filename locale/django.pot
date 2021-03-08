@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-22 20:24+0200\n"
+"POT-Creation-Date: 2021-03-08 21:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,10 +59,6 @@ msgid "Completion"
 msgstr ""
 
 #: actions/admin.py
-msgid "Image"
-msgstr ""
-
-#: actions/admin.py
 msgid "Internal fields"
 msgstr ""
 
@@ -105,6 +101,11 @@ msgstr ""
 #: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
 #: indicators/wagtail_admin.py
 msgid "Categories"
+msgstr ""
+
+#: actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py
+msgid "Basic information"
 msgstr ""
 
 #: actions/chooser.py
@@ -675,10 +676,6 @@ msgstr[1] ""
 msgid "Name"
 msgstr ""
 
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-msgid "Basic information"
-msgstr ""
-
 #: actions/wagtail_admin.py indicators/blocks.py
 msgid "Progress"
 msgstr ""
@@ -721,6 +718,10 @@ msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Action classifications"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Plan"
 msgstr ""
 
 #: admin_site/admin.py
@@ -851,7 +852,7 @@ msgstr ""
 msgid "site description"
 msgstr ""
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "hero content"
 msgstr ""
 
@@ -863,11 +864,11 @@ msgstr ""
 msgid "Name of the owner of the site"
 msgstr ""
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "Short description for what actions are"
 msgstr ""
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "Short description for what indicators are"
 msgstr ""
 
@@ -1640,6 +1641,10 @@ msgstr ""
 
 #: pages/models.py
 msgid "Category pages"
+msgstr ""
+
+#: pages/models.py
+msgid "lead content"
 msgstr ""
 
 #: people/admin.py

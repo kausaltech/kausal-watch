@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-02-22 20:24+0200\n"
+"POT-Creation-Date: 2021-03-08 21:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -59,10 +59,6 @@ msgid "Completion"
 msgstr "Toteutuminen"
 
 #: actions/admin.py
-msgid "Image"
-msgstr "Kuva"
-
-#: actions/admin.py
 msgid "Internal fields"
 msgstr "Sisäiset tiedot"
 
@@ -106,6 +102,11 @@ msgstr "Luokan metatieto"
 #: indicators/wagtail_admin.py
 msgid "Categories"
 msgstr "Luokat"
+
+#: actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py
+msgid "Basic information"
+msgstr "Perustiedot"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -681,10 +682,6 @@ msgstr[1] ""
 msgid "Name"
 msgstr "Nimi"
 
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-msgid "Basic information"
-msgstr "Perustiedot"
-
 #: actions/wagtail_admin.py indicators/blocks.py
 msgid "Progress"
 msgstr "Eteneminen"
@@ -728,6 +725,10 @@ msgstr "Toimenpiteen vaikuttavuusluokat"
 #: actions/wagtail_admin.py
 msgid "Action classifications"
 msgstr "Toimenpiteiden luokittelu"
+
+#: actions/wagtail_admin.py
+msgid "Plan"
+msgstr "Toimenpideohjelma"
 
 #: admin_site/admin.py
 #, python-format
@@ -857,7 +858,7 @@ msgstr "sivuston otsikko"
 msgid "site description"
 msgstr "sivuston kuvaus"
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "hero content"
 msgstr "heron kuvaus"
 
@@ -869,11 +870,11 @@ msgstr "Sivuston omistajaorganisaation URL"
 msgid "Name of the owner of the site"
 msgstr "Sivuston omistajaorganisaation nimi"
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "Short description for what actions are"
 msgstr "Lyhyt kuvaus mitä toimenpiteet ovat"
 
-#: content/models.py
+#: content/models.py pages/models.py
 msgid "Short description for what indicators are"
 msgstr "Lyhyt kuvaus mitä mittarit ovat"
 
@@ -1648,6 +1649,10 @@ msgstr "Luokkasivu"
 msgid "Category pages"
 msgstr "Luokkasivut"
 
+#: pages/models.py
+msgid "lead content"
+msgstr "johdanto"
+
 #: people/admin.py
 msgid "Is contact person"
 msgstr "On yhteyshenkilö"
@@ -1888,6 +1893,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Image"
+#~ msgstr "Kuva"
 
 #~ msgid "internal priority comment"
 #~ msgstr "sisäisen prioriteetin kommentti"
