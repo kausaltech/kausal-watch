@@ -119,35 +119,4 @@ class ModelWithImageViewMixin:
     @cache_control(max_age=3600)
     @action(detail=True)
     def image(self, request, pk=None):
-        qs = self.get_queryset()
-        obj = get_object_or_404(qs, pk=pk)
-        height = request.GET.get('height', None)
-        width = request.GET.get('width', None)
-        image = obj.image
-        if image is None:
-            raise Http404
-
-        if height or width:
-            try:
-                dim = determine_image_dim(image, width, height)
-            except ValueError as verr:
-                return HttpResponseBadRequest(str(verr))
-        else:
-            dim = None
-
-        if not dim:
-            out_image = obj.image
-            filename = out_image.name
-        else:
-            out_image = get_thumbnailer(obj.image).get_thumbnail({
-                'size': dim,
-                'box': obj.image_cropping,
-                'crop': True,
-                'detail': True,
-            })
-            filename = "%s-%dx%d%s" % (obj.image.name, dim[0], dim[1], os.path.splitext(out_image.name)[1])
-
-        # FIXME: Use SendFile headers instead of Django output when not in debug mode
-        out_image.seek(0)
-        resp = FileResponse(out_image, content_type=guess_type(filename, False)[0])
-        return resp
+        raise Http404
