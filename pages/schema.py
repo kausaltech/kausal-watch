@@ -76,24 +76,8 @@ class MenuNode(graphene.ObjectType):
         return graphene.Field(cls, resolver=cls.resolve_from_plan)
 
 
-class FooterItemNode(graphene.ObjectType):
-    id = graphene.ID(required=True)
-    page = graphene.Field(PageInterface, required=False)
-    external_url = graphene.String(required=False)
-    link_text = graphene.String(required=True)
-
-    def resolve_id(self, info):
-        return self.page.id
-
-    def resolve_page(self, info):
-        return self.page.specific
-
-    def resolve_link_text(self, info):
-        return self.page.title
-
-
 class FooterNode(graphene.ObjectType):
-    items = graphene.List(FooterItemNode, required=True)
+    items = graphene.List(MenuItemNode, required=True)
 
     @classmethod
     def resolve_from_plan(cls, plan, info):
@@ -104,7 +88,7 @@ class FooterNode(graphene.ObjectType):
 
     @classmethod
     def footer_item_from_page(self, page):
-        return FooterItemNode(page=page)
+        return MenuItemNode(page=page)
 
     def resolve_items(self, info):
         if not self:
