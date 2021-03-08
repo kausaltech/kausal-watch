@@ -1,10 +1,9 @@
 import datetime
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from factory import LazyFunction, Sequence, SubFactory, post_generation
+from factory import Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 from actions.models import CategoryTypeMetadata
+from people.tests.factories import PersonFactory
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -21,9 +20,9 @@ class PlanFactory(DjangoModelFactory):
         model = 'actions.Plan'
 
     organization = SubFactory(OrganizationFactory)
-    name = "Test plan"
-    identifier = 'test-plan'
-    site_url = 'http://example.com'
+    name = Sequence(lambda i: f'Plan {i}')
+    identifier = Sequence(lambda i: f'plan{i}')
+    site_url = Sequence(lambda i: f'https://plan{i}.example.com')
 
 
 class ActionStatusFactory(DjangoModelFactory):
@@ -147,22 +146,19 @@ class ActionFactory(DjangoModelFactory):
                 self.responsible_parties.add(responsible_party)
 
 
+# FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
+# object. We might want to consider renaming the model ActionContactPerson to ActionContact or similar.
+class ActionContactFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionContactPerson'
+
+    action = SubFactory(ActionFactory)
+    person = SubFactory(PersonFactory)
+
+
 class ActionResponsiblePartyFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ActionResponsibleParty'
 
     action = SubFactory(ActionFactory)
     organization = SubFactory(OrganizationFactory)
-
-
-class UserFactory(DjangoModelFactory):
-    class Meta:
-        model = get_user_model()
-
-    email = Sequence(lambda i: f'user{i}@example.com')
-    password = LazyFunction(lambda: make_password('foobar'))
-    is_staff = True
-
-
-class SuperuserFactory(UserFactory):
-    is_superuser = True

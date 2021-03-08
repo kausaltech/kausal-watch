@@ -196,7 +196,7 @@ class Plan(ClusterableModel):
 
         group_name = '%s admins' % self.name
         if self.admin_group is None:
-            obj = Group.objects.create(name='%s admins' % group_name)
+            obj = Group.objects.create(name=group_name)
             self.admin_group = obj
             update_fields.append('admin_group')
         else:
