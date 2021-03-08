@@ -24,14 +24,23 @@ class Command(BaseCommand):
                 setattr(plan_root_page, attr, getattr(content, attr))
             plan_root_page.save()
 
-            action_list_page = ActionListPage(lead_content=content.action_list_lead_content)
+            action_list_page = ActionListPage(
+                lead_content=content.action_list_lead_content,
+                title='Toimenpiteet',
+            )
             plan_root_page.add_child(instance=action_list_page)
 
-            indicator_list_page = IndicatorListPage(lead_content=content.indicator_list_lead_content)
+            indicator_list_page = IndicatorListPage(
+                lead_content=content.indicator_list_lead_content,
+                title='Mittarit',
+            )
             plan_root_page.add_child(instance=indicator_list_page)
 
             if content.plan.impact_groups.exists():
-                impact_group_page = ImpactGroupPage(lead_content=content.dashboard_lead_content)
+                impact_group_page = ImpactGroupPage(
+                    lead_content=content.dashboard_lead_content,
+                    title='Tilannekuva',
+                )
                 plan_root_page.add_child(instance=impact_group_page)
 
             content.migrated_data_to_pages_app = True

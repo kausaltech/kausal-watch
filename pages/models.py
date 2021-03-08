@@ -27,13 +27,17 @@ class AplansPage(Page):
         FieldPanel('title', classname="full title"),
     ]
 
+    common_settings_panels = [
+        FieldPanel('seo_title'),
+        FieldPanel('show_in_menus'),
+        FieldPanel('show_in_footer'),
+        FieldPanel('search_description'),
+    ]
+
     settings_panels = [
         MultiFieldPanel([
             FieldPanel('slug'),
-            FieldPanel('seo_title'),
-            FieldPanel('show_in_menus'),
-            FieldPanel('show_in_footer'),
-            FieldPanel('search_description'),
+            *common_settings_panels
         ], _('Common page configuration')),
     ]
 
@@ -180,9 +184,9 @@ class CategoryPage(AplansPage):
 
 class FixedSlugPage(AplansPage):
     """
-    Page with fixed title and slug
+    Page with fixed slug
 
-    Define `force_slug` and `force_title` in the body of subclasses.
+    Define `force_slug` in the body of subclasses.
 
     Since the slug is fixed, there can be at most one child page of the respective type.
     """
@@ -191,7 +195,6 @@ class FixedSlugPage(AplansPage):
 
     def __init__(self, *args, **kwargs):
         kwargs['slug'] = self.__class__.force_slug
-        kwargs['title'] = self.__class__.force_title
         super().__init__(*args, **kwargs)
 
     lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
@@ -199,7 +202,12 @@ class FixedSlugPage(AplansPage):
     content_panels = AplansPage.content_panels + [
         FieldPanel('lead_content'),
     ]
-    settings_panels = []
+    settings_panels = [
+        MultiFieldPanel(
+            AplansPage.common_settings_panels,
+            _('Common page configuration')
+        ),
+    ]
 
     # Only let this be created programmatically
     parent_page_types = []
@@ -212,14 +220,11 @@ class FixedSlugPage(AplansPage):
 
 class ActionListPage(FixedSlugPage):
     force_slug = 'actions'
-    force_title = 'Toimenpiteet'
 
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
-    force_title = 'Mittarit'
 
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
-    force_title = 'Vaikuttavuusryhmät'
