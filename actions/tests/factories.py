@@ -1,7 +1,5 @@
 import datetime
-from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
-from factory import LazyFunction, Sequence, SubFactory, post_generation
+from factory import Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 from actions.models import CategoryTypeMetadata
@@ -148,9 +146,8 @@ class ActionFactory(DjangoModelFactory):
                 self.responsible_parties.add(responsible_party)
 
 
-# FIXME: The factory name does not correspond to the model name because we also want a Person fixture whose name
-# should arguably by action_contact_person. We might want to consider renaming the model ActionContactPerson to
-# ActionContact or similar.
+# FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
+# object. We might want to consider renaming the model ActionContactPerson to ActionContact or similar.
 class ActionContactFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ActionContactPerson'
@@ -165,13 +162,3 @@ class ActionResponsiblePartyFactory(DjangoModelFactory):
 
     action = SubFactory(ActionFactory)
     organization = SubFactory(OrganizationFactory)
-
-
-class UserFactory(DjangoModelFactory):
-    class Meta:
-        model = get_user_model()
-
-    email = Sequence(lambda i: f'user{i}@example.com')
-    password = LazyFunction(lambda: make_password('foobar'))
-    is_staff = True
-    is_superuser = False

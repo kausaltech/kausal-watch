@@ -33,8 +33,8 @@ def test_login_removes_user_from_staff_if_no_plan_admin(user, client):
 
 
 @pytest.mark.django_db
-def test_active_plan_menu_item_not_shown_to_action_contact_person(action_contact_person, rf):
-    request = get_request(rf, action_contact_person.user)
+def test_active_plan_menu_item_not_shown_to_action_contact_person(action_contact, rf):
+    request = get_request(rf, action_contact.person.user)
     active_plan_admin = ActivePlanAdmin()
     assert not active_plan_admin.get_menu_item().is_shown(request)
 
