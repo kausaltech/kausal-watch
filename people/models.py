@@ -325,6 +325,9 @@ class Person(index.Indexed, ClusterableModel):
 
 # Override wagtail default avatar_url templatetag (registered in people/apps.py)
 def avatar_url(context, user, size=50):
+    if user is None:
+        return wagtail_avatar_url(user, size)
+
     person = user.get_corresponding_person()
     if person is not None:
         url = person.get_avatar_url(context['request'], '%dx%d' % (size, size))
