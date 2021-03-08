@@ -151,3 +151,9 @@ def reorder_page_action_menu_items(menu_items, request, context):
             menu_items.pop(index)
             menu_items.insert(0, item)
             break
+
+
+@hooks.register('register_rich_text_features')
+def enable_superscript_feature(features):
+    features.default_features.append('superscript')
+    features.default_features.append('subscript')
