@@ -196,7 +196,7 @@ class Indicator(ClusterableModel):
     )
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', related_name='indicators', editable=False,
-        on_delete=models.PROTECT, verbose_name=_('organization'),
+        on_delete=models.PROTECT, verbose_name=_('organization'), null=False,
     )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
