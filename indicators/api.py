@@ -3,11 +3,9 @@ from datetime import datetime
 import pytz
 from django.conf import settings
 from django.db import transaction
-from plotly.exceptions import PlotlyError
-from plotly.graph_objs import Figure
 
-import aniso8601
 import django_filters as filters
+from django_orghierarchy.models import Organization
 from actions.models import Plan
 from aplans.utils import register_view_helper
 from rest_framework import permissions, serializers, status, viewsets
@@ -16,7 +14,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from sentry_sdk import capture_exception, push_scope
 
-from .models import ActionIndicator, Indicator, IndicatorGraph, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
+from .models import ActionIndicator, Indicator, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
@@ -28,7 +26,7 @@ def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
-class UnitSerializer(serializers.HyperlinkedModelSerializer):
+class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = ('name', 'verbose_name')
@@ -40,83 +38,74 @@ class UnitViewSet(viewsets.ModelViewSet):
     serializer_class = UnitSerializer
 
 
-class IndicatorGraphSerializer(serializers.HyperlinkedModelSerializer):
-    def validate_data(self, value):
-        ALLOWED_KEYS = {'data', 'layout', 'frames'}
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Expecting JSON object")
-        if not set(value.keys()).issubset(ALLOWED_KEYS):
-            keys = ['"%s"' % x for x in ALLOWED_KEYS]
-            raise serializers.ValidationError("Only allowed keys are: %s" % ', '.join(keys))
-
-        try:
-            figure = Figure(**value).to_dict()
-        except (PlotlyError, ValueError) as err:
-            with push_scope() as scope:
-                scope.set_extra('plotly_json', value)
-                scope.level = 'warning'
-                capture_exception(err)
-            raise serializers.ValidationError("Invalid Plotly object received:\n\n{0}".format(err))
-        if not figure['data']:
-            raise serializers.ValidationError("No Plotly data given in data.data")
-        return value
-
-    def create(self, validated_data):
-        ret = super().create(validated_data)
-        ret.indicator.latest_graph = ret
-        ret.indicator.save(update_fields=['latest_graph'])
-        return ret
-
-    def update(self, instance, validated_data):
-        ret = super().update(instance, validated_data)
-        ret.indicator.latest_graph = ret
-        ret.indicator.save(update_fields=['latest_graph'])
-        return ret
-
-    class Meta:
-        model = IndicatorGraph
-        fields = ('indicator', 'data', 'created_at')
-
-
-@register_view
-class IndicatorGraphViewSet(viewsets.ModelViewSet):
-    queryset = IndicatorGraph.objects.all()
-    serializer_class = IndicatorGraphSerializer
-    permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
-
-
-class IndicatorLevelSerializer(serializers.HyperlinkedModelSerializer):
+class IndicatorLevelSerializer(serializers.ModelSerializer):
     class Meta:
         model = IndicatorLevel
-        fields = ('plan', 'indicator', 'level')
+        fields = ('plan', 'level')
 
 
-@register_view
-class IndicatorLevelViewSet(viewsets.ModelViewSet):
-    queryset = IndicatorLevel.objects.all()
-    serializer_class = IndicatorLevelSerializer
+class RelatedIndicatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RelatedIndicator
+        fields = '__all__'
 
 
-class IndicatorSerializer(serializers.HyperlinkedModelSerializer):
-    unit_name = serializers.CharField(source='unit.name', read_only=True)
+class IndicatorSerializer(serializers.ModelSerializer):
+    unit = serializers.CharField(source='unit.name')
+    related_effects = RelatedIndicatorSerializer(many=True, required=False)
+    related_causes = RelatedIndicatorSerializer(many=True, required=False)
+    levels = IndicatorLevelSerializer(many=True, required=False)
+    organization = serializers.PrimaryKeyRelatedField(
+        many=False, required=True, queryset=Organization.objects.filter(plans__isnull=False).distinct()
+    )
 
-    included_serializers = {
-        'plans': 'actions.api.PlanSerializer',
-        'levels': IndicatorLevelSerializer,
-        'categories': 'actions.api.CategorySerializer',
-        'unit': UnitSerializer,
-        'latest_graph': IndicatorGraphSerializer,
-        'related_effects': 'indicators.api.RelatedIndicatorSerializer',
-        'related_causes': 'indicators.api.RelatedIndicatorSerializer',
-        'actions': 'actions.api.ActionSerializer',
-    }
+    def validate(self, data):
+        data = super().validate(data)
+        org = data['organization']
+        levels = data.get('levels', None)
+        if levels:
+            for level in levels:
+                if level['plan'].organization != org:
+                    raise ValidationError('Attempting to set indicator level for wrong plan')
+
+        if Indicator.objects.filter(organization=org, name=data['name']).exists():
+            raise ValidationError('Indicator with the same name already exists for organization')
+
+        return data
+
+    def validate_levels(self, levels):
+        return levels
+
+    def validate_organization(self, val):
+        user = self.context['request'].user
+        admin_orgs = user.get_adminable_organizations()
+        if not user.is_superuser and val not in admin_orgs:
+            raise ValidationError('No permission for organisation %s' % val.name)
+        return val
+
+    def validate_unit(self, val):
+        try:
+            unit = Unit.objects.get(name=val)
+        except Unit.DoesNotExist:
+            raise ValidationError('Unit does not exist')
+        return unit
+
+    def create(self, validated_data):
+        unit = validated_data.pop('unit')['name']
+        levels = validated_data.pop('levels', None)
+        with transaction.atomic():
+            obj = Indicator.objects.create(unit=unit, **validated_data)
+            if levels:
+                level_objs = [IndicatorLevel(indicator=obj, plan=x['plan'], level=x['level']) for x in levels]
+                IndicatorLevel.objects.bulk_create(level_objs)
+        return obj
 
     class Meta:
         model = Indicator
         fields = (
-            'name', 'unit', 'unit_name', 'levels', 'plans', 'description', 'categories',
-            'time_resolution', 'latest_graph', 'actions',
-            'related_effects', 'related_causes', 'updated_at',
+            'id', 'name', 'unit', 'levels', 'plans', 'description', 'categories',
+            'time_resolution', 'actions', 'related_effects', 'related_causes', 'updated_at',
+            'organization',
         )
 
 
@@ -125,10 +114,13 @@ class IndicatorFilter(filters.FilterSet):
         field_name='plans__identifier', to_field_name='identifier',
         queryset=Plan.objects
     )
+    organization = filters.ModelChoiceFilter(
+        queryset=Organization.objects.filter(indicators__isnull=False).distinct()
+    )
 
     class Meta:
         model = Indicator
-        fields = ('plans', 'identifier')
+        fields = ('plans', 'identifier', 'organization')
 
 
 class IndicatorValueListSerializer(serializers.ListSerializer):
@@ -249,11 +241,6 @@ class IndicatorViewSet(viewsets.ModelViewSet):
     serializer_class = IndicatorSerializer
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
-    prefetch_for_includes = {
-        '__all__': [
-            'levels', 'levels__plan', 'categories',
-        ]
-    }
     filterset_class = IndicatorFilter
 
     def get_permissions(self):
@@ -262,6 +249,24 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         else:
             perms = list(self.permission_classes)
         return [perm() for perm in perms]
+
+    def check_object_permission(self, request, obj):
+        super().check_object_permissions(request, obj)
+        user = request.user
+        if obj is not None:
+            if not user.can_modify_indicator(obj):
+                self.permission_denied(
+                    request,
+                    message='No permission to modify indicator',
+                    code='no_indicator_permission'
+                )
+        else:
+            if not user.can_create_indicator(plan=None):
+                self.permission_denied(
+                    request,
+                    message='No permission to modify indicator',
+                    code='no_indicator_permission'
+                )
 
     @action(detail=True, methods=['get'])
     def values(self, request, pk=None):
@@ -292,24 +297,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         return Response({})
 
 
-class RelatedIndicatorSerializer(serializers.HyperlinkedModelSerializer):
-    included_serializers = {
-        'causal_indicator': IndicatorSerializer,
-        'effect_indicator': IndicatorSerializer,
-    }
-
-    class Meta:
-        model = RelatedIndicator
-        fields = '__all__'
-
-
-@register_view
-class RelatedIndicatorViewSet(viewsets.ModelViewSet):
-    queryset = RelatedIndicator.objects.all()
-    serializer_class = RelatedIndicatorSerializer
-
-
-class ActionIndicatorSerializer(serializers.HyperlinkedModelSerializer):
+class ActionIndicatorSerializer(serializers.ModelSerializer):
     included_serializers = {
         'action': 'actions.api.ActionSerializer',
         'indicator': IndicatorSerializer,

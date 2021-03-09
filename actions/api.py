@@ -146,7 +146,7 @@ class CategoryViewSet(viewsets.ModelViewSet, ModelWithImageViewMixin):
     }
 
 
-class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
+class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ('id', 'name', 'abbreviation', 'parent')
@@ -156,6 +156,11 @@ class OrganizationSerializer(serializers.HyperlinkedModelSerializer):
 class OrganizationViewSet(viewsets.ModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    filterset_fields = {
+        'name': ('exact', 'in'),
+        'origin_id': ('exact', 'in'),
+        'parent': ('exact', 'in'),
+    }
 
 
 class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
