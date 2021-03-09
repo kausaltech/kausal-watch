@@ -1,7 +1,5 @@
 import os
 
-from django.conf import settings
-
 
 def fetch_git_sha(path, head=None):
     """
@@ -53,4 +51,5 @@ def fetch_git_sha(path, head=None):
         return fh.read().strip()
 
 
-REVISION = fetch_git_sha(settings.BASE_DIR)
+REVISION = fetch_git_sha(os.path.dirname(os.path.dirname(__file__)))
+
