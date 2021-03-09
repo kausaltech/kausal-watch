@@ -1,7 +1,9 @@
+import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+@reversion.register()
 class SiteGeneralContent(models.Model):
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,

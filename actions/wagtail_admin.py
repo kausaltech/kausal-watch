@@ -490,6 +490,7 @@ class PlanAdmin(AplansModelAdmin):
 # modeladmin_register(PlanAdmin)
 
 
+# FIXME: This is partly duplicated in content/admin.py.
 class ActivePlanPermissionHelper(PermissionHelper):
     def user_can_list(self, user):
         return user.is_superuser
@@ -513,6 +514,7 @@ class ActivePlanEditView(AplansEditView):
         return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
+# FIXME: This is mostly duplicated in content/admin.py.
 class ActivePlanMenuItem(ModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.

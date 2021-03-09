@@ -1,37 +1,61 @@
-from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
+from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
+from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 
-from ckeditor.widgets import CKEditorWidget
-
-from aplans.utils import public_fields
 from .models import SiteGeneralContent
+from actions.wagtail_admin import ActivePlanEditView, ActivePlanPermissionHelper
 
 
-@admin.register(SiteGeneralContent)
-class SiteGeneralContentAdmin(admin.ModelAdmin):
-    fields = list(set(public_fields(SiteGeneralContent)) - set(['id']))
+# FIXME: This is partly duplicated in actions/wagtail_admin.py.
+class SiteGeneralContentPermissionHelper(ActivePlanPermissionHelper):
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
 
-    def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        form.base_fields['hero_content'].widget = CKEditorWidget()
-        form.base_fields['action_list_lead_content'].widget = CKEditorWidget()
-        form.base_fields['indicator_list_lead_content'].widget = CKEditorWidget()
-        form.base_fields['dashboard_lead_content'].widget = CKEditorWidget()
-        return form
+
+# FIXME: This duplicates most of what actions.wagtail_admin.ActivePlanMenuItem is doing.
+class SiteGeneralContentMenuItem(ModelAdminMenuItem):
+    def get_context(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        context = super().get_context(request)
+        plan = request.user.get_active_admin_plan()
+        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.general_content.pk)
+        return context
+
+    def is_shown(self, request):
+        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
+        # this menu item is about editing a plan, not listing.
+        plan = request.user.get_active_admin_plan()
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.general_content)
+
+
+@modeladmin_register
+class SiteGeneralContentAdmin(ModelAdmin):
+    model = SiteGeneralContent
+    edit_view_class = ActivePlanEditView
+    permission_helper_class = SiteGeneralContentPermissionHelper
+    add_to_settings_menu = True
+    menu_icon = 'cogs'
+    menu_label = _('Site settings')
+    menu_order = 501
+
+    panels = [
+        FieldPanel('site_title'),
+        FieldPanel('site_description'),
+        FieldPanel('owner_url'),
+        FieldPanel('owner_name'),
+        FieldPanel('official_name_description'),
+        FieldPanel('copyright_text'),
+        FieldPanel('creative_commons_license'),
+        FieldPanel('github_api_repository'),
+        FieldPanel('github_ui_repository'),
+    ]
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        plan = request.user.get_active_admin_plan()
+        user = request.user
+        plan = user.get_active_admin_plan()
         return qs.filter(plan=plan)
 
-    def has_add_permission(self, request, obj=None):
-        plan = request.user.get_active_admin_plan()
-        if SiteGeneralContent.objects.filter(plan=plan).exists():
-            return False
-        return request.user.is_general_admin_for_plan(plan)
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def save_model(self, request, obj, form, change):
-        obj.plan = request.user.get_active_admin_plan()
-        super().save_model(request, obj, form, change)
+    def get_menu_item(self, order=None):
+        return SiteGeneralContentMenuItem(self, order or self.get_menu_order())

@@ -1,9 +1,10 @@
 import datetime
-from factory import Sequence, SubFactory, post_generation
+from factory import RelatedFactory, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 from actions.models import CategoryTypeMetadata
 from people.tests.factories import PersonFactory
+from content.tests.factories import SiteGeneralContentFactory
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -15,6 +16,8 @@ class OrganizationFactory(DjangoModelFactory):
     abbreviation = Sequence(lambda i: f'org{i}')
 
 
+# https://factoryboy.readthedocs.io/en/stable/recipes.html#example-django-s-profile
+# @factory.django.mute_signals(post_save)
 class PlanFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.Plan'
@@ -23,6 +26,7 @@ class PlanFactory(DjangoModelFactory):
     name = Sequence(lambda i: f'Plan {i}')
     identifier = Sequence(lambda i: f'plan{i}')
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
+    general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
 
 
 class ActionStatusFactory(DjangoModelFactory):
