@@ -134,9 +134,8 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
     ('footer', 'show_in_footer', False, ['page1_in_menu', 'page2_in_menu']),
     ('footer', 'show_in_footer', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
 ])
-def test_main_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descendants, expected_pages):
+def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descendants, expected_pages):
     pages = add_menu_test_pages(plan.root_page, menu_key)
-
     data = graphql_client_query_data(
         menu_query(menu_field, with_descendants),
         variables={'plan': plan.identifier},
