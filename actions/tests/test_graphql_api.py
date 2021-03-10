@@ -1,4 +1,5 @@
 import pytest
+from pytest_factoryboy import LazyFixture
 
 from actions.models import CategoryTypeMetadata
 from actions.tests.factories import (
@@ -7,6 +8,16 @@ from actions.tests.factories import (
 )
 from aplans.schema import hyphenate
 from pages.models import CategoryPage
+
+
+@pytest.fixture
+def suborganization(organization_factory, organization):
+    return organization_factory(parent=organization)
+
+
+@pytest.fixture
+def another_organization(organization_factory):
+    return organization_factory()
 
 
 @pytest.mark.django_db
@@ -92,7 +103,11 @@ def test_plan_categories(graphql_client_query_data, plan, category_type):
 
 
 @pytest.mark.django_db
-def test_plan_actions(graphql_client_query_data, plan, action):
+def test_plan_actions(graphql_client_query_data, plan, action, action_schedule, category,
+                      action_responsible_party):
+    action.schedule.add(action_schedule)
+    action.categories.add(category)
+    action.responsible_parties.add(action_responsible_party)
     assert action.schedule.count() == 1
     schedule = action.schedule.first()
     assert action.categories.count() == 1
@@ -195,23 +210,56 @@ def test_plan_actions(graphql_client_query_data, plan, action):
 
 
 @pytest.mark.django_db
-def test_plan_organizations(graphql_client_query_data, plan):
-    assert False
-    # TODO: Test the following query
-    # planOrganizations(plan: $plan, withAncestors: true) {
-    #   id
-    #   abbreviation
-    #   name
-    #   classification {
-    #     name
-    #     __typename
-    #   }
-    #   parent {
-    #     id
-    #     __typename
-    #   }
-    #   __typename
-    # }
+@pytest.mark.parametrize('with_ancestors', [True, False])
+@pytest.mark.parametrize('organization__parent', [LazyFixture('another_organization')])
+def test_plan_organization(graphql_client_query_data, another_organization, organization, suborganization, plan,
+                           action_responsible_party, with_ancestors):
+    superorganization = another_organization
+    assert plan.organization == organization
+    assert organization.parent == another_organization
+    assert list(organization.children.all()) == [suborganization]
+    assert organization.classification is None
+    assert suborganization.classification is None
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planOrganizations(plan: $plan, withAncestors: %s) {
+            id
+            abbreviation
+            name
+            classification {
+              name
+            }
+            parent {
+              id
+            }
+          }
+        }
+        ''' % ('true' if with_ancestors else 'false'),
+        variables={'plan': plan.identifier},
+    )
+    expected_organizations = []
+    if with_ancestors:
+        expected_organizations.append({
+            'id': str(superorganization.id),
+            'abbreviation': superorganization.abbreviation,
+            'name': superorganization.name,
+            'classification': None,
+            'parent': None,
+        })
+    expected_organizations.append({
+        'id': str(organization.id),
+        'abbreviation': organization.abbreviation,
+        'name': organization.name,
+        'classification': None,
+        'parent': {
+            'id': superorganization.id,
+        },
+    })
+    expected = {
+        'planOrganizations': expected_organizations
+    }
+    assert data == expected
 
 
 @pytest.mark.django_db

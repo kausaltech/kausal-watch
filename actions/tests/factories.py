@@ -1,5 +1,5 @@
 import datetime
-from factory import RelatedFactory, Sequence, SubFactory, post_generation
+from factory import RelatedFactory, Sequence, SubFactory
 from factory.django import DjangoModelFactory
 
 from actions.models import CategoryTypeMetadata
@@ -14,6 +14,7 @@ class OrganizationFactory(DjangoModelFactory):
     id = Sequence(lambda i: f'organization{i}')
     name = Sequence(lambda i: f'Organization {i}')
     abbreviation = Sequence(lambda i: f'org{i}')
+    parent = None
 
 
 # https://factoryboy.readthedocs.io/en/stable/recipes.html#example-django-s-profile
@@ -135,29 +136,13 @@ class ActionFactory(DjangoModelFactory):
     implementation_phase = SubFactory(ActionImplementationPhaseFactory)
     completion = 99
 
-    @post_generation
-    def schedule(self, create, extracted, **kwargs):
-        if create:
-            if extracted is None:
-                extracted = [ActionScheduleFactory(plan=self.plan)]
-            for schedule in extracted:
-                self.schedule.add(schedule)
 
-    @post_generation
-    def categories(self, create, extracted, **kwargs):
-        if create:
-            if extracted is None:
-                extracted = [CategoryFactory(type__plan=self.plan)]
-            for category in extracted:
-                self.categories.add(category)
+class ActionResponsiblePartyFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionResponsibleParty'
 
-    @post_generation
-    def responsible_parties(self, create, extracted, **kwargs):
-        if create:
-            if extracted is None:
-                extracted = [ActionResponsiblePartyFactory(action=self, organization=self.plan.organization)]
-            for responsible_party in extracted:
-                self.responsible_parties.add(responsible_party)
+    action = SubFactory(ActionFactory)
+    organization = SubFactory(OrganizationFactory)
 
 
 # FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
@@ -168,11 +153,3 @@ class ActionContactFactory(DjangoModelFactory):
 
     action = SubFactory(ActionFactory)
     person = SubFactory(PersonFactory)
-
-
-class ActionResponsiblePartyFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionResponsibleParty'
-
-    action = SubFactory(ActionFactory)
-    organization = SubFactory(OrganizationFactory)
