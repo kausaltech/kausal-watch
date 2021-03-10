@@ -18,14 +18,14 @@ def expected_menu_item_for_page(page):
 
 def menu_query(menu_field='mainMenu', with_descendants=False):
     if with_descendants:
-        items = 'items(withDescendants: true)'
+        with_descendants_str = 'true'
     else:
-        items = 'items(withDescendants: false)'
+        with_descendants_str = 'false'
     return '''
         query($plan: ID!) {
           plan(id: $plan) {
-            ''' + menu_field + ''' {
-              ''' + items + ''' {
+            %(menu)s {
+              items(withDescendants: %(with_descendants_str)s) {
                 id
                 linkText
                 page {
@@ -36,7 +36,7 @@ def menu_query(menu_field='mainMenu', with_descendants=False):
             }
           }
         }
-        '''
+        ''' % {'menu': menu_field, 'with_descendants_str': with_descendants_str}
 
 
 def add_menu_test_pages(root_page, menu_key='show_in_menus'):
@@ -85,7 +85,7 @@ def test_plan_root_page_exists(graphql_client_query_data, plan):
           }
         }
         ''',
-        variables={'plan': plan.identifier},
+        variables=dict(plan=plan.identifier)
     )
     pages = data['plan']['pages']
     assert len(pages) == 1
@@ -108,15 +108,15 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
               ... on PlanRootPage {
                 body {
                   ... on FrontPageHeroBlock {
-                    ''' f'{" ".join(hero_data.keys())}' '''
+                    %s
                   }
                 }
               }
             }
           }
         }
-        ''',
-        variables={'plan': plan.identifier},
+        ''' % " ".join(hero_data.keys()),
+        variables=dict(plan=plan.identifier)
     )
     pages = data['plan']['pages']
     assert len(pages) == 1
@@ -138,7 +138,7 @@ def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descen
     pages = add_menu_test_pages(plan.root_page, menu_key)
     data = graphql_client_query_data(
         menu_query(menu_field, with_descendants),
-        variables={'plan': plan.identifier},
+        variables=dict(plan=plan.identifier)
     )
     expected = {
         'plan': {

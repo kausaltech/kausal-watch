@@ -44,7 +44,7 @@ def test_plan_exists(graphql_client_query_data, plan):
           }
         }
         ''',
-        variables={'plan': plan.identifier},
+        variables=dict(plan=plan.identifier)
     )
     assert data['plan']['id'] == plan.identifier
 
@@ -74,7 +74,7 @@ def test_plan_categories(graphql_client_query_data, plan, category_type):
           }
         }
         ''',
-        variables={'plan': plan.identifier},
+        variables=dict(plan=plan.identifier)
     )
     expected = {
         'plan': {
@@ -162,7 +162,7 @@ def test_plan_actions(graphql_client_query_data, plan, action, action_schedule, 
           }
         }
         ''',
-        variables={'plan': plan.identifier},
+        variables=dict(plan=plan.identifier)
     )
     expected = {
         'planActions': [{
@@ -222,8 +222,8 @@ def test_plan_organization(graphql_client_query_data, another_organization, orga
     assert suborganization.classification is None
     data = graphql_client_query_data(
         '''
-        query($plan: ID!) {
-          planOrganizations(plan: $plan, withAncestors: %s) {
+        query($plan: ID!, $withAncestors: Boolean!) {
+          planOrganizations(plan: $plan, withAncestors: $withAncestors) {
             id
             abbreviation
             name
@@ -235,8 +235,11 @@ def test_plan_organization(graphql_client_query_data, another_organization, orga
             }
           }
         }
-        ''' % ('true' if with_ancestors else 'false'),
-        variables={'plan': plan.identifier},
+        ''',
+        variables={
+            'plan': plan.identifier,
+            'withAncestors': with_ancestors,
+        }
     )
     expected_organizations = []
     if with_ancestors:
@@ -326,8 +329,8 @@ def test_category_types(graphql_client_query_data, plan):
     ctm2c2 = CategoryTypeMetadataChoiceFactory(metadata=ctm2)
     data = graphql_client_query_data(
         '''
-        {
-            plan(id: "''' f'{plan.identifier}' '''") {
+        query($plan: ID!) {
+            plan(id: $plan) {
                 categoryTypes {
                     identifier
                     name
@@ -344,6 +347,7 @@ def test_category_types(graphql_client_query_data, plan):
             }
         }
         ''',
+        variables=dict(plan=plan.identifier)
     )
     expected = {
         'plan': {
