@@ -48,6 +48,8 @@ cryptography==3.3.1
     #   authlib
     #   drf-oidc-auth
     #   social-auth-core
+dal-admin-filters==1.0.2
+    # via -r requirements.in
 defusedxml==0.6.0
     # via
     #   odfpy
@@ -55,8 +57,6 @@ defusedxml==0.6.0
     #   social-auth-core
 diff-match-patch==20200713
     # via django-import-export
-django-admin-autocomplete-filter==0.6.1
-    # via -r requirements.in
 django-admin-numeric-filter==0.1.6
     # via -r requirements.in
 django-admin-ordering==0.13.1
@@ -66,7 +66,9 @@ django-anymail[mailgun,sendgrid]==8.1
 django-appconf==1.0.4
     # via django-image-cropping
 django-autocomplete-light==3.8.1
-    # via -r requirements.in
+    # via
+    #   -r requirements.in
+    #   dal-admin-filters
 django-ckeditor==6.0.0
     # via -r requirements.in
 django-cors-headers==3.6.0
@@ -109,7 +111,6 @@ django-treebeard==4.4
 django==3.1.5
     # via
     #   -r requirements.in
-    #   django-admin-autocomplete-filter
     #   django-admin-numeric-filter
     #   django-anymail
     #   django-appconf

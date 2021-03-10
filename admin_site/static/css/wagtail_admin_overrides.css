@@ -198,3 +198,7 @@ expects main contact as 3rd element in container */
 .date_field .input::before, .date_time_field .input::before {
     pointer-events: none;
 }
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #0A5E43 !important;
+}

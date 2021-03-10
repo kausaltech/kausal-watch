@@ -3,15 +3,17 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from admin_auto_filters.filters import AutocompleteFilter
+import dal
 from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
 from admin_ordering.admin import OrderableAdmin
 from admin_site.admin import AplansExportMixin, AplansModelAdmin
+from admin_site.filters import AutocompleteFilter
 from ckeditor.widgets import CKEditorWidget
 from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from django_orghierarchy.models import Organization
 from image_cropping import ImageCroppingMixin
 from indicators.admin import ActionIndicatorAdmin
+from people.models import Person
 
 from .export import ActionResource
 from .models import (
@@ -189,7 +191,7 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
 
 
 class ModifiableActionsFilter(admin.SimpleListFilter):
-    title = _('non-modifiable actions')
+    title = _('Non-modifiable actions')
 
     parameter_name = 'non_modifiable'
 
@@ -217,7 +219,7 @@ class ModifiableActionsFilter(admin.SimpleListFilter):
 
 
 class MergedActionsFilter(admin.SimpleListFilter):
-    title = _('merged actions')
+    title = _('Merged actions')
 
     parameter_name = 'merged'
 
@@ -245,7 +247,7 @@ class MergedActionsFilter(admin.SimpleListFilter):
 
 
 class ImpactFilter(admin.SimpleListFilter):
-    title = _('impact')
+    title = _('Impact')
     parameter_name = 'impact'
 
     def lookups(self, request, model_admin):
@@ -278,9 +280,64 @@ class CategoryTypeFilter(admin.SimpleListFilter):
             return queryset
 
 
+class ResponsibleOrganizationFilter(AutocompleteFilter):
+    title = _('Responsible organizations')
+    field_name = 'responsible_organizations'
+    autocomplete_url = 'organization-autocomplete'
+    forwards = [
+        dal.forward.Const('1', 'responsible_for_actions'),
+    ]
+
+    def __init__(self, request, params, model, model_admin):
+        self.request = request
+        super().__init__(request, params, model, model_admin)
+
+    def get_queryset_for_field(self, model, name):
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        qs = Organization.objects.filter(responsible_actions__action__plan=plan).distinct()
+        return qs
+
+    def queryset(self, request, queryset):
+        if self.value():
+            org = Organization.objects.filter(id=self.value()).first()
+            if org is not None:
+                orgs = org.get_descendants(True)
+                return queryset.filter(responsible_parties__organization__in=orgs).distinct()
+            else:
+                return queryset.none()
+        else:
+            return queryset
+
+
 class ContactPersonFilter(AutocompleteFilter):
     title = _('Contact person')
     field_name = 'contact_persons_unordered'
+    autocomplete_url = 'person-autocomplete'
+    forwards = [
+        dal.forward.Const('1', 'responsible_for_actions'),
+    ]
+
+    def __init__(self, request, params, model, model_admin):
+        self.request = request
+        super().__init__(request, params, model, model_admin)
+
+    def get_queryset_for_field(self, model, name):
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        qs = Person.objects.is_action_contact_person(plan)
+        return qs
+
+    def queryset(self, request, queryset):
+        if self.value():
+            person = Person.objects.filter(id=self.value()).first()
+            if person is not None:
+                qs = queryset.filter(contact_persons__person=person).distinct()
+                return qs
+            else:
+                return queryset.none()
+        else:
+            return queryset
 
 
 @admin.register(Action)

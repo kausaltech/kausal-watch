@@ -72,6 +72,9 @@ class PersonQuerySet(models.QuerySet):
         q = Q(organization__isnull=True) | Q(organization__in=all_related)
         return self.filter(q)
 
+    def is_action_contact_person(self, plan):
+        return self.filter(contact_for_actions__plan=plan).distinct()
+
 
 class Person(index.Indexed, ClusterableModel):
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))

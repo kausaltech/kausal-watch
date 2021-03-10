@@ -46,6 +46,9 @@
       window.jQuery = django.jQuery;
 
     initUnsavedChangesNotification();
+
+    var selectElements = $('#changelist-filter').children(':has([data-autocomplete-light-url])');
+    selectElements.wrapAll('<form></form>'); // required for forward func
   }
 
   if (!window.django) window.django = {};

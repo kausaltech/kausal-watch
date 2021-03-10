@@ -112,7 +112,7 @@ class ClientAdmin(ModelAdmin):
 modeladmin_register(ClientAdmin)
 
 
-@hooks.register("insert_global_admin_css", order=900)
+@hooks.register("insert_global_admin_css", order=0)
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',

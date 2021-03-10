@@ -365,6 +365,11 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         through='indicators.ActionIndicator', related_name='actions'
     )
 
+    responsible_organizations = models.ManyToManyField(
+        'django_orghierarchy.Organization', through='ActionResponsibleParty', blank=True,
+        related_name='responsible_for_actions', verbose_name=_('responsible organizations')
+    )
+
     contact_persons_unordered = models.ManyToManyField(
         'people.Person', through='ActionContactPerson', blank=True,
         related_name='contact_for_actions', verbose_name=_('contact persons')

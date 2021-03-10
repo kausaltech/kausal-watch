@@ -22,7 +22,10 @@ from admin_site.wagtail import (
 )
 from people.chooser import PersonChooser
 
-from .admin import ImpactFilter, MergedActionsFilter, ModifiableActionsFilter
+from .admin import (
+    ImpactFilter, MergedActionsFilter, ModifiableActionsFilter, ResponsibleOrganizationFilter,
+    ContactPersonFilter
+)
 from .models import (
     Action, ActionImpact, ActionStatus, ActionTask, Plan
 )
@@ -212,7 +215,10 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     menu_order = 1
     list_display = ('identifier', 'name_link')
     list_display_add_buttons = 'name_link'
-    list_filter = (ModifiableActionsFilter, ImpactFilter, MergedActionsFilter)
+    list_filter = (
+        ResponsibleOrganizationFilter, ContactPersonFilter, ModifiableActionsFilter, ImpactFilter,
+        MergedActionsFilter
+    )
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
     index_order_field = 'order'
@@ -361,6 +367,14 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         if not request.user.is_general_admin_for_plan(plan):
             qs = qs.unmerged()
         return qs.filter(plan=plan)
+
+    def get_index_view_extra_css(self):
+        ret = super().get_index_view_extra_css()
+        return ret + ResponsibleOrganizationFilter.Media.css['all']
+
+    def get_index_view_extra_js(self):
+        ret = super().get_index_view_extra_js()
+        return ret + ResponsibleOrganizationFilter.Media.js
 
 
 modeladmin_register(ActionAdmin)

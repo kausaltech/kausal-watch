@@ -294,6 +294,10 @@ class AplansModelAdmin(ModelAdmin):
             fields['categories_%s' % cat_type.identifier] = field
         return fields
 
+    def get_index_view_extra_js(self):
+        ret = super().get_index_view_extra_js()
+        return ret + ['admin_site/js/wagtail_customizations.js']
+
 
 class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):
     """Remove empty new forms from data"""
