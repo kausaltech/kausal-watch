@@ -118,7 +118,6 @@ INSTALLED_APPS = [
     'admin_ordering',
     'ckeditor',
     'easy_thumbnails',
-    'admin_auto_filters',
     'image_cropping',
     'reversion',
 
