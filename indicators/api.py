@@ -44,16 +44,22 @@ class IndicatorLevelSerializer(serializers.ModelSerializer):
         fields = ('plan', 'level')
 
 
-class RelatedIndicatorSerializer(serializers.ModelSerializer):
+class RelatedCausalIndicatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelatedIndicator
-        fields = '__all__'
+        fields = ('causal_indicator', 'effect_type', 'confidence_level')
+
+
+class RelatedEffectIndicatorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RelatedIndicator
+        fields = ('effect_indicator', 'effect_type', 'confidence_level')
 
 
 class IndicatorSerializer(serializers.ModelSerializer):
     unit = serializers.CharField(source='unit.name')
-    related_effects = RelatedIndicatorSerializer(many=True, required=False)
-    related_causes = RelatedIndicatorSerializer(many=True, required=False)
+    related_effects = RelatedEffectIndicatorSerializer(many=True, required=False)
+    related_causes = RelatedCausalIndicatorSerializer(many=True, required=False)
     levels = IndicatorLevelSerializer(many=True, required=False)
     organization = serializers.PrimaryKeyRelatedField(
         many=False, required=True, queryset=Organization.objects.filter(plans__isnull=False).distinct()
@@ -67,6 +73,17 @@ class IndicatorSerializer(serializers.ModelSerializer):
             for level in levels:
                 if level['plan'].organization != org:
                     raise ValidationError('Attempting to set indicator level for wrong plan')
+
+        related_causes = data.get('related_causes', None)
+        if related_causes:
+            for ri in related_causes:
+                if ri['causal_indicator'].organization != org:
+                    raise ValidationError('Related indicators must have the same organization')
+        related_effects = data.get('related_effects', None)
+        if related_effects:
+            for ri in related_effects:
+                if ri['effect_indicator'].organization != org:
+                    raise ValidationError('Related indicators must have the same organization')
 
         if Indicator.objects.filter(organization=org, name=data['name']).exists():
             raise ValidationError('Indicator with the same name already exists for organization')
@@ -93,11 +110,21 @@ class IndicatorSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         unit = validated_data.pop('unit')['name']
         levels = validated_data.pop('levels', None)
+        related_causes = validated_data.pop('related_causes', None)
+        related_effects = validated_data.pop('related_effects', None)
+
         with transaction.atomic():
             obj = Indicator.objects.create(unit=unit, **validated_data)
             if levels:
                 level_objs = [IndicatorLevel(indicator=obj, plan=x['plan'], level=x['level']) for x in levels]
                 IndicatorLevel.objects.bulk_create(level_objs)
+            if related_causes:
+                ri_objs = [RelatedIndicator(effect_indicator=obj, **ri) for ri in related_causes]
+                RelatedIndicator.objects.bulk_create(ri_objs)
+            if related_effects:
+                ri_objs = [RelatedIndicator(causal_indicator=obj, **ri) for ri in related_effects]
+                RelatedIndicator.objects.bulk_create(ri_objs)
+
         return obj
 
     class Meta:
@@ -120,7 +147,7 @@ class IndicatorFilter(filters.FilterSet):
 
     class Meta:
         model = Indicator
-        fields = ('plans', 'identifier', 'organization')
+        fields = ('plans', 'identifier', 'organization', 'name')
 
 
 class IndicatorValueListSerializer(serializers.ListSerializer):
