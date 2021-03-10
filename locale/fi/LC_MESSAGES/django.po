@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-08 21:28+0200\n"
+"POT-Creation-Date: 2021-03-10 20:30+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: actions/admin.py
-msgid "non-modifiable actions"
+msgid "Non-modifiable actions"
 msgstr "Ei-muokattavat toimenpiteet"
 
 #: actions/admin.py
@@ -31,8 +31,8 @@ msgid "Show all"
 msgstr "Näytä kaikki"
 
 #: actions/admin.py
-msgid "merged actions"
-msgstr "yhdistetyt toimenpiteet"
+msgid "Merged actions"
+msgstr "Yhdistetyt toimenpiteet"
 
 #: actions/admin.py
 msgid "Show only un-merged actions"
@@ -42,13 +42,17 @@ msgstr "Ei yhdistettyjä toimenpiteitä"
 msgid "Show also merged actions"
 msgstr "Näytä myös yhdistetyt toimenpiteet"
 
-#: actions/admin.py actions/export.py actions/models.py
-msgid "impact"
-msgstr "vaikuttavuus"
+#: actions/admin.py
+msgid "Impact"
+msgstr "Vaikuttavuus"
 
 #: actions/admin.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
+
+#: actions/admin.py
+msgid "Responsible organizations"
+msgstr "Vastuuorganisaatiot"
 
 #: actions/admin.py
 msgid "Contact person"
@@ -124,6 +128,10 @@ msgstr "tunniste"
 #: notifications/models.py
 msgid "name"
 msgstr "nimi"
+
+#: actions/export.py actions/models.py
+msgid "impact"
+msgstr "vaikuttavuus"
 
 #: actions/export.py actions/models.py
 msgid "status"
@@ -294,6 +302,10 @@ msgstr "luokat"
 #: actions/models.py indicators/models.py
 msgid "indicators"
 msgstr "mittarit"
+
+#: actions/models.py
+msgid "responsible organizations"
+msgstr "vastuuorganisaatiot"
 
 #: actions/models.py indicators/models.py
 msgid "updated at"
@@ -765,6 +777,11 @@ msgstr "sisäänkirjautumisen otsikko"
 msgid "login button text"
 msgstr "sisäänkirjautumispainikkeen teksti"
 
+#: admin_site/templates/dal_admin_filters/autocomplete-filter.html
+#, python-format
+msgid " By %(filter_title)s "
+msgstr ""
+
 #: admin_site/views.py
 msgid "You have been successfully logged out."
 msgstr "Olet kirjautunut ulos."
@@ -845,6 +862,10 @@ msgstr "ruotsi"
 #: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
+
+#: content/admin.py
+msgid "Site settings"
+msgstr "Sivuston asetukset"
 
 #: content/apps.py
 msgid "Content"
@@ -1652,6 +1673,10 @@ msgstr "Luokkasivut"
 #: pages/models.py
 msgid "lead content"
 msgstr "johdanto"
+
+#: pages/wagtail_admin.py
+msgid "More"
+msgstr ""
 
 #: people/admin.py
 msgid "Is contact person"

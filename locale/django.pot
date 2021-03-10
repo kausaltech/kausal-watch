@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-08 21:28+0200\n"
+"POT-Creation-Date: 2021-03-10 20:30+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
 #: actions/admin.py
-msgid "non-modifiable actions"
+msgid "Non-modifiable actions"
 msgstr ""
 
 #: actions/admin.py
@@ -31,7 +31,7 @@ msgid "Show all"
 msgstr ""
 
 #: actions/admin.py
-msgid "merged actions"
+msgid "Merged actions"
 msgstr ""
 
 #: actions/admin.py
@@ -42,12 +42,16 @@ msgstr ""
 msgid "Show also merged actions"
 msgstr ""
 
-#: actions/admin.py actions/export.py actions/models.py
-msgid "impact"
+#: actions/admin.py
+msgid "Impact"
 msgstr ""
 
 #: actions/admin.py
 msgid "Category type"
+msgstr ""
+
+#: actions/admin.py
+msgid "Responsible organizations"
 msgstr ""
 
 #: actions/admin.py
@@ -123,6 +127,10 @@ msgstr ""
 #: actions/export.py actions/models.py indicators/models.py
 #: notifications/models.py
 msgid "name"
+msgstr ""
+
+#: actions/export.py actions/models.py
+msgid "impact"
 msgstr ""
 
 #: actions/export.py actions/models.py
@@ -293,6 +301,10 @@ msgstr ""
 
 #: actions/models.py indicators/models.py
 msgid "indicators"
+msgstr ""
+
+#: actions/models.py
+msgid "responsible organizations"
 msgstr ""
 
 #: actions/models.py indicators/models.py
@@ -759,6 +771,11 @@ msgstr ""
 msgid "login button text"
 msgstr ""
 
+#: admin_site/templates/dal_admin_filters/autocomplete-filter.html
+#, python-format
+msgid " By %(filter_title)s "
+msgstr ""
+
 #: admin_site/views.py
 msgid "You have been successfully logged out."
 msgstr ""
@@ -838,6 +855,10 @@ msgstr ""
 
 #: aplans/utils.py
 msgid "order"
+msgstr ""
+
+#: content/admin.py
+msgid "Site settings"
 msgstr ""
 
 #: content/apps.py
@@ -1645,6 +1666,10 @@ msgstr ""
 
 #: pages/models.py
 msgid "lead content"
+msgstr ""
+
+#: pages/wagtail_admin.py
+msgid "More"
 msgstr ""
 
 #: people/admin.py
