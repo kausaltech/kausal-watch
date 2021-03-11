@@ -1,22 +1,10 @@
-import functools
-
 import graphene
-from graphene.types.generic import GenericScalar
-from graphene_django.converter import convert_django_field
-from wagtail.core.blocks import StaticBlock as WagtailStaticBlock
-from wagtail.core.blocks import field_block
-from wagtail.core.fields import StreamField as WagtailStreamField
+import graphene_django_optimizer as gql_optimizer
 from wagtail.core.models import Page as WagtailPage
-from grapple.registry import registry as grapple_registry
 from grapple.types.pages import PageInterface
 
-from aplans.graphql_types import DjangoNode
-from pages.models import (
-    AplansPage, PlanRootPage, CategoryPage, StaticPage as WStaticPage
-)
-from indicators import blocks as indicators_blocks
-from actions import blocks as actions_blocks
-from . import blocks as pages_blocks
+from aplans.graphql_types import get_plan_from_context
+from pages.models import AplansPage
 
 
 class MenuItemNode(graphene.ObjectType):
@@ -100,3 +88,18 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
                            for page in Model.objects.filter(show_in_footer=True)]
         pages = pages.filter(id__in=footer_page_ids).specific()
         return [MenuItemNode(page=page) for page in pages]
+
+
+class Query:
+    plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
+
+    def resolve_plan_page(self, info, plan, path, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        root = plan_obj.root_page
+        if not path.endswith('/'):
+            path = path + '/'
+        qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()
+        return gql_optimizer.query(qs, info).first()

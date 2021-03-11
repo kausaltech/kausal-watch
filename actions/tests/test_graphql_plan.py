@@ -1,6 +1,7 @@
 import json
 import pytest
 
+from actions.models import CategoryTypeMetadata
 from pages.models import StaticPage
 
 
@@ -69,6 +70,158 @@ def add_menu_test_pages(root_page, menu_key='show_in_menus'):
     root_page.add_child(instance=pages['page2_in_menu'])
 
     return pages
+
+
+@pytest.fixture
+def suborganization(organization_factory, organization):
+    return organization_factory(parent=organization)
+
+
+@pytest.fixture
+def another_organization(organization_factory):
+    return organization_factory()
+
+
+@pytest.mark.django_db
+def test_nonexistent_domain(graphql_client_query_data):
+    data = graphql_client_query_data(
+        '''
+        {
+          plan(domain: "foo.localhost") {
+            id
+          }
+        }
+        ''',
+    )
+    assert data['plan'] is None
+
+
+@pytest.mark.django_db
+def test_plan_exists(graphql_client_query_data, plan):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            id
+          }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    assert data['plan']['id'] == plan.identifier
+
+
+@pytest.mark.django_db
+def test_categorytypes(graphql_client_query_data, plan, category_type, category_factory):
+    c0 = category_factory(type=category_type)
+    c1 = category_factory(type=category_type, parent=c0)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            categoryTypes {
+              id
+              identifier
+              name
+              usableForActions
+              categories {
+                id
+                identifier
+                name
+                parent {
+                  id
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'id': str(category_type.id),
+                'identifier': category_type.identifier,
+                'name': category_type.name,
+                'usableForActions': category_type.usable_for_actions,
+                'categories': [{
+                    'id': str(c0.id),
+                    'identifier': c0.identifier,
+                    'name': c0.name,
+                    'parent': None
+                }, {
+                    'id': str(c1.id),
+                    'identifier': c1.identifier,
+                    'name': c1.name,
+                    'parent': {
+                        'id': str(c0.id)
+                    }
+                }]
+            }]
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_types(
+    graphql_client_query_data, plan, category_type_factory, category_type_metadata_factory,
+    category_type_metadata_choice_factory
+):
+    ct = category_type_factory(plan=plan)
+    ctm1 = category_type_metadata_factory(type=ct)
+    ctm2 = category_type_metadata_factory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    ctm2c1 = category_type_metadata_choice_factory(metadata=ctm2)
+    ctm2c2 = category_type_metadata_choice_factory(metadata=ctm2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+            plan(id: $plan) {
+                categoryTypes {
+                    identifier
+                    name
+                    metadata {
+                        format
+                        identifier
+                        name
+                        choices {
+                            identifier
+                            name
+                        }
+                    }
+                }
+            }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'identifier': ct.identifier,
+                'name': ct.name,
+                'metadata': [{
+                    'format': 'RICH_TEXT',
+                    'identifier': ctm1.identifier,
+                    'name': ctm1.name,
+                    'choices': [],
+                }, {
+                    'format': 'ORDERED_CHOICE',
+                    'identifier': ctm2.identifier,
+                    'name': ctm2.name,
+                    'choices': [{
+                        'identifier': ctm2c1.identifier,
+                        'name': ctm2c1.name,
+                    }, {
+                        'identifier': ctm2c2.identifier,
+                        'name': ctm2c2.name,
+                    }],
+                }],
+            }]
+        }
+    }
+    assert data == expected
 
 
 @pytest.mark.django_db

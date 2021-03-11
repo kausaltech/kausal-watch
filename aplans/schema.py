@@ -14,6 +14,7 @@ from content.models import SiteGeneralContent
 from actions import schema as actions_schema
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
+from pages import schema as pages_schema
 from people.models import Person
 
 from .graphql_helpers import get_fields
@@ -89,6 +90,7 @@ class SiteGeneralContentNode(DjangoNode):
 class Query(
     actions_schema.Query,
     indicators_schema.Query,
+    pages_schema.Query,
     graphene.ObjectType
 ):
     plan_organizations = graphene.List(
