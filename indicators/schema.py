@@ -102,7 +102,7 @@ class IndicatorNode(DjangoNode):
     goals = graphene.List(IndicatorGoalNode, plan=graphene.ID())
     values = graphene.List(IndicatorValueNode, include_dimensions=graphene.Boolean())
     level = graphene.String(plan=graphene.ID())
-    actions = graphene.List('aplans.schema.ActionNode', plan=graphene.ID())
+    actions = graphene.List('actions.schema.ActionNode', plan=graphene.ID())
 
     class Meta:
         fields = public_fields(Indicator)
@@ -152,7 +152,7 @@ class IndicatorDimensionNode(DjangoNode):
         fields = public_fields(IndicatorDimension)
 
 
-class Query(graphene.ObjectType):
+class Query:
     indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
     plan_indicators = graphene.List(
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),

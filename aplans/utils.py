@@ -1,10 +1,44 @@
-from typing import Iterable, List
+import libvoikko
+import pytz
 import re
 from django import forms
 from django.db import models
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 from django.contrib.postgres.fields import ArrayField
+from typing import Iterable, List
+
+LOCAL_TZ = pytz.timezone('Europe/Helsinki')
+
+try:
+    voikko_fi = libvoikko.Voikko(language='fi')
+    voikko_fi.setNoUglyHyphenation(True)
+    voikko_fi.setMinHyphenatedWordLength(16)
+except OSError:
+    voikko_fi = None
+
+_hyphenation_cache = {}
+
+
+def hyphenate(s):
+    if voikko_fi is None:
+        return s
+
+    tokens = voikko_fi.tokens(s)
+    out = ''
+    for t in tokens:
+        if t.tokenTypeName != 'WORD':
+            out += t.tokenText
+            continue
+
+        cached = _hyphenation_cache.get(t.tokenText, None)
+        if cached is not None:
+            out += cached
+        else:
+            val = voikko_fi.hyphenate(t.tokenText, separator='\u00ad')
+            _hyphenation_cache[t.tokenText] = val
+            out += val
+    return out
 
 
 def camelcase_to_underscore(name):

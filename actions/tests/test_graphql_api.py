@@ -6,7 +6,7 @@ from actions.tests.factories import (
     CategoryFactory, CategoryTypeFactory, CategoryMetadataRichTextFactory, CategoryTypeMetadataFactory,
     CategoryTypeMetadataChoiceFactory
 )
-from aplans.schema import hyphenate
+from aplans.utils import hyphenate
 from pages.models import CategoryPage
 
 
