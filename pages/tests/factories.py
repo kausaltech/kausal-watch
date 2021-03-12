@@ -1,6 +1,9 @@
 from factory import Factory, SubFactory
-from wagtail_factories import CharBlockFactory, ListBlockFactory, PageFactory, StreamFieldFactory, StructBlockFactory
+from wagtail_factories import (
+    CharBlockFactory, ImageChooserBlockFactory, ListBlockFactory, PageFactory, StreamFieldFactory, StructBlockFactory
+)
 from wagtail.core.blocks import RichTextBlock
+from wagtail.core.rich_text import RichText
 
 import pages
 from images.tests.factories import AplansImageFactory
@@ -27,9 +30,7 @@ class QuestionBlockFactory(StructBlockFactory):
         model = pages.blocks.QuestionBlock
 
     question = "What is your quest?"
-    # answer = RichText("<p>To seek the holy grail.</p>")
-    answer = SubFactory(RichTextBlockFactory)
-    answer__value = "<p>To seek the holy grail.</p>"
+    answer = RichText("<p>To seek the holy grail.</p>")
 
 
 class QuestionAnswerBlockFactory(StructBlockFactory):
@@ -38,6 +39,16 @@ class QuestionAnswerBlockFactory(StructBlockFactory):
 
     heading = "QA block heading"
     questions = ListBlockFactory(QuestionBlockFactory)
+
+
+class FrontPageHeroBlockFactory(StructBlockFactory):
+    class Meta:
+        model = pages.blocks.FrontPageHeroBlock
+
+    layout = 'big_image'
+    image = SubFactory(ImageChooserBlockFactory)
+    heading = "Front page hero heading"
+    lead = RichText("<p>Front page hero lead</p>")
 
 
 class StaticPageFactory(PageFactory):

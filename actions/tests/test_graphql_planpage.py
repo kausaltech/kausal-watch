@@ -175,7 +175,18 @@ STREAMFIELD_FRAGMENT = '''
 
 
 @pytest.mark.django_db
-def test_planpage(graphql_client_query_data, plan):
+def test_plan_root_page(graphql_client_query_data, plan, front_page_hero_block):
+    page = plan.root_page
+    page.body = [
+        ('front_page_hero', front_page_hero_block),
+        # ('category_list', None),  # TODO
+        # ('indicator_group', None),  # TODO
+        # ('indicator_highlights', None),  # TODO
+        # ('indicator_showcase', None),  # TODO
+        # ('action_highlights', None),  # TODO
+        # ('cards', None),  # TODO
+    ]
+    page.save()
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $path: String!) {
@@ -183,9 +194,14 @@ def test_planpage(graphql_client_query_data, plan):
             id
             slug
             title
+            ... on PlanRootPage {
+              body {
+                ...StreamFieldFragment
+              }
+            }
           }
         }
-        ''',
+        ''' + STREAMFIELD_FRAGMENT + MULTI_USE_IMAGE_FRAGMENT,
         variables={
             'plan': plan.identifier,
             'path': '/',
@@ -193,9 +209,30 @@ def test_planpage(graphql_client_query_data, plan):
     )
     expected = {
         'planPage': {
-            'id': str(plan.root_page.id),
-            'slug': plan.root_page.slug,
-            'title': plan.root_page.title,
+            'id': str(page.id),
+            'slug': page.slug,
+            'title': page.title,
+            'body': [{
+                'id': page.body[0].id,
+                'blockType': 'FrontPageHeroBlock',
+                'field': 'front_page_hero',
+                'heading': front_page_hero_block['heading'],
+                'image': {
+                    'title': front_page_hero_block['image'].title,
+                    'focalPointX': None,
+                    'focalPointY': None,
+                    'width': front_page_hero_block['image'].width,
+                    'height': front_page_hero_block['image'].height,
+                    'rendition': {
+                        'width': front_page_hero_block['image'].get_rendition('fill-300x200-c50').width,
+                        'height': front_page_hero_block['image'].get_rendition('fill-300x200-c50').height,
+                        'src': ('http://testserver'
+                                + front_page_hero_block['image'].get_rendition('fill-300x200-c50').url),
+                    },
+                },
+                'layout': 'big_image',
+                'lead': str(front_page_hero_block['lead']),
+            }],
         }
     }
     assert data == expected
