@@ -147,8 +147,11 @@ ecdsa==0.14.1
     # via python-jose
 et-xmlfile==1.0.1
     # via openpyxl
-factory-boy==3.2.0
-    # via pytest-factoryboy
+factory-boy==3.1.0
+    # via
+    #   -r requirements.in
+    #   pytest-factoryboy
+    #   wagtail-factories
 faker==6.1.1
     # via factory-boy
 graphene-django-optimizer==0.8.0
@@ -344,6 +347,8 @@ wagtail-autocomplete==0.6
     # via -r requirements.in
 wagtail-condensedinlinepanel==0.5.3
     # via -r requirements.in
+wagtail-factories==2.0.1
+    # via -r requirements.in
 wagtail-generic-chooser==0.1.1
     # via -r requirements.in
 wagtail-grapple==0.10.1
@@ -356,6 +361,7 @@ wagtail==2.11.3
     # via
     #   -r requirements.in
     #   wagtail-autocomplete
+    #   wagtail-factories
     #   wagtail-grapple
     #   wagtail-headless-preview
     #   wagtail-orderable
