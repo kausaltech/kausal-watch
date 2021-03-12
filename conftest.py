@@ -1,10 +1,12 @@
 import json
 import pytest
+import wagtail_factories
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
 
 from actions.tests import factories as actions_factories
 from content.tests import factories as content_factories
+from images.tests import factories as images_factories
 from users.tests import factories as users_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
@@ -23,11 +25,13 @@ register(actions_factories.CategoryTypeMetadataChoiceFactory)
 register(actions_factories.OrganizationFactory)
 register(actions_factories.PlanFactory)
 register(content_factories.SiteGeneralContentFactory)
+register(images_factories.AplansImageFactory)
 register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan: plan.root_page))
 register(people_factories.PersonFactory)
 register(users_factories.UserFactory)
 register(users_factories.UserFactory, 'superuser', is_superuser=True)
 register(users_factories.UserFactory, 'plan_admin_user', general_admin_plans=LazyFixture(lambda plan: [plan]))
+register(wagtail_factories.factories.CollectionFactory)
 
 
 @pytest.fixture

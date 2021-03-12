@@ -3,6 +3,7 @@ from wagtail_factories import CharBlockFactory, ListBlockFactory, PageFactory, S
 from wagtail.core.blocks import RichTextBlock
 
 import pages
+from images.tests.factories import AplansImageFactory
 
 
 # wagtail-factories doesn't support rich text blocks.
@@ -43,6 +44,7 @@ class StaticPageFactory(PageFactory):
     class Meta:
         model = pages.models.StaticPage
 
+    header_image = SubFactory(AplansImageFactory)
     lead_paragraph = "Lead paragraph"
     # body = [
     #     ('heading', "Heading"),

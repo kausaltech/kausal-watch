@@ -9,21 +9,6 @@ MULTI_USE_IMAGE_FRAGMENT = '''
       height
       focalPointX
       focalPointY
-      large: rendition(size:"1600x600") {
-        width
-        height
-        src
-      }
-      small: rendition(size:"600x300") {
-        width
-        height
-        src
-      }
-      social: rendition(size:"1200x627") {
-        width
-        height
-        src
-      }
       rendition(size:"300x200") {
         width
         height
@@ -226,17 +211,11 @@ def test_static_page(graphql_client_query_data, plan, static_page):
             slug
             title
             ... on StaticPage {
-              headerImage {
-                ...MultiUseImageFragment
-              }
               leadParagraph
-              body {
-                ...StreamFieldFragment
-              }
             }
           }
         }
-        ''' + MULTI_USE_IMAGE_FRAGMENT + STREAMFIELD_FRAGMENT,
+        ''',
         variables={
             'plan': plan.identifier,
             'path': static_page.url_path,
@@ -247,8 +226,33 @@ def test_static_page(graphql_client_query_data, plan, static_page):
             'id': str(static_page.id),
             'slug': static_page.slug,
             'title': static_page.title,
-            'headerImage': None,  # TODO
             'leadParagraph': static_page.lead_paragraph,
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_static_page_body(graphql_client_query_data, plan, static_page):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            ... on StaticPage {
+              body {
+                ...StreamFieldFragment
+              }
+            }
+          }
+        }
+        ''' + STREAMFIELD_FRAGMENT + MULTI_USE_IMAGE_FRAGMENT,
+        variables={
+            'plan': plan.identifier,
+            'path': static_page.url_path,
+        }
+    )
+    expected = {
+        'planPage': {
             'body': [{
                 'blockType': 'CharBlock',
                 'field': 'heading',
@@ -270,6 +274,44 @@ def test_static_page(graphql_client_query_data, plan, static_page):
                     'answer': str(static_page.body[2].value['questions'][0]['answer']),
                 }],
             }],
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_static_page_header_image(graphql_client_query_data, plan, static_page):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            ... on StaticPage {
+              headerImage {
+                ...MultiUseImageFragment
+              }
+            }
+          }
+        }
+        ''' + MULTI_USE_IMAGE_FRAGMENT,
+        variables={
+            'plan': plan.identifier,
+            'path': static_page.url_path,
+        }
+    )
+    expected = {
+        'planPage': {
+            'headerImage': {
+                'title': static_page.header_image.title,
+                'focalPointX': None,
+                'focalPointY': None,
+                'width': static_page.header_image.width,
+                'height': static_page.header_image.height,
+                'rendition': {
+                    'width': static_page.header_image.get_rendition('fill-300x200-c50').width,
+                    'height': static_page.header_image.get_rendition('fill-300x200-c50').height,
+                    'src': 'http://testserver' + static_page.header_image.get_rendition('fill-300x200-c50').url,
+                },
+            },
         }
     }
     assert data == expected
