@@ -33,7 +33,6 @@ class YearField(fields.Field):
 
         existing = obj._yearly_values.get(self.year)
         cleaned = self.clean(data)
-
         if cleaned is None:
             if existing is not None:
                 existing.delete()
@@ -119,7 +118,12 @@ class IndicatorResource(AplansResource):
         super().import_field(field, obj, data, is_m2m)
 
     def before_import(self, dataset, using_transactions, dry_run, **kwargs):
-        dataset.headers = [force_str(x) for x in dataset.headers]
+        def convert_header(header):
+            if isinstance(header, float):
+                header = int(header)
+            return force_str(header)
+
+        dataset.headers = [convert_header(x) for x in dataset.headers]
 
     def after_import_instance(self, instance, new, row_number=None, **kwargs):
         user = self.request.user
@@ -152,9 +156,9 @@ class IndicatorResource(AplansResource):
     def import_data_inner(self, dataset, *args, **kwargs):
         years = []
         for header in dataset.headers:
-            if isinstance(header, int):
+            if isinstance(header, (int, float)):
                 if header >= 1900 and header < 2100:
-                    years.append(header)
+                    years.append(int(header))
             elif re.match(r'[12][0-9]{3}', header):
                 years.append(int(header))
         self.min_year = min(years)
