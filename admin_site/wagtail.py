@@ -1,6 +1,9 @@
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.forms.widgets import Select
+from django.http.request import QueryDict
+from django.http.response import HttpResponseRedirect
+from django.urls.base import reverse
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 
@@ -169,6 +172,24 @@ class PlanRelatedViewMixin:
             assert active_plan in plans
 
         return super().form_valid(form, *args, **kwargs)
+
+    def dispatch(self, request, *args, **kwargs):
+        user = request.user
+        instance = getattr(self, 'instance', None)
+        # Check if we need to change the active action plan to be able to modify
+        # the instance. This might happen e.g. when the user clicks on an edit link
+        # in the email notification.
+        if (instance is not None and isinstance(instance, PlanRelatedModel) and
+                user is not None and user.is_authenticated):
+            plan = user.get_active_admin_plan()
+            instance_plans = instance.get_plans()
+            if plan not in instance_plans:
+                querystring = QueryDict(mutable=True)
+                querystring['next'] = request.get_full_path()
+                url = reverse('change-admin-plan', kwargs=dict(plan_id=instance_plans[0].id))
+                return HttpResponseRedirect(url + '?' + querystring.urlencode())
+
+        return super().dispatch(request, *args, **kwargs)
 
 
 class AplansEditView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, EditView):

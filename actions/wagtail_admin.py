@@ -298,7 +298,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         plan = request.user.get_active_admin_plan()
-        assert instance.plan == plan
 
         all_tabs = []
 
