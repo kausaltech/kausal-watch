@@ -1,5 +1,6 @@
 import pytest
 
+from indicators.blocks import IndicatorGroupBlock
 from pages.models import CategoryPage
 
 MULTI_USE_IMAGE_FRAGMENT = '''
@@ -177,16 +178,15 @@ STREAMFIELD_FRAGMENT = '''
     '''
 
 
-def assert_plan_page_body_block(graphql_client_query_data, plan, block_name, block, block_fields, expected,
-                                extra_fragments=None):
+def assert_plan_page_body_block(graphql_client_query_data, plan, block_name, block_type, block_value, block_fields,
+                                expected, extra_fragments=None):
     if extra_fragments is None:
         extra_fragments_str = ''
     else:
         extra_fragments_str = '\n'.join(extra_fragments)
-    block_type = type(block.block).__name__
     page = plan.root_page
     page.body = [
-        (block_name, block),
+        (block_name, block_value),
     ]
     page.save()
     data = graphql_client_query_data(
@@ -226,16 +226,12 @@ def assert_plan_page_body_block(graphql_client_query_data, plan, block_name, blo
 
 @pytest.mark.django_db
 def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_block):
-    #     # ('indicator_group', None),  # TODO
-    #     # ('indicator_highlights', None),  # TODO
-    #     # ('indicator_showcase', None),  # TODO
-    #     # ('action_highlights', None),  # TODO
-    #     # ('cards', None),  # TODO
     assert_plan_page_body_block(
         graphql_client_query_data,
         plan=plan,
         block_name='front_page_hero',
-        block=front_page_hero_block,
+        block_type='FrontPageHeroBlock',
+        block_value=front_page_hero_block,
         block_fields='''
             id
             layout
@@ -273,7 +269,8 @@ def test_category_list_block(graphql_client_query_data, plan, category_list_bloc
         graphql_client_query_data,
         plan=plan,
         block_name='category_list',
-        block=category_list_block,
+        block_type='CategoryListBlock',
+        block_value=category_list_block,
         block_fields='''
             heading
             lead
@@ -283,6 +280,78 @@ def test_category_list_block(graphql_client_query_data, plan, category_list_bloc
             'heading': category_list_block['heading'],
             'lead': str(category_list_block['lead']),
             'style': category_list_block['style'],
+        }
+    )
+
+
+@pytest.mark.django_db
+def test_indicator_group_block(graphql_client_query_data, plan, indicator_block):
+    #     # ('indicator_highlights', None),  # TODO
+    #     # ('indicator_showcase', None),  # TODO
+    #     # ('action_highlights', None),  # TODO
+    #     # ('cards', None),  # TODO
+
+    indicator = indicator_block['indicator']
+    assert not indicator.goals.exists()
+    assert not indicator.levels.exists()
+    assert indicator.latest_value is None
+    unit = indicator.unit
+
+    assert_plan_page_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_name='indicator_group',
+        block_type='IndicatorGroupBlock',
+        block_value=[indicator_block],
+        block_fields='''
+            items {
+              ... on IndicatorBlock {
+                style
+                indicator {
+                  id
+                  identifier
+                  name
+                  unit {
+                    id
+                    name
+                  }
+                  description
+                  timeResolution
+                  latestValue {
+                    id
+                    date
+                    value
+                  }
+                  goals {
+                    id
+                    date
+                    value
+                  }
+                  level(plan: $plan)
+                }
+              }
+            }
+        ''',
+        # extra_fragments=[MULTI_USE_IMAGE_FRAGMENT],
+        expected={
+            'items': [{
+                'style': 'graph',
+                'indicator': {
+                    'id': str(indicator.id),
+                    'identifier': indicator.identifier,
+                    'name': indicator.name,
+                    'unit': {
+                        'id': str(unit.id),
+                        'name': unit.name,
+                    },
+                    'description': indicator.description,
+                    # graphene_django puts choices into upper case in converter.convert_choice_name()
+                    'timeResolution': indicator.time_resolution.upper(),
+                    'latestValue': None,
+                    'goals': [],
+                    'level': None,
+                },
+            }]
         }
     )
 

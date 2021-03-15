@@ -7,6 +7,7 @@ from pytest_factoryboy import LazyFixture, register
 from actions.tests import factories as actions_factories
 from content.tests import factories as content_factories
 from images.tests import factories as images_factories
+from indicators.tests import factories as indicators_factories
 from users.tests import factories as users_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
@@ -27,6 +28,9 @@ register(actions_factories.OrganizationFactory)
 register(actions_factories.PlanFactory)
 register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
+register(indicators_factories.IndicatorFactory)
+register(indicators_factories.IndicatorBlockFactory)
+register(indicators_factories.UnitFactory)
 register(pages_factories.FrontPageHeroBlockFactory)
 register(pages_factories.RichTextBlockFactory)
 register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan: plan.root_page))

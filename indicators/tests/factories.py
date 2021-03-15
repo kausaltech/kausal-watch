@@ -1,6 +1,8 @@
 from factory import SubFactory
 from factory.django import DjangoModelFactory
+from wagtail_factories import StructBlockFactory
 
+import indicators
 from actions.tests.factories import OrganizationFactory
 
 
@@ -18,3 +20,11 @@ class IndicatorFactory(DjangoModelFactory):
     organization = SubFactory(OrganizationFactory)
     name = 'indicator1'
     unit = SubFactory(UnitFactory)
+
+
+class IndicatorBlockFactory(StructBlockFactory):
+    class Meta:
+        model = indicators.blocks.IndicatorBlock
+
+    indicator = SubFactory(IndicatorFactory)
+    style = 'graph'
