@@ -6,6 +6,7 @@ from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
+from django.contrib.auth import REDIRECT_FIELD_NAME
 
 from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
 from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
@@ -185,7 +186,7 @@ class PlanRelatedViewMixin:
             instance_plans = instance.get_plans()
             if plan not in instance_plans:
                 querystring = QueryDict(mutable=True)
-                querystring['next'] = request.get_full_path()
+                querystring[REDIRECT_FIELD_NAME] = request.get_full_path()
                 url = reverse('change-admin-plan', kwargs=dict(plan_id=instance_plans[0].id))
                 return HttpResponseRedirect(url + '?' + querystring.urlencode())
 
