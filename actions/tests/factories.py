@@ -31,6 +31,7 @@ class PlanFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'plan{i}')
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
     general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
+    show_admin_link = False
 
 
 class ActionStatusFactory(DjangoModelFactory):

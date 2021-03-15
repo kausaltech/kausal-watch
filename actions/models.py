@@ -83,6 +83,10 @@ class Plan(ClusterableModel):
         default=True, verbose_name=_('allow images for actions'),
         help_text=_('Should custom images for individual actions be allowed')
     )
+    show_admin_link = models.BooleanField(
+        default=False, verbose_name=_('show admin link'),
+        help_text=_('Should the public website contain a link to the admin login?'),
+    )
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', related_name='plans', on_delete=models.PROTECT,
         verbose_name=_('main organization for the plan'),

@@ -4,6 +4,7 @@ from aplans.graphql_types import (
     DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
+from django.urls import reverse
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from itertools import chain
@@ -43,6 +44,7 @@ class PlanNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
+    admin_url = graphene.String(required=False)
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
@@ -85,6 +87,11 @@ class PlanNode(DjangoNode):
         if not hostname:
             return None
         return self.domains.filter(hostname=hostname).first()
+
+    def resolve_admin_url(self, info):
+        if not self.show_admin_link:
+            return None
+        return info.context.build_absolute_uri(reverse('wagtailadmin_home'))
 
     @gql_optimizer.resolver_hints(
         model_field='actions',

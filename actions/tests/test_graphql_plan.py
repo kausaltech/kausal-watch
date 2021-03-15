@@ -1,5 +1,6 @@
 import json
 import pytest
+from django.urls import reverse
 
 from actions.models import CategoryTypeMetadata
 from pages.models import StaticPage
@@ -109,6 +110,26 @@ def test_plan_exists(graphql_client_query_data, plan):
         variables=dict(plan=plan.identifier)
     )
     assert data['plan']['id'] == plan.identifier
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('plan__show_admin_link', [True, False])
+def test_plan_admin_url(graphql_client_query_data, plan):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            adminUrl
+          }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    if plan.show_admin_link:
+        admin_path = reverse('wagtailadmin_home')
+        assert data == {'plan': {'adminUrl': f'http://testserver{admin_path}'}}
+    else:
+        assert data == {'plan': {'adminUrl': None}}
 
 
 @pytest.mark.django_db
