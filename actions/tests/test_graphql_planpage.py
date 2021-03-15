@@ -17,6 +17,7 @@ MULTI_USE_IMAGE_FRAGMENT = '''
     }
     '''
 
+# TODO: Remove this after implementing tests for these blocks
 STREAMFIELD_FRAGMENT = '''
     fragment StreamFieldFragment on StreamFieldInterface {
       id
@@ -176,75 +177,114 @@ STREAMFIELD_FRAGMENT = '''
     '''
 
 
-@pytest.mark.django_db
-def test_plan_root_page(graphql_client_query_data, plan, front_page_hero_block, category_list_block):
+def assert_plan_page_body_block(graphql_client_query_data, plan, block_name, block, block_fields, expected,
+                                extra_fragments=None):
+    if extra_fragments is None:
+        extra_fragments_str = ''
+    else:
+        extra_fragments_str = '\n'.join(extra_fragments)
+    block_type = type(block.block).__name__
     page = plan.root_page
     page.body = [
-        ('front_page_hero', front_page_hero_block),
-        ('category_list', category_list_block),
-        # ('indicator_group', None),  # TODO
-        # ('indicator_highlights', None),  # TODO
-        # ('indicator_showcase', None),  # TODO
-        # ('action_highlights', None),  # TODO
-        # ('cards', None),  # TODO
+        (block_name, block),
     ]
     page.save()
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
-            id
-            slug
-            title
             ... on PlanRootPage {
               body {
-                ...StreamFieldFragment
+                id
+                blockType
+                field
+                ...Block
               }
             }
           }
         }
-        ''' + STREAMFIELD_FRAGMENT + MULTI_USE_IMAGE_FRAGMENT,
+        fragment Block on StreamFieldInterface {
+          ... on %(block_type)s {
+            %(block_fields)s
+          }
+        }
+        %(extra_fragments)s
+        ''' % {'block_type': block_type, 'block_fields': block_fields, 'extra_fragments': extra_fragments_str},
         variables={
             'plan': plan.identifier,
             'path': '/',
         }
     )
     expected = {
-        'planPage': {
-            'id': str(page.id),
-            'slug': page.slug,
-            'title': page.title,
-            'body': [{
-                'id': page.body[0].id,
-                'blockType': 'FrontPageHeroBlock',
-                'field': 'front_page_hero',
-                'heading': front_page_hero_block['heading'],
-                'image': {
-                    'title': front_page_hero_block['image'].title,
-                    'focalPointX': None,
-                    'focalPointY': None,
-                    'width': front_page_hero_block['image'].width,
-                    'height': front_page_hero_block['image'].height,
-                    'rendition': {
-                        'width': front_page_hero_block['image'].get_rendition('fill-300x200-c50').width,
-                        'height': front_page_hero_block['image'].get_rendition('fill-300x200-c50').height,
-                        'src': ('http://testserver'
-                                + front_page_hero_block['image'].get_rendition('fill-300x200-c50').url),
-                    },
-                },
-                'layout': 'big_image',
-                'lead': str(front_page_hero_block['lead']),
-            }, {
-                'id': page.body[1].id,
-                'blockType': 'CategoryListBlock',
-                'field': 'category_list',
-                'heading': category_list_block['heading'],
-                'lead': str(category_list_block['lead']),
-                'style': category_list_block['style'],
-            }],
-        }
+        'id': page.body[0].id,
+        'blockType': block_type,
+        'field': block_name,
+        **expected
     }
-    assert data == expected
+    assert data == {'planPage': {'body': [expected]}}
+
+
+@pytest.mark.django_db
+def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_block):
+    #     # ('indicator_group', None),  # TODO
+    #     # ('indicator_highlights', None),  # TODO
+    #     # ('indicator_showcase', None),  # TODO
+    #     # ('action_highlights', None),  # TODO
+    #     # ('cards', None),  # TODO
+    assert_plan_page_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_name='front_page_hero',
+        block=front_page_hero_block,
+        block_fields='''
+            id
+            layout
+            image {
+              ...MultiUseImageFragment
+            }
+            heading
+            lead
+        ''',
+        extra_fragments=[MULTI_USE_IMAGE_FRAGMENT],
+        expected={
+            'heading': front_page_hero_block['heading'],
+            'image': {
+                'title': front_page_hero_block['image'].title,
+                'focalPointX': None,
+                'focalPointY': None,
+                'width': front_page_hero_block['image'].width,
+                'height': front_page_hero_block['image'].height,
+                'rendition': {
+                    'width': front_page_hero_block['image'].get_rendition('fill-300x200-c50').width,
+                    'height': front_page_hero_block['image'].get_rendition('fill-300x200-c50').height,
+                    'src': ('http://testserver'
+                            + front_page_hero_block['image'].get_rendition('fill-300x200-c50').url),
+                },
+            },
+            'layout': 'big_image',
+            'lead': str(front_page_hero_block['lead']),
+        }
+    )
+
+
+@pytest.mark.django_db
+def test_category_list_block(graphql_client_query_data, plan, category_list_block):
+    assert_plan_page_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_name='category_list',
+        block=category_list_block,
+        block_fields='''
+            heading
+            lead
+            style
+        ''',
+        expected={
+            'heading': category_list_block['heading'],
+            'lead': str(category_list_block['lead']),
+            'style': category_list_block['style'],
+        }
+    )
 
 
 @pytest.mark.django_db

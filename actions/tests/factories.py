@@ -164,5 +164,5 @@ class CategoryListBlockFactory(StructBlockFactory):
         model = actions.blocks.CategoryListBlock
 
     heading = "Category list heading"
-    lead = RichText("<p>Front page hero lead</p>")
+    lead = RichText("<p>Category list lead</p>")
     style = 'cards'
