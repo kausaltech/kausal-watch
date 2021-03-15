@@ -2,13 +2,13 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLString
-from wagtail.core.blocks import ChoiceBlock, ChooserBlock, StaticBlock, StructBlock
+from wagtail.core import blocks
 
 from .chooser import CategoryChooser
 from .models import Category
 
 
-class CategoryChooserBlock(ChooserBlock):
+class CategoryChooserBlock(blocks.ChooserBlock):
     @cached_property
     def target_model(self):
         return Category
@@ -19,12 +19,12 @@ class CategoryChooserBlock(ChooserBlock):
 
 
 @register_streamfield_block
-class ActionHighlightsBlock(StaticBlock):
+class ActionHighlightsBlock(blocks.StaticBlock):
     pass
 
 
 @register_streamfield_block
-class ActionListBlock(StructBlock):
+class ActionListBlock(blocks.StructBlock):
     category_filter = CategoryChooserBlock(label=_('Filter on category'))
 
     graphql_fields = [
@@ -33,12 +33,16 @@ class ActionListBlock(StructBlock):
 
 
 @register_streamfield_block
-class CategoryListBlock(StructBlock):
-    style = ChoiceBlock(choices=[
+class CategoryListBlock(blocks.StructBlock):
+    heading = blocks.CharBlock(classname='full title', label=_('Heading'))
+    lead = blocks.RichTextBlock(label=_('Lead'))
+    style = blocks.ChoiceBlock(choices=[
         ('cards', _('Cards')),
         ('table', _('Table')),
     ])
 
     graphql_fields = [
+        GraphQLString('heading'),
+        GraphQLString('lead'),
         GraphQLString('style'),
     ]

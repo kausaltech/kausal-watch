@@ -1,7 +1,10 @@
 import datetime
 from factory import RelatedFactory, Sequence, SubFactory
 from factory.django import DjangoModelFactory
+from wagtail.core.rich_text import RichText
+from wagtail_factories import StructBlockFactory
 
+import actions
 from actions.models import CategoryTypeMetadata
 from people.tests.factories import PersonFactory
 from content.tests.factories import SiteGeneralContentFactory
@@ -153,3 +156,12 @@ class ActionContactFactory(DjangoModelFactory):
 
     action = SubFactory(ActionFactory)
     person = SubFactory(PersonFactory)
+
+
+class CategoryListBlockFactory(StructBlockFactory):
+    class Meta:
+        model = actions.blocks.CategoryListBlock
+
+    heading = "Category list heading"
+    lead = RichText("<p>Front page hero lead</p>")
+    style = 'cards'

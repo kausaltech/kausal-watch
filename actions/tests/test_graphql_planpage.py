@@ -92,6 +92,8 @@ STREAMFIELD_FRAGMENT = '''
         }
       }
       ... on CategoryListBlock {
+        heading
+        lead
         style
       }
       ... on FrontPageHeroBlock {
@@ -175,11 +177,11 @@ STREAMFIELD_FRAGMENT = '''
 
 
 @pytest.mark.django_db
-def test_plan_root_page(graphql_client_query_data, plan, front_page_hero_block):
+def test_plan_root_page(graphql_client_query_data, plan, front_page_hero_block, category_list_block):
     page = plan.root_page
     page.body = [
         ('front_page_hero', front_page_hero_block),
-        # ('category_list', None),  # TODO
+        ('category_list', category_list_block),
         # ('indicator_group', None),  # TODO
         # ('indicator_highlights', None),  # TODO
         # ('indicator_showcase', None),  # TODO
@@ -232,6 +234,13 @@ def test_plan_root_page(graphql_client_query_data, plan, front_page_hero_block):
                 },
                 'layout': 'big_image',
                 'lead': str(front_page_hero_block['lead']),
+            }, {
+                'id': page.body[1].id,
+                'blockType': 'CategoryListBlock',
+                'field': 'category_list',
+                'heading': category_list_block['heading'],
+                'lead': str(category_list_block['lead']),
+                'style': category_list_block['style'],
             }],
         }
     }
