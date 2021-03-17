@@ -30,8 +30,21 @@ register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.IndicatorFactory)
 register(indicators_factories.IndicatorBlockFactory)
+register(indicators_factories.IndicatorShowcaseBlockFactory)
 register(indicators_factories.UnitFactory)
+register(pages_factories.CardBlockFactory)
+# NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
+# ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
+# https://github.com/wagtail/wagtail-factories/issues/40
+# register(pages_factories.CardListBlockFactory)
 register(pages_factories.FrontPageHeroBlockFactory)
+register(pages_factories.PageChooserBlockFactory, parent=LazyFixture(lambda plan: plan.root_page))
+register(pages_factories.PageLinkBlockFactory)
+# NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
+# ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
+# https://github.com/wagtail/wagtail-factories/issues/40
+# register(pages_factories.QuestionAnswerBlockFactory)
+register(pages_factories.QuestionBlockFactory)
 register(pages_factories.RichTextBlockFactory)
 register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan: plan.root_page))
 register(people_factories.PersonFactory)

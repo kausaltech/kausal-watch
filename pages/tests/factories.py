@@ -2,11 +2,19 @@ from factory import Factory, SubFactory
 from wagtail_factories import (
     CharBlockFactory, ImageChooserBlockFactory, ListBlockFactory, PageFactory, StreamFieldFactory, StructBlockFactory
 )
-from wagtail.core.blocks import RichTextBlock
+from wagtail_factories.blocks import BlockFactory
+from wagtail.core.blocks import PageChooserBlock, RichTextBlock
 from wagtail.core.rich_text import RichText
 
 import pages
 from images.tests.factories import AplansImageFactory
+
+
+class PageChooserBlockFactory(BlockFactory):
+    class Meta:
+        model = PageChooserBlock
+
+    value = SubFactory('pages.tests.factories.StaticPageFactory')
 
 
 # wagtail-factories doesn't support rich text blocks.
@@ -47,8 +55,16 @@ class FrontPageHeroBlockFactory(StructBlockFactory):
 
     layout = 'big_image'
     image = SubFactory(ImageChooserBlockFactory)
-    heading = "Front page hero heading"
-    lead = RichText("<p>Front page hero lead</p>")
+    heading = "Front page hero block heading"
+    lead = RichText("<p>Front page hero block lead</p>")
+
+
+class PageLinkBlockFactory(StructBlockFactory):
+    class Meta:
+        model = pages.blocks.PageLinkBlock
+
+    text = "Page link block text"
+    page = SubFactory(PageChooserBlockFactory)
 
 
 class StaticPageFactory(PageFactory):
@@ -77,3 +93,22 @@ class StaticPageFactory(PageFactory):
     body__1__paragraph__value = "<p>Test paragraph</p>"
     body__2__qa_section__heading = "QA section heading"
     body__2__qa_section__questions__0 = None
+
+
+class CardBlockFactory(StructBlockFactory):
+    class Meta:
+        model = pages.blocks.CardBlock
+
+    image = SubFactory(ImageChooserBlockFactory)
+    heading = "Card block heading"
+    content = "Card block content"
+    link = 'http://example.com'
+
+
+class CardListBlockFactory(StructBlockFactory):
+    class Meta:
+        model = pages.blocks.CardListBlock
+
+    heading = "Card list block heading"
+    lead = "<p>Card list block lead</p>"
+    cards = ListBlockFactory(CardBlockFactory)
