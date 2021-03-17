@@ -248,6 +248,12 @@ class Person(index.Indexed, ClusterableModel):
             self.update_focal_point()
             if self.image_cropping != old_cropping:
                 super().save(update_fields=['image_cropping'])
+
+        user = self.create_corresponding_user()
+        if self.user != user:
+            self.user = user
+            super().save(update_fields=['user'])
+
         return ret
 
     def get_admin_client(self):
@@ -306,19 +312,25 @@ class Person(index.Indexed, ClusterableModel):
         return out
 
     def get_corresponding_user(self):
+        if self.user:
+            return self.user
+
         return User.objects.filter(email__iexact=self.email).first()
 
     def create_corresponding_user(self):
         user = self.get_corresponding_user()
+        email = self.email.lower()
         if not user:
             user = User(
-                email=self.email.lower(),
+                email=email,
                 uuid=uuid.uuid4(),
             )
             user.set_password(str(uuid.uuid4()))
 
         user.first_name = self.first_name
         user.last_name = self.last_name
+        if user.email != email:
+            user.email = email
         user.save()
         return user
 
