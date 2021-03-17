@@ -439,6 +439,7 @@ class PlanAdmin(AplansModelAdmin):
         AutocompletePanel('general_admins'),
         ImageChooserPanel('image'),
         FieldPanel('show_admin_link'),
+        FieldPanel('contact_persons_private'),
     ]
 
     action_status_panels = [

@@ -1,3 +1,4 @@
+from django.db.models.query import Prefetch
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import (
@@ -275,6 +276,7 @@ class ActionNode(DjangoNode):
 
     name = graphene.String(hyphenated=graphene.Boolean())
     categories = graphene.List(CategoryNode, category_type=graphene.ID())
+    contact_persons = graphene.List('actions.schema.ActionContactPersonNode')
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
@@ -318,6 +320,15 @@ class ActionNode(DjangoNode):
         if category_type is not None:
             qs = qs.filter(type__identifier=category_type)
         return qs
+
+    @gql_optimizer.resolver_hints(
+        model_field='contact_persons',
+    )
+    def resolve_contact_persons(self, info):
+        plan = get_plan_from_context(info)
+        if plan.contact_persons_private:
+            return []
+        return self.contact_persons.all()
 
 
 class ActionScheduleNode(DjangoNode):

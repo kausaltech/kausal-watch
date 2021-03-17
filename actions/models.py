@@ -123,6 +123,10 @@ class Plan(ClusterableModel):
     )
     uses_wagtail = models.BooleanField(default=True)
     statuses_updated_manually = models.BooleanField(default=False)
+    contact_persons_private = models.BooleanField(
+        default=False, verbose_name=_('Contact persons private'),
+        help_text=_('Set if the contact persons should not be visible in the public UI')
+    )
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'

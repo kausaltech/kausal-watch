@@ -74,7 +74,13 @@ def set_active_plan(info, plan):
     info.context._graphql_active_plan = plan
 
 
-def get_plan_from_context(info, plan_identifier):
+def get_plan_from_context(info, plan_identifier=None):
+    if plan_identifier is None:
+        plan = getattr(info.context, '_graphql_active_plan')
+        if not plan:
+            raise Exception('No plan in context')
+        return plan
+
     cache = getattr(info.context, '_plan_cache', None)
     if cache is None:
         cache = info.context._plan_cache = {}
