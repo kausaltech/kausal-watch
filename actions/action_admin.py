@@ -322,7 +322,7 @@ class ActionIndexView(ListControlsIndexView):
                 ('1', gettext('Show only own actions')),
                 (None, gettext('Show all actions')),
             ],
-            apply_to_queryset=lambda queryset, value: queryset.modifiable_by(request.user)
+            apply_to_queryset=lambda queryset, value: queryset.modifiable_by(self.request.user)
         )
 
         updated_filter = RadioFilter(
