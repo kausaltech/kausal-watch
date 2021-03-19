@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-10 20:30+0200\n"
+"POT-Creation-Date: 2021-03-19 10:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,82 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: actions/action_admin.py
+msgid "Responsible organization"
+msgstr ""
+
+#: actions/action_admin.py actions/admin.py
+msgid "Contact person"
+msgstr ""
+
+#: actions/action_admin.py templates/aplans_admin/own_actions_panel.html
+msgid "Own actions"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Show only own actions"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Show all actions"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Filter actions"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Apply filters"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Reset all"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Search"
+msgstr ""
+
+#: actions/action_admin.py actions/apps.py actions/wagtail_admin.py
+msgid "Actions"
+msgstr ""
+
+#: actions/action_admin.py people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Name"
+msgstr ""
+
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py
+msgid "Basic information"
+msgstr ""
+
+#: actions/action_admin.py indicators/blocks.py
+msgid "Progress"
+msgstr ""
+
+#: actions/action_admin.py indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Responsible parties"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Tasks"
+msgstr ""
+
+#: actions/action_admin.py actions/category_admin.py indicators/admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Internal information"
+msgstr ""
 
 #: actions/admin.py
 msgid "Non-modifiable actions"
@@ -55,10 +131,6 @@ msgid "Responsible organizations"
 msgstr ""
 
 #: actions/admin.py
-msgid "Contact person"
-msgstr ""
-
-#: actions/admin.py
 msgid "Completion"
 msgstr ""
 
@@ -74,12 +146,16 @@ msgstr ""
 msgid "action"
 msgstr ""
 
-#: actions/apps.py actions/wagtail_admin.py
-msgid "Actions"
-msgstr ""
-
 #: actions/blocks.py
 msgid "Filter on category"
+msgstr ""
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Heading"
+msgstr ""
+
+#: actions/blocks.py pages/blocks.py
+msgid "Lead"
 msgstr ""
 
 #: actions/blocks.py
@@ -100,16 +176,6 @@ msgstr ""
 
 #: actions/category_admin.py
 msgid "Category metadata"
-msgstr ""
-
-#: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
-#: indicators/wagtail_admin.py
-msgid "Categories"
-msgstr ""
-
-#: actions/category_admin.py actions/wagtail_admin.py
-#: indicators/wagtail_admin.py
-msgid "Basic information"
 msgstr ""
 
 #: actions/chooser.py
@@ -175,6 +241,14 @@ msgid "Should custom images for individual actions be allowed"
 msgstr ""
 
 #: actions/models.py
+msgid "show admin link"
+msgstr ""
+
+#: actions/models.py
+msgid "Should the public website contain a link to the admin login?"
+msgstr ""
+
+#: actions/models.py
 msgid "main organization for the plan"
 msgstr ""
 
@@ -188,6 +262,14 @@ msgstr ""
 
 #: actions/models.py
 msgid "URL to accessibility statement"
+msgstr ""
+
+#: actions/models.py
+msgid "Contact persons private"
+msgstr ""
+
+#: actions/models.py
+msgid "Set if the contact persons should not be visible in the public UI"
 msgstr ""
 
 #: actions/models.py content/models.py indicators/models.py
@@ -681,32 +763,6 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 msgstr[1] ""
-
-#: actions/wagtail_admin.py people/templates/people/chooser_results.html
-#: templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Name"
-msgstr ""
-
-#: actions/wagtail_admin.py indicators/blocks.py
-msgid "Progress"
-msgstr ""
-
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-msgid "Contact persons"
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgid "Responsible parties"
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgid "Tasks"
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "late"
@@ -1564,14 +1620,6 @@ msgstr ""
 msgid "Small image"
 msgstr ""
 
-#: pages/blocks.py pages/models.py
-msgid "Heading"
-msgstr ""
-
-#: pages/blocks.py
-msgid "Lead"
-msgstr ""
-
 #: pages/models.py
 msgid "show in footer"
 msgstr ""
@@ -1799,10 +1847,6 @@ msgstr ""
 
 #: templates/aplans_admin/index.html
 msgid "Unknown content"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Own actions"
 msgstr ""
 
 #: templates/aplans_admin/own_actions_panel.html

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-10 20:30+0200\n"
+"POT-Creation-Date: 2021-03-19 10:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,82 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: actions/action_admin.py
+msgid "Responsible organization"
+msgstr "Vastuuorganisaatio"
+
+#: actions/action_admin.py actions/admin.py
+msgid "Contact person"
+msgstr "Yhteyshenkilö"
+
+#: actions/action_admin.py templates/aplans_admin/own_actions_panel.html
+msgid "Own actions"
+msgstr "Omat toimenpiteet"
+
+#: actions/action_admin.py
+msgid "Show only own actions"
+msgstr "Näytä vain omat toimenpiteet"
+
+#: actions/action_admin.py
+msgid "Show all actions"
+msgstr "Näytä kaikki toimenpiteet"
+
+#: actions/action_admin.py
+msgid "Filter actions"
+msgstr "Suodata toimenpiteitä"
+
+#: actions/action_admin.py
+msgid "Apply filters"
+msgstr "Toteuta suodatukset"
+
+#: actions/action_admin.py
+msgid "Reset all"
+msgstr "Nollaa suotimet"
+
+#: actions/action_admin.py
+msgid "Search"
+msgstr "Haku"
+
+#: actions/action_admin.py actions/apps.py actions/wagtail_admin.py
+msgid "Actions"
+msgstr "Toimenpiteet"
+
+#: actions/action_admin.py people/templates/people/chooser_results.html
+#: templates/aplans_admin/own_actions_panel.html
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Name"
+msgstr "Nimi"
+
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py
+msgid "Basic information"
+msgstr "Perustiedot"
+
+#: actions/action_admin.py indicators/blocks.py
+msgid "Progress"
+msgstr "Eteneminen"
+
+#: actions/action_admin.py indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Yhteyshenkilöt"
+
+#: actions/action_admin.py
+msgid "Responsible parties"
+msgstr "Toimenpiteen vastuutahot"
+
+#: actions/action_admin.py
+msgid "Tasks"
+msgstr "Tehtävät"
+
+#: actions/action_admin.py actions/category_admin.py indicators/admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Luokat"
+
+#: actions/action_admin.py
+msgid "Internal information"
+msgstr "Sisäiset tiedot"
 
 #: actions/admin.py
 msgid "Non-modifiable actions"
@@ -55,10 +131,6 @@ msgid "Responsible organizations"
 msgstr "Vastuuorganisaatiot"
 
 #: actions/admin.py
-msgid "Contact person"
-msgstr "Yhteyshenkilö"
-
-#: actions/admin.py
 msgid "Completion"
 msgstr "Toteutuminen"
 
@@ -74,13 +146,17 @@ msgstr "Aikataulu ja päätöstaso"
 msgid "action"
 msgstr "toimenpide"
 
-#: actions/apps.py actions/wagtail_admin.py
-msgid "Actions"
-msgstr "Toimenpiteet"
-
 #: actions/blocks.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Heading"
+msgstr "Otsikko"
+
+#: actions/blocks.py pages/blocks.py
+msgid "Lead"
+msgstr "Johdanto"
 
 #: actions/blocks.py
 msgid "Cards"
@@ -101,16 +177,6 @@ msgstr "Toimenpiteiden ja mittareiden luokittelu"
 #: actions/category_admin.py
 msgid "Category metadata"
 msgstr "Luokan metatieto"
-
-#: actions/category_admin.py actions/wagtail_admin.py indicators/admin.py
-#: indicators/wagtail_admin.py
-msgid "Categories"
-msgstr "Luokat"
-
-#: actions/category_admin.py actions/wagtail_admin.py
-#: indicators/wagtail_admin.py
-msgid "Basic information"
-msgstr "Perustiedot"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -175,6 +241,14 @@ msgid "Should custom images for individual actions be allowed"
 msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
 
 #: actions/models.py
+msgid "show admin link"
+msgstr ""
+
+#: actions/models.py
+msgid "Should the public website contain a link to the admin login?"
+msgstr ""
+
+#: actions/models.py
 msgid "main organization for the plan"
 msgstr "toimenpideohjelman pääorganisaatio"
 
@@ -189,6 +263,14 @@ msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvä
 #: actions/models.py
 msgid "URL to accessibility statement"
 msgstr "Linkki saavutettavuusselosteeseen"
+
+#: actions/models.py
+msgid "Contact persons private"
+msgstr "Yhteyshenkilöt salaisia"
+
+#: actions/models.py
+msgid "Set if the contact persons should not be visible in the public UI"
+msgstr "Aseta jos yhteyshenkilöitä ei näytetä julkisessa käyttöliittymässä"
 
 #: actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
@@ -687,32 +769,6 @@ msgstr[1] ""
 "\n"
 "        <span>%(total)s</span> toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
-
-#: actions/wagtail_admin.py people/templates/people/chooser_results.html
-#: templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Name"
-msgstr "Nimi"
-
-#: actions/wagtail_admin.py indicators/blocks.py
-msgid "Progress"
-msgstr "Eteneminen"
-
-#: actions/wagtail_admin.py indicators/wagtail_admin.py
-msgid "Contact persons"
-msgstr "Yhteyshenkilöt"
-
-#: actions/wagtail_admin.py
-msgid "Responsible parties"
-msgstr "Toimenpiteen vastuutahot"
-
-#: actions/wagtail_admin.py
-msgid "Tasks"
-msgstr "Tehtävät"
-
-#: actions/wagtail_admin.py
-msgid "Internal information"
-msgstr "Sisäiset tiedot"
 
 #: actions/wagtail_admin.py
 msgid "late"
@@ -1570,14 +1626,6 @@ msgstr "Iso kuva"
 msgid "Small image"
 msgstr "Pieni kuva"
 
-#: pages/blocks.py pages/models.py
-msgid "Heading"
-msgstr "Otsikko"
-
-#: pages/blocks.py
-msgid "Lead"
-msgstr "Johdanto"
-
 #: pages/models.py
 msgid "show in footer"
 msgstr "näkyy sivun footerissa"
@@ -1806,10 +1854,6 @@ msgstr "Ei löydy"
 #: templates/aplans_admin/index.html
 msgid "Unknown content"
 msgstr "Tuntematon sisältö"
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Own actions"
-msgstr "Omat toimenpiteet"
 
 #: templates/aplans_admin/own_actions_panel.html
 msgid "Identifier"

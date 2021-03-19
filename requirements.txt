@@ -343,6 +343,8 @@ urllib3==1.26.2
     # via
     #   requests
     #   sentry-sdk
+wagtail-admin-list-controls==0.1.7
+    # via -r requirements.in
 wagtail-autocomplete==0.6
     # via -r requirements.in
 wagtail-condensedinlinepanel==0.5.3

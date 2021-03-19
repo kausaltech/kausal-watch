@@ -111,6 +111,7 @@ INSTALLED_APPS = [
     'condensedinlinepanel',
     'generic_chooser',
     'wagtailorderable',
+    'admin_list_controls',
 
     'modelcluster',
     'taggit',
