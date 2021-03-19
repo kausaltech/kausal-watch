@@ -1,11 +1,13 @@
+from datetime import timedelta
 import json
+import humanize
 
 from django.db.models.query_utils import Q
 from people.models import Person
 from dal import autocomplete
 from django import forms
 from django.utils import timezone
-from django.utils.translation import gettext, gettext_lazy as _
+from django.utils.translation import get_language, gettext, gettext_lazy as _
 from django_orghierarchy.models import Organization
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
@@ -15,9 +17,9 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_list_controls.views import ListControlsIndexView
-from admin_list_controls.components import Button, Icon, Panel, Columns, Summary
-from admin_list_controls.actions import CollapsePanel, SubmitForm, TogglePanel
-from admin_list_controls.filters import RadioFilter, TextFilter, ChoiceFilter
+from admin_list_controls.components import Button, Icon, Panel, Columns, Spacer, Summary
+from admin_list_controls.actions import SubmitForm, TogglePanel
+from admin_list_controls.filters import RadioFilter, ChoiceFilter
 
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
@@ -25,10 +27,6 @@ from admin_site.wagtail import (
 )
 from people.chooser import PersonChooser
 
-from .admin import (
-    ImpactFilter, MergedActionsFilter, ModifiableActionsFilter, ResponsibleOrganizationFilter,
-    ContactPersonFilter
-)
 from .models import Action, ActionTask
 
 
@@ -272,6 +270,25 @@ class ActionIndexView(ListControlsIndexView):
             ))
         return ct_filters
 
+    def filter_last_updated(self, queryset, value):
+        if not value:
+            return queryset
+
+        start = end = None
+        if value.endswith('-'):
+            start = value.strip('-')
+        elif value.startswith('-'):
+            end = value.strip('-')
+        else:
+            start, end = value.split('-')
+
+        now = timezone.now()
+        if start:
+            queryset = queryset.filter(updated_at__lte=now - timedelta(days=int(start)))
+        if end:
+            queryset = queryset.filter(updated_at__gte=now - timedelta(days=int(end)))
+        return queryset
+
     def build_list_controls(self):
         user = self.request.user
         plan = user.get_active_admin_plan()
@@ -305,23 +322,35 @@ class ActionIndexView(ListControlsIndexView):
                 ('1', gettext('Show only own actions')),
                 (None, gettext('Show all actions')),
             ],
+            apply_to_queryset=lambda queryset, value: queryset.modifiable_by(request.user)
         )
 
-        panel_filters = [org_filter, person_filter, *ct_filters, own_actions]
-
-        filters_active = any(self.request.GET.get(f.name) for f in panel_filters)
+        updated_filter = RadioFilter(
+            name='last_updated',
+            label=gettext('By last updated'),
+            choices=[
+                (None, gettext('No filtering')),
+                ('-7', gettext('In the last 7 days')),
+                ('7-30', gettext('7–30 days ago')),
+                ('30-120', gettext('1–3 months ago')),
+                ('120-', gettext('More than 3 months ago')),
+            ],
+            apply_to_queryset=self.filter_last_updated,
+        )
 
         return [
-            Button(action=[
-                TogglePanel(ref='filter_panel'),
-            ])(
-                Icon('icon icon-search'),
-                gettext('Filter actions'),
+            Columns()(
+                Button(action=[
+                    TogglePanel(ref='filter_panel'),
+                ])(Icon('icon icon-search'), gettext('Filter actions')),
             ),
             Panel(ref='filter_panel', collapsed=True)(
                 Columns()(org_filter, person_filter),
                 Columns()(*ct_filters),
+                Spacer(),
                 Columns()(own_actions),
+                Spacer(),
+                updated_filter,
                 Button(action=SubmitForm())(
                     Icon('icon icon-tick'),
                     gettext("Apply filters"),
@@ -394,7 +423,21 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         getHeader(form);
     '''
 
+    def updated_at_delta(self, obj):
+        now = timezone.now()
+        if not obj.updated_at:
+            return None
+        delta = now - obj.updated_at
+        return humanize.naturaltime(delta)
+    updated_at_delta.short_description = _('Last updated')
+
     def get_list_display(self, request):
+        cached_list_display = getattr(request, '_action_admin_list_display', None)
+        if cached_list_display:
+            return cached_list_display
+
+        humanize.activate(get_language())
+
         def name_link(obj):
             from django.utils.html import format_html
 
@@ -405,12 +448,26 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 return obj.name
         name_link.short_description = _('Name')
         self.name_link = name_link
+
         list_display = ['identifier', 'name_link']
         plan = request.user.get_active_admin_plan()
+
+        ct = plan.category_types.filter(identifier='action').first()
+        if ct:
+            def action_category(obj):
+                return '; '.join([str(cat) for cat in obj.categories.all() if cat.type_id == ct.id])
+            action_category.short_description = ct.name
+            self.action_category = action_category
+            list_display.append('action_category')
+
+        list_display.append('updated_at_delta')
+
         if not plan.actions_locked and request.user.is_general_admin_for_plan(plan):
             list_display.insert(0, 'index_order')
 
-        return tuple(list_display)
+        out = tuple(list_display)
+        request._action_admin_list_display = out
+        return out
 
     def get_task_header_formatter(self):
         states = {key: str(label) for key, label in list(ActionTask.STATES)}
@@ -486,7 +543,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         if not request.user.is_general_admin_for_plan(plan):
             qs = qs.unmerged()
-        return qs.filter(plan=plan)
-
+        qs = qs.filter(plan=plan)
+        qs = qs.select_related('plan').prefetch_related('categories')
+        return qs
 
 modeladmin_register(ActionAdmin)

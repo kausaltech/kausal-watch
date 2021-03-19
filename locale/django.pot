@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-19 10:03+0200\n"
+"POT-Creation-Date: 2021-03-19 12:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,6 +39,30 @@ msgid "Show all actions"
 msgstr ""
 
 #: actions/action_admin.py
+msgid "By last updated"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "No filtering"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "In the last 7 days"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "7–30 days ago"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "1–3 months ago"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "More than 3 months ago"
+msgstr ""
+
+#: actions/action_admin.py
 msgid "Filter actions"
 msgstr ""
 
@@ -56,6 +80,10 @@ msgstr ""
 
 #: actions/action_admin.py actions/apps.py actions/wagtail_admin.py
 msgid "Actions"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Last updated"
 msgstr ""
 
 #: actions/action_admin.py people/templates/people/chooser_results.html
