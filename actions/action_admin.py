@@ -342,7 +342,7 @@ class ActionIndexView(ListControlsIndexView):
             Columns()(
                 Button(action=[
                     TogglePanel(ref='filter_panel'),
-                ])(Icon('icon icon-search'), gettext('Filter actions')),
+                ])(Icon('icon icon-list-ul'), gettext('Filter actions')),
             ),
             Panel(ref='filter_panel', collapsed=True)(
                 Columns()(org_filter, person_filter),
