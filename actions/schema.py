@@ -92,7 +92,10 @@ class PlanNode(DjangoNode):
     def resolve_admin_url(self, info):
         if not self.show_admin_link:
             return None
-        return info.context.build_absolute_uri(reverse('wagtailadmin_home'))
+        client_plan = self.clients.first()
+        if client_plan is None:
+            return None
+        return client_plan.client.get_admin_url()
 
     @gql_optimizer.resolver_hints(
         model_field='actions',

@@ -5,6 +5,7 @@ from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
 
 from actions.tests import factories as actions_factories
+# from admin_site.tests import factories as admin_site_factories
 from content.tests import factories as content_factories
 from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
@@ -26,6 +27,12 @@ register(actions_factories.CategoryTypeMetadataFactory)
 register(actions_factories.CategoryTypeMetadataChoiceFactory)
 register(actions_factories.OrganizationFactory)
 register(actions_factories.PlanFactory)
+# We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
+# because `client` is already taken by dango.test.Client and the following problem appears when we register the
+# fixture with a different name:
+# https://github.com/pytest-dev/pytest-factoryboy/issues/91
+# register(admin_site_factories.ClientFactory, 'admin_site_client')
+# register(admin_site_factories.ClientPlanFactory)
 register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.IndicatorFactory)

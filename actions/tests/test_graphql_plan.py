@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from actions.models import CategoryTypeMetadata
 from pages.models import StaticPage
+from admin_site.tests.factories import ClientPlanFactory
 
 
 def expected_menu_item_for_page(page):
@@ -115,6 +116,7 @@ def test_plan_exists(graphql_client_query_data, plan):
 @pytest.mark.django_db
 @pytest.mark.parametrize('plan__show_admin_link', [True, False])
 def test_plan_admin_url(graphql_client_query_data, plan):
+    client_plan = ClientPlanFactory(plan=plan)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -126,8 +128,8 @@ def test_plan_admin_url(graphql_client_query_data, plan):
         variables=dict(plan=plan.identifier)
     )
     if plan.show_admin_link:
-        admin_path = reverse('wagtailadmin_home')
-        assert data == {'plan': {'adminUrl': f'http://testserver{admin_path}'}}
+        admin_url = f'https://{client_plan.client.admin_hostnames.first().hostname}'
+        assert data == {'plan': {'adminUrl': admin_url}}
     else:
         assert data == {'plan': {'adminUrl': None}}
 
