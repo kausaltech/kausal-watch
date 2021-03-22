@@ -12,6 +12,44 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from .models import Client
 
 
+class CategoryMenuItem(MenuItem):
+    def __init__(self, category_type, **kwargs):
+        self.category_type = category_type
+        self.base_url = reverse('actions_category_modeladmin_index')
+        url = f'{self.base_url}?category_type={category_type.id}'
+        label = category_type.name
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        category_type = request.GET.get('category_type')
+        return request.path.startswith(self.base_url) and category_type == str(self.category_type.pk)
+
+
+class CategoryMenu(Menu):
+    def menu_items_for_request(self, request):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        items = []
+        for category_type in plan.category_types.all():
+            item = CategoryMenuItem(category_type)
+            items.append(item)
+        return items
+
+
+category_menu = CategoryMenu(None)
+
+
+@hooks.register('register_admin_menu_item')
+def register_category_menu():
+    return SubmenuMenuItem(
+        _('Categories'),
+        category_menu,
+        classnames='icon icon-folder-open-inverse',
+        order=100
+    )
+
+
 class PlanChooserMenuItem(SubmenuMenuItem):
     def is_shown(self, request):
         if len(self.menu.menu_items_for_request(request)) > 1:

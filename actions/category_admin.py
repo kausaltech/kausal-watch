@@ -1,30 +1,41 @@
-from django.utils.translation import gettext_lazy as _
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
-from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
-from wagtail.core.fields import RichTextField
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.core.rich_text import RichText
+from wagtail.contrib.modeladmin.helpers import ButtonHelper
+from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
+from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.views import DeleteView
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from admin_site.wagtail import (
-    AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel, AplansTabbedInterface
-)
-
 from .admin import CategoryTypeFilter
 from .models import Category, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata
+from admin_site.wagtail import (
+    AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
+    AplansTabbedInterface
+)
 
 
+def _append_category_type_query_parameter(request, url):
+    category_type = request.GET.get('category_type')
+    if category_type:
+        assert '?' not in url
+        return f'{url}?category_type={category_type}'
+    return url
+
+
+@modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
     menu_icon = 'fa-briefcase'
     menu_label = _('Category types')
-    menu_order = 1
+    menu_order = 1100
     list_display = ('name',)
     search_fields = ('name',)
+    add_to_settings_menu = True
 
     panels = [
         FieldPanel('name'),
@@ -57,10 +68,13 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return qs.filter(plan=plan)
 
 
+@modeladmin_register
 class CategoryTypeMetadataAdmin(OrderableMixin, AplansModelAdmin):
     model = CategoryTypeMetadata
     menu_label = _('Category metadata')
+    menu_order = 1200
     list_display = ('name', 'type')
+    add_to_settings_menu = True
 
     panels = [
         PlanFilteredFieldPanel('type'),
@@ -146,21 +160,114 @@ class CategoryEditHandler(AplansTabbedInterface):
         return super().get_form_class()
 
 
+class CategoryTypeQueryParameterMixin:
+    @property
+    def index_url(self):
+        return _append_category_type_query_parameter(self.request, super().index_url)
+
+    @property
+    def create_url(self):
+        return _append_category_type_query_parameter(self.request, super().create_url)
+
+    @property
+    def edit_url(self):
+        return _append_category_type_query_parameter(self.request, super().edit_url)
+
+    @property
+    def delete_url(self):
+        return _append_category_type_query_parameter(self.request, super().delete_url)
+
+
+class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
+    def get_instance(self):
+        """Create a category instance and set its category type to the one given in the GET or POST data."""
+        instance = super().get_instance()
+        category_type = self.request.GET.get('category_type')
+        if category_type and not instance.pk:
+            assert not hasattr(instance, 'type')
+            instance.type = CategoryType.objects.get(pk=int(category_type))
+        return instance
+
+
+class CategoryEditView(CategoryTypeQueryParameterMixin, AplansEditView):
+    pass
+
+
+class CategoryDeleteView(CategoryTypeQueryParameterMixin, DeleteView):
+    pass
+
+
+class CategoryAdminButtonHelper(ButtonHelper):
+    def add_button(self, *args, **kwargs):
+        """
+        Only show "add" button if the request contains a category type.
+
+        Set GET parameter category_type to the type for the URL when clicking the button.
+        """
+        if 'category_type' in self.request.GET:
+            data = super().add_button(*args, **kwargs)
+            data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+            return data
+        return None
+
+    def inspect_button(self, *args, **kwargs):
+        data = super().inspect_button(*args, **kwargs)
+        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        return data
+
+    def edit_button(self, *args, **kwargs):
+        data = super().edit_button(*args, **kwargs)
+        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        return data
+
+    def delete_button(self, *args, **kwargs):
+        data = super().delete_button(*args, **kwargs)
+        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        return data
+
+
+class CategoryOfSameTypePanel(PlanFilteredFieldPanel):
+    """Only show categories of the same category type as the current category instance."""
+
+    def on_form_bound(self):
+        super().on_form_bound()
+        field = self.bound_field.field
+        field.queryset = field.queryset.filter(type=self.instance.type)
+
+
+class CategoryAdminMenuItem(ModelAdminMenuItem):
+    def is_shown(self, request):
+        # Hide it because we will have menu items for listing categories of specific types.
+        # Note that we need to register CategoryAdmin nonetheless, otherwise the URLs wouldn't be set up.
+        return False
+
+
+@modeladmin_register
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
+    menu_order = 1300
     list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
+    add_to_settings_menu = True
 
     panels = [
-        PlanFilteredFieldPanel('type'),
-        PlanFilteredFieldPanel('parent'),
+        CategoryOfSameTypePanel('parent'),
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('short_description'),
         ImageChooserPanel('image'),
         FieldPanel('color'),
     ]
+
+    create_view_class = CategoryCreateView
+    edit_view_class = CategoryEditView
+    # Do we need to create a view for inspect_view?
+    delete_view_class = CategoryDeleteView
+    button_helper_class = CategoryAdminButtonHelper
+
+    def get_menu_item(self, order=None):
+        return CategoryAdminMenuItem(self, order or self.get_menu_order())
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -180,14 +287,5 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         for key, field in metadata_fields.items():
             metadata_panels.append(MetadataFieldPanel(key, heading=field.metadata.name))
 
-        tabs.append(ObjectList(metadata_panels, heading=_('Categories')))
+        tabs.append(ObjectList(metadata_panels, heading=_('Metadata')))
         return CategoryEditHandler(tabs)
-
-
-class CategoryGroup(ModelAdminGroup):
-    menu_order = 400
-    menu_label = _('Categories')
-    items = (CategoryTypeAdmin, CategoryTypeMetadataAdmin, CategoryAdmin)
-
-
-modeladmin_register(CategoryGroup)
