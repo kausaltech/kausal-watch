@@ -159,6 +159,13 @@ class ActionContactFactory(DjangoModelFactory):
     person = SubFactory(PersonFactory)
 
 
+class ActionListBlockFactory(StructBlockFactory):
+    class Meta:
+        model = actions.blocks.ActionListBlock
+
+    category_filter = SubFactory(CategoryFactory)
+
+
 class CategoryListBlockFactory(StructBlockFactory):
     class Meta:
         model = actions.blocks.CategoryListBlock

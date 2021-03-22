@@ -1,5 +1,6 @@
 import pytest
 
+from actions.tests.factories import ActionListBlockFactory
 from pages.models import CategoryPage
 from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFactory
 
@@ -14,30 +15,6 @@ MULTI_USE_IMAGE_FRAGMENT = '''
         width
         height
         src
-      }
-    }
-    '''
-
-# TODO: Remove this after implementing tests for these blocks
-STREAMFIELD_FRAGMENT = '''
-    fragment StreamFieldFragment on StreamFieldInterface {
-      id
-      blockType
-      field
-      ... on TextBlock {
-        value
-      }
-      ... on ChoiceBlock {
-        value
-        choices {
-          key
-          value
-        }
-      }
-      ... on ActionListBlock {
-        categoryFilter {
-          id
-        }
       }
     }
     '''
@@ -545,3 +522,29 @@ def test_categorymetadata_order_as_in_categorytypemetadata(
     expected_metadata[0], expected_metadata[1] = expected_metadata[1], expected_metadata[0]
     data = graphql_client_query_data(query, variables=query_variables)
     assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_page_action_list(graphql_client_query_data, plan, category):
+    category_page = CategoryPage(title='Category', slug='category-slug', category=category)
+    plan.root_page.add_child(instance=category_page)
+    action_list_block = ActionListBlockFactory(category_filter=category)
+    category_page.body = [
+        ('action_list', action_list_block),
+    ]
+    category_page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        page=category_page,
+        block_fields='''
+            categoryFilter {
+              id
+            }
+        ''',
+        expected={
+            'categoryFilter': {
+                'id': str(category.id),
+            },
+        }
+    )
