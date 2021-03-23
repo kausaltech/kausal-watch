@@ -44,7 +44,7 @@ class PlanDomainFactory(DjangoModelFactory):
         model = 'actions.PlanDomain'
 
     plan = SubFactory(PlanFactory, _domain=None)
-    hostname = 'example.org'
+    hostname = Sequence(lambda i: f'plandomain{i}.example.org')
 
 
 class ActionStatusFactory(DjangoModelFactory):

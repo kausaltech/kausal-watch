@@ -25,8 +25,10 @@ register(actions_factories.CategoryListBlockFactory)
 register(actions_factories.CategoryMetadataRichTextFactory)
 register(actions_factories.CategoryTypeMetadataFactory)
 register(actions_factories.CategoryTypeMetadataChoiceFactory)
+register(actions_factories.ImpactGroupFactory)
 register(actions_factories.OrganizationFactory)
 register(actions_factories.PlanFactory)
+register(actions_factories.PlanDomainFactory)
 # We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
 # because `client` is already taken by dango.test.Client and the following problem appears when we register the
 # fixture with a different name:

@@ -188,6 +188,7 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize('plan___category_type', [None])
 def test_category_types(
     graphql_client_query_data, plan, category_type_factory, category_type_metadata_factory,
     category_type_metadata_choice_factory
