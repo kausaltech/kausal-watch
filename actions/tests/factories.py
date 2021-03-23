@@ -33,9 +33,12 @@ class PlanFactory(DjangoModelFactory):
     general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
     show_admin_link = False
 
+    _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
+
+
+class PlanWithRelatedObjectsFactory(PlanFactory):
     _action = RelatedFactory('actions.tests.factories.ActionFactory', factory_related_name='plan')
     _category_type = RelatedFactory('actions.tests.factories.CategoryTypeFactory', factory_related_name='plan')
-    _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
     _impact_group = RelatedFactory('actions.tests.factories.ImpactGroupFactory', factory_related_name='plan')
 
 
@@ -106,7 +109,7 @@ class CategoryTypeMetadataChoiceFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryTypeMetadataChoice'
 
-    metadata = SubFactory(CategoryTypeMetadataFactory)
+    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
     identifier = Sequence(lambda i: f'ctmc{i}')
     name = Sequence(lambda i: f'CategoryTypeMetadataChoice {i}')
 
@@ -120,30 +123,29 @@ class CategoryFactory(DjangoModelFactory):
     name = Sequence(lambda i: f'Category {i}')
 
 
-class CategoryTypeMetadataFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.CategoryTypeMetadata'
-
-    type = SubFactory(CategoryTypeFactory)
-    identifier = Sequence(lambda i: f'category-type-metadata-{i}')
-    name = Sequence(lambda i: f'Category type metadata {i}')
-    format = CategoryTypeMetadata.MetadataFormat.RICH_TEXT
-
-
 class CategoryMetadataRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryMetadataRichText'
 
-    metadata = SubFactory(CategoryTypeMetadataFactory)
+    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.RICH_TEXT)
     category = SubFactory(CategoryFactory)
     text = Sequence(lambda i: f'CategoryMetadataRichText {i}')
+
+
+class CategoryMetadataChoiceFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CategoryMetadataChoice'
+
+    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    category = SubFactory(CategoryFactory)
+    choice = SubFactory(CategoryTypeMetadataChoiceFactory)
 
 
 class ImpactGroupFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ImpactGroup'
 
-    plan = SubFactory(PlanFactory, _impact_group=None)
+    plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'Impact group {i}')
     identifier = Sequence(lambda i: f'impact-group-{i}')
     parent = None
@@ -155,7 +157,7 @@ class ActionFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.Action'
 
-    plan = SubFactory(PlanFactory, _action=None)
+    plan = SubFactory(PlanFactory)
     name = "Test action"
     identifier = 'test-action'
     official_name = name

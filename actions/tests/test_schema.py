@@ -1,14 +1,88 @@
 import pytest
 
-from actions.models import get_default_language
-from actions.tests.factories import PlanFactory
+from actions.models import get_default_language, CategoryTypeMetadata
+from actions.tests.factories import (
+    CategoryFactory, CategoryMetadataChoiceFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
+    CategoryTypeMetadataChoiceFactory, PlanFactory, PlanWithRelatedObjectsFactory
+)
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
+
+
+@pytest.mark.django_db
+def test_plan_domain_node(graphql_client_query_data):
+    plan = PlanFactory()
+    domain = plan.domains.first()
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $hostname: String!) {
+          plan(id: $plan) {
+            domain(hostname: $hostname) {
+              id
+              hostname
+              googleSiteVerificationTag
+              matomoAnalyticsUrl
+            }
+          }
+        }
+        ''',
+        variables=dict(plan=plan.identifier, hostname=domain.hostname)
+    )
+    expected = {
+        'plan': {
+            'domain': {
+                'id': str(domain.id),
+                'hostname': domain.hostname,
+                'googleSiteVerificationTag': domain.google_site_verification_tag,
+                'matomoAnalyticsUrl': domain.matomo_analytics_url,
+            },
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_metadata_choice_node(graphql_client_query_data):
+    plan = PlanFactory()
+    ct = CategoryTypeFactory(plan=plan)
+    ctm = CategoryTypeMetadataFactory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    ctmc = CategoryTypeMetadataChoiceFactory(metadata=ctm)
+    # Create a category with metadata so we can access the CategoryMetadataChoiceNode via planCategories
+    category = CategoryFactory(type=ct)
+    CategoryMetadataChoiceFactory(metadata=ctm, category=category, choice=ctmc)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            metadata {
+              ... on CategoryMetadataChoice {
+                key
+                keyIdentifier
+                value
+                valueIdentifier
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'metadata': [{
+                'key': ctm.name,
+                'keyIdentifier': ctm.identifier,
+                'value': ctmc.name,
+                'valueIdentifier': ctmc.identifier,
+            }]
+        }]
+    }
+    assert data == expected
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize('show_admin_link', [True, False])
 def test_plan_node(graphql_client_query_data, show_admin_link):
-    plan = PlanFactory(show_admin_link=show_admin_link)
+    plan = PlanWithRelatedObjectsFactory(show_admin_link=show_admin_link)
     admin_hostname = AdminHostnameFactory()
     client_plan = ClientPlanFactory(plan=plan, client=admin_hostname.client)
     data = graphql_client_query_data(
@@ -48,7 +122,7 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
           }
         }
         ''',
-        variables=dict(plan=plan.identifier, hostname=plan.domains.first().hostname)
+        variables={'plan': plan.identifier, 'hostname': plan.domains.first().hostname}
     )
     if show_admin_link:
         expected_admin_url = client_plan.client.get_admin_url()

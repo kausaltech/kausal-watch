@@ -1,11 +1,9 @@
-from django.db.models.query import Prefetch
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import (
     DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
-from django.urls import reverse
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from itertools import chain
