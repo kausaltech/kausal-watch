@@ -1,11 +1,12 @@
 import datetime
-from factory import RelatedFactory, Sequence, SubFactory
+from factory import RelatedFactory, SelfAttribute, Sequence, SubFactory
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
 from actions.models import CategoryTypeMetadata
+from images.tests.factories import AplansImageFactory
 from people.tests.factories import PersonFactory
 from content.tests.factories import SiteGeneralContentFactory
 
@@ -20,8 +21,6 @@ class OrganizationFactory(DjangoModelFactory):
     parent = None
 
 
-# https://factoryboy.readthedocs.io/en/stable/recipes.html#example-django-s-profile
-# @factory.django.mute_signals(post_save)
 class PlanFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.Plan'
@@ -29,9 +28,23 @@ class PlanFactory(DjangoModelFactory):
     organization = SubFactory(OrganizationFactory)
     name = Sequence(lambda i: f'Plan {i}')
     identifier = Sequence(lambda i: f'plan{i}')
+    image = SubFactory(AplansImageFactory)
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
     general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
     show_admin_link = False
+
+    _action = RelatedFactory('actions.tests.factories.ActionFactory', factory_related_name='plan')
+    _category_type = RelatedFactory('actions.tests.factories.CategoryTypeFactory', factory_related_name='plan')
+    _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
+    _impact_group = RelatedFactory('actions.tests.factories.ImpactGroupFactory', factory_related_name='plan')
+
+
+class PlanDomainFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.PlanDomain'
+
+    plan = SubFactory(PlanFactory, _domain=None)
+    hostname = 'example.org'
 
 
 class ActionStatusFactory(DjangoModelFactory):
@@ -126,18 +139,30 @@ class CategoryMetadataRichTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'CategoryMetadataRichText {i}')
 
 
+class ImpactGroupFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ImpactGroup'
+
+    plan = SubFactory(PlanFactory, _impact_group=None)
+    identifier = Sequence(lambda i: f'Impact group {i}')
+    identifier = Sequence(lambda i: f'impact-group-{i}')
+    parent = None
+    weight = None
+    color = None
+
+
 class ActionFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.Action'
 
-    plan = SubFactory(PlanFactory)
+    plan = SubFactory(PlanFactory, _action=None)
     name = "Test action"
     identifier = 'test-action'
     official_name = name
     description = "Action description"
-    impact = SubFactory(ActionImpactFactory)
-    status = SubFactory(ActionStatusFactory)
-    implementation_phase = SubFactory(ActionImplementationPhaseFactory)
+    impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..plan'))
+    status = SubFactory(ActionStatusFactory, plan=SelfAttribute('..plan'))
+    implementation_phase = SubFactory(ActionImplementationPhaseFactory, plan=SelfAttribute('..plan'))
     completion = 99
 
 

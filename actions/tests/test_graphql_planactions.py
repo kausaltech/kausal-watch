@@ -2,6 +2,52 @@ import pytest
 
 from aplans.utils import hyphenate
 
+ACTION_FRAGMENT = '''
+    fragment ActionFragment on Action {
+      id
+      identifier
+      name(hyphenated: true)
+      officialName
+      completion
+      plan {
+        id
+      }
+      schedule {
+        id
+      }
+      status {
+        id
+        identifier
+        name
+      }
+      manualStatusReason
+      implementationPhase {
+        id
+        identifier
+        name
+      }
+      impact {
+        id
+        identifier
+      }
+      categories {
+        id
+      }
+      responsibleParties {
+        id
+        organization {
+          id
+          abbreviation
+          name
+        }
+      }
+      mergedWith {
+        id
+        identifier
+      }
+    }
+    '''
+
 
 @pytest.mark.django_db
 def test_planactions(graphql_client_query_data, plan, action, action_schedule, category,
@@ -19,50 +65,10 @@ def test_planactions(graphql_client_query_data, plan, action, action_schedule, c
         '''
         query($plan: ID!) {
           planActions(plan: $plan) {
-            id
-            identifier
-            name(hyphenated: true)
-            officialName
-            completion
-            plan {
-              id
-            }
-            schedule {
-              id
-            }
-            status {
-              id
-              identifier
-              name
-            }
-            manualStatusReason
-            implementationPhase {
-              id
-              identifier
-              name
-            }
-            impact {
-              id
-              identifier
-            }
-            categories {
-              id
-            }
-            responsibleParties {
-              id
-              organization {
-                id
-                abbreviation
-                name
-              }
-            }
-            mergedWith {
-              id
-              identifier
-            }
+            ...ActionFragment
           }
         }
-        ''',
+        ''' + ACTION_FRAGMENT,
         variables=dict(plan=plan.identifier)
     )
     expected = {

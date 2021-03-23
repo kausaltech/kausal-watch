@@ -8,6 +8,9 @@ from pages.models import AplansPage
 
 
 class MenuItemNode(graphene.ObjectType):
+    class Meta:
+        name = 'MenuItem'
+
     id = graphene.ID(required=True)
     page = graphene.Field(PageInterface, required=False)
     external_url = graphene.String(required=False)
@@ -60,6 +63,9 @@ class MenuNodeMixin():
 
 
 class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
+    class Meta:
+        name = 'MainMenu'
+
     def resolve_items(parent, info, with_descendants):
         if not parent:
             return []
@@ -72,6 +78,9 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
 
 
 class FooterNode(MenuNodeMixin, graphene.ObjectType):
+    class Meta:
+        name = 'Footer'
+
     def resolve_items(parent, info, with_descendants):
         if not parent:
             return []
