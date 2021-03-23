@@ -2,8 +2,9 @@ import pytest
 
 from actions.models import get_default_language, CategoryTypeMetadata
 from actions.tests.factories import (
-    CategoryFactory, CategoryMetadataChoiceFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
-    CategoryTypeMetadataChoiceFactory, PlanFactory, PlanWithRelatedObjectsFactory
+    CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory,
+    CategoryTypeFactory, CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, PlanFactory,
+    PlanWithRelatedObjectsFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 
@@ -36,45 +37,6 @@ def test_plan_domain_node(graphql_client_query_data):
                 'matomoAnalyticsUrl': domain.matomo_analytics_url,
             },
         }
-    }
-    assert data == expected
-
-
-@pytest.mark.django_db
-def test_category_metadata_choice_node(graphql_client_query_data):
-    plan = PlanFactory()
-    ct = CategoryTypeFactory(plan=plan)
-    ctm = CategoryTypeMetadataFactory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
-    ctmc = CategoryTypeMetadataChoiceFactory(metadata=ctm)
-    # Create a category with metadata so we can access the CategoryMetadataChoiceNode via planCategories
-    category = CategoryFactory(type=ct)
-    CategoryMetadataChoiceFactory(metadata=ctm, category=category, choice=ctmc)
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            metadata {
-              ... on CategoryMetadataChoice {
-                key
-                keyIdentifier
-                value
-                valueIdentifier
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'metadata': [{
-                'key': ctm.name,
-                'keyIdentifier': ctm.identifier,
-                'value': ctmc.name,
-                'valueIdentifier': ctmc.identifier,
-            }]
-        }]
     }
     assert data == expected
 
@@ -161,5 +123,157 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
                 '__typename': 'Footer',
             },
         }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_metadata_choice_node(graphql_client_query_data):
+    plan = PlanFactory()
+    ct = CategoryTypeFactory(plan=plan)
+    ctm = CategoryTypeMetadataFactory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    ctmc = CategoryTypeMetadataChoiceFactory(metadata=ctm)
+    # Create a category with metadata so we can access the CategoryMetadataChoiceNode via planCategories
+    category = CategoryFactory(type=ct)
+    cmc = CategoryMetadataChoiceFactory(metadata=ctm, category=category, choice=ctmc)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            metadata {
+              ... on CategoryMetadataChoice {
+                id
+                metadata {
+                  __typename
+                }
+                category {
+                  __typename
+                }
+                choice {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+                valueIdentifier
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'metadata': [{
+                'id': str(cmc.id),
+                'metadata': {
+                    '__typename': 'CategoryTypeMetadata',
+                },
+                'category': {
+                    '__typename': 'Category',
+                },
+                'choice': {
+                    '__typename': 'CategoryTypeMetadataChoice',
+                },
+                'key': ctm.name,
+                'keyIdentifier': ctm.identifier,
+                'value': ctmc.name,
+                'valueIdentifier': ctmc.identifier,
+            }]
+        }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_metadata_rich_text_node(graphql_client_query_data):
+    plan = PlanFactory()
+    ct = CategoryTypeFactory(plan=plan)
+    ctm = CategoryTypeMetadataFactory(type=ct, format=CategoryTypeMetadata.MetadataFormat.RICH_TEXT)
+    # Create a category with metadata so we can access the CategoryMetadataRichTextNode via planCategories
+    category = CategoryFactory(type=ct)
+    cmrt = CategoryMetadataRichTextFactory(metadata=ctm, category=category)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            metadata {
+              ... on CategoryMetadataRichText {
+                id
+                metadata {
+                  __typename
+                }
+                category {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'metadata': [{
+                'id': str(cmrt.id),
+                'metadata': {
+                    '__typename': 'CategoryTypeMetadata',
+                },
+                'category': {
+                    '__typename': 'Category',
+                },
+                'key': ctm.name,
+                'keyIdentifier': ctm.identifier,
+                'value': cmrt.text,
+            }]
+        }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_level_node(graphql_client_query_data):
+    plan = PlanFactory()
+    ct = CategoryTypeFactory(plan=plan)
+    level = CategoryLevelFactory(type=ct)
+    # Create a category with metadata so we can access the CategoryMetadataRichTextNode via planCategories
+    CategoryFactory(type=ct)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            level {
+              ... on CategoryLevel {
+                id
+                order
+                type {
+                  __typename
+                }
+                name
+                namePlural
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'level': {
+                'id': str(level.id),
+                'order': 1,
+                'type': {
+                    '__typename': 'CategoryType',
+                },
+                'name': level.name,
+                'namePlural': level.name_plural,
+            }
+        }]
     }
     assert data == expected

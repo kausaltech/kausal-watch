@@ -141,6 +141,15 @@ class CategoryMetadataChoiceFactory(DjangoModelFactory):
     choice = SubFactory(CategoryTypeMetadataChoiceFactory)
 
 
+class CategoryLevelFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CategoryLevel'
+
+    type = SubFactory(CategoryTypeFactory)
+    name = Sequence(lambda i: f'Category level name {i}')
+    name_plural = Sequence(lambda i: f'Category level name plural {i}')
+
+
 class ImpactGroupFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ImpactGroup'
