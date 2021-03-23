@@ -50,6 +50,9 @@ class PlanNode(DjangoNode):
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
 
+    def resolve_last_action_identifier(self, info):
+        return self.get_last_action_identifier()
+
     @gql_optimizer.resolver_hints(
         model_field='category_types',
     )
