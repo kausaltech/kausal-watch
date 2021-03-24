@@ -468,7 +468,7 @@ def test_static_page_body(graphql_client_query_data, plan, static_page):
 
 @pytest.mark.django_db
 def test_categorymetadata_order_as_in_categorytypemetadata(
-    graphql_client_query_data, plan, category, category_type, category_type_metadata_factory,
+    graphql_client_query_data, plan, category, category_page, category_type, category_type_metadata_factory,
     category_metadata_rich_text_factory
 ):
     ctm0 = category_type_metadata_factory(type=category_type)
@@ -476,8 +476,6 @@ def test_categorymetadata_order_as_in_categorytypemetadata(
     assert ctm0.order < ctm1.order
     cmrt0 = category_metadata_rich_text_factory(metadata=ctm0, category=category)
     cmrt1 = category_metadata_rich_text_factory(metadata=ctm1, category=category)
-    category_page = CategoryPage(title='Category', slug='category-slug', category=category)
-    plan.root_page.add_child(instance=category_page)
 
     query = '''
         query($plan: ID!, $path: String!) {
@@ -496,8 +494,8 @@ def test_categorymetadata_order_as_in_categorytypemetadata(
         }
         '''
     query_variables = {
-        'plan': category_page.category.type.plan.identifier,
-        'path': f'/{category.identifier}-category-slug',
+        'plan': plan.identifier,
+        'path': category_page.url_path,
     }
     expected = {
         'planPage': {
@@ -525,9 +523,7 @@ def test_categorymetadata_order_as_in_categorytypemetadata(
 
 
 @pytest.mark.django_db
-def test_category_page_action_list(graphql_client_query_data, plan, category):
-    category_page = CategoryPage(title='Category', slug='category-slug', category=category)
-    plan.root_page.add_child(instance=category_page)
+def test_category_page_action_list(graphql_client_query_data, plan, category, category_page):
     action_list_block = ActionListBlockFactory(category_filter=category)
     category_page.body = [
         ('action_list', action_list_block),

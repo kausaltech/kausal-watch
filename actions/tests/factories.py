@@ -7,6 +7,7 @@ from wagtail_factories import StructBlockFactory
 import actions
 from actions.models import CategoryTypeMetadata
 from images.tests.factories import AplansImageFactory
+from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
 from content.tests.factories import SiteGeneralContentFactory
 
@@ -16,7 +17,7 @@ class OrganizationFactory(DjangoModelFactory):
         model = 'django_orghierarchy.Organization'
 
     id = Sequence(lambda i: f'organization{i}')
-    name = Sequence(lambda i: f'Organization {i}')
+    name = Sequence(lambda i: f"Organization {i}")
     abbreviation = Sequence(lambda i: f'org{i}')
     parent = None
 
@@ -26,7 +27,7 @@ class PlanFactory(DjangoModelFactory):
         model = 'actions.Plan'
 
     organization = SubFactory(OrganizationFactory)
-    name = Sequence(lambda i: f'Plan {i}')
+    name = Sequence(lambda i: f"Plan {i}")
     identifier = Sequence(lambda i: f'plan{i}')
     image = SubFactory(AplansImageFactory)
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
@@ -34,12 +35,6 @@ class PlanFactory(DjangoModelFactory):
     show_admin_link = False
 
     _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
-
-
-class PlanWithRelatedObjectsFactory(PlanFactory):
-    _action = RelatedFactory('actions.tests.factories.ActionFactory', factory_related_name='plan')
-    _category_type = RelatedFactory('actions.tests.factories.CategoryTypeFactory', factory_related_name='plan')
-    _impact_group = RelatedFactory('actions.tests.factories.ImpactGroupFactory', factory_related_name='plan')
 
 
 class PlanDomainFactory(DjangoModelFactory):
@@ -55,8 +50,8 @@ class ActionStatusFactory(DjangoModelFactory):
         model = 'actions.ActionStatus'
 
     plan = SubFactory(PlanFactory)
-    name = "Test action status"
-    identifier = 'test-action-status'
+    name = Sequence(lambda i: f"Action status {i}")
+    identifier = Sequence(lambda i: f'action-status-{i}')
 
 
 class ActionImplementationPhaseFactory(DjangoModelFactory):
@@ -64,8 +59,8 @@ class ActionImplementationPhaseFactory(DjangoModelFactory):
         model = 'actions.ActionImplementationPhase'
 
     plan = SubFactory(PlanFactory)
-    name = "Test action implementation phase"
-    identifier = 'test-aip'
+    name = Sequence(lambda i: f"Action implementation phase {i}")
+    identifier = Sequence(lambda i: f'aip{i}')
 
 
 class ActionScheduleFactory(DjangoModelFactory):
@@ -82,8 +77,8 @@ class ActionImpactFactory(DjangoModelFactory):
         model = 'actions.ActionImpact'
 
     plan = SubFactory(PlanFactory)
-    name = "Test action impact"
-    identifier = 'test-action-impact'
+    identifier = Sequence(lambda i: f'action-impact-{i}')
+    name = Sequence(lambda i: f"Action impact {i}")
 
 
 class CategoryTypeFactory(DjangoModelFactory):
@@ -92,7 +87,7 @@ class CategoryTypeFactory(DjangoModelFactory):
 
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'ct{i}')
-    name = Sequence(lambda i: f'CategoryType {i}')
+    name = Sequence(lambda i: f"Category type {i}")
 
 
 class CategoryTypeMetadataFactory(DjangoModelFactory):
@@ -101,7 +96,7 @@ class CategoryTypeMetadataFactory(DjangoModelFactory):
 
     type = SubFactory(CategoryTypeFactory)
     identifier = Sequence(lambda i: f'ctm{i}')
-    name = Sequence(lambda i: f'CategoryTypeMetadata {i}')
+    name = Sequence(lambda i: f"Category type metadata {i}")
     format = CategoryTypeMetadata.MetadataFormat.RICH_TEXT
 
 
@@ -111,7 +106,7 @@ class CategoryTypeMetadataChoiceFactory(DjangoModelFactory):
 
     metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
     identifier = Sequence(lambda i: f'ctmc{i}')
-    name = Sequence(lambda i: f'CategoryTypeMetadataChoice {i}')
+    name = Sequence(lambda i: f"Category type metadata choice {i}")
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -120,7 +115,12 @@ class CategoryFactory(DjangoModelFactory):
 
     type = SubFactory(CategoryTypeFactory)
     identifier = Sequence(lambda i: f'category{i}')
-    name = Sequence(lambda i: f'Category {i}')
+    name = Sequence(lambda i: f"Category {i}")
+    image = SubFactory(AplansImageFactory)
+
+    _category_page = RelatedFactory(CategoryPageFactory,
+                                    factory_related_name='category',
+                                    parent=SelfAttribute('..type.plan.root_page'))
 
 
 class CategoryMetadataRichTextFactory(DjangoModelFactory):
@@ -146,8 +146,18 @@ class CategoryLevelFactory(DjangoModelFactory):
         model = 'actions.CategoryLevel'
 
     type = SubFactory(CategoryTypeFactory)
-    name = Sequence(lambda i: f'Category level name {i}')
+    name = Sequence(lambda i: f"Category level name {i}")
     name_plural = Sequence(lambda i: f'Category level name plural {i}')
+
+
+class ScenarioFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.Scenario'
+
+    plan = SubFactory(PlanFactory)
+    name = Sequence(lambda i: f"Scenario {i}")
+    identifier = Sequence(lambda i: f'scenario{i}')
+    description = "Scenario description"
 
 
 class ImpactGroupFactory(DjangoModelFactory):
@@ -155,11 +165,26 @@ class ImpactGroupFactory(DjangoModelFactory):
         model = 'actions.ImpactGroup'
 
     plan = SubFactory(PlanFactory)
-    identifier = Sequence(lambda i: f'Impact group {i}')
+    name = Sequence(lambda i: f"Impact group {i}")
     identifier = Sequence(lambda i: f'impact-group-{i}')
     parent = None
-    weight = None
-    color = None
+    weight = 1.0
+    color = 'red'
+
+    _action = RelatedFactory('actions.tests.factories.ImpactGroupActionFactory',
+                             factory_related_name='group',
+                             group__plan=SelfAttribute('..plan'))
+
+
+class MonitoringQualityPointFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.MonitoringQualityPoint'
+
+    name = Sequence(lambda i: f"Monitoring quality point {i}")
+    description_yes = "Yes"
+    description_no = "No"
+    plan = SubFactory(PlanFactory)
+    identifier = Sequence(lambda i: f'monitoring-quality-point-{i}')
 
 
 class ActionFactory(DjangoModelFactory):
@@ -167,14 +192,38 @@ class ActionFactory(DjangoModelFactory):
         model = 'actions.Action'
 
     plan = SubFactory(PlanFactory)
-    name = "Test action"
-    identifier = 'test-action'
+    name = Sequence(lambda i: f"Action {i}")
+    identifier = Sequence(lambda i: f'action{i}')
     official_name = name
     description = "Action description"
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..plan'))
     status = SubFactory(ActionStatusFactory, plan=SelfAttribute('..plan'))
     implementation_phase = SubFactory(ActionImplementationPhaseFactory, plan=SelfAttribute('..plan'))
     completion = 99
+
+
+class ActionTaskFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionTask'
+
+    action = SubFactory(ActionFactory)
+    name = Sequence(lambda i: f"Action task {i}")
+    state = actions.models.ActionTask.NOT_STARTED
+    comment = "Comment"
+    due_at = '2020-01-01'
+    completed_at = None
+    completed_by = None
+    # created_at = None  # Should be set automatically
+    # modified_at = None  # Should be set automatically
+
+
+class ImpactGroupActionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ImpactGroupAction'
+
+    group = SubFactory(ImpactGroupFactory)
+    action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'))
+    impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..group.plan'))
 
 
 class ActionResponsiblePartyFactory(DjangoModelFactory):

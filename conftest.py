@@ -46,6 +46,7 @@ register(pages_factories.CardBlockFactory)
 # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
 # https://github.com/wagtail/wagtail-factories/issues/40
 # register(pages_factories.CardListBlockFactory)
+register(pages_factories.CategoryPageFactory)
 register(pages_factories.FrontPageHeroBlockFactory)
 register(pages_factories.PageChooserBlockFactory, parent=LazyFixture(lambda plan: plan.root_page))
 register(pages_factories.PageLinkBlockFactory)

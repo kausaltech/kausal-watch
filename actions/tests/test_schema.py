@@ -2,9 +2,9 @@ import pytest
 
 from actions.models import get_default_language, CategoryTypeMetadata
 from actions.tests.factories import (
-    CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory,
-    CategoryTypeFactory, CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, PlanFactory,
-    PlanWithRelatedObjectsFactory
+    ActionFactory, CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory,
+    CategoryMetadataRichTextFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
+    CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory, ScenarioFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 
@@ -91,7 +91,12 @@ def test_plan_domain_node(graphql_client_query_data):
 @pytest.mark.django_db
 @pytest.mark.parametrize('show_admin_link', [True, False])
 def test_plan_node(graphql_client_query_data, show_admin_link):
-    plan = PlanWithRelatedObjectsFactory(show_admin_link=show_admin_link)
+    plan = PlanFactory(show_admin_link=show_admin_link)
+    action = ActionFactory(plan=plan)
+    category_type = CategoryTypeFactory(plan=plan)
+    # Switch off RelatedFactory _action because it would generate an extra action
+    impact_group = ImpactGroupFactory(plan=plan, _action=None)
+    ImpactGroupActionFactory(group=impact_group, action=action)
     admin_hostname = AdminHostnameFactory()
     client_plan = ClientPlanFactory(plan=plan, client=admin_hostname.client)
     data = graphql_client_query_data(
@@ -101,10 +106,12 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             __typename
             actions {
               __typename
+              id
             }
             adminUrl
             categoryTypes {
               __typename
+              id
             }
             domain(hostname: $hostname) {
               __typename
@@ -115,6 +122,7 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             }
             impactGroups {
               __typename
+              id
             }
             lastActionIdentifier
             mainMenu {
@@ -142,10 +150,12 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             '__typename': 'Plan',
             'actions': [{
                 '__typename': 'Action',
+                'id': str(action.id),
             }],
             'adminUrl': expected_admin_url,
             'categoryTypes': [{
                 '__typename': 'CategoryType',
+                'id': str(category_type.id),
             }],
             'domain': {
                 '__typename': 'PlanDomain',
@@ -156,6 +166,7 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             },
             'impactGroups': [{
                 '__typename': 'ImpactGroup',
+                'id': str(impact_group.id),
             }],
             'lastActionIdentifier': plan.get_last_action_identifier(),
             'mainMenu': {
@@ -356,5 +367,299 @@ def test_category_type_metadata_node(
                 }]
             }
         }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_type_metadata_choice_node(
+    graphql_client_query_data, plan, category_type_metadata_choice, category_metadata_choice
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            type {
+              metadata {
+                choices {
+                  identifier
+                  name
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'type': {
+                'metadata': [{
+                    'choices': [{
+                        'identifier': category_type_metadata_choice.identifier,
+                        'name': category_type_metadata_choice.name,
+                    }],
+                }]
+            }
+        }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_type_node(
+    graphql_client_query_data, plan, category_type, category, category_level, category_type_metadata__rich_text
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            type {
+              id
+              plan {
+                __typename
+                # Workaround: I just want __typename, but this causes an error due to graphene-django-optimizer.
+                identifier
+              }
+              name
+              identifier
+              usableForActions
+              usableForIndicators
+              editableForActions
+              editableForIndicators
+              levels {
+                __typename
+              }
+              categories {
+                __typename
+              }
+              metadata {
+                __typename
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'type': {
+                'id': str(category_type.id),
+                'plan': {
+                    '__typename': 'Plan',
+                    'identifier': plan.identifier,
+                },
+                'name': category_type.name,
+                'identifier': category_type.identifier,
+                'usableForActions': category_type.usable_for_actions,
+                'usableForIndicators': category_type.usable_for_indicators,
+                'editableForActions': category_type.editable_for_actions,
+                'editableForIndicators': category_type.editable_for_indicators,
+                'levels': [{
+                    '__typename': 'CategoryLevel'
+                }],
+                'categories': [{
+                    '__typename': 'Category'
+                }],
+                'metadata': [{
+                    '__typename': 'CategoryTypeMetadata'
+                }],
+            }
+        }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_category_node(
+    graphql_client_query_data, plan, category_type, category, category_level, category_metadata_rich_text,
+    category_metadata_choice
+):
+    child_category = CategoryFactory(parent=category)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            id
+            type {
+              __typename
+            }
+            order
+            identifier
+            name
+            parent {
+              __typename
+            }
+            shortDescription
+            color
+            children {
+              __typename
+              id
+              parent {
+                __typename
+                id
+              }
+            }
+            categoryPage {
+              __typename
+            }
+            image {
+              __typename
+            }
+            metadata {
+              __typename
+            }
+            level {
+              __typename
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'id': str(category.id),
+            'type': {
+              '__typename': 'CategoryType',
+            },
+            'order': 1,
+            'identifier': category.identifier,
+            'name': category.name,
+            'parent': None,
+            'shortDescription': category.short_description,
+            'color': category.color,
+            'children': [{
+                '__typename': 'Category',
+                'id': str(child_category.id),
+                'parent': {
+                  '__typename': 'Category',
+                  'id': str(category.id),
+                }
+            }],
+            'categoryPage': {
+                '__typename': 'CategoryPage',
+            },
+            'image': {
+                '__typename': 'Image',
+            },
+            'metadata': [{
+                '__typename': 'CategoryMetadataRichText',
+            }, {
+                '__typename': 'CategoryMetadataChoice',
+            }],
+            'level': {
+                '__typename': 'CategoryLevel',
+            },
+        }]
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_scenario_node(graphql_client_query_data):
+    scenario = ScenarioFactory()
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            scenarios {
+              id
+              plan {
+                __typename
+              }
+              name
+              identifier
+              description
+            }
+          }
+        }
+        ''',
+        variables={'plan': scenario.plan.identifier}
+    )
+    expected = {
+        'plan': {
+            'scenarios': [{
+                'id': str(scenario.id),
+                'plan': {
+                    '__typename': 'Plan',
+                },
+                'name': scenario.name,
+                'identifier': scenario.identifier,
+                'description': scenario.description,
+            }]
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_impact_group_node(graphql_client_query_data):
+    impact_group = ImpactGroupFactory()
+    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            impactGroups {
+              id
+              plan {
+                __typename
+                id
+              }
+              identifier
+              parent {
+                __typename
+                id
+              }
+              weight
+              color
+              actions {
+                __typename
+              }
+              name
+            }
+          }
+        }
+        ''',
+        variables={'plan': impact_group.plan.identifier}
+    )
+    expected = {
+        'plan': {
+            'impactGroups': [{
+                'id': str(impact_group.id),
+                'plan': {
+                    '__typename': 'Plan',
+                    'id': impact_group.plan.identifier,
+                },
+                'identifier': impact_group.identifier,
+                'parent': None,
+                'weight': impact_group.weight,
+                'color': impact_group.color,
+                'actions': [{
+                    '__typename': 'ImpactGroupAction',
+                }],
+                'name': impact_group.name,
+            }, {
+                'id': str(impact_group_child.id),
+                'plan': {
+                    '__typename': 'Plan',
+                    'id': impact_group_child.plan.identifier,
+                },
+                'identifier': impact_group_child.identifier,
+                'parent': {
+                    '__typename': 'ImpactGroup',
+                    'id': str(impact_group.id),
+                },
+                'weight': impact_group_child.weight,
+                'color': impact_group_child.color,
+                'actions': [{
+                    '__typename': 'ImpactGroupAction',
+                }],
+                'name': impact_group_child.name,
+            }]
+        }
     }
     assert data == expected

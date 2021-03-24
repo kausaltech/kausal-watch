@@ -1,4 +1,4 @@
-from factory import Factory, SubFactory
+from factory import Factory, LazyAttribute, SelfAttribute, SubFactory
 from wagtail_factories import (
     CharBlockFactory, ImageChooserBlockFactory, ListBlockFactory, PageFactory, StreamFieldFactory, StructBlockFactory
 )
@@ -93,6 +93,24 @@ class StaticPageFactory(PageFactory):
     body__1__paragraph__value = "<p>Test paragraph</p>"
     body__2__qa_section__heading = "QA section heading"
     body__2__qa_section__questions__0 = None
+
+
+class CategoryPageFactory(PageFactory):
+    class Meta:
+        model = pages.models.CategoryPage
+
+    title = LazyAttribute(lambda obj: f'Page for Category {obj.category.id}')
+    category = SubFactory('actions.tests.factories.CategoryFactory', _category_page=None)
+    body = StreamFieldFactory({
+        'text': RichTextBlockFactory,
+        # TODO: Write factories
+        # 'indicator_group': IndicatorGroupBlockFactory,
+        # 'category_list': CategoryListBlockFactory,
+        # 'action_list': ActionListBlockFactory,
+    })
+    # TODO: Fill body
+    # A category page must have a parent (assumed in CategoryPage.set_url_path)
+    parent = SelfAttribute('category.type.plan.root_page')
 
 
 class CardBlockFactory(StructBlockFactory):
