@@ -235,17 +235,12 @@ class ScenarioNode(DjangoNode):
 
 
 class ImpactGroupNode(DjangoNode):
-    name = graphene.String()
-    image = graphene.Field('images.schema.ImageNode')
-
     class Meta:
         model = ImpactGroup
-        fields = public_fields(ImpactGroup, remove_fields=['name'])
+        fields = public_fields(ImpactGroup)
 
 
 class ImpactGroupActionNode(DjangoNode):
-    image = graphene.Field('images.schema.ImageNode')
-
     class Meta:
         model = ImpactGroupAction
 
