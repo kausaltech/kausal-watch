@@ -23,6 +23,7 @@ from wagtail.search import index
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
+from django_orghierarchy.models import Organization
 
 from admin_site.models import Client
 
@@ -68,8 +69,9 @@ def image_upload_path(instance, filename):
 
 class PersonQuerySet(models.QuerySet):
     def available_for_plan(self, plan):
-        all_related = plan.related_organizations.all() | plan.related_organizations.all().get_descendants()
-        q = Q(organization__isnull=True) | Q(organization__in=all_related)
+        related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
+        all_related = related.get_descendants(include_self=True)
+        q = Q(organization__in=all_related)
         return self.filter(q)
 
     def is_action_contact_person(self, plan):
