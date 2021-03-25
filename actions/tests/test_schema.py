@@ -2,10 +2,10 @@ import pytest
 
 from actions.models import CategoryTypeMetadata
 from actions.tests.factories import (
-    ActionFactory, ActionScheduleFactory, CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory,
-    CategoryMetadataRichTextFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
-    CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory,
-    MonitoringQualityPointFactory, ScenarioFactory
+    ActionFactory, ActionScheduleFactory, ActionTaskFactory, CategoryFactory, CategoryLevelFactory,
+    CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory, CategoryTypeFactory,
+    CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory,
+    PlanFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 from indicators.tests.factories import IndicatorLevelFactory
@@ -828,5 +828,53 @@ def test_monitoring_quality_point_node(graphql_client_query_data):
                 'identifier': monitoring_quality_point.identifier,
             }]
         }
+    }
+    assert data == expected
+
+
+def test_action_task_node(graphql_client_query_data):
+    action_task = ActionTaskFactory()
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            tasks {
+              id
+              action {
+                __typename
+                id
+              }
+              name
+              state
+              comment
+              dueAt
+              completedAt
+              createdAt
+              modifiedAt
+            }
+          }
+        }
+        ''',
+        variables={'plan': action_task.action.plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            'tasks': [{
+                'id': str(action_task.id),
+                'action': {
+                    '__typename': 'Action',
+                    'id': str(action_task.action.id),
+                },
+                'name': action_task.name,
+                # graphene_django puts choices into upper case in converter.convert_choice_name()
+                'state': action_task.state.upper(),
+                'comment': action_task.comment,
+                'dueAt': action_task.due_at.isoformat(),
+                'completedAt': action_task.completed_at.isoformat(),
+                # 'completedBy': action_task.completed_by,
+                'createdAt': action_task.created_at.isoformat(),
+                'modifiedAt': action_task.modified_at.isoformat(),
+            }]
+        }]
     }
     assert data == expected

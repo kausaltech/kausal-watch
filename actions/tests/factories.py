@@ -219,8 +219,8 @@ class ActionTaskFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Action task {i}")
     state = actions.models.ActionTask.NOT_STARTED
     comment = "Comment"
-    due_at = '2020-01-01'
-    completed_at = None
+    due_at = datetime.date(2020, 1, 1)
+    completed_at = datetime.date(2020, 1, 2)
     completed_by = None
     # created_at = None  # Should be set automatically
     # modified_at = None  # Should be set automatically
