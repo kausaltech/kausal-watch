@@ -1,12 +1,14 @@
 import pytest
 
-from actions.models import get_default_language, CategoryTypeMetadata
+from actions.models import CategoryTypeMetadata
 from actions.tests.factories import (
-    ActionFactory, CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory,
+    ActionFactory, ActionScheduleFactory, CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory,
     CategoryMetadataRichTextFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
-    CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory, ScenarioFactory
+    CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory,
+    MonitoringQualityPointFactory, ScenarioFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
+from indicators.tests.factories import IndicatorLevelFactory
 
 
 @pytest.fixture
@@ -92,47 +94,90 @@ def test_plan_domain_node(graphql_client_query_data):
 @pytest.mark.parametrize('show_admin_link', [True, False])
 def test_plan_node(graphql_client_query_data, show_admin_link):
     plan = PlanFactory(show_admin_link=show_admin_link)
-    action = ActionFactory(plan=plan)
+    action_schedule = ActionScheduleFactory(plan=plan)
+    action = ActionFactory(plan=plan, schedule=[action_schedule])
     category_type = CategoryTypeFactory(plan=plan)
     # Switch off RelatedFactory _action because it would generate an extra action
     impact_group = ImpactGroupFactory(plan=plan, _action=None)
-    ImpactGroupActionFactory(group=impact_group, action=action)
+    ImpactGroupActionFactory(group=impact_group, action=action, impact=action.impact)
     admin_hostname = AdminHostnameFactory()
     client_plan = ClientPlanFactory(plan=plan, client=admin_hostname.client)
+    monitoring_quality_point = MonitoringQualityPointFactory(plan=plan)
+    indicator_level = IndicatorLevelFactory(plan=plan)
+    scenario = ScenarioFactory(plan=plan)
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $hostname: String!) {
           plan(id: $plan) {
             __typename
+            id
+            name
+            identifier
+            image {
+              __typename
+              id
+            }
+            actionSchedules {
+              __typename
+              id
+            }
             actions {
               __typename
               id
             }
-            adminUrl
             categoryTypes {
               __typename
               id
             }
-            domain(hostname: $hostname) {
+            actionStatuses {
               __typename
+              id
             }
-            id
-            image {
+            indicatorLevels {
               __typename
+              id
+            }
+            actionImpacts {
+              __typename
+              id
+            }
+            generalContent {
+              __typename
+              id
             }
             impactGroups {
               __typename
               id
             }
+            monitoringQualityPoints {
+              __typename
+              id
+            }
+            scenarios {
+              __typename
+              id
+            }
+            primaryLanguage
+            otherLanguages
+            accessibilityStatementUrl
+            actionImplementationPhases {
+              __typename
+              id
+            }
             lastActionIdentifier
+            serveFileBaseUrl
+            pages {
+              __typename
+              id
+            }
+            domain(hostname: $hostname) {
+              __typename
+              id
+            }
+            adminUrl
             mainMenu {
               __typename
             }
-            pages {
-              __typename
-            }
-            primaryLanguage
-            serveFileBaseUrl
             footer {
               __typename
             }
@@ -148,35 +193,74 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
     expected = {
         'plan': {
             '__typename': 'Plan',
+            'id': plan.identifier,
+            'name': plan.name,
+            'identifier': plan.identifier,
+            'image': {
+                '__typename': 'Image',
+                'id': str(plan.image.id),
+            },
+            'actionSchedules': [{
+                '__typename': 'ActionSchedule',
+                'id': str(action_schedule.id),
+            }],
             'actions': [{
                 '__typename': 'Action',
                 'id': str(action.id),
             }],
-            'adminUrl': expected_admin_url,
             'categoryTypes': [{
                 '__typename': 'CategoryType',
                 'id': str(category_type.id),
             }],
-            'domain': {
-                '__typename': 'PlanDomain',
-            },
-            'id': plan.identifier,
-            'image': {
-                '__typename': 'Image',
+            'actionStatuses': [{
+                '__typename': 'ActionStatus',
+                'id': str(action.status.id),
+            }],
+            'indicatorLevels': [{
+                '__typename': 'IndicatorLevel',
+                'id': str(indicator_level.id),
+            }],
+            'actionImpacts': [{
+                '__typename': 'ActionImpact',
+                'id': str(action.impact.id),
+            }],
+            'generalContent': {
+                '__typename': 'SiteGeneralContent',
+                'id': str(plan.general_content.id),
             },
             'impactGroups': [{
                 '__typename': 'ImpactGroup',
                 'id': str(impact_group.id),
             }],
+            'monitoringQualityPoints': [{
+                '__typename': 'MonitoringQualityPoint',
+                'id': str(monitoring_quality_point.id),
+            }],
+            'scenarios': [{
+                '__typename': 'Scenario',
+                'id': str(scenario.id),
+            }],
+            'primaryLanguage': plan.primary_language,
+            'otherLanguages': plan.other_languages,
+            'accessibilityStatementUrl': plan.accessibility_statement_url,
+            'actionImplementationPhases': [{
+                '__typename': 'ActionImplementationPhase',
+                'id': str(action.implementation_phase.id),
+            }],
             'lastActionIdentifier': plan.get_last_action_identifier(),
+            'serveFileBaseUrl': 'http://testserver',
+            'pages': [{
+                '__typename': 'PlanRootPage',
+                'id': str(plan.root_page.id),
+            }],
+            'domain': {
+                '__typename': 'PlanDomain',
+                'id': str(plan.domains.first().id),
+            },
+            'adminUrl': expected_admin_url,
             'mainMenu': {
                 '__typename': 'MainMenu',
             },
-            'pages': [{
-                '__typename': 'PlanRootPage',
-            }],
-            'primaryLanguage': get_default_language(),
-            'serveFileBaseUrl': 'http://testserver',
             'footer': {
                 '__typename': 'Footer',
             },
@@ -659,6 +743,100 @@ def test_impact_group_node(graphql_client_query_data):
                     '__typename': 'ImpactGroupAction',
                 }],
                 'name': impact_group_child.name,
+            }]
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_impact_group_action_node(graphql_client_query_data):
+    impact_group_action = ImpactGroupActionFactory()
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            impactGroups {
+              actions {
+                id
+                group {
+                  __typename
+                  id
+                }
+                action {
+                  __typename
+                  id
+                }
+                impact {
+                  __typename
+                  id
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': impact_group_action.group.plan.identifier}
+    )
+    expected = {
+        'plan': {
+            'impactGroups': [{
+                'actions': [{
+                    'id': str(impact_group_action.id),
+                    'group': {
+                        '__typename': 'ImpactGroup',
+                        'id': str(impact_group_action.group.id),
+                    },
+                    'action': {
+                        '__typename': 'Action',
+                        'id': str(impact_group_action.action.id),
+                    },
+                    'impact': {
+                        '__typename': 'ActionImpact',
+                        'id': str(impact_group_action.impact.id),
+                    },
+                }],
+            }]
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.django_db
+def test_monitoring_quality_point_node(graphql_client_query_data):
+    monitoring_quality_point = MonitoringQualityPointFactory()
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            monitoringQualityPoints {
+              id
+              name
+              descriptionYes
+              descriptionNo
+              plan {
+                __typename
+                id
+              }
+              identifier
+            }
+          }
+        }
+        ''',
+        variables={'plan': monitoring_quality_point.plan.identifier}
+    )
+    expected = {
+        'plan': {
+            'monitoringQualityPoints': [{
+                'id': str(monitoring_quality_point.id),
+                'name': monitoring_quality_point.name,
+                'descriptionYes': monitoring_quality_point.description_yes,
+                'descriptionNo': monitoring_quality_point.description_no,
+                'plan': {
+                  '__typename': 'Plan',
+                  'id': str(monitoring_quality_point.plan.identifier),
+                },
+                'identifier': monitoring_quality_point.identifier,
             }]
         }
     }

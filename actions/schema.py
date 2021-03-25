@@ -111,7 +111,7 @@ class PlanNode(DjangoNode):
 
     class Meta:
         model = Plan
-        fields = public_fields(Plan, remove_fields=['image_url'])
+        fields = public_fields(Plan)
 
 
 class CategoryMetadataInterface(graphene.Interface):

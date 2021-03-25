@@ -4,7 +4,7 @@ from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import indicators
-from actions.tests.factories import OrganizationFactory
+from actions.tests.factories import OrganizationFactory, PlanFactory
 from pages.tests.factories import PageLinkBlockFactory
 
 
@@ -22,6 +22,15 @@ class IndicatorFactory(DjangoModelFactory):
     organization = SubFactory(OrganizationFactory)
     name = 'indicator1'
     unit = SubFactory(UnitFactory)
+
+
+class IndicatorLevelFactory(DjangoModelFactory):
+    class Meta:
+        model = 'indicators.IndicatorLevel'
+
+    indicator = SubFactory(IndicatorFactory)
+    plan = SubFactory(PlanFactory)
+    level = 'strategic'
 
 
 class IndicatorBlockFactory(StructBlockFactory):

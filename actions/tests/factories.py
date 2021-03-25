@@ -1,11 +1,11 @@
 import datetime
-from factory import RelatedFactory, SelfAttribute, Sequence, SubFactory
+from factory import RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
-from actions.models import CategoryTypeMetadata
+from actions.models import CategoryTypeMetadata, get_default_language, get_supported_languages
 from images.tests.factories import AplansImageFactory
 from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
@@ -33,6 +33,9 @@ class PlanFactory(DjangoModelFactory):
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
     general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
     show_admin_link = False
+    accessibility_statement_url = 'https://example.com'
+    primary_language = get_default_language()
+    other_languages = [lang_code for lang_code, _ in get_supported_languages() if lang_code != get_default_language()]
 
     _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
 
@@ -201,6 +204,12 @@ class ActionFactory(DjangoModelFactory):
     implementation_phase = SubFactory(ActionImplementationPhaseFactory, plan=SelfAttribute('..plan'))
     completion = 99
 
+    @post_generation
+    def schedule(obj, create, extracted, **kwargs):
+        if create and extracted:
+            for schedule in extracted:
+                obj.schedule.add(schedule)
+
 
 class ActionTaskFactory(DjangoModelFactory):
     class Meta:
@@ -221,7 +230,7 @@ class ImpactGroupActionFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ImpactGroupAction'
 
-    group = SubFactory(ImpactGroupFactory)
+    group = SubFactory(ImpactGroupFactory, _action=None)
     action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'))
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..group.plan'))
 
