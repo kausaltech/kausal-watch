@@ -1,10 +1,11 @@
 import json
 import pytest
-from django.urls import reverse
 
 from actions.models import CategoryTypeMetadata
 from pages.models import StaticPage
 from admin_site.tests.factories import ClientPlanFactory
+
+pytestmark = pytest.mark.django_db
 
 
 def expected_menu_item_for_page(page):
@@ -84,7 +85,6 @@ def another_organization(organization_factory):
     return organization_factory()
 
 
-@pytest.mark.django_db
 def test_nonexistent_domain(graphql_client_query_data):
     data = graphql_client_query_data(
         '''
@@ -98,7 +98,6 @@ def test_nonexistent_domain(graphql_client_query_data):
     assert data['plan'] is None
 
 
-@pytest.mark.django_db
 def test_plan_exists(graphql_client_query_data, plan):
     data = graphql_client_query_data(
         '''
@@ -113,7 +112,6 @@ def test_plan_exists(graphql_client_query_data, plan):
     assert data['plan']['id'] == plan.identifier
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize('plan__show_admin_link', [True, False])
 def test_plan_admin_url(graphql_client_query_data, plan):
     client_plan = ClientPlanFactory(plan=plan)
@@ -134,7 +132,6 @@ def test_plan_admin_url(graphql_client_query_data, plan):
         assert data == {'plan': {'adminUrl': None}}
 
 
-@pytest.mark.django_db
 def test_categorytypes(graphql_client_query_data, plan, category_type, category_factory):
     c0 = category_factory(type=category_type)
     c1 = category_factory(type=category_type, parent=c0)
@@ -187,7 +184,6 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_types(
     graphql_client_query_data, plan, category_type_factory, category_type_metadata_factory,
     category_type_metadata_choice_factory
@@ -247,7 +243,6 @@ def test_category_types(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_plan_root_page_exists(graphql_client_query_data, plan):
     data = graphql_client_query_data(
         '''
@@ -269,7 +264,6 @@ def test_plan_root_page_exists(graphql_client_query_data, plan):
     assert page['id'] == str(plan.root_page.id)
 
 
-@pytest.mark.django_db
 def test_plan_root_page_contains_block(graphql_client_query_data, plan):
     hero_data = {'layout': 'big_image', 'heading': 'foo', 'lead': 'bar'}
     plan.root_page.body = json.dumps([
@@ -303,7 +297,6 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
         assert block[key] == value
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize('menu_field,menu_key,with_descendants,expected_pages', [
     ('mainMenu', 'show_in_menus', False, ['page1_in_menu', 'page2_in_menu']),
     ('mainMenu', 'show_in_menus', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),

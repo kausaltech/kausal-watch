@@ -1,8 +1,9 @@
 import pytest
 
 from actions.tests.factories import ActionListBlockFactory
-from pages.models import CategoryPage
 from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFactory
+
+pytestmark = pytest.mark.django_db
 
 MULTI_USE_IMAGE_FRAGMENT = '''
     fragment MultiUseImageFragment on Image {
@@ -84,7 +85,6 @@ def expected_result_multi_use_image_fragment(image_block):
     }
 
 
-@pytest.mark.django_db
 def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_block):
     page = plan.root_page
     page.body = [
@@ -114,7 +114,6 @@ def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_
     )
 
 
-@pytest.mark.django_db
 def test_category_list_block(graphql_client_query_data, plan, category_list_block):
     page = plan.root_page
     page.body = [
@@ -137,7 +136,6 @@ def test_category_list_block(graphql_client_query_data, plan, category_list_bloc
     )
 
 
-@pytest.mark.django_db
 def test_indicator_group_block(graphql_client_query_data, plan, indicator_block):
     indicator = indicator_block['indicator']
     assert not indicator.goals.exists()
@@ -211,7 +209,6 @@ def test_indicator_group_block(graphql_client_query_data, plan, indicator_block)
     )
 
 
-@pytest.mark.django_db
 def test_indicator_highlights_block(graphql_client_query_data, plan):
     page = plan.root_page
     page.body = [
@@ -230,7 +227,6 @@ def test_indicator_highlights_block(graphql_client_query_data, plan):
     )
 
 
-@pytest.mark.django_db
 def test_indicator_showcase_block(graphql_client_query_data, plan, indicator_showcase_block):
     page = plan.root_page
     page.body = [
@@ -255,7 +251,6 @@ def test_indicator_showcase_block(graphql_client_query_data, plan, indicator_sho
     )
 
 
-@pytest.mark.django_db
 def test_action_highlights_block(graphql_client_query_data, plan):
     page = plan.root_page
     page.body = [
@@ -274,7 +269,6 @@ def test_action_highlights_block(graphql_client_query_data, plan):
     )
 
 
-@pytest.mark.django_db
 def test_card_list_block(graphql_client_query_data, plan, card_block):
     # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
     # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
@@ -316,7 +310,6 @@ def test_card_list_block(graphql_client_query_data, plan, card_block):
     )
 
 
-@pytest.mark.django_db
 def test_question_answer_block(graphql_client_query_data, plan, static_page, question_block):
     question_answer_block = QuestionAnswerBlockFactory(questions=[question_block])
     static_page.body = [
@@ -346,7 +339,6 @@ def test_question_answer_block(graphql_client_query_data, plan, static_page, que
     )
 
 
-@pytest.mark.django_db
 def test_static_page_lead_paragraph(graphql_client_query_data, plan, static_page):
     data = graphql_client_query_data(
         '''
@@ -377,7 +369,6 @@ def test_static_page_lead_paragraph(graphql_client_query_data, plan, static_page
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_static_page_header_image(graphql_client_query_data, plan, static_page):
     data = graphql_client_query_data(
         '''
@@ -415,7 +406,6 @@ def test_static_page_header_image(graphql_client_query_data, plan, static_page):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_static_page_body(graphql_client_query_data, plan, static_page):
     # We omit checking non-primitive blocks as they get their own tests.
     data = graphql_client_query_data(
@@ -466,7 +456,6 @@ def test_static_page_body(graphql_client_query_data, plan, static_page):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_categorymetadata_order_as_in_categorytypemetadata(
     graphql_client_query_data, plan, category, category_page, category_type, category_type_metadata_factory,
     category_metadata_rich_text_factory
@@ -522,7 +511,6 @@ def test_categorymetadata_order_as_in_categorytypemetadata(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_page_action_list(graphql_client_query_data, plan, category, category_page):
     action_list_block = ActionListBlockFactory(category_filter=category)
     category_page.body = [

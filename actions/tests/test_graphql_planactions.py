@@ -2,6 +2,8 @@ import pytest
 
 from aplans.utils import hyphenate
 
+pytestmark = pytest.mark.django_db
+
 ACTION_FRAGMENT = '''
     fragment ActionFragment on Action {
       id
@@ -49,7 +51,6 @@ ACTION_FRAGMENT = '''
     '''
 
 
-@pytest.mark.django_db
 def test_planactions(graphql_client_query_data, plan, action, action_schedule, category,
                      action_responsible_party):
     action.schedule.add(action_schedule)

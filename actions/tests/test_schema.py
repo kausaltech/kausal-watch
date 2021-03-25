@@ -10,6 +10,8 @@ from actions.tests.factories import (
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 from indicators.tests.factories import IndicatorLevelFactory
 
+pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture
 def plan():
@@ -58,7 +60,6 @@ def category_level(category_type):
     return CategoryLevelFactory(type=category_type)
 
 
-@pytest.mark.django_db
 def test_plan_domain_node(graphql_client_query_data):
     plan = PlanFactory()
     domain = plan.domains.first()
@@ -90,7 +91,6 @@ def test_plan_domain_node(graphql_client_query_data):
     assert data == expected
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize('show_admin_link', [True, False])
 def test_plan_node(graphql_client_query_data, show_admin_link):
     plan = PlanFactory(show_admin_link=show_admin_link)
@@ -269,7 +269,6 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_metadata_choice_node(
     graphql_client_query_data, plan, category_metadata_choice, category_type_metadata__ordered_choice,
     category_type_metadata_choice
@@ -324,7 +323,6 @@ def test_category_metadata_choice_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_metadata_rich_text_node(
     graphql_client_query_data, plan, category_metadata_rich_text, category_type_metadata__rich_text
 ):
@@ -370,7 +368,6 @@ def test_category_metadata_rich_text_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_level_node(graphql_client_query_data, plan, category_level, category):
     # We need to include the `category` fixture so we can access the CategoryLevelNode via planCategories
     data = graphql_client_query_data(
@@ -409,7 +406,6 @@ def test_category_level_node(graphql_client_query_data, plan, category_level, ca
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_type_metadata_node(
     graphql_client_query_data, plan, category_metadata_rich_text, category_metadata_choice,
     category_type_metadata__rich_text, category_type_metadata__ordered_choice
@@ -455,7 +451,6 @@ def test_category_type_metadata_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_type_metadata_choice_node(
     graphql_client_query_data, plan, category_type_metadata_choice, category_metadata_choice
 ):
@@ -491,7 +486,6 @@ def test_category_type_metadata_choice_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_type_node(
     graphql_client_query_data, plan, category_type, category, category_level, category_type_metadata__rich_text
 ):
@@ -556,7 +550,6 @@ def test_category_type_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_category_node(
     graphql_client_query_data, plan, category_type, category, category_level, category_metadata_rich_text,
     category_metadata_choice
@@ -642,7 +635,6 @@ def test_category_node(
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_scenario_node(graphql_client_query_data):
     scenario = ScenarioFactory()
     data = graphql_client_query_data(
@@ -679,7 +671,6 @@ def test_scenario_node(graphql_client_query_data):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_impact_group_node(graphql_client_query_data):
     impact_group = ImpactGroupFactory()
     impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group)
@@ -749,7 +740,6 @@ def test_impact_group_node(graphql_client_query_data):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_impact_group_action_node(graphql_client_query_data):
     impact_group_action = ImpactGroupActionFactory()
     data = graphql_client_query_data(
@@ -802,7 +792,6 @@ def test_impact_group_action_node(graphql_client_query_data):
     assert data == expected
 
 
-@pytest.mark.django_db
 def test_monitoring_quality_point_node(graphql_client_query_data):
     monitoring_quality_point = MonitoringQualityPointFactory()
     data = graphql_client_query_data(

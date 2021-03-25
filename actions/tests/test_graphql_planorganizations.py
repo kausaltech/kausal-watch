@@ -1,6 +1,8 @@
 import pytest
 from pytest_factoryboy import LazyFixture
 
+pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture
 def suborganization(organization_factory, organization):
@@ -12,7 +14,6 @@ def another_organization(organization_factory):
     return organization_factory()
 
 
-@pytest.mark.django_db
 @pytest.mark.parametrize('with_ancestors', [True, False])
 @pytest.mark.parametrize('organization__parent', [LazyFixture('another_organization')])
 def test_planorganizations(graphql_client_query_data, another_organization, organization, suborganization, plan,

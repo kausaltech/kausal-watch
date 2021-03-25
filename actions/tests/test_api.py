@@ -1,8 +1,8 @@
 import pytest
-from actions.models import ActionSchedule
+
+pytestmark = pytest.mark.django_db
 
 
-@pytest.mark.django_db
 def test_plan_api_get(api_client, plan_list_url, plan):
     response = api_client.get(plan_list_url)
     data = response.json_data
@@ -32,7 +32,6 @@ def test_plan_api_get(api_client, plan_list_url, plan):
 
 
 """
-@pytest.mark.django_db
 def test_action_api_get(api_client, action_list_url, action):
     response = api_client.get(action_list_url, data=dict(include='plan'))
     data = response.json_data

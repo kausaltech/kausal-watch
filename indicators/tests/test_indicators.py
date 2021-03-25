@@ -1,6 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.django_db
 
-@pytest.mark.django_db
+
 def test_indicator_can_be_saved(indicator):
     pass
