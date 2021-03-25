@@ -2,6 +2,10 @@ import pytest
 
 from aplans.utils import hyphenate
 
+from actions.tests.factories import (
+    ActionFactory, ActionScheduleFactory, ActionResponsiblePartyFactory, CategoryFactory, PlanFactory
+)
+
 pytestmark = pytest.mark.django_db
 
 ACTION_FRAGMENT = '''
@@ -51,17 +55,14 @@ ACTION_FRAGMENT = '''
     '''
 
 
-def test_planactions(graphql_client_query_data, plan, action, action_schedule, category,
-                     action_responsible_party):
-    action.schedule.add(action_schedule)
-    action.categories.add(category)
-    action.responsible_parties.add(action_responsible_party)
-    assert action.schedule.count() == 1
-    schedule = action.schedule.first()
-    assert action.categories.count() == 1
-    category = action.categories.first()
-    assert action.responsible_parties.count() == 1
-    responsible_party = action.responsible_parties.first()
+def test_planactions(graphql_client_query_data):
+    plan = PlanFactory()
+    schedule = ActionScheduleFactory(plan=plan)
+    category = CategoryFactory()
+    action = ActionFactory(plan=plan,
+                           categories=[category],
+                           schedule=[schedule])
+    responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -90,7 +91,7 @@ def test_planactions(graphql_client_query_data, plan, action, action_schedule, c
                 'identifier': action.status.identifier,
                 'name': action.status.name,
             },
-            'manualStatusReason': None,
+            'manualStatusReason': action.manual_status_reason,
             'implementationPhase': {
                 'id': str(action.implementation_phase.id),
                 'identifier': action.implementation_phase.identifier,

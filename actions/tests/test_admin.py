@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from pytest_django.asserts import assertContains
 
-from actions.tests.factories import PlanFactory
+from actions.tests.factories import ActionContactFactory, PlanFactory
 from actions.wagtail_admin import ActivePlanAdmin
 
 pytestmark = pytest.mark.django_db
@@ -32,7 +32,8 @@ def test_login_removes_user_from_staff_if_no_plan_admin(user, client):
     assert not user.is_staff
 
 
-def test_active_plan_menu_item_not_shown_to_action_contact_person(action_contact, rf):
+def test_active_plan_menu_item_not_shown_to_action_contact_person(rf):
+    action_contact = ActionContactFactory()
     request = get_request(rf, action_contact.person.user)
     active_plan_admin = ActivePlanAdmin()
     assert not active_plan_admin.get_menu_item().is_shown(request)

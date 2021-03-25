@@ -1,5 +1,6 @@
 import pytest
-from pytest_factoryboy import LazyFixture
+
+from actions.tests.factories import ActionFactory, ActionResponsiblePartyFactory, OrganizationFactory, PlanFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -15,15 +16,15 @@ def another_organization(organization_factory):
 
 
 @pytest.mark.parametrize('with_ancestors', [True, False])
-@pytest.mark.parametrize('organization__parent', [LazyFixture('another_organization')])
-def test_planorganizations(graphql_client_query_data, another_organization, organization, suborganization, plan,
-                           action_responsible_party, with_ancestors):
-    superorganization = another_organization
-    assert plan.organization == organization
-    assert organization.parent == another_organization
-    assert list(organization.children.all()) == [suborganization]
+def test_planorganizations(graphql_client_query_data, with_ancestors):
+    superorganization = OrganizationFactory()
+    organization = OrganizationFactory(parent=superorganization)
+    suborganization = OrganizationFactory(parent=organization)
+    plan = PlanFactory(organization=organization)
     assert organization.classification is None
     assert suborganization.classification is None
+    action = ActionFactory(plan=plan)
+    ActionResponsiblePartyFactory(action=action, organization=organization)
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $withAncestors: Boolean!) {

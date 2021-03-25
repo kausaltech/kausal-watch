@@ -10,6 +10,7 @@ from images.tests.factories import AplansImageFactory
 from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
 from content.tests.factories import SiteGeneralContentFactory
+from users.tests.factories import UserFactory
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -163,6 +164,20 @@ class ScenarioFactory(DjangoModelFactory):
     description = "Scenario description"
 
 
+class ActionStatusUpdateFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionStatusUpdate'
+
+    action = SubFactory('actions.tests.factories.ActionFactory')
+    title = "Action status update"
+    date = datetime.date(2020, 1, 1)
+    author = SubFactory(PersonFactory)
+    content = "Action status update content"
+    # created_at = None  # Should be set automatically
+    # modified_at = None  # Should be set automatically
+    created_by = SubFactory(UserFactory)
+
+
 class ImpactGroupFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ImpactGroup'
@@ -198,11 +213,32 @@ class ActionFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Action {i}")
     identifier = Sequence(lambda i: f'action{i}')
     official_name = name
+    image = SubFactory(AplansImageFactory)
     description = "Action description"
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..plan'))
     status = SubFactory(ActionStatusFactory, plan=SelfAttribute('..plan'))
     implementation_phase = SubFactory(ActionImplementationPhaseFactory, plan=SelfAttribute('..plan'))
+    manual_status = True
+    manual_status_reason = "Because this is a test."
     completion = 99
+
+    _contact_person = RelatedFactory('actions.tests.factories.ActionContactFactory', factory_related_name='action')
+    _impact_group_action = RelatedFactory('actions.tests.factories.ImpactGroupActionFactory',
+                                          factory_related_name='action',
+                                          group__plan=SelfAttribute('...plan'),
+                                          impact=SelfAttribute('..impact'),)
+
+    @post_generation
+    def categories(obj, create, extracted, **kwargs):
+        if create and extracted:
+            for category in extracted:
+                obj.categories.add(category)
+
+    @post_generation
+    def monitoring_quality_points(obj, create, extracted, **kwargs):
+        if create and extracted:
+            for monitoring_quality_point in extracted:
+                obj.monitoring_quality_points.add(monitoring_quality_point)
 
     @post_generation
     def schedule(obj, create, extracted, **kwargs):
@@ -231,7 +267,7 @@ class ImpactGroupActionFactory(DjangoModelFactory):
         model = 'actions.ImpactGroupAction'
 
     group = SubFactory(ImpactGroupFactory, _action=None)
-    action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'))
+    action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'), _impact_group_action=None)
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..group.plan'))
 
 

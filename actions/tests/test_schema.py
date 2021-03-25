@@ -2,13 +2,13 @@ import pytest
 
 from actions.models import CategoryTypeMetadata
 from actions.tests.factories import (
-    ActionFactory, ActionScheduleFactory, ActionTaskFactory, CategoryFactory, CategoryLevelFactory,
-    CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory, CategoryTypeFactory,
-    CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory,
-    PlanFactory, MonitoringQualityPointFactory, ScenarioFactory
+    ActionFactory, ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusUpdateFactory, ActionTaskFactory,
+    CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory,
+    CategoryTypeFactory, CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, ImpactGroupFactory,
+    ImpactGroupActionFactory, PlanFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
-from indicators.tests.factories import IndicatorLevelFactory
+from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -95,7 +95,7 @@ def test_plan_domain_node(graphql_client_query_data):
 def test_plan_node(graphql_client_query_data, show_admin_link):
     plan = PlanFactory(show_admin_link=show_admin_link)
     action_schedule = ActionScheduleFactory(plan=plan)
-    action = ActionFactory(plan=plan, schedule=[action_schedule])
+    action = ActionFactory(plan=plan, schedule=[action_schedule], _impact_group_action=None)
     category_type = CategoryTypeFactory(plan=plan)
     # Switch off RelatedFactory _action because it would generate an extra action
     impact_group = ImpactGroupFactory(plan=plan, _action=None)
@@ -672,8 +672,10 @@ def test_scenario_node(graphql_client_query_data):
 
 
 def test_impact_group_node(graphql_client_query_data):
-    impact_group = ImpactGroupFactory()
-    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group)
+    impact_group = ImpactGroupFactory(_action=None)
+    impact_group_action = ImpactGroupActionFactory(group=impact_group)
+    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group, _action=None)
+    impact_group_action_child = ImpactGroupActionFactory(group=impact_group_child)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -693,6 +695,7 @@ def test_impact_group_node(graphql_client_query_data):
               color
               actions {
                 __typename
+                id
               }
               name
             }
@@ -715,6 +718,7 @@ def test_impact_group_node(graphql_client_query_data):
                 'color': impact_group.color,
                 'actions': [{
                     '__typename': 'ImpactGroupAction',
+                    'id': str(impact_group_action.id),
                 }],
                 'name': impact_group.name,
             }, {
@@ -732,6 +736,7 @@ def test_impact_group_node(graphql_client_query_data):
                 'color': impact_group_child.color,
                 'actions': [{
                     '__typename': 'ImpactGroupAction',
+                    'id': str(impact_group_action_child.id),
                 }],
                 'name': impact_group_child.name,
             }]
@@ -875,6 +880,286 @@ def test_action_task_node(graphql_client_query_data):
                 'createdAt': action_task.created_at.isoformat(),
                 'modifiedAt': action_task.modified_at.isoformat(),
             }]
+        }]
+    }
+    assert data == expected
+
+
+def test_action_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action_schedule = ActionScheduleFactory(plan=plan)
+    category = CategoryFactory()
+    monitoring_quality_point = MonitoringQualityPointFactory()
+    action = ActionFactory(plan=plan,
+                           categories=[category],
+                           monitoring_quality_points=[monitoring_quality_point],
+                           schedule=[action_schedule])
+    indicator = IndicatorFactory(organization=plan.organization)
+    action_indicator = ActionIndicatorFactory(action=action, indicator=indicator)
+    action_responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
+    action_status_update = ActionStatusUpdateFactory(action=action)
+    action_task = ActionTaskFactory(action=action)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            __typename
+            id
+            plan {
+              __typename
+              id
+            }
+            name
+            officialName
+            identifier
+            description
+            status {
+              __typename
+              id
+            }
+            completion
+            schedule {
+              __typename
+              id
+            }
+            responsibleParties {
+              __typename
+              id
+            }
+            categories {
+              __typename
+              id
+            }
+            indicators {
+              __typename
+              id
+            }
+            contactPersons {
+              __typename
+              id
+            }
+            updatedAt
+            tasks {
+              __typename
+              id
+            }
+            relatedIndicators {
+              __typename
+              id
+            }
+            impact {
+              __typename
+              id
+            }
+            statusUpdates {
+              __typename
+              id
+            }
+            # The following are in a separate test case
+            # mergedWith {
+            #   __typename
+            #   id
+            # }
+            # mergedActions {
+            #   __typename
+            #   id
+            # }
+            impactGroups {
+              __typename
+              id
+            }
+            monitoringQualityPoints {
+              __typename
+              id
+            }
+            implementationPhase {
+              __typename
+              id
+            }
+            manualStatusReason
+            # The following are in a separate test case
+            # nextAction {
+            #   __typename
+            #   id
+            # }
+            # previousAction {
+            #   __typename
+            #   id
+            # }
+            image {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            '__typename': 'Action',
+            'id': str(action.id),
+            'plan': {
+                '__typename': 'Plan',
+                'id': str(plan.identifier),
+            },
+            'name': action.name,
+            'officialName': action.official_name,
+            'identifier': action.identifier,
+            'description': action.description,
+            'status': {
+                '__typename': 'ActionStatus',
+                'id': str(action.status.id),
+            },
+            'completion': action.completion,
+            'schedule': [{
+                '__typename': 'ActionSchedule',
+                'id': str(action_schedule.id),
+            }],
+            'responsibleParties': [{
+                '__typename': 'ActionResponsibleParty',
+                'id': str(action_responsible_party.id),
+            }],
+            'categories': [{
+                '__typename': 'Category',
+                'id': str(category.id),
+            }],
+            'indicators': [{
+                '__typename': 'Indicator',
+                'id': str(indicator.id),
+            }],
+            'contactPersons': [{
+                '__typename': 'ActionContactPerson',
+                'id': str(action.contact_persons.first().id),
+            }],
+            'updatedAt': action.updated_at.isoformat(),
+            'tasks': [{
+                '__typename': 'ActionTask',
+                'id': str(action_task.id),
+            }],
+            'relatedIndicators': [{
+                '__typename': 'ActionIndicator',
+                'id': str(action_indicator.id),
+            }],
+            'impact': {
+                '__typename': 'ActionImpact',
+                'id': str(action.impact.id),
+            },
+            'statusUpdates': [{
+                '__typename': 'ActionStatusUpdate',
+                'id': str(action_status_update.id),
+            }],
+            'impactGroups': [{
+                '__typename': 'ImpactGroupAction',
+                'id': str(action.impact_groups.first().id),
+            }],
+            'monitoringQualityPoints': [{
+                '__typename': 'MonitoringQualityPoint',
+                'id': str(monitoring_quality_point.id),
+            }],
+            'implementationPhase': {
+                '__typename': 'ActionImplementationPhase',
+                'id': str(action.implementation_phase.id),
+            },
+            'manualStatusReason': action.manual_status_reason,
+            'image': {
+                '__typename': 'Image',
+                'id': str(action.image.id),
+            },
+        }]
+    }
+    assert data == expected
+
+
+def test_action_node_merged(graphql_client_query_data):
+    plan = PlanFactory()
+    action1 = ActionFactory(plan=plan)
+    action2 = ActionFactory(plan=plan, merged_with=action1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            __typename
+            id
+            mergedWith {
+              __typename
+              id
+            }
+            mergedActions {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            '__typename': 'Action',
+            'id': str(action1.id),
+            'mergedWith': None,
+            'mergedActions': [{
+                '__typename': 'Action',
+                'id': str(action2.id),
+            }],
+        }, {
+            '__typename': 'Action',
+            'id': str(action2.id),
+            'mergedWith': {
+                '__typename': 'Action',
+                'id': str(action1.id),
+            },
+            'mergedActions': [],
+        }]
+    }
+    assert data == expected
+
+
+def test_action_node_next_previous(graphql_client_query_data):
+    plan = PlanFactory()
+    action1 = ActionFactory(plan=plan)
+    action2 = ActionFactory(plan=plan)
+    assert action1.get_next_action() == action2
+    assert action2.get_next_action() is None
+    assert action1.get_previous_action() is None
+    assert action2.get_previous_action() == action1
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            __typename
+            id
+            nextAction {
+              __typename
+              id
+            }
+            previousAction {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            '__typename': 'Action',
+            'id': str(action1.id),
+            'nextAction': {
+                '__typename': 'Action',
+                'id': str(action2.id),
+            },
+            'previousAction': None,
+        }, {
+            '__typename': 'Action',
+            'id': str(action2.id),
+            'nextAction': None,
+            'previousAction': {
+                '__typename': 'Action',
+                'id': str(action1.id),
+            }
         }]
     }
     assert data == expected

@@ -1,10 +1,10 @@
-from factory import SubFactory
+from factory import Sequence, SubFactory
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import indicators
-from actions.tests.factories import OrganizationFactory, PlanFactory
+from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
 from pages.tests.factories import PageLinkBlockFactory
 
 
@@ -12,7 +12,7 @@ class UnitFactory(DjangoModelFactory):
     class Meta:
         model = 'indicators.Unit'
 
-    name = 'unit1'
+    name = Sequence(lambda i: f"Unit {i}")
 
 
 class IndicatorFactory(DjangoModelFactory):
@@ -31,6 +31,16 @@ class IndicatorLevelFactory(DjangoModelFactory):
     indicator = SubFactory(IndicatorFactory)
     plan = SubFactory(PlanFactory)
     level = 'strategic'
+
+
+class ActionIndicatorFactory(DjangoModelFactory):
+    class Meta:
+        model = 'indicators.ActionIndicator'
+
+    action = SubFactory(ActionFactory)
+    indicator = SubFactory(IndicatorFactory)
+    effect_type = 'increases'
+    indicates_action_progress = True
 
 
 class IndicatorBlockFactory(StructBlockFactory):
