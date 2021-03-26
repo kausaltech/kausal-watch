@@ -21,8 +21,6 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
     organization = OrganizationFactory(parent=superorganization)
     suborganization = OrganizationFactory(parent=organization)
     plan = PlanFactory(organization=organization)
-    assert organization.classification is None
-    assert suborganization.classification is None
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=organization)
     data = graphql_client_query_data(
@@ -52,14 +50,18 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
             'id': str(superorganization.id),
             'abbreviation': superorganization.abbreviation,
             'name': superorganization.name,
-            'classification': None,
+            'classification': {
+                'name': superorganization.classification.name,
+            },
             'parent': None,
         })
     expected_organizations.append({
         'id': str(organization.id),
         'abbreviation': organization.abbreviation,
         'name': organization.name,
-        'classification': None,
+        'classification': {
+            'name': organization.classification.name,
+        },
         'parent': {
             'id': superorganization.id,
         },

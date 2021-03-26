@@ -6,21 +6,12 @@ from wagtail_factories import StructBlockFactory
 
 import actions
 from actions.models import CategoryTypeMetadata, get_default_language, get_supported_languages
+from aplans.tests.factories import OrganizationFactory
 from images.tests.factories import AplansImageFactory
 from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
 from content.tests.factories import SiteGeneralContentFactory
 from users.tests.factories import UserFactory
-
-
-class OrganizationFactory(DjangoModelFactory):
-    class Meta:
-        model = 'django_orghierarchy.Organization'
-
-    id = Sequence(lambda i: f'organization{i}')
-    name = Sequence(lambda i: f"Organization {i}")
-    abbreviation = Sequence(lambda i: f'org{i}')
-    parent = None
 
 
 class PlanFactory(DjangoModelFactory):
@@ -274,7 +265,7 @@ class ActionContactFactory(DjangoModelFactory):
         model = 'actions.ActionContactPerson'
 
     action = SubFactory(ActionFactory)
-    person = SubFactory(PersonFactory)
+    person = SubFactory(PersonFactory, organization=SelfAttribute('..action.plan.organization'))
 
 
 class ActionListBlockFactory(StructBlockFactory):
