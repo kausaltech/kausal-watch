@@ -2,10 +2,12 @@ import pytest
 
 from actions.models import CategoryTypeMetadata
 from actions.tests.factories import (
-    ActionFactory, ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusUpdateFactory, ActionTaskFactory,
-    CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory, CategoryMetadataRichTextFactory,
-    CategoryTypeFactory, CategoryTypeMetadataFactory, CategoryTypeMetadataChoiceFactory, ImpactGroupFactory,
-    ImpactGroupActionFactory, PlanFactory, MonitoringQualityPointFactory, ScenarioFactory
+    ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
+    ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
+    ActionTaskFactory, CategoryFactory, CategoryLevelFactory, CategoryMetadataChoiceFactory,
+    CategoryMetadataRichTextFactory, CategoryTypeFactory, CategoryTypeMetadataFactory,
+    CategoryTypeMetadataChoiceFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory, PlanDomainFactory,
+    MonitoringQualityPointFactory, ScenarioFactory
 )
 from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
@@ -62,7 +64,7 @@ def category_level(category_type):
 
 def test_plan_domain_node(graphql_client_query_data):
     plan = PlanFactory()
-    domain = plan.domains.first()
+    domain = PlanDomainFactory(plan=plan)
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $hostname: String!) {
@@ -94,11 +96,12 @@ def test_plan_domain_node(graphql_client_query_data):
 @pytest.mark.parametrize('show_admin_link', [True, False])
 def test_plan_node(graphql_client_query_data, show_admin_link):
     plan = PlanFactory(show_admin_link=show_admin_link)
+    domain = PlanDomainFactory(plan=plan)
     action_schedule = ActionScheduleFactory(plan=plan)
-    action = ActionFactory(plan=plan, schedule=[action_schedule], _impact_group_action=None)
+    action = ActionFactory(plan=plan, schedule=[action_schedule])
     category_type = CategoryTypeFactory(plan=plan)
     # Switch off RelatedFactory _action because it would generate an extra action
-    impact_group = ImpactGroupFactory(plan=plan, _action=None)
+    impact_group = ImpactGroupFactory(plan=plan)
     ImpactGroupActionFactory(group=impact_group, action=action, impact=action.impact)
     admin_hostname = AdminHostnameFactory()
     client_plan = ClientPlanFactory(plan=plan, client=admin_hostname.client)
@@ -184,7 +187,7 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
           }
         }
         ''',
-        variables={'plan': plan.identifier, 'hostname': plan.domains.first().hostname}
+        variables={'plan': plan.identifier, 'hostname': domain.hostname}
     )
     if show_admin_link:
         expected_admin_url = client_plan.client.get_admin_url()
@@ -672,9 +675,9 @@ def test_scenario_node(graphql_client_query_data):
 
 
 def test_impact_group_node(graphql_client_query_data):
-    impact_group = ImpactGroupFactory(_action=None)
+    impact_group = ImpactGroupFactory()
     impact_group_action = ImpactGroupActionFactory(group=impact_group)
-    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group, _action=None)
+    impact_group_child = ImpactGroupFactory(plan=impact_group.plan, parent=impact_group)
     impact_group_action_child = ImpactGroupActionFactory(group=impact_group_child)
     data = graphql_client_query_data(
         '''
@@ -899,10 +902,12 @@ def test_action_node(graphql_client_query_data):
     action_responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     action_status_update = ActionStatusUpdateFactory(action=action)
     action_task = ActionTaskFactory(action=action)
+    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
+    impact_group_action = ImpactGroupActionFactory(action=action, group__plan=action.plan, impact=action.impact)
     data = graphql_client_query_data(
         '''
-        query($plan: ID!) {
-          planActions(plan: $plan) {
+        query($action: ID!) {
+          action(id: $action) {
             __typename
             id
             plan {
@@ -993,10 +998,10 @@ def test_action_node(graphql_client_query_data):
           }
         }
         ''',
-        variables={'plan': plan.identifier}
+        variables={'action': action.id}
     )
     expected = {
-        'planActions': [{
+        'action': {
             '__typename': 'Action',
             'id': str(action.id),
             'plan': {
@@ -1030,7 +1035,7 @@ def test_action_node(graphql_client_query_data):
             }],
             'contactPersons': [{
                 '__typename': 'ActionContactPerson',
-                'id': str(action.contact_persons.first().id),
+                'id': str(action_contact.id),
             }],
             'updatedAt': action.updated_at.isoformat(),
             'tasks': [{
@@ -1051,7 +1056,7 @@ def test_action_node(graphql_client_query_data):
             }],
             'impactGroups': [{
                 '__typename': 'ImpactGroupAction',
-                'id': str(action.impact_groups.first().id),
+                'id': str(impact_group_action.id),
             }],
             'monitoringQualityPoints': [{
                 '__typename': 'MonitoringQualityPoint',
@@ -1066,7 +1071,7 @@ def test_action_node(graphql_client_query_data):
                 '__typename': 'Image',
                 'id': str(action.image.id),
             },
-        }]
+        }
     }
     assert data == expected
 
@@ -1161,5 +1166,314 @@ def test_action_node_next_previous(graphql_client_query_data):
                 'id': str(action1.id),
             }
         }]
+    }
+    assert data == expected
+
+
+def test_action_schedule_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action_schedule = ActionScheduleFactory(plan=plan)
+    action = ActionFactory(plan=plan, schedule=[action_schedule])
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            schedule {
+              __typename
+              id
+              plan {
+                __typename
+                id
+              }
+              beginsAt
+              endsAt
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'schedule': [{
+                '__typename': 'ActionSchedule',
+                'id': str(action_schedule.id),
+                'plan': {
+                   '__typename': 'Plan',
+                   'id': plan.identifier,
+                },
+                'beginsAt': action_schedule.begins_at.isoformat(),
+                'endsAt': action_schedule.ends_at.isoformat(),
+            }]
+        }
+    }
+    assert data == expected
+
+
+def test_action_status_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action_status = ActionStatusFactory(plan=plan)
+    action = ActionFactory(plan=plan, status=action_status)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            status {
+              __typename
+              id
+              plan {
+                __typename
+                id
+              }
+              name
+              identifier
+              isCompleted
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'status': {
+                '__typename': 'ActionStatus',
+                'id': str(action_status.id),
+                'plan': {
+                   '__typename': 'Plan',
+                   'id': plan.identifier,
+                },
+                'name': action_status.name,
+                'identifier': action_status.identifier,
+                'isCompleted': action_status.is_completed,
+            }
+        }
+    }
+    assert data == expected
+
+
+def test_action_implementation_phase_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action_implementation_phase = ActionImplementationPhaseFactory(plan=plan)
+    action = ActionFactory(plan=plan, implementation_phase=action_implementation_phase)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            implementationPhase {
+              __typename
+              id
+              plan {
+                __typename
+                id
+              }
+              order
+              name
+              identifier
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'implementationPhase': {
+                '__typename': 'ActionImplementationPhase',
+                'id': str(action_implementation_phase.id),
+                'plan': {
+                   '__typename': 'Plan',
+                   'id': plan.identifier,
+                },
+                'order': action_implementation_phase.order,
+                'name': action_implementation_phase.name,
+                'identifier': action_implementation_phase.identifier,
+            }
+        }
+    }
+    assert data == expected
+
+
+def test_action_responsible_party_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action = ActionFactory(plan=plan)
+    action_responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            responsibleParties {
+              __typename
+              id
+              action {
+                __typename
+                id
+              }
+              organization {
+                __typename
+                id
+              }
+              order
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'responsibleParties': [{
+                '__typename': 'ActionResponsibleParty',
+                'id': str(action_responsible_party.id),
+                'action': {
+                   '__typename': 'Action',
+                   'id': str(action.id),
+                },
+                'organization': {
+                   '__typename': 'Organization',
+                   'id': str(plan.organization.id),
+                },
+                'order': action_responsible_party.order,
+            }]
+        }
+    }
+    assert data == expected
+
+
+def test_action_contact_person_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action = ActionFactory(plan=plan)
+    action_contact = ActionContactFactory(action=action, person__organization=plan.organization)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            contactPersons {
+              __typename
+              id
+              action {
+                __typename
+                id
+              }
+              person {
+                __typename
+                id
+              }
+              order
+              primaryContact
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'contactPersons': [{
+                '__typename': 'ActionContactPerson',
+                'id': str(action_contact.id),
+                'action': {
+                   '__typename': 'Action',
+                   'id': str(action.id),
+                },
+                'person': {
+                   '__typename': 'Person',
+                   'id': str(action_contact.person.id),
+                },
+                'order': action_contact.order,
+                'primaryContact': action_contact.primary_contact,
+            }]
+        }
+    }
+    assert data == expected
+
+
+def test_action_impact_node(graphql_client_query_data):
+    plan = PlanFactory()
+    action_impact = ActionImpactFactory(plan=plan)
+    action = ActionFactory(plan=plan, impact=action_impact)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            impact {
+              __typename
+              id
+              plan {
+                __typename
+                id
+              }
+              name
+              identifier
+              order
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'impact': {
+                '__typename': 'ActionImpact',
+                'id': str(action_impact.id),
+                'plan': {
+                   '__typename': 'Plan',
+                   'id': plan.identifier,
+                },
+                'name': action_impact.name,
+                'identifier': action_impact.identifier,
+                'order': action_impact.order,
+            }
+        }
+    }
+    assert data == expected
+
+
+def test_action_status_update_node(graphql_client_query_data):
+    action = ActionFactory()
+    action_status_update = ActionStatusUpdateFactory(action=action)
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            statusUpdates {
+              __typename
+              id
+              action {
+                __typename
+                id
+              }
+              title
+              date
+              author {
+                __typename
+                id
+              }
+              content
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+            'statusUpdates': [{
+                '__typename': 'ActionStatusUpdate',
+                'id': str(action_status_update.id),
+                'action': {
+                   '__typename': 'Action',
+                   'id': str(action.id),
+                },
+                'title': action_status_update.title,
+                'date': action_status_update.date.isoformat(),
+                'author': {
+                    '__typename': 'Person',
+                    'id': str(action_status_update.author.id),
+                },
+                'content': action_status_update.content,
+            }]
+        }
     }
     assert data == expected

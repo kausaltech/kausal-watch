@@ -38,8 +38,6 @@ class PlanFactory(DjangoModelFactory):
     primary_language = get_default_language()
     other_languages = [lang_code for lang_code, _ in get_supported_languages() if lang_code != get_default_language()]
 
-    _domain = RelatedFactory('actions.tests.factories.PlanDomainFactory', factory_related_name='plan')
-
 
 class PlanDomainFactory(DjangoModelFactory):
     class Meta:
@@ -74,6 +72,7 @@ class ActionScheduleFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
     name = "Test action schedule"
     begins_at = datetime.date(2020, 1, 1)
+    ends_at = datetime.date(2021, 1, 1)
 
 
 class ActionImpactFactory(DjangoModelFactory):
@@ -121,10 +120,9 @@ class CategoryFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'category{i}')
     name = Sequence(lambda i: f"Category {i}")
     image = SubFactory(AplansImageFactory)
-
-    _category_page = RelatedFactory(CategoryPageFactory,
-                                    factory_related_name='category',
-                                    parent=SelfAttribute('..type.plan.root_page'))
+    category_page = RelatedFactory(CategoryPageFactory,
+                                   factory_related_name='category',
+                                   parent=SelfAttribute('..type.plan.root_page'))
 
 
 class CategoryMetadataRichTextFactory(DjangoModelFactory):
@@ -189,10 +187,6 @@ class ImpactGroupFactory(DjangoModelFactory):
     weight = 1.0
     color = 'red'
 
-    _action = RelatedFactory('actions.tests.factories.ImpactGroupActionFactory',
-                             factory_related_name='group',
-                             group__plan=SelfAttribute('..plan'))
-
 
 class MonitoringQualityPointFactory(DjangoModelFactory):
     class Meta:
@@ -221,12 +215,6 @@ class ActionFactory(DjangoModelFactory):
     manual_status = True
     manual_status_reason = "Because this is a test."
     completion = 99
-
-    _contact_person = RelatedFactory('actions.tests.factories.ActionContactFactory', factory_related_name='action')
-    _impact_group_action = RelatedFactory('actions.tests.factories.ImpactGroupActionFactory',
-                                          factory_related_name='action',
-                                          group__plan=SelfAttribute('...plan'),
-                                          impact=SelfAttribute('..impact'),)
 
     @post_generation
     def categories(obj, create, extracted, **kwargs):
@@ -266,8 +254,8 @@ class ImpactGroupActionFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.ImpactGroupAction'
 
-    group = SubFactory(ImpactGroupFactory, _action=None)
-    action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'), _impact_group_action=None)
+    group = SubFactory(ImpactGroupFactory)
+    action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'))
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..group.plan'))
 
 
