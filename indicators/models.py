@@ -260,8 +260,8 @@ class Indicator(ClusterableModel):
     public_fields = [
         'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
-        'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'latest_value',
-        'related_actions', 'actions', 'related_causes', 'related_effects', 'dimensions',
+        'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
+        'related_causes', 'related_effects', 'dimensions',
     ]
 
     class Meta:

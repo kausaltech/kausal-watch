@@ -195,8 +195,8 @@ def test_indicator_group_block(graphql_client_query_data, plan, indicator_block)
                         'shortName': unit.short_name,
                         'name': unit.name,
                     },
-                    'minValue': None,
-                    'maxValue': None,
+                    'minValue': indicator.min_value,
+                    'maxValue': indicator.max_value,
                     'description': indicator.description,
                     # graphene_django puts choices into upper case in converter.convert_choice_name()
                     'timeResolution': indicator.time_resolution.upper(),
