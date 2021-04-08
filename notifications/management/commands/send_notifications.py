@@ -301,7 +301,7 @@ class NotificationEngine:
                     continue
                 template = templates_by_type.get(ttype)
                 if template is None:
-                    logger.error('No template for %s' % ttype)
+                    logger.debug('No template for %s' % ttype)
                     continue
 
                 cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
