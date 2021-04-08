@@ -147,7 +147,7 @@ class IndicatorResource(AplansResource):
         if dry_run:
             return
 
-        instance.set_latest_value()
+        instance.handle_values_update()
         user = self.request.user
         plan = user.get_active_admin_plan()
         if not instance.levels.filter(plan=plan).exists():

@@ -29,7 +29,7 @@ class Command(BaseCommand):
             val = IndicatorValue(indicator=indicator, date=now.date())
         val.value = share
         val.save()
-        indicator.set_latest_value()
+        indicator.handle_values_update()
 
     def handle_average_days_since_last_update(self, indicator, plan):
         now = timezone.now()
@@ -52,7 +52,7 @@ class Command(BaseCommand):
             val = IndicatorValue(indicator=indicator, date=now.date())
         val.value = avg
         val.save()
-        indicator.set_latest_value()
+        indicator.handle_values_update()
 
     def handle(self, *args, **options):
         IDENTIFIERS = ['share_of_updated_indicators', 'average_days_since_last_update']

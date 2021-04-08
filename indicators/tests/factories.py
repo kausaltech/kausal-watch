@@ -48,6 +48,7 @@ class IndicatorFactory(DjangoModelFactory):
     min_value = 0.0
     max_value = 100.0
     time_resolution = indicators.models.Indicator.TIME_RESOLUTIONS[0][0]
+    updated_values_due_at = None
     # created_at = None  # Should be set automatically
     # updated_at = None  # Should be set automatically
 

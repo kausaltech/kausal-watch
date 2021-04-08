@@ -1,5 +1,5 @@
 import datetime
-
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -226,6 +226,7 @@ class Indicator(ClusterableModel):
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
         verbose_name=_('time resolution')
     )
+    updated_values_due_at = models.DateField(null=True, blank=True, verbose_name=_('updated values due at'))
     latest_graph = models.ForeignKey(
         'IndicatorGraph', null=True, blank=True, related_name='+',
         on_delete=models.SET_NULL, editable=False
@@ -276,7 +277,7 @@ class Indicator(ClusterableModel):
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None
 
-    def set_latest_value(self):
+    def handle_values_update(self):
         try:
             latest_value = self.values.latest()
         except IndicatorValue.DoesNotExist:
@@ -284,7 +285,16 @@ class Indicator(ClusterableModel):
         if self.latest_value == latest_value:
             return
         self.latest_value = latest_value
-        self.save(update_fields=['latest_value'])
+        update_fields = ['latest_value']
+
+        if self.updated_values_due_at is not None:
+            # If latest_value is newer than updated_values_due_at - 1 year, add 1 year to updated_values_due_at
+            reporting_period_start = self.updated_values_due_at - relativedelta(years=1)
+            if latest_value.date >= reporting_period_start:
+                self.updated_values_due_at += relativedelta(years=1)
+                update_fields.append('updated_values_due_at')
+
+        self.save(update_fields=update_fields)
 
     def has_current_data(self):
         return self.latest_value_id is not None
@@ -425,6 +435,10 @@ class IndicatorValue(ClusterableModel):
         verbose_name_plural = _('indicator values')
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.indicator.handle_values_update()
 
     def clean(self):
         super().clean()
