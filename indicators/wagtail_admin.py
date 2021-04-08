@@ -281,6 +281,7 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('quantity'),
         FieldPanel('unit'),
         FieldPanel('time_resolution'),
+        FieldPanel('updated_values_due_at'),
         FieldPanel('min_value'),
         FieldPanel('max_value'),
         FieldPanel('level'),
