@@ -325,14 +325,13 @@ class Indicator(ClusterableModel):
 
     def get_notification_context(self, plan):
         if plan.uses_wagtail:
-            change_url = reverse('indicators_indicator_modeladmin_edit', kwargs=dict(instance_pk=self.id))
+            edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
         else:
-            change_url = reverse('admin:indicators_indicator_change', args=(self.id,))
+            edit_values_url = reverse('admin:indicators_indicator_change', args=(self.id,))
         return {
             'id': self.id,
-            'identifier': self.identifier,
             'name': self.name,
-            'change_url': change_url,
+            'edit_values_url': edit_values_url,
             'updated_at': self.updated_at,
             'updated_values_due_at': self.updated_values_due_at,
             'view_url': self.get_view_url(plan),
