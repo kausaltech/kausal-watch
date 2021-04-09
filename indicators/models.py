@@ -286,8 +286,9 @@ class Indicator(ClusterableModel):
             latest_value = self.values.latest()
         except IndicatorValue.DoesNotExist:
             latest_value = None
-        if self.latest_value == latest_value:
-            return
+        else:
+            if self.latest_value == latest_value:
+                return
         self.latest_value = latest_value
         update_fields = ['latest_value']
 
