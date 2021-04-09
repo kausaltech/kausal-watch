@@ -878,7 +878,7 @@ def test_action_task_node(graphql_client_query_data):
                 'state': action_task.state.upper(),
                 'comment': action_task.comment,
                 'dueAt': action_task.due_at.isoformat(),
-                'completedAt': action_task.completed_at.isoformat(),
+                'completedAt': None,
                 # 'completedBy': action_task.completed_by,
                 'createdAt': action_task.created_at.isoformat(),
                 'modifiedAt': action_task.modified_at.isoformat(),

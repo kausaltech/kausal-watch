@@ -304,7 +304,12 @@ class Person(index.Indexed, ClusterableModel):
         )
 
         logo = client.logo
-        if logo is not None:
+        if logo is None:
+            out['logo_url'] = None
+            out['logo_height'] = None
+            out['logo_width'] = None
+            out['logo_alt'] = None
+        else:
             rendition = logo.get_rendition('max-200x50')
             out['logo_url'] = admin_url + rendition.url
             out['logo_height'] = rendition.height

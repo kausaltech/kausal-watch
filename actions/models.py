@@ -600,15 +600,14 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
-    def get_notification_context(self):
-        plan = self.plan
+    def get_notification_context(self, plan):
         if plan.uses_wagtail:
             change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
         else:
             change_url = reverse('admin:actions_action_change', args=(self.id,))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
-            'updated_at': self.updated_at, 'view_url': self.get_view_url(), 'order': self.order,
+            'updated_at': self.updated_at, 'view_url': self.get_view_url(plan), 'order': self.order,
         }
 
     def has_contact_persons(self):
@@ -624,8 +623,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         return len(active_tasks)
     active_task_count.short_description = _('Active tasks')
 
-    def get_view_url(self):
-        plan = self.plan
+    def get_view_url(self, plan):
         if not plan or not plan.site_url:
             return None
         if plan.site_url.startswith('http'):
@@ -852,9 +850,9 @@ class ActionTask(models.Model):
         if self.completed_at is not None and self.completed_at > date.today():
             raise ValidationError({'completed_at': _("Date can't be in the future")})
 
-    def get_notification_context(self):
+    def get_notification_context(self, plan):
         return {
-            'action': self.action.get_notification_context(),
+            'action': self.action.get_notification_context(plan),
             'name': self.name,
             'due_at': self.due_at,
             'state': self.state
