@@ -341,9 +341,9 @@ class Indicator(ClusterableModel):
         if not plan or not plan.site_url:
             return None
         if plan.site_url.startswith('http'):
-            return '{}/indicators/{}'.format(plan.site_url, self.identifier)
+            return '{}/indicators/{}'.format(plan.site_url, self.id)
         else:
-            return 'https://{}/indicators/{}'.format(plan.site_url, self.identifier)
+            return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
 
     def __str__(self):
         return self.name

@@ -7,7 +7,7 @@
         {% with indicator = item.indicator %}
         <mj-text align="left" css-class="notification-subheader">
             <a href="{{ indicator.view_url }}">
-                <strong style="color: {{ theme.brand_dark_color }}">Mittari {{ indicator.identifier }}</strong>
+                <strong style="color: {{ theme.brand_dark_color }}">Mittari {{ indicator.id }}</strong>
             </a>
         </mj-text>
         <mj-text align="left" css-class="notification-header">

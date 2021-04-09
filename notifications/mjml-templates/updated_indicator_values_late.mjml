@@ -6,7 +6,7 @@
         {% for item in items %}
         {% with indicator = item.indicator %}
         <mj-text align="left" css-class="notification-subheader">
-            <a href="{{ indicator.view_url }}">Mittari {{ indicator.identifier }}</a>
+            <a href="{{ indicator.view_url }}">Mittari {{ indicator.id }}</a>
         </mj-text>
         <mj-text align="left" css-class="notification-header">
             <h2>{{ indicator.name }}</h2>
