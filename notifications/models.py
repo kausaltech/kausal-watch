@@ -20,6 +20,8 @@ class NotificationType(Enum):
     TASK_DUE_SOON = _("Task is due soon")
     ACTION_NOT_UPDATED = _("Action metadata has not been updated recently")
     NOT_ENOUGH_TASKS = _("Action doesn't have enough in-progress tasks")
+    UPDATED_INDICATOR_VALUES_LATE = _("Updated indicator values are late")
+    UPDATED_INDICATOR_VALUES_DUE_SOON = _("Updated indicator values are due soon")
 
     @property
     def identifier(self):

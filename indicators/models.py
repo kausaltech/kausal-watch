@@ -1,15 +1,17 @@
 import datetime
+import reversion
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
-from django.db import models
-from django.utils.translation import pgettext_lazy, gettext_lazy as _
-from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import JSONField
-from modeltrans.fields import TranslationField
-from modelcluster.models import ClusterableModel
+from django.db import models
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
-import reversion
+from modelcluster.models import ClusterableModel
+from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import IdentifierField, OrderedModel
@@ -258,6 +260,8 @@ class Indicator(ClusterableModel):
         related_name='contact_for_indicators', verbose_name=_('contact persons')
     )
 
+    sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
+
     public_fields = [
         'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
@@ -282,8 +286,9 @@ class Indicator(ClusterableModel):
             latest_value = self.values.latest()
         except IndicatorValue.DoesNotExist:
             latest_value = None
-        if self.latest_value == latest_value:
-            return
+        else:
+            if self.latest_value == latest_value:
+                return
         self.latest_value = latest_value
         update_fields = ['latest_value']
 
@@ -317,6 +322,28 @@ class Indicator(ClusterableModel):
         return self.latest_graph_id is not None
     has_graph.short_description = _('Has a graph')
     has_graph.boolean = True
+
+    def get_notification_context(self, plan):
+        if plan.uses_wagtail:
+            edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
+        else:
+            edit_values_url = reverse('admin:indicators_indicator_change', args=(self.id,))
+        return {
+            'id': self.id,
+            'name': self.name,
+            'edit_values_url': edit_values_url,
+            'updated_at': self.updated_at,
+            'updated_values_due_at': self.updated_values_due_at,
+            'view_url': self.get_view_url(plan),
+        }
+
+    def get_view_url(self, plan):
+        if not plan or not plan.site_url:
+            return None
+        if plan.site_url.startswith('http'):
+            return '{}/indicators/{}'.format(plan.site_url, self.id)
+        else:
+            return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
 
     def __str__(self):
         return self.name

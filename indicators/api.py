@@ -183,6 +183,7 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
 
         with transaction.atomic():
             n_deleted, _ = indicator.values.all().delete()
+            indicator.latest_value = None
 
             for data in validated_data:
                 categories = data.pop('categories', [])

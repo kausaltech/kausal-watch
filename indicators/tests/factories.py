@@ -7,6 +7,7 @@ from wagtail_factories import StructBlockFactory
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory, ScenarioFactory
 from pages.tests.factories import PageLinkBlockFactory
+from people.tests.factories import PersonFactory
 
 
 class UnitFactory(DjangoModelFactory):
@@ -155,3 +156,13 @@ class IndicatorGoalFactory(DjangoModelFactory):
     scenario = SubFactory(ScenarioFactory, plan=SelfAttribute('..plan'))
     value = 1.23
     date = datetime.date(2020, 1, 1)
+
+
+# FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
+# object. We might want to consider renaming the model IndicatorContactPerson to IndicatorContact or similar.
+class IndicatorContactFactory(DjangoModelFactory):
+    class Meta:
+        model = 'indicators.IndicatorContactPerson'
+
+    indicator = SubFactory(IndicatorFactory)
+    person = SubFactory(PersonFactory, organization=SelfAttribute('..indicator.organization'))
