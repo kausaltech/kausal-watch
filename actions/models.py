@@ -842,11 +842,20 @@ class ActionTask(models.Model):
         ordering = ('action', '-due_at')
         verbose_name = _('action task')
         verbose_name_plural = _('action tasks')
+        constraints = [
+            # Ensure a task is completed if and only if it has completed_at
+            models.CheckConstraint(check=~Q(state='completed') | Q(completed_at__isnull=False),
+                                   name='%(app_label)s_%(class)s_completed_at_if_completed'),
+            models.CheckConstraint(check=Q(completed_at__isnull=True) | Q(state='completed'),
+                                   name='%(app_label)s_%(class)s_completed_if_completed_at'),
+        ]
 
     def __str__(self):
         return self.name
 
     def clean(self):
+        if self.state != ActionTask.COMPLETED and self.completed_at is not None:
+            raise ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if self.state == ActionTask.COMPLETED and self.completed_at is None:
             raise ValidationError({'completed_at': _('Completed tasks must have a completion date')})
         if self.completed_at is not None and self.completed_at > date.today():
