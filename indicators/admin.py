@@ -313,7 +313,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         assert obj.organization_id is None or obj.organization == plan.organization
         obj.organization = plan.organization
         super().save_model(request, obj, form, change)
-        obj.set_latest_value()
+        obj.handle_values_update()
         obj.save(update_fields=['latest_value'])
 
         self._update_actions = obj.related_actions.filter(indicates_action_progress=True)
