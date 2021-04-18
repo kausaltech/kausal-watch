@@ -1072,7 +1072,7 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
         unique_together = (('type', 'identifier'),)
         verbose_name = _('category')
         verbose_name_plural = _('categories')
-        ordering = ('type', 'identifier')
+        ordering = ('type', 'order')
 
     def clean(self):
         if self.parent_id is not None:
