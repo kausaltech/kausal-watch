@@ -265,7 +265,9 @@ def get_or_create_plan_admin_group():
 
 def _sync_plan_admin_groups(user):
     plans = user.get_adminable_plans()
-    user.groups.filter(admin_for_plan__isnull=False).exclude(admin_for_plan__in=plans).delete()
+    groups_to_remove = user.groups.filter(admin_for_plan__isnull=False).exclude(admin_for_plan__in=plans)
+    for group in groups_to_remove:
+        user.groups.remove(group)
     wagtail_perms = get_wagtail_plan_admin_perms()
 
     for plan in plans:
