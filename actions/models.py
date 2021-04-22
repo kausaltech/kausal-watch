@@ -545,7 +545,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         return by_id['late']
 
     def recalculate_status(self, force_update=False):
-        if self.merged_with is not None or self.manual_status or self.plan.statuses_updated_manually:
+        if self.merged_with is not None or self.manual_status:
             return
 
         if self.status is not None and self.status.is_completed:
@@ -556,9 +556,6 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
 
         determine_monitoring_quality(self, self.plan.monitoring_quality_points.all())
 
-        tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
-        update_fields = []
-
         indicator_status = self._calculate_status_from_indicators()
         if indicator_status:
             new_completion = indicator_status['completion']
@@ -566,19 +563,18 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
             new_completion = None
 
         if self.completion != new_completion or force_update:
-            update_fields.append('completion')
             self.completion = new_completion
             self.updated_at = timezone.now()
-            update_fields.append('updated_at')
+            self.save(update_fields=['completion', 'updated_at'])
 
+        if self.plan.statuses_updated_manually:
+            return
+
+        tasks = self.tasks.exclude(state=ActionTask.CANCELLED).only('due_at', 'completed_at')
         status = self._determine_status(tasks, indicator_status)
         if status is not None and status.id != self.status_id:
             self.status = status
-            update_fields.append('status')
-
-        if not update_fields:
-            return
-        self.save(update_fields=update_fields)
+            self.save(update_fields=['status'])
 
     def handle_admin_save(self):
         self.recalculate_status(force_update=True)
