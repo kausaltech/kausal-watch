@@ -138,7 +138,7 @@ class IndicatorValueFactory(DjangoModelFactory):
 
     indicator = SubFactory(IndicatorFactory)
     value = 1.23
-    date = datetime.date(2020, 1, 1)
+    date = datetime.date(2020, 12, 31)
 
     @post_generation
     def categories(obj, create, extracted, **kwargs):
@@ -155,7 +155,7 @@ class IndicatorGoalFactory(DjangoModelFactory):
     indicator = SubFactory(IndicatorFactory)
     scenario = SubFactory(ScenarioFactory, plan=SelfAttribute('..plan'))
     value = 1.23
-    date = datetime.date(2020, 1, 1)
+    date = datetime.date(2020, 12, 31)
 
 
 # FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person

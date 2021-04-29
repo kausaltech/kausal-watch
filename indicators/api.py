@@ -182,7 +182,7 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
         created_objs = []
 
         with transaction.atomic():
-            n_deleted, _ = indicator.values.all().delete()
+            indicator.values.all().delete()
             indicator.latest_value = None
 
             for data in validated_data:
@@ -193,14 +193,7 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
                     obj.categories.set(categories)
                 created_objs.append(obj)
 
-            if len(created_objs):
-                latest_value_id = indicator.values.filter(categories__isnull=True).latest().id
-            else:
-                latest_value_id = None
-
-            if indicator.latest_value_id != latest_value_id:
-                indicator.latest_value_id = latest_value_id
-                indicator.save(update_fields=['latest_value_id'])
+            indicator.handle_values_update()
 
             for plan in indicator.plans.all():
                 plan.invalidate_cache()
