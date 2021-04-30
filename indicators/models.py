@@ -351,7 +351,7 @@ class Indicator(ClusterableModel):
             return
         if self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1):
             raise ValidationError({'updated_values_due_at':
-                                   _('Date must be more than one year after the latest existing value')})
+                                   _('There is already an indicator value for the year preceding the deadline')})
 
     def __str__(self):
         return self.name
