@@ -1,0 +1,8 @@
+.env
+.env.*
+.idea
+db.sqlite3
+env
+local_settings.py
+media
+venv

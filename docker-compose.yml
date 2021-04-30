@@ -8,6 +8,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=aplans
+      - POSTGRES_PASSWORD=change_me
     volumes:
       - db_data:/var/lib/postgresql/data/
 
@@ -27,7 +28,7 @@ services:
     volumes:
       - aplans_media:/srv/media
     environment:
-      - DATABASE_URL=postgres://aplans@db/aplans
+      - DATABASE_URL=postgres://aplans:change_me@db/aplans
       - CACHE_URL=rediscache://redis:6379
       - STATIC_ROOT=/srv/static
       - LC_CTYPE=C.UTF-8

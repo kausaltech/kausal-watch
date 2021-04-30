@@ -9,11 +9,11 @@ jobs:
       - name: Building Docker containers
         run: |
           docker-compose build
-      #- name: Starting Postgres and Redis
-      #  run: |
-      #    docker-compose up -d db redis
-      #- name: Running pytest unit tests
-      #  run: docker-compose run --entrypoint '' app pytest 
-      #- name: Stopping Postgres and Redis
-      #  run: |
-      #    docker-compose down db redis
+      - name: Starting Postgres and Redis
+        run: |
+          docker-compose up -d db redis
+      - name: Running pytest unit tests
+        run: docker-compose run --rm --entrypoint '' app pytest
+      - name: Stopping Postgres and Redis
+        run: |
+          docker-compose down db redis
