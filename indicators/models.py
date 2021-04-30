@@ -347,9 +347,13 @@ class Indicator(ClusterableModel):
             return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
 
     def clean(self):
-        if self.latest_value is None or self.updated_values_due_at is None:
+        if self.updated_values_due_at is None:
             return
-        if self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1):
+        if self.time_resolution != 'year':
+            raise ValidationError({'updated_values_due_at':
+                                   _('Deadlines for value updates are currently only possible for yearly indicators')})
+        if (self.latest_value is not None
+                and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1)):
             raise ValidationError({'updated_values_due_at':
                                    _('There is already an indicator value for the year preceding the deadline')})
 
