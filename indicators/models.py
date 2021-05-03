@@ -5,6 +5,7 @@ from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import JSONField
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
@@ -283,7 +284,7 @@ class Indicator(ClusterableModel):
 
     def handle_values_update(self):
         try:
-            latest_value = self.values.latest()
+            latest_value = self.values.filter(categories__isnull=True).latest()
         except IndicatorValue.DoesNotExist:
             latest_value = None
         else:
@@ -344,6 +345,17 @@ class Indicator(ClusterableModel):
             return '{}/indicators/{}'.format(plan.site_url, self.id)
         else:
             return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
+
+    def clean(self):
+        if self.updated_values_due_at is None:
+            return
+        if self.time_resolution != 'year':
+            raise ValidationError({'updated_values_due_at':
+                                   _('Deadlines for value updates are currently only possible for yearly indicators')})
+        if (self.latest_value is not None
+                and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1)):
+            raise ValidationError({'updated_values_due_at':
+                                   _('There is already an indicator value for the year preceding the deadline')})
 
     def __str__(self):
         return self.name
@@ -462,10 +474,6 @@ class IndicatorValue(ClusterableModel):
         verbose_name_plural = _('indicator values')
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.indicator.handle_values_update()
 
     def clean(self):
         super().clean()

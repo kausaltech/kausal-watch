@@ -1,44 +1,34 @@
 import pytest
-from datetime import date, timedelta
+from datetime import date
+from django.core.exceptions import ValidationError
 
 from indicators.tests.factories import IndicatorFactory, IndicatorValueFactory
 
 pytestmark = pytest.mark.django_db
 
 
-def test_indicator_can_be_saved():
-    IndicatorFactory()
-
-
-def test_add_first_value_updates_indicator_latest_value():
+def test_indicator_updated_values_due_at_too_early():
     indicator = IndicatorFactory()
-    assert not indicator.values.exists()
-    assert indicator.latest_value is None
-    value = IndicatorValueFactory(indicator=indicator)
-    indicator.refresh_from_db()
+    assert indicator.updated_values_due_at is None
+    value = IndicatorValueFactory(indicator=indicator, date=date(2020, 12, 31))
+    indicator.handle_values_update()
     assert indicator.latest_value == value
+    # Try to set a due date so that there is already a value within the previous year
+    indicator.updated_values_due_at = date(2021, 3, 1)
+    with pytest.raises(ValidationError):
+        indicator.full_clean()
 
 
-def test_add_value_updates_indicator_latest_value():
-    indicator = IndicatorFactory()
-    old_value = IndicatorValueFactory(indicator=indicator)
-    assert indicator.latest_value == old_value
-    new_date = indicator.latest_value.date + timedelta(days=1)
-    new_value = IndicatorValueFactory(indicator=indicator, date=new_date)
-    indicator.refresh_from_db()
-    assert indicator.latest_value == new_value
-
-
-def test_add_value_keeps_null_due_date():
-    indicator = IndicatorFactory()
-    assert indicator.updated_values_due_at is None
-    IndicatorValueFactory(indicator=indicator)
-    indicator.refresh_from_db()
-    assert indicator.updated_values_due_at is None
-
-
-def test_add_value_updates_non_null_due_date():
-    indicator = IndicatorFactory(updated_values_due_at=date(2020, 1, 1))
-    IndicatorValueFactory(indicator=indicator, date=date(2020, 1, 1))
-    indicator.refresh_from_db()
-    assert indicator.updated_values_due_at > date(2020, 1, 1)
+@pytest.mark.parametrize('time_resolution,should_raise', [
+    ('year', False),
+    ('month', True),
+    ('week', True),
+    ('day', True),
+])
+def test_indicator_updated_values_due_at_resolution(time_resolution, should_raise):
+    indicator = IndicatorFactory(time_resolution=time_resolution, updated_values_due_at=date(2020, 1, 1))
+    if should_raise:
+        with pytest.raises(ValidationError):
+            indicator.full_clean()
+    else:
+        indicator.full_clean()
