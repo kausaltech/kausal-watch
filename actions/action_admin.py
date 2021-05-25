@@ -1,6 +1,7 @@
 from datetime import timedelta
-import json
 import humanize
+import json
+import logging
 
 from django.db.models.query_utils import Q
 from people.models import Person
@@ -28,6 +29,8 @@ from admin_site.wagtail import (
 from people.chooser import PersonChooser
 
 from .models import Action, ActionTask
+
+logger = logging.getLogger(__name__)
 
 
 def _get_category_fields(plan, model, obj, with_initial=False):
@@ -436,7 +439,10 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         if cached_list_display:
             return cached_list_display
 
-        humanize.activate(get_language())
+        try:
+            humanize.activate(get_language())
+        except FileNotFoundError as e:
+            logger.warning(e)
 
         def name_link(obj):
             from django.utils.html import format_html
