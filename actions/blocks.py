@@ -34,8 +34,8 @@ class ActionListBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class CategoryListBlock(blocks.StructBlock):
-    heading = blocks.CharBlock(classname='full title', label=_('Heading'))
-    lead = blocks.RichTextBlock(label=_('Lead'))
+    heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
+    lead = blocks.RichTextBlock(label=_('Lead'), required=False)
     style = blocks.ChoiceBlock(choices=[
         ('cards', _('Cards')),
         ('table', _('Table')),
