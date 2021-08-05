@@ -6,7 +6,7 @@ from pages.models import CategoryPage, PlanRootPage
 
 def handle_model(model):
     for page in model.objects.all():
-        indicator_blocks = (b for b in page.body.stream_data if b['type'] == 'indicator')
+        indicator_blocks = (b for b in page.body.raw_data if b['type'] == 'indicator')
         for block in indicator_blocks:
             block['type'] = 'indicator_group'
             block['value'] = [block['value']]
