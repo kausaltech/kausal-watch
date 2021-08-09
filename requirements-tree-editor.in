@@ -1,0 +1,4 @@
+-c requirements.txt
+-e git+ssh://git@github.com/kausaltech/wagtail-tree-editor.git#egg=wagtail-tree-editor
+# Instead of the above, the following hack could be useful for development?
+#-e ../wagtail-tree-editor

@@ -14,6 +14,7 @@ from content.models import SiteGeneralContent
 from actions import schema as actions_schema
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
+from orgs import schema as orgs_schema
 from pages import schema as pages_schema
 from people.models import Person
 
@@ -90,6 +91,7 @@ class SiteGeneralContentNode(DjangoNode):
 class Query(
     actions_schema.Query,
     indicators_schema.Query,
+    orgs_schema.Query,
     pages_schema.Query,
     graphene.ObjectType
 ):
@@ -168,7 +170,7 @@ class Query(
         return obj
 
 
-class Mutation(graphene.ObjectType):
+class Mutation(orgs_schema.Mutation, graphene.ObjectType):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
 

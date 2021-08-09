@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
+import importlib
 import os
 
 import environ
@@ -129,7 +130,12 @@ INSTALLED_APPS = [
     'graphene_django',
 
     'django_orghierarchy',
+]
 
+if importlib.util.find_spec('tree_editor') is not None:
+    INSTALLED_APPS.append('tree_editor')
+
+INSTALLED_APPS += [
     'users',
     'actions',
     'indicators',
@@ -138,6 +144,7 @@ INSTALLED_APPS = [
     'notifications',
     'pages',
     'feedback',
+    'orgs',
 ]
 
 MIDDLEWARE = [
