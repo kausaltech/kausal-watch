@@ -96,6 +96,9 @@ class PlanRootPage(AplansPage):
     parent_page_types = []
 
     graphql_fields = AplansPage.graphql_fields + [
+        GraphQLString('action_short_description'),
+        GraphQLString('indicator_short_description'),
+        GraphQLString('hero_content'),
         GraphQLStreamfield('body'),
     ]
 
