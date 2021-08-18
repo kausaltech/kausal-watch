@@ -11,20 +11,8 @@ class SiteGeneralContent(models.Model):
     )
     site_title = models.CharField(max_length=150, verbose_name=_('site title'), blank=True)
     site_description = models.CharField(max_length=150, verbose_name=_('site description'), blank=True)
-    hero_content = models.TextField(blank=True, verbose_name=_('hero content'))
     owner_url = models.URLField(blank=True, verbose_name=_('URL for the owner of the site'))
     owner_name = models.CharField(blank=True, max_length=150, verbose_name=_('Name of the owner of the site'))
-
-    action_short_description = models.TextField(
-        blank=True, verbose_name=_('Short description for what actions are')
-    )
-    indicator_short_description = models.TextField(
-        blank=True, verbose_name=_('Short description for what indicators are')
-    )
-
-    action_list_lead_content = models.TextField(blank=True, verbose_name=_('action list lead content'))
-    indicator_list_lead_content = models.TextField(blank=True, verbose_name=_('indicator list lead content'))
-    dashboard_lead_content = models.TextField(blank=True, verbose_name=_('dashboard lead content'))
 
     official_name_description = models.CharField(
         max_length=200, verbose_name=_('official name description'),
@@ -39,12 +27,8 @@ class SiteGeneralContent(models.Model):
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
 
-    migrated_data_to_pages_app = models.BooleanField(default=False)
-
     public_fields = [
-        'id', 'site_title', 'site_description', 'hero_content', 'owner_url', 'owner_name',
-        'action_short_description', 'indicator_short_description',
-        'action_list_lead_content', 'indicator_list_lead_content', 'dashboard_lead_content',
+        'id', 'site_title', 'site_description', 'owner_url', 'owner_name',
         'official_name_description', 'copyright_text', 'creative_commons_license',
         'github_api_repository', 'github_ui_repository'
     ]

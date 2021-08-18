@@ -37,7 +37,6 @@ register(aplans_factories.OrganizationFactory)
 # https://github.com/pytest-dev/pytest-factoryboy/issues/91
 # register(admin_site_factories.ClientFactory, 'admin_site_client')
 # register(admin_site_factories.ClientPlanFactory)
-register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.IndicatorFactory)

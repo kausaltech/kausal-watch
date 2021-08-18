@@ -10,7 +10,6 @@ from aplans.tests.factories import OrganizationFactory
 from images.tests.factories import AplansImageFactory
 from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
-from content.tests.factories import SiteGeneralContentFactory
 from users.tests.factories import UserFactory
 
 
@@ -23,7 +22,6 @@ class PlanFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'plan{i}')
     image = SubFactory(AplansImageFactory)
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
-    general_content = RelatedFactory(SiteGeneralContentFactory, factory_related_name='plan')
     show_admin_link = False
     accessibility_statement_url = 'https://example.com'
     primary_language = get_default_language()
