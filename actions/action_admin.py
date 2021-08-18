@@ -391,7 +391,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('manual_status'),
         FieldPanel('manual_status_reason'),
     ]
-    admin_panels = [
+    internal_panels = [
         FieldPanel('internal_notes'),
     ]
 
@@ -525,19 +525,23 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ], heading=_('Tasks')),
         ]
 
-        admin_panels = list(self.admin_panels)
-        cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
-        cat_panels = []
-        for key, field in cat_fields.items():
-            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
-        if cat_panels:
-            admin_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
 
-        if plan.action_impacts.exists():
-            admin_panels.append(PlanFilteredFieldPanel('impact'))
+        internal_panels = list(self.internal_panels)
 
-        if request.user.is_general_admin_for_plan(plan):
-            all_tabs.append(ObjectList(admin_panels, heading=_('Internal information')))
+        if is_general_admin:
+            internal_panels.append(FieldPanel('internal_admin_notes'))
+            cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
+            cat_panels = []
+            for key, field in cat_fields.items():
+                cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+            if cat_panels:
+                internal_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
+
+            if plan.action_impacts.exists():
+                internal_panels.append(PlanFilteredFieldPanel('impact'))
+
+        all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
 
         i18n_tabs = self.get_translation_tabs(instance, request)
         all_tabs += i18n_tabs

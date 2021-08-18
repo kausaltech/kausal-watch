@@ -328,6 +328,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     internal_priority = models.PositiveIntegerField(
         blank=True, null=True, verbose_name=_('internal priority')
     )
+    internal_admin_notes = models.TextField(
+        blank=True, null=True, verbose_name=_('internal notes for plan administrators')
+    )
     internal_notes = models.TextField(
         blank=True, null=True, verbose_name=_('internal notes')
     )

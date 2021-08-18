@@ -485,7 +485,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
 
         if user.is_general_admin_for_plan(plan):
             fieldsets.insert(1, (_('Internal fields'), {
-                'fields': ('internal_priority', 'internal_notes', 'impact', 'merged_with'),
+                'fields': ('internal_priority', 'internal_admin_notes', 'impact', 'merged_with'),
             }))
             fieldsets.insert(2, (_('Schedule and decision level'), {
                 'fields': ('schedule', 'decision_level')
