@@ -577,11 +577,11 @@ class RelatedIndicator(models.Model):
 class ActionIndicator(models.Model):
     """Link between an action and an indicator."""
 
-    action = models.ForeignKey(
+    action = ParentalKey(
         'actions.Action', related_name='related_indicators', on_delete=models.CASCADE,
         verbose_name=_('action')
     )
-    indicator = models.ForeignKey(
+    indicator = ParentalKey(
         Indicator, related_name='related_actions', on_delete=models.CASCADE,
         verbose_name=_('indicator')
     )

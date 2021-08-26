@@ -1,5 +1,6 @@
 import json
 
+from dal import autocomplete
 from django import forms
 from django.contrib.admin.utils import quote
 from django.urls import re_path, reverse
@@ -285,6 +286,15 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('min_value'),
         FieldPanel('max_value'),
         FieldPanel('level'),
+        InlinePanel(
+            'related_actions',
+            panels=[
+                FieldPanel('action', widget=autocomplete.ModelSelect2(url='action-autocomplete')),
+                FieldPanel('effect_type'),
+                FieldPanel('indicates_action_progress'),
+            ],
+            heading=_('Indicator for actions'),
+        ),
         RichTextFieldPanel('description'),
     ]
 
