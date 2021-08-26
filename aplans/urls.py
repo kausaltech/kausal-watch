@@ -27,7 +27,7 @@ from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
 from actions.api import all_views as actions_api_views
-from admin_site.autocomplete import OrganizationAutocomplete
+from admin_site.autocomplete import ActionAutocomplete, OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView
 from indicators.api import all_views as indicators_api_views
@@ -66,6 +66,7 @@ urlpatterns = [
     re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
+    re_path(r'^org-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
     path('auth/', include('social_django.urls', namespace='social')),
