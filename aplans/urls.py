@@ -66,7 +66,7 @@ urlpatterns = [
     re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
-    re_path(r'^org-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
+    re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
     path('auth/', include('social_django.urls', namespace='social')),
