@@ -33,6 +33,6 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
         qs = Action.objects.filter(plan=plan)
 
         if self.q:
-            qs = qs.filter(Q(name__icontains=self.q) | Q(official_name__icontains=self.q))
+            qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q) | Q(official_name__icontains=self.q))
 
         return qs
