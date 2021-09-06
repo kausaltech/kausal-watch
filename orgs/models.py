@@ -1,6 +1,8 @@
+from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.template.loader import render_to_string
+from django.utils.translation import gettext_lazy as _
 from treebeard.mp_tree import MP_Node
 from wagtail.admin.edit_handlers import FieldPanel
 
@@ -52,10 +54,82 @@ class Node(MP_Node):
         return self.name
 
 
+class Namespace(models.Model):
+    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    name = models.CharField(max_length=255)
+    user_editable = models.BooleanField(default=False)
+
+
+class OrganizationClass(models.Model):
+    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    name = models.CharField(max_length=255)
+
+    created_time = models.DateTimeField(auto_now_add=True,
+                                        help_text=_('The time at which the resource was created'))
+    last_modified_time = models.DateTimeField(auto_now=True,
+                                              help_text=_('The time at which the resource was updated'))
+
+
 class Organization(Node):
     # base_form_class = OrganizationForm
     # This doesn't work because OrganizationForm depends on this class. We set base_form_class after defining
     # OrganizationForm.
 
-    # TODO: Add fields
-    pass
+    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
+
+    classification = models.ForeignKey(OrganizationClass,
+                                       on_delete=models.PROTECT,
+                                       blank=True,
+                                       null=True,
+                                       help_text=_('An organization category, e.g. committee'))
+
+    name = models.CharField(max_length=255,
+                            help_text=_('A primary name, e.g. a legally recognized name'))
+    abbreviation = models.CharField(max_length=50,
+                                    blank=True,
+                                    help_text=_('A commonly used abbreviation'))
+    # TODO: Write / copy management command for generating the following
+    distinct_name = models.CharField(max_length=400,
+                                     editable=False,
+                                     null=True,
+                                     help_text=_('A distinct name for this organization (generated automatically)'))
+    founding_date = models.DateField(blank=True,
+                                     null=True,
+                                     help_text=_('A date of founding'))
+    dissolution_date = models.DateField(blank=True,
+                                        null=True,
+                                        help_text=_('A date of dissolution'))
+    # TODO
+    # admin_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='admin_organizations')
+    # regular_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True,
+    #                                        related_name='organization_memberships')
+    created_time = models.DateTimeField(auto_now_add=True,
+                                        help_text=_('The time at which the resource was created'))
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                   # related_name='created_organizations',
+                                   related_name='created_organizations_new',
+                                   null=True,
+                                   blank=True,
+                                   editable=False,
+                                   on_delete=models.SET_NULL)
+    last_modified_time = models.DateTimeField(auto_now=True,
+                                              help_text=_('The time at which the resource was updated'))
+    last_modified_by = models.ForeignKey(settings.AUTH_USER_MODEL,
+                                         # related_name='modified_organizations',
+                                         related_name='modified_organizations_new',
+                                         null=True,
+                                         blank=True,
+                                         editable=False,
+                                         on_delete=models.SET_NULL)
+
+
+class OrganizationIdentifier(models.Model):
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['namespace', 'identifier'], name='unique_identifier_in_namespace')
+        ]
+
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
