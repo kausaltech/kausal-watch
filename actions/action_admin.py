@@ -15,6 +15,7 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_list_controls.views import ListControlsIndexView
@@ -382,6 +383,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('official_name'),
         FieldPanel('name', classname='full title'),
+        ImageChooserPanel('image'),
         RichTextFieldPanel('description'),
     ]
 
