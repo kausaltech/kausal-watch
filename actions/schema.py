@@ -393,6 +393,11 @@ class Query:
     )
     plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
+    category = graphene.Field(
+        CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID(required=True),
+        external_identifier=graphene.ID(required=True)
+    )
+
     def resolve_plan(self, info, id=None, domain=None, **kwargs):
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'", [info])
@@ -485,3 +490,11 @@ class Query:
             set_active_plan(info, obj.plan)
 
         return obj
+
+    def resolve_category(self, info, plan, category_type, external_identifier):
+        plan_obj = get_plan_from_context(info, plan)
+        if not plan_obj:
+            return None
+        return Category.objects.get(
+            type__plan=plan_obj, type__identifier=category_type, external_identifier=external_identifier
+        )

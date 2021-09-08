@@ -1043,6 +1043,7 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
         verbose_name=_('type')
     )
     identifier = IdentifierField()
+    external_identifier = models.CharField(max_length=50, blank=True, null=True, editable=False)
     name = models.CharField(max_length=100, verbose_name=_('name'))
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
@@ -1063,12 +1064,12 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     i18n = TranslationField(fields=('name', 'short_description'))
 
     public_fields = [
-        'id', 'type', 'order', 'identifier', 'name', 'parent', 'short_description', 'color',
+        'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description', 'color',
         'children', 'category_page',
     ]
 
     class Meta:
-        unique_together = (('type', 'identifier'),)
+        unique_together = (('type', 'identifier'), ('type', 'external_identifier'))
         verbose_name = _('category')
         verbose_name_plural = _('categories')
         ordering = ('type', 'order')
