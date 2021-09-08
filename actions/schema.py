@@ -203,6 +203,7 @@ class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
     metadata = graphene.List(CategoryMetadataInterface)
     level = graphene.Field(CategoryLevelNode)
+    actions = graphene.List('actions.schema.ActionNode')
 
     def resolve_metadata(self, info):
         metadata = chain(self.metadata_richtexts.all(), self.metadata_choices.all())
@@ -222,6 +223,9 @@ class CategoryNode(DjangoNode):
         if depth >= len(levels):
             return None
         return levels[depth]
+
+    def resolve_actions(self, info):
+        return self.action_set.all()
 
     class Meta:
         model = Category
