@@ -79,7 +79,7 @@ def register_view_helper(view_list, klass, name=None, basename=None):
 class IdentifierValidator(RegexValidator):
     def __init__(self, regex=None, **kwargs):
         if regex is None:
-            regex = r'^[a-z0-9_-]+$'
+            regex = r'^[a-zA-Z0-9_-]+$'
         super().__init__(regex, **kwargs)
 
 
