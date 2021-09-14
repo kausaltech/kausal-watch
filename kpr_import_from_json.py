@@ -14,7 +14,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
 django.setup()
 
 from django_orghierarchy.models import Organization  # noqa
-from actions.models import Action, ActionImplementationPhase, Category, CategoryType, Plan  # noqa
+from actions.models import Action, ActionImplementationPhase, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
 from indicators.models import Indicator, IndicatorLevel, IndicatorValue, Unit  # noqa
 from images.models import AplansImage  # noqa
 from pages.models import CategoryPage  # noqa
@@ -61,6 +61,15 @@ category_type, _ = CategoryType.objects.update_or_create(
     identifier='transition',
     defaults=category_type_data,
 )
+metadata, _ = CategoryTypeMetadata.objects.update_or_create(
+    type=category_type,
+    identifier='impact',
+    defaults=dict(
+        name='Utsläppsminskning',
+        format=CategoryTypeMetadata.MetadataFormat.NUMERIC
+    )
+)
+
 
 # Delete data from previous import, which used Excel instead of JSON
 Action.objects.filter(plan=plan).delete()
@@ -266,6 +275,15 @@ for i, node in enumerate(nodes.values()):
     )
     assert node['id'] not in category_for_uuid
     category_for_uuid[node['id']] = category
+
+    if 'co2e' in node['nodeProperties']:
+        val, _ = CategoryMetadataNumericValue.objects.update_or_create(
+            metadata=metadata,
+            category=category,
+            defaults=dict(
+                value=node['nodeProperties']['co2e'],
+            )
+        )
 
     # Assign indicators to this category
     for indicator_id in node['indicators']:
