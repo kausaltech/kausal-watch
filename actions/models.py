@@ -976,6 +976,7 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
     class MetadataFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         RICH_TEXT = 'rich_text', _('Rich text')
+        NUMERIC = 'numeric', _('Numeric')
 
     type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='metadata')
     identifier = IdentifierField()
@@ -1015,6 +1016,16 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
             if obj is None:
                 obj = CategoryMetadataRichText(metadata=self, category=category)
             obj.text = val
+            obj.save()
+        elif self.format == self.MetadataFormat.NUMERIC:
+            obj = self.category_numeric_values.filter(category=category).first()
+            if val is None and obj is not None:
+                obj.delete()
+                return
+
+            if obj is None:
+                obj = CategoryMetadataNumericValue(metadata=self, category=category)
+            obj.value = val
             obj.save()
 
 
@@ -1134,6 +1145,22 @@ class CategoryMetadataChoice(models.Model):
 
     def __str__(self):
         return '%s (%s) for %s' % (self.choice, self.metadata, self.category)
+
+
+class CategoryMetadataNumericValue(models.Model):
+    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_numeric_values')
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_numeric_values'))
+    value = models.FloatField()
+
+    public_fields = [
+        'id', 'metadata', 'category', 'value',
+    ]
+
+    class Meta:
+        unique_together = ('category', 'metadata')
+
+    def __str__(self):
+        return '%s (%s) for %s' % (self.value, self.metadata, self.category)
 
 
 class Scenario(models.Model, PlanRelatedModel):

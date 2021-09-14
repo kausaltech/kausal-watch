@@ -1,3 +1,4 @@
+from django.db.models.query_utils import Q
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import (
@@ -11,7 +12,7 @@ from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice,
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice, CategoryMetadataNumericValue,
     CategoryMetadataRichText, CategoryType, CategoryTypeMetadata, CategoryTypeMetadataChoice, ImpactGroup,
     ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
@@ -116,6 +117,14 @@ class PlanNode(DjangoNode):
 
 class CategoryMetadataInterface(graphene.Interface):
     id = graphene.ID(required=True)
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.metadata.name
+
+    def resolve_key_identifier(self, info):
+        return self.metadata.identifier
 
     @classmethod
     def resolve_type(cls, instance, info):
@@ -123,20 +132,14 @@ class CategoryMetadataInterface(graphene.Interface):
             return CategoryMetadataRichTextNode
         elif isinstance(instance, CategoryMetadataChoice):
             return CategoryMetadataChoiceNode
+        elif isinstance(instance, CategoryMetadataNumericValue):
+            return CategoryMetadataNumericValueNode
 
 
 @register_django_node
 class CategoryMetadataChoiceNode(DjangoNode):
-    key = graphene.String(required=True)
-    key_identifier = graphene.String(required=True)
     value = graphene.String(required=True)
     value_identifier = graphene.String(required=True)
-
-    def resolve_key(self, info):
-        return self.metadata.name
-
-    def resolve_key_identifier(self, info):
-        return self.metadata.identifier
 
     def resolve_value(self, info):
         return self.choice.name
@@ -151,15 +154,7 @@ class CategoryMetadataChoiceNode(DjangoNode):
 
 @register_django_node
 class CategoryMetadataRichTextNode(DjangoNode):
-    key = graphene.String(required=True)
-    key_identifier = graphene.String(required=True)
     value = graphene.String(required=True)
-
-    def resolve_key(self, info):
-        return self.metadata.name
-
-    def resolve_key_identifier(self, info):
-        return self.metadata.identifier
 
     def resolve_value(self, info):
         return self.text
@@ -169,6 +164,14 @@ class CategoryMetadataRichTextNode(DjangoNode):
         interfaces = (CategoryMetadataInterface,)
         # We expose `value` instead of `text`
         fields = public_fields(CategoryMetadataRichText, remove_fields=['text'])
+
+
+@register_django_node
+class CategoryMetadataNumericValueNode(DjangoNode):
+    class Meta:
+        model = CategoryMetadataNumericValue
+        interfaces = (CategoryMetadataInterface,)
+        fields = public_fields(CategoryMetadataNumericValue)
 
 
 class CategoryLevelNode(DjangoNode):
@@ -201,12 +204,19 @@ class CategoryTypeNode(DjangoNode):
 @register_django_node
 class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
-    metadata = graphene.List(CategoryMetadataInterface)
+    metadata = graphene.List(CategoryMetadataInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
 
-    def resolve_metadata(self, info):
-        metadata = chain(self.metadata_richtexts.all(), self.metadata_choices.all())
+    def resolve_metadata(self, info, id=None):
+        query = Q()
+        if id is not None:
+            query = Q(metadata__identifier=id)
+        metadata = chain(
+            self.metadata_richtexts.filter(query),
+            self.metadata_choices.filter(query),
+            self.metadata_numeric_values.filter(query)
+        )
         return sorted(metadata, key=lambda m: m.metadata.order)
 
     def resolve_level(self, info):

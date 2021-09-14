@@ -111,7 +111,7 @@ def get_metadata_fields(cat_type, obj, with_initial=False):
             field = forms.ModelChoiceField(
                 qs, label=metadata.name, initial=initial, required=False,
             )
-        else:
+        elif metadata.format == CategoryTypeMetadata.MetadataFormat.RICH_TEXT:
             initial = None
             if with_initial:
                 val_obj = metadata.category_richtexts.filter(category=obj).first()
@@ -121,6 +121,17 @@ def get_metadata_fields(cat_type, obj, with_initial=False):
             field = CategoryMetadataRichText._meta.get_field('text').formfield(
                 initial=initial, required=False
             )
+        elif metadata.format == CategoryTypeMetadata.MetadataFormat.NUMERIC:
+            initial = None
+            if with_initial:
+                val_obj = metadata.category_numeric_values.filter(category=obj).first()
+                if val_obj is not None:
+                    initial = val_obj.value
+            field = forms.FloatField(
+                label=metadata.name, initial=initial, required=False,
+            )
+        else:
+            raise Exception('Unsupported metadata format: %s' % metadata.format)
 
         field.metadata = metadata
         fields['metadata_%s' % metadata.identifier] = field
