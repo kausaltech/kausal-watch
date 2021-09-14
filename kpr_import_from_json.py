@@ -251,9 +251,13 @@ for i, indicator_data in enumerate(indicators.values()):
 # Create a category for each node
 category_for_uuid = {}
 for i, node in enumerate(nodes.values()):
+    parent = parent_of.get(node['id'])
+    if parent:
+        parent = category_for_uuid[parent]
     category_data = {
         'name': node['title'],
         'external_identifier': node['id'],
+        'parent': parent,
     }
     category, _ = Category.objects.update_or_create(
         type=category_type,
