@@ -24,6 +24,15 @@ from wagtail.core.rich_text import RichText  # noqa
 tz = pytz.timezone('Europe/Stockholm')
 
 
+SECTOR_COLORS = {
+    'Transport': '#56C38E',
+    'Industri': '#336D94',
+    'Jordbruk': '#C88217',
+    'Energi': '#F4CE73',
+    'Övrigt': '#D46262',
+}
+
+
 def to_rich_text(text):
     return '\n'.join([f'<p>{line}</p>' for line in text.splitlines() if line])
 
@@ -267,6 +276,7 @@ for i, node in enumerate(nodes.values()):
         'name': node['title'],
         'external_identifier': node['id'],
         'parent': parent,
+        'color': SECTOR_COLORS[node['title']] if parent is None else None
     }
     category, _ = Category.objects.update_or_create(
         type=category_type,
