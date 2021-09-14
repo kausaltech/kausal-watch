@@ -39,6 +39,7 @@ class CategoryListBlock(blocks.StructBlock):
     style = blocks.ChoiceBlock(choices=[
         ('cards', _('Cards')),
         ('table', _('Table')),
+        ('treemap', _('Tree map')),
     ])
 
     graphql_fields = [
