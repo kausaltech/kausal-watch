@@ -90,24 +90,23 @@ def import_image(url):
     """Download image and import to wagtail."""
     if url is None:
         return None
-    return None  # FIXME: Just for testing
-    # filename = os.path.basename(url)
-    # try:
-    #     return AplansImage.objects.get(collection_id=plan.root_collection, title=filename)
-    # except AplansImage.DoesNotExist:
-    #     pass
-    # response = requests.get(url)
-    # try:
-    #     response.raise_for_status()
-    # except requests.exceptions.HTTPError:
-    #     print(f"Could not download {url}: {response}")
-    #     return
-    # image_file = ImageFile(BytesIO(response.content), name=filename)
-    # return AplansImage.objects.create(
-    #     title=filename,
-    #     file=image_file,
-    #     collection=plan.root_collection,
-    # )
+    filename = os.path.basename(url)
+    try:
+        return AplansImage.objects.get(collection_id=plan.root_collection, title=filename)
+    except AplansImage.DoesNotExist:
+        pass
+    response = requests.get(url)
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        print(f"Could not download {url}: {response}")
+        return
+    image_file = ImageFile(BytesIO(response.content), name=filename)
+    return AplansImage.objects.create(
+        title=filename,
+        file=image_file,
+        collection=plan.root_collection,
+    )
 
 
 # Create implementation phases
