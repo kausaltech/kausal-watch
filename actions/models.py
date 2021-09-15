@@ -23,7 +23,9 @@ from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
 
 from django_orghierarchy.models import Organization
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel
+from aplans.utils import (
+    ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
+)
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -127,6 +129,10 @@ class Plan(ClusterableModel):
         default=False, verbose_name=_('Contact persons private'),
         help_text=_('Set if the contact persons should not be visible in the public UI')
     )
+    hide_action_identifiers = models.BooleanField(
+        default=False, verbose_name=_('Hide action identifiers'),
+        help_text=_("Set if the plan doesn't have meaningful action identifiers")
+    )
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
@@ -141,7 +147,7 @@ class Plan(ClusterableModel):
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
-        'action_implementation_phases',
+        'action_implementation_phases', 'hide_action_identifiers',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
@@ -601,6 +607,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
+    def generate_identifier(self):
+        self.identifier = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
+
     def get_notification_context(self, plan=None):
         if plan is None:
             plan = self.plan
@@ -927,10 +936,15 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
         default=False,
         verbose_name=_('editable for indicators'),
     )
+    hide_category_identifiers = models.BooleanField(
+        default=False, verbose_name=_('hide category identifiers'),
+        help_text=_("Set if the categories do not have meaningful identifiers")
+    )
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
         'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'metadata',
+        'hide_category_identifiers',
     ]
 
     class Meta:
@@ -1112,8 +1126,11 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
         # we do nothing here.
         pass
 
+    def generate_identifier(self):
+        self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
+
     def __str__(self):
-        if self.identifier and self.identifier[0].isnumeric():
+        if self.identifier and self.type and not self.type.hide_category_identifiers:
             return "%s %s" % (self.identifier, self.name)
         else:
             return self.name

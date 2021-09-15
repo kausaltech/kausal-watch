@@ -168,9 +168,11 @@ class ActionEditHandler(AplansTabbedInterface):
 
         form_class = super().get_form_class()
 
-        if plan.actions_locked:
+        if plan.hide_action_identifiers or plan.actions_locked:
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
+
+        if plan.actions_locked:
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
 
@@ -204,7 +206,11 @@ class ActionCreateView(AplansCreateView):
         # error when saving it
         instance = super().get_instance()
         if not instance.pk:
-            instance.plan = self.request.user.get_active_admin_plan()
+            plan = self.request.user.get_active_admin_plan()
+            instance.plan = plan
+            if not instance.identifier and plan.hide_action_identifiers:
+                instance.generate_identifier()
+
         return instance
 
 
@@ -457,8 +463,11 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         name_link.short_description = _('Name')
         self.name_link = name_link
 
-        list_display = ['identifier', 'name_link']
         plan = request.user.get_active_admin_plan()
+
+        list_display = ['name_link']
+        if not plan.hide_action_identifiers:
+            list_display.insert(0, 'identifier')
 
         ct = plan.category_types.filter(identifier='action').first()
         if ct:
@@ -558,5 +567,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         qs = qs.filter(plan=plan)
         qs = qs.select_related('plan').prefetch_related('categories')
         return qs
+
 
 modeladmin_register(ActionAdmin)

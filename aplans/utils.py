@@ -1,3 +1,4 @@
+import random
 import libvoikko
 import pytz
 import re
@@ -163,3 +164,16 @@ class ChoiceArrayField(ArrayField):
         # care for it.
         # pylint:disable=bad-super-call
         return super(ArrayField, self).formfield(**defaults)
+
+
+def generate_identifier(qs, type_letter: str, field_name: str) -> str:
+    # Try a couple of times to generate a unique identifier.
+    for i in range(0, 10):
+        rand = random.randint(0, 65535)
+        identifier = '%s%04x' % (type_letter, rand)
+        f = '%s__iexact' % field_name
+        if qs.filter(**{f: identifier}).exists():
+            continue
+        return identifier
+    else:
+        raise Exception('Unable to generate an unused identifier')

@@ -82,6 +82,7 @@ class PlanAdmin(AplansModelAdmin):
         ImageChooserPanel('image'),
         FieldPanel('show_admin_link'),
         FieldPanel('contact_persons_private'),
+        FieldPanel('hide_action_identifiers'),
     ]
 
     action_status_panels = [

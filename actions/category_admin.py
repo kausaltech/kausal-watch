@@ -40,6 +40,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('identifier'),
+        FieldPanel('hide_category_identifiers'),
         MultiFieldPanel([
             FieldRowPanel([
                 FieldPanel('usable_for_actions'),
@@ -197,6 +198,8 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
         if category_type and not instance.pk:
             assert not hasattr(instance, 'type')
             instance.type = CategoryType.objects.get(pk=int(category_type))
+            if not instance.identifier and instance.type.hide_category_identifiers:
+                instance.generate_identifier()
         return instance
 
 
@@ -287,7 +290,16 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         return qs.filter(type__plan=plan).distinct()
 
     def get_edit_handler(self, instance, request):
-        tabs = [ObjectList(self.panels, heading=_('Basic information'))]
+        panels = list(self.panels)
+        # If the category type doesn't have semantic identifiers, we
+        # hide the whole panel.
+        if instance.type.hide_category_identifiers:
+            for p in panels:
+                if p.field_name == 'identifier':
+                    panels.remove(p)
+                    break
+
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         if instance and instance.type:
             metadata_fields = get_metadata_fields(instance.type, instance, with_initial=True)
