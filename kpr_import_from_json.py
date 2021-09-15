@@ -15,7 +15,7 @@ django.setup()
 
 from django_orghierarchy.models import Organization  # noqa
 from actions.models import Action, ActionImplementationPhase, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
-from indicators.models import Indicator, IndicatorLevel, IndicatorValue, Unit  # noqa
+from indicators.models import Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Unit  # noqa
 from images.models import AplansImage  # noqa
 from pages.models import CategoryPage  # noqa
 from wagtail.core.models import Page  # noqa
@@ -383,6 +383,25 @@ for indicator_data in indicators.values():
             }
             # TODO: dimension categories for this value?
             indicator_value = IndicatorValue.objects.update_or_create(
+                indicator=indicator,
+                date=date,
+                defaults=defaults,
+            )
+
+# Create indicator goals
+for indicator_data in indicators.values():
+    indicator = indicator_for_uuid[indicator_data['id']]
+    properties = indicator_data['indicatorProperties']
+    for goal in properties['potentialCurve']:
+        date_str = goal['date'].replace("Z", "+00:00")
+        date = datetime.fromisoformat(date_str)
+        value = goal.get('value')
+        if value is not None:
+            defaults = {
+                'value': value,
+            }
+            indicator_goal = IndicatorGoal.objects.update_or_create(
+                plan=plan,
                 indicator=indicator,
                 date=date,
                 defaults=defaults,
