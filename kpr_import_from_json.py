@@ -352,8 +352,13 @@ for node_id, category in category_for_uuid.items():
         'style': 'cards',  # or 'table'?
     }))
 
+    parent = parent_of.get(node_id)
+    if parent:
+        parent = category_for_uuid[parent].category_page
+    if not parent:
+        parent = categories_page
     page = CategoryPage(title=category.name, category=category, body=page_body)
-    categories_page.add_child(instance=page)
+    parent.add_child(instance=page)
 
 # Create indicator values
 for indicator_data in indicators.values():
