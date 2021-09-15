@@ -92,9 +92,14 @@ def import_image(url, credit=''):
         return None
     filename = os.path.basename(url)
     try:
-        return AplansImage.objects.get(collection_id=plan.root_collection, title=filename)
+        image = AplansImage.objects.get(collection_id=plan.root_collection, title=filename)
     except AplansImage.DoesNotExist:
         pass
+    else:
+        # Update credit
+        image.image_credit = credit
+        image.save()
+        return image
     response = requests.get(url)
     try:
         response.raise_for_status()
