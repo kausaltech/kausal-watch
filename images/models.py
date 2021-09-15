@@ -6,7 +6,10 @@ from wagtail.images.models import Image as WagtailImage
 
 
 class AplansImage(AbstractImage):
-    admin_form_fields = WagtailImage.admin_form_fields
+    admin_form_fields = WagtailImage.admin_form_fields + ('image_credit', 'alt_text')
+
+    image_credit = models.CharField(max_length=254, blank=True)
+    alt_text = models.CharField(max_length=254, blank=True)
 
     class Meta:
         verbose_name = _('image')
