@@ -86,7 +86,7 @@ CategoryPage.objects.filter(category__type__plan=plan).delete()
 Category.objects.filter(type__plan=plan).delete()
 
 
-def import_image(url):
+def import_image(url, credit=''):
     """Download image and import to wagtail."""
     if url is None:
         return None
@@ -106,6 +106,7 @@ def import_image(url):
         title=filename,
         file=image_file,
         collection=plan.root_collection,
+        image_credit=credit,
     )
 
 
@@ -155,8 +156,9 @@ for i, action_data in enumerate(actions.values()):
     properties = action_data['actionProperties']
     implementation_phase = implementation_phase_for_swimlane[properties['swimlane']]
     image_url = properties['imgURL']
+    credit = properties.get('imageCredits') or ''
     if image_url:
-        image = import_image(image_url)
+        image = import_image(image_url, credit)
     else:
         image = None
 
