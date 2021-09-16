@@ -194,14 +194,7 @@ class Plan(ClusterableModel):
                 self.root_collection.save(update_fields=['name'])
 
         if self.site is None:
-            from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
-            from wagtail.core.models import Page
-
-            root_page = Page.get_first_root_node().add_child(
-                instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
-            )
-            root_page.add_child(instance=ActionListPage(title=_("Actions")))
-            root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
+            root_page = self.create_pages()
             site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
             site.save()
             self.site = site
@@ -244,6 +237,26 @@ class Plan(ClusterableModel):
         logger.info('Invalidate cache for %s' % self)
         self.cache_invalidated_at = timezone.now()
         super().save(update_fields=['cache_invalidated_at'])
+
+    def create_pages(self):
+        """Create plan root page as well as subpages that should be always there and return plan root page."""
+        from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
+        from wagtail.core.models import Page
+
+        root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
+        try:
+            root_page = root_pages.get(slug=self.identifier)
+        except root_pages.DoesNotExist:
+            root_page = Page.get_first_root_node().add_child(
+                instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
+            )
+        action_list_pages = root_page.get_children().type(ActionListPage)
+        if not action_list_pages.exists():
+            root_page.add_child(instance=ActionListPage(title=_("Actions")))
+        indicator_list_pages = root_page.get_children().type(IndicatorListPage)
+        if not indicator_list_pages.exists():
+            root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
+        return root_page
 
 
 class PlanDomain(models.Model):
