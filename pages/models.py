@@ -211,6 +211,7 @@ class FixedSlugPage(AplansPage):
     # Omit the title from the editable fields
     inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
     content_panels = inherited_content_panels + [
+        FieldPanel('title'),
         FieldPanel('lead_content'),
     ]
     settings_panels = [
