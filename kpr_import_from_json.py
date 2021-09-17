@@ -14,7 +14,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
 django.setup()
 
 from django_orghierarchy.models import Organization  # noqa
-from actions.models import Action, ActionImplementationPhase, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
+from actions.models import Action, ActionImplementationPhase, ActionLink, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
 from indicators.models import Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Unit  # noqa
 from images.models import AplansImage  # noqa
 from pages.models import CategoryPage  # noqa
@@ -191,6 +191,16 @@ for i, action_data in enumerate(actions.values()):
     )
     assert action_data['id'] not in action_for_uuid
     action_for_uuid[action_data['id']] = action
+
+    # Create action links
+    for link in properties.get('readMore', []):
+        ActionLink.objects.update_or_create(
+            action=action,
+            url=link['linkUrl'],
+            defaults={
+                'title': link.get('title', ''),
+            }
+        )
 
     # Categories will be set later
 
