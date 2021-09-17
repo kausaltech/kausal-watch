@@ -64,6 +64,7 @@ plan, _ = Plan.objects.update_or_create(
 category_type_data = {
     'name': "Omställningar",
     'usable_for_actions': True,
+    'hide_category_identifiers': True,
 }
 category_type, _ = CategoryType.objects.update_or_create(
     plan=plan,
@@ -272,12 +273,25 @@ for i, indicator_data in enumerate(indicators.values()):
 
     # Categories will be set later
 
+# Create a root category for total emissions
+root_category, _ = Category.objects.update_or_create(
+    type=category_type,
+    identifier='root',
+    defaults={
+        'name': 'Total utsläpp',
+        'parent': None,
+        'color': '#999999',
+    },
+)
+
 # Create a category for each node
 category_for_uuid = {}
 for i, node in enumerate(nodes.values()):
     parent = parent_of.get(node['id'])
     if parent:
         parent = category_for_uuid[parent]
+    else:
+        parent = root_category
     category_data = {
         'name': node['title'],
         'external_identifier': node['id'],
