@@ -346,8 +346,14 @@ for node_id, category in category_for_uuid.items():
     node = nodes[node_id]
     properties = node['nodeProperties']
     page_body = []
-    if 'extendedDescription' in properties:
-        extended_description = properties['extendedDescription']
+
+    transition_target_description = properties.get('transitionTargetDescription')
+    if transition_target_description:
+        description_rich_text = to_rich_text(transition_target_description)
+        page_body.append(('text', RichText(description_rich_text)))
+
+    extended_description = properties.get('extendedDescription')
+    if extended_description:
         assert set(extended_description.keys()) == {'data', 'type'}, extended_description.keys()
         assert extended_description['type'] == 1
         assert set(extended_description['data'].keys()) == {'texts', 'images'}
@@ -359,7 +365,9 @@ for node_id, category in category_for_uuid.items():
         assert list(texts[0].keys()) == ['title', 'body']
         title = texts[0]['title']  # TODO: We ignore this for now.
         body_text = to_rich_text(texts[0]['body'])
-        page_body.append(('text', RichText(body_text)))
+        if body_text:
+            assert not page_body
+            page_body.append(('text', RichText(body_text)))
 
         # Save image in category, not category page
         image = import_image(img_url)
