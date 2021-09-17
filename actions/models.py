@@ -338,6 +338,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
+    lead_paragraph = models.TextField(blank=True, verbose_name=_('Lead paragraph'))
     description = RichTextField(
         null=True, blank=True,
         verbose_name=_('description'),
@@ -415,6 +416,18 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     updated_at = models.DateTimeField(
         editable=False, verbose_name=_('updated at'), default=timezone.now
     )
+    start_date = models.DateField(
+        verbose_name=_('start date'),
+        help_text=_('The date when implementation of this action starts'),
+        blank=True,
+        null=True,
+    )
+    end_date = models.DateField(
+        verbose_name=_('end date'),
+        help_text=_('The date when implementation of this action ends'),
+        blank=True,
+        null=True,
+    )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
@@ -424,9 +437,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
 
     # Used by GraphQL + REST API code
     public_fields = [
-        'id', 'plan', 'name', 'official_name', 'identifier', 'description', 'status',
+        'id', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
         'completion', 'schedule', 'decision_level', 'responsible_parties',
-        'categories', 'indicators', 'contact_persons', 'updated_at', 'tasks',
+        'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase',
         'manual_status_reason',
