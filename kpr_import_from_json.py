@@ -170,19 +170,19 @@ for i, action_data in enumerate(actions.values()):
 
     if properties['implemented']:
         timestamp = properties['implemented'] // 1000
-        updated_at = datetime.fromtimestamp(timestamp)
-        updated_at = timezone.make_aware(updated_at, tz)
+        start_date = datetime.fromtimestamp(timestamp)
+        start_date = timezone.make_aware(start_date, tz)
     else:
-        updated_at = timezone.now()
+        start_date = timezone.now()
     description = properties['description'] or ''
     description = to_rich_text(description)
     defaults = {
         'name': action_data['title'],
-        'official_name': properties['summary'],
+        'lead_paragraph': properties['summary'],
         'image': image,
         'description': description,
         'implementation_phase': implementation_phase,
-        'updated_at': updated_at,
+        'start_date': start_date,
     }
     action, _ = Action.objects.update_or_create(
         plan=plan,
