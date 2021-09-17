@@ -390,6 +390,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('official_name'),
         FieldPanel('name', classname='full title'),
         ImageChooserPanel('image'),
+        FieldPanel('lead_paragraph'),
         RichTextFieldPanel('description'),
     ]
 
@@ -398,6 +399,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         PlanFilteredFieldPanel('status'),
         FieldPanel('manual_status'),
         FieldPanel('manual_status_reason'),
+        FieldPanel('start_date'),
+        FieldPanel('end_date'),
     ]
     internal_panels = [
         FieldPanel('internal_notes'),
