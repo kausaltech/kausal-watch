@@ -11,10 +11,10 @@ from itertools import chain
 from wagtail.core.rich_text import RichText
 
 from actions.models import (
-    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice, CategoryMetadataNumericValue,
-    CategoryMetadataRichText, CategoryType, CategoryTypeMetadata, CategoryTypeMetadataChoice, ImpactGroup,
-    ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
+    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
+    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice,
+    CategoryMetadataNumericValue, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata,
+    CategoryTypeMetadataChoice, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
 from pages import schema as pages_schema
 from pages.models import AplansPage
@@ -386,6 +386,12 @@ class ActionStatusUpdateNode(DjangoNode):
         fields = [
             'id', 'action', 'title', 'date', 'author', 'content'
         ]
+
+
+class ActionLinkNode(DjangoNode):
+    class Meta:
+        model = ActionLink
+        fields = public_fields(ActionLink)
 
 
 class Query:
