@@ -293,6 +293,7 @@ root_category, _ = Category.objects.update_or_create(
         'color': '#999999',
     },
 )
+metadata.set_category_value(root_category, 0)  # TODO: where to get the value from?
 
 # Create a category for each node
 category_for_uuid = {}
@@ -313,6 +314,7 @@ for i, node in enumerate(nodes.values()):
         identifier=str(i+1),
         defaults=category_data,
     )
+    metadata.set_category_value(category, 0)  # TODO: where to get the value from?
     assert node['id'] not in category_for_uuid
     category_for_uuid[node['id']] = category
 
