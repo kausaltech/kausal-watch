@@ -442,7 +442,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase',
-        'manual_status_reason',
+        'manual_status_reason', 'links',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
@@ -934,6 +934,29 @@ class ActionImpact(OrderedModel, PlanRelatedModel):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.identifier)
+
+
+class ActionLink(OrderedModel):
+    """A link related to an action."""
+
+    action = ParentalKey(Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='links')
+    url = models.URLField(max_length=400, verbose_name=_('URL'), validators=[URLValidator(('http', 'https'))])
+    title = models.CharField(max_length=254, verbose_name=_('title'), blank=True)
+
+    public_fields = [
+        'id', 'action', 'url', 'title', 'order'
+    ]
+
+    class Meta:
+        ordering = ['action', 'order']
+        index_together = (('action', 'order'),)
+        verbose_name = _('action link')
+        verbose_name_plural = _('action links')
+
+    def __str__(self):
+        if self.title:
+            return f'{self.title}: {self.url}'
+        return self.url
 
 
 class CategoryType(ClusterableModel, PlanRelatedModel):

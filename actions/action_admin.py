@@ -392,6 +392,13 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         ImageChooserPanel('image'),
         FieldPanel('lead_paragraph'),
         RichTextFieldPanel('description'),
+        CondensedInlinePanel(
+            'links',
+            panels=[
+                FieldPanel('url'),
+                FieldPanel('title')
+            ]
+        )
     ]
 
     progress_panels = [
