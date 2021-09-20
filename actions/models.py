@@ -1071,25 +1071,29 @@ class CategoryTypeMetadata(ClusterableModel, OrderedModel):
             if val is not None:
                 self.category_choices.create(category=category, choice=val)
         elif self.format == self.MetadataFormat.RICH_TEXT:
-            obj = self.category_richtexts.filter(category=category).first()
-            if not val and obj is not None:
-                obj.delete()
-                return
-
-            if obj is None:
-                obj = CategoryMetadataRichText(metadata=self, category=category)
-            obj.text = val
-            obj.save()
+            try:
+                obj = self.category_richtexts.get(category=category)
+            except self.category_richtexts.model.DoesNotExist:
+                if val:
+                    obj = self.category_richtexts.create(category=category, text=val)
+            else:
+                if not val:
+                    obj.delete()
+                else:
+                    obj.text = val
+                    obj.save()
         elif self.format == self.MetadataFormat.NUMERIC:
-            obj = self.category_numeric_values.filter(category=category).first()
-            if val is None and obj is not None:
-                obj.delete()
-                return
-
-            if obj is None:
-                obj = CategoryMetadataNumericValue(metadata=self, category=category)
-            obj.value = val
-            obj.save()
+            try:
+                obj = self.category_numeric_values.get(category=category)
+            except self.category_numeric_values.model.DoesNotExist:
+                if val is not None:
+                    obj = self.category_numeric_values.create(category=category, value=val)
+            else:
+                if val is None:
+                    obj.delete()
+                else:
+                    obj.value = val
+                    obj.save()
 
 
 class CategoryTypeMetadataChoice(OrderedModel):
