@@ -13,7 +13,7 @@ else:
     class OrganizationForm(NodeForm):
         class Meta:
             model = Organization
-            fields = ['name']
+            fields = ['classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
 
     # FIXME: This should be done in the model definition, but we have a circular
     # dependency.

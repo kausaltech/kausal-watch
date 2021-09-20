@@ -54,12 +54,6 @@ class Node(MP_Node):
         return self.name
 
 
-class Namespace(models.Model):
-    identifier = models.CharField(max_length=255, unique=True, editable=False)
-    name = models.CharField(max_length=255)
-    user_editable = models.BooleanField(default=False)
-
-
 class OrganizationClass(models.Model):
     identifier = models.CharField(max_length=255, unique=True, editable=False)
     name = models.CharField(max_length=255)
@@ -75,7 +69,6 @@ class Organization(Node):
     # This doesn't work because OrganizationForm depends on this class. We set base_form_class after defining
     # OrganizationForm.
 
-    identifier = models.CharField(max_length=255, unique=True, editable=False)
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
 
     classification = models.ForeignKey(OrganizationClass,
@@ -124,12 +117,18 @@ class Organization(Node):
                                          on_delete=models.SET_NULL)
 
 
+class Namespace(models.Model):
+    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    name = models.CharField(max_length=255)
+    user_editable = models.BooleanField(default=False)
+
+
 class OrganizationIdentifier(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(fields=['namespace', 'identifier'], name='unique_identifier_in_namespace')
         ]
 
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
-    identifier = models.CharField(max_length=255, unique=True, editable=False)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='identifiers')
+    identifier = models.CharField(max_length=255, editable=False)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
