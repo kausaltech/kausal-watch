@@ -33,6 +33,20 @@ SECTOR_COLORS = {
 }
 
 
+def delete_old_data(plan):
+    # Not used anymore, but call manually if needed
+    Action.objects.filter(plan=plan).delete()
+    CategoryPage.objects.filter(category__type__plan=plan).delete()
+    Category.objects.filter(type__plan=plan).delete()
+
+    # Delete category pages from previous invocations
+    plan.root_page.get_children().filter(title='Categories').delete()
+
+    # Reload plan (and in particular plan.root_page) because otherwise things will be messed up:
+    # https://github.com/wagtail/wagtail/issues/3402
+    plan.refresh_from_db()
+
+
 def to_rich_text(text):
     return '\n'.join([f'<p>{line}</p>' for line in text.splitlines() if line])
 
@@ -79,12 +93,6 @@ metadata, _ = CategoryTypeMetadata.objects.update_or_create(
         format=CategoryTypeMetadata.MetadataFormat.NUMERIC
     )
 )
-
-
-# Delete data from previous import, which used Excel instead of JSON
-Action.objects.filter(plan=plan).delete()
-CategoryPage.objects.filter(category__type__plan=plan).delete()
-Category.objects.filter(type__plan=plan).delete()
 
 
 def import_image(url, credit=''):
@@ -340,16 +348,19 @@ for i, node in enumerate(nodes.values()):
             assert action
             action.categories.add(category)
 
-# Delete category pages from previous invocations
-plan.root_page.get_children().filter(title='Categories').delete()
+# The parent page for all CategoryPage instances should be a Page and we can't rely on its title or slug having a
+# particular value. To find it if it exists, look for a page with only category pages as children (and at least one).
+categories_page = None
+for page in plan.root_page.get_children():
+    num_category_pages = page.get_descendants().type(CategoryPage).count()
+    if num_category_pages > 0 and num_category_pages == page.get_descendants().count():
+        assert categories_page is None
+        categories_page = page
 
-# Reload plan (and in particular plan.root_page) because otherwise things will be messed up:
-# https://github.com/wagtail/wagtail/issues/3402
-plan.refresh_from_db()
-
-# Create a Page as a parent for all CategoryPages
-categories_page = Page(title='Categories')
-plan.root_page.add_child(instance=categories_page)
+if categories_page is None:
+    # Create a Page as a parent for all CategoryPages
+    categories_page = Page(title='Categories')
+    plan.root_page.add_child(instance=categories_page)
 
 # Create a CategoryPage instance for each category
 for node_id, category in category_for_uuid.items():
@@ -395,8 +406,16 @@ for node_id, category in category_for_uuid.items():
         parent = category_for_uuid[parent].category_page
     if not parent:
         parent = categories_page
-    page = CategoryPage(title=category.name, category=category, body=page_body)
-    parent.add_child(instance=page)
+
+    try:
+        page = CategoryPage.objects.get(category=category)
+        assert page.get_parent().id == parent.id
+        page.title = category.name
+        page.body = page_body
+        page.save()
+    except parent.DoesNotExist:
+        page = CategoryPage(title=category.name, category=category, body=page_body)
+        parent.add_child(instance=page)
 
 # Create indicator values
 for indicator_data in indicators.values():
