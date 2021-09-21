@@ -1,13 +1,12 @@
 from rest_framework import viewsets, serializers, permissions
 
-from django_orghierarchy.models import Organization
-
 from aplans.utils import register_view_helper, public_fields
 from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
+from orgs.models import Organization
 from people.models import Person
 from .models import (
     Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
-    ActionTask, ActionDecisionLevel, ImpactGroup, ImpactGroupAction
+    ActionTask, ActionDecisionLevel, ImpactGroup
 )
 
 
@@ -87,16 +86,6 @@ class ActionDecisionLevelSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ActionDecisionLevel
         fields = '__all__'
-
-
-@register_view
-class ActionDecisionLevelViewSet(viewsets.ModelViewSet):
-    queryset = ActionDecisionLevel.objects.all()
-    serializer_class = ActionDecisionLevelSerializer
-    filterset_fields = {
-        'plan': ('exact',),
-        'plan__identifier': ('exact',),
-    }
 
 
 @register_view

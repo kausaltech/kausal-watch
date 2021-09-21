@@ -3,7 +3,6 @@ from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django_orghierarchy.models import Organization
 from wagtail.core.models import GroupPagePermission, PAGE_PERMISSION_TYPES
 
 from content.models import SiteGeneralContent
@@ -12,12 +11,13 @@ from indicators.models import (
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
 from notifications.models import BaseTemplate, ContentBlock, NotificationTemplate
+from orgs.models import Organization
 from people.models import Person
 
 from .models import (
     Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
-    CategoryTypeMetadata, CategoryTypeMetadataChoice, CategoryLevel, CategoryMetadataChoice, CategoryMetadataRichText
+    CategoryTypeMetadata, CategoryTypeMetadataChoice, CategoryMetadataChoice, CategoryMetadataRichText
 )
 
 User = get_user_model()

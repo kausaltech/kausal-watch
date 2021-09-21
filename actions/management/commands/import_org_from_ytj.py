@@ -1,16 +1,16 @@
 import re
-import sys
 import requests
-from django_orghierarchy.models import Organization, DataSource, OrganizationClass
 from django.core.management.base import BaseCommand
+
 from actions.models import Plan
+from orgs.models import Organization, OrganizationClass, OrganizationIdentifier, Namespace
 
 
 class Command(BaseCommand):
     help = 'Import an organisation from YTJ'
 
     def import_organisation(self, name_or_id):
-        ds = DataSource.objects.get(id='ytj')
+        namespace = Namespace.objects.get(identifier='ytj')
 
         if not name_or_id[0].isnumeric():
             resp = requests.get('https://avoindata.prh.fi/bis/v1?name=%s' % name_or_id)
@@ -39,19 +39,27 @@ class Command(BaseCommand):
         form = data['companyForm']
         assert form == 'OY'
 
-        org = Organization.objects.filter(data_source=ds, origin_id=data['businessId']).first()
-        if org is None:
+        org_identifier = (OrganizationIdentifier.objects.filter(namespace=namespace, identifier=data['businessId'])
+                          .first())
+        if org_identifier is None:
             print('Creating %s (%s)' % (data['name'], data['businessId']))
-            org = Organization(data_source=ds, origin_id=data['businessId'])
+            org = Organization()
+        else:
+            org = org_identifier.organization
+
         org.name = data['name']
         org.classification = OrganizationClass.objects.get(name='Osakeyhtiö')
         if not org.abbreviation:
             abbr = re.sub(' [oO][yY]', '', org.name)
             org.abbreviation = abbr
         org.save()
+
+        if org_identifier is None:
+            org_identifier.objects.create(namespace=namespace, identifier=data['businessId'], organization=org)
+
         print('Imported %s (%s)' % (org.name, org.id))
         if self.plan:
-            self.plan.related_organizations.add(org)
+            self.plan.related_organizations_new.add(org)
 
     def add_arguments(self, parser):
         # Positional arguments

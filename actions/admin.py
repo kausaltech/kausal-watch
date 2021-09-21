@@ -9,10 +9,10 @@ from admin_ordering.admin import OrderableAdmin
 from admin_site.admin import AplansExportMixin, AplansModelAdmin
 from admin_site.filters import AutocompleteFilter
 from ckeditor.widgets import CKEditorWidget
-from django_orghierarchy.admin import OrganizationAdmin as DefaultOrganizationAdmin
-from django_orghierarchy.models import Organization
 from image_cropping import ImageCroppingMixin
 from indicators.admin import ActionIndicatorAdmin
+# from orgs.admin import OrganizationAdmin as DefaultOrganizationAdmin
+from orgs.models import Organization
 from people.models import Person
 
 from .export import ActionResource
@@ -128,8 +128,9 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('organization', 'order',)
-    autocomplete_fields = ('organization',)
+    fields = ('organization_new', 'order',)
+    # TODO: Listing the organization in autocomplete_fields requires OrganizationAdmin
+    # autocomplete_fields = ('organization_new',)
 
 
 class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
@@ -302,8 +303,9 @@ class ResponsibleOrganizationFilter(AutocompleteFilter):
         if self.value():
             org = Organization.objects.filter(id=self.value()).first()
             if org is not None:
+                # TODO: get_descendants argument probably doesn't work anymore
                 orgs = org.get_descendants(True)
-                return queryset.filter(responsible_parties__organization__in=orgs).distinct()
+                return queryset.filter(responsible_parties__organization_new__in=orgs).distinct()
             else:
                 return queryset.none()
         else:
@@ -659,17 +661,18 @@ class CategoryAdmin(ImageCroppingMixin, AplansModelAdmin):
         return True
 
 
-admin.site.unregister(Organization)
+# TODO: We did not migrate OrganizationAdmin from django_orghierarchy to orgs for now
+# admin.site.unregister(Organization)
 
 
-@admin.register(Organization)
-class OrganizationAdmin(DefaultOrganizationAdmin):
-    search_fields = ('name', 'abbreviation')
+# @admin.register(Organization)
+# class OrganizationAdmin(DefaultOrganizationAdmin):
+#     search_fields = ('name', 'abbreviation')
 
-    def get_queryset(self, request):
-        # The default OrganizationAdmin is buggy
-        qs = admin.ModelAdmin.get_queryset(self, request).filter(dissolution_date=None)
-        return qs
+#     def get_queryset(self, request):
+#         # The default OrganizationAdmin is buggy
+#         qs = admin.ModelAdmin.get_queryset(self, request).filter(dissolution_date=None)
+#         return qs
 
-    def get_actions(self, request):
-        return admin.ModelAdmin.get_actions(self, request)
+#     def get_actions(self, request):
+#         return admin.ModelAdmin.get_actions(self, request)

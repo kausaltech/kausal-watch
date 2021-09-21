@@ -5,7 +5,6 @@ from django.conf import settings
 from django.db import transaction
 
 import django_filters as filters
-from django_orghierarchy.models import Organization
 from actions.models import Plan
 from aplans.utils import register_view_helper
 from rest_framework import permissions, serializers, status, viewsets
@@ -15,6 +14,7 @@ from rest_framework.response import Response
 from sentry_sdk import capture_exception, push_scope
 
 from .models import ActionIndicator, Indicator, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
+from orgs.models import Organization
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
@@ -71,21 +71,21 @@ class IndicatorSerializer(serializers.ModelSerializer):
         levels = data.get('levels', None)
         if levels:
             for level in levels:
-                if level['plan'].organization != org:
+                if level['plan'].organization_new != org:
                     raise ValidationError('Attempting to set indicator level for wrong plan')
 
         related_causes = data.get('related_causes', None)
         if related_causes:
             for ri in related_causes:
-                if ri['causal_indicator'].organization != org:
+                if ri['causal_indicator'].organization_new != org:
                     raise ValidationError('Related indicators must have the same organization')
         related_effects = data.get('related_effects', None)
         if related_effects:
             for ri in related_effects:
-                if ri['effect_indicator'].organization != org:
+                if ri['effect_indicator'].organization_new != org:
                     raise ValidationError('Related indicators must have the same organization')
 
-        if Indicator.objects.filter(organization=org, name=data['name']).exists():
+        if Indicator.objects.filter(organization_new=org, name=data['name']).exists():
             raise ValidationError('Indicator with the same name already exists for organization')
 
         return data

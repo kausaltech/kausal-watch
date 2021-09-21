@@ -1,7 +1,8 @@
 from dal import autocomplete
 from django.db.models import Q
-from django_orghierarchy.models import Organization
+
 from actions.models import Action
+from orgs.models import Organization
 
 
 class OrganizationAutocomplete(autocomplete.Select2QuerySetView):

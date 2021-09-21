@@ -1,6 +1,5 @@
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
-from django_orghierarchy.models import Organization
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
@@ -13,6 +12,7 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel,
 )
+from orgs.models import Organization
 from .models import (
     ActionImpact, ActionStatus, Plan
 )

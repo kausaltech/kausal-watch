@@ -2,7 +2,6 @@ import graphene
 import graphene_django_optimizer as gql_optimizer
 
 from django.db.models import Count, Q
-from django_orghierarchy.models import Organization, OrganizationClass
 from graphql.error import GraphQLError
 from graphql.type import (
     DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
@@ -15,6 +14,7 @@ from actions import schema as actions_schema
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
 from orgs import schema as orgs_schema
+from orgs.models import Organization, OrganizationClass
 from pages import schema as pages_schema
 from people.models import Person
 

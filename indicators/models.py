@@ -16,6 +16,7 @@ from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import IdentifierField, OrderedModel
+from orgs.models import Organization
 
 
 User = get_user_model()
@@ -98,6 +99,9 @@ class Dataset(ClusterableModel):
     owner = models.ForeignKey(
         'django_orghierarchy.Organization', null=True, blank=True, verbose_name=_('owner'),
         on_delete=models.SET_NULL,
+    )
+    owner_new = models.ForeignKey(
+        Organization, null=True, blank=True, verbose_name=_('owner'), on_delete=models.SET_NULL,
     )
     owner_name = models.CharField(
         max_length=100, null=True, blank=True, verbose_name=_('owner name'),
@@ -200,6 +204,10 @@ class Indicator(ClusterableModel):
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', related_name='indicators', editable=False,
         on_delete=models.PROTECT, verbose_name=_('organization'), null=False,
+    )
+    organization_new = models.ForeignKey(
+        Organization, related_name='indicators', editable=False, on_delete=models.PROTECT,
+        verbose_name=_('organization'), null=False,
     )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,

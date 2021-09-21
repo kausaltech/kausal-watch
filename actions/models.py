@@ -22,10 +22,10 @@ from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.core.models import Collection, Site
 
-from django_orghierarchy.models import Organization
 from aplans.utils import (
     ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
+from orgs.models import Organization
 
 from .monitoring_quality import determine_monitoring_quality
 
@@ -93,6 +93,9 @@ class Plan(ClusterableModel):
         'django_orghierarchy.Organization', related_name='plans', on_delete=models.PROTECT,
         verbose_name=_('main organization for the plan'),
     )
+    organization_new = models.ForeignKey(
+        Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
+    )
 
     general_admins = models.ManyToManyField(
         User, blank=True, related_name='general_admin_plans',
@@ -145,6 +148,9 @@ class Plan(ClusterableModel):
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
     )
+    related_organizations_new = models.ManyToManyField(
+        Organization, blank=True, related_name='related_plans'
+    )
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name'])
@@ -178,9 +184,11 @@ class Plan(ClusterableModel):
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
     def get_related_organizations(self):
-        all_related = self.related_organizations.all() | self.related_organizations.all().get_descendants()
-        if self.organization:
-            all_related |= Organization.objects.filter(id=self.id) | self.organization.get_descendants(True)
+        # TODO: Does get_descendants still work with treebeard?
+        all_related = self.related_organizations_new.all() | self.related_organizations_new.all().get_descendants()
+        if self.organization_new:
+            all_related |= Organization.objects.filter(id=self.organization_new.id)
+            all_related |= self.organization_new.get_descendants()
         return all_related
 
     @property
@@ -319,7 +327,7 @@ class ActionQuerySet(models.QuerySet):
         person = user.get_corresponding_person()
         if person is not None:
             query |= Q(contact_persons__person=person)
-        query |= Q(responsible_parties__organization__in=user.get_adminable_organizations())
+        query |= Q(responsible_parties__organization_new__in=user.get_adminable_organizations())
         return self.filter(query).distinct()
 
     def unmerged(self):
@@ -692,6 +700,10 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name=_('action')
     )
     organization = models.ForeignKey(
+        'django_orghierarchy.Organization', on_delete=models.CASCADE, related_name='responsible_actions',
+        limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
+    )
+    organization_new = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name='responsible_actions',
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
     )
@@ -703,12 +715,13 @@ class ActionResponsibleParty(OrderedModel):
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
-        unique_together = (('action', 'organization'),)
+        unique_together = (('action', 'organization'),)  # TODO: delete
+        unique_together = (('action', 'organization_new'),)  # TODO: rename
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
 
     def __str__(self):
-        return str(self.organization)
+        return str(self.organization_new)
 
 
 class ActionContactPerson(OrderedModel):

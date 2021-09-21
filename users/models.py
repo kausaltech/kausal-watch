@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
 from users.managers import UserManager
+from orgs.models import Organization
 
 
 class User(AbstractUser):
@@ -117,10 +118,9 @@ class User(AbstractUser):
             return action.pk in actions
 
     def get_adminable_organizations(self):
-        Organization = apps.get_model('django_orghierarchy', 'Organization')
-        orgs = Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)\
-            .get_descendants(include_self=True).filter(dissolution_date=None).distinct()
-        return orgs
+        # TODO: Probably get_descendants doesn't have a include_self argument anymore. Check/fix.
+        return (Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)
+                .get_descendants(include_self=True).filter(dissolution_date=None).distinct())
 
     def get_active_admin_plan(self, adminable_plans=None):
         if adminable_plans is None:
@@ -222,8 +222,14 @@ class OrganizationAdmin(models.Model):
         User, verbose_name=_('user'), on_delete=models.CASCADE,
         related_name='admin_orgs'
     )
+    # TODO: Remove
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', verbose_name=_('organization'),
+        on_delete=models.CASCADE, related_name='aplans_admin_users'
+    )
+    # TODO: Migrate from organization
+    organization_new = models.ForeignKey(
+        Organization, verbose_name=_('organization'),
         on_delete=models.CASCADE, related_name='aplans_admin_users'
     )
 

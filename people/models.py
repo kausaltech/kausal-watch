@@ -23,7 +23,8 @@ from wagtail.search import index
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
-from django_orghierarchy.models import Organization
+
+from orgs.models import Organization
 
 from admin_site.models import Client
 
@@ -69,9 +70,10 @@ def image_upload_path(instance, filename):
 
 class PersonQuerySet(models.QuerySet):
     def available_for_plan(self, plan):
-        related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
+        related = Organization.objects.filter(id=plan.organization_new_id) | plan.related_organizations_new.all()
+        # TODO: include_self probably doesn't work anymore?
         all_related = related.get_descendants(include_self=True)
-        q = Q(organization__in=all_related)
+        q = Q(organization_new__in=all_related)
         return self.filter(q)
 
     def is_action_contact_person(self, plan):
@@ -90,6 +92,10 @@ class Person(index.Indexed, ClusterableModel):
     organization = models.ForeignKey(
         'django_orghierarchy.Organization', related_name='people',
         on_delete=models.PROTECT, verbose_name=_('organization'),
+        help_text=_("What is this person's organization")
+    )
+    organization_new = models.ForeignKey(
+        Organization, related_name='people', on_delete=models.PROTECT, verbose_name=_('organization'),
         help_text=_("What is this person's organization")
     )
     user = models.OneToOneField(
@@ -117,7 +123,7 @@ class Person(index.Indexed, ClusterableModel):
     search_fields = [
         index.AutocompleteField('first_name', partial_match=True),
         index.AutocompleteField('last_name', partial_match=True),
-        index.FilterField('organization'),
+        index.FilterField('organization_new'),
     ]
 
     class Meta:
