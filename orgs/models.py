@@ -3,12 +3,16 @@ from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
 from treebeard.mp_tree import MP_Node
 from wagtail.admin.edit_handlers import FieldPanel
 
+from admin_site.wagtail import CondensedInlinePanel
+
 
 # TODO: Generalize and put in some other app's models.py
-class Node(MP_Node):
+class Node(MP_Node, ClusterableModel):
     class Meta:
         abstract = True
 
@@ -63,11 +67,25 @@ class OrganizationClass(models.Model):
     last_modified_time = models.DateTimeField(auto_now=True,
                                               help_text=_('The time at which the resource was updated'))
 
+    def __str__(self):
+        return f'{self.name} ({self.identifier})'
+
 
 class Organization(Node):
     # base_form_class = OrganizationForm
     # This doesn't work because OrganizationForm depends on this class. We set base_form_class after defining
     # OrganizationForm.
+
+    panels = Node.panels + [
+        FieldPanel('classification'),
+        FieldPanel('abbreviation'),
+        FieldPanel('founding_date'),
+        FieldPanel('dissolution_date'),
+        CondensedInlinePanel('identifiers', panels=[
+            FieldPanel('namespace'),
+            FieldPanel('identifier'),
+        ])
+    ]
 
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
 
@@ -122,6 +140,9 @@ class Namespace(models.Model):
     name = models.CharField(max_length=255)
     user_editable = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f'{self.name} ({self.identifier})'
+
 
 class OrganizationIdentifier(models.Model):
     class Meta:
@@ -129,6 +150,9 @@ class OrganizationIdentifier(models.Model):
             models.UniqueConstraint(fields=['namespace', 'identifier'], name='unique_identifier_in_namespace')
         ]
 
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='identifiers')
-    identifier = models.CharField(max_length=255, editable=False)
+    organization = ParentalKey(Organization, on_delete=models.CASCADE, related_name='identifiers')
+    identifier = models.CharField(max_length=255)
     namespace = models.ForeignKey(Namespace, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'{self.identifier} @ {self.namespace.name}'
