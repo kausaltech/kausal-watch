@@ -507,6 +507,14 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         all_tabs = []
 
         panels = list(self.basic_panels)
+        for panel in list(panels):
+            field_name = getattr(panel, 'field_name', None)
+            if not field_name:
+                continue
+            if field_name == 'official_name' and plan.hide_action_official_name:
+                panels.remove(panel)
+            elif field_name == 'lead_paragraph' and plan.hide_action_lead_paragraph:
+                panels.remove(panel)
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
         progress_panels = list(self.progress_panels)

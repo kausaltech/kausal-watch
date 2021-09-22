@@ -133,6 +133,14 @@ class Plan(ClusterableModel):
         default=False, verbose_name=_('Hide action identifiers'),
         help_text=_("Set if the plan doesn't have meaningful action identifiers")
     )
+    hide_action_official_name = models.BooleanField(
+        default=False, verbose_name=_('Hide official name field'),
+        help_text=_("Set if the plan doesn't use the official name field")
+    )
+    hide_action_lead_paragraph = models.BooleanField(
+        default=True, verbose_name=_('Hide lead paragraph'),
+        help_text=_("Set if the plan doesn't use the lead paragraph field")
+    )
 
     related_organizations = models.ManyToManyField(
         'django_orghierarchy.Organization', blank=True, related_name='related_plans'
@@ -147,7 +155,7 @@ class Plan(ClusterableModel):
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
-        'action_implementation_phases', 'hide_action_identifiers',
+        'action_implementation_phases', 'hide_action_identifiers', 'hide_official_name',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
@@ -458,7 +466,11 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         )
 
     def __str__(self):
-        return "%s. %s" % (self.identifier, self.name)
+        s = ''
+        if self.plan is not None and not self.plan.hide_action_identifiers:
+            s += '%s. ' % self.identifier
+        s += self.name
+        return s
 
     def clean(self):
         if self.merged_with is not None:
