@@ -12,7 +12,9 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
 from actions.models import Category, Plan
-from indicators.blocks import IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock
+from indicators.blocks import (
+    IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
+)
 from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -160,7 +162,7 @@ class CategoryPage(AplansPage):
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('indicator_group', IndicatorGroupBlock()),
-        ('related_indicators', blocks.StaticBlock()),
+        ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
     ])
