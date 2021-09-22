@@ -324,7 +324,7 @@ for i, node in enumerate(nodes.values()):
         'name': node['title'],
         'external_identifier': node['id'],
         'parent': parent,
-        'color': SECTOR_COLORS[node['title']] if parent is None else None
+        'color': SECTOR_COLORS[node['title']] if parent is None or parent is root_category else None
     }
     category, _ = Category.objects.update_or_create(
         type=category_type,
