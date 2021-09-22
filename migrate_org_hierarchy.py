@@ -5,8 +5,19 @@ import os
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
 django.setup()
 
+from actions.models import ActionResponsibleParty, Plan  # noqa
 from django_orghierarchy import models as doh  # noqa
+from indicators.models import Dataset, Indicator  # noqa
 from orgs.models import Namespace, Organization, OrganizationClass, OrganizationIdentifier  # noqa
+from people.models import Person  # noqa
+from users.models import OrganizationAdmin, User  # noqa
+
+
+def get_new_organization(doh_org):
+    if doh_org is None:
+        return None
+    namespace = Namespace.objects.get(identifier=doh_org.data_source.id)
+    return OrganizationIdentifier.objects.get(namespace=namespace, identifier=doh_org.id).organization
 
 
 def migrate_data_sources():
@@ -55,9 +66,7 @@ def migrate_organization(doh_org):
     if doh_org.parent is None:
         Organization.add_root(instance=org)
     else:
-        parent_namespace = Namespace.objects.get(identifier=doh_org.parent.data_source.id)
-        parent_identifier = OrganizationIdentifier.objects.get(namespace=parent_namespace, identifier=doh_org.parent.id)
-        parent = parent_identifier.organization
+        parent = get_new_organization(doh_org.parent)
         parent.add_child(instance=org)
     return org
 
@@ -84,11 +93,50 @@ def migrate_organizations():
             continue
 
 
+def set_foreign_keys():
+    for arp in ActionResponsibleParty.objects.all():
+        arp.organization_new = get_new_organization(arp.organization)
+        arp.save()
+
+    for plan in Plan.objects.all():
+        plan.organization_new = get_new_organization(plan.organization)
+
+        assert plan.related_organizations_new.count() == 0
+        for related_org in plan.related_organizations.all():
+            new_org = get_new_organization(related_org)
+            plan.related_organizations_new.add(new_org)
+        assert plan.related_organizations_new.count() == plan.related_organizations.count()
+        plan.save()
+
+    for dataset in Dataset.objects.all():
+        dataset.owner_new = get_new_organization(dataset.owner)
+        dataset.save()
+
+    for indicator in Indicator.objects.all():
+        indicator.organization_new = get_new_organization(indicator.organization)
+        indicator.save()
+
+    # Before migrating persons, need to fix a person whose user also belongs to a different person, otherwise error
+    person = Person.objects.get(id=122)
+    person.user = User.objects.get(email=person.email)
+    person.save()
+
+    for person in Person.objects.all():
+        person.organization_new = get_new_organization(person.organization)
+        person.save()
+
+    for organization_admin in OrganizationAdmin.objects.all():
+        organization_admin.organization_new = get_new_organization(organization_admin.organization)
+        organization_admin.save()
+
+
 if __name__ == '__main__':
-    OrganizationIdentifier.objects.all().delete()
-    Organization.objects.all().delete()
-    OrganizationClass.objects.all().delete()
-    Namespace.objects.all().delete()
-    migrate_data_sources()
-    migrate_organization_classes()
-    migrate_organizations()
+    with django.db.transaction.atomic():
+        OrganizationIdentifier.objects.all().delete()
+        Organization.objects.all().delete()
+        OrganizationClass.objects.all().delete()
+        Namespace.objects.all().delete()
+        migrate_data_sources()
+        migrate_organization_classes()
+        migrate_organizations()
+        set_foreign_keys()

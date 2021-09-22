@@ -134,6 +134,15 @@ class Organization(Node):
                                          editable=False,
                                          on_delete=models.SET_NULL)
 
+    def __str__(self):
+        if self.distinct_name:
+            name = self.distinct_name
+        else:
+            name = self.name
+        if self.dissolution_date:
+            return self.name + ' (dissolved)'
+        return name
+
 
 class Namespace(models.Model):
     identifier = models.CharField(max_length=255, unique=True, editable=False)

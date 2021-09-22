@@ -207,7 +207,8 @@ class Indicator(ClusterableModel):
     )
     organization_new = models.ForeignKey(
         Organization, related_name='indicators', editable=False, on_delete=models.PROTECT,
-        verbose_name=_('organization'), null=False,
+        verbose_name=_('organization'),
+        null=True,  # TODO: Remove after migrating the data
     )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,

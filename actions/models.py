@@ -95,6 +95,7 @@ class Plan(ClusterableModel):
     )
     organization_new = models.ForeignKey(
         Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
+        null=True,  # TODO: Remove after migrating the data
     )
 
     general_admins = models.ManyToManyField(
@@ -184,8 +185,9 @@ class Plan(ClusterableModel):
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
     def get_related_organizations(self):
-        # TODO: Does get_descendants still work with treebeard?
-        all_related = self.related_organizations_new.all() | self.related_organizations_new.all().get_descendants()
+        all_related = self.related_organizations_new.all()
+        for org in self.related_organizations_new.all():
+            all_related |= org.get_descendants()
         if self.organization_new:
             all_related |= Organization.objects.filter(id=self.organization_new.id)
             all_related |= self.organization_new.get_descendants()
@@ -416,8 +418,12 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         through='indicators.ActionIndicator', related_name='actions'
     )
 
-    responsible_organizations = models.ManyToManyField(
+    responsible_organizations_old = models.ManyToManyField(
         'django_orghierarchy.Organization', through='ActionResponsibleParty', blank=True,
+        related_name='responsible_for_actions', verbose_name=_('responsible organizations')
+    )
+    responsible_organizations = models.ManyToManyField(
+        Organization, through='ActionResponsibleParty', blank=True,
         related_name='responsible_for_actions', verbose_name=_('responsible organizations')
     )
 
@@ -706,6 +712,7 @@ class ActionResponsibleParty(OrderedModel):
     organization_new = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name='responsible_actions',
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
+        null=True,  # TODO: Remove after migrating the data
     )
 
     public_fields = [

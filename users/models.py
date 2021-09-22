@@ -118,9 +118,10 @@ class User(AbstractUser):
             return action.pk in actions
 
     def get_adminable_organizations(self):
-        # TODO: Probably get_descendants doesn't have a include_self argument anymore. Check/fix.
-        return (Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)
-                .get_descendants(include_self=True).filter(dissolution_date=None).distinct())
+        orgs = Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)
+        for org in list(orgs):
+            orgs |= org.get_descendants().filter(dissolution_date=None)
+        return orgs.distinct()
 
     def get_active_admin_plan(self, adminable_plans=None):
         if adminable_plans is None:
@@ -229,8 +230,8 @@ class OrganizationAdmin(models.Model):
     )
     # TODO: Migrate from organization
     organization_new = models.ForeignKey(
-        Organization, verbose_name=_('organization'),
-        on_delete=models.CASCADE, related_name='aplans_admin_users'
+        Organization, verbose_name=_('organization'), on_delete=models.CASCADE, related_name='aplans_admin_users',
+        null=True,  # TODO: Remove after migrating the data
     )
 
     class Meta:

@@ -96,7 +96,8 @@ class Person(index.Indexed, ClusterableModel):
     )
     organization_new = models.ForeignKey(
         Organization, related_name='people', on_delete=models.PROTECT, verbose_name=_('organization'),
-        help_text=_("What is this person's organization")
+        help_text=_("What is this person's organization"),
+        null=True,  # TODO: Remove after migrating the data
     )
     user = models.OneToOneField(
         User, null=True, blank=True, related_name='person', on_delete=models.SET_NULL,
