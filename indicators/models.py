@@ -224,7 +224,7 @@ class Indicator(ClusterableModel):
         help_text=_('What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum.')
     )
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
-    categories = models.ManyToManyField('actions.Category', blank=True)
+    categories = models.ManyToManyField('actions.Category', blank=True, related_name='indicators')
     time_resolution = models.CharField(
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
         verbose_name=_('time resolution')

@@ -1158,8 +1158,8 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     i18n = TranslationField(fields=('name', 'short_description'))
 
     public_fields = [
-        'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description', 'color',
-        'children', 'category_page',
+        'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description',
+        'color', 'children', 'category_page', 'indicators',
     ]
 
     class Meta:
