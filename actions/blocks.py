@@ -24,12 +24,8 @@ class ActionHighlightsBlock(blocks.StaticBlock):
 
 
 @register_streamfield_block
-class ActionListBlock(blocks.StructBlock):
-    category_filter = CategoryChooserBlock(label=_('Filter on category'))
-
-    graphql_fields = [
-        GraphQLForeignKey('category_filter', Category),
-    ]
+class ActionListBlock(blocks.StaticBlock):
+    pass
 
 
 @register_streamfield_block

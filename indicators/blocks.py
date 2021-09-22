@@ -77,3 +77,8 @@ class IndicatorShowcaseBlock(StructBlock):
         GraphQLForeignKey('indicator', Indicator),
         GraphQLStreamfield('link_button', is_list=False),
     ]
+
+
+@register_streamfield_block
+class RelatedIndicatorsBlock(StaticBlock):
+    pass
