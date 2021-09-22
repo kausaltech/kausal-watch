@@ -254,7 +254,7 @@ class Plan(ClusterableModel):
         root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
         try:
             root_page = root_pages.get(slug=self.identifier)
-        except root_pages.DoesNotExist:
+        except Page.DoesNotExist:
             root_page = Page.get_first_root_node().add_child(
                 instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
             )
