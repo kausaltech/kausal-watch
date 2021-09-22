@@ -9,15 +9,19 @@ from .models import AplansImage, AplansRendition
 
 
 class ImageRendition(DjangoNode):
+    id = graphene.ID(required=True)
     src = graphene.String(required=True)
     width = graphene.Int(required=True)
     height = graphene.Int(required=True)
     alt = graphene.String(required=True)
 
+    def resolve_id(root, info):
+        return root.id
+
     class Meta:
         model = AplansRendition
         fields = [
-            'src', 'width', 'height', 'alt',
+            'id', 'src', 'width', 'height', 'alt',
         ]
 
 
@@ -64,4 +68,4 @@ class ImageNode(DjangoNode):
             sentry_sdk.capture_exception(e)
             return None
 
-        return ImageRendition(**rendition.get_fqdn_attrs(info.context))
+        return ImageRendition(id=rendition.id, **rendition.get_fqdn_attrs(info.context))
