@@ -1,4 +1,6 @@
+from django.db.models.fields import NullBooleanField
 from django.db.models.query_utils import Q
+from django.urls.base import reverse
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import (
@@ -207,6 +209,7 @@ class CategoryNode(DjangoNode):
     metadata = graphene.List(CategoryMetadataInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
+    icon_url = graphene.String()
 
     def resolve_metadata(self, info, id=None):
         query = Q()
@@ -237,9 +240,17 @@ class CategoryNode(DjangoNode):
     def resolve_actions(self, info):
         return self.action_set.all()
 
+    def resolve_icon_url(self, info):
+        if not hasattr(self, 'icon'):
+            return None
+        request = info.context
+        path = reverse('category-icon', kwargs=dict(id=self.icon.id)) + '?%s' % int(self.icon.updated_at.timestamp())
+        uri = request.build_absolute_uri(path)
+        return uri
+
     class Meta:
         model = Category
-        fields = public_fields(Category, add_fields=['level'])
+        fields = public_fields(Category, add_fields=['level', 'icon_url'])
 
 
 class ScenarioNode(DjangoNode):

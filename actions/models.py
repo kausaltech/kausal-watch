@@ -1202,6 +1202,15 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
             return self.name
 
 
+class CategoryIcon(models.Model):
+    category = models.OneToOneField(Category, on_delete=models.CASCADE, related_name='icon')
+    data = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'Icon for %s' % self.category
+
+
 class CategoryMetadataRichText(models.Model):
     metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name=_('category_richtexts'))
     category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_richtexts'))
