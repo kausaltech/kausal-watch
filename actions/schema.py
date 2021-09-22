@@ -441,7 +441,10 @@ class Query:
 
         qs = Action.objects.filter(plan=plan_obj)
         if category is not None:
-            qs = qs.filter(categories=category).distinct()
+            # FIXME: This is sucky, maybe convert Category to a proper tree model?
+            f = Q(id=category) | Q(parent=category) | Q(parent__parent=category) | Q(parent__parent__parent=category) | Q(parent__parent__parent__parent=category)
+            descendant_cats = Category.objects.filter(f)
+            qs = qs.filter(categories__in=descendant_cats).distinct()
 
         qs = order_queryset(qs, ActionNode, order_by)
         if first is not None:
