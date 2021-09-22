@@ -505,6 +505,7 @@ for organization, occurrences in org_counter.items():
             origin_id=organization,
             defaults=defaults,
         )
+        plan.related_organizations.add(organization)
         print(f"Created organization {organization}")
 
 # Assign organizations to actions
