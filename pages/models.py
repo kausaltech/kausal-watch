@@ -160,6 +160,7 @@ class CategoryPage(AplansPage):
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('indicator_group', IndicatorGroupBlock()),
+        ('related_indicators', blocks.StaticBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
     ])
