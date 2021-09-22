@@ -401,7 +401,7 @@ if categories_page is None:
         'style': 'cards',  # or 'table'?
     }))
 
-    page_body.append(('action_list', {}))
+    page_body.append(('action_list', {'category_filter': root_category}))
 
     categories_page = CategoryPage(title=root_category.name, category=root_category, body=page_body)
     plan.root_page.add_child(instance=categories_page)
@@ -456,7 +456,7 @@ for node_id, category in category_for_uuid.items():
         'style': 'cards',  # or 'table'?
     }))
 
-    page_body.append(('action_list', {}))
+    page_body.append(('action_list', {'category_filter': category}))
 
     parent = parent_of.get(node_id)
     if parent:
