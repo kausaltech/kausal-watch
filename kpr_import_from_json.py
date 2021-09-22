@@ -5,6 +5,7 @@ import os
 import pytz
 import re
 import requests
+from collections import Counter
 from django.core.files.images import ImageFile
 from django.utils import timezone
 from datetime import datetime
@@ -13,8 +14,8 @@ from io import BytesIO
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'aplans.settings')
 django.setup()
 
-from django_orghierarchy.models import Organization  # noqa
-from actions.models import Action, ActionImplementationPhase, ActionLink, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
+from django_orghierarchy.models import DataSource, Organization  # noqa
+from actions.models import Action, ActionImplementationPhase, ActionLink, ActionResponsibleParty, Category, CategoryMetadataNumericValue, CategoryType, CategoryTypeMetadata, Plan  # noqa
 from indicators.models import Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Unit  # noqa
 from images.models import AplansImage  # noqa
 from pages.models import CategoryPage  # noqa
@@ -31,6 +32,15 @@ SECTOR_COLORS = {
     'Energi': '#F4CE73',
     'Övrigt': '#D46262',
 }
+
+
+def clean_organization_name(name):
+    return name.strip()
+
+
+def str_to_id(v):
+    # https://stackoverflow.com/questions/3303312/how-do-i-convert-a-string-to-a-valid-variable-name-in-python
+    return re.sub(r'\W|^(?=\d)', '_', v)
 
 
 def delete_old_data(plan):
@@ -395,11 +405,15 @@ for node_id, category in category_for_uuid.items():
         category.image = image
         category.save()
 
+    # page_body.append(('related_indicators'), {})  # TODO
+
     page_body.append(('category_list', {
         # 'heading': 'TODO',
         # 'lead': 'TODO',
         'style': 'cards',  # or 'table'?
     }))
+
+    page_body.append(('action_list', {}))  # TODO
 
     parent = parent_of.get(node_id)
     if parent:
@@ -413,7 +427,7 @@ for node_id, category in category_for_uuid.items():
         page.title = category.name
         page.body = page_body
         page.save()
-    except parent.DoesNotExist:
+    except CategoryPage.DoesNotExist:
         page = CategoryPage(title=category.name, category=category, body=page_body)
         parent.add_child(instance=page)
 
@@ -457,3 +471,58 @@ for indicator_data in indicators.values():
                 date=date,
                 defaults=defaults,
             )
+
+# Count occurrences for each organization
+org_counter = Counter()
+for action_data in actions.values():
+    accountable = action_data['actionProperties']['accountable']
+    if accountable:
+        cleaned = clean_organization_name(accountable)
+        org_counter[cleaned] += 1
+
+# from pprint import pprint
+# pprint(org_counter)
+# pprint(sorted(org_counter.keys()))
+
+# Create DataSource
+data_source, _ = DataSource.objects.update_or_create(
+    id='kpr',
+    defaults={
+        'name': 'Klimatpolitiska rådet',
+    }
+)
+print(f"Created data source {data_source}")
+
+# Import organizations with at least a certain number of occurrences
+for organization, occurrences in org_counter.items():
+    if occurrences >= 5:
+        origin_id = str_to_id(organization.lower())
+        defaults = {
+            'name': organization,
+        }
+        organization, _ = Organization.objects.update_or_create(
+            data_source=data_source,
+            origin_id=organization,
+            defaults=defaults,
+        )
+        print(f"Created organization {organization}")
+
+# Assign organizations to actions
+for uuid, action_data in actions.items():
+    accountable = action_data['actionProperties']['accountable']
+    if accountable:
+        cleaned = clean_organization_name(accountable)
+        try:
+            organization = Organization.objects.get(
+                data_source=data_source,
+                origin_id=cleaned,
+            )
+        except Organization.DoesNotExist:
+            pass
+        else:
+            action = action_for_uuid[uuid]
+            ActionResponsibleParty.objects.update_or_create(
+                action=action,
+                organization=organization,
+            )
+            print(f"Added responsible organization {organization} to action {action}")
