@@ -76,7 +76,7 @@ plan_data = {
     'name': 'Klimatpolitiska rådet',
     'organization': org,
     'primary_language': 'sv',
-    'other_languages': ['en'],
+    'other_languages': [],
     'site_url': 'https://kpr.test.kausal.tech',
 }
 plan, _ = Plan.objects.update_or_create(
