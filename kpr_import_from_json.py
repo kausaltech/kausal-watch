@@ -405,6 +405,15 @@ for node_id, category in category_for_uuid.items():
         category.image = image
         category.save()
 
+    # For those categories without an image from above, fetch one using the transitionTarget field
+    if category.image is None:
+        target = properties.get('transitionTarget')
+        if target:
+            target_image_url = f'https://app.climateview.global/assets/images/transition-targets-images/{target}.jpg'
+            image = import_image(target_image_url)
+            category.image = image
+            category.save()
+
     page_body.append(('related_indicators', {}))
 
     page_body.append(('category_list', {
