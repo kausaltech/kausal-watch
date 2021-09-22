@@ -405,7 +405,7 @@ for node_id, category in category_for_uuid.items():
         category.image = image
         category.save()
 
-    # page_body.append(('related_indicators'), {})  # TODO
+    page_body.append(('related_indicators', {}))
 
     page_body.append(('category_list', {
         # 'heading': 'TODO',
@@ -413,7 +413,7 @@ for node_id, category in category_for_uuid.items():
         'style': 'cards',  # or 'table'?
     }))
 
-    page_body.append(('action_list', {}))  # TODO
+    page_body.append(('action_list', {}))
 
     parent = parent_of.get(node_id)
     if parent:
