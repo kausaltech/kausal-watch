@@ -2,23 +2,23 @@
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-# 
+#
 # Translators:
 # Juha Yrjölä <juha.yrjola@kausal.tech>, 2021
-# 
+#
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-16 14:11+0300\n"
+"POT-Creation-Date: 2021-09-22 10:16+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Juha Yrjölä <juha.yrjola@kausal.tech>, 2021\n"
 "Language-Team: Swedish (https://www.transifex.com/kausal-tech/teams/113123/sv/)\n"
+"Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: sv\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: actions/action_admin.py
@@ -82,9 +82,12 @@ msgid "Search"
 msgstr "Sök"
 
 #: actions/action_admin.py actions/apps.py actions/models.py
-#: actions/wagtail_admin.py
 msgid "Actions"
 msgstr "Åtgärder"
+
+#: actions/action_admin.py
+msgid "External links"
+msgstr "Länk till externa webbplats"
 
 #: actions/action_admin.py
 msgid "Last updated"
@@ -94,7 +97,7 @@ msgstr "Senast uppdaterad"
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
-msgstr "namn"
+msgstr "Namn"
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py
@@ -258,9 +261,7 @@ msgstr "kontaktpersoner"
 #: actions/models.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
-msgstr ""
-"%(color)s är inte en CSS -färg (t.ex. \"#112233\", \"röd\" eller \"rgb (0, "
-"255, 127)\")"
+msgstr "%(color)s är inte en CSS -färg (t.ex. \"#112233\", \"röd\" eller \"rgb (0, 255, 127)\")"
 
 #: actions/models.py
 msgid "site URL"
@@ -288,8 +289,7 @@ msgstr "visa administratörslänk"
 
 #: actions/models.py
 msgid "Should the public website contain a link to the admin login?"
-msgstr ""
-"Bör den offentliga webbplatsen innehålla en länk till admin -inloggningen?"
+msgstr "Bör den offentliga webbplatsen innehålla en länk till admin -inloggningen?"
 
 #: actions/models.py
 msgid "main organization for the plan"
@@ -313,9 +313,31 @@ msgstr "Kontaktpersoner privata"
 
 #: actions/models.py
 msgid "Set if the contact persons should not be visible in the public UI"
+msgstr "Ange om kontaktpersonerna inte ska vara synliga i det offentliga användargränssnittet"
+
+#: actions/models.py
+msgid "Hide action identifiers"
+msgstr "Dölj åtgärdsidentifierare"
+
+#: actions/models.py
+msgid "Set if the plan doesn't have meaningful action identifiers"
 msgstr ""
-"Ange om kontaktpersonerna inte ska vara synliga i det offentliga "
-"användargränssnittet"
+
+#: actions/models.py
+msgid "Hide official name field"
+msgstr "Dölj officiellt namn"
+
+#: actions/models.py
+msgid "Set if the plan doesn't use the official name field"
+msgstr ""
+
+#: actions/models.py
+msgid "Hide lead paragraph"
+msgstr "Dölj ingress"
+
+#: actions/models.py
+msgid "Set if the plan doesn't use the lead paragraph field"
+msgstr ""
 
 #: actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
@@ -343,8 +365,7 @@ msgstr "värdnamn"
 
 #: actions/models.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"
-msgstr ""
-"Värdnamn måste endast vara ett fullständigt kvalificerat domännamn i gemener"
+msgstr "Värdnamn måste endast vara ett fullständigt kvalificerat domännamn i gemener"
 
 #: actions/models.py
 msgid "plan domain"
@@ -366,9 +387,17 @@ msgstr "Namnet som godkänt av en officiell part"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Identifieraren för denna åtgärd (t.ex. nummer)"
 
+#: actions/models.py
+msgid "Image"
+msgstr "Bild"
+
+#: actions/models.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Ingress"
+
 #: actions/models.py indicators/models.py
 msgid "description"
-msgstr "beskrivning"
+msgstr "brödtext"
 
 #: actions/models.py
 msgid "What does this action involve in more detail?"
@@ -399,11 +428,8 @@ msgid "override status manually"
 msgstr "åsidosätta status manuellt"
 
 #: actions/models.py
-msgid ""
-"Set if you want to prevent the action status from being determined "
-"automatically"
-msgstr ""
-"Ställ in om du vill förhindra att åtgärdsstatus fastställs automatiskt"
+msgid "Set if you want to prevent the action status from being determined automatically"
+msgstr "Ställ in om du vill förhindra att åtgärdsstatus fastställs automatiskt"
 
 #: actions/models.py
 msgid "specifier for status"
@@ -452,6 +478,22 @@ msgstr "ansvariga organisationer"
 #: actions/models.py indicators/models.py
 msgid "updated at"
 msgstr "uppdaterad kl"
+
+#: actions/models.py
+msgid "start date"
+msgstr "Startdatum för implementering"
+
+#: actions/models.py
+msgid "The date when implementation of this action starts"
+msgstr "Datum då implementeringen av denna åtgärd startar"
+
+#: actions/models.py
+msgid "end date"
+msgstr "Slutdatum för implementering"
+
+#: actions/models.py
+msgid "The date when implementation of this action ends"
+msgstr "Datum då implementeringen av denna åtgärd slutar"
 
 #: actions/models.py
 msgctxt "partitive"
@@ -623,6 +665,22 @@ msgstr "åtgärdseffektklass"
 msgid "action impact classes"
 msgstr "åtgärder påverkan klasser"
 
+#: actions/models.py indicators/models.py
+msgid "URL"
+msgstr "URL"
+
+#: actions/models.py
+msgid "title"
+msgstr "titel"
+
+#: actions/models.py
+msgid "action link"
+msgstr "åtgärdslänk"
+
+#: actions/models.py
+msgid "action links"
+msgstr "åtgärdslänkar"
+
 #: actions/models.py
 msgid "usable for action categorization"
 msgstr "användbar för kategorisering av åtgärder"
@@ -638,6 +696,14 @@ msgstr "redigerbar för åtgärder"
 #: actions/models.py
 msgid "editable for indicators"
 msgstr "redigerbar för indikatorer"
+
+#: actions/models.py
+msgid "hide category identifiers"
+msgstr "dölj kategoriidentifierare"
+
+#: actions/models.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr ""
 
 #: actions/models.py
 msgid "category type"
@@ -750,10 +816,6 @@ msgstr "scenario"
 #: actions/models.py
 msgid "scenarios"
 msgstr "scenarier"
-
-#: actions/models.py
-msgid "title"
-msgstr "titel"
 
 #: actions/models.py indicators/models.py
 msgid "date"
@@ -1032,10 +1094,8 @@ msgid "creative commons license"
 msgstr "Creative Commons-licens"
 
 #: content/models.py
-msgid ""
-"If the site is under a Creative Commons license, which CC license it is"
-msgstr ""
-"Om webbplatsen är under en Creative Commons-licens, vilken CC-licens det är"
+msgid "If the site is under a Creative Commons license, which CC license it is"
+msgstr "Om webbplatsen är under en Creative Commons-licens, vilken CC-licens det är"
 
 #: content/models.py
 msgid "Link to GitHub repository for API"
@@ -1084,6 +1144,14 @@ msgstr "Laddar upp ..."
 #: images/templates/wagtailimages/chooser/chooser.html
 msgid "Upload"
 msgstr "Ladda upp"
+
+#: images/models.py
+msgid "Image byline or credits"
+msgstr "Bild byline/credits"
+
+#: images/models.py
+msgid "Alt text"
+msgstr "Alt text"
 
 #: images/models.py
 msgid "images"
@@ -1204,10 +1272,6 @@ msgid "dataset licenses"
 msgstr "datasetlicenser"
 
 #: indicators/models.py
-msgid "URL"
-msgstr "URL"
-
-#: indicators/models.py
 msgid "last retrieved at"
 msgstr "senast hämtad kl"
 
@@ -1292,24 +1356,16 @@ msgid "minimum value"
 msgstr "minimivärde"
 
 #: indicators/models.py
-msgid ""
-"What is the minimum value this indicator can reach? It is used in "
-"visualizations as the Y axis minimum."
-msgstr ""
-"Vad är det minsta värde som denna indikator kan nå? Det används i "
-"visualiseringar som Y -axelminimum."
+msgid "What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum."
+msgstr "Vad är det minsta värde som denna indikator kan nå? Det används i visualiseringar som Y -axelminimum."
 
 #: indicators/models.py
 msgid "maximum value"
 msgstr "maximalt värde"
 
 #: indicators/models.py
-msgid ""
-"What is the maximum value this indicator can reach? It is used in "
-"visualizations as the Y axis maximum."
-msgstr ""
-"Vad är det maximala värdet som denna indikator kan nå? Det används i "
-"visualiseringar som Y -axelns maximala."
+msgid "What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum."
+msgstr "Vad är det maximala värdet som denna indikator kan nå? Det används i visualiseringar som Y -axelns maximala."
 
 #: indicators/models.py
 msgid "time resolution"
@@ -1336,16 +1392,11 @@ msgid "Has a graph"
 msgstr "Har en graf"
 
 #: indicators/models.py
-msgid ""
-"Deadlines for value updates are currently only possible for yearly "
-"indicators"
-msgstr ""
-"Tidsfrister för värdeuppdateringar är för närvarande endast möjliga för "
-"årliga indikatorer"
+msgid "Deadlines for value updates are currently only possible for yearly indicators"
+msgstr "Tidsfrister för värdeuppdateringar är för närvarande endast möjliga för årliga indikatorer"
 
 #: indicators/models.py
-msgid ""
-"There is already an indicator value for the year preceding the deadline"
+msgid "There is already an indicator value for the year preceding the deadline"
 msgstr "Det finns redan ett indikatorvärde för året före deadline"
 
 #: indicators/models.py
@@ -1556,8 +1607,7 @@ msgstr "Redigera denna kvantitet"
 msgid "Indicator dimensions"
 msgstr "Indikator dimensioner"
 
-#: indicators/wagtail_admin.py
-#: templates/aplans_admin/own_indicators_panel.html
+#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Redigera data"
 
@@ -1772,10 +1822,6 @@ msgstr "Rubrikbild"
 #: pages/models.py
 msgid "Image to use in the header for this page"
 msgstr "Bild som ska användas i rubriken för den här sidan"
-
-#: pages/models.py
-msgid "Lead paragraph"
-msgstr "Ledavsnitt"
 
 #: pages/models.py
 msgid "Lead paragraph right under the heading"
@@ -2012,8 +2058,7 @@ msgstr "Logga in"
 #: templates/wagtailadmin/login.html
 #, python-format
 msgid "Your %(username_field)s and password didn't match. Please try again."
-msgstr ""
-"Ditt %(username_field)s och lösenord matchade inte. Var god försök igen."
+msgstr "Ditt %(username_field)s och lösenord matchade inte. Var god försök igen."
 
 #: templates/wagtailadmin/login.html
 msgid "Sign in to Kausal Watch"

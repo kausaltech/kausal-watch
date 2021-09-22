@@ -81,8 +81,11 @@ class PlanAdmin(AplansModelAdmin):
         AutocompletePanel('general_admins'),
         ImageChooserPanel('image'),
         FieldPanel('show_admin_link'),
+        FieldPanel('statuses_updated_manually'),
         FieldPanel('contact_persons_private'),
         FieldPanel('hide_action_identifiers'),
+        FieldPanel('hide_action_official_name'),
+        FieldPanel('hide_action_lead_paragraph'),
     ]
 
     action_status_panels = [
@@ -94,10 +97,6 @@ class PlanAdmin(AplansModelAdmin):
     action_impact_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
-    ]
-
-    action_ordering_panels = [
-        CondensedInlinePanel('actions', panels=[FieldPanel('identifier'), FieldPanel('name')])
     ]
 
     def get_form_class(self, request=None):
@@ -129,9 +128,6 @@ class PlanAdmin(AplansModelAdmin):
 
             ], heading=_('Action classifications')),
         ]
-
-        if not instance.actions_locked:
-            tabs.append(ObjectList(self.action_ordering_panels, heading=_('Actions')))
 
         handler = PlanEditHandler(tabs)
         return handler
