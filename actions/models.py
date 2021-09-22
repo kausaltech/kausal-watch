@@ -254,7 +254,7 @@ class Plan(ClusterableModel):
         root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
         try:
             root_page = root_pages.get(slug=self.identifier)
-        except root_pages.DoesNotExist:
+        except Page.DoesNotExist:
             root_page = Page.get_first_root_node().add_child(
                 instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
             )
@@ -1200,6 +1200,15 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
             return "%s %s" % (self.identifier, self.name)
         else:
             return self.name
+
+
+class CategoryIcon(models.Model):
+    category = models.OneToOneField(Category, on_delete=models.CASCADE, related_name='icon')
+    data = models.TextField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return 'Icon for %s' % self.category
 
 
 class CategoryMetadataRichText(models.Model):

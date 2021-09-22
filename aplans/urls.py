@@ -34,6 +34,7 @@ from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
 from users.views import change_admin_plan
 
+from actions.views import category_icon
 from .graphene_views import SentryGraphQLView
 
 router = routers.DefaultRouter()
@@ -61,6 +62,8 @@ urlpatterns = [
     path('v1/graphql/docs/', TemplateView.as_view(
         template_name='graphql-voyager.html',
     ), name='graphql-voyager'),
+    path('v1/category-icons/<int:id>.svg', category_icon, name='category-icon'),
+
     re_path(r'^wadmin/', include(wagtailadmin_urls)),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     re_path(r'^pages/', include(wagtail_urls)),
