@@ -344,7 +344,8 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         help_text=_('The identifier for this action (e.g. number)')
     )
     image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
+        verbose_name=_('Image')
     )
     lead_paragraph = models.TextField(blank=True, verbose_name=_('Lead paragraph'))
     description = RichTextField(

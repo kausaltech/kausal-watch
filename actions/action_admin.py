@@ -397,7 +397,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             panels=[
                 FieldPanel('url'),
                 FieldPanel('title')
-            ]
+            ],
+            heading=_('External links')
         )
     ]
 
