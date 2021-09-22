@@ -145,7 +145,7 @@ for identifier, name in action_types.items():
         CategoryIcon.objects.update_or_create(
             category=category,
             defaults={
-                'data': response.content,
+                'data': response.content.decode('utf8'),
             },
         )
 
