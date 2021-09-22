@@ -306,7 +306,7 @@ root_category, _ = Category.objects.update_or_create(
     type=category_type,
     identifier='root',
     defaults={
-        'name': 'Total utsläpp',
+        'name': 'Totala utsläpp',
         'parent': None,
         'color': '#999999',
     },
@@ -368,8 +368,42 @@ for page in plan.root_page.get_children():
         categories_page = page
 
 if categories_page is None:
-    # Create a Page as a parent for all CategoryPages
-    categories_page = Page(title='Categories')
+    # Create a CategoryPage as a parent for all other CategoryPages
+    page_body = []
+
+    board_settings = d['publishedBoardVersion']['versionData']['boardData']['boardSettings']
+    extended_description = board_settings['extendedDescription']
+    assert set(extended_description.keys()) == {'data', 'type'}, extended_description.keys()
+    assert extended_description['type'] == 1
+    assert set(extended_description['data'].keys()) == {'texts', 'images'}
+    assert len(extended_description['data']['images']) == 1
+    assert set(extended_description['data']['images'][0].keys()) == {'imgURL'}
+    img_url = extended_description['data']['images'][0]['imgURL']
+    texts = extended_description['data']['texts']
+    assert len(texts) == 1
+    assert list(texts[0].keys()) == ['title', 'body']
+    title = texts[0]['title']  # TODO: We ignore this for now.
+    body_text = to_rich_text(texts[0]['body'])
+    if body_text:
+        assert not page_body
+        page_body.append(('text', RichText(body_text)))
+
+    # Save image in category, not category page
+    image = import_image(img_url)
+    root_category.image = image
+    root_category.save()
+
+    page_body.append(('related_indicators', {}))
+
+    page_body.append(('category_list', {
+        # 'heading': 'TODO',
+        # 'lead': 'TODO',
+        'style': 'cards',  # or 'table'?
+    }))
+
+    page_body.append(('action_list', {}))
+
+    categories_page = CategoryPage(title=root_category.name, category=root_category, body=page_body)
     plan.root_page.add_child(instance=categories_page)
 
 # Create a CategoryPage instance for each category
