@@ -41,18 +41,8 @@ class CategoryMenu(Menu):
 category_menu = CategoryMenu(None)
 
 
-# class CategorySubmenuMenuItem(SubmenuMenuItem):
-#     def __init__(self):
-#         # TODO Set on class level instead of arguments?
-#         super().__init__(_('Categories'), category_menu, classnames='icon icon-folder-open-inverse', order=100)
-# 
-#     def is_shown(self, request):
-#         return False
-
-
 @hooks.register('register_admin_menu_item')
 def register_category_menu():
-    # return CategorySubmenuMenuItem()
     return SubmenuMenuItem(
         _('Categories'),
         category_menu,
