@@ -31,17 +31,28 @@ class CategoryMenu(Menu):
         user = request.user
         plan = user.get_active_admin_plan()
         items = []
-        for category_type in plan.category_types.all():
-            item = CategoryMenuItem(category_type)
-            items.append(item)
+        if user.is_general_admin_for_plan(plan):
+            for category_type in plan.category_types.all():
+                item = CategoryMenuItem(category_type)
+                items.append(item)
         return items
 
 
 category_menu = CategoryMenu(None)
 
 
+# class CategorySubmenuMenuItem(SubmenuMenuItem):
+#     def __init__(self):
+#         # TODO Set on class level instead of arguments?
+#         super().__init__(_('Categories'), category_menu, classnames='icon icon-folder-open-inverse', order=100)
+# 
+#     def is_shown(self, request):
+#         return False
+
+
 @hooks.register('register_admin_menu_item')
 def register_category_menu():
+    # return CategorySubmenuMenuItem()
     return SubmenuMenuItem(
         _('Categories'),
         category_menu,
