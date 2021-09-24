@@ -12,12 +12,15 @@ from orgs.models import Namespace, Organization, OrganizationClass, Organization
 from people.models import Person  # noqa
 from users.models import OrganizationAdmin, User  # noqa
 
+old_organization_to_new = {None: None}
+
 
 def get_new_organization(doh_org):
-    if doh_org is None:
-        return None
-    namespace = Namespace.objects.get(identifier=doh_org.data_source.id)
-    return OrganizationIdentifier.objects.get(namespace=namespace, identifier=doh_org.id).organization
+    return old_organization_to_new[doh_org]
+    # if doh_org is None:
+    #     return None
+    # namespace = Namespace.objects.get(identifier=doh_org.data_source.id)
+    # return OrganizationIdentifier.objects.get(namespace=namespace, identifier=doh_org.origin_id).organization
 
 
 def migrate_data_sources():
@@ -46,13 +49,28 @@ def migrate_organization_classes():
 
 
 def migrate_organization(doh_org):
+    if doh_org.data_source is None:
+        # Create namespace for that organization
+        defaults = {
+            'name': doh_org.name,
+        }
+        namespace, _ = Namespace.objects.update_or_create(
+            identifier=doh_org.id,
+            defaults=defaults,
+        )
+    else:
+        namespace = Namespace.objects.get(identifier=doh_org.data_source.id)
+
     assert not OrganizationIdentifier.objects.filter(
-        identifier=doh_org.id,
-        namespace=Namespace.objects.get(identifier=doh_org.data_source.id)
+        identifier=doh_org.origin_id,
+        namespace=namespace
     ).exists()
 
     org = Organization()
-    org.classification = OrganizationClass.objects.get(identifier=doh_org.classification_id)
+    try:
+        org.classification = OrganizationClass.objects.get(identifier=doh_org.classification_id)
+    except OrganizationClass.DoesNotExist:
+        pass
     org.name = doh_org.name
     org.abbreviation = doh_org.abbreviation or ''
     # TODO: distinct_name
@@ -68,16 +86,23 @@ def migrate_organization(doh_org):
     else:
         parent = get_new_organization(doh_org.parent)
         parent.add_child(instance=org)
+    global old_organization_to_new  # TODO: Make a class instead
+    assert doh_org not in old_organization_to_new
+    old_organization_to_new[doh_org] = org
     return org
 
 
 def migrate_organization_identifier(doh_org, org):
+    if doh_org.data_source is None:
+        print(f"Organization {doh_org} has no data source; not creating any organization identifiers for it")
+        return
     namespace = Namespace.objects.get(identifier=doh_org.data_source.id)
     defaults = {
         'organization': org,
     }
+    print(f"Creating identifier {doh_org.origin_id} in namespace {namespace}")
     OrganizationIdentifier.objects.update_or_create(
-        identifier=doh_org.id,
+        identifier=doh_org.origin_id,
         namespace=namespace,
         defaults=defaults,
     )
@@ -85,21 +110,20 @@ def migrate_organization_identifier(doh_org, org):
 
 def migrate_organizations():
     for doh_org in doh.Organization.objects.all():
-        try:
-            org = migrate_organization(doh_org)
-            migrate_organization_identifier(doh_org, org)
-        except OrganizationClass.DoesNotExist:
-            print(f"Skipping organization {doh_org.id} since it has no classification")
-            continue
+        org = migrate_organization(doh_org)
+        migrate_organization_identifier(doh_org, org)
 
 
 def set_foreign_keys():
     for arp in ActionResponsibleParty.objects.all():
-        arp.organization_new = get_new_organization(arp.organization)
+        # I don't understand why arp.organization doesn't work, but well...
+        org = doh.Organization.objects.get(id=arp.organization_id)
+        arp.organization_new = get_new_organization(org)
         arp.save()
 
     for plan in Plan.objects.all():
-        plan.organization_new = get_new_organization(plan.organization)
+        org = doh.Organization.objects.get(id=plan.organization_id)
+        plan.organization_new = get_new_organization(org)
 
         assert plan.related_organizations_new.count() == 0
         for related_org in plan.related_organizations.all():
@@ -113,7 +137,8 @@ def set_foreign_keys():
         dataset.save()
 
     for indicator in Indicator.objects.all():
-        indicator.organization_new = get_new_organization(indicator.organization)
+        org = doh.Organization.objects.get(id=indicator.organization_id)
+        indicator.organization_new = get_new_organization(org)
         indicator.save()
 
     # Before migrating persons, need to fix a person whose user also belongs to a different person, otherwise error
@@ -122,11 +147,13 @@ def set_foreign_keys():
     person.save()
 
     for person in Person.objects.all():
-        person.organization_new = get_new_organization(person.organization)
+        org = doh.Organization.objects.get(id=person.organization_id)
+        person.organization_new = get_new_organization(org)
         person.save()
 
     for organization_admin in OrganizationAdmin.objects.all():
-        organization_admin.organization_new = get_new_organization(organization_admin.organization)
+        org = doh.Organization.objects.get(id=organization_admin.organization_id)
+        organization_admin.organization_new = get_new_organization(org)
         organization_admin.save()
 
 
