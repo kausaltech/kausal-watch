@@ -90,12 +90,7 @@ class Plan(ClusterableModel):
         help_text=_('Should the public website contain a link to the admin login?'),
     )
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', related_name='plans', on_delete=models.PROTECT,
-        verbose_name=_('main organization for the plan'),
-    )
-    organization_new = models.ForeignKey(
         Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
-        null=True,  # TODO: Remove after migrating the data
     )
 
     general_admins = models.ManyToManyField(
@@ -146,12 +141,7 @@ class Plan(ClusterableModel):
         help_text=_("Set if the plan doesn't use the lead paragraph field")
     )
 
-    related_organizations = models.ManyToManyField(
-        'django_orghierarchy.Organization', blank=True, related_name='related_plans'
-    )
-    related_organizations_new = models.ManyToManyField(
-        Organization, blank=True, related_name='related_plans'
-    )
+    related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name'])
@@ -185,12 +175,12 @@ class Plan(ClusterableModel):
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
     def get_related_organizations(self):
-        all_related = self.related_organizations_new.all()
-        for org in self.related_organizations_new.all():
+        all_related = self.related_organizations.all()
+        for org in self.related_organizations.all():
             all_related |= org.get_descendants()
-        if self.organization_new:
-            all_related |= Organization.objects.filter(id=self.organization_new.id)
-            all_related |= self.organization_new.get_descendants()
+        if self.organization:
+            all_related |= Organization.objects.filter(id=self.organization.id)
+            all_related |= self.organization.get_descendants()
         return all_related
 
     @property
@@ -329,7 +319,7 @@ class ActionQuerySet(models.QuerySet):
         person = user.get_corresponding_person()
         if person is not None:
             query |= Q(contact_persons__person=person)
-        query |= Q(responsible_parties__organization_new__in=user.get_adminable_organizations())
+        query |= Q(responsible_parties__organization__in=user.get_adminable_organizations())
         return self.filter(query).distinct()
 
     def unmerged(self):
@@ -418,10 +408,6 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         through='indicators.ActionIndicator', related_name='actions'
     )
 
-    responsible_organizations_old = models.ManyToManyField(
-        'django_orghierarchy.Organization', through='ActionResponsibleParty', blank=True,
-        related_name='responsible_for_actions', verbose_name=_('responsible organizations')
-    )
     responsible_organizations = models.ManyToManyField(
         Organization, through='ActionResponsibleParty', blank=True,
         related_name='responsible_for_actions', verbose_name=_('responsible organizations')
@@ -706,13 +692,8 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name=_('action')
     )
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', on_delete=models.CASCADE, related_name='responsible_actions',
-        limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
-    )
-    organization_new = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name='responsible_actions',
         limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
-        null=True,  # TODO: Remove after migrating the data
     )
 
     public_fields = [
@@ -722,13 +703,12 @@ class ActionResponsibleParty(OrderedModel):
     class Meta:
         ordering = ['action', 'order']
         index_together = (('action', 'order'),)
-        unique_together = (('action', 'organization'),)  # TODO: delete
-        unique_together = (('action', 'organization_new'),)  # TODO: rename
+        unique_together = (('action', 'organization'),)
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
 
     def __str__(self):
-        return str(self.organization_new)
+        return str(self.organization)
 
 
 class ActionContactPerson(OrderedModel):

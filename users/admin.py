@@ -4,7 +4,8 @@ from .models import User, OrganizationAdmin
 
 class OrganizationAdminAdmin(admin.TabularInline):
     search_fields = ('user',)
-    autocomplete_fields = ('organization',)
+    # Listing the organization in autocomplete_fields requires OrganizationAdmin
+    # autocomplete_fields = ('organization',)
     model = OrganizationAdmin
     extra = 0
 

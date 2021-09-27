@@ -32,7 +32,7 @@ class PersonChooserMixin(ModelChooserMixin):
             'choose_url': self.get_chosen_url(item),
             'name': self.get_object_string(item),
             'title': item.title,
-            'organization': item.organization_new,
+            'organization': item.organization,
             'avatar_url': avatar_url,
         }
 
@@ -45,7 +45,7 @@ class PersonModelChooserCreateTabMixin(ModelChooserCreateTabMixin):
 
     def get_initial(self):
         plan = self.request.user.get_active_admin_plan()
-        return {'organization': plan.organization_new}
+        return {'organization': plan.organization}
 
     def get_form_class(self):
         if self.form_class:

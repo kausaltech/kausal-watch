@@ -71,21 +71,21 @@ class IndicatorSerializer(serializers.ModelSerializer):
         levels = data.get('levels', None)
         if levels:
             for level in levels:
-                if level['plan'].organization_new != org:
+                if level['plan'].organization != org:
                     raise ValidationError('Attempting to set indicator level for wrong plan')
 
         related_causes = data.get('related_causes', None)
         if related_causes:
             for ri in related_causes:
-                if ri['causal_indicator'].organization_new != org:
+                if ri['causal_indicator'].organization != org:
                     raise ValidationError('Related indicators must have the same organization')
         related_effects = data.get('related_effects', None)
         if related_effects:
             for ri in related_effects:
-                if ri['effect_indicator'].organization_new != org:
+                if ri['effect_indicator'].organization != org:
                     raise ValidationError('Related indicators must have the same organization')
 
-        if Indicator.objects.filter(organization_new=org, name=data['name']).exists():
+        if Indicator.objects.filter(organization=org, name=data['name']).exists():
             raise ValidationError('Indicator with the same name already exists for organization')
 
         return data

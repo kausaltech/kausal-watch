@@ -128,9 +128,9 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     ordering_field = 'order'
     ordering_field_hide_input = True
     extra = 0
-    fields = ('organization_new', 'order',)
-    # TODO: Listing the organization in autocomplete_fields requires OrganizationAdmin
-    # autocomplete_fields = ('organization_new',)
+    fields = ('organization', 'order',)
+    # Listing the organization in autocomplete_fields requires OrganizationAdmin
+    # autocomplete_fields = ('organization',)
 
 
 class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
@@ -305,7 +305,7 @@ class ResponsibleOrganizationFilter(AutocompleteFilter):
             if org is not None:
                 # TODO: get_descendants argument probably doesn't work anymore
                 orgs = org.get_descendants(True)
-                return queryset.filter(responsible_parties__organization_new__in=orgs).distinct()
+                return queryset.filter(responsible_parties__organization__in=orgs).distinct()
             else:
                 return queryset.none()
         else:
@@ -661,7 +661,7 @@ class CategoryAdmin(ImageCroppingMixin, AplansModelAdmin):
         return True
 
 
-# TODO: We did not migrate OrganizationAdmin from django_orghierarchy to orgs for now
+# We did not migrate OrganizationAdmin from django_orghierarchy to orgs for now
 # admin.site.unregister(Organization)
 
 

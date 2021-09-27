@@ -222,7 +222,7 @@ class ActionIndexView(ListControlsIndexView):
         if org is not None:
             # TODO: argument probably doesn't work anymore?
             orgs = org.get_descendants(True)
-            return queryset.filter(responsible_parties_new__organization_new__in=orgs).distinct()
+            return queryset.filter(responsible_parties__organization__in=orgs).distinct()
         else:
             return queryset.none()
 
@@ -304,7 +304,7 @@ class ActionIndexView(ListControlsIndexView):
         plan = user.get_active_admin_plan()
 
         qs = plan.get_related_organizations().filter(dissolution_date=None)
-        org_qs = qs.filter(responsible_actions_new__action__plan=plan)
+        org_qs = qs.filter(responsible_actions__action__plan=plan)
         org_qs |= org_qs.get_ancestors()
         org_qs = org_qs.distinct()
         org_choices = [(str(org.id), ' ' * org.level + str(org.distinct_name or org.name)) for org in org_qs]

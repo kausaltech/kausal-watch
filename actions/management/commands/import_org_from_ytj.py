@@ -59,7 +59,7 @@ class Command(BaseCommand):
 
         print('Imported %s (%s)' % (org.name, org.id))
         if self.plan:
-            self.plan.related_organizations_new.add(org)
+            self.plan.related_organizations.add(org)
 
     def add_arguments(self, parser):
         # Positional arguments

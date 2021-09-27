@@ -223,15 +223,8 @@ class OrganizationAdmin(models.Model):
         User, verbose_name=_('user'), on_delete=models.CASCADE,
         related_name='admin_orgs'
     )
-    # TODO: Remove
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', verbose_name=_('organization'),
-        on_delete=models.CASCADE, related_name='aplans_admin_users'
-    )
-    # TODO: Migrate from organization
-    organization_new = models.ForeignKey(
         Organization, verbose_name=_('organization'), on_delete=models.CASCADE, related_name='aplans_admin_users',
-        null=True,  # TODO: Remove after migrating the data
     )
 
     class Meta:

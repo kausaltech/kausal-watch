@@ -119,7 +119,7 @@ class Organization(Node):
                                         help_text=_('The time at which the resource was created'))
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                    # related_name='created_organizations',
-                                   related_name='created_organizations_new',
+                                   related_name='created_organizations_new',  # TODO: rename
                                    null=True,
                                    blank=True,
                                    editable=False,
@@ -128,7 +128,7 @@ class Organization(Node):
                                               help_text=_('The time at which the resource was updated'))
     last_modified_by = models.ForeignKey(settings.AUTH_USER_MODEL,
                                          # related_name='modified_organizations',
-                                         related_name='modified_organizations_new',
+                                         related_name='modified_organizations_new',  # TODO: rename
                                          null=True,
                                          blank=True,
                                          editable=False,

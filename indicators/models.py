@@ -97,10 +97,6 @@ class Dataset(ClusterableModel):
         null=True, blank=True, verbose_name=_('last retrieved at')
     )
     owner = models.ForeignKey(
-        'django_orghierarchy.Organization', null=True, blank=True, verbose_name=_('owner'),
-        on_delete=models.SET_NULL,
-    )
-    owner_new = models.ForeignKey(
         Organization, null=True, blank=True, verbose_name=_('owner'), on_delete=models.SET_NULL,
     )
     owner_name = models.CharField(
@@ -202,13 +198,8 @@ class Indicator(ClusterableModel):
         on_delete=models.PROTECT, verbose_name=_('common indicator')
     )
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', related_name='indicators', editable=False,
-        on_delete=models.PROTECT, verbose_name=_('organization'), null=False,
-    )
-    organization_new = models.ForeignKey(
         Organization, related_name='indicators', editable=False, on_delete=models.PROTECT,
         verbose_name=_('organization'),
-        null=True,  # TODO: Remove after migrating the data
     )
     plans = models.ManyToManyField(
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,

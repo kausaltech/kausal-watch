@@ -70,10 +70,10 @@ def image_upload_path(instance, filename):
 
 class PersonQuerySet(models.QuerySet):
     def available_for_plan(self, plan):
-        related = Organization.objects.filter(id=plan.organization_new_id) | plan.related_organizations_new.all()
+        related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
         # TODO: include_self probably doesn't work anymore?
         all_related = related.get_descendants(include_self=True)
-        q = Q(organization_new__in=all_related)
+        q = Q(organization__in=all_related)
         return self.filter(q)
 
     def is_action_contact_person(self, plan):
@@ -90,14 +90,8 @@ class Person(index.Indexed, ClusterableModel):
     )
     postal_address = models.TextField(max_length=100, verbose_name=_('postal address'), null=True, blank=True)
     organization = models.ForeignKey(
-        'django_orghierarchy.Organization', related_name='people',
-        on_delete=models.PROTECT, verbose_name=_('organization'),
-        help_text=_("What is this person's organization")
-    )
-    organization_new = models.ForeignKey(
         Organization, related_name='people', on_delete=models.PROTECT, verbose_name=_('organization'),
         help_text=_("What is this person's organization"),
-        null=True,  # TODO: Remove after migrating the data
     )
     user = models.OneToOneField(
         User, null=True, blank=True, related_name='person', on_delete=models.SET_NULL,
@@ -124,7 +118,7 @@ class Person(index.Indexed, ClusterableModel):
     search_fields = [
         index.AutocompleteField('first_name', partial_match=True),
         index.AutocompleteField('last_name', partial_match=True),
-        index.FilterField('organization_new'),
+        index.FilterField('organization'),
     ]
 
     class Meta:
