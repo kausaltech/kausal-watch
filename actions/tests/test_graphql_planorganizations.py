@@ -63,7 +63,7 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
             'name': organization.classification.name,
         },
         'parent': {
-            'id': superorganization.id,
+            'id': str(superorganization.id),
         },
     })
     expected = {

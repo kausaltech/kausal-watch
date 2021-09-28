@@ -30,7 +30,10 @@ class OrganizationFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):
+        parent = kwargs.pop('parent', None)
         node = Organization(*args, **kwargs)
+        if parent:
+            return parent.add_child(instance=node)
         return Organization.add_root(instance=node)
 
 

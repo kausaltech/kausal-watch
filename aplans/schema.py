@@ -14,12 +14,24 @@ from actions import schema as actions_schema
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
 from orgs import schema as orgs_schema
-from orgs.models import Organization, OrganizationClass
+from orgs.models import Organization
 from pages import schema as pages_schema
 from people.models import Person
 
 from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, get_plan_from_context
+
+
+def mp_node_get_ancestors(qs, include_self=False):
+    # https://github.com/django-treebeard/django-treebeard/issues/98
+    paths = set()
+    for node in qs:
+        length = len(node.path)
+        if include_self:
+            length += node.steplen
+        paths.update(node.path[0:pos]
+                     for pos in range(node.steplen, length, node.steplen))
+    return qs.model.objects.filter(path__in=paths)
 
 
 class OrderableModelMixin:
@@ -48,40 +60,6 @@ class PersonNode(DjangoNode):
         return self.get_avatar_url(request, size)
 
 
-class OrganizationClassNode(DjangoNode):
-    class Meta:
-        model = OrganizationClass
-
-
-class OrganizationNode(DjangoNode):
-    ancestors = graphene.List('aplans.schema.OrganizationNode')
-    action_count = graphene.Int(description='Number of actions this organization is responsible for')
-    contact_person_count = graphene.Int(
-        description='Number of contact persons that are associated with this organization'
-    )
-
-    def resolve_ancestors(self, info):
-        return self.get_ancestors()
-
-    @gql_optimizer.resolver_hints(
-        only=tuple(),
-    )
-    def resolve_action_count(self, info):
-        return getattr(self, 'action_count', None)
-
-    @gql_optimizer.resolver_hints(
-        only=tuple(),
-    )
-    def resolve_contact_person_count(self, info):
-        return getattr(self, 'contact_person_count', None)
-
-    class Meta:
-        model = Organization
-        fields = [
-            'id', 'abbreviation', 'parent', 'name', 'classification', 'distinct_name',
-        ]
-
-
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
@@ -96,7 +74,7 @@ class Query(
     graphene.ObjectType
 ):
     plan_organizations = graphene.List(
-        OrganizationNode, plan=graphene.ID(),
+        orgs_schema.OrganizationNode, plan=graphene.ID(),
         with_ancestors=graphene.Boolean(default_value=False),
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
@@ -122,21 +100,9 @@ class Query(
         qs = qs.distinct()
 
         if with_ancestors:
-            # Retrieving ancestors for a queryset doesn't seem to work,
-            # so iterate over parents until we have a set of model IDs
-            # for all children and their ancestors.
             if plan is None:
                 raise GraphQLError("withAncestors can only be used when 'plan' is set", [info])
-            all_ids = set()
-            while True:
-                vals = qs.values_list('id', 'parent')
-                ids = set((val[0] for val in vals))
-                parent_ids = set((val[1] for val in vals))
-                all_ids.update(ids)
-                if parent_ids.issubset(all_ids):
-                    break
-                qs = Organization.objects.filter(id__in=parent_ids)
-            qs = Organization.objects.filter(id__in=all_ids)
+            qs = mp_node_get_ancestors(qs, include_self=True)
 
         selections = get_fields(info)
         if 'actionCount' in selections:

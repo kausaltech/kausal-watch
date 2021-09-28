@@ -249,6 +249,7 @@ def test_plan_root_page_exists(graphql_client_query_data, plan):
         query($plan: ID!) {
           plan(id: $plan) {
             pages {
+              __typename
               ... on PlanRootPage {
                 id
               }
@@ -259,9 +260,7 @@ def test_plan_root_page_exists(graphql_client_query_data, plan):
         variables=dict(plan=plan.identifier)
     )
     pages = data['plan']['pages']
-    assert len(pages) == 1
-    page = pages[0]
-    assert page['id'] == str(plan.root_page.id)
+    assert any(page['__typename'] == 'PlanRootPage' and page['id'] == str(plan.root_page.id) for page in pages)
 
 
 def test_plan_root_page_contains_block(graphql_client_query_data, plan):
@@ -275,6 +274,7 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
         query($plan: ID!) {
           plan(id: $plan) {
             pages {
+              __typename
               ... on PlanRootPage {
                 body {
                   ... on FrontPageHeroBlock {
@@ -289,8 +289,8 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
         variables=dict(plan=plan.identifier)
     )
     pages = data['plan']['pages']
-    assert len(pages) == 1
-    blocks = pages[0]['body']
+    page = next(page for page in pages if page['__typename'] == 'PlanRootPage')
+    blocks = page['body']
     assert len(blocks) == 1
     block = blocks[0]
     for key, value in hero_data.items():

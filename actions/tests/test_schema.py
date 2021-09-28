@@ -171,7 +171,7 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             serveFileBaseUrl
             pages {
               __typename
-              id
+              # TODO: Check the id field, but getting it from other pages than the root page is not trivial
             }
             domain(hostname: $hostname) {
               __typename
@@ -252,10 +252,17 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
             }],
             'lastActionIdentifier': plan.get_last_action_identifier(),
             'serveFileBaseUrl': 'http://testserver',
-            'pages': [{
-                '__typename': 'PlanRootPage',
-                'id': str(plan.root_page.id),
-            }],
+            'pages': [
+                {
+                    '__typename': 'PlanRootPage',
+                },
+                {
+                    '__typename': 'ActionListPage',
+                },
+                {
+                    '__typename': 'IndicatorListPage',
+                },
+            ],
             'domain': {
                 '__typename': 'PlanDomain',
                 'id': str(plan.domains.first().id),
