@@ -128,8 +128,6 @@ INSTALLED_APPS = [
     'django_filters',
     'grapple',
     'graphene_django',
-
-    'django_orghierarchy',
 ]
 
 if importlib.util.find_spec('tree_editor') is not None:
