@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-08-26 14:06+0300\n"
+"POT-Creation-Date: 2021-09-29 10:33+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -78,9 +78,13 @@ msgstr "Nollaa suotimet"
 msgid "Search"
 msgstr "Haku"
 
-#: actions/action_admin.py actions/apps.py actions/wagtail_admin.py
+#: actions/action_admin.py actions/apps.py actions/models.py
 msgid "Actions"
 msgstr "Toimenpiteet"
+
+#: actions/action_admin.py
+msgid "External links"
+msgstr "Ulkopuoliset linkit"
 
 #: actions/action_admin.py
 msgid "Last updated"
@@ -194,6 +198,10 @@ msgstr "Kortit"
 msgid "Table"
 msgstr "Taulukko"
 
+#: actions/blocks.py
+msgid "Tree map"
+msgstr ""
+
 #: actions/category_admin.py
 msgid "Category types"
 msgstr "Luokkien tyypit"
@@ -304,6 +312,30 @@ msgstr "Yhteyshenkilöt salaisia"
 msgid "Set if the contact persons should not be visible in the public UI"
 msgstr "Aseta jos yhteyshenkilöitä ei näytetä julkisessa käyttöliittymässä"
 
+#: actions/models.py
+msgid "Hide action identifiers"
+msgstr "Piilota toimenpiteiden tunnisteet"
+
+#: actions/models.py
+msgid "Set if the plan doesn't have meaningful action identifiers"
+msgstr "Aseta jos ohjelmassa ei käytetä toimenpiteiden tunnisteita"
+
+#: actions/models.py
+msgid "Hide official name field"
+msgstr "Piilota virallinen nimi -kenttä"
+
+#: actions/models.py
+msgid "Set if the plan doesn't use the official name field"
+msgstr "Aseta jos ohjelmalla ei ole virallinen nimi -kenttää käytössä"
+
+#: actions/models.py
+msgid "Hide lead paragraph"
+msgstr "Piilota ingressi"
+
+#: actions/models.py
+msgid "Set if the plan doesn't use the lead paragraph field"
+msgstr "Aseta jos ohjelma ei käytä ingressikenttää"
+
 #: actions/models.py content/models.py indicators/models.py
 #: notifications/models.py
 msgid "plan"
@@ -316,6 +348,13 @@ msgstr "toimenpideohjelmat"
 #: actions/models.py
 msgid "Primary language must not be selected"
 msgstr "Ensisijainen kieli ei voi olla valittuna"
+
+#: actions/models.py indicators/apps.py indicators/blocks.py
+#: indicators/templates/indicators/edit_values.html
+#: indicators/templates/indicators/edit_values_new.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr "Mittarit"
 
 #: actions/models.py
 msgid "host name"
@@ -344,6 +383,14 @@ msgstr "Virallisen tahon hyväksymä nimi"
 #: actions/models.py
 msgid "The identifier for this action (e.g. number)"
 msgstr "Toimenpiteen tunniste (esim. numero)"
+
+#: actions/models.py
+msgid "Image"
+msgstr "Kuva"
+
+#: actions/models.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Ingressi"
 
 #: actions/models.py indicators/models.py
 msgid "description"
@@ -428,6 +475,22 @@ msgstr "vastuuorganisaatiot"
 #: actions/models.py indicators/models.py
 msgid "updated at"
 msgstr "päivitysaika"
+
+#: actions/models.py
+msgid "start date"
+msgstr "alkupäivämäärä"
+
+#: actions/models.py
+msgid "The date when implementation of this action starts"
+msgstr "Päivämäärä jona toimenpiteen toteutus käynnistyy/käynnistyi"
+
+#: actions/models.py
+msgid "end date"
+msgstr "loppupäivämäärä"
+
+#: actions/models.py
+msgid "The date when implementation of this action ends"
+msgstr "Päivämäärä jona toimenpiteen toteutus päättyy/päättyi"
 
 #: actions/models.py
 msgctxt "partitive"
@@ -599,6 +662,22 @@ msgstr "toimenpiteen vaikuttavuusluokka"
 msgid "action impact classes"
 msgstr "toimenpiteen vaikuttavuusluokat"
 
+#: actions/models.py indicators/models.py
+msgid "URL"
+msgstr "URL"
+
+#: actions/models.py
+msgid "title"
+msgstr "otsikko"
+
+#: actions/models.py
+msgid "action link"
+msgstr "ulkopuolinen linkki"
+
+#: actions/models.py
+msgid "action links"
+msgstr "ulkopuoliset linkit"
+
 #: actions/models.py
 msgid "usable for action categorization"
 msgstr "käytetään toimenpiteiden luokitukseen"
@@ -614,6 +693,14 @@ msgstr "muokattavissa toimenpiteille"
 #: actions/models.py
 msgid "editable for indicators"
 msgstr "muokattavissa mittareille"
+
+#: actions/models.py
+msgid "hide category identifiers"
+msgstr "piilota kategorioiden tunnisteet"
+
+#: actions/models.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Aseta jos kategorioilla ei ole tunnisteita"
 
 #: actions/models.py
 msgid "category type"
@@ -646,6 +733,10 @@ msgstr "Järjestetty valinta"
 #: actions/models.py
 msgid "Rich text"
 msgstr "Sisältöteksti"
+
+#: actions/models.py
+msgid "Numeric"
+msgstr ""
 
 #: actions/models.py
 msgid "Format"
@@ -718,10 +809,6 @@ msgstr "skenaario"
 #: actions/models.py
 msgid "scenarios"
 msgstr "skenaariot"
-
-#: actions/models.py
-msgid "title"
-msgstr "otsikko"
 
 #: actions/models.py indicators/models.py
 msgid "date"
@@ -1052,6 +1139,14 @@ msgid "Upload"
 msgstr "Lähetä"
 
 #: images/models.py
+msgid "Image byline or credits"
+msgstr "Kuvateksti tai tekijän tiedot"
+
+#: images/models.py
+msgid "Alt text"
+msgstr "Alt-teksti"
+
+#: images/models.py
 msgid "images"
 msgstr "kuvat"
 
@@ -1111,11 +1206,6 @@ msgstr "[ei mitään]"
 msgid "has goals"
 msgstr "on tavoitteita"
 
-#: indicators/apps.py indicators/blocks.py
-#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr "Mittarit"
-
 #: indicators/blocks.py
 msgid "Indicator"
 msgstr "Mittari"
@@ -1173,10 +1263,6 @@ msgstr "tietoaineiston lisenssi"
 #: indicators/models.py
 msgid "dataset licenses"
 msgstr "tietoaineistojen lisenssit"
-
-#: indicators/models.py
-msgid "URL"
-msgstr "URL"
 
 #: indicators/models.py
 msgid "last retrieved at"
@@ -1447,18 +1533,22 @@ msgid "Permission denied"
 msgstr "Ei käyttövaltuuksia"
 
 #: indicators/templates/indicators/edit_values.html
+#: indicators/templates/indicators/edit_values_new.html
 msgid "Home"
 msgstr "Etusivu"
 
 #: indicators/templates/indicators/edit_values.html
+#: indicators/templates/indicators/edit_values_new.html
 msgid "Indicator data"
 msgstr "Mittarin data"
 
 #: indicators/templates/indicators/edit_values.html
+#: indicators/templates/indicators/edit_values_new.html
 msgid "Observations"
 msgstr "Havainnot"
 
 #: indicators/templates/indicators/edit_values.html
+#: indicators/templates/indicators/edit_values_new.html
 msgid "Goals"
 msgstr "Tavoitteet"
 
@@ -1725,10 +1815,6 @@ msgstr "Pääkuva"
 #: pages/models.py
 msgid "Image to use in the header for this page"
 msgstr "Kuva jota käytetään sivun yläosassa"
-
-#: pages/models.py
-msgid "Lead paragraph"
-msgstr "Ingressi"
 
 #: pages/models.py
 msgid "Lead paragraph right under the heading"
@@ -2019,9 +2105,6 @@ msgstr "ylläpitäjät organisaatiolle"
 
 #~ msgid "dashboard lead content"
 #~ msgstr "tilannekuvasivun ingressi"
-
-#~ msgid "Image"
-#~ msgstr "Kuva"
 
 #~ msgid "internal priority comment"
 #~ msgstr "sisäisen prioriteetin kommentti"
