@@ -6,8 +6,8 @@ from wagtail_factories import StructBlockFactory
 
 import actions
 from actions.models import CategoryTypeMetadata, get_default_language, get_supported_languages
-from aplans.tests.factories import OrganizationFactory
 from images.tests.factories import AplansImageFactory
+from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory

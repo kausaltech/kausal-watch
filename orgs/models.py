@@ -111,10 +111,6 @@ class Organization(Node):
     dissolution_date = models.DateField(blank=True,
                                         null=True,
                                         help_text=_('A date of dissolution'))
-    # TODO
-    # admin_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='admin_organizations')
-    # regular_users = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True,
-    #                                        related_name='organization_memberships')
     created_time = models.DateTimeField(auto_now_add=True,
                                         help_text=_('The time at which the resource was created'))
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL,

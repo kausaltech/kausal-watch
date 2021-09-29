@@ -5,11 +5,11 @@ from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
 
 from actions.tests import factories as actions_factories
-from aplans.tests import factories as aplans_factories
 # from admin_site.tests import factories as admin_site_factories
-from content.tests import factories as content_factories
+# from content.tests import factories as content_factories
 from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
+from orgs.tests import factories as orgs_factories
 from users.tests import factories as users_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
@@ -29,8 +29,6 @@ register(actions_factories.CategoryTypeMetadataChoiceFactory)
 register(actions_factories.ImpactGroupFactory)
 register(actions_factories.PlanFactory)
 register(actions_factories.PlanDomainFactory)
-register(aplans_factories.OrganizationClassFactory)
-register(aplans_factories.OrganizationFactory)
 # We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
 # because `client` is already taken by dango.test.Client and the following problem appears when we register the
 # fixture with a different name:
@@ -44,6 +42,8 @@ register(indicators_factories.IndicatorBlockFactory)
 register(indicators_factories.IndicatorShowcaseBlockFactory)
 register(indicators_factories.QuantityFactory)
 register(indicators_factories.UnitFactory)
+register(orgs_factories.OrganizationClassFactory)
+register(orgs_factories.OrganizationFactory)
 register(pages_factories.CardBlockFactory)
 # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
 # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.

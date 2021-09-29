@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from factory import Sequence, LazyFunction, post_generation
+from factory import Sequence, SubFactory, LazyFunction, post_generation
 from factory.django import DjangoModelFactory
+
+from orgs.tests.factories import OrganizationFactory
 
 
 class UserFactory(DjangoModelFactory):
@@ -18,3 +20,11 @@ class UserFactory(DjangoModelFactory):
         if create and extracted:
             for plan in extracted:
                 self.general_admin_plans.add(plan)
+
+
+class OrganizationAdminFactory(DjangoModelFactory):
+    class Meta:
+        model = 'users.OrganizationAdmin'
+
+    user = SubFactory(UserFactory)
+    organization = SubFactory(OrganizationFactory)
