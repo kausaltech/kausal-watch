@@ -1,7 +1,7 @@
 import pytest
 
-from aplans.tests.factories import OrganizationClassFactory, OrganizationFactory
 from actions.tests.factories import ActionFactory, ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
+from orgs.tests.factories import OrganizationClassFactory, OrganizationFactory
 from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db

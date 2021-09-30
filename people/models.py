@@ -70,10 +70,11 @@ def image_upload_path(instance, filename):
 
 class PersonQuerySet(models.QuerySet):
     def available_for_plan(self, plan):
+        """Return persons from an organization related to the plan."""
         related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
-        # TODO: include_self probably doesn't work anymore?
-        all_related = related.get_descendants(include_self=True)
-        q = Q(organization__in=all_related)
+        q = Q()
+        for org in related:
+            q |= Q(organization__path__startswith=org.path)
         return self.filter(q)
 
     def is_action_contact_person(self, plan):
