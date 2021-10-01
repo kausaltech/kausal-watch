@@ -130,6 +130,42 @@ class Organization(Node):
                                          editable=False,
                                          on_delete=models.SET_NULL)
 
+    def generate_distinct_name(self, levels=1):
+        # FIXME: This relies on legacy identifiers
+        if self.classification.identifier.startswith('helsinki:'):
+            ROOTS = ['Kaupunki', 'Valtuusto', 'Hallitus', 'Toimiala', 'Lautakunta', 'Toimikunta', 'Jaosto']
+            stopper_classes = OrganizationClass.objects\
+                .filter(identifier__startswith='helsinki:', name__in=ROOTS).values_list('id', flat=True)
+            stopper_parents = Organization.objects\
+                .filter(classification__identifier__startswith='helsinki:', name='Kaupunginkanslia',
+                        dissolution_date=None)\
+                .values_list('id', flat=True)
+        else:
+            stopper_classes = []
+            stopper_parents = []
+
+        if (stopper_classes and self.classification_id in stopper_classes) or \
+                (stopper_parents and self.id in stopper_parents):
+            return self.name
+
+        name = self.name
+        parent = self.get_parent()
+        for level in range(levels):
+            if parent is None:
+                break
+            if parent.abbreviation:
+                parent_name = parent.abbreviation
+            else:
+                parent_name = parent.name
+            name = "%s / %s" % (parent_name, name)
+            if stopper_classes and parent.classification_id in stopper_classes:
+                break
+            if stopper_parents and parent.id in stopper_parents:
+                break
+            parent = parent.get_parent()
+
+        return name
+
     def __str__(self):
         if self.distinct_name:
             name = self.distinct_name

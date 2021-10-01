@@ -214,18 +214,6 @@ class ActionCreateView(AplansCreateView):
 
 
 class ActionIndexView(ListControlsIndexView):
-    def filter_by_org(self, queryset, value):
-        if not value:
-            return queryset
-
-        org = Organization.objects.filter(id=value).first()
-        if org is not None:
-            # TODO: argument probably doesn't work anymore?
-            orgs = org.get_descendants(True)
-            return queryset.filter(responsible_parties__organization__in=orgs).distinct()
-        else:
-            return queryset.none()
-
     def filter_by_person(self, queryset, value):
         if not value:
             return queryset
@@ -303,18 +291,6 @@ class ActionIndexView(ListControlsIndexView):
         user = self.request.user
         plan = user.get_active_admin_plan()
 
-        qs = plan.get_related_organizations().filter(dissolution_date=None)
-        org_qs = qs.filter(responsible_actions__action__plan=plan)
-        org_qs |= org_qs.get_ancestors()
-        org_qs = org_qs.distinct()
-        org_choices = [(str(org.id), ' ' * org.level + str(org.distinct_name or org.name)) for org in org_qs]
-        org_filter = ChoiceFilter(
-            name='responsible_org',
-            label=gettext('Responsible organization'),
-            choices=org_choices,
-            apply_to_queryset=self.filter_by_org,
-        )
-
         qs = Person.objects.filter(contact_for_actions__plan=plan).distinct()
         person_choices = [(str(person.id), str(person)) for person in qs]
         person_filter = ChoiceFilter(
@@ -355,7 +331,7 @@ class ActionIndexView(ListControlsIndexView):
                 ])(Icon('icon icon-list-ul'), gettext('Filter actions')),
             ),
             Panel(ref='filter_panel', collapsed=True)(
-                Columns()(org_filter, person_filter),
+                Columns()(person_filter,),
                 Columns()(*ct_filters),
                 Spacer(),
                 Columns()(own_actions),
