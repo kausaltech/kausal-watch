@@ -100,7 +100,6 @@ class Organization(Node):
     abbreviation = models.CharField(max_length=50,
                                     blank=True,
                                     help_text=_('A commonly used abbreviation'))
-    # TODO: Write / copy management command for generating the following
     distinct_name = models.CharField(max_length=400,
                                      editable=False,
                                      null=True,
