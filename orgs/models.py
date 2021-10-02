@@ -131,7 +131,7 @@ class Organization(Node):
 
     def generate_distinct_name(self, levels=1):
         # FIXME: This relies on legacy identifiers
-        if self.classification.identifier.startswith('helsinki:'):
+        if self.classification is not None and self.classification.identifier.startswith('helsinki:'):
             ROOTS = ['Kaupunki', 'Valtuusto', 'Hallitus', 'Toimiala', 'Lautakunta', 'Toimikunta', 'Jaosto']
             stopper_classes = OrganizationClass.objects\
                 .filter(identifier__startswith='helsinki:', name__in=ROOTS).values_list('id', flat=True)
