@@ -181,7 +181,7 @@ class Plan(ClusterableModel):
         if self.organization:
             all_related |= Organization.objects.filter(id=self.organization.id)
             all_related |= self.organization.get_descendants()
-        return all_related
+        return all_related.distinct()
 
     @property
     def root_page(self):
