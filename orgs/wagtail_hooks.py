@@ -4,21 +4,12 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from .models import Organization
 
 # Only define and register model admin for Organization if tree_editor module exists
+# TODO: Instead of conditional imports, monkey-patch things in the proprietary extensions
 try:
-    from tree_editor.forms import NodeForm
     from tree_editor.wagtail_admin import NodeAdmin
 except ImportError:
     pass
 else:
-    class OrganizationForm(NodeForm):
-        class Meta:
-            model = Organization
-            fields = ['classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
-
-    # FIXME: This should be done in the model definition, but we have a circular
-    # dependency.
-    Organization.base_form_class = OrganizationForm
-
     class OrganizationAdmin(NodeAdmin):
         model = Organization
         menu_label = _("Organizations")

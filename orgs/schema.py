@@ -1,11 +1,10 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import DjangoNode, register_django_node
-from aplans.utils import public_fields
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
+from orgs.forms import OrganizationForm
 from orgs.models import Organization, OrganizationClass
-from orgs.wagtail_hooks import OrganizationForm
 
 
 @register_django_node
