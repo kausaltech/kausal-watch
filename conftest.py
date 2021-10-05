@@ -3,6 +3,7 @@ import pytest
 import wagtail_factories
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
+from rest_framework.authtoken.models import Token
 
 from actions.tests import factories as actions_factories
 # from admin_site.tests import factories as admin_site_factories
@@ -72,7 +73,8 @@ register(wagtail_factories.factories.CollectionFactory)
 @pytest.fixture
 def graphql_client_query(client):
     def func(*args, **kwargs):
-        return graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
+        response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
+        return json.loads(response.content)
     return func
 
 
@@ -81,7 +83,30 @@ def graphql_client_query_data(graphql_client_query):
     """Make a GraphQL request, make sure the `error` field is not present and return the `data` field."""
     def func(*args, **kwargs):
         response = graphql_client_query(*args, **kwargs)
-        content = json.loads(response.content)
-        assert 'errors' not in content
-        return content['data']
+        assert 'errors' not in response
+        return response['data']
+    return func
+
+
+@pytest.fixture
+def uuid(user):
+    return str(user.uuid)
+
+
+@pytest.fixture
+def token(user):
+    return Token.objects.create(user=user).key
+
+
+@pytest.fixture
+def contains_error():
+    def func(response, code=None, message=None):
+        if 'errors' not in response:
+            return False
+        expected_parts = {}
+        if code is not None:
+            expected_parts['extensions'] = {'code': code}
+        if message is not None:
+            expected_parts['message'] = message
+        return any(expected_parts.items() <= error.items() for error in response['errors'])
     return func

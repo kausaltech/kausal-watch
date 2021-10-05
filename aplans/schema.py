@@ -155,9 +155,28 @@ class LocaleDirective(GraphQLDirective):
         )
 
 
+class AuthDirective(GraphQLDirective):
+    def __init__(self):
+        super().__init__(
+            name='auth',
+            description="Provide authentication data",
+            args={
+                'uuid': GraphQLArgument(
+                    type_=GraphQLNonNull(GraphQLString),
+                    description="User UUID"
+                ),
+                'token': GraphQLArgument(
+                    type_=GraphQLNonNull(GraphQLString),
+                    description="Authentication token"
+                ),
+            },
+            locations=[DirectiveLocation.MUTATION]
+        )
+
+
 schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
-    directives=specified_directives + [LocaleDirective()],
+    directives=specified_directives + [LocaleDirective(), AuthDirective()],
     types=[] + list(grapple_registry.models.values())
 )

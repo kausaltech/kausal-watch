@@ -1,4 +1,5 @@
 import functools
+import graphene
 import re
 
 from graphene.utils.str_converters import to_camel_case, to_snake_case
@@ -122,3 +123,7 @@ def replace_image_node(cls):
     model = cls._meta.model
     registry.images[model] = cls
     return cls
+
+
+class AuthenticatedUserNode(graphene.ObjectType):
+    pass

@@ -1,3 +1,4 @@
+from graphql.error import GraphQLError
 from graphql.utils.ast_to_dict import ast_to_dict
 
 
@@ -45,3 +46,21 @@ def get_fields(info):
         fragments[name] = ast_to_dict(value)
 
     return collect_fields(node, fragments)
+
+
+class GraphQLAuthFailedError(GraphQLError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.extensions:
+            self.extensions = {
+                'code': 'AUTH_FAILED',
+            }
+
+
+class GraphQLAuthRequiredError(GraphQLError):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.extensions:
+            self.extensions = {
+                'code': 'AUTH_REQUIRED',
+            }

@@ -316,6 +316,9 @@ CORS_ALLOW_HEADERS = list(default_cors_headers) + [
 #
 GRAPHENE = {
     'SCHEMA': 'aplans.schema.schema',
+    'MIDDLEWARE': [
+        'aplans.graphene_views.APITokenMiddleware',
+    ],
 }
 
 # Internationalization

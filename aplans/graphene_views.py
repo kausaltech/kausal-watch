@@ -9,13 +9,77 @@ from django.core.cache import cache
 
 import sentry_sdk
 from actions.models import Plan
+from django.core.exceptions import ValidationError
 from graphene_django.views import GraphQLView
 from graphql.error import GraphQLError
+from graphql.language.ast import Variable
 
+from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
+from .graphql_types import AuthenticatedUserNode
 from .code_rev import REVISION
+from users.models import User
 
 SUPPORTED_LANGUAGES = {x[0] for x in settings.LANGUAGES}
 logger = logging.getLogger(__name__)
+
+
+class APITokenMiddleware:
+    # def authenticate_user(self, info):
+    #     raise GraphQLError('Token not found', [info])
+
+    def process_auth_directive(self, info, directive):
+        user = None
+        token = None
+        variable_vals = info.variable_values
+        for arg in directive.arguments:
+            if arg.name.value == 'uuid':
+                if isinstance(arg.value, Variable):
+                    val = variable_vals.get(arg.value.name.value)
+                else:
+                    val = arg.value.value
+                try:
+                    user = User.objects.get(uuid=val)
+                except User.DoesNotExist:
+                    raise GraphQLAuthFailedError("User not found", [arg])
+                except ValidationError:
+                    raise GraphQLAuthFailedError("Invalid UUID", [arg])
+
+            elif arg.name.value == 'token':
+                if isinstance(arg.value, Variable):
+                    val = variable_vals.get(arg.value.name.value)
+                else:
+                    val = arg.value.value
+                token = val
+
+        if not token:
+            raise GraphQLAuthFailedError("Token required", [directive])
+        if not user:
+            raise GraphQLAuthFailedError("User required", [directive])
+
+        try:
+            if user.auth_token.key != token:
+                raise GraphQLAuthFailedError("Invalid token", [directive])
+        except User.auth_token.RelatedObjectDoesNotExist:
+            raise GraphQLAuthFailedError("Invalid token", [directive])
+
+        info.context.user = user
+
+    def resolve(self, next, root, info, **kwargs):
+        context = info.context
+
+        if root is None:
+            info.context.user = None
+            operation = info.operation
+            for directive in operation.directives:
+                if directive.name.value == 'auth':
+                    self.process_auth_directive(info, directive)
+
+        rt = info.return_type
+        gt = getattr(rt, 'graphene_type', None)
+        if gt and issubclass(gt, AuthenticatedUserNode):
+            if not getattr(context, 'user', None):
+                raise GraphQLAuthRequiredError("Authentication required", [info])
+        return next(root, info, **kwargs)
 
 
 class LocaleMiddleware:
@@ -40,7 +104,7 @@ class LocaleMiddleware:
 class SentryGraphQLView(GraphQLView):
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
-            kwargs['middleware'] = (LocaleMiddleware,)
+            kwargs['middleware'] = (APITokenMiddleware, LocaleMiddleware)
         super().__init__(*args, **kwargs)
 
     def get_cache_key(self, request, data, query, variables):

@@ -1,6 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from aplans.graphql_types import DjangoNode, register_django_node
+from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, register_django_node
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
 from orgs.forms import OrganizationForm
@@ -64,14 +64,14 @@ class Query:
         return Organization.objects.all()
 
 
-class CreateOrganizationMutation(DjangoModelFormMutation):
+class CreateOrganizationMutation(DjangoModelFormMutation, AuthenticatedUserNode):
     class Meta:
         form_class = OrganizationForm
         # Exclude `id`, otherwise we could change an existing organization by specifying an ID
         exclude_fields = ['id']
 
 
-class UpdateOrganizationMutation(DjangoModelFormMutation):
+class UpdateOrganizationMutation(DjangoModelFormMutation, AuthenticatedUserNode):
     class Meta:
         form_class = OrganizationForm
 
@@ -82,7 +82,7 @@ class UpdateOrganizationMutation(DjangoModelFormMutation):
         return super().perform_mutate(form, info)
 
 
-class DeleteOrganizationMutation(graphene.Mutation):
+class DeleteOrganizationMutation(graphene.Mutation, AuthenticatedUserNode):
     class Arguments:
         id = graphene.ID()
 
