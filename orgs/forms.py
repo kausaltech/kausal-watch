@@ -66,14 +66,3 @@ class NodeForm(WagtailAdminModelForm):
                 # instance.refresh_from_db()
                 # instance.get_parent(update=True)
         return instance
-
-
-class OrganizationForm(NodeForm):
-    class Meta:
-        model = Organization
-        fields = ['classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
-
-
-# FIXME: This should be done in the model definition, but we have a circular
-# dependency.
-Organization.base_form_class = OrganizationForm

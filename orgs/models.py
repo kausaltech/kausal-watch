@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from treebeard.mp_tree import MP_Node
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList, get_form_for_model
 
 from admin_site.wagtail import CondensedInlinePanel
 
@@ -71,11 +71,26 @@ class OrganizationClass(models.Model):
         return f'{self.name} ({self.identifier})'
 
 
-class Organization(Node):
-    # base_form_class = OrganizationForm
-    # This doesn't work because OrganizationForm depends on this class. We set base_form_class after defining
-    # OrganizationForm.
+class OrganizationEditHandler(ObjectList):
+    def get_form_class(self):
+        # Adapted from BaseFormEditHandler.get_form_class to basically do the same as if we had set base_form_class to
+        # a form like this that we could put in forms.py:
+        # class OrganizationForm(NodeForm):
+        #     class Meta:
+        #         model = Organization
+        #         fields = ['parent', 'classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
+        # However, we can't just set base_form_class because we can't use OrganizationForm yet at the time of class
+        # definition due to circular dependencies between this file and forms.py.
+        from .forms import NodeForm
+        return get_form_for_model(
+            self.model,
+            form_class=NodeForm,
+            fields=self.required_fields(),
+            formsets=self.required_formsets(),
+            widgets=self.widget_overrides())
 
+
+class Organization(Node):
     panels = Node.panels + [
         FieldPanel('classification'),
         FieldPanel('abbreviation'),
@@ -86,6 +101,7 @@ class Organization(Node):
             FieldPanel('identifier'),
         ])
     ]
+    edit_handler = OrganizationEditHandler(panels)
 
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
 
