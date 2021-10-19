@@ -1,5 +1,9 @@
+import graphene
+from graphene_django.forms.mutation import DjangoModelFormMutation
 from graphql.error import GraphQLError
 from graphql.utils.ast_to_dict import ast_to_dict
+
+from .graphql_types import AuthenticatedUserNode
 
 
 def collect_fields(node, fragments):
@@ -64,3 +68,46 @@ class GraphQLAuthRequiredError(GraphQLError):
             self.extensions = {
                 'code': 'AUTH_REQUIRED',
             }
+
+
+class CreateModelInstanceMutation(DjangoModelFormMutation, AuthenticatedUserNode):
+    # Provide form_class in Meta class of subclass
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def __init_subclass_with_meta__(cls, *args, **kwargs):
+        # Exclude `id`, otherwise we could change an existing instance by specifying an ID
+        kwargs['exclude_fields'] = ['id']
+        super().__init_subclass_with_meta__(*args, **kwargs)
+
+
+class UpdateModelInstanceMutation(DjangoModelFormMutation, AuthenticatedUserNode):
+    # Provide form_class in Meta class of subclasses
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def perform_mutate(cls, form, info):
+        # Require id in `input` argument, otherwise we could create instances with this mutation
+        if form.instance.id is None:
+            raise ValueError("ID not specified")
+        return super().perform_mutate(form, info)
+
+
+class DeleteModelInstanceMutation(graphene.Mutation, AuthenticatedUserNode):
+    class Arguments:
+        id = graphene.ID()
+
+    ok = graphene.Boolean()
+
+    @classmethod
+    def __init_subclass_with_meta__(cls, *args, **kwargs):
+        cls.model = kwargs.pop('model')
+        super().__init_subclass_with_meta__(*args, **kwargs)
+
+    @classmethod
+    def mutate(cls, root, info, id):
+        obj = cls.model.objects.get(pk=id)
+        obj.delete()
+        return cls(ok=True)

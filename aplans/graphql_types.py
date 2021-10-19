@@ -2,10 +2,10 @@ import functools
 import graphene
 import re
 
+import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
-import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry
 from modeltrans.translator import get_i18n_field
 

@@ -136,7 +136,11 @@ class Query(
         return obj
 
 
-class Mutation(orgs_schema.Mutation, graphene.ObjectType):
+class Mutation(
+    actions_schema.Mutation,
+    orgs_schema.Mutation,
+    graphene.ObjectType
+):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
 

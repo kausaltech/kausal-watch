@@ -153,7 +153,7 @@ class Plan(ClusterableModel):
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'hide_action_identifiers', 'hide_action_official_name',
-        'hide_action_lead_paragraph',
+        'hide_action_lead_paragraph', 'organization'
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
