@@ -73,7 +73,7 @@ class OrganizationClass(models.Model):
 
 class OrganizationEditHandler(ObjectList):
     def get_form_class(self):
-        # Adapted from BaseFormEditHandler.get_form_class to basically do the same as if we had set base_form_class to
+        # Adapted from BaseFormEditHandler.get_form_class to do something similar as if we had set base_form_class to
         # a form like this that we could put in forms.py:
         # class OrganizationForm(NodeForm):
         #     class Meta:

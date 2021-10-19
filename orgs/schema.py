@@ -3,8 +3,16 @@ import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, register_django_node
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
-from orgs.forms import OrganizationForm
+from orgs.forms import NodeForm
 from orgs.models import Organization, OrganizationClass
+
+
+# This form is just used in the GraphQL schema, not in Wagtail. For Wagtail, a different form class is created in
+# OrganizationEditHandler.get_form_class().
+class OrganizationForm(NodeForm):
+    class Meta:
+        model = Organization
+        fields = ['parent', 'name', 'classification', 'abbreviation', 'founding_date', 'dissolution_date']
 
 
 @register_django_node
