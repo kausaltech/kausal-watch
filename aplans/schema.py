@@ -16,6 +16,7 @@ from indicators import schema as indicators_schema
 from orgs import schema as orgs_schema
 from orgs.models import Organization
 from pages import schema as pages_schema
+from people import schema as people_schema
 from people.models import Person
 
 from .graphql_helpers import get_fields
@@ -138,7 +139,9 @@ class Query(
 
 class Mutation(
     actions_schema.Mutation,
+    indicators_schema.Mutation,
     orgs_schema.Mutation,
+    people_schema.Mutation,
     graphene.ObjectType
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()

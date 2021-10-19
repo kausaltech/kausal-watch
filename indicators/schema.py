@@ -1,8 +1,11 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
+from django.forms import ModelForm
+from graphql.error import GraphQLError
+
+from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
-from graphql.error import GraphQLError
 from indicators.models import (
     ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
@@ -215,3 +218,19 @@ class Query:
             return None
 
         return obj
+
+
+class IndicatorForm(ModelForm):
+    # TODO: Eventually we will want to allow updating things other than organization
+    class Meta:
+        model = Indicator
+        fields = ['organization']
+
+
+class UpdateIndicatorMutation(UpdateModelInstanceMutation):
+    class Meta:
+        form_class = IndicatorForm
+
+
+class Mutation(graphene.ObjectType):
+    update_indicator = UpdateIndicatorMutation.Field()

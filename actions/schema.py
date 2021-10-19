@@ -3,7 +3,6 @@ import graphene_django_optimizer as gql_optimizer
 from django.db.models.query_utils import Q
 from django.forms import ModelForm
 from django.urls.base import reverse
-from graphene_django.forms.mutation import DjangoModelFormMutation
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from itertools import chain
@@ -17,7 +16,7 @@ from actions.models import (
 )
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
-    AuthenticatedUserNode, DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
+    DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
@@ -532,6 +531,18 @@ class Query:
         )
 
 
+class ActionResponsiblePartyForm(ModelForm):
+    # TODO: Eventually we will want to allow updating things other than organization
+    class Meta:
+        model = ActionResponsibleParty
+        fields = ['organization']
+
+
+class UpdateActionResponsiblePartyMutation(UpdateModelInstanceMutation):
+    class Meta:
+        form_class = ActionResponsiblePartyForm
+
+
 class PlanForm(ModelForm):
     # TODO: Eventually we will want to allow updating things other than organization
     class Meta:
@@ -546,3 +557,4 @@ class UpdatePlanMutation(UpdateModelInstanceMutation):
 
 class Mutation(graphene.ObjectType):
     update_plan = UpdatePlanMutation.Field()
+    update_action_responsible_party = UpdateActionResponsiblePartyMutation.Field()
