@@ -45,22 +45,6 @@ class OrderableModelMixin:
         return self.sort_order
 
 
-class PersonNode(DjangoNode):
-    avatar_url = graphene.String(size=graphene.String())
-
-    class Meta:
-        model = Person
-        fields = [
-            'id', 'first_name', 'last_name', 'title', 'email', 'organization',
-        ]
-
-    def resolve_avatar_url(self, info, size=None):
-        request = info.context
-        if not request:
-            return None
-        return self.get_avatar_url(request, size)
-
-
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
@@ -80,7 +64,7 @@ class Query(
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
     )
-    person = graphene.Field(PersonNode, id=graphene.ID(required=True))
+    person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True))
 
     def resolve_plan_organizations(
         self, info, plan, with_ancestors, for_responsible_parties, for_contact_persons,
