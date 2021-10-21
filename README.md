@@ -17,18 +17,11 @@ Install the required Python packages:
 pip install -r requirements.txt
 ```
 
-Create a file called `local_settings.py` in your repo root with the following contents:
+Create a file called `.env` in your repo root with the following contents:
 
-```python
-DEBUG = True
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'aplans',
-        'ATOMIC_REQUESTS': True,
-    }
-}
+```
+DEBUG=1
+DATABASE_URL=postgres:///aplans
 ```
 
 Make sure you have created a Postgres database with the same name (here `aplans`).

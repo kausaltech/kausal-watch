@@ -22,6 +22,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
+    CONFIGURE_LOGGING=(bool, False),
     DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     CACHE_URL=(str, 'locmemcache://'),
     MEDIA_ROOT=(environ.Path(), root('media')),
@@ -69,6 +70,78 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 SITE_ID = 1
 
+# Logging
+if env('CONFIGURE_LOGGING'):
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': True,
+        'formatters': {
+            'verbose': {
+                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            },
+            'simple': {
+                'format': '%(levelname)s %(name)s %(asctime)s %(message)s'
+            },
+        },
+        'handlers': {
+            'null': {
+                'level': 'DEBUG',
+                'class': 'logging.NullHandler',
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple'
+            },
+        },
+        'loggers': {
+            'django.db': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            'django.template': {
+                'handlers': ['null'],
+                'level': 'WARNING',
+                'propagate': False,
+            },
+            'django': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': False,
+            },
+            'raven': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False
+            },
+            'generic': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': False,
+            },
+            'parso': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+            },
+            'requests': {
+                'handlers': ['console'],
+                'level': 'WARNING',
+                'propagate': False,
+            },
+            'PIL': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False,
+            },
+            '': {
+                'handlers': ['console'],
+                'level': 'DEBUG',
+                'propagate': False,
+            }
+        }
+    }
 
 # Application definition
 
@@ -464,18 +537,6 @@ SILENCED_SYSTEM_CHECKS = [
 ]
 
 ENABLE_DEBUG_TOOLBAR = False
-
-# local_settings.py can be used to override environment-specific settings
-# like database and email that differ between development and production.
-f = os.path.join(BASE_DIR, "local_settings.py")
-if os.path.exists(f):
-    import sys
-    import types
-    module_name = "%s.local_settings" % ROOT_URLCONF.split('.')[0]
-    module = types.ModuleType(module_name)
-    module.__file__ = f
-    sys.modules[module_name] = module
-    exec(open(f, "rb").read())
 
 if not locals().get('SECRET_KEY', ''):
     secret_file = os.path.join(BASE_DIR, '.django_secret')
