@@ -463,6 +463,8 @@ SILENCED_SYSTEM_CHECKS = [
     'fields.W904',  # postgres JSONField -> django JSONField
 ]
 
+ENABLE_DEBUG_TOOLBAR = False
+
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
 f = os.path.join(BASE_DIR, "local_settings.py")
@@ -507,3 +509,7 @@ if SENTRY_DSN:
 if 'DATABASES' in locals():
     if DATABASES['default']['ENGINE'] in ('django.db.backends.postgresql', 'django.contrib.gis.db.backends.postgis'):
         DATABASES['default']['CONN_MAX_AGE'] = 600
+
+if ENABLE_DEBUG_TOOLBAR:
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
