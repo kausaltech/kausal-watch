@@ -117,9 +117,14 @@ class Person(index.Indexed, ClusterableModel):
     objects = models.Manager.from_queryset(PersonQuerySet)()
 
     search_fields = [
+        index.FilterField('id'),
         index.AutocompleteField('first_name', partial_match=True),
         index.AutocompleteField('last_name', partial_match=True),
-        index.FilterField('organization'),
+        index.AutocompleteField('title', partial_match=True),
+        index.RelatedFields('organization', [
+            index.AutocompleteField('distinct_name', partial_match=True),
+            index.AutocompleteField('abbreviation', partial_match=True),
+        ]),
     ]
 
     class Meta:

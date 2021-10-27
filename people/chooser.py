@@ -2,7 +2,6 @@ from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin, ModelC
 from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import modelform_factory
-from wagtailautocomplete.widgets import Autocomplete as AutocompleteWidget
 from wagtail.search.backends import get_search_backend
 from wagtail.core import hooks
 from dal import autocomplete
@@ -19,6 +18,8 @@ class PersonChooserMixin(ModelChooserMixin):
     def get_object_list(self, search_term=None, **kwargs):
         plan = self.request.user.get_active_admin_plan()
         object_list = self.get_unfiltered_object_list().available_for_plan(plan)
+        # Workaround to prevent Wagtail from looking for `path` (from Organization) in the search fields for Person
+        object_list = self.model.objects.filter(id__in=object_list)
 
         if search_term:
             search_backend = get_search_backend()
