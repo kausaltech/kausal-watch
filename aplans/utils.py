@@ -1,13 +1,18 @@
 import random
+import re
+from typing import Iterable, List
+
+from django import forms
+from django.contrib.postgres.fields import ArrayField
+from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+
 import libvoikko
 import pytz
-import re
-from django import forms
-from django.db import models
-from django.core.validators import RegexValidator
-from django.utils.translation import gettext_lazy as _
-from django.contrib.postgres.fields import ArrayField
-from typing import Iterable, List
+from tinycss2.color3 import parse_color
+
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
@@ -177,3 +182,11 @@ def generate_identifier(qs, type_letter: str, field_name: str) -> str:
         return identifier
     else:
         raise Exception('Unable to generate an unused identifier')
+
+
+def validate_css_color(s):
+    if parse_color(s) is None:
+        raise ValidationError(
+            _('%(color)s is not a CSS color (e.g., "#112233", "red" or "rgb(0, 255, 127)")'),
+            params={'color': s},
+        )

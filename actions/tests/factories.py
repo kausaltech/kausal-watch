@@ -5,7 +5,8 @@ from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
-from actions.models import CategoryTypeMetadata, get_default_language, get_supported_languages
+from actions.models import CategoryTypeMetadata
+from actions.models.plan import get_default_language, get_supported_languages
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import CategoryPageFactory

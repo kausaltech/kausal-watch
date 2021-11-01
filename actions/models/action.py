@@ -1,314 +1,31 @@
 import logging
-import re
 from datetime import date
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Q, Max
+from django.db.models import Max, Q
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-import reversion
-from tinycss2.color3 import parse_color
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
-from wagtail.core.models import Collection, Site
 
-from aplans.utils import (
-    ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
-)
+import reversion
+
+from aplans.utils import IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 from orgs.models import Organization
 
-from .monitoring_quality import determine_monitoring_quality
+from ..monitoring_quality import determine_monitoring_quality
 
 logger = logging.getLogger(__name__)
+
 User = get_user_model()
-
-
-def get_supported_languages():
-    for x in settings.LANGUAGES:
-        yield x
-
-
-def get_default_language():
-    return settings.LANGUAGES[0][0]
-
-
-def validate_css_color(s):
-    if parse_color(s) is None:
-        raise ValidationError(
-            _('%(color)s is not a CSS color (e.g., "#112233", "red" or "rgb(0, 255, 127)")'),
-            params={'color': s},
-        )
-
-
-class PlanQuerySet(models.QuerySet):
-    def for_hostname(self, hostname):
-        hostname = hostname.lower()
-
-        # Support localhost-based URLs for development
-        parts = hostname.split('.')
-        if len(parts) == 2 and parts[1] == 'localhost':
-            return self.filter(identifier=parts[0])
-
-        return self.filter(domains__hostname=hostname.lower())
-
-
-class Plan(ClusterableModel):
-    """The Action Plan under monitoring.
-
-    Most information in this service is linked to a Plan.
-    """
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    identifier = IdentifierField(unique=True)
-    image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
-    )
-    created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    site_url = models.URLField(
-        blank=True, null=True, verbose_name=_('site URL'),
-        validators=[URLValidator(('http', 'https'))]
-    )
-    actions_locked = models.BooleanField(
-        default=False, verbose_name=_('actions locked'),
-        help_text=_('Can actions be added and the official metadata edited?'),
-    )
-    allow_images_for_actions = models.BooleanField(
-        default=True, verbose_name=_('allow images for actions'),
-        help_text=_('Should custom images for individual actions be allowed')
-    )
-    show_admin_link = models.BooleanField(
-        default=False, verbose_name=_('show admin link'),
-        help_text=_('Should the public website contain a link to the admin login?'),
-    )
-    organization = models.ForeignKey(
-        Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
-    )
-
-    general_admins = models.ManyToManyField(
-        User, blank=True, related_name='general_admin_plans',
-        verbose_name=_('general administrators'),
-        help_text=_('Users that can modify everything related to the action plan')
-    )
-
-    site = models.OneToOneField(
-        Site, null=True, on_delete=models.SET_NULL, editable=False, related_name='plan',
-    )
-    root_collection = models.OneToOneField(
-        Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='plan',
-    )
-    admin_group = models.OneToOneField(
-        Group, null=True, on_delete=models.PROTECT, editable=False, related_name='admin_for_plan',
-    )
-    contact_person_group = models.OneToOneField(
-        Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
-    )
-
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
-    other_languages = ChoiceArrayField(
-        models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
-        default=list, null=True, blank=True
-    )
-    accessibility_statement_url = models.URLField(
-        blank=True,
-        null=True,
-        verbose_name=_('URL to accessibility statement'),
-    )
-    uses_wagtail = models.BooleanField(default=True)
-    statuses_updated_manually = models.BooleanField(default=False)
-    contact_persons_private = models.BooleanField(
-        default=False, verbose_name=_('Contact persons private'),
-        help_text=_('Set if the contact persons should not be visible in the public UI')
-    )
-    hide_action_identifiers = models.BooleanField(
-        default=False, verbose_name=_('Hide action identifiers'),
-        help_text=_("Set if the plan doesn't have meaningful action identifiers")
-    )
-    hide_action_official_name = models.BooleanField(
-        default=False, verbose_name=_('Hide official name field'),
-        help_text=_("Set if the plan doesn't use the official name field")
-    )
-    hide_action_lead_paragraph = models.BooleanField(
-        default=True, verbose_name=_('Hide lead paragraph'),
-        help_text=_("Set if the plan doesn't use the lead paragraph field")
-    )
-
-    related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
-
-    cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name'])
-
-    public_fields = [
-        'id', 'name', 'identifier', 'image', 'action_schedules',
-        'actions', 'category_types', 'action_statuses', 'indicator_levels',
-        'action_impacts', 'general_content', 'impact_groups',
-        'monitoring_quality_points', 'scenarios',
-        'primary_language', 'other_languages', 'accessibility_statement_url',
-        'action_implementation_phases', 'hide_action_identifiers', 'hide_action_official_name',
-        'hide_action_lead_paragraph', 'organization'
-    ]
-
-    objects = models.Manager.from_queryset(PlanQuerySet)()
-
-    class Meta:
-        verbose_name = _('plan')
-        verbose_name_plural = _('plans')
-        get_latest_by = 'created_at'
-        ordering = ('created_at',)
-
-    def __str__(self):
-        return self.name
-
-    def get_last_action_identifier(self):
-        return self.actions.order_by('order').values_list('identifier', flat=True).last()
-
-    def clean(self):
-        if self.primary_language in self.other_languages:
-            raise ValidationError({'other_languages': _('Primary language must not be selected')})
-
-    def get_related_organizations(self):
-        all_related = self.related_organizations.all()
-        for org in self.related_organizations.all():
-            all_related |= org.get_descendants()
-        if self.organization:
-            all_related |= Organization.objects.filter(id=self.organization.id)
-            all_related |= self.organization.get_descendants()
-        return all_related.distinct()
-
-    @property
-    def root_page(self):
-        if self.site_id is None:
-            return None
-        return self.site.root_page
-
-    def save(self, *args, **kwargs):
-        ret = super().save(*args, **kwargs)
-
-        update_fields = []
-        if self.root_collection is None:
-            obj = Collection.get_first_root_node().add_child(name=self.name)
-            self.root_collection = obj
-            update_fields.append('root_collection')
-        else:
-            if self.root_collection.name != self.name:
-                self.root_collection.name = self.name
-                self.root_collection.save(update_fields=['name'])
-
-        if self.site is None:
-            root_page = self.create_pages()
-            site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
-            site.save()
-            self.site = site
-            update_fields.append('site')
-        else:
-            # FIXME: Update Site and PlanRootPage attributes
-            pass
-
-        group_name = '%s admins' % self.name
-        if self.admin_group is None:
-            obj = Group.objects.create(name=group_name)
-            self.admin_group = obj
-            update_fields.append('admin_group')
-        else:
-            if self.admin_group.name != group_name:
-                self.admin_group.name = group_name
-                self.admin_group.save()
-
-        group_name = '%s contact persons' % self.name
-        if self.contact_person_group is None:
-            obj = Group.objects.create(name=group_name)
-            self.contact_person_group = obj
-            update_fields.append('contact_person_group')
-        else:
-            if self.contact_person_group.name != group_name:
-                self.contact_person_group.name = group_name
-                self.contact_person_group.save()
-
-        if update_fields:
-            super().save(update_fields=update_fields)
-        return ret
-
-    def get_site_notification_context(self):
-        return dict(
-            view_url=self.site_url,
-            title=self.general_content.site_title
-        )
-
-    def invalidate_cache(self):
-        logger.info('Invalidate cache for %s' % self)
-        self.cache_invalidated_at = timezone.now()
-        super().save(update_fields=['cache_invalidated_at'])
-
-    def create_pages(self):
-        """Create plan root page as well as subpages that should be always there and return plan root page."""
-        from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
-        from wagtail.core.models import Page
-
-        root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
-        try:
-            root_page = root_pages.get(slug=self.identifier)
-        except Page.DoesNotExist:
-            root_page = Page.get_first_root_node().add_child(
-                instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
-            )
-        action_list_pages = root_page.get_children().type(ActionListPage)
-        if not action_list_pages.exists():
-            root_page.add_child(instance=ActionListPage(title=_("Actions")))
-        indicator_list_pages = root_page.get_children().type(IndicatorListPage)
-        if not indicator_list_pages.exists():
-            root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
-        return root_page
-
-
-class PlanDomain(models.Model):
-    """A domain (hostname) where an UI for a Plan might live."""
-
-    plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, related_name='domains', verbose_name=_('plan')
-    )
-    hostname = models.CharField(max_length=200, verbose_name=_('host name'), unique=True, db_index=True)
-    google_site_verification_tag = models.CharField(max_length=50, null=True, blank=True)
-    matomo_analytics_url = models.CharField(max_length=100, null=True, blank=True)
-
-    def validate_hostname(self):
-        dn = self.hostname
-        if not isinstance(dn, str):
-            return False
-        if not dn.islower():
-            return False
-        if dn.endswith('.'):
-            dn = dn[:-1]
-        if len(dn) < 1 or len(dn) > 253:
-            return False
-        ldh_re = re.compile('^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$',
-                            re.IGNORECASE)
-        return all(ldh_re.match(x) for x in dn.split('.'))
-
-    def clean(self):
-        if not self.validate_hostname():
-            raise ValidationError({'hostname': _('Hostname must be a fully qualified domain name in lower-case only')})
-
-    def __str__(self):
-        return str(self.hostname)
-
-    class Meta:
-        verbose_name = _('plan domain')
-        verbose_name_plural = _('plan domains')
-
-
-def latest_plan():
-    if Plan.objects.exists():
-        return Plan.objects.latest().id
-    else:
-        return None
 
 
 class ActionQuerySet(models.QuerySet):
@@ -329,11 +46,12 @@ class ActionQuerySet(models.QuerySet):
         return self.unmerged().exclude(status__is_completed=True)
 
 
+@reversion.register()
 class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     """One action/measure tracked in an action plan."""
 
     plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, related_name='actions',
+        'actions.Plan', on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
@@ -572,7 +290,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         KNOWN_IDS = {'not_started', 'on_time', 'late'}
         # If the status set is not something we can handle, bail out.
         if not KNOWN_IDS.issubset(set(by_id.keys())):
-            logger.warning('Unable to determine action statuses for plan %s: right statuses missing' % self.plan.identifier)
+            logger.warning(
+                'Unable to determine action statuses for plan %s: '
+                'right statuses missing' % self.plan.identifier
+            )
             return None
 
         if indicator_status is not None and indicator_status.get('is_late'):
@@ -744,7 +465,7 @@ class ActionContactPerson(OrderedModel):
 class ActionSchedule(models.Model, PlanRelatedModel):
     """A schedule for an action with begin and end dates."""
 
-    plan = ParentalKey(Plan, on_delete=models.CASCADE, related_name='action_schedules')
+    plan = ParentalKey('actions.Plan', on_delete=models.CASCADE, related_name='action_schedules')
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
@@ -767,7 +488,7 @@ class ActionSchedule(models.Model, PlanRelatedModel):
 class ActionStatus(models.Model, PlanRelatedModel):
     """The current status for the action ("on time", "late", "completed", etc.)."""
     plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, related_name='action_statuses',
+        'actions.Plan', on_delete=models.CASCADE, related_name='action_statuses',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
@@ -791,7 +512,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
 
 class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, related_name='action_implementation_phases',
+        'actions.Plan', on_delete=models.CASCADE, related_name='action_implementation_phases',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
@@ -815,7 +536,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
 
 class ActionDecisionLevel(models.Model, PlanRelatedModel):
     plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, related_name='action_decision_levels',
+        'actions.Plan', on_delete=models.CASCADE, related_name='action_decision_levels',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=200, verbose_name=_('name'))
@@ -928,7 +649,7 @@ class ActionImpact(OrderedModel, PlanRelatedModel):
     """An impact classification for an action in an action plan."""
 
     plan = ParentalKey(
-        Plan, on_delete=models.CASCADE, related_name='action_impacts',
+        'actions.Plan', on_delete=models.CASCADE, related_name='action_impacts',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=200, verbose_name=_('name'))
@@ -973,311 +694,6 @@ class ActionLink(OrderedModel):
         return self.url
 
 
-class CategoryType(ClusterableModel, PlanRelatedModel):
-    """Type of the categories.
-
-    Is used to group categories together. One action plan can have several
-    category types.
-    """
-
-    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='category_types')
-    name = models.CharField(max_length=50, verbose_name=_('name'))
-    identifier = IdentifierField()
-    usable_for_actions = models.BooleanField(
-        default=False,
-        verbose_name=_('usable for action categorization'),
-    )
-    usable_for_indicators = models.BooleanField(
-        default=False,
-        verbose_name=_('usable for indicator categorization'),
-    )
-    editable_for_actions = models.BooleanField(
-        default=False,
-        verbose_name=_('editable for actions'),
-    )
-    editable_for_indicators = models.BooleanField(
-        default=False,
-        verbose_name=_('editable for indicators'),
-    )
-    hide_category_identifiers = models.BooleanField(
-        default=False, verbose_name=_('hide category identifiers'),
-        help_text=_("Set if the categories do not have meaningful identifiers")
-    )
-
-    public_fields = [
-        'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'metadata',
-        'hide_category_identifiers',
-    ]
-
-    class Meta:
-        unique_together = (('plan', 'identifier'),)
-        ordering = ('plan', 'name')
-        verbose_name = _('category type')
-        verbose_name_plural = _('category types')
-
-    def __str__(self):
-        return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
-
-
-@reversion.register()
-class CategoryLevel(OrderedModel):
-    """Hierarchy level within a CategoryType.
-
-    Root level has order=0, first child level order=1 and so on.
-    """
-    type = ParentalKey(
-        CategoryType, on_delete=models.CASCADE, related_name='levels',
-        verbose_name=_('type')
-    )
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
-    i18n = TranslationField(fields=('name',))
-
-    public_fields = [
-        'id', 'name', 'name_plural', 'order', 'type',
-    ]
-
-    class Meta:
-        unique_together = (('type', 'order'),)
-        verbose_name = _('category level')
-        verbose_name_plural = _('category levels')
-        ordering = ('type', 'order')
-
-    def __str__(self):
-        return self.name
-
-
-@reversion.register()
-class CategoryTypeMetadata(ClusterableModel, OrderedModel):
-    class MetadataFormat(models.TextChoices):
-        ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
-        RICH_TEXT = 'rich_text', _('Rich text')
-        NUMERIC = 'numeric', _('Numeric')
-
-    type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='metadata')
-    identifier = IdentifierField()
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    format = models.CharField(max_length=50, choices=MetadataFormat.choices, verbose_name=_('Format'))
-
-    public_fields = [
-        'identifier', 'name', 'format', 'choices'
-    ]
-
-    class Meta:
-        unique_together = (('type', 'identifier'),)
-        verbose_name = _('category metadata')
-        verbose_name_plural = _('category metadatas')
-
-    def __str__(self):
-        return self.name
-
-    def filter_siblings(self, qs):
-        return qs.filter(type=self.type)
-
-    def set_category_value(self, category, val):
-        assert category.type == self.type
-
-        if self.format == self.MetadataFormat.ORDERED_CHOICE:
-            existing = self.category_choices.filter(category=category)
-            if existing:
-                existing.delete()
-            if val is not None:
-                self.category_choices.create(category=category, choice=val)
-        elif self.format == self.MetadataFormat.RICH_TEXT:
-            try:
-                obj = self.category_richtexts.get(category=category)
-            except self.category_richtexts.model.DoesNotExist:
-                if val:
-                    obj = self.category_richtexts.create(category=category, text=val)
-            else:
-                if not val:
-                    obj.delete()
-                else:
-                    obj.text = val
-                    obj.save()
-        elif self.format == self.MetadataFormat.NUMERIC:
-            try:
-                obj = self.category_numeric_values.get(category=category)
-            except self.category_numeric_values.model.DoesNotExist:
-                if val is not None:
-                    obj = self.category_numeric_values.create(category=category, value=val)
-            else:
-                if val is None:
-                    obj.delete()
-                else:
-                    obj.value = val
-                    obj.save()
-
-
-class CategoryTypeMetadataChoice(OrderedModel):
-    metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
-    identifier = IdentifierField()
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-
-    public_fields = [
-        'identifier', 'name'
-    ]
-
-    class Meta:
-        unique_together = (('metadata', 'identifier'), ('metadata', 'order'),)
-        ordering = ('metadata', 'order')
-        verbose_name = _('category type metadata choice')
-        verbose_name_plural = _('category type metadata choices')
-
-    def __str__(self):
-        return self.name
-
-
-class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
-    """A category for actions and indicators."""
-
-    type = models.ForeignKey(
-        CategoryType, on_delete=models.PROTECT, related_name='categories',
-        verbose_name=_('type')
-    )
-    identifier = IdentifierField()
-    external_identifier = models.CharField(max_length=50, blank=True, null=True, editable=False)
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
-    )
-    parent = models.ForeignKey(
-        'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
-        verbose_name=_('parent category')
-    )
-    short_description = models.TextField(
-        max_length=200, blank=True, verbose_name=_('short description')
-    )
-    color = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name=_('theme color'),
-        help_text=_('Set if the category has a theme color'),
-        validators=[validate_css_color]
-    )
-
-    i18n = TranslationField(fields=('name', 'short_description'))
-
-    public_fields = [
-        'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description',
-        'color', 'children', 'category_page', 'indicators',
-    ]
-
-    class Meta:
-        unique_together = (('type', 'identifier'), ('type', 'external_identifier'))
-        verbose_name = _('category')
-        verbose_name_plural = _('categories')
-        ordering = ('type', 'order')
-
-    def clean(self):
-        if self.parent_id is not None:
-            seen_categories = {self.id}
-            obj = self.parent
-            while obj is not None:
-                if obj.id in seen_categories:
-                    raise ValidationError({'parent': _('Parent forms a loop. Leave empty if top-level category.')})
-                seen_categories.add(obj.id)
-                obj = obj.parent
-
-            if self.parent.type != self.type:
-                raise ValidationError({'parent': _('Parent must be of same type')})
-
-    def get_plans(self):
-        return [self.type.plan]
-
-    @classmethod
-    def filter_by_plan(cls, plan, qs):
-        return qs.filter(type__plan=plan)
-
-    def set_plan(self, plan):
-        # The right plan should be set through CategoryType relation, so
-        # we do nothing here.
-        pass
-
-    def generate_identifier(self):
-        self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
-
-    def __str__(self):
-        if self.identifier and self.type and not self.type.hide_category_identifiers:
-            return "%s %s" % (self.identifier, self.name)
-        else:
-            return self.name
-
-
-class CategoryIcon(models.Model):
-    category = models.OneToOneField(Category, on_delete=models.CASCADE, related_name='icon')
-    data = models.TextField()
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return 'Icon for %s' % self.category
-
-
-class CategoryMetadataRichText(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name=_('category_richtexts'))
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_richtexts'))
-    text = RichTextField(verbose_name=_('Text'))
-
-    public_fields = [
-        'id', 'metadata', 'category', 'text',
-    ]
-
-    class Meta:
-        unique_together = ('category', 'metadata')
-
-    def __str__(self):
-        return '%s for %s' % (self.metadata, self.category)
-
-
-class CategoryMetadataChoice(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_choices')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_choices'))
-    choice = models.ForeignKey(CategoryTypeMetadataChoice, on_delete=models.CASCADE, related_name=_('categories'))
-
-    class Meta:
-        unique_together = ('category', 'metadata')
-
-    def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.metadata, self.category)
-
-
-class CategoryMetadataNumericValue(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_numeric_values')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_numeric_values'))
-    value = models.FloatField()
-
-    public_fields = [
-        'id', 'metadata', 'category', 'value',
-    ]
-
-    class Meta:
-        unique_together = ('category', 'metadata')
-
-    def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.metadata, self.category)
-
-
-class Scenario(models.Model, PlanRelatedModel):
-    plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, related_name='scenarios',
-        verbose_name=_('plan')
-    )
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    identifier = IdentifierField()
-    description = models.TextField(null=True, blank=True, verbose_name=_('description'))
-
-    public_fields = [
-        'id', 'plan', 'name', 'identifier', 'description',
-    ]
-
-    class Meta:
-        unique_together = (('plan', 'identifier'),)
-        verbose_name = _('scenario')
-        verbose_name_plural = _('scenarios')
-
-    def __str__(self):
-        return self.name
-
-
 class ActionStatusUpdate(models.Model):
     action = models.ForeignKey(
         Action, on_delete=models.CASCADE, related_name='status_updates',
@@ -1315,42 +731,9 @@ class ActionStatusUpdate(models.Model):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)
 
 
-class ImpactGroup(models.Model, PlanRelatedModel):
-    plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, related_name='impact_groups',
-        verbose_name=_('plan')
-    )
-    name = models.CharField(verbose_name=_('name'), max_length=200)
-    identifier = IdentifierField()
-    parent = models.ForeignKey(
-        'self', on_delete=models.SET_NULL, related_name='children', null=True, blank=True,
-        verbose_name=_('parent')
-    )
-    weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
-    color = models.CharField(
-        max_length=16, verbose_name=_('color'), null=True, blank=True,
-        validators=[validate_css_color]
-    )
-
-    i18n = TranslationField(fields=('name',))
-
-    public_fields = [
-        'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
-    ]
-
-    class Meta:
-        unique_together = (('plan', 'identifier'),)
-        verbose_name = _('impact group')
-        verbose_name_plural = _('impact groups')
-        ordering = ('plan', '-weight')
-
-    def __str__(self):
-        return self.name
-
-
 class ImpactGroupAction(models.Model):
     group = models.ForeignKey(
-        ImpactGroup, verbose_name=_('name'), on_delete=models.CASCADE,
+        'actions.ImpactGroup', verbose_name=_('name'), on_delete=models.CASCADE,
         related_name='actions',
     )
     action = models.ForeignKey(
@@ -1373,30 +756,3 @@ class ImpactGroupAction(models.Model):
 
     def __str__(self):
         return "%s ➜ %s" % (self.action, self.group)
-
-
-class MonitoringQualityPoint(OrderedModel, PlanRelatedModel):
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    description_yes = models.CharField(max_length=200, verbose_name=_("description when action fulfills criteria"))
-    description_no = models.CharField(max_length=200, verbose_name=_("description when action doesn\'t fulfill criteria"))
-
-    plan = models.ForeignKey(
-        Plan, on_delete=models.CASCADE, related_name='monitoring_quality_points',
-        verbose_name=_('plan')
-    )
-    identifier = IdentifierField()
-
-    i18n = TranslationField(fields=('name', 'description_yes', 'description_no'))
-
-    public_fields = [
-        'id', 'name', 'description_yes', 'description_no', 'plan', 'identifier',
-    ]
-
-    class Meta:
-        verbose_name = _('monitoring quality point')
-        verbose_name_plural = _('monitoring quality points')
-        unique_together = (('plan', 'order'),)
-        ordering = ('plan', 'order')
-
-    def __str__(self):
-        return self.name
