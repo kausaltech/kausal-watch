@@ -44,18 +44,24 @@ class Command(BaseCommand):
         if org_identifier is None:
             print('Creating %s (%s)' % (data['name'], data['businessId']))
             org = Organization()
+            create = True
         else:
             org = org_identifier.organization
+            create = False
 
         org.name = data['name']
         org.classification = OrganizationClass.objects.get(name='Osakeyhtiö')
         if not org.abbreviation:
             abbr = re.sub(' [oO][yY]', '', org.name)
             org.abbreviation = abbr
-        org.save()
+
+        if create:
+            org = Organization.add_root(instance=org)
+        else:
+            org.save()
 
         if org_identifier is None:
-            org_identifier.objects.create(namespace=namespace, identifier=data['businessId'], organization=org)
+            OrganizationIdentifier.objects.create(namespace=namespace, identifier=data['businessId'], organization=org)
 
         print('Imported %s (%s)' % (org.name, org.id))
         if self.plan:
