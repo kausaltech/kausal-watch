@@ -4,6 +4,12 @@
 #
 #    pip-compile requirements-dev.in
 #
+asgiref==3.3.1
+    # via
+    #   -c requirements.txt
+    #   django
+astroid==2.8.4
+    # via pylint
 autopep8==1.5.4
     # via -r requirements-dev.in
 backcall==0.2.0
@@ -12,18 +18,45 @@ click==7.1.2
     # via pip-tools
 decorator==4.4.2
     # via ipython
+django-stubs-ext==0.3.1
+    # via django-stubs
+django-stubs==1.9.0
+    # via -r requirements-dev.in
+django==3.1.5
+    # via
+    #   -c requirements.txt
+    #   django-stubs
+    #   django-stubs-ext
+flake8==3.8.4
+    # via -r requirements-dev.in
+graphene-stubs==0.15
+    # via -r requirements-dev.in
 ipython-genutils==0.2.0
     # via traitlets
 ipython==7.19.0
     # via -r requirements-dev.in
 isort==5.7.0
-    # via -r requirements-dev.in
+    # via
+    #   -r requirements-dev.in
+    #   pylint
 jedi==0.17.2
     # via
     #   ipython
     #   python-language-server
+lazy-object-proxy==1.6.0
+    # via astroid
 mccabe==0.6.1
-    # via python-language-server
+    # via
+    #   flake8
+    #   pylint
+    #   python-language-server
+mypy-extensions==0.4.3
+    # via mypy
+mypy==0.910
+    # via
+    #   -r requirements-dev.in
+    #   django-stubs
+    #   graphene-stubs
 parso==0.7.1
     # via jedi
 pexpect==4.8.0
@@ -32,6 +65,8 @@ pickleshare==0.7.5
     # via ipython
 pip-tools==5.5.0
     # via -r requirements-dev.in
+platformdirs==2.4.0
+    # via pylint
 pluggy==0.13.1
     # via
     #   -c requirements.txt
@@ -41,31 +76,70 @@ prompt-toolkit==3.0.10
 ptyprocess==0.7.0
     # via pexpect
 pycodestyle==2.6.0
-    # via autopep8
+    # via
+    #   autopep8
+    #   flake8
 pyflakes==2.2.0
-    # via python-language-server
+    # via
+    #   flake8
+    #   python-language-server
 pygments==2.7.4
     # via ipython
+pylint-django==2.4.4
+    # via -r requirements-dev.in
+pylint-plugin-utils==0.6
+    # via pylint-django
+pylint==2.11.1
+    # via
+    #   -r requirements-dev.in
+    #   pylint-django
+    #   pylint-plugin-utils
 python-jsonrpc-server==0.4.0
     # via python-language-server
 python-language-server[mccabe,pyflakes,rope,yapf]==0.36.2
     # via -r requirements-dev.in
+pytz==2020.5
+    # via
+    #   -c requirements.txt
+    #   django
 pywatchman==1.4.1
     # via -r requirements-dev.in
 rope==0.18.0
     # via python-language-server
+sqlparse==0.4.1
+    # via
+    #   -c requirements.txt
+    #   django
 toml==0.10.2
     # via
     #   -c requirements.txt
     #   autopep8
+    #   django-stubs
+    #   mypy
+    #   pylint
 traitlets==5.0.5
     # via ipython
+types-pytz==2021.3.0
+    # via django-stubs
+types-pyyaml==6.0.0
+    # via django-stubs
+typing-extensions==3.10.0.2
+    # via
+    #   -c requirements.txt
+    #   astroid
+    #   django-stubs
+    #   django-stubs-ext
+    #   graphene-stubs
+    #   mypy
+    #   pylint
 ujson==4.0.1
     # via
     #   python-jsonrpc-server
     #   python-language-server
 wcwidth==0.2.5
     # via prompt-toolkit
+wrapt==1.13.2
+    # via astroid
 yapf==0.30.0
     # via python-language-server
 

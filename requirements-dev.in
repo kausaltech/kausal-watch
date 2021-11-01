@@ -3,5 +3,11 @@ pywatchman
 python-language-server[Rope,Pyflakes,McCabe,YAPF]
 isort
 autopep8
+flake8<3.9
 ipython
 pip-tools
+pylint
+pylint-django
+mypy
+django-stubs
+graphene-stubs
