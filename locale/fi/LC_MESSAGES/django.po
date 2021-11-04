@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-09-29 10:33+0300\n"
+"POT-Creation-Date: 2021-11-04 09:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,10 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-#: actions/action_admin.py
-msgid "Responsible organization"
-msgstr "Vastuuorganisaatio"
 
 #: actions/action_admin.py actions/admin.py
 msgid "Contact person"
@@ -78,7 +74,7 @@ msgstr "Nollaa suotimet"
 msgid "Search"
 msgstr "Haku"
 
-#: actions/action_admin.py actions/apps.py actions/models.py
+#: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -174,7 +170,7 @@ msgstr "Sisäiset tiedot"
 msgid "Schedule and decision level"
 msgstr "Aikataulu ja päätöstaso"
 
-#: actions/admin.py actions/models.py indicators/models.py
+#: actions/admin.py actions/models/action.py indicators/models.py
 msgid "action"
 msgstr "toimenpide"
 
@@ -230,16 +226,16 @@ msgstr "Valitse toinen luokka"
 msgid "identifier"
 msgstr "tunniste"
 
-#: actions/export.py actions/models.py indicators/models.py
-#: notifications/models.py
+#: actions/export.py actions/models/action.py actions/models/category.py
+#: actions/models/plan.py indicators/models.py notifications/models.py
 msgid "name"
 msgstr "nimi"
 
-#: actions/export.py actions/models.py
+#: actions/export.py actions/models/action.py
 msgid "impact"
 msgstr "vaikuttavuus"
 
-#: actions/export.py actions/models.py
+#: actions/export.py actions/models/action.py
 msgid "status"
 msgstr "tila"
 
@@ -251,630 +247,638 @@ msgstr "etenemismittarit"
 msgid "other indicators"
 msgstr "muut mittarit"
 
-#: actions/export.py actions/models.py indicators/models.py
+#: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
-#: actions/models.py
-#, python-format
-msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
-msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
-
-#: actions/models.py
-msgid "site URL"
-msgstr "sivuston osoite"
-
-#: actions/models.py
-msgid "actions locked"
-msgstr "toimenpiteet lukittu"
-
-#: actions/models.py
-msgid "Can actions be added and the official metadata edited?"
-msgstr "Voidaanko toimenpiteitä lisätä ja virallisia tietoja muokata?"
-
-#: actions/models.py
-msgid "allow images for actions"
-msgstr "salli toimenpiteille kuvat"
-
-#: actions/models.py
-msgid "Should custom images for individual actions be allowed"
-msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
-
-#: actions/models.py
-msgid "show admin link"
-msgstr ""
-
-#: actions/models.py
-msgid "Should the public website contain a link to the admin login?"
-msgstr ""
-
-#: actions/models.py
-msgid "main organization for the plan"
-msgstr "toimenpideohjelman pääorganisaatio"
-
-#: actions/models.py
-msgid "general administrators"
-msgstr "pääkäyttäjät"
-
-#: actions/models.py
-msgid "Users that can modify everything related to the action plan"
-msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
-
-#: actions/models.py
-msgid "URL to accessibility statement"
-msgstr "Linkki saavutettavuusselosteeseen"
-
-#: actions/models.py
-msgid "Contact persons private"
-msgstr "Yhteyshenkilöt salaisia"
-
-#: actions/models.py
-msgid "Set if the contact persons should not be visible in the public UI"
-msgstr "Aseta jos yhteyshenkilöitä ei näytetä julkisessa käyttöliittymässä"
-
-#: actions/models.py
-msgid "Hide action identifiers"
-msgstr "Piilota toimenpiteiden tunnisteet"
-
-#: actions/models.py
-msgid "Set if the plan doesn't have meaningful action identifiers"
-msgstr "Aseta jos ohjelmassa ei käytetä toimenpiteiden tunnisteita"
-
-#: actions/models.py
-msgid "Hide official name field"
-msgstr "Piilota virallinen nimi -kenttä"
-
-#: actions/models.py
-msgid "Set if the plan doesn't use the official name field"
-msgstr "Aseta jos ohjelmalla ei ole virallinen nimi -kenttää käytössä"
-
-#: actions/models.py
-msgid "Hide lead paragraph"
-msgstr "Piilota ingressi"
-
-#: actions/models.py
-msgid "Set if the plan doesn't use the lead paragraph field"
-msgstr "Aseta jos ohjelma ei käytä ingressikenttää"
-
-#: actions/models.py content/models.py indicators/models.py
-#: notifications/models.py
+#: actions/models/action.py actions/models/plan.py content/models.py
+#: indicators/models.py notifications/models.py
 msgid "plan"
 msgstr "toimenpideohjelma"
 
-#: actions/models.py indicators/models.py
+#: actions/models/action.py
+msgid "primary organization"
+msgstr "pääorganisaatio"
+
+#: actions/models/action.py
+msgid "official name"
+msgstr "virallinen nimi"
+
+#: actions/models/action.py
+msgid "The name as approved by an official party"
+msgstr "Virallisen tahon hyväksymä nimi"
+
+#: actions/models/action.py
+msgid "The identifier for this action (e.g. number)"
+msgstr "Toimenpiteen tunniste (esim. numero)"
+
+#: actions/models/action.py
+msgid "Image"
+msgstr "Kuva"
+
+#: actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Ingressi"
+
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+msgid "description"
+msgstr "kuvaus"
+
+#: actions/models/action.py
+msgid "What does this action involve in more detail?"
+msgstr "Mitä toimenpiteeseen tarkemmin liittyy?"
+
+#: actions/models/action.py
+msgid "The impact of this action"
+msgstr "Toimenpiteen vaikuttavuus"
+
+#: actions/models/action.py
+msgid "internal priority"
+msgstr "sisäinen prioriteetti"
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "sisäiset muistiinpanot pääkäyttäjille"
+
+#: actions/models/action.py
+msgid "internal notes"
+msgstr "sisäiset muistiinpanot"
+
+#: actions/models/action.py
+msgid "implementation phase"
+msgstr "toteutusvaihe"
+
+#: actions/models/action.py
+msgid "override status manually"
+msgstr "määritä toimenpiteen tila käsin"
+
+#: actions/models/action.py
+msgid "Set if you want to prevent the action status from being determined automatically"
+msgstr "Aseta jos haluat estää toimenpiteen tilan automaattisen päivityksen"
+
+#: actions/models/action.py
+msgid "specifier for status"
+msgstr "tilan tarkenne"
+
+#: actions/models/action.py
+msgid "Describe the reason why this action has has this status"
+msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
+
+#: actions/models/action.py
+msgid "merged with action"
+msgstr "yhdistetty toimenpiteeseen"
+
+#: actions/models/action.py
+msgid "Set if this action is merged with another action"
+msgstr "Aseta jos toimenpide on yhdistetty toiseen toimenpiteeseen"
+
+#: actions/models/action.py
+msgid "completion"
+msgstr "toteutumisaste"
+
+#: actions/models/action.py
+msgid "The completion percentage for this action"
+msgstr "Toimenpiteen toteutumisaste prosenteissa"
+
+#: actions/models/action.py
+msgid "schedule"
+msgstr "aikajänne"
+
+#: actions/models/action.py
+msgid "decision-making level"
+msgstr "päätöstaso"
+
+#: actions/models/action.py actions/models/category.py indicators/models.py
+msgid "categories"
+msgstr "luokat"
+
+#: actions/models/action.py indicators/models.py
+msgid "indicators"
+msgstr "mittarit"
+
+#: actions/models/action.py
+msgid "responsible organizations"
+msgstr "vastuuorganisaatiot"
+
+#: actions/models/action.py indicators/models.py
+msgid "updated at"
+msgstr "päivitysaika"
+
+#: actions/models/action.py
+msgid "start date"
+msgstr "alkupäivämäärä"
+
+#: actions/models/action.py
+msgid "The date when implementation of this action starts"
+msgstr "Päivämäärä jona toimenpiteen toteutus käynnistyy/käynnistyi"
+
+#: actions/models/action.py
+msgid "end date"
+msgstr "loppupäivämäärä"
+
+#: actions/models/action.py
+msgid "The date when implementation of this action ends"
+msgstr "Päivämäärä jona toimenpiteen toteutus päättyy/päättyi"
+
+#: actions/models/action.py
+msgctxt "partitive"
+msgid "action"
+msgstr "toimenpidettä"
+
+#: actions/models/action.py
+msgid "actions"
+msgstr "toimenpiteet"
+
+#: actions/models/action.py
+msgid "Can administrate all actions"
+msgstr "Voi ylläpitää kaikkia toimenpiteitä"
+
+#: actions/models/action.py
+msgid "Other action is merged with this one"
+msgstr "Toinen toimenpide on jo yhdistetty tähän"
+
+#: actions/models/action.py
+msgid "Has contact persons"
+msgstr "Yhteyshenkilöt nimetty"
+
+#: actions/models/action.py
+msgid "Active tasks"
+msgstr "Aktiivisia tehtäviä"
+
+#: actions/models/action.py indicators/models.py people/models.py
+#: users/models.py
+msgid "organization"
+msgstr "organisaatio"
+
+#: actions/models/action.py
+msgid "action responsible party"
+msgstr "toimenpiteen vastuutaho"
+
+#: actions/models/action.py
+msgid "action responsible parties"
+msgstr "toimenpiteen vastuutahot"
+
+#: actions/models/action.py indicators/models.py people/models.py
+msgid "person"
+msgstr "henkilö"
+
+#: actions/models/action.py
+msgid "primary contact person"
+msgstr "ensisijainen yhteyshenkilö"
+
+#: actions/models/action.py
+msgid "Is this person the primary contact person for the action?"
+msgstr "Onko tämä henkilö toimenpiteen ensisijainen yhteyshenkilö?"
+
+#: actions/models/action.py
+msgid "action contact person"
+msgstr "toimenpiteen yhteyshenkilö"
+
+#: actions/models/action.py
+msgid "action contact persons"
+msgstr "toimenpiteen yhteyshenkilöt"
+
+#: actions/models/action.py
+msgid "action schedule"
+msgstr "toimenpiteiden aikataulu"
+
+#: actions/models/action.py
+msgid "action schedules"
+msgstr "toimenpiteiden aikataulut"
+
+#: actions/models/action.py
+msgid "is completed"
+msgstr "valmis"
+
+#: actions/models/action.py
+msgid "action status"
+msgstr "toimenpiteen tila"
+
+#: actions/models/action.py
+msgid "action statuses"
+msgstr "toimenpiteen tilat"
+
+#: actions/models/action.py
+msgid "action implementation phase"
+msgstr "toimenpiteen toteutusvaihee"
+
+#: actions/models/action.py
+msgid "action implementation phases"
+msgstr "toimenpiteen toteutusvaiheet"
+
+#: actions/models/action.py actions/wagtail_admin.py
+msgid "not started"
+msgstr "ei käynnistynyt"
+
+#: actions/models/action.py actions/wagtail_admin.py
+msgid "in progress"
+msgstr "käynnissä"
+
+#: actions/models/action.py actions/wagtail_admin.py
+msgid "completed"
+msgstr "valmis"
+
+#: actions/models/action.py
+msgid "cancelled"
+msgstr "peruttu"
+
+#: actions/models/action.py
+msgid "state"
+msgstr "tila"
+
+#: actions/models/action.py
+msgid "comment"
+msgstr "kommentti"
+
+#: actions/models/action.py
+msgid "due date"
+msgstr "tavoitepäivämäärä"
+
+#: actions/models/action.py
+msgid "The date by which the task should be completed (deadline)"
+msgstr "Päivämäärä johon mennessä tehtävän pitäisi valmistua (deadline)"
+
+#: actions/models/action.py
+msgid "completion date"
+msgstr "valmistumispäivämäärä"
+
+#: actions/models/action.py
+msgid "The date when the task was completed"
+msgstr "Päivämäärä jolloin tehtävä valmistui"
+
+#: actions/models/action.py
+msgid "completed by"
+msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
+
+#: actions/models/action.py indicators/models.py
+msgid "created at"
+msgstr "luomisaika"
+
+#: actions/models/action.py
+msgid "modified at"
+msgstr "muokkausaika"
+
+#: actions/models/action.py
+msgctxt "partitive"
+msgid "action task"
+msgstr "toimenpiteen tehtävää"
+
+#: actions/models/action.py
+msgid "action task"
+msgstr "toimenpiteen tehtävä"
+
+#: actions/models/action.py
+msgid "action tasks"
+msgstr "toimenpiteen tehtävät"
+
+#: actions/models/action.py
+msgid "Non-completed tasks cannot have a completion date"
+msgstr "Keskeneräisillä tehtävillä ei voi olla valmistumispäivämäärää"
+
+#: actions/models/action.py
+msgid "Completed tasks must have a completion date"
+msgstr "Valmistuneilla tehtävillä pitää olla valmistumispäivämäärä"
+
+#: actions/models/action.py
+msgid "Date can't be in the future"
+msgstr "Päivämäärä ei voi olla tulevaisuudessa"
+
+#: actions/models/action.py
+msgid "action impact class"
+msgstr "toimenpiteen vaikuttavuusluokka"
+
+#: actions/models/action.py
+msgid "action impact classes"
+msgstr "toimenpiteen vaikuttavuusluokat"
+
+#: actions/models/action.py indicators/models.py
+msgid "URL"
+msgstr "URL"
+
+#: actions/models/action.py
+msgid "title"
+msgstr "otsikko"
+
+#: actions/models/action.py
+msgid "action link"
+msgstr "ulkopuolinen linkki"
+
+#: actions/models/action.py
+msgid "action links"
+msgstr "ulkopuoliset linkit"
+
+#: actions/models/action.py indicators/models.py
+msgid "date"
+msgstr "päivämäärä"
+
+#: actions/models/action.py
+msgid "author"
+msgstr "tekijä"
+
+#: actions/models/action.py notifications/models.py
+msgid "content"
+msgstr "sisältö"
+
+#: actions/models/action.py
+msgid "created by"
+msgstr "luoja"
+
+#: actions/models/action.py
+msgid "action status update"
+msgstr "toimenpiteen tilannepäivitys"
+
+#: actions/models/action.py
+msgid "action status updates"
+msgstr "toimenpiteiden tilannepäivitykset"
+
+#: actions/models/action.py
+msgid "impact group action"
+msgstr "toimenpiteen vaikuttavuusryhmä"
+
+#: actions/models/action.py
+msgid "impact group actions"
+msgstr "toimenpiteen vaikuttavuusryhmät"
+
+#: actions/models/category.py
+msgid "usable for action categorization"
+msgstr "käytetään toimenpiteiden luokitukseen"
+
+#: actions/models/category.py
+msgid "usable for indicator categorization"
+msgstr "käytetään mittareiden luokitukseen"
+
+#: actions/models/category.py
+msgid "editable for actions"
+msgstr "muokattavissa toimenpiteille"
+
+#: actions/models/category.py
+msgid "editable for indicators"
+msgstr "muokattavissa mittareille"
+
+#: actions/models/category.py
+msgid "hide category identifiers"
+msgstr "piilota kategorioiden tunnisteet"
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Aseta jos kategorioilla ei ole tunnisteita"
+
+#: actions/models/category.py
+msgid "category type"
+msgstr "luokan tyyppi"
+
+#: actions/models/category.py
+msgid "category types"
+msgstr "luokan tyypit"
+
+#: actions/models/category.py notifications/models.py
+msgid "type"
+msgstr "tyyppi"
+
+#: actions/models/category.py
+msgid "plural name"
+msgstr "nimi monikossa"
+
+#: actions/models/category.py
+msgid "category level"
+msgstr "luokan taso"
+
+#: actions/models/category.py
+msgid "category levels"
+msgstr "luokan tasot"
+
+#: actions/models/category.py
+msgid "Ordered choice"
+msgstr "Järjestetty valinta"
+
+#: actions/models/category.py
+msgid "Rich text"
+msgstr "Sisältöteksti"
+
+#: actions/models/category.py
+msgid "Numeric"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Format"
+msgstr "Muoto"
+
+#: actions/models/category.py
+msgid "category metadata"
+msgstr "luokan metatieto"
+
+#: actions/models/category.py
+msgid "category metadatas"
+msgstr "luokkien metatiedot"
+
+#: actions/models/category.py
+msgid "category type metadata choice"
+msgstr "luokan metatiedon valinta"
+
+#: actions/models/category.py
+msgid "category type metadata choices"
+msgstr "luokan metatietojen valinnat"
+
+#: actions/models/category.py
+msgid "parent category"
+msgstr "yläluokka"
+
+#: actions/models/category.py
+msgid "short description"
+msgstr "lyhyt kuvaus"
+
+#: actions/models/category.py
+msgid "theme color"
+msgstr "teeman väri"
+
+#: actions/models/category.py
+msgid "Set if the category has a theme color"
+msgstr "Aseta jos kategorialla on teemaväri"
+
+#: actions/models/category.py
+msgid "category"
+msgstr "luokka"
+
+#: actions/models/category.py
+msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
+
+#: actions/models/category.py
+msgid "Parent must be of same type"
+msgstr ""
+
+#: actions/models/category.py
+msgid "category_richtexts"
+msgstr "luokan tekstisisällöt"
+
+#: actions/models/category.py
+msgid "metadata_richtexts"
+msgstr "metatiedon tekstisisällöt"
+
+#: actions/models/category.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
+
+#: actions/models/category.py
+msgid "metadata_choices"
+msgstr "metatiedon valinnat"
+
+#: actions/models/plan.py
+msgid "site URL"
+msgstr "sivuston osoite"
+
+#: actions/models/plan.py
+msgid "actions locked"
+msgstr "toimenpiteet lukittu"
+
+#: actions/models/plan.py
+msgid "Can actions be added and the official metadata edited?"
+msgstr "Voidaanko toimenpiteitä lisätä ja virallisia tietoja muokata?"
+
+#: actions/models/plan.py
+msgid "allow images for actions"
+msgstr "salli toimenpiteille kuvat"
+
+#: actions/models/plan.py
+msgid "Should custom images for individual actions be allowed"
+msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
+
+#: actions/models/plan.py
+msgid "show admin link"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Should the public website contain a link to the admin login?"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "main organization for the plan"
+msgstr "toimenpideohjelman pääorganisaatio"
+
+#: actions/models/plan.py
+msgid "general administrators"
+msgstr "pääkäyttäjät"
+
+#: actions/models/plan.py
+msgid "Users that can modify everything related to the action plan"
+msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
+
+#: actions/models/plan.py
+msgid "URL to accessibility statement"
+msgstr "Linkki saavutettavuusselosteeseen"
+
+#: actions/models/plan.py
+msgid "Contact persons private"
+msgstr "Yhteyshenkilöt salaisia"
+
+#: actions/models/plan.py
+msgid "Set if the contact persons should not be visible in the public UI"
+msgstr "Aseta jos yhteyshenkilöitä ei näytetä julkisessa käyttöliittymässä"
+
+#: actions/models/plan.py
+msgid "Hide action identifiers"
+msgstr "Piilota toimenpiteiden tunnisteet"
+
+#: actions/models/plan.py
+msgid "Set if the plan doesn't have meaningful action identifiers"
+msgstr "Aseta jos ohjelmassa ei käytetä toimenpiteiden tunnisteita"
+
+#: actions/models/plan.py
+msgid "Hide official name field"
+msgstr "Piilota virallinen nimi -kenttä"
+
+#: actions/models/plan.py
+msgid "Set if the plan doesn't use the official name field"
+msgstr "Aseta jos ohjelmalla ei ole virallinen nimi -kenttää käytössä"
+
+#: actions/models/plan.py
+msgid "Hide lead paragraph"
+msgstr "Piilota ingressi"
+
+#: actions/models/plan.py
+msgid "Set if the plan doesn't use the lead paragraph field"
+msgstr "Aseta jos ohjelma ei käytä ingressikenttää"
+
+#: actions/models/plan.py
+msgid "Has primary organisations for actions"
+msgstr "Toimenpiteillä on pääorganisaatiot"
+
+#: actions/models/plan.py
+msgid "Set if actions have a clear primary organisation"
+msgstr "Aseta jos toimenpiteillä on selvä pääorganisaatio"
+
+#: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr "toimenpideohjelmat"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "Primary language must not be selected"
 msgstr "Ensisijainen kieli ei voi olla valittuna"
 
-#: actions/models.py indicators/apps.py indicators/blocks.py
+#: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html
 #: indicators/templates/indicators/edit_values_new.html
 #: indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "host name"
 msgstr "domain-osoite"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"
 msgstr "Nimen pitää olla kelvollinen FQDN"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "plan domain"
 msgstr "toimenpideohjelman verkkotunnus"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "plan domains"
 msgstr "toimenpideohjelman verkkotunnukset"
 
-#: actions/models.py
-msgid "official name"
-msgstr "virallinen nimi"
-
-#: actions/models.py
-msgid "The name as approved by an official party"
-msgstr "Virallisen tahon hyväksymä nimi"
-
-#: actions/models.py
-msgid "The identifier for this action (e.g. number)"
-msgstr "Toimenpiteen tunniste (esim. numero)"
-
-#: actions/models.py
-msgid "Image"
-msgstr "Kuva"
-
-#: actions/models.py pages/models.py
-msgid "Lead paragraph"
-msgstr "Ingressi"
-
-#: actions/models.py indicators/models.py
-msgid "description"
-msgstr "kuvaus"
-
-#: actions/models.py
-msgid "What does this action involve in more detail?"
-msgstr "Mitä toimenpiteeseen tarkemmin liittyy?"
-
-#: actions/models.py
-msgid "The impact of this action"
-msgstr "Toimenpiteen vaikuttavuus"
-
-#: actions/models.py
-msgid "internal priority"
-msgstr "sisäinen prioriteetti"
-
-#: actions/models.py
-msgid "internal notes for plan administrators"
-msgstr "sisäiset muistiinpanot pääkäyttäjille"
-
-#: actions/models.py
-msgid "internal notes"
-msgstr "sisäiset muistiinpanot"
-
-#: actions/models.py
-msgid "implementation phase"
-msgstr "toteutusvaihe"
-
-#: actions/models.py
-msgid "override status manually"
-msgstr "määritä toimenpiteen tila käsin"
-
-#: actions/models.py
-msgid "Set if you want to prevent the action status from being determined automatically"
-msgstr "Aseta jos haluat estää toimenpiteen tilan automaattisen päivityksen"
-
-#: actions/models.py
-msgid "specifier for status"
-msgstr "tilan tarkenne"
-
-#: actions/models.py
-msgid "Describe the reason why this action has has this status"
-msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
-
-#: actions/models.py
-msgid "merged with action"
-msgstr "yhdistetty toimenpiteeseen"
-
-#: actions/models.py
-msgid "Set if this action is merged with another action"
-msgstr "Aseta jos toimenpide on yhdistetty toiseen toimenpiteeseen"
-
-#: actions/models.py
-msgid "completion"
-msgstr "toteutumisaste"
-
-#: actions/models.py
-msgid "The completion percentage for this action"
-msgstr "Toimenpiteen toteutumisaste prosenteissa"
-
-#: actions/models.py
-msgid "schedule"
-msgstr "aikajänne"
-
-#: actions/models.py
-msgid "decision-making level"
-msgstr "päätöstaso"
-
-#: actions/models.py indicators/models.py
-msgid "categories"
-msgstr "luokat"
-
-#: actions/models.py indicators/models.py
-msgid "indicators"
-msgstr "mittarit"
-
-#: actions/models.py
-msgid "responsible organizations"
-msgstr "vastuuorganisaatiot"
-
-#: actions/models.py indicators/models.py
-msgid "updated at"
-msgstr "päivitysaika"
-
-#: actions/models.py
-msgid "start date"
-msgstr "alkupäivämäärä"
-
-#: actions/models.py
-msgid "The date when implementation of this action starts"
-msgstr "Päivämäärä jona toimenpiteen toteutus käynnistyy/käynnistyi"
-
-#: actions/models.py
-msgid "end date"
-msgstr "loppupäivämäärä"
-
-#: actions/models.py
-msgid "The date when implementation of this action ends"
-msgstr "Päivämäärä jona toimenpiteen toteutus päättyy/päättyi"
-
-#: actions/models.py
-msgctxt "partitive"
-msgid "action"
-msgstr "toimenpidettä"
-
-#: actions/models.py
-msgid "actions"
-msgstr "toimenpiteet"
-
-#: actions/models.py
-msgid "Can administrate all actions"
-msgstr "Voi ylläpitää kaikkia toimenpiteitä"
-
-#: actions/models.py
-msgid "Other action is merged with this one"
-msgstr "Toinen toimenpide on jo yhdistetty tähän"
-
-#: actions/models.py
-msgid "Has contact persons"
-msgstr "Yhteyshenkilöt nimetty"
-
-#: actions/models.py
-msgid "Active tasks"
-msgstr "Aktiivisia tehtäviä"
-
-#: actions/models.py indicators/models.py people/models.py users/models.py
-msgid "organization"
-msgstr "organisaatio"
-
-#: actions/models.py
-msgid "action responsible party"
-msgstr "toimenpiteen vastuutaho"
-
-#: actions/models.py
-msgid "action responsible parties"
-msgstr "toimenpiteen vastuutahot"
-
-#: actions/models.py indicators/models.py people/models.py
-msgid "person"
-msgstr "henkilö"
-
-#: actions/models.py
-msgid "primary contact person"
-msgstr "ensisijainen yhteyshenkilö"
-
-#: actions/models.py
-msgid "Is this person the primary contact person for the action?"
-msgstr "Onko tämä henkilö toimenpiteen ensisijainen yhteyshenkilö?"
-
-#: actions/models.py
-msgid "action contact person"
-msgstr "toimenpiteen yhteyshenkilö"
-
-#: actions/models.py
-msgid "action contact persons"
-msgstr "toimenpiteen yhteyshenkilöt"
-
-#: actions/models.py
-msgid "action schedule"
-msgstr "toimenpiteiden aikataulu"
-
-#: actions/models.py
-msgid "action schedules"
-msgstr "toimenpiteiden aikataulut"
-
-#: actions/models.py
-msgid "is completed"
-msgstr "valmis"
-
-#: actions/models.py
-msgid "action status"
-msgstr "toimenpiteen tila"
-
-#: actions/models.py
-msgid "action statuses"
-msgstr "toimenpiteen tilat"
-
-#: actions/models.py
-msgid "action implementation phase"
-msgstr "toimenpiteen toteutusvaihee"
-
-#: actions/models.py
-msgid "action implementation phases"
-msgstr "toimenpiteen toteutusvaiheet"
-
-#: actions/models.py actions/wagtail_admin.py
-msgid "not started"
-msgstr "ei käynnistynyt"
-
-#: actions/models.py actions/wagtail_admin.py
-msgid "in progress"
-msgstr "käynnissä"
-
-#: actions/models.py actions/wagtail_admin.py
-msgid "completed"
-msgstr "valmis"
-
-#: actions/models.py
-msgid "cancelled"
-msgstr "peruttu"
-
-#: actions/models.py
-msgid "state"
-msgstr "tila"
-
-#: actions/models.py
-msgid "comment"
-msgstr "kommentti"
-
-#: actions/models.py
-msgid "due date"
-msgstr "tavoitepäivämäärä"
-
-#: actions/models.py
-msgid "The date by which the task should be completed (deadline)"
-msgstr "Päivämäärä johon mennessä tehtävän pitäisi valmistua (deadline)"
-
-#: actions/models.py
-msgid "completion date"
-msgstr "valmistumispäivämäärä"
-
-#: actions/models.py
-msgid "The date when the task was completed"
-msgstr "Päivämäärä jolloin tehtävä valmistui"
-
-#: actions/models.py
-msgid "completed by"
-msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
-
-#: actions/models.py indicators/models.py
-msgid "created at"
-msgstr "luomisaika"
-
-#: actions/models.py
-msgid "modified at"
-msgstr "muokkausaika"
-
-#: actions/models.py
-msgctxt "partitive"
-msgid "action task"
-msgstr "toimenpiteen tehtävää"
-
-#: actions/models.py
-msgid "action task"
-msgstr "toimenpiteen tehtävä"
-
-#: actions/models.py
-msgid "action tasks"
-msgstr "toimenpiteen tehtävät"
-
-#: actions/models.py
-msgid "Non-completed tasks cannot have a completion date"
-msgstr "Keskeneräisillä tehtävillä ei voi olla valmistumispäivämäärää"
-
-#: actions/models.py
-msgid "Completed tasks must have a completion date"
-msgstr "Valmistuneilla tehtävillä pitää olla valmistumispäivämäärä"
-
-#: actions/models.py
-msgid "Date can't be in the future"
-msgstr "Päivämäärä ei voi olla tulevaisuudessa"
-
-#: actions/models.py
-msgid "action impact class"
-msgstr "toimenpiteen vaikuttavuusluokka"
-
-#: actions/models.py
-msgid "action impact classes"
-msgstr "toimenpiteen vaikuttavuusluokat"
-
-#: actions/models.py indicators/models.py
-msgid "URL"
-msgstr "URL"
-
-#: actions/models.py
-msgid "title"
-msgstr "otsikko"
-
-#: actions/models.py
-msgid "action link"
-msgstr "ulkopuolinen linkki"
-
-#: actions/models.py
-msgid "action links"
-msgstr "ulkopuoliset linkit"
-
-#: actions/models.py
-msgid "usable for action categorization"
-msgstr "käytetään toimenpiteiden luokitukseen"
-
-#: actions/models.py
-msgid "usable for indicator categorization"
-msgstr "käytetään mittareiden luokitukseen"
-
-#: actions/models.py
-msgid "editable for actions"
-msgstr "muokattavissa toimenpiteille"
-
-#: actions/models.py
-msgid "editable for indicators"
-msgstr "muokattavissa mittareille"
-
-#: actions/models.py
-msgid "hide category identifiers"
-msgstr "piilota kategorioiden tunnisteet"
-
-#: actions/models.py
-msgid "Set if the categories do not have meaningful identifiers"
-msgstr "Aseta jos kategorioilla ei ole tunnisteita"
-
-#: actions/models.py
-msgid "category type"
-msgstr "luokan tyyppi"
-
-#: actions/models.py
-msgid "category types"
-msgstr "luokan tyypit"
-
-#: actions/models.py notifications/models.py
-msgid "type"
-msgstr "tyyppi"
-
-#: actions/models.py
-msgid "plural name"
-msgstr "nimi monikossa"
-
-#: actions/models.py
-msgid "category level"
-msgstr "luokan taso"
-
-#: actions/models.py
-msgid "category levels"
-msgstr "luokan tasot"
-
-#: actions/models.py
-msgid "Ordered choice"
-msgstr "Järjestetty valinta"
-
-#: actions/models.py
-msgid "Rich text"
-msgstr "Sisältöteksti"
-
-#: actions/models.py
-msgid "Numeric"
-msgstr ""
-
-#: actions/models.py
-msgid "Format"
-msgstr "Muoto"
-
-#: actions/models.py
-msgid "category metadata"
-msgstr "luokan metatieto"
-
-#: actions/models.py
-msgid "category metadatas"
-msgstr "luokkien metatiedot"
-
-#: actions/models.py
-msgid "category type metadata choice"
-msgstr "luokan metatiedon valinta"
-
-#: actions/models.py
-msgid "category type metadata choices"
-msgstr "luokan metatietojen valinnat"
-
-#: actions/models.py
-msgid "parent category"
-msgstr "yläluokka"
-
-#: actions/models.py
-msgid "short description"
-msgstr "lyhyt kuvaus"
-
-#: actions/models.py
-msgid "theme color"
-msgstr "teeman väri"
-
-#: actions/models.py
-msgid "Set if the category has a theme color"
-msgstr "Aseta jos kategorialla on teemaväri"
-
-#: actions/models.py
-msgid "category"
-msgstr "luokka"
-
-#: actions/models.py
-msgid "Parent forms a loop. Leave empty if top-level category."
-msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
-
-#: actions/models.py
-msgid "Parent must be of same type"
-msgstr ""
-
-#: actions/models.py
-msgid "category_richtexts"
-msgstr "luokan tekstisisällöt"
-
-#: actions/models.py
-msgid "metadata_richtexts"
-msgstr "metatiedon tekstisisällöt"
-
-#: actions/models.py pages/models.py
-msgid "Text"
-msgstr "Teksti"
-
-#: actions/models.py
-msgid "metadata_choices"
-msgstr "metatiedon valinnat"
-
-#: actions/models.py indicators/models.py
+#: actions/models/plan.py indicators/models.py
 msgid "scenario"
 msgstr "skenaario"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "scenarios"
 msgstr "skenaariot"
 
-#: actions/models.py indicators/models.py
-msgid "date"
-msgstr "päivämäärä"
-
-#: actions/models.py
-msgid "author"
-msgstr "tekijä"
-
-#: actions/models.py notifications/models.py
-msgid "content"
-msgstr "sisältö"
-
-#: actions/models.py
-msgid "created by"
-msgstr "luoja"
-
-#: actions/models.py
-msgid "action status update"
-msgstr "toimenpiteen tilannepäivitys"
-
-#: actions/models.py
-msgid "action status updates"
-msgstr "toimenpiteiden tilannepäivitykset"
-
-#: actions/models.py
+#: actions/models/plan.py
 msgid "parent"
 msgstr "yläluokka"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "weight"
 msgstr "paino"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "color"
 msgstr "väri"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "impact group"
 msgstr "vaikuttavuusryhmä"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "impact groups"
 msgstr "vaikuttavuusryhmät"
 
-#: actions/models.py
-msgid "impact group action"
-msgstr "toimenpiteen vaikuttavuusryhmä"
-
-#: actions/models.py
-msgid "impact group actions"
-msgstr "toimenpiteen vaikuttavuusryhmät"
-
-#: actions/models.py
+#: actions/models/plan.py
 msgid "description when action fulfills criteria"
 msgstr "kuvaus kun toimenpide täyttää ehdon"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "description when action doesn't fulfill criteria"
 msgstr "kuvaus kun toimenpide ei täytä ehtoa"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "monitoring quality point"
 msgstr "seurannan laatupiste"
 
-#: actions/models.py
+#: actions/models/plan.py
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
@@ -1045,6 +1049,11 @@ msgstr "ruotsi"
 #: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
+
+#: aplans/utils.py
+#, python-format
+msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
+msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 
 #: content/admin.py
 msgid "Site settings"
@@ -1732,6 +1741,46 @@ msgstr "sisältölohko"
 msgid "content blocks"
 msgstr "sisältölohkot"
 
+#: orgs/apps.py orgs/wagtail_hooks.py
+msgid "Organizations"
+msgstr "Organisaatiot"
+
+#: orgs/forms.py
+msgid "A node cannot be its own parent."
+msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
+
+#: orgs/models.py
+msgid "The time at which the resource was created"
+msgstr "Aika jolloin organisaatio luotiin"
+
+#: orgs/models.py
+msgid "The time at which the resource was updated"
+msgstr "Aika jolloin organisaatiota päivitettiin"
+
+#: orgs/models.py
+msgid "An organization category, e.g. committee"
+msgstr ""
+
+#: orgs/models.py
+msgid "A primary name, e.g. a legally recognized name"
+msgstr ""
+
+#: orgs/models.py
+msgid "A commonly used abbreviation"
+msgstr ""
+
+#: orgs/models.py
+msgid "A distinct name for this organization (generated automatically)"
+msgstr ""
+
+#: orgs/models.py
+msgid "A date of founding"
+msgstr "Perustamispäivämäärä"
+
+#: orgs/models.py
+msgid "A date of dissolution"
+msgstr "Lakkauttamispäivämäärä"
+
 #: pages/blocks.py
 msgid "Question"
 msgstr "Kysymys"
@@ -2096,6 +2145,9 @@ msgstr "ylläpitäjä organisaatiolle"
 #: users/models.py
 msgid "admins for organization"
 msgstr "ylläpitäjät organisaatiolle"
+
+#~ msgid "Responsible organization"
+#~ msgstr "Vastuuorganisaatio"
 
 #~ msgid "action list lead content"
 #~ msgstr "toimenpidelistan ingressi"
