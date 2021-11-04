@@ -81,6 +81,7 @@ class PlanAdmin(AplansModelAdmin):
         AutocompletePanel('general_admins'),
         ImageChooserPanel('image'),
         FieldPanel('show_admin_link'),
+        FieldPanel('has_action_primary_orgs'),
         FieldPanel('statuses_updated_manually'),
         FieldPanel('contact_persons_private'),
         FieldPanel('hide_action_identifiers'),

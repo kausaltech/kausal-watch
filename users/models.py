@@ -1,3 +1,6 @@
+from __future__ import annotations
+import typing
+
 from django.apps import apps
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -5,6 +8,9 @@ from django.utils.translation import gettext_lazy as _
 from helusers.models import AbstractUser
 from users.managers import UserManager
 from orgs.models import Organization
+
+if typing.TYPE_CHECKING:
+    from actions.models import Plan
 
 
 class User(AbstractUser):
@@ -123,7 +129,7 @@ class User(AbstractUser):
             orgs |= org.get_descendants().filter(dissolution_date=None)
         return orgs.distinct()
 
-    def get_active_admin_plan(self, adminable_plans=None):
+    def get_active_admin_plan(self, adminable_plans=None) -> Plan:
         if adminable_plans is None:
             plans = self.get_adminable_plans()
         else:

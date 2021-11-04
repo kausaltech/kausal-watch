@@ -127,6 +127,10 @@ class Plan(ClusterableModel):
         default=True, verbose_name=_('Hide lead paragraph'),
         help_text=_("Set if the plan doesn't use the lead paragraph field")
     )
+    has_action_primary_orgs = models.BooleanField(
+        default=False, verbose_name=_('Has primary organisations for actions'),
+        help_text=_("Set if actions have a clear primary organisation")
+    )
 
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
 

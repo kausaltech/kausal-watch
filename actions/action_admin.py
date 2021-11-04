@@ -1,32 +1,36 @@
-from datetime import timedelta
-import humanize
 import json
 import logging
+from datetime import timedelta
 
-from orgs.models import Organization
-from people.models import Person
-from dal import autocomplete
 from django import forms
 from django.utils import timezone
-from django.utils.translation import get_language, gettext, gettext_lazy as _
+from django.utils.translation import get_language, gettext
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
+
+import humanize
+from admin_list_controls.actions import SubmitForm, TogglePanel
+from admin_list_controls.components import (
+    Button, Columns, Icon, Panel, Spacer, Summary
+)
+from admin_list_controls.filters import ChoiceFilter, RadioFilter
+from admin_list_controls.views import ListControlsIndexView
+from dal import autocomplete
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from admin_list_controls.views import ListControlsIndexView
-from admin_list_controls.components import Button, Icon, Panel, Columns, Spacer, Summary
-from admin_list_controls.actions import SubmitForm, TogglePanel
-from admin_list_controls.filters import RadioFilter, ChoiceFilter
-
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, PlanRelatedPermissionHelper, PlanFilteredFieldPanel
+    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
+    CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
+    PlanRelatedPermissionHelper
 )
+from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
+from people.models import Person
 
 from .models import Action, ActionTask
 
@@ -365,6 +369,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('official_name'),
         FieldPanel('name', classname='full title'),
+        FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
         ImageChooserPanel('image'),
         FieldPanel('lead_paragraph'),
         RichTextFieldPanel('description'),
@@ -429,7 +434,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         return humanize.naturaltime(delta)
     updated_at_delta.short_description = _('Last updated')
 
-    def get_list_display(self, request):
+    def get_list_display(self, request: WatchAdminRequest):
         cached_list_display = getattr(request, '_action_admin_list_display', None)
         if cached_list_display:
             return cached_list_display
@@ -455,6 +460,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         list_display = ['name_link']
         if not plan.hide_action_identifiers:
             list_display.insert(0, 'identifier')
+        if plan.has_action_primary_orgs:
+            list_display.insert(0, 'primary_org')
 
         ct = plan.category_types.filter(identifier='action').first()
         if ct:
@@ -491,6 +498,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             if field_name == 'official_name' and plan.hide_action_official_name:
                 panels.remove(panel)
             elif field_name == 'lead_paragraph' and plan.hide_action_lead_paragraph:
+                panels.remove(panel)
+            elif field_name == 'primary_org' and not plan.has_action_primary_orgs:
                 panels.remove(panel)
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 

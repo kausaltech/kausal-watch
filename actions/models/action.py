@@ -54,6 +54,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         'actions.Plan', on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
     )
+    primary_org = models.ForeignKey(
+        'orgs.Organization', verbose_name=_('primary organization'),
+        null=True, on_delete=models.SET_NULL,
+    )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
     official_name = models.TextField(
         null=True, blank=True, verbose_name=_('official name'),
@@ -485,6 +489,7 @@ class ActionSchedule(models.Model, PlanRelatedModel):
         return self.name
 
 
+@reversion.register()
 class ActionStatus(models.Model, PlanRelatedModel):
     """The current status for the action ("on time", "late", "completed", etc.)."""
     plan = ParentalKey(
@@ -510,6 +515,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
         return self.name
 
 
+@reversion.register()
 class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='action_implementation_phases',
