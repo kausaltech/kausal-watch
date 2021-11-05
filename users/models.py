@@ -124,6 +124,8 @@ class User(AbstractUser):
             return action.pk in actions
 
     def get_adminable_organizations(self):
+        if self.is_superuser:
+            return Organization.objects.all()
         orgs = Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)
         for org in list(orgs):
             orgs |= org.get_descendants().filter(dissolution_date=None)

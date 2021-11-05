@@ -6,10 +6,15 @@ from users.tests.factories import OrganizationAdminFactory
 pytestmark = pytest.mark.django_db
 
 
-def test_get_adminable_organizations(user):
+def test_get_adminable_organizations_is_admin(user):
     organization = OrganizationFactory()
     OrganizationAdminFactory(user=user, organization=organization)
     assert list(user.get_adminable_organizations()) == [organization]
+
+
+def test_get_adminable_organizations_is_not_admin(user):
+    OrganizationFactory()
+    assert list(user.get_adminable_organizations()) == []
 
 
 def test_get_adminable_organizations_descendants(user):
@@ -17,3 +22,8 @@ def test_get_adminable_organizations_descendants(user):
     OrganizationAdminFactory(user=user, organization=organization)
     sub_org = OrganizationFactory(parent=organization)
     assert list(user.get_adminable_organizations()) == [organization, sub_org]
+
+
+def test_get_adminable_organizations_superuser(superuser):
+    organization = OrganizationFactory()
+    assert list(superuser.get_adminable_organizations()) == [organization]
