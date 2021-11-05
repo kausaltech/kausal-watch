@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
-import importlib
 import os
 
 import environ
@@ -22,6 +21,7 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
+    EXTRA_INSTALLED_APPS=(list, []),
     CONFIGURE_LOGGING=(bool, False),
     DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     CACHE_URL=(str, 'locmemcache://'),
@@ -205,9 +205,6 @@ INSTALLED_APPS = [
     'graphene_django',
 ]
 
-if importlib.util.find_spec('tree_editor') is not None:
-    INSTALLED_APPS.append('tree_editor')
-
 INSTALLED_APPS += [
     'users',
     'actions',
@@ -219,6 +216,9 @@ INSTALLED_APPS += [
     'feedback',
     'orgs',
 ]
+
+EXTRA_INSTALLED_APPS: list[str] = env.list('EXTRA_INSTALLED_APPS')  # type:ignore
+INSTALLED_APPS += EXTRA_INSTALLED_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
