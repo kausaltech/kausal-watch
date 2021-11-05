@@ -1,6 +1,7 @@
 import pytest
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from django.core import mail
+from django.utils.timezone import make_aware
 
 from actions.tests.factories import ActionContactFactory, ActionFactory, ActionTaskFactory, PlanFactory
 from admin_site.tests.factories import ClientPlanFactory
@@ -74,7 +75,7 @@ def test_action_not_updated():
     plan = PlanFactory()
     NotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.ACTION_NOT_UPDATED.identifier)
-    action = ActionFactory(plan=plan, updated_at=date(2000, 1, 1))
+    action = ActionFactory(plan=plan, updated_at=make_aware(datetime(2000, 1, 1, 0, 0)))
     ActionContactFactory(action=action)
     ClientPlanFactory(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.ACTION_NOT_UPDATED.identifier)

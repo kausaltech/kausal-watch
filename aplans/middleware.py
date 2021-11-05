@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 
 import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
