@@ -160,7 +160,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'social_django',
-    'mptt',
     'django_extensions',
     'import_export',
     'anymail',

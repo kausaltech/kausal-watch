@@ -8,8 +8,6 @@
     # via
     #   -r requirements.in
     #   wagtail
--e git+https://github.com/juyrjola/django-orghierarchy.git#egg=django-orghierarchy
-    # via -r requirements.in
 -e git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
     # via -r requirements.in
 aniso8601==7.0.0
@@ -91,11 +89,8 @@ django-js-asset==1.2.2
     # via
     #   django-admin-ordering
     #   django-ckeditor
-    #   django-mptt
 django-modeltrans==0.5.2
     # via -r requirements.in
-django-mptt==0.11.0
-    # via django-orghierarchy
 django-npm==1.0.0
     # via -r requirements.in
 django-parler==2.2
@@ -119,7 +114,6 @@ django==3.1.5
     #   django-helusers
     #   django-import-export
     #   django-modeltrans
-    #   django-mptt
     #   django-redis
     #   django-reversion
     #   django-taggit
@@ -134,7 +128,6 @@ django==3.1.5
 djangorestframework==3.12.2
     # via
     #   -r requirements.in
-    #   django-orghierarchy
     #   drf-oidc-auth
     #   wagtail
 draftjs-exporter==2.1.7
@@ -277,7 +270,6 @@ requests==2.25.1
     #   coreapi
     #   django-anymail
     #   django-helusers
-    #   django-orghierarchy
     #   drf-oidc-auth
     #   requests-oauthlib
     #   social-auth-core
@@ -321,8 +313,6 @@ soupsieve==2.1
     # via beautifulsoup4
 sqlparse==0.4.1
     # via django
-swapper==1.1.2.post1
-    # via django-orghierarchy
 tablib[html,ods,xls,xlsx,yaml]==3.0.0
     # via
     #   django-import-export
