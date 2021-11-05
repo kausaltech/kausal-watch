@@ -24,6 +24,9 @@ services:
     build:
       context: .
       dockerfile: docker/app/Dockerfile
+      args:
+        - EXTRA_PYPI_INDEX
+        - EXTRA_INSTALLED_APPS_VERSIONS
     restart: always
     volumes:
       - aplans_media:/srv/media
@@ -46,6 +49,8 @@ services:
       - MAILGUN_API_KEY
       - MAILGUN_SENDER_DOMAIN
       - MAILGUN_REGION
+      - EXTRA_INSTALLED_APPS
+      - EXTRA_INSTALLED_APPS_URLS
     ports:
       - "${HOST_PORT:-8000}:8000"
       - "${UWSGI_SOCKET_PORT:-8001}:8001"
