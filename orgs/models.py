@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from treebeard.mp_tree import MP_Node
+from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, get_form_for_model
 
 from admin_site.wagtail import CondensedInlinePanel
@@ -90,6 +90,23 @@ class OrganizationEditHandler(ObjectList):
             widgets=self.widget_overrides())
 
 
+class OrganizationQuerySet(MP_NodeQuerySet):
+    def editable_by_user(self, user):
+        related_ids = []
+        for plan in user.get_adminable_plans():
+            related_ids += [org.id for org in plan.get_related_organizations()]
+        return self.filter(id__in=related_ids)
+
+
+class OrganizationManager(models.Manager):
+    """Duplicate MP_NodeManager but use OrganizationQuerySet instead of MP_NodeQuerySet"""
+    def get_queryset(self):
+        return OrganizationQuerySet(self.model).order_by('path')
+
+    def editable_by_user(self, user):
+        return self.get_queryset().editable_by_user(user)
+
+
 class Organization(Node):
     panels = Node.panels + [
         FieldPanel('classification'),
@@ -144,6 +161,8 @@ class Organization(Node):
                                          blank=True,
                                          editable=False,
                                          on_delete=models.SET_NULL)
+
+    objects = OrganizationManager()
 
     def generate_distinct_name(self, levels=1):
         # FIXME: This relies on legacy identifiers

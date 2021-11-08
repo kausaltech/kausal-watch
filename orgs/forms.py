@@ -3,8 +3,6 @@ from django.forms import ModelChoiceField
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 
-from .models import Organization
-
 
 class NodeChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
@@ -17,8 +15,9 @@ class NodeForm(WagtailAdminModelForm):
     parent = NodeChoiceField(required=False, queryset=None)
 
     def __init__(self, *args, **kwargs):
+        parent_choices = kwargs.pop('parent_choices', self._meta.model.objects.all())
         super().__init__(*args, **kwargs)
-        self.fields['parent'] = NodeChoiceField(required=False, queryset=self._meta.model.objects.all())
+        self.fields['parent'] = NodeChoiceField(required=False, queryset=parent_choices)
 
         instance = kwargs.get('instance')
 
