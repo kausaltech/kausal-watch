@@ -15,9 +15,10 @@ class NodeForm(WagtailAdminModelForm):
     parent = NodeChoiceField(required=False, queryset=None)
 
     def __init__(self, *args, **kwargs):
+        parent_required = kwargs.pop('parent_required', False)
         parent_choices = kwargs.pop('parent_choices', self._meta.model.objects.all())
         super().__init__(*args, **kwargs)
-        self.fields['parent'] = NodeChoiceField(required=False, queryset=parent_choices)
+        self.fields['parent'] = NodeChoiceField(required=parent_required, queryset=parent_choices)
 
         instance = kwargs.get('instance')
 
