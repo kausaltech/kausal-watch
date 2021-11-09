@@ -7,6 +7,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, get_form_for_model
+from wagtail.search import index
 
 from admin_site.wagtail import CondensedInlinePanel
 
@@ -107,7 +108,7 @@ class OrganizationManager(models.Manager):
         return self.get_queryset().editable_by_user(user)
 
 
-class Organization(Node):
+class Organization(index.Indexed, Node):
     panels = Node.panels + [
         FieldPanel('classification'),
         FieldPanel('abbreviation'),
@@ -163,6 +164,11 @@ class Organization(Node):
                                          on_delete=models.SET_NULL)
 
     objects = OrganizationManager()
+
+    search_fields = [
+        index.AutocompleteField('name', partial_match=True),
+        index.AutocompleteField('abbreviation', partial_match=True),
+    ]
 
     def generate_distinct_name(self, levels=1):
         # FIXME: This relies on legacy identifiers
