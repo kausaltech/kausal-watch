@@ -29,11 +29,6 @@ class Node(MP_Node, ClusterableModel):
 
     public_fields = ['id', 'name']
 
-    def delete(self):
-        if self.is_root():
-            raise PermissionDenied("Cannot delete root")
-        super().delete()
-
     def get_as_listing_header(self):
         """Build HTML representation of node with title & depth indication."""
         depth = self.get_depth()
@@ -100,7 +95,7 @@ class OrganizationQuerySet(MP_NodeQuerySet):
 
 
 class OrganizationManager(models.Manager):
-    """Duplicate MP_NodeManager but use OrganizationQuerySet instead of MP_NodeQuerySet"""
+    """Duplicate MP_NodeManager but use OrganizationQuerySet instead of MP_NodeQuerySet."""
     def get_queryset(self):
         return OrganizationQuerySet(self.model).order_by('path')
 
