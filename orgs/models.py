@@ -109,10 +109,11 @@ class Organization(index.Indexed, Node):
         FieldPanel('abbreviation'),
         FieldPanel('founding_date'),
         FieldPanel('dissolution_date'),
-        CondensedInlinePanel('identifiers', panels=[
-            FieldPanel('namespace'),
-            FieldPanel('identifier'),
-        ])
+        # Don't allow editing identifiers at this point
+        # CondensedInlinePanel('identifiers', panels=[
+        #     FieldPanel('namespace', widget=CondensedPanelSingleSelect),
+        #     FieldPanel('identifier'),
+        # ]),
     ]
     edit_handler = OrganizationEditHandler(panels)
 
