@@ -20,11 +20,3 @@ class UserFactory(DjangoModelFactory):
         if create and extracted:
             for plan in extracted:
                 self.general_admin_plans.add(plan)
-
-
-class OrganizationAdminFactory(DjangoModelFactory):
-    class Meta:
-        model = 'users.OrganizationAdmin'
-
-    user = SubFactory(UserFactory)
-    organization = SubFactory(OrganizationFactory)

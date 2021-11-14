@@ -339,8 +339,6 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
 
 @admin.register(Dataset)
 class DatasetAdmin(AplansModelAdmin):
-    # Listing the organization in autocomplete_fields requires OrganizationAdmin
-    # autocomplete_fields = ('owner',)
     search_fields = ('name',)
 
 

@@ -11,7 +11,6 @@ from admin_site.filters import AutocompleteFilter
 from ckeditor.widgets import CKEditorWidget
 from image_cropping import ImageCroppingMixin
 from indicators.admin import ActionIndicatorAdmin
-# from orgs.admin import OrganizationAdmin as DefaultOrganizationAdmin
 from orgs.models import Organization
 from people.models import Person
 
@@ -129,8 +128,6 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     ordering_field_hide_input = True
     extra = 0
     fields = ('organization', 'order',)
-    # Listing the organization in autocomplete_fields requires OrganizationAdmin
-    # autocomplete_fields = ('organization',)
 
 
 class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
@@ -659,20 +656,3 @@ class CategoryAdmin(ImageCroppingMixin, AplansModelAdmin):
             return False
 
         return True
-
-
-# We did not migrate OrganizationAdmin from django_orghierarchy to orgs for now
-# admin.site.unregister(Organization)
-
-
-# @admin.register(Organization)
-# class OrganizationAdmin(DefaultOrganizationAdmin):
-#     search_fields = ('name', 'abbreviation')
-
-#     def get_queryset(self, request):
-#         # The default OrganizationAdmin is buggy
-#         qs = admin.ModelAdmin.get_queryset(self, request).filter(dissolution_date=None)
-#         return qs
-
-#     def get_actions(self, request):
-#         return admin.ModelAdmin.get_actions(self, request)

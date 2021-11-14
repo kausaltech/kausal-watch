@@ -69,8 +69,6 @@ class PersonAdmin(ImageCroppingMixin, AplansExportMixin, AplansModelAdmin):
         'organization', 'image', 'image_cropping'
     )
     search_fields = ('first_name', 'last_name',)
-    # Listing the organization in autocomplete_fields requires OrganizationAdmin
-    # autocomplete_fields = ('organization',)
 
     list_display = ('__str__', 'title', 'organization',)
     list_filter = (IsContactPersonFilter,)

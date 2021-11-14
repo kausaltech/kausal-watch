@@ -203,8 +203,6 @@ class Organization(index.Indexed, Node):
         return name
 
     def user_can_edit(self, user):
-        if self.aplans_admin_users.filter(user=user).exists():
-            return True
         for plan in user.get_adminable_plans():
             if self.id in (org.id for org in plan.get_related_organizations()):
                 return True

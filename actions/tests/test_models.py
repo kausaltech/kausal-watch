@@ -41,16 +41,6 @@ def test_action_query_set_modifiable_by_contact_person(action, action_contact):
     assert action in Action.objects.modifiable_by(action_contact.person.user)
 
 
-def test_action_query_set_modifiable_by_organization_admin_not_responsible(action, organization_admin):
-    assert action not in Action.objects.modifiable_by(organization_admin.user)
-
-
-def test_action_query_set_modifiable_by_organization_admin_responsible(
-    action, organization_admin, action_responsible_party
-):
-    assert action in Action.objects.modifiable_by(organization_admin.user)
-
-
 def test_action_query_set_modifiable_by_distinct(action, user, action_contact):
     assert user == action_contact.person.user
     assert list(Action.objects.modifiable_by(user)) == [action]

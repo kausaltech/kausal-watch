@@ -109,9 +109,6 @@ class User(AbstractUser):
         actions = set()
         self._org_admin_for_actions = actions
 
-        if not self.admin_orgs.exists():
-            return
-
         orgs = self.get_adminable_organizations()
 
         Action = apps.get_model('actions', 'Action')
@@ -126,10 +123,7 @@ class User(AbstractUser):
     def get_adminable_organizations(self):
         if self.is_superuser:
             return Organization.objects.all()
-        orgs = Organization.objects.filter(aplans_admin_users__user=self, dissolution_date=None)
-        for org in list(orgs):
-            orgs |= org.get_descendants().filter(dissolution_date=None)
-        return orgs.distinct()
+        return Organization.objects.none()
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:
         if adminable_plans is None:
@@ -224,23 +218,3 @@ class User(AbstractUser):
                     return True
 
         return self.is_contact_person_for_indicator(indicator)
-
-
-class OrganizationAdmin(models.Model):
-    user = models.ForeignKey(
-        User, verbose_name=_('user'), on_delete=models.CASCADE,
-        related_name='admin_orgs'
-    )
-    organization = models.ForeignKey(
-        Organization, verbose_name=_('organization'), on_delete=models.CASCADE, related_name='aplans_admin_users',
-    )
-
-    class Meta:
-        unique_together = (('user', 'organization'),)
-        verbose_name = _('admin for organization')
-        verbose_name_plural = _('admins for organization')
-
-    def __str__(self):
-        if self.user is not None and self.organization is not None:
-            return '%s: %s' % (str(self.organization), str(self.user))
-        return '[unknown]'

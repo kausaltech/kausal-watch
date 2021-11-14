@@ -1,16 +1,7 @@
 from django.contrib import admin
-from .models import User, OrganizationAdmin
-
-
-class OrganizationAdminAdmin(admin.TabularInline):
-    search_fields = ('user',)
-    # Listing the organization in autocomplete_fields requires OrganizationAdmin
-    # autocomplete_fields = ('organization',)
-    model = OrganizationAdmin
-    extra = 0
+from .models import User
 
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
     search_fields = ('first_name', 'last_name', 'email')
-    inlines = [OrganizationAdminAdmin]
