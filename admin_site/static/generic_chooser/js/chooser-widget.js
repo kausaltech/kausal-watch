@@ -1,4 +1,4 @@
-function createChooserWidget(id, opts) {
+function ChooserWidget(id, opts) {
     /*
     id = the ID of the HTML element where chooser behaviour should be attached
     opts = dictionary of configuration options, which may include:
@@ -7,43 +7,79 @@ function createChooserWidget(id, opts) {
     */
 
     opts = opts || {};
+    var self = this;
 
-    var chooserElement = $('#' + id + '-chooser');
-    var docTitle = chooserElement.find('.title');
-    var input = $('#' + id);
-    var editLink = chooserElement.find('.edit-link');
-
-    function genericChosen(genericData, initial) {
-        if (!initial) {
-            input.val(genericData.id);
-        }
-        console.log(genericData);
-        input.val(genericData.id);
-        docTitle.text(genericData.string);
-        chooserElement.removeClass('blank');
-        editLink.attr('href', genericData.edit_link);
+    this.id = id;
+    this.chooserElement = $('#' + id + '-chooser');
+    this.titleElement = this.chooserElement.find('.title');
+    this.inputElement = $('#' + id);
+    this.editLinkElement = this.chooserElement.find('.edit-link');
+    this.editLinkWrapper = this.chooserElement.find('.edit-link-wrapper');
+    if (!this.editLinkElement.attr('href')) {
+        this.editLinkWrapper.hide();
     }
+    this.chooseButton = $('.action-choose', this.chooserElement);
+    this.idForLabel = null;
 
-    $('.action-choose', chooserElement).on('click', function() {
-        var responses = {};
-        responses[opts.modalWorkflowResponseName || 'chosen'] = genericChosen;
-
-        ModalWorkflow({
-            url: chooserElement.data('choose-modal-url'),
-            onload: GENERIC_CHOOSER_MODAL_ONLOAD_HANDLERS,
-            responses: responses
+    this.modalResponses = {};
+    this.modalResponses[opts.modalWorkflowResponseName || 'chosen'] = function(data) {
+        self.setState({
+            'value': data.id,
+            'title': data.string,
+            'edit_item_url': data.edit_link
         });
+    };
+
+    this.chooseButton.on('click', function() {
+        self.openModal();
     });
 
-    $('.action-clear', chooserElement).on('click', function() {
-        input.val('');
-        chooserElement.addClass('blank');
+    $('.action-clear', this.chooserElement).on('click', function() {
+        self.setState(null);
     });
+}
 
-    if (input.val()) {
-        $.ajax(chooserElement.data('choose-modal-url') + encodeURIComponent(input.val()) + '/')
-            .done(function (data) {
-                genericChosen(data.result, true);
-            });
+ChooserWidget.prototype.getModalURL = function() {
+    return this.chooserElement.data('choose-modal-url');
+};
+
+ChooserWidget.prototype.openModal = function() {
+    ModalWorkflow({
+        url: this.getModalURL(),
+        onload: GENERIC_CHOOSER_MODAL_ONLOAD_HANDLERS,
+        responses: this.modalResponses
+    });
+};
+
+ChooserWidget.prototype.setState = function(newState) {
+    if (newState && newState.value !== null && newState.value !== '') {
+        this.inputElement.val(newState.value);
+        this.titleElement.text(newState.title);
+        this.chooserElement.removeClass('blank');
+        if (newState.edit_item_url) {
+            this.editLinkElement.attr('href', newState.edit_item_url);
+            this.editLinkWrapper.show();
+        } else {
+            this.editLinkWrapper.hide();
+        }
+    } else {
+        this.inputElement.val('');
+        this.chooserElement.addClass('blank');
     }
+};
+
+ChooserWidget.prototype.getState = function() {
+    return {
+        'value': this.inputElement.val(),
+        'title': this.titleElement.text(),
+        'edit_item_url': this.editLinkElement.attr('href')
+    };
+};
+
+ChooserWidget.prototype.getValue = function() {
+    return this.inputElement.val();
+};
+
+ChooserWidget.prototype.focus = function() {
+    this.chooseButton.focus();
 }
