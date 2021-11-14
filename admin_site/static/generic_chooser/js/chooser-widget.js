@@ -37,6 +37,17 @@ function ChooserWidget(id, opts) {
     $('.action-clear', this.chooserElement).on('click', function() {
         self.setState(null);
     });
+
+    if (this.inputElement.val()) {
+        $.ajax(this.chooserElement.data('choose-modal-url') + encodeURIComponent(this.inputElement.val()) + '/')
+            .done(function (data) {
+                self.setState({
+                    'value': data.result.id,
+                    'title': data.result.string,
+                    'edit_item_url': data.result.edit_link
+                });
+            });
+    }
 }
 
 ChooserWidget.prototype.getModalURL = function() {
