@@ -1,4 +1,4 @@
-# SOME DESCRIPTIVE TITLE.
+ge# SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-11-04 09:25+0200\n"
+"POT-Creation-Date: 2021-11-12 15:51+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -345,6 +345,14 @@ msgid "schedule"
 msgstr "aikajänne"
 
 #: actions/models/action.py
+msgid "continuous action"
+msgstr "jatkuva toimenpide"
+
+#: actions/models/action.py
+msgid "Set if the action does not have a start or an end date"
+msgstr "Aseta jos toimenpiteellä ei ole alku- tai loppupäivämäärää"
+
+#: actions/models/action.py
 msgid "decision-making level"
 msgstr "päätöstaso"
 
@@ -657,7 +665,7 @@ msgstr "Sisältöteksti"
 
 #: actions/models/category.py
 msgid "Numeric"
-msgstr ""
+msgstr "Numero"
 
 #: actions/models/category.py
 msgid "Format"
@@ -723,6 +731,12 @@ msgstr "Teksti"
 msgid "metadata_choices"
 msgstr "metatiedon valinnat"
 
+#: actions/models/category.py
+#, fuzzy
+#| msgid "metadata_richtexts"
+msgid "metadata_numeric_values"
+msgstr "metatiedon tekstisisällöt"
+
 #: actions/models/plan.py
 msgid "site URL"
 msgstr "sivuston osoite"
@@ -745,11 +759,11 @@ msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
 
 #: actions/models/plan.py
 msgid "show admin link"
-msgstr ""
+msgstr "näytä ylläpidon linkki"
 
 #: actions/models/plan.py
 msgid "Should the public website contain a link to the admin login?"
-msgstr ""
+msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: actions/models/plan.py
 msgid "main organization for the plan"
@@ -920,6 +934,10 @@ msgstr "Toimenpiteen tilat"
 #: actions/wagtail_admin.py
 msgid "Action impacts"
 msgstr "Toimenpiteen vaikuttavuusluokat"
+
+#: actions/wagtail_admin.py
+msgid "Action schedules"
+msgstr "Toimenpiteen aikataulu"
 
 #: actions/wagtail_admin.py
 msgid "Action classifications"
@@ -1741,7 +1759,7 @@ msgstr "sisältölohko"
 msgid "content blocks"
 msgstr "sisältölohkot"
 
-#: orgs/apps.py orgs/wagtail_hooks.py
+#: orgs/apps.py
 msgid "Organizations"
 msgstr "Organisaatiot"
 
