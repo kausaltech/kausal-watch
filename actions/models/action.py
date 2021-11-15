@@ -1,7 +1,6 @@
 import logging
 from datetime import date
 
-from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -18,18 +17,20 @@ from wagtail.core.fields import RichTextField
 
 import reversion
 
-from aplans.utils import IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
+from aplans.utils import (
+    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
+)
 from orgs.models import Organization
+from users.models import User
 
 from ..monitoring_quality import determine_monitoring_quality
 
-logger = logging.getLogger(__name__)
 
-User = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class ActionQuerySet(models.QuerySet):
-    def modifiable_by(self, user):
+    def modifiable_by(self, user: User):
         if user.is_superuser:
             return self
         query = Q(plan__in=user.general_admin_plans.all())
@@ -118,6 +119,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
         'ActionSchedule', blank=True,
         verbose_name=_('schedule')
     )
+    schedule_continuous = models.BooleanField(
+        default=False, verbose_name=_('continuous action'),
+        help_text=_('Set if the action does not have a start or an end date')
+    )
     decision_level = models.ForeignKey(
         'ActionDecisionLevel', blank=True, null=True, related_name='actions', on_delete=models.SET_NULL,
         verbose_name=_('decision-making level')
@@ -170,7 +175,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     # Used by GraphQL + REST API code
     public_fields = [
         'id', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
-        'completion', 'schedule', 'decision_level', 'responsible_parties',
+        'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase',

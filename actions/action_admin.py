@@ -388,6 +388,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         PlanFilteredFieldPanel('status'),
         FieldPanel('manual_status'),
         FieldPanel('manual_status_reason'),
+        FieldPanel('schedule_continuous'),
         FieldPanel('start_date'),
         FieldPanel('end_date'),
     ]
@@ -555,6 +556,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
             if plan.action_impacts.exists():
                 internal_panels.append(PlanFilteredFieldPanel('impact'))
+            if plan.action_schedules.exists():
+                internal_panels.append(PlanFilteredFieldPanel('schedule'))
 
         all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
 
