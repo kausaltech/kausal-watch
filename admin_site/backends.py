@@ -8,13 +8,20 @@ class AzureADAuth(AzureADTenantOAuth2):
     AUTHORIZATION_URL = 'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
     DEFAULT_SCOPE = ['openid', 'profile', 'email', 'User.Read']
 
-    def authorization_url(self):
-        client = Client.objects.for_request(self.strategy.request).first()
-        if client is None or not client.azure_ad_tenant_id:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.strategy.request is not None:
+            self.client = Client.objects.for_request(self.strategy.request).first()
+        else:
+            self.client = None
+
+    @property
+    def tenant_id(self):
+        if self.client is None or not self.client.azure_ad_tenant_id:
             tenant_id = 'common'
         else:
-            tenant_id = client.azure_ad_tenant_id
-        return self.AUTHORIZATION_URL.format(tenant_id=tenant_id)
+            tenant_id = self.client.azure_ad_tenant_id
+        return tenant_id
 
     def auth_complete_params(self, state=None):
         ret = super().auth_complete_params(state)
@@ -32,5 +39,7 @@ class AzureADAuth(AzureADTenantOAuth2):
 
     def get_user_details(self, response):
         details = super().get_user_details(response)
+        if self.client and self.client.use_id_token_email_field:
+            details['email'] = response.get('email') or details.get('email')
         details['uuid'] = response.get('oid')
         return details
