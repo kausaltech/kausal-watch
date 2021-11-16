@@ -537,6 +537,19 @@ SILENCED_SYSTEM_CHECKS = [
 
 ENABLE_DEBUG_TOOLBAR = False
 
+
+# local_settings.py can be used to override environment-specific settings
+# like database and email that differ between development and production.
+f = os.path.join(BASE_DIR, "local_settings.py")
+if os.path.exists(f):
+    import sys
+    import types
+    module_name = "%s.local_settings" % ROOT_URLCONF.split('.')[0]
+    module = types.ModuleType(module_name)
+    module.__file__ = f
+    sys.modules[module_name] = module
+    exec(open(f, "rb").read())
+
 if not locals().get('SECRET_KEY', ''):
     secret_file = os.path.join(BASE_DIR, '.django_secret')
     try:
