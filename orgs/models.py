@@ -1,15 +1,13 @@
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, get_form_for_model
 from wagtail.search import index
 
-from admin_site.wagtail import CondensedInlinePanel
+from aplans.utils import PlanRelatedModel
 
 
 # TODO: Generalize and put in some other app's models.py
@@ -20,12 +18,6 @@ class Node(MP_Node, ClusterableModel):
     name = models.CharField(max_length=255)
 
     node_order_by = ['name']
-
-    # We could also define panels in the ModelAdmin class.
-    panels = [
-        FieldPanel('parent'),  # virtual field, needs to be specified in the form
-        FieldPanel('name'),
-    ]
 
     public_fields = ['id', 'name']
 
@@ -67,25 +59,6 @@ class OrganizationClass(models.Model):
         return f'{self.name} ({self.identifier})'
 
 
-class OrganizationEditHandler(ObjectList):
-    def get_form_class(self):
-        # Adapted from BaseFormEditHandler.get_form_class to do something similar as if we had set base_form_class to
-        # a form like this that we could put in forms.py:
-        # class OrganizationForm(NodeForm):
-        #     class Meta:
-        #         model = Organization
-        #         fields = ['parent', 'classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
-        # However, we can't just set base_form_class because we can't use OrganizationForm yet at the time of class
-        # definition due to circular dependencies between this file and forms.py.
-        from .forms import NodeForm
-        return get_form_for_model(
-            self.model,
-            form_class=NodeForm,
-            fields=self.required_fields(),
-            formsets=self.required_formsets(),
-            widgets=self.widget_overrides())
-
-
 class OrganizationQuerySet(MP_NodeQuerySet):
     def editable_by_user(self, user):
         related_ids = []
@@ -103,20 +76,8 @@ class OrganizationManager(models.Manager):
         return self.get_queryset().editable_by_user(user)
 
 
-class Organization(index.Indexed, Node):
-    panels = Node.panels + [
-        FieldPanel('classification'),
-        FieldPanel('abbreviation'),
-        FieldPanel('founding_date'),
-        FieldPanel('dissolution_date'),
-        # Don't allow editing identifiers at this point
-        # CondensedInlinePanel('identifiers', panels=[
-        #     FieldPanel('namespace', widget=CondensedPanelSingleSelect),
-        #     FieldPanel('identifier'),
-        # ]),
-    ]
-    edit_handler = OrganizationEditHandler(panels)
 
+class Organization(index.Indexed, Node):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
 
     classification = models.ForeignKey(OrganizationClass,
@@ -242,3 +203,24 @@ class OrganizationIdentifier(models.Model):
 
     def __str__(self):
         return f'{self.identifier} @ {self.namespace.name}'
+
+
+class OrganizationAdmin(models.Model, PlanRelatedModel):
+    """Person who can administer plan-specific content that is related to the organization."""
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_admin')
+        ]
+
+    organization = ParentalKey(
+        Organization, on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('organization'),
+    )
+    plan = models.ForeignKey(
+        'actions.Plan', on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('plan')
+    )
+    person = models.ForeignKey(
+        'people.Person', on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('person')
+    )
+
+    def __str__(self):
+        return f'{self.person} ({self.plan})'

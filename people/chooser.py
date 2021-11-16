@@ -5,6 +5,7 @@ from django.forms.models import modelform_factory
 from wagtail.search.backends import get_search_backend
 from wagtail.core import hooks
 from dal import autocomplete
+
 from .models import Person
 
 
