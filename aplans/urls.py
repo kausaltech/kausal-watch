@@ -64,10 +64,10 @@ urlpatterns = [
     ), name='graphql-voyager'),
     path('v1/category-icons/<int:id>.svg', category_icon, name='category-icon'),
 
+    re_path(r'^wadmin/autocomplete/', include(autocomplete_admin_urls)),
     re_path(r'^wadmin/', include(wagtailadmin_urls)),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     re_path(r'^pages/', include(wagtail_urls)),
-    re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
