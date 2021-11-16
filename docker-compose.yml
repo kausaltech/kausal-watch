@@ -41,6 +41,7 @@ services:
       - INTERNAL_IPS
       - SENTRY_DSN
       - SECRET_KEY
+      - CONFIGURE_LOGGING
       - OIDC_ISSUER_URL
       - OIDC_CLIENT_ID
       - OIDC_CLIENT_SECRET
