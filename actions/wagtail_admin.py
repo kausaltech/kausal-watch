@@ -8,6 +8,7 @@ from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailautocomplete.edit_handlers import AutocompletePanel
+from actions.models.action import ActionSchedule
 
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel,
@@ -100,6 +101,12 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('name'),
     ]
 
+    action_schedule_panels = [
+        FieldPanel('name'),
+        FieldPanel('begins_at'),
+        FieldPanel('ends_at'),
+    ]
+
     def get_form_class(self, request=None):
         form_class = super().get_form_class()
         return form_class
@@ -111,6 +118,10 @@ class PlanAdmin(AplansModelAdmin):
         action_impact_panels = self.insert_model_translation_tabs(
             ActionImpact, self.action_impact_panels, request, instance
         )
+        action_schedule_panels = self.insert_model_translation_tabs(
+            ActionSchedule, self.action_schedule_panels, request, instance
+        )
+
         panels = self.insert_model_translation_tabs(
             Plan, self.panels, request, instance
         )
@@ -126,7 +137,7 @@ class PlanAdmin(AplansModelAdmin):
             ObjectList([
                 CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
                 CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
-
+                CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
             ], heading=_('Action classifications')),
         ]
 
