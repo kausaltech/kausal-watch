@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:21.10
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -11,24 +11,15 @@ RUN mkdir -p /srv/media
 
 RUN apt-get update
 
-# Install PostgreSQL 11
-RUN apt-get install -y gnupg wget lsb-release software-properties-common
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 apt-key add -
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/postgres.list
-RUN apt-get update
-RUN apt-get install -y python3.8 python3-pip libpython3.8-dev \
+RUN apt-get install -y python3.9 python3-pip libpython3.9-dev \
 	postgresql-client-common postgresql-client libpq-dev \
-	gettext git-core \
+	gettext git \
 	zlib1g-dev libjpeg8-dev libtiff-dev libopenjp2-7-dev libwebp-dev \
     nodejs npm
 
-RUN apt-get install -y voikko-fi libhfstospell10
+RUN apt-get install -y voikko-fi libvoikko1 libhfstospell11
 
-RUN wget http://ftp.fi.debian.org/debian/pool/main/libv/libvoikko/libvoikko1_4.3-1+b1_amd64.deb && \
-    wget http://ftp.fi.debian.org/debian/pool/main/h/hfst-ospell/libhfstospell11_0.5.2-1+b1_amd64.deb && \
-    dpkg -i libvoikko1_4.3-1+b1_amd64.deb libhfstospell11_0.5.2-1+b1_amd64.deb
-
-RUN ln -fs /usr/bin/python3.8 /usr/bin/python3
+RUN ln -fs /usr/bin/python3.9 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
