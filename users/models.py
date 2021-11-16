@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
 from users.managers import UserManager
-from orgs.models import Organization
+from orgs.models import Organization, OrganizationAdmin
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
@@ -123,7 +123,13 @@ class User(AbstractUser):
     def get_adminable_organizations(self):
         if self.is_superuser:
             return Organization.objects.all()
-        return Organization.objects.none()
+
+        person = self.get_corresponding_person()
+        if not person:
+            return Organization.objects.none()
+
+        orgs = person.organization_admins.values_list('organization')
+        return Organization.objects.filter(id__in=orgs)
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:
         if adminable_plans is None:

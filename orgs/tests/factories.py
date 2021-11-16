@@ -1,7 +1,8 @@
 from factory import Sequence, SubFactory
 from factory.django import DjangoModelFactory
 
-from orgs.models import Namespace, Organization, OrganizationClass, OrganizationIdentifier
+from orgs.models import Namespace, Organization, OrganizationAdmin, OrganizationClass, OrganizationIdentifier
+from people.tests.factories import PersonFactory
 
 
 class NamespaceFactory(DjangoModelFactory):
@@ -44,3 +45,12 @@ class OrganizationIdentifierFactory(DjangoModelFactory):
     organization = SubFactory(OrganizationFactory)
     identifier = Sequence(lambda i: f'org{i}')
     namespace = SubFactory(NamespaceFactory)
+
+
+class OrganizationAdminFactory(DjangoModelFactory):
+    class Meta:
+        model = OrganizationAdmin
+
+    organization = SubFactory(OrganizationFactory)
+    plan = SubFactory('actions.tests.factories.PlanFactory')
+    person = SubFactory(PersonFactory)
