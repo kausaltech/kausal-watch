@@ -14,12 +14,16 @@ from aplans.utils import (
 )
 
 
+@reversion.register()
 class CategoryType(ClusterableModel, PlanRelatedModel):
     """Type of the categories.
 
     Is used to group categories together. One action plan can have several
     category types.
     """
+    class SelectWidget(models.TextChoices):
+        MULTIPLE = 'multiple', _('Multiple')
+        SINGLE = 'single', _('Single')
 
     plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
     name = models.CharField(max_length=50, verbose_name=_('name'))
@@ -44,6 +48,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
         default=False, verbose_name=_('hide category identifiers'),
         help_text=_("Set if the categories do not have meaningful identifiers")
     )
+    select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',

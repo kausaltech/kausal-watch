@@ -41,6 +41,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('hide_category_identifiers'),
+        FieldPanel('select_widget'),
         MultiFieldPanel([
             FieldRowPanel([
                 FieldPanel('usable_for_actions'),

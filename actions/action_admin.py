@@ -32,9 +32,26 @@ from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .models import Action, ActionTask
+from .models import Action, ActionTask, CategoryType
 
 logger = logging.getLogger(__name__)
+
+
+class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
+    """Like ModelMultipleChoiceField, but allow only one value to be chosen."""
+    def to_python(self, value):
+        result = super().to_python(value)
+        if not result:
+            return []
+        return [result]
+
+    def prepare_value(self, value):
+        if (hasattr(value, '__iter__') and
+                not isinstance(value, str) and
+                not hasattr(value, '_meta')):
+            prepare_value = super().prepare_value
+            return [prepare_value(v) for v in value]
+        return super().prepare_value(value)
 
 
 def _get_category_fields(plan, model, obj, with_initial=False):
@@ -52,7 +69,12 @@ def _get_category_fields(plan, model, obj, with_initial=False):
             initial = obj.categories.filter(type=cat_type)
         else:
             initial = None
-        field = forms.ModelMultipleChoiceField(
+        field_class = forms.ModelMultipleChoiceField
+        if cat_type.select_widget == CategoryType.SelectWidget.SINGLE:
+            field_class = ModelChoiceFieldWithValueInList
+        else:
+            field_class = forms.ModelMultipleChoiceField
+        field = field_class(
             qs, label=cat_type.name, initial=initial, required=False,
         )
         field.category_type = cat_type
