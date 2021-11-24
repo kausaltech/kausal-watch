@@ -551,6 +551,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             AdminOnlyPanel([
                 InlinePanel(
                     'responsible_parties',
+                    heading=_('Responsible parties'),
                     panels=[FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))]
                 )
             ], heading=_('Responsible parties')),
