@@ -64,7 +64,7 @@ class PlanNode(DjangoNode):
             qs = qs.filter(usable_for_indicators=usable_for_indicators)
         if usable_for_indicators is not None:
             qs = qs.filter(usable_for_indicators=usable_for_indicators)
-        return qs
+        return qs.order_by('pk')
 
     @gql_optimizer.resolver_hints(
         model_field='impact_groups',
@@ -73,7 +73,7 @@ class PlanNode(DjangoNode):
         qs = self.impact_groups.all()
         if first is not None:
             qs = qs[0:first]
-        return qs
+        return qs.order_by('pk')
 
     def resolve_serve_file_base_url(self, info):
         request = info.context
@@ -199,9 +199,14 @@ class CategoryTypeMetadataChoiceNode(DjangoNode):
 
 @register_django_node
 class CategoryTypeNode(DjangoNode):
+    metadata = graphene.List(CategoryTypeMetadataNode)
+
     class Meta:
         model = CategoryType
         fields = public_fields(CategoryType)
+
+    def resolve_metadata(self, info):
+        return self.metadata.order_by('pk')
 
 
 @register_django_node
