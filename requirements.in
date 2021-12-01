@@ -1,5 +1,5 @@
 django
--e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster
+#-e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster
 -e git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
 djangorestframework
 django-helusers

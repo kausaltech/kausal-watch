@@ -1,13 +1,13 @@
 from wagtail.core.models import Collection
 
 
-_wagtail_get_chooser_context = None
+_wagtail_get_context_data = None
 
 
-def get_chooser_context(request):
-    ret = _wagtail_get_chooser_context(request)
+def get_context_data(self):
+    ret = _wagtail_get_context_data(self)
 
-    plan = request.user.get_active_admin_plan()
+    plan = self.request.user.get_active_admin_plan()
     if plan.root_collection is not None:
         collections = plan.root_collection.get_descendants(inclusive=True)
     else:
@@ -23,11 +23,11 @@ def get_chooser_context(request):
 
 
 def monkeypatch_chooser():
-    from wagtail.images.views import chooser
-    global _wagtail_get_chooser_context
+    from wagtail.images.views.chooser import ChooseView
+    global _wagtail_get_context_data
 
-    if _wagtail_get_chooser_context is not None:
+    if _wagtail_get_context_data is not None:
         return
 
-    _wagtail_get_chooser_context = chooser.get_chooser_context
-    chooser.get_chooser_context = get_chooser_context
+    _wagtail_get_context_data = ChooseView.get_context_data
+    ChooseView.get_context_data = get_context_data

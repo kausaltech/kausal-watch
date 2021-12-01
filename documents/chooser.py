@@ -1,5 +1,7 @@
 from django.core.paginator import Paginator
 from django.template.response import TemplateResponse
+from django.urls import reverse
+from django.utils.translation import gettext as _
 
 from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.modal_workflow import render_modal_workflow
@@ -8,7 +10,6 @@ from wagtail.core.models import Collection
 from wagtail.documents import get_document_model
 from wagtail.documents.forms import get_document_form
 from wagtail.documents.permissions import permission_policy
-from wagtail.documents.views.chooser import get_chooser_context
 
 _wagtail_get_chooser_context = None
 
@@ -84,7 +85,12 @@ def chooser(request):
             'searchform': searchform,
             'collections': collections,
             'is_searching': False,
-        }, json_data=get_chooser_context())
+        }, json_data={
+            'step': 'chooser',
+            'error_label': _("Server Error"),
+            'error_message': _("Report this error to your webmaster with the following information:"),
+            'tag_autocomplete_url': reverse('wagtailadmin_tag_autocomplete'),
+        })
 
 
 def monkeypatch_chooser():

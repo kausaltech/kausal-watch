@@ -23,16 +23,10 @@ def remove_default_site_summary_items(hooks):
 
 def remove_user_related_menu_items(hooks):
     from wagtail.admin import wagtail_hooks  # noqa
+    from wagtail.admin.views.account import AvatarSettingsPanel
     from wagtail.admin.wagtail_hooks import register_reports_menu
 
-    account_hooks = hooks._hooks['register_account_menu_item']
-    for idx, val in enumerate(account_hooks):
-        if val[0] == wagtail_hooks.register_account_set_profile_picture:
-            break
-    else:
-        val = None
-    if val is not None:
-        account_hooks.remove(val)
+    AvatarSettingsPanel.is_active = lambda self: False
 
     menu_item_hooks = hooks._hooks['register_admin_menu_item']
     for idx, val in enumerate(menu_item_hooks):

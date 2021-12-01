@@ -59,6 +59,10 @@ DATABASES = {
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
+# Set type of implicit primary keys to AutoField. In newer versions of Django it is BigAutoField by default.
+# https://docs.djangoproject.com/en/3.2/releases/3.2/#customizing-type-of-auto-created-primary-keys
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
+
 CACHES = {
     'default': env.cache(),
 }
@@ -153,7 +157,8 @@ INSTALLED_APPS = [
     'dal_select2',
     'dal_admin_filters',
 
-    'helusers',
+    'helusers.apps.HelusersConfig',
+    # 'helusers.apps.HelusersAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -511,10 +516,8 @@ IMAGE_CROPPING_JQUERY_URL = None
 THUMBNAIL_HIGH_RESOLUTION = True
 
 
-GRAPPLE_APPS = {
-    'pages': '',
-    'documents': '',
-    'images': '',
+GRAPPLE = {
+    'APPS': ['pages', 'documents', 'images'],
 }
 
 # Static files (CSS, JavaScript, Images)
