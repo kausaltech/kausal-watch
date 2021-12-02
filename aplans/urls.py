@@ -45,8 +45,8 @@ for view in actions_api_views + indicators_api_views + insight_api_views:
 api_urls = path('v1/', include(router.urls))
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
+    path('admin/', admin.site.urls),
     api_urls,
     path('v1/docs/', TemplateView.as_view(
         template_name='swagger-ui.html',
