@@ -18,13 +18,10 @@ class IndicatorChooserBlock(ChooserBlock):
 
     @cached_property
     def widget(self):
-        return IndicatorChooser
+        return IndicatorChooser()
 
-    def render_basic(self, value, context=None):
-        if value:
-            return format_html('<a href="{0}">{1}</a>', '', value.name)
-        else:
-            return ''
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
 
     class Meta:
         label = _('Indicator')
