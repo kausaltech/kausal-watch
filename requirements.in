@@ -44,7 +44,6 @@ wagtail-autocomplete
 wagtailfontawesome
 wagtail-generic-chooser
 rustface
-wagtail-react-streamfield
 django-npm
 django-autocomplete-light
 coreapi
