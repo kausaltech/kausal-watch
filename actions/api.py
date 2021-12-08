@@ -138,7 +138,7 @@ class CategoryViewSet(viewsets.ModelViewSet, ModelWithImageViewMixin):
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ('id', 'name', 'abbreviation', 'parent')
+        fields = ('id', 'name', 'abbreviation',)
 
 
 @register_view
@@ -147,8 +147,6 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     serializer_class = OrganizationSerializer
     filterset_fields = {
         'name': ('exact', 'in'),
-        'origin_id': ('exact', 'in'),
-        'parent': ('exact', 'in'),
     }
 
 
