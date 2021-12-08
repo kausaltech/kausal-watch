@@ -5,8 +5,8 @@ from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerialize
 from orgs.models import Organization
 from people.models import Person
 from .models import (
-    Plan, Action, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
-    ActionTask, ActionDecisionLevel, ImpactGroup
+    Plan, Action, ActionImpact, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
+    ActionTask, ActionDecisionLevel, ImpactGroup, ImpactGroupAction
 )
 
 
@@ -19,8 +19,8 @@ def register_view(klass, *args, **kwargs):
 
 class ActionImpactSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ActionDecisionLevel
-        fields = '__all__'
+        model = ActionImpact
+        fields = public_fields(ActionImpact)
 
 
 class PlanSerializer(ModelWithImageSerializerMixin, serializers.HyperlinkedModelSerializer):
@@ -240,3 +240,17 @@ class ImpactGroupViewSet(viewsets.ModelViewSet):
         'plan': ('exact',),
         'plan__identifier': ('exact',),
     }
+
+
+class ImpactGroupActionSerializer(serializers.HyperlinkedModelSerializer):
+    impact = ActionImpactSerializer()
+
+    class Meta:
+        model = ImpactGroupAction
+        fields = public_fields(ImpactGroupAction)
+
+
+@register_view
+class ImpactGroupActionViewSet(viewsets.ModelViewSet):
+    queryset = ImpactGroupAction.objects.all()
+    serializer_class = ImpactGroupActionSerializer
