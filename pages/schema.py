@@ -35,7 +35,15 @@ class MenuItemNode(graphene.ObjectType):
         return MenuItemNode(page=parent)
 
     def resolve_children(parent, info):
-        return [MenuItemNode(page=page) for page in parent.page.get_children().live().public().specific()]
+        pages = parent.page.get_children().live().public()
+        # TODO: Get rid of this terrible hack
+        if 'footer' in info.path:
+            footer_page_ids = [page.id
+                               for Model in AplansPage.get_subclasses()
+                               for page in Model.objects.filter(show_in_footer=True)]
+            pages = pages.filter(id__in=footer_page_ids)
+        pages = pages.specific()
+        return [MenuItemNode(page=page) for page in pages]
 
 
 class MenuNodeMixin():

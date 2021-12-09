@@ -317,3 +317,42 @@ def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descen
         }
     }
     assert data == expected
+
+
+def test_footer_children_only_shown(graphql_client_query_data, plan):
+    page1 = StaticPage(title="page1", show_in_footer=True)
+    plan.root_page.add_child(instance=page1)
+    page2 = StaticPage(title="page2", show_in_footer=True)
+    page3 = StaticPage(title="page3", show_in_footer=False)
+    page1.add_child(instance=page2)
+    page1.add_child(instance=page3)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            footer {
+              items {
+                id
+                children {
+                  id
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'plan': {
+            'footer': {
+                'items': [{
+                    'id': str(page1.id),
+                    'children': [{
+                        'id': str(page2.id),
+                    }],
+                }]
+            }
+        }
+    }
+    assert data == expected
