@@ -1,3 +1,7 @@
+# FIXME: Monkey patch due to wagtail-admin-list-controls using a deprecated alias in collections package
+import collections
+collections.Iterable = collections.abc.Iterable
+
 import json
 import logging
 from datetime import timedelta
