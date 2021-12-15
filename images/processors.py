@@ -1,5 +1,5 @@
 import willow
-from wagtail.images.image_operations import FillOperation
+from wagtail.images.image_operations import FillOperation, ImageTransform
 from wagtail.images.rect import Rect
 
 
@@ -22,5 +22,8 @@ def scale_and_crop(image, size, focal_point=None, crop=None, **kwargs):
     else:
         crop = []
     fill_op = FillOperation('fill', size, *crop)
-    ret = fill_op.run(wi, FocalPointImage(focal_point), dict())
-    return ret.image
+    transform = ImageTransform(image.size)
+    transform = fill_op.run(transform, FocalPointImage(focal_point))
+    wi = wi.crop(transform.get_rect().round())
+    wi = wi.resize(transform.size)
+    return wi.image
