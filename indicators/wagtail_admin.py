@@ -50,6 +50,8 @@ class IndicatorPermissionHelper(PermissionHelper):
     def user_can_edit_obj(self, user: User, obj: Indicator):
         if not super().user_can_edit_obj(user, obj):
             return False
+        if user.is_superuser:
+            return True
 
         obj_plans = obj.plans.all()
         for plan in obj_plans:
@@ -221,8 +223,8 @@ class IndicatorForm(AplansAdminModelForm):
                 pass
 
     def save(self, commit=True):
-        assert self.instance.organization_id is None or self.instance.organization == self.plan.organization
-        self.instance.organization = self.plan.organization
+        if self.instance.organization_id is None:
+            self.instance.organization = self.plan.organization
         return super().save(commit)
 
     def _save_m2m(self):
@@ -306,6 +308,9 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect)
             ]))
+
+        if request.user.is_superuser:
+            basic_panels.insert(0, FieldPanel('organization'))
 
         handler = AplansTabbedInterface(children=[
             ObjectList(basic_panels, heading=_('Basic information')),
