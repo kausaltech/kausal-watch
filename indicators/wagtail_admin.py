@@ -2,6 +2,7 @@ import json
 
 from dal import autocomplete
 from django import forms
+from django.contrib import admin
 from django.contrib.admin.utils import quote
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
@@ -320,6 +321,15 @@ class IndicatorAdmin(AplansModelAdmin):
         handler.base_form_class = IndicatorForm
         return handler
 
+    def get_list_filter(self, request):
+        list_filter = super().get_list_filter(request)
+        if request.user.is_superuser:
+            # Superusers get all indicators from all organizations, so offer them a way to filter by organization.
+            # Non-superusers users get only indicators from the organization of the currently active plan.
+            # TODO: Make this into a searchable dropdown or something
+            list_filter += ('organization',)
+        return list_filter
+
     def unit_display(self, obj):
         unit = obj.unit
         if not unit:
@@ -334,8 +344,10 @@ class IndicatorAdmin(AplansModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        plan = request.user.get_active_admin_plan()
-        return qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
+        if not request.user.is_superuser:
+            plan = request.user.get_active_admin_plan()
+            qs = qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
+        return qs
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
