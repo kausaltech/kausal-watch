@@ -147,7 +147,7 @@ class CommonIndicator(ClusterableModel):
 
     i18n = TranslationField(fields=['name', 'description'])
 
-    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit']
+    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators']
 
     class Meta:
         verbose_name = _('common indicator')
@@ -194,7 +194,7 @@ class Indicator(ClusterableModel):
     )
 
     common = models.ForeignKey(
-        CommonIndicator, null=True, blank=True, related_name='instances',
+        CommonIndicator, null=True, blank=True, related_name='indicators',
         on_delete=models.PROTECT, verbose_name=_('common indicator')
     )
     organization = models.ForeignKey(
