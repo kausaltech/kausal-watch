@@ -2,7 +2,6 @@ import json
 
 from dal import autocomplete
 from django import forms
-from django.contrib import admin
 from django.contrib.admin.utils import quote
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
@@ -25,7 +24,7 @@ from users.models import User
 
 from .admin import DisconnectedIndicatorFilter
 from .api import IndicatorValueSerializer
-from .models import Dimension, Indicator, IndicatorLevel, Quantity, Unit
+from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -305,8 +304,12 @@ class IndicatorAdmin(AplansModelAdmin):
         basic_panels = list(self.basic_panels)
         plan = request.user.get_active_admin_plan()
         if request.user.is_general_admin_for_plan(plan):
+            dimension_widget_attrs = {}
+            if instance and instance.common:  # TODO: if linked to common indicator
+                dimension_widget_attrs['disabled'] = 'disabled'
+                # TODO: Disable changing dimensions otherwise (adding, deleting, reordering)
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
-                FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+                FieldPanel('dimension', widget=CondensedPanelSingleSelect(attrs=dimension_widget_attrs))
             ]))
 
         if request.user.is_superuser:
@@ -367,11 +370,38 @@ class IndicatorAdmin(AplansModelAdmin):
         return urls
 
 
+class CommonIndicatorAdmin(AplansModelAdmin):
+    model = CommonIndicator
+    menu_icon = 'fa-object-group'
+    menu_label = _('Common indicators')
+    list_display = ('name', 'unit_display', 'quantity')
+    search_fields = ('name',)
+
+    # TODO: Disable changing dimensions if indicators linked to the common indicator exist
+    panels = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+        FieldPanel('quantity'),
+        FieldPanel('unit'),
+        RichTextFieldPanel('description'),
+        CondensedInlinePanel('dimensions', panels=[
+            FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+        ]),
+    ]
+
+    def unit_display(self, obj):
+        unit = obj.unit
+        if not unit:
+            return ''
+        return unit.short_name or unit.name
+    unit_display.short_description = _('Unit')
+
+
 class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'fa-bar-chart'
     menu_order = 3
-    items = (IndicatorAdmin, DimensionAdmin, UnitAdmin)
+    items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin)
 
 
 modeladmin_register(IndicatorGroup)

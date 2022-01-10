@@ -15,6 +15,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
+from admin_site.wagtail import AplansAdminModelForm
 from aplans.utils import IdentifierField, OrderedModel
 from orgs.models import Organization
 
@@ -131,8 +132,21 @@ class Framework(ClusterableModel):
         return self.åname
 
 
+class CommonIndicatorForm(AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        # If the common indicator has indicators linked to it, disallow editing some fields
+        instance = kwargs.get('instance')
+        if instance is not None and instance.indicators.exists():
+            for field in ('quantity', 'unit'):
+                self.base_fields[field].disabled = True
+                self.base_fields[field].required = False
+            # TODO: Also dimensions should not be editable
+        super().__init__(*args, **kwargs)
+
+
+@reversion.register()
 class CommonIndicator(ClusterableModel):
-    identifier = IdentifierField()
+    identifier = IdentifierField(blank=True)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
 
@@ -147,7 +161,9 @@ class CommonIndicator(ClusterableModel):
 
     i18n = TranslationField(fields=['name', 'description'])
 
-    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators']
+    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators', 'dimensions']
+
+    base_form_class = CommonIndicatorForm
 
     class Meta:
         verbose_name = _('common indicator')
@@ -350,7 +366,8 @@ class Indicator(ClusterableModel):
         if self.updated_values_due_at:
             if self.time_resolution != 'year':
                 raise ValidationError({'updated_values_due_at':
-                                       _('Deadlines for value updates are currently only possible for yearly indicators')})
+                                       _('Deadlines for value updates are currently only possible for yearly '
+                                         'indicators')})
             if (self.latest_value is not None
                     and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1)):
                 raise ValidationError({'updated_values_due_at':
@@ -363,6 +380,8 @@ class Indicator(ClusterableModel):
             if self.common.unit != self.unit:
                 raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
                                                  % self.common.unit)})
+            if list(self.dimensions.values_list('id')) != list(self.common.dimensions.values_list('id')):
+                raise ValidationError(_("Dimensions must be the same as in common indicator"))
 
     def __str__(self):
         return self.name
@@ -424,6 +443,25 @@ class IndicatorDimension(OrderedModel):
 
     def __str__(self):
         return "%s ∈ %s" % (str(self.dimension), str(self.indicator))
+
+
+class CommonIndicatorDimension(OrderedModel):
+    """Mapping of which dimensions a common indicator has."""
+
+    dimension = ParentalKey(Dimension, on_delete=models.CASCADE, related_name='common_indicators')
+    common_indicator = ParentalKey(CommonIndicator, on_delete=models.CASCADE, related_name='dimensions')
+
+    public_fields = ['id', 'dimension', 'common_indicator', 'order']
+
+    class Meta:
+        verbose_name = _('common indicator dimension')
+        verbose_name_plural = _('common indicator dimensions')
+        ordering = ['common_indicator', 'order']
+        index_together = (('common_indicator', 'order'),)
+        unique_together = (('common_indicator', 'dimension'),)
+
+    def __str__(self):
+        return "%s ∈ %s" % (str(self.dimension), str(self.common_indicator))
 
 
 class IndicatorLevel(ClusterableModel):
