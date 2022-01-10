@@ -347,15 +347,22 @@ class Indicator(ClusterableModel):
             return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
 
     def clean(self):
-        if self.updated_values_due_at is None:
-            return
-        if self.time_resolution != 'year':
-            raise ValidationError({'updated_values_due_at':
-                                   _('Deadlines for value updates are currently only possible for yearly indicators')})
-        if (self.latest_value is not None
-                and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1)):
-            raise ValidationError({'updated_values_due_at':
-                                   _('There is already an indicator value for the year preceding the deadline')})
+        if self.updated_values_due_at:
+            if self.time_resolution != 'year':
+                raise ValidationError({'updated_values_due_at':
+                                       _('Deadlines for value updates are currently only possible for yearly indicators')})
+            if (self.latest_value is not None
+                    and self.updated_values_due_at <= self.latest_value.date + relativedelta(years=1)):
+                raise ValidationError({'updated_values_due_at':
+                                       _('There is already an indicator value for the year preceding the deadline')})
+
+        if self.common:
+            if self.common.quantity != self.quantity:
+                raise ValidationError({'quantity': _("Quantity must be the same as in common indicator (%s)"
+                                                     % self.common.quantity)})
+            if self.common.unit != self.unit:
+                raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
+                                                 % self.common.unit)})
 
     def __str__(self):
         return self.name

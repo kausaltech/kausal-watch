@@ -310,7 +310,8 @@ class IndicatorAdmin(AplansModelAdmin):
             ]))
 
         if request.user.is_superuser:
-            basic_panels.insert(0, FieldPanel('organization'))
+            basic_panels.insert(1, FieldPanel('organization'))
+            basic_panels.insert(2, FieldPanel('common'))
 
         handler = AplansTabbedInterface(children=[
             ObjectList(basic_panels, heading=_('Basic information')),
