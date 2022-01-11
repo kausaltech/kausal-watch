@@ -7,6 +7,7 @@ import logging
 from datetime import timedelta
 
 from django import forms
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import get_language, gettext
 from django.utils.translation import gettext_lazy as _
@@ -32,7 +33,9 @@ from admin_site.wagtail import (
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
     PlanRelatedPermissionHelper
 )
+from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
+from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
@@ -255,6 +258,15 @@ class ActionIndexView(ListControlsIndexView):
         else:
             return queryset.none()
 
+    def filter_by_organization(self, queryset, value):
+        try:
+            org = Organization.objects.get(id=value)
+        except Organization.DoesNotExist:
+            return queryset.none()
+        orgs = Organization.objects.filter(id=org.id) | org.get_descendants()
+        responsibilities = ActionResponsibleParty.objects.filter(organization__in=orgs).values_list('action', flat=True)
+        return queryset.filter(Q(primary_org__in=orgs) | Q(id__in=responsibilities))
+
     def create_cat_filters(self, plan):
         ct_filters = []
         for ct in plan.category_types.filter(usable_for_actions=True).all():
@@ -331,6 +343,14 @@ class ActionIndexView(ListControlsIndexView):
         )
         ct_filters = self.create_cat_filters(plan)
 
+        org_choices = [(str(org.id), str(org)) for org in plan.get_related_organizations()]
+        org_filter = ChoiceFilter(
+            name='organization',
+            label=gettext('Organization'),
+            choices=org_choices,
+            apply_to_queryset=self.filter_by_organization,
+        )
+
         own_actions = RadioFilter(
             name='own',
             label=gettext('Own actions'),
@@ -361,7 +381,7 @@ class ActionIndexView(ListControlsIndexView):
                 ])(Icon('icon icon-list-ul'), gettext('Filter actions')),
             ),
             Panel(ref='filter_panel', collapsed=True)(
-                Columns()(person_filter,),
+                Columns()(person_filter, org_filter),
                 Columns()(*ct_filters),
                 Spacer(),
                 Columns()(own_actions),
