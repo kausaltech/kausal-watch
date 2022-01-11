@@ -3,6 +3,7 @@ import json
 from dal import autocomplete
 from django import forms
 from django.contrib.admin.utils import quote
+from django.core.exceptions import ValidationError
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -221,6 +222,21 @@ class IndicatorForm(AplansAdminModelForm):
                 # Indicator is not in active plan
                 pass
 
+    def clean(self):
+        common_indicator_dimensions = list(self.instance.common.dimensions.values_list('dimension', flat=True))
+        # Dimensions cannot be accessed from self.instance.dimensions yet
+        sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+        new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
+        if new_dimensions != common_indicator_dimensions:
+            # FIXME: At the moment there is a bug presumably in CondensedInlinePanel. If you try to remove the
+            # dimensions of an indicator whose common indicator has dimensions, you will correctly get a validation
+            # error and are presented again with the form, which will have the old dimensions in it. If you try to save
+            # again without changing anything, the forms will the dimension formset will have 'DELETE' set to true.
+            # Another weird issue: If, for example you add a new dimension to the indicator that's not in the common
+            # indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
+            raise ValidationError(_("Dimensions must be the same as in common indicator"))
+        return super().clean()
+
     def save(self, commit=True):
         if self.instance.organization_id is None:
             self.instance.organization = self.plan.organization
@@ -305,8 +321,12 @@ class IndicatorAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         if request.user.is_general_admin_for_plan(plan):
             dimension_widget_attrs = {}
-            if instance and instance.common:  # TODO: if linked to common indicator
-                dimension_widget_attrs['disabled'] = 'disabled'
+            # FIXME: We'd like to disable editing dimensions if the instance is linked to a common indicator. Something
+            # like the following code should do it, but it's commented out because it leads to is a weird error when
+            # submitting the form with one dimension from the inline panel expanded. The value for the dimension seems
+            # to be missing.
+            # if instance and instance.common:
+            #     dimension_widget_attrs['disabled'] = 'disabled'
                 # TODO: Disable changing dimensions otherwise (adding, deleting, reordering)
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect(attrs=dimension_widget_attrs))

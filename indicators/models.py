@@ -380,8 +380,7 @@ class Indicator(ClusterableModel):
             if self.common.unit != self.unit:
                 raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
                                                  % self.common.unit)})
-            if list(self.dimensions.values_list('id')) != list(self.common.dimensions.values_list('id')):
-                raise ValidationError(_("Dimensions must be the same as in common indicator"))
+            # Unfortunately it seems we need to check whether dimensions are equal in the form
 
     def __str__(self):
         return self.name
