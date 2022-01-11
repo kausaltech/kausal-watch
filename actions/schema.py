@@ -14,6 +14,7 @@ from actions.models import (
     CategoryMetadataNumericValue, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata,
     CategoryTypeMetadataChoice, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
 )
+from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
     DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
@@ -45,6 +46,8 @@ class PlanNode(DjangoNode):
     actions = graphene.List('actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID())
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int())
     image = graphene.Field('images.schema.ImageNode')
+
+    primary_orgs = graphene.List('orgs.schema.OrganizationNode')
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     admin_url = graphene.String(required=False)
@@ -112,6 +115,10 @@ class PlanNode(DjangoNode):
         if id:
             qs = qs.filter(id=id)
         return qs
+
+    def resolve_primary_orgs(self, info):
+        qs = self.actions.all().values('primary_org')
+        return Organization.objects.filter(id__in=qs)
 
     class Meta:
         model = Plan
