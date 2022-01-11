@@ -27,7 +27,8 @@ from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
 from actions.api import all_views as actions_api_views
-from admin_site.autocomplete import ActionAutocomplete, OrganizationAutocomplete
+from admin_site.autocomplete import ActionAutocomplete
+from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView
 from indicators.api import all_views as indicators_api_views
