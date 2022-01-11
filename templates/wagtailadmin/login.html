@@ -64,6 +64,9 @@
                         {{ form.password.label_tag }}
                         <div class="input icon-password">
                             {{ form.password }}
+                            {% if show_password_reset %}
+                                <a class="help" style="top: 40px" href="{% url 'wagtailadmin_password_reset' %}" aria-label="{% trans 'Reset your password' %}">{% trans "Forgotten it?" %}</a>
+                            {% endif %}
                         </div>
                     </div>
                 </li>
@@ -86,10 +89,6 @@
                     {% endblock %}
                 </li>
             </ul>
-
-            {% if show_password_reset %}
-                <p class="help"><a href="{% url 'wagtailadmin_password_reset' %}" aria-label="{% trans 'Reset your password' %}">{% trans "Forgotten it?" %}</a></p>
-            {% endif %}
         {% endblock %}
         </form>
 
