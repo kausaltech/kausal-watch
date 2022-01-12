@@ -297,8 +297,6 @@ class IndicatorAdmin(AplansModelAdmin):
 
     basic_panels = [
         FieldPanel('name'),
-        FieldPanel('quantity'),
-        FieldPanel('unit'),
         FieldPanel('time_resolution'),
         FieldPanel('updated_values_due_at'),
         FieldPanel('min_value'),
@@ -319,18 +317,15 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance, request):
         basic_panels = list(self.basic_panels)
         plan = request.user.get_active_admin_plan()
-        if request.user.is_general_admin_for_plan(plan):
-            dimension_widget_attrs = {}
-            # FIXME: We'd like to disable editing dimensions if the instance is linked to a common indicator. Something
-            # like the following code should do it, but it's commented out because it leads to is a weird error when
-            # submitting the form with one dimension from the inline panel expanded. The value for the dimension seems
-            # to be missing.
-            # if instance and instance.common:
-            #     dimension_widget_attrs['disabled'] = 'disabled'
-                # TODO: Disable changing dimensions otherwise (adding, deleting, reordering)
-            basic_panels.append(CondensedInlinePanel('dimensions', panels=[
-                FieldPanel('dimension', widget=CondensedPanelSingleSelect(attrs=dimension_widget_attrs))
-            ]))
+
+        # Some fields should only be editable if the indicator is not linked to a common indicator
+        if not instance or not instance.common:
+            basic_panels.insert(1, FieldPanel('quantity'))
+            basic_panels.insert(2, FieldPanel('unit'))
+            if request.user.is_general_admin_for_plan(plan):
+                basic_panels.append(CondensedInlinePanel('dimensions', panels=[
+                    FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+                ]))
 
         if request.user.is_superuser:
             basic_panels.insert(1, FieldPanel('organization'))
