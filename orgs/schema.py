@@ -30,6 +30,7 @@ class OrganizationNode(DjangoNode):
         description='Number of contact persons that are associated with this organization'
     )
     parent = graphene.Field(lambda: OrganizationNode, required=False)
+    logo = graphene.Field('images.schema.ImageNode', required=False)
 
     @staticmethod
     def resolve_ancestors(parent, info):

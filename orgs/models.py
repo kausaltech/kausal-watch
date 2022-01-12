@@ -76,7 +76,6 @@ class OrganizationManager(models.Manager):
         return self.get_queryset().editable_by_user(user)
 
 
-
 class Organization(index.Indexed, Node):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
 
@@ -95,6 +94,11 @@ class Organization(index.Indexed, Node):
                                      editable=False,
                                      null=True,
                                      help_text=_('A distinct name for this organization (generated automatically)'))
+
+    logo = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+
     founding_date = models.DateField(blank=True,
                                      null=True,
                                      help_text=_('A date of founding'))
