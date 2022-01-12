@@ -1,20 +1,53 @@
 {% extends "modeladmin/create.html" %}
 {% load i18n %}
 
-{% block form_actions %}
-    <div class="dropdown dropup dropdown-button match-width">
-        <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
-            <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
-        </button>
+{% block extra_js %}
+    {{ block.super }}
+    {# Copied from wagtail/admin/templates/wagtailadmin/pages/edit.html #}
+    <script>
+        $(function() {
+            /* Make user confirm before leaving the editor if there are unsaved changes */
+            {% trans "This page has unsaved changes." as confirmation_message %}
+            enableDirtyFormCheck(
+                'div.content > form',
+                {
+                    confirmationMessage: '{{ confirmation_message|escapejs }}',
 
-        <div class="dropdown-toggle icon icon-arrow-up"></div>
-            <ul>
-                <li>
-                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
-                        <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
+                    {% if has_unsaved_changes %}
+                        alwaysDirty: true,
+                    {% endif %}
+
+                    //commentApp: window.comments.commentApp,
+                    callback: window.updateFooterSaveWarning
+                }
+            );
+        });
+    </script>
+{% endblock %}
+
+{# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
+{% block footer %}
+    <footer class="footer">
+        <ul>
+            <li class="actions footer__container">
+                {# This would be the form_actions block #}
+                <div class="dropdown dropup dropdown-button match-width">
+                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
+                        <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
                     </button>
-                </li>
-            </ul>
-        </div>
-    </div>
+
+                    <div class="dropdown-toggle icon icon-arrow-up"></div>
+                    <ul>
+                        <li>
+                            <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
+                                <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                {# end of form_actions block #}
+            </li>
+            {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
+        </ul>
+    </footer>
 {% endblock %}
