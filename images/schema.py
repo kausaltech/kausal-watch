@@ -27,7 +27,11 @@ class ImageRendition(DjangoNode):
 
 @replace_image_node
 class ImageNode(DjangoNode):
-    rendition = graphene.Field(ImageRendition, size=graphene.String())
+    rendition = graphene.Field(
+        ImageRendition,
+        size=graphene.String(),
+        crop=graphene.Boolean(required=False, default_value=True)
+    )
 
     class Meta:
         model = AplansImage
@@ -36,7 +40,7 @@ class ImageNode(DjangoNode):
             'focal_point_height', 'height', 'width', 'image_credit', 'alt_text'
         ]
 
-    def resolve_rendition(self, info, size=None):
+    def resolve_rendition(self, info, size=None, crop=True):
         if size is not None:
             try:
                 width, height = size.split('x')
@@ -61,7 +65,11 @@ class ImageNode(DjangoNode):
             size = '800x600'
 
         try:
-            rendition = self.get_rendition('fill-%s-c50' % size)
+            if crop:
+                format_str = 'fill-%s-c50' % size
+            else:
+                format_str = 'max-%s' % size
+            rendition = self.get_rendition(format_str)
         except (FileNotFoundError, SourceImageIOError) as e:
             # We ignore the error so that the query will not fail, but report it to
             # Sentry anyway.
