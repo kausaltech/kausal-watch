@@ -223,18 +223,20 @@ class IndicatorForm(AplansAdminModelForm):
                 pass
 
     def clean(self):
-        common_indicator_dimensions = list(self.instance.common.dimensions.values_list('dimension', flat=True))
-        # Dimensions cannot be accessed from self.instance.dimensions yet
-        sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
-        new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
-        if new_dimensions != common_indicator_dimensions:
-            # FIXME: At the moment there is a bug presumably in CondensedInlinePanel. If you try to remove the
-            # dimensions of an indicator whose common indicator has dimensions, you will correctly get a validation
-            # error and are presented again with the form, which will have the old dimensions in it. If you try to save
-            # again without changing anything, the forms will the dimension formset will have 'DELETE' set to true.
-            # Another weird issue: If, for example you add a new dimension to the indicator that's not in the common
-            # indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
-            raise ValidationError(_("Dimensions must be the same as in common indicator"))
+        if self.instance.common and 'dimensions' in self.formsets:
+            common_indicator_dimensions = list(self.instance.common.dimensions.values_list('dimension', flat=True))
+            # Dimensions cannot be accessed from self.instance.dimensions yet
+            sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+            new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
+            if new_dimensions != common_indicator_dimensions:
+                # FIXME: At the moment there is a bug presumably in CondensedInlinePanel. If you try to remove the
+                # dimensions of an indicator whose common indicator has dimensions, you will correctly get a validation
+                # error and are presented again with the form, which will have the old dimensions in it. If you try to
+                # save again without changing anything, the forms will the dimension formset will have 'DELETE' set to
+                # true. Another weird issue: If, for example you add a new dimension to the indicator that's not in the
+                # common indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
+                # This may also affect CommonIndicatorForm.
+                raise ValidationError(_("Dimensions must be the same as in common indicator"))
         return super().clean()
 
     def save(self, commit=True):
@@ -385,6 +387,19 @@ class IndicatorAdmin(AplansModelAdmin):
         return urls
 
 
+class CommonIndicatorForm(AplansAdminModelForm):
+    def clean(self):
+        if self.instance and 'dimensions' in self.formsets:
+            # Dimensions cannot be accessed from self.instance.dimensions yet
+            sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+            new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
+            for indicator in self.instance.indicators.all():
+                indicator_dimensions = list(indicator.dimensions.values_list('dimension', flat=True))
+                if new_dimensions != indicator_dimensions:
+                    raise ValidationError(_("Dimensions must be the same as in all indicators linked to this one"))
+        return super().clean()
+
+
 class CommonIndicatorAdmin(AplansModelAdmin):
     model = CommonIndicator
     menu_icon = 'fa-object-group'
@@ -392,16 +407,10 @@ class CommonIndicatorAdmin(AplansModelAdmin):
     list_display = ('name', 'unit_display', 'quantity')
     search_fields = ('name',)
 
-    # TODO: Disable changing dimensions if indicators linked to the common indicator exist
-    panels = [
+    basic_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
-        FieldPanel('quantity'),
-        FieldPanel('unit'),
         RichTextFieldPanel('description'),
-        CondensedInlinePanel('dimensions', panels=[
-            FieldPanel('dimension', widget=CondensedPanelSingleSelect)
-        ]),
     ]
 
     def unit_display(self, obj):
@@ -410,6 +419,21 @@ class CommonIndicatorAdmin(AplansModelAdmin):
             return ''
         return unit.short_name or unit.name
     unit_display.short_description = _('Unit')
+
+    def get_edit_handler(self, instance, request):
+        basic_panels = list(self.basic_panels)
+
+        # Some fields should only be editable if no indicator is linked to the common indicator
+        if not instance or not instance.indicators.exists():
+            basic_panels.insert(1, FieldPanel('quantity'))
+            basic_panels.insert(2, FieldPanel('unit'))
+            basic_panels.append(CondensedInlinePanel('dimensions', panels=[
+                FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+            ]))
+
+        handler = ObjectList(basic_panels)
+        handler.base_form_class = CommonIndicatorForm
+        return handler
 
 
 class IndicatorGroup(ModelAdminGroup):

@@ -132,18 +132,6 @@ class Framework(ClusterableModel):
         return self.åname
 
 
-class CommonIndicatorForm(AplansAdminModelForm):
-    def __init__(self, *args, **kwargs):
-        # If the common indicator has indicators linked to it, disallow editing some fields
-        instance = kwargs.get('instance')
-        if instance is not None and instance.indicators.exists():
-            for field in ('quantity', 'unit'):
-                self.base_fields[field].disabled = True
-                self.base_fields[field].required = False
-            # TODO: Also dimensions should not be editable
-        super().__init__(*args, **kwargs)
-
-
 @reversion.register()
 class CommonIndicator(ClusterableModel):
     identifier = IdentifierField(blank=True)
@@ -162,8 +150,6 @@ class CommonIndicator(ClusterableModel):
     i18n = TranslationField(fields=['name', 'description'])
 
     public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators', 'dimensions']
-
-    base_form_class = CommonIndicatorForm
 
     class Meta:
         verbose_name = _('common indicator')
