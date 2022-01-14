@@ -16,7 +16,11 @@ def get_context_data(self):
     if len(collections) < 2:
         collections = None
     else:
-        collections = Collection.order_for_display(collections)
+        collections = collections.annotate(
+            display_order=Case(
+                When(depth=1, then=Value('')),
+                default='name')
+        ).order_by('display_order')
 
     ret['collections'] = collections
     return ret
