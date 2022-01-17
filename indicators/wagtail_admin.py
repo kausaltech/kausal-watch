@@ -353,6 +353,9 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance, request):
         basic_panels = list(self.basic_panels)
         plan = request.user.get_active_admin_plan()
+        dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
+        if not dimensions_str:
+            dimensions_str = _("none")
 
         # Some fields should only be editable if the indicator is not linked to a common indicator
         show_dimensions_section = request.user.is_general_admin_for_plan(plan)
@@ -367,9 +370,6 @@ class IndicatorAdmin(AplansModelAdmin):
                 num_values = instance.values.count() if instance else 0
                 if num_values:
                     assert instance
-                    dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
-                    if not dimensions_str:
-                        dimensions_str = _("none")
                     warning_text = ngettext_lazy("If you change the dimensions of this indicator (currently "
                                                  "%(dimensions)s), its %(num)d value will be deleted.",
                                                  "If you change the dimensions of this indicator (currently "
@@ -380,7 +380,9 @@ class IndicatorAdmin(AplansModelAdmin):
                     basic_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
         else:
             info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
-                          "edited.")
+                          "edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {
+                              'quantity': instance.quantity, 'unit': instance.unit, 'dimensions': dimensions_str
+                          }
             basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
         if request.user.is_superuser:
@@ -485,8 +487,13 @@ class CommonIndicatorAdmin(AplansModelAdmin):
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect)
             ]))
         else:
+            dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
+            if not dimensions_str:
+                dimensions_str = _("none")
             info_text = _("This common indicator has indicators linked to it, so quantity, unit and dimensions cannot "
-                          "be edited.")
+                          "be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {
+                              'quantity': instance.quantity, 'unit': instance.unit, 'dimensions': dimensions_str
+                          }
             basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
         handler = ObjectList(basic_panels)
