@@ -47,7 +47,7 @@ class Quantity(ClusterableModel):
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
         verbose_name_plural = pgettext_lazy('physical', 'quantities')
-        ordering = ('name_i18n',)
+        ordering = ('name',)
 
     def __str__(self):
         return self.name

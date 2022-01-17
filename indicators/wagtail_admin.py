@@ -207,6 +207,9 @@ class QuantityAdmin(AplansModelAdmin):
             *self.get_translation_tabs(instance, request, include_all_languages=True)
         ])
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).order_by('name_i18n')
+
 
 class UnitAdmin(ModelAdmin):
     model = Unit
