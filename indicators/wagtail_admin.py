@@ -20,6 +20,7 @@ from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     CondensedPanelSingleSelect
 )
+from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
 from users.models import User
 
@@ -187,6 +188,27 @@ class IndicatorButtonHelper(AplansButtonHelper):
                 buttons.insert(1, edit_values_button)
 
         return buttons
+
+
+class QuantityAdmin(AplansModelAdmin):
+    model = Quantity
+    menu_icon = 'fa-thermometer-half'
+    menu_order = 6
+    menu_label = _('Quantities')
+    list_display = ('name_i18n',)
+
+    panels = [
+        FieldPanel('name'),
+    ]
+
+    def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
+        return AplansTabbedInterface([
+            ObjectList(self.panels, heading=_('General')),
+            *self.get_translation_tabs(instance, request, include_all_languages=True)
+        ])
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).order('name')
 
 
 class UnitAdmin(ModelAdmin):
@@ -440,7 +462,7 @@ class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'fa-bar-chart'
     menu_order = 3
-    items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin)
+    items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin)
 
 
 modeladmin_register(IndicatorGroup)

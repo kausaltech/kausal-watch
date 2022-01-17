@@ -244,7 +244,7 @@ class AplansModelAdmin(ModelAdmin):
             self.permission_helper_class = PlanRelatedPermissionHelper
         super().__init__(*args, **kwargs)
 
-    def get_translation_tabs(self, instance, request):
+    def get_translation_tabs(self, instance, request, include_all_languages: bool=False):
         i18n_field = get_i18n_field(type(instance))
         if not i18n_field:
             return []
@@ -254,8 +254,11 @@ class AplansModelAdmin(ModelAdmin):
         plan = user.get_active_admin_plan()
 
         languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
-
-        for lang_code in plan.other_languages:
+        if include_all_languages:
+            languages = list(languages_by_code.keys())
+        else:
+            languages = plan.other_languages
+        for lang_code in languages:
             fields = []
             for field in i18n_field.get_translated_fields():
                 if field.language != lang_code:

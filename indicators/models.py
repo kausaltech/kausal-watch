@@ -13,6 +13,7 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from modeltrans.manager import MultilingualManager
 from wagtail.core.fields import RichTextField
 
 from admin_site.wagtail import AplansAdminModelForm
@@ -31,17 +32,22 @@ def latest_plan():
         return None
 
 
+@reversion.register()
 class Quantity(ClusterableModel):
     """The quantity that an indicator measures."""
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
 
+    i18n = TranslationField(fields=['name'])
+
     autocomplete_search_field = 'name'
+
+    objects = MultilingualManager()
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
         verbose_name_plural = pgettext_lazy('physical', 'quantities')
-        ordering = ('name',)
+        ordering = ('name_i18n',)
 
     def __str__(self):
         return self.name
