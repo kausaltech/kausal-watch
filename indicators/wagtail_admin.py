@@ -6,10 +6,10 @@ from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path, reverse
 from django.utils.functional import cached_property
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel, ObjectList, RichTextFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
@@ -244,12 +244,17 @@ class IndicatorForm(AplansAdminModelForm):
                 # Indicator is not in active plan
                 pass
 
+    def get_dimension_ids_from_formset(self):
+        sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+        return [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
+
     def clean(self):
-        if self.instance.common and 'dimensions' in self.formsets:
-            common_indicator_dimensions = list(self.instance.common.dimensions.values_list('dimension', flat=True))
+        data = super().clean()
+        common = data.get('common')
+        if common and 'dimensions' in self.formsets:
+            common_indicator_dimensions = list(common.dimensions.values_list('dimension', flat=True))
             # Dimensions cannot be accessed from self.instance.dimensions yet
-            sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
-            new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
+            new_dimensions = self.get_dimension_ids_from_formset()
             if new_dimensions != common_indicator_dimensions:
                 # FIXME: At the moment there is a bug presumably in CondensedInlinePanel. If you try to remove the
                 # dimensions of an indicator whose common indicator has dimensions, you will correctly get a validation
@@ -259,11 +264,18 @@ class IndicatorForm(AplansAdminModelForm):
                 # common indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_("Dimensions must be the same as in common indicator"))
-        return super().clean()
+        return data
 
     def save(self, commit=True):
         if self.instance.organization_id is None:
             self.instance.organization = self.plan.organization
+        old_dimensions = list(self.instance.dimensions.values_list('dimension', flat=True))
+        new_dimensions = self.get_dimension_ids_from_formset()
+        if old_dimensions != new_dimensions:
+            # Hopefully the user hasn't changed the dimensions by accident because now it's bye-bye, indicator values
+            self.instance.latest_value = None
+            self.instance.save()
+            self.instance.values.all().delete()
         return super().save(commit)
 
     def _save_m2m(self):
@@ -343,13 +355,33 @@ class IndicatorAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
 
         # Some fields should only be editable if the indicator is not linked to a common indicator
+        show_dimensions_section = request.user.is_general_admin_for_plan(plan)
         if not instance or not instance.common:
             basic_panels.insert(1, FieldPanel('quantity'))
             basic_panels.insert(2, FieldPanel('unit'))
-            if request.user.is_general_admin_for_plan(plan):
+            if show_dimensions_section:
                 basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                     FieldPanel('dimension', widget=CondensedPanelSingleSelect)
                 ]))
+                # If the indicator has values, show a warning that these would be deleted by changing dimensions
+                num_values = instance.values.count() if instance else 0
+                if num_values:
+                    assert instance
+                    dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
+                    if not dimensions_str:
+                        dimensions_str = _("none")
+                    warning_text = ngettext_lazy("If you change the dimensions of this indicator (currently "
+                                                 "%(dimensions)s), its %(num)d value will be deleted.",
+                                                 "If you change the dimensions of this indicator (currently "
+                                                 "%(dimensions)s), all its %(num)d values will be deleted.",
+                                                 num_values) % {'dimensions': dimensions_str, 'num': num_values}
+                    # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
+                    # the ugly gap, but it seems nontrivial to do properly.
+                    basic_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+        else:
+            info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
+                          "edited.")
+            basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
         if request.user.is_superuser:
             basic_panels.insert(1, FieldPanel('organization'))
@@ -452,6 +484,10 @@ class CommonIndicatorAdmin(AplansModelAdmin):
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect)
             ]))
+        else:
+            info_text = _("This common indicator has indicators linked to it, so quantity, unit and dimensions cannot "
+                          "be edited.")
+            basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
         handler = ObjectList(basic_panels)
         handler.base_form_class = CommonIndicatorForm
