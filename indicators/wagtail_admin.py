@@ -245,16 +245,18 @@ class IndicatorForm(AplansAdminModelForm):
                 pass
 
     def get_dimension_ids_from_formset(self):
+        if 'dimensions' not in self.formsets:
+            return None
         sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
         return [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
 
     def clean(self):
         data = super().clean()
         common = data.get('common')
-        if common and 'dimensions' in self.formsets:
+        # Dimensions cannot be accessed from self.instance.dimensions yet
+        new_dimensions = self.get_dimension_ids_from_formset()
+        if common and new_dimensions is not None:
             common_indicator_dimensions = list(common.dimensions.values_list('dimension', flat=True))
-            # Dimensions cannot be accessed from self.instance.dimensions yet
-            new_dimensions = self.get_dimension_ids_from_formset()
             if new_dimensions != common_indicator_dimensions:
                 # FIXME: At the moment there is a bug presumably in CondensedInlinePanel. If you try to remove the
                 # dimensions of an indicator whose common indicator has dimensions, you will correctly get a validation
@@ -271,7 +273,7 @@ class IndicatorForm(AplansAdminModelForm):
             self.instance.organization = self.plan.organization
         old_dimensions = list(self.instance.dimensions.values_list('dimension', flat=True))
         new_dimensions = self.get_dimension_ids_from_formset()
-        if old_dimensions != new_dimensions:
+        if new_dimensions is not None and old_dimensions != new_dimensions:
             # Hopefully the user hasn't changed the dimensions by accident because now it's bye-bye, indicator values
             self.instance.latest_value = None
             self.instance.save()
