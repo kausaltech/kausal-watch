@@ -28,28 +28,29 @@ class PlanDomainNode(DjangoNode):
     class Meta:
         model = PlanDomain
         fields = [
-            'id', 'hostname', 'google_site_verification_tag', 'matomo_analytics_url',
+            'id', 'hostname', 'base_path', 'google_site_verification_tag', 'matomo_analytics_url',
         ]
 
 
 class PlanNode(DjangoNode):
-    id = graphene.ID(source='identifier')
+    id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
-    serve_file_base_url = graphene.String()
-    primary_language = graphene.String()
+    serve_file_base_url = graphene.String(required=True)
+    primary_language = graphene.String(required=True)
     pages = graphene.List(PageInterface)
     category_types = graphene.List(
         'actions.schema.CategoryTypeNode',
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
-    actions = graphene.List('actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID())
-    impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int())
-    image = graphene.Field('images.schema.ImageNode')
+    actions = graphene.List('actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True)
+    impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
+    image = graphene.Field('images.schema.ImageNode', required=False)
 
-    primary_orgs = graphene.List('orgs.schema.OrganizationNode')
+    primary_orgs = graphene.List('orgs.schema.OrganizationNode', required=True)
 
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
+    domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     admin_url = graphene.String(required=False)
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
@@ -93,9 +94,23 @@ class PlanNode(DjangoNode):
         model_field='domains',
     )
     def resolve_domain(self, info, hostname=None):
+        context_hostname = getattr(info.context, '_plan_hostname', None)
         if not hostname:
-            return None
+            hostname = context_hostname
+            if not hostname:
+                return None
         return self.domains.filter(hostname=hostname).first()
+
+    @gql_optimizer.resolver_hints(
+        model_field='domains',
+    )
+    def resolve_domains(self, info, hostname=None):
+        context_hostname = getattr(info.context, '_plan_hostname', None)
+        if not hostname:
+            hostname = context_hostname
+            if not hostname:
+                return None
+        return self.domains.filter(hostname=hostname)
 
     def resolve_admin_url(self, info):
         if not self.show_admin_link:
@@ -420,7 +435,7 @@ class ActionLinkNode(DjangoNode):
 
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
-    all_plans = graphene.List(PlanNode)
+    plans_for_hostname = graphene.List(PlanNode, hostname=graphene.String())
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
 
@@ -447,6 +462,7 @@ class Query:
             qs = qs.filter(identifier=id.lower())
         if domain:
             qs = qs.for_hostname(domain.lower())
+            info.context._plan_hostname = domain
 
         plan = gql_optimizer.query(qs, info).first()
         if not plan:
@@ -455,8 +471,10 @@ class Query:
         set_active_plan(info, plan)
         return plan
 
-    def resolve_all_plans(self, info):
-        return Plan.objects.all()
+    def resolve_plans_for_hostname(self, info, hostname: str):
+        info.context._plan_hostname = hostname
+        plans = Plan.objects.for_hostname(hostname.lower())
+        return list(gql_optimizer.query(plans, info))
 
     def resolve_plan_actions(self, info, plan, first=None, category=None, order_by=None, **kwargs):
         plan_obj = get_plan_from_context(info, plan)

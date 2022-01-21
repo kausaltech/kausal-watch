@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator
+from django.core.validators import URLValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -260,13 +260,30 @@ class Plan(ClusterableModel):
         return root_page
 
 
+def is_valid_hostname(hostname):
+    if len(hostname) > 255:
+        return False
+    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    return all(allowed.match(x) for x in hostname.split("."))
+
+
 class PlanDomain(models.Model):
     """A domain (hostname) where an UI for a Plan might live."""
 
     plan = ParentalKey(
         Plan, on_delete=models.CASCADE, related_name='domains', verbose_name=_('plan')
     )
-    hostname = models.CharField(max_length=200, verbose_name=_('host name'), unique=True, db_index=True)
+    hostname = models.CharField(
+        max_length=200, verbose_name=_('host name'), db_index=True,
+        validators=[is_valid_hostname]
+    )
+    base_path = models.CharField(
+        max_length=200, verbose_name=_('base path'), null=True, blank=True,
+        validators=[RegexValidator(
+            regex=r'^\/[a-z_-]+',
+            message=_("Base path must begin with a '/' and not end with '/'")
+        )],
+    )
     google_site_verification_tag = models.CharField(max_length=50, null=True, blank=True)
     matomo_analytics_url = models.CharField(max_length=100, null=True, blank=True)
 
@@ -294,6 +311,7 @@ class PlanDomain(models.Model):
     class Meta:
         verbose_name = _('plan domain')
         verbose_name_plural = _('plan domains')
+        unique_together = (('hostname', 'base_path'),)
 
 
 class Scenario(models.Model, PlanRelatedModel):

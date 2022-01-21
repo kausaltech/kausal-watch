@@ -128,6 +128,7 @@ class PlanAdmin(AplansModelAdmin):
         if request.user.is_superuser:
             panels.append(InlinePanel('domains', panels=[
                 FieldPanel('hostname'),
+                FieldPanel('base_path'),
                 FieldPanel('google_site_verification_tag'),
                 FieldPanel('matomo_analytics_url'),
             ], heading=_('Domains')))
