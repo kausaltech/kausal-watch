@@ -1,8 +1,9 @@
 #!/bin/bash
 
 set -e
+DB_CONTAINER=${1:-db}
 
-/wait-for-it.sh db:5432
+/wait-for-it.sh ${DB_CONTAINER}:5432
 
 cd /code
 python manage.py migrate --no-input
