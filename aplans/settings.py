@@ -18,6 +18,7 @@ from django.utils.translation import gettext_lazy as _
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(
+    ENV_FILE=(str, ''),
     DEBUG=(bool, False),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
@@ -47,11 +48,10 @@ env = environ.FileAwareEnv(
 
 BASE_DIR = root()
 
-# Read .env file; if that doesn't exist, try Docker config, which is expected to be at /watch_config
-if os.path.exists(os.path.join(BASE_DIR, '.env')):
+if env('ENV_FILE'):
+    environ.Env.read_env(env('ENV_FILE'))
+elif os.path.exists(os.path.join(BASE_DIR, '.env')):
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
-elif os.path.exists('/watch_config'):
-    environ.Env.read_env('/watch_config')
 
 DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
