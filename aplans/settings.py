@@ -17,15 +17,13 @@ from corsheaders.defaults import default_headers as default_cors_headers  # noqa
 from django.utils.translation import gettext_lazy as _
 
 root = environ.Path(__file__) - 2  # two folders back
-env = environ.Env(
+env = environ.FileAwareEnv(
     DEBUG=(bool, False),
-    SECRET_KEY=(str, ''),  # overrides SECRET_KEY_FILE
-    SECRET_KEY_FILE=(str, ''),
+    SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
     EXTRA_INSTALLED_APPS=(list, []),
     CONFIGURE_LOGGING=(bool, False),
-    DATABASE_URL=(str, ''),  # overrides DATABASE_URL_FILE; if neither is used, set to sqlite:///db.sqlite3
-    DATABASE_URL_FILE=(str, ''),
+    DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     CACHE_URL=(str, 'locmemcache://'),
     MEDIA_ROOT=(environ.Path(), root('media')),
     STATIC_ROOT=(environ.Path(), root('static')),
@@ -38,13 +36,10 @@ env = environ.Env(
     INTERNAL_IPS=(list, []),
     OIDC_ISSUER_URL=(str, ''),
     OIDC_CLIENT_ID=(str, ''),
-    OIDC_CLIENT_SECRET=(str, ''),  # overrides OIDC_CLIENT_SECRET_FILE
-    OIDC_CLIENT_SECRET_FILE=(str, ''),
+    OIDC_CLIENT_SECRET=(str, ''),
     AZURE_AD_CLIENT_ID=(str, ''),
-    AZURE_AD_CLIENT_SECRET=(str, ''),  # overrides AZURE_AD_CLIENT_SECRET_FILE
-    AZURE_AD_CLIENT_SECRET_FILE=(str, ''),
-    MAILGUN_API_KEY=(str, ''),  # overrides MAILGUN_API_KEY_FILE
-    MAILGUN_API_KEY_FILE=(str, ''),
+    AZURE_AD_CLIENT_SECRET=(str, ''),
+    MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
     SENDGRID_API_KEY=(str, ''),
@@ -62,17 +57,8 @@ DEBUG = env('DEBUG')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 INTERNAL_IPS = env.list('INTERNAL_IPS',
                         default=(['127.0.0.1'] if DEBUG else []))
-if env('DATABASE_URL'):
-    db_config = env.db()
-else:
-    DATABASE_URL_FILE = env('DATABASE_URL_FILE')
-    if DATABASE_URL_FILE:
-        db_url = open(DATABASE_URL_FILE).read().strip()
-    else:
-        db_url = 'sqlite:///db.sqlite3'
-    db_config = env.db_url_config(db_url)
 DATABASES = {
-    'default': db_config
+    'default': env.db()
 }
 DATABASES['default']['ATOMIC_REQUESTS'] = True
 
@@ -85,10 +71,6 @@ CACHES = {
 }
 
 SECRET_KEY = env('SECRET_KEY')
-if SECRET_KEY is None:
-    SECRET_KEY_FILE = env('SECRET_KEY_FILE')
-    if SECRET_KEY_FILE:
-        SECRET_KEY = open(SECRET_KEY_FILE).read().strip()
 
 SERVER_EMAIL = env('SERVER_EMAIL')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
@@ -337,18 +319,10 @@ LANGUAGE_COOKIE_NAME = '%s-language' % env.str('COOKIE_PREFIX')
 TUNNISTAMO_BASE_URL = env.str('OIDC_ISSUER_URL')
 SOCIAL_AUTH_TUNNISTAMO_KEY = env.str('OIDC_CLIENT_ID')
 SOCIAL_AUTH_TUNNISTAMO_SECRET = env.str('OIDC_CLIENT_SECRET')
-if SOCIAL_AUTH_TUNNISTAMO_SECRET is None:
-    OIDC_CLIENT_SECRET_FILE = env('OIDC_CLIENT_SECRET_FILE')
-    if OIDC_CLIENT_SECRET_FILE:
-        SOCIAL_AUTH_TUNNISTAMO_SECRET = open(OIDC_CLIENT_SECRET_FILE).read().strip()
 SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
 SOCIAL_AUTH_AZURE_AD_KEY = env.str('AZURE_AD_CLIENT_ID')
 SOCIAL_AUTH_AZURE_AD_SECRET = env.str('AZURE_AD_CLIENT_SECRET')
-if SOCIAL_AUTH_AZURE_AD_SECRET is None:
-    AZURE_AD_CLIENT_SECRET_FILE = env('AZURE_AD_CLIENT_SECRET_FILE')
-    if AZURE_AD_CLIENT_SECRET_FILE:
-        SOCIAL_AUTH_AZURE_AD_SECRET = open(AZURE_AD_CLIENT_SECRET_FILE).read().strip()
 
 SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.log_login_attempt',
@@ -474,17 +448,9 @@ LOCALE_PATHS = [
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 ANYMAIL = {}
 
-if 'MAILGUN_API_KEY' in env.ENVIRON:
-    MAILGUN_API_KEY = env('MAILGUN_API_KEY')
-else:
-    MAILGUN_API_KEY_FILE = env('MAILGUN_API_KEY_FILE')
-    if MAILGUN_API_KEY_FILE:
-        MAILGUN_API_KEY = open(MAILGUN_API_KEY_FILE).read().strip()
-    else:
-        MAILGUN_API_KEY = None
-if MAILGUN_API_KEY:
+if env.str('MAILGUN_API_KEY'):
     EMAIL_BACKEND = "anymail.backends.mailgun.EmailBackend"
-    ANYMAIL['MAILGUN_API_KEY'] = MAILGUN_API_KEY
+    ANYMAIL['MAILGUN_API_KEY'] = env.str('MAILGUN_API_KEY')
     ANYMAIL['MAILGUN_SENDER_DOMAIN'] = env.str('MAILGUN_SENDER_DOMAIN')
     if env.str('MAILGUN_REGION'):
         ANYMAIL['MAILGUN_API_URL'] = 'https://api.%s.mailgun.net/v3' % env.str('MAILGUN_REGION')
