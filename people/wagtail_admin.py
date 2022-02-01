@@ -1,13 +1,14 @@
 from dal import autocomplete
+from datetime import timedelta
 from django.contrib.admin.widgets import AdminFileWidget
+from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+import humanize
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
-from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.images.edit_handlers import ImageChooserPanel
 
-from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm, AplansTabbedInterface
+from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm
 from users.models import User
 
 from .admin import IsContactPersonFilter
@@ -93,18 +94,22 @@ class PersonAdmin(AplansModelAdmin):
 
         fields = [avatar, first_name, last_name, 'title', 'organization']
 
-        def has_logged_in(obj):
+        def last_logged_in(obj):
             user = User.objects.filter(email__iexact=obj.email).first()
             if not user or not user.last_login:
-                return False
-            return True
-        has_logged_in.short_description = _('has logged in')
-        has_logged_in.boolean = True
+                return None
+            now = timezone.now()
+            delta = now - user.last_login
+            if delta > timedelta(days=30):
+                return humanize.naturaldate(user.last_login)
+            return humanize.naturaltime(delta)
+        last_logged_in.short_description = _('has logged in')
+        last_logged_in.admin_order_field = 'user__last_login'
 
         user = request.user
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            fields.append(has_logged_in)
+            fields.append(last_logged_in)
             fields.append('participated_in_training')
 
         def contact_for_actions(obj):
