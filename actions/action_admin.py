@@ -366,7 +366,7 @@ class ActionIndexView(ListControlsIndexView):
             label=gettext('Own actions'),
             choices=[
                 ('contact_person', gettext('Show only actions with me as a contact person')),
-                ('modifiable', gettext('Show only own actions')),
+                ('modifiable', gettext('Show only actions I can modify')),
                 (None, gettext('Show all actions')),
             ],
             apply_to_queryset=self.filter_own_action
