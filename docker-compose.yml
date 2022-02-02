@@ -1,15 +1,19 @@
 version: '3.3'
 services:
   db:
+    image: docker.kausal.tech/postgres
     environment:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
     volumes:
       - db_data:/var/lib/postgresql/data/
 
-  # redis is defined in override file
+  redis:
+    image: docker.kausal.tech/redis
 
   app:
+    image: docker.kausal.tech/watch
+    environment:
     volumes:
       - aplans_media:/srv/media
     environment:

@@ -1,19 +1,27 @@
 name: CI
 on: push
 jobs:
-  build_and_test:
-    name: Build Docker container and run tests
+  build_test_and_push:
+    name: Build Docker images, run tests and push to Docker registry
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Building Docker containers
-        run: |
-          docker-compose build
-      - name: Starting Postgres and Redis
-        run: |
-          docker-compose up -d db redis
-      - name: Running pytest unit tests
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Build Docker containers
+        run: docker-compose build
+      - name: Start Postgres and Redis
+        run: docker-compose up -d db redis
+      - name: Run pytest unit tests
         run: docker-compose run --rm --entrypoint '' app pytest
-      - name: Stopping Postgres and Redis
-        run: |
-          docker-compose down db redis
+      - name: Stop Postgres and Redis
+        run: docker-compose down db redis
+      - name: Log into Docker registry
+        uses: docker/login-action@v1
+        with:
+          registry: docker.kausal.tech
+          username: docker
+          # FIXME: Instead of using the password, we should probably switch to token authentication with limited scope
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+      - name: Push Docker images
+        if: github.ref == 'refs/heads/master'
+        run: docker-compose push
