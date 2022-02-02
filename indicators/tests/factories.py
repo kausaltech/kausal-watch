@@ -44,7 +44,7 @@ class IndicatorFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Indicator {i}")
     unit = SubFactory(UnitFactory)
     quantity = SubFactory(QuantityFactory)
-    common = SubFactory(CommonIndicatorFactory)
+    common = SubFactory(CommonIndicatorFactory, unit=SelfAttribute('..unit'), quantity=SelfAttribute('..quantity'))
     description = "Indicator description"
     min_value = 0.0
     max_value = 100.0
