@@ -1,5 +1,6 @@
 from dal import autocomplete
 from datetime import timedelta
+from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils import timezone
 from django.utils.html import format_html
@@ -57,6 +58,11 @@ class PersonAdmin(AplansModelAdmin):
         qs = super().get_queryset(request).available_for_plan(plan)
         return qs
 
+    def get_empty_value_display(self, field=None):
+        if getattr(field, '_name', field) == 'last_logged_in':
+            return display_for_value(False, None, boolean=True)
+        return super().get_empty_value_display(field)
+
     def get_list_display(self, request):
         def edit_url(obj):
             if self.permission_helper.user_can_edit_obj(request.user, obj):
@@ -105,6 +111,7 @@ class PersonAdmin(AplansModelAdmin):
             return humanize.naturaltime(delta)
         last_logged_in.short_description = _('has logged in')
         last_logged_in.admin_order_field = 'user__last_login'
+        last_logged_in._name = 'last_logged_in'
 
         user = request.user
         plan = user.get_active_admin_plan()
