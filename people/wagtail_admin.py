@@ -95,7 +95,7 @@ class PersonAdmin(AplansModelAdmin):
         fields = [avatar, first_name, last_name, 'title', 'organization']
 
         def last_logged_in(obj):
-            user = User.objects.filter(email__iexact=obj.email).first()
+            user = obj.user
             if not user or not user.last_login:
                 return None
             now = timezone.now()
