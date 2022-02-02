@@ -310,6 +310,16 @@ class ActionIndexView(ListControlsIndexView):
             ))
         return ct_filters
 
+    def filter_own_action(self, queryset, value):
+        user = self.request.user
+        if value == 'modifiable':
+            return queryset.modifiable_by(user)
+        elif value == 'contact_person':
+            person = user.get_corresponding_person()
+            if person is not None:
+                return queryset.filter(contact_persons__person=person)
+        return queryset
+
     def filter_last_updated(self, queryset, value):
         if not value:
             return queryset
@@ -355,10 +365,11 @@ class ActionIndexView(ListControlsIndexView):
             name='own',
             label=gettext('Own actions'),
             choices=[
-                ('1', gettext('Show only own actions')),
+                ('contact_person', gettext('Show only actions with me as a contact person')),
+                ('modifiable', gettext('Show only own actions')),
                 (None, gettext('Show all actions')),
             ],
-            apply_to_queryset=lambda queryset, value: queryset.modifiable_by(self.request.user)
+            apply_to_queryset=self.filter_own_action
         )
 
         updated_filter = RadioFilter(
