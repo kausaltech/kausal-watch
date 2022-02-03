@@ -316,7 +316,9 @@ class ActionIndexView(ListControlsIndexView):
             return queryset.modifiable_by(user)
         elif value == 'contact_person':
             person = user.get_corresponding_person()
-            if person is not None:
+            if person is None:
+                return queryset.none()
+            else:
                 return queryset.filter(contact_persons__person=person)
         return queryset
 
