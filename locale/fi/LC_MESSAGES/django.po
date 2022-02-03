@@ -31,8 +31,12 @@ msgid "Own actions"
 msgstr "Omat toimenpiteet"
 
 #: actions/action_admin.py
-msgid "Show only own actions"
-msgstr "Näytä vain omat toimenpiteet"
+msgid "Show only actions with me as a contact person"
+msgstr "Näytä vain toimenpiteet joiden yhteyshenkilö olen"
+
+#: actions/action_admin.py
+msgid "Show only actions I can modify"
+msgstr "Näytä vain toimenpiteet joita voin muokata"
 
 #: actions/action_admin.py
 msgid "Show all actions"
