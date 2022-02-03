@@ -4,7 +4,7 @@ from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext_lazy as _
 import humanize
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.options import modeladmin_register
@@ -64,6 +64,11 @@ class PersonAdmin(AplansModelAdmin):
         return super().get_empty_value_display(field)
 
     def get_list_display(self, request):
+        try:
+            humanize.activate(get_language())
+        except FileNotFoundError as e:
+            logger.warning(e)
+
         def edit_url(obj):
             if self.permission_helper.user_can_edit_obj(request.user, obj):
                 return self.url_helper.get_action_url('edit', obj.pk)
@@ -107,7 +112,7 @@ class PersonAdmin(AplansModelAdmin):
             now = timezone.now()
             delta = now - user.last_login
             if delta > timedelta(days=30):
-                return humanize.naturaldate(user.last_login)
+                return user.last_login.date()
             return humanize.naturaltime(delta)
         last_logged_in.short_description = _('last login')
         last_logged_in.admin_order_field = 'user__last_login'
