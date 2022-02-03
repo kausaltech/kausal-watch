@@ -1,19 +1,32 @@
 version: '3.3'
 services:
   db:
-    image: docker.kausal.tech/postgres
+    # Set DB_IMAGE to specify the image name and tag for docker-compose push
+    image: ${DB_IMAGE-}
+    build:
+      context: .
+      dockerfile: ./docker/db/Dockerfile
+    restart: always
     environment:
-      - POSTGRES_USER
+      - POSTGRES_USER=watch
       - POSTGRES_PASSWORD
     volumes:
       - db_data:/var/lib/postgresql/data/
 
   redis:
-    image: docker.kausal.tech/redis
+    image: ${REDIS_IMAGE-redis:6.0-alpine}
+    restart: always
 
   app:
-    image: docker.kausal.tech/watch
-    environment:
+    # Set APP_IMAGE to specify the image name and tag for docker-compose push
+    image: ${APP_IMAGE-}
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+      args:
+        - EXTRA_PYPI_INDEX
+        - EXTRA_INSTALLED_APPS_VERSIONS
+    restart: always
     volumes:
       - aplans_media:/srv/media
     environment:
@@ -39,6 +52,9 @@ services:
       - MAILGUN_REGION
       - EXTRA_INSTALLED_APPS
       - EXTRA_INSTALLED_APPS_URLS
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+      - "${UWSGI_SOCKET_PORT:-8001}:8001"
     depends_on:
       - db
       - redis

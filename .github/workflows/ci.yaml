@@ -4,6 +4,9 @@ jobs:
   build_test_and_push:
     name: Build Docker images, run tests and push to Docker registry
     runs-on: ubuntu-latest
+    env:
+      APP_IMAGE: docker.kausal.tech/watch
+      DB_IMAGE: docker.kausal.tech/watch-postgres
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -24,4 +27,4 @@ jobs:
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
       - name: Push Docker images
         if: github.ref == 'refs/heads/master'
-        run: docker-compose push
+        run: docker-compose push app db

@@ -21,3 +21,4 @@ __pycache__/
 /.envrc
 /.direnv/
 tags
+/docker-compose.override.yml

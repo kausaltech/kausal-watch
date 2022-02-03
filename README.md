@@ -50,6 +50,13 @@ python manage.py compilemessages
 The project is containerized using Docker Compose. You will still need to set some
 variables in your environment; see the first few lines in `aplans/settings.py`.
 
+In particular, you will need to set the database credentials; for example:
+
+```
+POSTGRES_PASSWORD=change_me
+DATABASE_URL=postgres://watch:change_me@db/watch
+```
+
 ## Contributing
 
 ### Python requirements
