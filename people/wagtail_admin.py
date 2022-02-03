@@ -111,7 +111,7 @@ class PersonAdmin(AplansModelAdmin):
             return humanize.naturaltime(delta)
         last_logged_in.short_description = _('last login')
         last_logged_in.admin_order_field = 'user__last_login'
-            last_logged_in._name = 'last_logged_in'
+        last_logged_in._name = 'last_logged_in'
 
         user = request.user
         plan = user.get_active_admin_plan()
