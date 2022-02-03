@@ -7,6 +7,8 @@ jobs:
     env:
       APP_IMAGE: docker.kausal.tech/watch
       DB_IMAGE: docker.kausal.tech/watch-postgres
+      POSTGRES_PASSWORD: foobar123
+      DATABASE_URL: postgres://watch:foobar123@db/watch
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -19,6 +21,7 @@ jobs:
       - name: Stop Postgres and Redis
         run: docker-compose down db redis
       - name: Log into Docker registry
+        if: github.ref == 'refs/heads/master'
         uses: docker/login-action@v1
         with:
           registry: docker.kausal.tech
