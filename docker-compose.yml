@@ -2,7 +2,7 @@ version: '3.3'
 services:
   db:
     # Set DB_IMAGE to specify the image name and tag for docker-compose push
-    image: ${DB_IMAGE-}
+    image: ${DB_IMAGE-kausal-watch-postgres}
     build:
       context: .
       dockerfile: ./docker/db/Dockerfile
@@ -19,7 +19,7 @@ services:
 
   app:
     # Set APP_IMAGE to specify the image name and tag for docker-compose push
-    image: ${APP_IMAGE-}
+    image: ${APP_IMAGE-kausal-watch}
     build:
       context: .
       dockerfile: docker/app/Dockerfile
@@ -52,9 +52,6 @@ services:
       - MAILGUN_REGION
       - EXTRA_INSTALLED_APPS
       - EXTRA_INSTALLED_APPS_URLS
-    ports:
-      - "${HOST_PORT:-8000}:8000"
-      - "${UWSGI_SOCKET_PORT:-8001}:8001"
     depends_on:
       - db
       - redis
