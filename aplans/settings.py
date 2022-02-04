@@ -44,6 +44,7 @@ env = environ.FileAwareEnv(
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
     SENDGRID_API_KEY=(str, ''),
+    HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
 )
 
 BASE_DIR = root()
@@ -591,3 +592,5 @@ if 'DATABASES' in locals():
 if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')

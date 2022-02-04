@@ -52,6 +52,7 @@ services:
       - MAILGUN_REGION
       - EXTRA_INSTALLED_APPS
       - EXTRA_INSTALLED_APPS_URLS
+      - HOSTNAME_PLAN_DOMAINS
     depends_on:
       - db
       - redis
