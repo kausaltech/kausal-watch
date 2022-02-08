@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-03 10:02+0200\n"
+"POT-Creation-Date: 2022-02-08 08:44+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,11 +67,11 @@ msgid "More than 3 months ago"
 msgstr ""
 
 #: actions/action_admin.py
-msgid "Filter actions"
+msgid "Apply filters"
 msgstr ""
 
 #: actions/action_admin.py
-msgid "Apply filters"
+msgid "Advanced filters"
 msgstr ""
 
 #: actions/action_admin.py

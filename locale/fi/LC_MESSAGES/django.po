@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-03 10:02+0200\n"
-"PO-Revision-Date: 2022-02-03 10:02+0200\n"
+"POT-Creation-Date: 2022-02-08 08:44+0200\n"
+"PO-Revision-Date: 2022-02-08 08:49+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -67,12 +67,12 @@ msgid "More than 3 months ago"
 msgstr "Päälle 3 kuukautta sitten"
 
 #: actions/action_admin.py
-msgid "Filter actions"
-msgstr "Suodata toimenpiteitä"
-
-#: actions/action_admin.py
 msgid "Apply filters"
 msgstr "Toteuta suodatukset"
+
+#: actions/action_admin.py
+msgid "Advanced filters"
+msgstr "Rajaa tarkemmin"
 
 #: actions/action_admin.py
 msgid "Reset all"
@@ -2243,6 +2243,9 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Filter actions"
+#~ msgstr "Suodata toimenpiteitä"
 
 #~ msgid "admin for organization"
 #~ msgstr "ylläpitäjä organisaatiolle"

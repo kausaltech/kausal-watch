@@ -21,7 +21,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 import humanize
 from admin_list_controls.actions import SubmitForm, TogglePanel
 from admin_list_controls.components import (
-    Button, Columns, Icon, Panel, Spacer, Summary
+    Block, Button, Columns, Icon, Panel, Spacer, Summary
 )
 from admin_list_controls.filters import ChoiceFilter, RadioFilter
 from admin_list_controls.views import ListControlsIndexView
@@ -388,22 +388,23 @@ class ActionIndexView(ListControlsIndexView):
         )
 
         return [
-            Columns()(
-                Button(action=[
-                    TogglePanel(ref='filter_panel'),
-                ])(Icon('icon icon-list-ul'), gettext('Filter actions')),
+            Columns(column_count=2)(
+                Block(extra_classes='own-action-filter')(own_actions),
+                Block(extra_classes='own-action-filter')(org_filter)
             ),
+            Button(action=SubmitForm())(
+                Icon('icon icon-tick'),
+                gettext("Apply filters"),
+            ),
+            Button(action=[
+                TogglePanel(ref='filter_panel'),
+            ])(Icon('icon icon-list-ul'), gettext('Advanced filters')),
             Panel(ref='filter_panel', collapsed=True)(
-                Columns()(person_filter, org_filter),
+                Columns()(person_filter),
                 Columns()(*ct_filters),
                 Spacer(),
-                Columns()(own_actions),
                 Spacer(),
                 updated_filter,
-                Button(action=SubmitForm())(
-                    Icon('icon icon-tick'),
-                    gettext("Apply filters"),
-                ),
             ),
             Summary(reset_label=gettext('Reset all'), search_query_label=gettext('Search')),
         ]

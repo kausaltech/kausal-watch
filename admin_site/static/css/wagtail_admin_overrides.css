@@ -89,7 +89,7 @@ header {
     background-color: #074A35;
 }
 
-.dropdown .dropdown-toggle { 
+.dropdown .dropdown-toggle {
     background-color: #0A5E43;
 }
 
@@ -205,4 +205,9 @@ expects main contact as 3rd element in container */
 
 .alc__root {
     background-color: #0A5E43 !important;
+}
+
+.alc__block.own-action-filter label {
+    font-size: 80%;
+    color: white;
 }
