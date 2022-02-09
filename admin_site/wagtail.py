@@ -1,3 +1,5 @@
+from urllib.parse import urljoin
+
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.forms.widgets import Select
@@ -135,9 +137,39 @@ class FormClassMixin:
             return handler.get_form_class()
 
 
-class ContinueEditingMixin:
+class PersistIndexViewFiltersMixin:
+    def dispatch(self, request, *args, **kwargs):
+        result = super().dispatch(request, *args, **kwargs)
+        model = getattr(self, 'model_name')
+        if model is None:
+            return result
+        request.session[f'{model}_filter_querystring'] = super().get_query_string()
+        return result
+
+
+class PersistFiltersEditingMixin:
     def get_success_url(self):
-        if '_continue' in self.request.POST:
+        if super().continue_editing_active():
+            return super().get_success_url()
+        model = getattr(self, 'model_name')
+        url = super().get_success_url()
+        if model is None:
+            return url
+        filter_qs = self.request.session.get(f'{model}_filter_querystring')
+        if filter_qs is None:
+            return url
+        # Notice that urljoin will just overwrite any existing query
+        # strings in the url.  The query strings would have to be
+        # parsed, merged, and serialized if url contains query strings
+        return urljoin(url, filter_qs)
+
+
+class ContinueEditingMixin():
+    def continue_editing_active(self):
+        return '_continue' in self.request.POST
+
+    def get_success_url(self):
+        if self.continue_editing_active():
             # Save and continue editing
             if not hasattr(self, 'pk_quoted'):
                 pk = self.instance.pk
@@ -193,7 +225,8 @@ class PlanRelatedViewMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-class AplansEditView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, EditView):
+class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
+                     PlanRelatedViewMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         form_valid_return = super().form_valid(form, *args, **kwargs)
 
@@ -216,7 +249,8 @@ class AplansEditView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin,
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class AplansCreateView(ContinueEditingMixin, FormClassMixin, PlanRelatedViewMixin, CreateView):
+class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
+                       PlanRelatedViewMixin, CreateView):
     def get_instance(self):
         instance = super().get_instance()
         # If it is a plan-related model, ensure the 'plan' field gets set correctly.

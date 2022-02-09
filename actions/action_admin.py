@@ -31,7 +31,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper
+    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin
 )
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
@@ -246,7 +246,7 @@ class ActionCreateView(AplansCreateView):
         return instance
 
 
-class ActionIndexView(ListControlsIndexView):
+class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
     def filter_by_person(self, queryset, value):
         if not value:
             return queryset
