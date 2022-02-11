@@ -149,7 +149,7 @@ class PersistIndexViewFiltersMixin:
 
 class PersistFiltersEditingMixin:
     def get_success_url(self):
-        if super().continue_editing_active():
+        if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():
             return super().get_success_url()
         model = getattr(self, 'model_name')
         url = super().get_success_url()
@@ -180,7 +180,7 @@ class ContinueEditingMixin():
             return super().get_success_url()
 
     def get_success_message_buttons(self, instance):
-        if '_continue' in self.request.POST:
+        if self.continue_editing_active():
             # Store a reference to instance here for get_success_url() above to
             # work in CreateView
             if not hasattr(self, 'pk_quoted') and not hasattr(self, 'instance'):
