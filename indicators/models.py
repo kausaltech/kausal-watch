@@ -1,6 +1,7 @@
 import datetime
 import reversion
 from dateutil.relativedelta import relativedelta
+
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
@@ -9,7 +10,9 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import pgettext_lazy, gettext_lazy as _
+from django.utils.translation import (
+    get_language, pgettext_lazy, gettext_lazy as _
+)
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -50,6 +53,10 @@ class Quantity(ClusterableModel):
         ordering = ('name',)
 
     def __str__(self):
+        lang_code = get_language()
+        field_key = 'name_%s' % lang_code
+        if field_key in self.i18n:
+            return self.i18n[field_key]
         return self.name
 
     def autocomplete_label(self):
