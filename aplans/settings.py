@@ -413,6 +413,7 @@ LANGUAGES = (
     ('fi', _('Finnish')),
     ('en', _('English')),
     ('sv', _('Swedish')),
+    ('de', _('German')),
 )
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
 
@@ -423,9 +424,10 @@ PARLER_LANGUAGES = {
         {'code': 'fi'},
         {'code': 'en'},
         {'code': 'sv'},
+        {'code': 'de'},
     ),
     'default': {
-        'fallbacks': ['en', 'fi', 'sv'],
+        'fallbacks': ['en', 'fi', 'sv', 'de'],
         'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
     }
 }
