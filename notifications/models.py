@@ -6,6 +6,9 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
+from wagtail.core.fields import RichTextField
 
 from actions.models import Plan
 from people.models import Person
@@ -57,7 +60,7 @@ class BaseTemplateManager(models.Manager):
         return self.get(plan__identifier=plan_identifier)
 
 
-class BaseTemplate(models.Model):
+class BaseTemplate(ClusterableModel):
     plan = models.OneToOneField(
         Plan, on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),
@@ -100,7 +103,7 @@ class NotificationTemplateManager(models.Manager):
 
 
 class NotificationTemplate(models.Model):
-    base = models.ForeignKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
+    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
     subject = models.CharField(
         verbose_name=_('subject'), max_length=200, help_text=_('Subject for email notifications')
     )
@@ -140,9 +143,9 @@ class ContentBlockManager(models.Manager):
 
 
 class ContentBlock(models.Model):
-    content = models.TextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
+    content = RichTextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
-    base = models.ForeignKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
+    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
     template = models.ForeignKey(
         NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
         verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
@@ -156,6 +159,7 @@ class ContentBlock(models.Model):
     objects = ContentBlockManager()
 
     class Meta:
+        ordering = ('base', '-template', 'identifier')
         verbose_name = _('content block')
         verbose_name_plural = _('content blocks')
         unique_together = (('base', 'template', 'identifier'),)
