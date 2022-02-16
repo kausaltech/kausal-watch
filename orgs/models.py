@@ -124,11 +124,6 @@ class Organization(index.Indexed, Node):
                                          editable=False,
                                          on_delete=models.SET_NULL)
 
-    metadata_admins = models.ManyToManyField('people.Person',
-                                             through='orgs.OrganizationMetadataAdmin',
-                                             related_name='metadata_adminable_organizations',
-                                             blank=True)
-
     objects = OrganizationManager()
 
     search_fields = [
@@ -173,12 +168,12 @@ class Organization(index.Indexed, Node):
         return name
 
     def user_can_edit(self, user):
-        person = user.get_corresponding_person()
-        if person:
-            ancestors = self.get_ancestors() | Organization.objects.filter(pk=self.pk)
-            intersection = ancestors & person.metadata_adminable_organizations.all()
-            if intersection.exists():
+        for plan in user.get_adminable_plans():
+            if self.id in (org.id for org in plan.get_related_organizations()):
                 return True
+        parent = self.get_parent()
+        if parent and parent.user_can_edit(user):
+            return True
         return False
 
     def __str__(self):
@@ -233,22 +228,3 @@ class OrganizationAdmin(models.Model, PlanRelatedModel):
 
     def __str__(self):
         return f'{self.person} ({self.plan})'
-
-
-class OrganizationMetadataAdmin(models.Model):
-    """Person who can administer data of (descendants of) an organization but, in general, no plan-specific content."""
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['organization', 'person'], name='unique_organization_metadata_admin')
-        ]
-
-    organization = ParentalKey(
-        Organization,
-        on_delete=models.CASCADE,
-        verbose_name=_('organization'),
-    )
-    person = models.ForeignKey(
-        'people.Person',
-        on_delete=models.CASCADE,
-        verbose_name=_('person'),
-    )
