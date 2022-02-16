@@ -314,7 +314,6 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         obj.organization = plan.organization
         super().save_model(request, obj, form, change)
         obj.handle_values_update()
-        obj.save(update_fields=['latest_value'])
 
         self._update_actions = obj.related_actions.filter(indicates_action_progress=True)
 
@@ -331,6 +330,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
 
     def save_related(self, request, form, formsets, change):
         ret = super().save_related(request, form, formsets, change)
+        form.instance.handle_values_update()
         for act_ind in self._update_actions:
             act = act_ind.action
             act.recalculate_status()
