@@ -67,7 +67,6 @@ class NotificationTemplateAdmin(AplansModelAdmin):
 class ContentBlockAdmin(AplansModelAdmin):
     fields = [
         'identifier',
-        'name',
         'content',
         'template',
     ]

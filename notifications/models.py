@@ -145,7 +145,6 @@ class ContentBlockManager(models.Manager):
 
 
 class ContentBlock(models.Model):
-    name = models.CharField(verbose_name=_('name'), max_length=100, null=True, blank=True)
     content = models.TextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
     base = models.ForeignKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
@@ -159,7 +158,7 @@ class ContentBlock(models.Model):
         ('outro', _('Contact information block')),
     ))
 
-    i18n = TranslationField(fields=['name', 'content'])
+    i18n = TranslationField(fields=['content'])
 
     objects = ContentBlockManager()
 
@@ -181,6 +180,8 @@ class ContentBlock(models.Model):
         return super().save(*args, **kwargs)
 
     def __str__(self):
-        if not self.name:
-            return str(self.identifier)
-        return self.name
+        parts = []
+        if (self.template is not None):
+            parts.append(self.template.get_type_display())
+        parts.append(self.get_identifier_display())
+        return ': '.join(parts)
