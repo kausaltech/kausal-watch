@@ -1,3 +1,5 @@
+import logging
+
 from dal import autocomplete
 from datetime import timedelta
 from django.contrib.admin.utils import display_for_value
@@ -13,6 +15,9 @@ from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm
 
 from .admin import IsContactPersonFilter
 from .models import Person
+
+
+logger = logging.getLogger(__name__)
 
 
 def smart_truncate(content, length=100, suffix='...'):
