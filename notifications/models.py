@@ -6,7 +6,6 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from modeltrans.fields import TranslationField
 
 from actions.models import Plan
 from people.models import Person
@@ -74,8 +73,6 @@ class BaseTemplate(models.Model):
     font_family = models.CharField(verbose_name=_('Font family'), null=True, blank=True, max_length=200)
     font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True)
 
-    i18n = TranslationField(fields=['from_name'])
-
     objects = BaseTemplateManager()
 
     class Meta:
@@ -111,8 +108,6 @@ class NotificationTemplate(models.Model):
         verbose_name=_('type'), choices=notification_type_choice_builder(),
         max_length=100,
     )
-
-    i18n = TranslationField(fields=['subject'])
 
     objects = NotificationTemplateManager()
 
@@ -157,8 +152,6 @@ class ContentBlock(models.Model):
         ('motivation', _('Motivation block')),
         ('outro', _('Contact information block')),
     ))
-
-    i18n = TranslationField(fields=['content'])
 
     objects = ContentBlockManager()
 
