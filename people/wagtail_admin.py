@@ -10,7 +10,6 @@ from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm
-from users.models import User
 
 from .admin import IsContactPersonFilter
 from .models import Person
