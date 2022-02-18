@@ -10,9 +10,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.translation import (
-    get_language, pgettext_lazy, gettext_lazy as _
-)
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -20,7 +18,7 @@ from modeltrans.manager import MultilingualManager
 from wagtail.core.fields import RichTextField
 
 from admin_site.wagtail import AplansAdminModelForm
-from aplans.utils import IdentifierField, OrderedModel
+from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
 from orgs.models import Organization
 
 
@@ -36,7 +34,7 @@ def latest_plan():
 
 
 @reversion.register()
-class Quantity(ClusterableModel):
+class Quantity(ClusterableModel, TranslatedModelMixin):
     """The quantity that an indicator measures."""
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
@@ -53,11 +51,7 @@ class Quantity(ClusterableModel):
         ordering = ('name',)
 
     def __str__(self):
-        lang_code = get_language()
-        field_key = 'name_%s' % lang_code
-        if field_key in self.i18n:
-            return self.i18n[field_key]
-        return self.name
+        return self.get_i18n_value('name')
 
     def autocomplete_label(self):
         return str(self)

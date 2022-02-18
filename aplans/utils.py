@@ -7,7 +7,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext_lazy as _
 
 import libvoikko
 import pytz
@@ -190,3 +190,14 @@ def validate_css_color(s):
             _('%(color)s is not a CSS color (e.g., "#112233", "red" or "rgb(0, 255, 127)")'),
             params={'color': s},
         )
+
+
+class TranslatedModelMixin:
+    def get_i18n_value(self, field_name: str, language: str = None, default_language: str = None):
+        if language is None:
+            language = get_language()
+        key = '%s_%s' % (field_name, language)
+        val = self.i18n.get(key)
+        if val:
+            return val
+        return getattr(self, field_name)
