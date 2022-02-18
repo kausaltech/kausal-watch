@@ -115,6 +115,7 @@ class NotificationTemplate(models.Model):
     objects = NotificationTemplateManager()
 
     class Meta:
+        ordering = ('type', 'subject')
         verbose_name = _('notification template')
         verbose_name_plural = _('notification templates')
         unique_together = (('base', 'type'),)
@@ -159,7 +160,7 @@ class ContentBlock(models.Model):
     objects = ContentBlockManager()
 
     class Meta:
-        ordering = ('base', '-template', 'identifier')
+        ordering = ('base', 'identifier')
         verbose_name = _('content block')
         verbose_name_plural = _('content blocks')
         unique_together = (('base', 'template', 'identifier'),)
