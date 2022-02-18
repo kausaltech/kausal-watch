@@ -75,6 +75,10 @@ def test_organization_user_can_change_related_to_plan_superuser(superuser):
     assert organization.user_can_change_related_to_plan(superuser, plan)
 
 
-def test_organization_user_can_change_related_to_plan_organization_plan_admin():
+def test_organization_user_can_change_related_to_plan_organization_plan_admin_general_admin(plan_admin_user, plan):
+    assert plan.organization.user_can_change_related_to_plan(plan_admin_user, plan)
+
+
+def test_organization_user_can_change_related_to_plan_organization_plan_admin_false():
     opa = OrganizationPlanAdminFactory()
-    assert opa.organization.user_can_change_related_to_plan(opa.person.user, opa.plan)
+    assert not opa.organization.user_can_change_related_to_plan(opa.person.user, opa.plan)

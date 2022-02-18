@@ -189,13 +189,7 @@ class Organization(index.Indexed, Node):
         return False
 
     def user_can_change_related_to_plan(self, user, plan):
-        if user.is_superuser:
-            return True
-        person = user.get_corresponding_person()
-        if person:
-            admins = plan.organization_plan_admins.filter(organization=self).values_list('person', flat=True)
-            return person.pk in admins
-        return False
+        return user.is_general_admin_for_plan(plan)
 
     def __str__(self):
         if self.distinct_name:
