@@ -2,7 +2,7 @@ import pytest
 
 from actions.tests.factories import PlanFactory
 from orgs.models import Organization
-from orgs.tests.factories import OrganizationFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -61,3 +61,20 @@ def test_organization_queryset_editable_by_user_metadata_admin_suborg(person):
     sub_org = OrganizationFactory(parent=organization)
     sub_org.metadata_admins.add(person)
     assert organization not in Organization.objects.editable_by_user(person.user)
+
+
+def test_organization_user_can_change_related_to_plan_false(user):
+    plan = PlanFactory()
+    organization = OrganizationFactory()
+    assert not organization.user_can_change_related_to_plan(user, plan)
+
+
+def test_organization_user_can_change_related_to_plan_superuser(superuser):
+    plan = PlanFactory()
+    organization = OrganizationFactory()
+    assert organization.user_can_change_related_to_plan(superuser, plan)
+
+
+def test_organization_user_can_change_related_to_plan_organization_plan_admin():
+    opa = OrganizationPlanAdminFactory()
+    assert opa.organization.user_can_change_related_to_plan(opa.person.user, opa.plan)
