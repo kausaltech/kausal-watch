@@ -178,6 +178,8 @@ class Organization(index.Indexed, Node):
         return name
 
     def user_can_edit(self, user):
+        if user.is_superuser:
+            return True
         person = user.get_corresponding_person()
         if person:
             ancestors = self.get_ancestors() | Organization.objects.filter(pk=self.pk)
