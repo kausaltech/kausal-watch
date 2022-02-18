@@ -2,7 +2,8 @@ from wagtail.admin.edit_handlers import (FieldPanel, ObjectList, InlinePanel, Ri
 from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from django.utils.translation import gettext_lazy as _
 from admin_site.wagtail import (
-    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect
+    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
+    ActivePlanEditView
 )
 
 from .models import BaseTemplate
@@ -12,6 +13,7 @@ from .models import BaseTemplate
 class BaseTemplateAdmin(AplansModelAdmin):
     model = BaseTemplate
     add_to_settings_menu = True
+    edit_view_class = ActivePlanEditView
 
     panels = [
         FieldPanel('from_name'),

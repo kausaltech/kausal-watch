@@ -11,7 +11,8 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel
 from actions.models.action import ActionSchedule
 
 from admin_site.wagtail import (
-    AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel,
+    AplansCreateView, AplansModelAdmin, CondensedInlinePanel,
+    ActivePlanEditView
 )
 from orgs.models import Organization
 from .models import (
@@ -173,12 +174,6 @@ class ActivePlanPermissionHelper(PermissionHelper):
 
     def user_can_edit_obj(self, user, obj):
         return user.is_general_admin_for_plan(obj)
-
-
-class ActivePlanEditView(AplansEditView):
-    def get_success_url(self):
-        # After editing the plan, don't redirect to the index page as AplansEditView does.
-        return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
 # FIXME: This is mostly duplicated in content/admin.py.

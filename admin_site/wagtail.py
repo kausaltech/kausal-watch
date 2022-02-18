@@ -249,6 +249,12 @@ class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClass
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
+class ActivePlanEditView(AplansEditView):
+    def get_success_url(self):
+        # After editing the plan, don't redirect to the index page as AplansEditView does.
+        return self.url_helper.get_action_url('edit', self.instance.pk)
+
+
 class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
                        PlanRelatedViewMixin, CreateView):
     def get_instance(self):
