@@ -56,7 +56,7 @@ class OrganizationClass(models.Model):
                                               help_text=_('The time at which the resource was updated'))
 
     def __str__(self):
-        return f'{self.name} ({self.identifier})'
+        return self.name
 
 
 class OrganizationQuerySet(MP_NodeQuerySet):
