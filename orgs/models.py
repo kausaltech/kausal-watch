@@ -219,21 +219,21 @@ class OrganizationIdentifier(models.Model):
         return f'{self.identifier} @ {self.namespace.name}'
 
 
-class OrganizationAdmin(models.Model, PlanRelatedModel):
+class OrganizationPlanAdmin(models.Model, PlanRelatedModel):
     """Person who can administer plan-specific content that is related to the organization."""
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_admin')
+            models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_plan_admin')
         ]
 
     organization = ParentalKey(
-        Organization, on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('organization'),
+        Organization, on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('organization'),
     )
     plan = models.ForeignKey(
-        'actions.Plan', on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('plan')
+        'actions.Plan', on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('plan')
     )
     person = models.ForeignKey(
-        'people.Person', on_delete=models.CASCADE, related_name='organization_admins', verbose_name=_('person')
+        'people.Person', on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('person')
     )
 
     def __str__(self):

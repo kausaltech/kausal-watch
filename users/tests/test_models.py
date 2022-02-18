@@ -3,7 +3,7 @@ import pytest
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory
 from indicators.tests.factories import IndicatorContactFactory
 from people.tests.factories import PersonFactory
-from orgs.tests.factories import OrganizationFactory, OrganizationAdminFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -59,7 +59,7 @@ def test_is_organization_admin_for_action(action):
     org = action.plan.organization
     person = PersonFactory(organization=org)
     plan = action.plan
-    OrganizationAdminFactory(organization=org, person=person, plan=plan)
+    OrganizationPlanAdminFactory(organization=org, person=person, plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=org)
     user = person.user
     # User's organization is responsible party for action
@@ -71,7 +71,7 @@ def test_is_organization_admin_for_action_not_responsible(action):
     org = action.plan.organization
     person = PersonFactory(organization=org)
     plan = action.plan
-    OrganizationAdminFactory(organization=org, person=person, plan=plan)
+    OrganizationPlanAdminFactory(organization=org, person=person, plan=plan)
     user = person.user
     # User is organization admin, but the user's organization is not a responsible party for the action
     assert not user.is_organization_admin_for_action()
@@ -104,6 +104,6 @@ def test_get_adminable_organizations_descendants(superuser):
     assert list(superuser.get_adminable_organizations()) == [organization, sub_org]
 
 
-def test_get_adminable_organizations_organization_admin():
-    org_admin = OrganizationAdminFactory()
+def test_get_adminable_organizations_organization_plan_admin():
+    org_admin = OrganizationPlanAdminFactory()
     assert list(org_admin.person.user.get_adminable_organizations()) == [org_admin.organization]

@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
 from users.managers import UserManager
-from orgs.models import Organization, OrganizationAdmin
+from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
@@ -128,7 +128,7 @@ class User(AbstractUser):
         if not person:
             return Organization.objects.none()
 
-        orgs = person.organization_admins.values_list('organization')
+        orgs = person.organization_plan_admins.values_list('organization')
         return Organization.objects.filter(id__in=orgs)
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:

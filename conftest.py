@@ -47,7 +47,7 @@ register(indicators_factories.UnitFactory)
 register(orgs_factories.OrganizationClassFactory)
 register(orgs_factories.OrganizationFactory)
 register(orgs_factories.OrganizationIdentifierFactory)
-register(orgs_factories.OrganizationAdminFactory)
+register(orgs_factories.OrganizationPlanAdminFactory)
 register(pages_factories.CardBlockFactory)
 # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
 # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
