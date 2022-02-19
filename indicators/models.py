@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 import reversion
 from dateutil.relativedelta import relativedelta
 
@@ -16,6 +17,8 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
 from wagtail.core.fields import RichTextField
+from wagtail.search import index
+from wagtail.search.queryset import SearchableQuerySetMixin
 
 from admin_site.wagtail import AplansAdminModelForm
 from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
@@ -187,7 +190,11 @@ class FrameworkIndicator(models.Model):
         return '%s ∈ %s' % (str(self.common_indicator), str(self.framework))
 
 
-class Indicator(ClusterableModel):
+class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
+    pass
+
+
+class Indicator(ClusterableModel, index.Indexed):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
@@ -272,12 +279,21 @@ class Indicator(ClusterableModel):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
+    search_fields = [
+        index.SearchField('name', boost=10),
+        index.AutocompleteField('name'),
+        index.SearchField('description'),
+        index.FilterField('plans'),
+    ]
+
     public_fields = [
         'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
         'related_causes', 'related_effects', 'dimensions',
     ]
+
+    objects = IndicatorQuerySet.as_manager()
 
     class Meta:
         verbose_name = _('indicator')
@@ -347,8 +363,10 @@ class Indicator(ClusterableModel):
             'view_url': self.get_view_url(plan),
         }
 
-    def get_view_url(self, plan):
-        if not plan or not plan.site_url:
+    def get_view_url(self, plan=None):
+        if plan is None:
+            plan = self.plans.first()
+        if plan is None or not plan.site_url:
             return None
         if plan.site_url.startswith('http'):
             return '{}/indicators/{}'.format(plan.site_url, self.id)

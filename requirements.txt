@@ -22,6 +22,7 @@ cachetools==4.2.4
     # via django-helusers
 certifi==2021.10.8
     # via
+    #   elasticsearch
     #   requests
     #   sentry-sdk
 cffi==1.15.0
@@ -138,6 +139,8 @@ easy-thumbnails==2.8.1
     # via -r requirements.in
 ecdsa==0.17.0
     # via python-jose
+elasticsearch==7.17.0
+    # via -r requirements.in
 et-xmlfile==1.1.0
     # via openpyxl
 factory-boy==3.1.0
@@ -344,6 +347,7 @@ uritemplate==4.1.1
     #   coreapi
 urllib3==1.26.7
     # via
+    #   elasticsearch
     #   requests
     #   sentry-sdk
 wagtail==2.15.4

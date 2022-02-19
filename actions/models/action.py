@@ -14,6 +14,8 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
+from wagtail.search import index
+from wagtail.search.queryset import SearchableQuerySetMixin
 
 import reversion
 
@@ -29,7 +31,7 @@ from ..monitoring_quality import determine_monitoring_quality
 logger = logging.getLogger(__name__)
 
 
-class ActionQuerySet(models.QuerySet):
+class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def modifiable_by(self, user: User):
         if user.is_superuser:
             return self
@@ -48,7 +50,7 @@ class ActionQuerySet(models.QuerySet):
 
 
 @reversion.register()
-class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
+class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
     plan = ParentalKey(
@@ -171,6 +173,23 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel):
     i18n = TranslationField(fields=('name', 'official_name', 'description'))
 
     objects = ActionQuerySet.as_manager()
+
+    search_fields = [
+        index.SearchField('name', boost=10),
+        index.AutocompleteField('name'),
+        index.SearchField('identifier', boost=10),
+        index.AutocompleteField('identifier'),
+        index.SearchField('official_name', boost=8),
+        index.AutocompleteField('official_name'),
+        index.SearchField('description'),
+        index.RelatedFields('tasks', [
+            index.SearchField('name'),
+            index.SearchField('comment'),
+        ]),
+        index.FilterField('plan'),
+        index.FilterField('updated_at'),
+    ]
+    search_auto_update = True
 
     # Used by GraphQL + REST API code
     public_fields = [

@@ -57,6 +57,19 @@ services:
       - db
       - redis
 
+  elasticsearch:
+    build:
+      context: ./docker/elasticsearch
+      dockerfile: ./Dockerfile
+    restart: always
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=$ELASTIC_PASSWORD
+
 volumes:
   db_data:
   aplans_media:
+  elasticsearch_data:

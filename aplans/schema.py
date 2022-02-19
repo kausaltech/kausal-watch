@@ -18,6 +18,7 @@ from orgs.models import Organization
 from pages import schema as pages_schema
 from people import schema as people_schema
 from people.models import Person
+from search import schema as search_schema
 
 from .graphql_helpers import get_fields
 from .graphql_types import DjangoNode, get_plan_from_context
@@ -56,6 +57,7 @@ class Query(
     indicators_schema.Query,
     orgs_schema.Query,
     pages_schema.Query,
+    search_schema.Query,
     graphene.ObjectType
 ):
     plan_organizations = graphene.List(

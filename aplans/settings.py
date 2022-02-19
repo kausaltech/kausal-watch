@@ -45,6 +45,7 @@ env = environ.FileAwareEnv(
     MAILGUN_REGION=(str, ''),
     SENDGRID_API_KEY=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
+    ELASTICSEARCH_URL=(str, ''),
 )
 
 BASE_DIR = root()
@@ -70,6 +71,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 CACHES = {
     'default': env.cache(),
 }
+
+ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
 
 SECRET_KEY = env('SECRET_KEY')
 
@@ -510,6 +513,55 @@ WAGTAILSEARCH_BACKENDS = {
         'BACKEND': 'wagtail.contrib.postgres_search.backend',
     }
 }
+
+if ELASTICSEARCH_URL:
+    ANALYSIS_CONFIG = {
+        'fi': {
+            'analyzer': {
+                'default': {
+                    'tokenizer': 'finnish',
+                    'filter': ['lowercase', 'raudikkoFilter']
+                }
+             },
+            'filter': {
+                'raudikkoFilter': {
+                    'type': 'raudikko'
+                }
+            }
+        },
+        'sv': {
+            'analyzer': {
+                'default': {
+                    'type': 'swedish'
+                }
+            }
+        },
+        'en': {
+            'analyzer': {
+                'default': {
+                    'type': 'english'
+                }
+            }
+        },
+    }
+    for lang in ('fi', 'sv', 'en'):
+        WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
+            'BACKEND': 'search.backends',
+            'URLS': [ELASTICSEARCH_URL],
+            'INDEX': 'watch-%s' % lang,
+            'TIMEOUT': 5,
+            'INDEX_SETTINGS': {
+                'settings': {
+                    'index': {
+                        'number_of_shards': 1,
+                    },
+                    'analysis': {
+                        **ANALYSIS_CONFIG[lang],
+                    }
+                }
+            }
+        }
+    WAGTAILSEARCH_BACKENDS['default'] = WAGTAILSEARCH_BACKENDS['default-fi']
 
 
 THUMBNAIL_PROCESSORS = (
