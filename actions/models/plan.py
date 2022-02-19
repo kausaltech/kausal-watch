@@ -133,6 +133,7 @@ class Plan(ClusterableModel):
     )
 
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
+    related_plans = models.ManyToManyField('self', blank=True)
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name'])

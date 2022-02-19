@@ -1,6 +1,7 @@
 from itertools import chain
 
 from django.utils.translation import get_language
+from django.db.models import Q
 import graphene
 from graphql.error import GraphQLError
 from wagtail.core.models import Page
@@ -40,30 +41,34 @@ class SearchResults(graphene.ObjectType):
 class Query:
     search = graphene.Field(
         SearchResults,
-        plan=graphene.ID(required=False),
-        query=graphene.String(required=False),
-        autocomplete=graphene.String(required=False),
+        plan=graphene.ID(required=True),
+        include_related_plans=graphene.Boolean(default_value=False),
         max_results=graphene.Int(default_value=10),
-        page=graphene.Int(default_value=0)
+        page=graphene.Int(default_value=0),
+        query=graphene.String(required=False, default_value=None),
+        autocomplete=graphene.String(required=False, default_value=None),
     )
 
-    def resolve_search(root, info, plan=None, query=None, autocomplete=None, max_results=10, page=0):
+    def resolve_search(
+        root, info, plan, include_related_plans=False, max_results=10, page=0, query=None,
+        autocomplete=None,
+    ):
         if ((query is not None and autocomplete is not None) or
                 (query is None and autocomplete is None)):
             raise GraphQLError("You must supply either query or autocomplete", [info])
 
         plans = Plan.objects.all()
-        if plan is not None:
-            plan_obj = Plan.objects.filter(identifier=plan).first()
-            if plan_obj is None:
-                raise GraphQLError("Plan %s not found" % plan, [info])
-            plans = plans.filter(id=plan_obj.id)
-            # FIXME: add related plans
-        plans = list(plans.values_list('id', flat=True))
-
+        plan_obj = Plan.objects.filter(identifier=plan).first()
+        if plan_obj is None:
+            raise GraphQLError("Plan %s not found" % plan, [info])
+        plan_filter = Q(id=plan_obj.id)
+        if include_related_plans:
+            plan_filter |= Q(id__in=plan_obj.related_plans.all())
+        plans = plans.filter(plan_filter)
+        plan_ids = list(plans.values_list('id', flat=True))
         querysets = [
-            Action.objects.filter(plan__in=plans),
-            Indicator.objects.filter(plans__in=plans),
+            Action.objects.filter(plan__in=plan_ids),
+            Indicator.objects.filter(plans__in=plan_ids),
             # FIXME: Add Pages
         ]
         lang = get_language()
