@@ -128,6 +128,7 @@ class Dataset(ClusterableModel):
 
 
 class Framework(ClusterableModel):
+    identifier = IdentifierField(unique=True)
     name = models.CharField(max_length=200, verbose_name=_('name'))
 
     i18n = TranslationField(fields=['name'])
@@ -139,12 +140,35 @@ class Framework(ClusterableModel):
         verbose_name_plural = _('frameworks')
 
     def __str__(self):
-        return self.åname
+        return self.name
+
+
+class IndicatorRelationship(models.Model):
+    """A causal relationship between two indicators."""
+
+    INCREASES = 'increases'
+    DECREASES = 'decreases'
+    PART_OF = 'part_of'
+
+    EFFECT_TYPES = (
+        (INCREASES, _('increases')),
+        (DECREASES, _('decreases')),
+        (PART_OF, _('is a part of')),
+    )
+    effect_type = models.CharField(
+        max_length=40, choices=EFFECT_TYPES,
+        verbose_name=_('effect type'), help_text=_('What type of causal effect is there between the indicators'))
+
+    class Meta:
+        abstract = True
+
+    def __str__(self):
+        return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
 
 
 @reversion.register()
 class CommonIndicator(ClusterableModel):
-    identifier = IdentifierField(blank=True)
+    identifier = IdentifierField(null=True, blank=True)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
 
@@ -155,6 +179,9 @@ class CommonIndicator(ClusterableModel):
     unit = ParentalKey(
         Unit, related_name='common_indicators', on_delete=models.PROTECT,
         verbose_name=_('unit')
+    )
+    plans = models.ManyToManyField(
+        'actions.Plan', blank=True, related_name='common_indicators', through='PlanCommonIndicator'
     )
 
     i18n = TranslationField(fields=['name', 'description'])
@@ -167,6 +194,30 @@ class CommonIndicator(ClusterableModel):
 
     def __str__(self):
         return self.name
+
+
+class PlanCommonIndicator(models.Model):
+    common_indicator = models.ForeignKey(CommonIndicator, on_delete=models.CASCADE, related_name='+')
+    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='+')
+
+    def __str__(self):
+        return '%s in %s' % (self.common_indicator, self.plan)
+
+
+class RelatedCommonIndicator(IndicatorRelationship):
+    causal_indicator = models.ForeignKey(
+        CommonIndicator, related_name='related_effects', on_delete=models.CASCADE,
+        verbose_name=_('causal indicator')
+    )
+    effect_indicator = models.ForeignKey(
+        CommonIndicator, related_name='related_causes', on_delete=models.CASCADE,
+        verbose_name=_('effect indicator')
+    )
+
+    class Meta:
+        unique_together = (('causal_indicator', 'effect_indicator'),)
+        verbose_name = _('related indicator')
+        verbose_name_plural = _('related indicators')
 
 
 class FrameworkIndicator(models.Model):
@@ -271,7 +322,6 @@ class Indicator(ClusterableModel, index.Indexed):
     created_at = models.DateTimeField(
         auto_now_add=True, editable=False, verbose_name=_('created at')
     )
-
     contact_persons_unordered = models.ManyToManyField(
         'people.Person', through='IndicatorContactPerson', blank=True,
         related_name='contact_for_indicators', verbose_name=_('contact persons')
@@ -298,6 +348,7 @@ class Indicator(ClusterableModel, index.Indexed):
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')
+        unique_together = (('common', 'organization'),)
         ordering = ('-updated_at',)
 
     def get_latest_graph(self):
@@ -582,19 +633,8 @@ class IndicatorGoal(models.Model):
         return f"{indicator}{scenario_str} {date} {self.value}"
 
 
-class RelatedIndicator(models.Model):
+class RelatedIndicator(IndicatorRelationship):
     """A causal relationship between two indicators."""
-
-    INCREASES = 'increases'
-    DECREASES = 'decreases'
-    PART_OF = 'part_of'
-
-    EFFECT_TYPES = (
-        (INCREASES, _('increases')),
-        (DECREASES, _('decreases')),
-        (PART_OF, _('is a part of')),
-    )
-
     HIGH_CONFIDENCE = 'high'
     MEDIUM_CONFIDENCE = 'medium'
     LOW_CONFIDENCE = 'low'
@@ -612,9 +652,6 @@ class RelatedIndicator(models.Model):
         Indicator, related_name='related_causes', on_delete=models.CASCADE,
         verbose_name=_('effect indicator')
     )
-    effect_type = models.CharField(
-        max_length=40, choices=EFFECT_TYPES,
-        verbose_name=_('effect type'), help_text=_('What type of causal effect is there between the indicators'))
     confidence_level = models.CharField(
         max_length=20, choices=CONFIDENCE_LEVELS,
         verbose_name=_('confidence level'), help_text=_('How confident we are that the causal effect is present')
@@ -641,7 +678,7 @@ class ActionIndicator(models.Model):
         verbose_name=_('indicator')
     )
     effect_type = models.CharField(
-        max_length=40, choices=[(val, name) for val, name in RelatedIndicator.EFFECT_TYPES if val != 'part_of'],
+        max_length=40, choices=[(val, name) for val, name in IndicatorRelationship.EFFECT_TYPES if val != 'part_of'],
         verbose_name=_('effect type'), help_text=_('What type of effect should the action cause?')
     )
     indicates_action_progress = models.BooleanField(
