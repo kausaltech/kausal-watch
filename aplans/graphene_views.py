@@ -5,6 +5,7 @@ import logging
 from time import time
 
 from django.conf import settings
+from django.utils import translation
 from django.core.cache import cache
 
 import sentry_sdk
@@ -90,15 +91,24 @@ class LocaleMiddleware:
                 if lang not in SUPPORTED_LANGUAGES:
                     raise GraphQLError("unsupported language: %s" % lang, [info])
                 info.context._graphql_query_language = lang
+                return lang
 
     def resolve(self, next, root, info, **kwargs):
         if root is None:
             info.context._graphql_query_language = None
             operation = info.operation
+            lang = translation.get_language()
             for directive in operation.directives:
                 if directive.name.value == 'locale':
-                    self.process_locale_directive(info, directive)
-        return next(root, info, **kwargs)
+                    lang = self.process_locale_directive(info, directive)
+                    if lang is not None:
+                        break
+
+            with translation.override(lang):
+                ret = next(root, info, **kwargs)
+            return ret
+        else:
+            return next(root, info, **kwargs)
 
 
 class SentryGraphQLView(GraphQLView):
