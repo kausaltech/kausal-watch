@@ -55,3 +55,4 @@ tinycss2
 wagtail-admin-list-controls
 humanize
 elasticsearch>=7.0.0,<8.0.0
+rich
