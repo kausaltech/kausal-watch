@@ -59,6 +59,7 @@ services:
       - redis
 
   elasticsearch:
+    image: ${ELASTICSEARCH_IMAGE-kausal-watch-elasticsearch}
     build:
       context: ./docker/elasticsearch
       dockerfile: ./Dockerfile
