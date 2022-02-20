@@ -509,6 +509,7 @@ WAGTAIL_PASSWORD_RESET_ENABLED = True
 WAGTAILADMIN_PERMITTED_LANGUAGES = list(LANGUAGES)
 WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
 WAGTAILSEARCH_BACKENDS = {
+    # Will be overridden below if ELASTICSEARCH_URL is specified
     'default': {
         'BACKEND': 'wagtail.contrib.postgres_search.backend',
     }

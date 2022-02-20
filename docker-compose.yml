@@ -53,6 +53,7 @@ services:
       - EXTRA_INSTALLED_APPS
       - EXTRA_INSTALLED_APPS_URLS
       - HOSTNAME_PLAN_DOMAINS
+      - ELASTICSEARCH_URL
     depends_on:
       - db
       - redis
@@ -67,7 +68,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=$ELASTIC_PASSWORD
+      - ELASTIC_PASSWORD
 
 volumes:
   db_data:
