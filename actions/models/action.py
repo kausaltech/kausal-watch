@@ -198,7 +198,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase',
-        'manual_status_reason', 'links', 'primary_org',
+        'manual_status_reason', 'links', 'primary_org', 'order'
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
