@@ -22,6 +22,7 @@ from aplans.graphql_types import (
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage
+from search.backends import get_search_backend
 
 
 class PlanDomainNode(DjangoNode):
@@ -332,6 +333,7 @@ class ActionNode(DjangoNode):
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
+    similar_actions = graphene.List('actions.schema.ActionNode')
 
     class Meta:
         model = Action
@@ -381,6 +383,13 @@ class ActionNode(DjangoNode):
         if plan.contact_persons_private:
             return []
         return self.contact_persons.all()
+
+    def resolve_similar_actions(self: Action, info):
+        backend = get_search_backend()
+        if backend is None:
+            return []
+        backend.more_like_this(self)
+        return []
 
 
 class ActionScheduleNode(DjangoNode):
