@@ -44,7 +44,7 @@ class WatchSearchResults(Elasticsearch7SearchResults):
         # Get pks from results
         pks = [hit['fields']['pk'][0] for hit in hits]
         scores = {str(hit['fields']['pk'][0]): hit['_score'] for hit in hits}
-        highlights = {str(hit['fields']['pk'][0]): hit['highlight']['_all_text'] for hit in hits}
+        highlights = {str(hit['fields']['pk'][0]): hit.get('highlight', {}).get('_all_text', None) for hit in hits}
 
         # Initialise results dictionary
         results = {str(pk): None for pk in pks}
@@ -55,7 +55,7 @@ class WatchSearchResults(Elasticsearch7SearchResults):
 
             if self._score_field:
                 setattr(obj, self._score_field, scores.get(str(obj.pk)))
-            setattr(obj, '_highlight', highlights.get(str(obj.pk)))
+            setattr(obj, '_highlights', highlights.get(str(obj.pk)))
 
         # Yield results in order given by Elasticsearch
         for pk in pks:

@@ -1,3 +1,4 @@
+import logging
 from itertools import chain
 
 from django.utils.translation import get_language
@@ -8,10 +9,13 @@ from wagtail.core.models import Page
 
 from actions.models import Action, Plan
 from indicators.models import Indicator
-from pages.models import PlanRootPage
+from pages.models import PlanRootPage, AplansPage
 
 from actions.schema import ActionNode
 from indicators.schema import IndicatorNode
+
+
+logger = logging.getLogger(__name__)
 
 
 class SearchHitObject(graphene.Union):
@@ -52,14 +56,20 @@ class SearchResults(graphene.ObjectType):
                     plan=obj.plans.first(),
                     object=obj,
                 )
-            elif isinstance(obj, Page):
+            elif isinstance(obj, AplansPage):
                 hit = dict(
                     title=obj.title,
                     url=obj.get_full_url(),
                     plan=obj.plan,
                     page=obj,
                 )
+            else:
+                logger.warning('Unknown object type: %s' % type(obj))
+                continue
             hit['relevance'] = obj.relevance
+            highlights = getattr(obj, '_highlights', None)
+            if highlights:
+                hit['highlight'] = highlights[0]
             res.append(hit)
         return res
 
