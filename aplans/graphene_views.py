@@ -102,13 +102,9 @@ class LocaleMiddleware:
                 if directive.name.value == 'locale':
                     lang = self.process_locale_directive(info, directive)
                     if lang is not None:
+                        translation.activate(lang)
                         break
-
-            with translation.override(lang):
-                ret = next(root, info, **kwargs)
-            return ret
-        else:
-            return next(root, info, **kwargs)
+        return next(root, info, **kwargs)
 
 
 class SentryGraphQLView(GraphQLView):

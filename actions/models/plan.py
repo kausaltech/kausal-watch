@@ -56,6 +56,7 @@ class Plan(ClusterableModel):
     """
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
+    short_name = models.CharField(max_length=50, verbose_name=_('short name'), null=True, blank=True)
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
@@ -136,16 +137,17 @@ class Plan(ClusterableModel):
     related_plans = models.ManyToManyField('self', blank=True)
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name'])
+    i18n = TranslationField(fields=['name', 'short_name'])
 
     public_fields = [
-        'id', 'name', 'identifier', 'image', 'action_schedules',
+        'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'hide_action_identifiers', 'hide_action_official_name',
-        'hide_action_lead_paragraph', 'organization'
+        'hide_action_lead_paragraph', 'organization',
+        'related_plans',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
