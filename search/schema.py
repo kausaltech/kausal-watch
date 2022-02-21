@@ -13,6 +13,7 @@ from pages.models import PlanRootPage, AplansPage
 
 from actions.schema import ActionNode
 from indicators.schema import IndicatorNode
+from .backends import get_search_backend
 
 
 logger = logging.getLogger(__name__)
@@ -79,6 +80,7 @@ class Query:
         SearchResults,
         plan=graphene.ID(required=True),
         include_related_plans=graphene.Boolean(default_value=False),
+        only_other_plans=graphene.Boolean(default_value=False),
         max_results=graphene.Int(default_value=10),
         page=graphene.Int(default_value=0),
         query=graphene.String(required=False, default_value=None),
@@ -86,8 +88,8 @@ class Query:
     )
 
     def resolve_search(
-        root, info, plan, include_related_plans=False, max_results=10, page=0, query=None,
-        autocomplete=None,
+        root, info, plan, include_related_plans=False, only_other_plans=False,
+        max_results=10, page=0, query=None, autocomplete=None,
     ):
         if ((query is not None and autocomplete is not None) or
                 (query is None and autocomplete is None)):
@@ -102,6 +104,10 @@ class Query:
             plan_filter |= Q(id__in=plan_obj.related_plans.all())
         plans = plans.filter(plan_filter)
         plan_ids = list(plans.values_list('id', flat=True))
+
+        #backend = get_search_backend()
+        #backend.watch_search(query, included_plans=plan_ids)
+
         root_page_paths = (
             PlanRootPage.objects
                 .filter(sites_rooted_here__plan__in=plan_ids)
@@ -110,11 +116,18 @@ class Query:
         page_filter = Q()
         for path in root_page_paths:
             page_filter |= Q(path__startswith=path)
+
+        filter_method_name = 'filter'
+        if only_other_plans:
+            filter_method_name = 'exclude'
         querysets = [
-            Action.objects.filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
-            Indicator.objects.filter(plans__in=plan_ids),
-            Page.objects.filter(page_filter).live().specific(),
+            getattr(Action.objects, filter_method_name)(plan__in=plan_ids).select_related('plan', 'plan__organization'),
+            getattr(Page.objects, filter_method_name)(page_filter).live().specific(),
         ]
+        # FIXME: This doesn't work with exclude yet
+        if not only_other_plans:
+            querysets.append(Indicator.objects.filter(plans__in=plan_ids))
+
         lang = get_language()
         backend = 'default-%s' % lang
         results = []
