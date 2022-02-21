@@ -69,13 +69,12 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
       - ELASTIC_PASSWORD
     deploy:
       resources:
         limits:
-          # Apparently needs to be bigger than the limit in ES_JAVA_OPTS. But how much? No one knows.
-          memory: ${ELASTIC_MEM_LIMIT:-800M}
+          memory: ${ELASTIC_MEM_LIMIT:-2G}
 
 volumes:
   db_data:
