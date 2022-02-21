@@ -126,6 +126,11 @@ if env('CONFIGURE_LOGGING'):
                 'level': 'WARNING',
                 'propagate': False
             },
+            'blib2to3': {
+                'handlers': ['console'],
+                'level': 'INFO',
+                'propagate': False
+            },
             'generic': {
                 'handlers': ['console'],
                 'level': 'DEBUG',
