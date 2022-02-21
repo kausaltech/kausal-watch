@@ -81,7 +81,7 @@ class Query:
         plan=graphene.ID(required=True),
         include_related_plans=graphene.Boolean(default_value=False),
         only_other_plans=graphene.Boolean(default_value=False),
-        max_results=graphene.Int(default_value=10),
+        max_results=graphene.Int(default_value=20),
         page=graphene.Int(default_value=0),
         query=graphene.String(required=False, default_value=None),
         autocomplete=graphene.String(required=False, default_value=None),
@@ -89,7 +89,7 @@ class Query:
 
     def resolve_search(
         root, info, plan, include_related_plans=False, only_other_plans=False,
-        max_results=10, page=0, query=None, autocomplete=None,
+        max_results=20, page=0, query=None, autocomplete=None,
     ):
         if ((query is not None and autocomplete is not None) or
                 (query is None and autocomplete is None)):
