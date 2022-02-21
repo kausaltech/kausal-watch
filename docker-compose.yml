@@ -69,9 +69,13 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - ELASTIC_PASSWORD
-    # Default memory limit to 1024 MiB
-    mem_limit: ${ELASTIC_MEM_LIMIT:-1073741824}
+    deploy:
+      resources:
+        limits:
+          # Default memory limit to 512 MiB
+          memory: ${ELASTIC_MEM_LIMIT:-512M}
 
 volumes:
   db_data:
