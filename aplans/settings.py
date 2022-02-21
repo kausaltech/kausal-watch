@@ -521,12 +521,16 @@ if ELASTICSEARCH_URL:
             'analyzer': {
                 'default': {
                     'tokenizer': 'finnish',
-                    'filter': ['lowercase', 'raudikkoFilter']
+                    'filter': ['lowercase', 'finnish_stop', 'raudikkoFilter']
                 }
              },
             'filter': {
                 'raudikkoFilter': {
                     'type': 'raudikko'
+                },
+                'finnish_stop': {
+                    'type': 'stop',
+                    'stopwords': '_finnish',
                 }
             }
         },
