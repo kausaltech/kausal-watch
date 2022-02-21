@@ -560,6 +560,7 @@ if ELASTICSEARCH_URL:
             'URLS': [ELASTICSEARCH_URL],
             'INDEX': 'watch-%s' % lang,
             'TIMEOUT': 5,
+            'LANGUAGE_CODE': lang,
             'INDEX_SETTINGS': {
                 'settings': {
                     'index': {

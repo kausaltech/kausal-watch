@@ -1,10 +1,39 @@
+import logging
 from typing import Optional
 from django.utils import translation
 import elasticsearch_dsl as es_dsl
 from wagtail.search.backends.elasticsearch7 import (
     Elasticsearch7SearchBackend, Elasticsearch7SearchResults,
     Elasticsearch7SearchQueryCompiler, Elasticsearch7AutocompleteQueryCompiler,
+    Elasticsearch7Index
 )
+from wagtail.search.backends.elasticsearch5 import (
+    ElasticsearchIndexRebuilder, ElasticsearchAtomicIndexRebuilder
+)
+
+logger = logging.getLogger(__name__)
+
+
+class WatchSearchIndex(Elasticsearch7Index):
+    def add_items(self, model, items):
+        if not hasattr(model, 'get_primary_language'):
+            logger.warn('Model %s does not define a primary language' % model)
+            return
+        lang = self.backend.language_code
+        items = [item for item in items if item.get_primary_language() == lang]
+        return super().add_items(model, items)
+
+
+class WatchSearchRebuilder(ElasticsearchIndexRebuilder):
+    def start(self):
+        self.previous_language = translation.get_language()
+        translation.activate(self.index.backend.language_code)
+        return super().start()
+
+    def finish(self):
+        super().finish()
+        translation.activate(self.previous_language)
+
 
 class WatchSearchQueryCompiler(Elasticsearch7SearchQueryCompiler):
     def _process_filter(self, field_attname, lookup, value, check_only=False):
@@ -66,8 +95,14 @@ class WatchSearchResults(Elasticsearch7SearchResults):
 
 class WatchSearchBackend(Elasticsearch7SearchBackend):
     query_compiler_class = WatchSearchQueryCompiler
+    index_class = WatchSearchIndex
+    basic_rebuilder_class = WatchSearchRebuilder
     autocomplete_query_compiler_class = WatchAutocompleteQueryCompiler
     results_class = WatchSearchResults
+
+    def __init__(self, params: dict):
+        self.language_code = params.pop('LANGUAGE_CODE')
+        super().__init__(params)
 
     def more_like_this(self, obj):
         s = es_dsl.Search(using=self.es)

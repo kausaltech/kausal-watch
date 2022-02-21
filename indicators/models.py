@@ -447,6 +447,13 @@ class Indicator(ClusterableModel, index.Indexed):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def get_indexed_objects(cls):
+        return super().get_indexed_objects().filter(plans__isnull=False)
+
+    def get_primary_language(self):
+        return self.plans.first().primary_language
+
 
 @reversion.register()
 class Dimension(ClusterableModel):

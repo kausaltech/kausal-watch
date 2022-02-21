@@ -1,3 +1,4 @@
+import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -48,6 +49,10 @@ class AplansPage(Page):
         ], _('Common page configuration')),
     ]
 
+    search_fields = Page.search_fields + [
+        index.FilterField('plan'),
+    ]
+
     promote_panels = []
 
     graphql_fields = [
@@ -65,12 +70,17 @@ class AplansPage(Page):
         models = [ct.model_class() for ct in content_types]
         return [model for model in models if (model is not None and issubclass(model, cls) and model is not cls)]
 
-    @property
+    @functools.cached_property
     def plan(self) -> Optional[Plan]:
         root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()
         site = Site.objects.filter(root_page=root_page).first()
         plan = Plan.objects.filter(site=site).first()
         return plan
+
+    def get_primary_language(self):
+        if self.plan is None:
+            return None
+        return self.plan.primary_language
 
     def get_url_parts(self, request=None):
         plan = self.plan
@@ -115,7 +125,7 @@ class PlanRootPage(AplansPage):
         GraphQLStreamfield('body'),
     ]
 
-    search_fields = Page.search_fields + [
+    search_fields = AplansPage.search_fields + [
         index.SearchField('hero_content'),
         index.SearchField('body'),
     ]
@@ -165,7 +175,7 @@ class StaticPage(AplansPage):
         GraphQLStreamfield('body'),
     ]
 
-    search_fields = Page.search_fields + [
+    search_fields = AplansPage.search_fields + [
         index.SearchField('lead_paragraph'),
         index.SearchField('body'),
     ]
@@ -201,7 +211,7 @@ class CategoryPage(AplansPage):
         GraphQLStreamfield('body'),
     ]
 
-    search_fields = Page.search_fields + [
+    search_fields = AplansPage.search_fields + [
         index.FilterField('category'),
         index.SearchField('body'),
     ]

@@ -434,6 +434,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         else:
             return 'https://{}/actions/{}'.format(plan.site_url, self.identifier)
 
+    def get_primary_language(self):
+        return self.plan.primary_language
+
 
 class ActionResponsibleParty(OrderedModel):
     action = ParentalKey(
