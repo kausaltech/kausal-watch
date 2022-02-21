@@ -74,8 +74,8 @@ services:
     deploy:
       resources:
         limits:
-          # Default memory limit to 512 MiB
-          memory: ${ELASTIC_MEM_LIMIT:-512M}
+          # Apparently needs to be bigger than the limit in ES_JAVA_OPTS. But how much? No one knows.
+          memory: ${ELASTIC_MEM_LIMIT:-800M}
 
 volumes:
   db_data:
