@@ -8,15 +8,26 @@ from wagtail.core.models import Page
 
 from actions.models import Action, Plan
 from indicators.models import Indicator
+from pages.models import PlanRootPage
+
+from actions.schema import ActionNode
+from indicators.schema import IndicatorNode
+
+
+class SearchHitObject(graphene.Union):
+    class Meta:
+        types = (
+            ActionNode, IndicatorNode,
+        )
 
 
 class SearchHit(graphene.ObjectType):
     title = graphene.String()
     url = graphene.String()
     relevance = graphene.Float()
-
-    action = graphene.Field('actions.schema.ActionNode', required=False)
-    indicator = graphene.Field('indicators.schema.IndicatorNode', required=False)
+    highlight = graphene.String()
+    plan = graphene.Field('actions.schema.PlanNode')
+    object = graphene.Field(SearchHitObject, required=False)
     page = graphene.Field('grapple.types.pages.PageInterface', required=False)
 
 
@@ -28,11 +39,26 @@ class SearchResults(graphene.ObjectType):
         res = []
         for obj in hits:
             if isinstance(obj, Action):
-                hit = dict(title=str(obj), url=obj.get_view_url(), action=obj)
+                hit = dict(
+                    title=str(obj),
+                    url=obj.get_view_url(),
+                    plan=obj.plan,
+                    object=obj
+                )
             elif isinstance(obj, Indicator):
-                hit = dict(title=str(obj), url=obj.get_view_url(), indicator=obj)
+                hit = dict(
+                    title=str(obj),
+                    url=obj.get_view_url(),
+                    plan=obj.plans.first(),
+                    object=obj,
+                )
             elif isinstance(obj, Page):
-                hit = dict(title=obj.page, url=obj.get_full_url(), page=obj)
+                hit = dict(
+                    title=obj.title,
+                    url=obj.get_full_url(),
+                    plan=obj.plan,
+                    page=obj,
+                )
             hit['relevance'] = obj.relevance
             res.append(hit)
         return res
@@ -66,10 +92,18 @@ class Query:
             plan_filter |= Q(id__in=plan_obj.related_plans.all())
         plans = plans.filter(plan_filter)
         plan_ids = list(plans.values_list('id', flat=True))
+        root_page_paths = (
+            PlanRootPage.objects
+                .filter(sites_rooted_here__plan__in=plan_ids)
+                .values_list('path', flat=True)
+        )
+        page_filter = Q()
+        for path in root_page_paths:
+            page_filter |= Q(path__startswith=path)
         querysets = [
-            Action.objects.filter(plan__in=plan_ids),
+            Action.objects.filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
             Indicator.objects.filter(plans__in=plan_ids),
-            # FIXME: Add Pages
+            Page.objects.filter(page_filter).live().specific(),
         ]
         lang = get_language()
         backend = 'default-%s' % lang

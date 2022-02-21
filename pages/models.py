@@ -1,13 +1,18 @@
+from typing import Optional
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield, GraphQLString
+from grapple.models import (
+    GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
+    GraphQLString, GraphQLField
+)
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail.search import index
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
 from actions.chooser import CategoryChooser
@@ -46,6 +51,7 @@ class AplansPage(Page):
     promote_panels = []
 
     graphql_fields = [
+        GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
     ]
 
@@ -59,14 +65,19 @@ class AplansPage(Page):
         models = [ct.model_class() for ct in content_types]
         return [model for model in models if (model is not None and issubclass(model, cls) and model is not cls)]
 
-    def get_url_parts(self, request=None):
+    @property
+    def plan(self) -> Optional[Plan]:
         root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()
         site = Site.objects.filter(root_page=root_page).first()
         plan = Plan.objects.filter(site=site).first()
+        return plan
+
+    def get_url_parts(self, request=None):
+        plan = self.plan
         if not plan:
             return super().get_url_parts(request)
 
-        return (site.id, plan.site_url, self.url_path)
+        return (plan.site_id, plan.site_url, self.url_path)
 
 
 class PlanRootPage(AplansPage):
@@ -102,6 +113,11 @@ class PlanRootPage(AplansPage):
         GraphQLString('indicator_short_description'),
         GraphQLString('hero_content'),
         GraphQLStreamfield('body'),
+    ]
+
+    search_fields = Page.search_fields + [
+        index.SearchField('hero_content'),
+        index.SearchField('body'),
     ]
 
     class Meta:
@@ -149,6 +165,11 @@ class StaticPage(AplansPage):
         GraphQLStreamfield('body'),
     ]
 
+    search_fields = Page.search_fields + [
+        index.SearchField('lead_paragraph'),
+        index.SearchField('body'),
+    ]
+
     class Meta:
         verbose_name = _('Content page')
         verbose_name_plural = _('Content pages')
@@ -178,6 +199,11 @@ class CategoryPage(AplansPage):
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLForeignKey('category', Category),
         GraphQLStreamfield('body'),
+    ]
+
+    search_fields = Page.search_fields + [
+        index.FilterField('category'),
+        index.SearchField('body'),
     ]
 
     class Meta:
