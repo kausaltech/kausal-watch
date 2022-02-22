@@ -14,6 +14,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
     model = BaseTemplate
     add_to_settings_menu = True
     edit_view_class = ActivePlanEditView
+    menu_icon = 'fa-bell'
+    menu_label = _('Notifications')
 
     panels = [
         FieldPanel('from_name'),
