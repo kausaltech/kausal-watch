@@ -61,6 +61,8 @@ class OrganizationClass(models.Model):
 
 class OrganizationQuerySet(MP_NodeQuerySet):
     def editable_by_user(self, user):
+        if user.is_superuser:
+            return self
         person = user.get_corresponding_person()
         if person:
             # TODO: Improve efficiency
