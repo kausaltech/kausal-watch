@@ -19,7 +19,6 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('from_name'),
-        FieldPanel('from_address'),
         FieldPanel('reply_to')
     ]
 
@@ -44,9 +43,17 @@ class BaseTemplateAdmin(AplansModelAdmin):
         return ActivePlanMenuItem(self, order or self.get_menu_order())
 
     def get_edit_handler(self, instance, request):
+        additional_panels = []
+        if request.user.is_superuser:
+            additional_panels.append(FieldPanel('from_address'))
+            additional_panels.append(FieldPanel('brand_dark_color'))
+            additional_panels.append(FieldPanel('logo'))
+            additional_panels.append(FieldPanel('font_family'))
+            additional_panels.append(FieldPanel('font_css_url'))
+
         return AplansTabbedInterface([
             ObjectList(
-                self.panels,
+                self.panels + additional_panels,
                 heading=_('Basic information')),
             ObjectList([
                 InlinePanel(
