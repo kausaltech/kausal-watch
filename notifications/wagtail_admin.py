@@ -53,13 +53,13 @@ class BaseTemplateAdmin(AplansModelAdmin):
                     'templates',
                     panels=self.templates_panels
                 )],
-                heading=_('Message subjects')),
+                heading=_('Notification types')),
             ObjectList([
                 CondensedInlinePanel(
                     'content_blocks',
                     panels=self.block_panels
                 )],
-                heading=_('Content')
+                heading=_('Notification contents')
             )
         ])
 

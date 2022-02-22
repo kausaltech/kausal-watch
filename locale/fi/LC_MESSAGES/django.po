@@ -3,13 +3,12 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-08 08:44+0200\n"
-"PO-Revision-Date: 2022-02-14 12:04+0200\n"
+"POT-Creation-Date: 2022-02-22 16:26+0200\n"
+"PO-Revision-Date: 2022-02-22 16:37+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -101,7 +100,7 @@ msgid "Name"
 msgstr "Nimi"
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
 
@@ -235,7 +234,7 @@ msgid "identifier"
 msgstr "tunniste"
 
 #: actions/export.py actions/models/action.py actions/models/category.py
-#: actions/models/plan.py indicators/models.py notifications/models.py
+#: actions/models/plan.py indicators/models.py
 msgid "name"
 msgstr "nimi"
 
@@ -752,6 +751,10 @@ msgstr "metatiedon valinnat"
 msgid "metadata_numeric_values"
 msgstr "metatiedon numeroarvot"
 
+#: actions/models/plan.py indicators/models.py
+msgid "short name"
+msgstr "lyhenne"
+
 #: actions/models/plan.py
 msgid "site URL"
 msgstr "sivuston osoite"
@@ -1089,6 +1092,10 @@ msgstr "englanti"
 msgid "Swedish"
 msgstr "ruotsi"
 
+#: aplans/settings.py
+msgid "German"
+msgstr ""
+
 #: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
@@ -1297,10 +1304,6 @@ msgid "quantities"
 msgstr "suureet"
 
 #: indicators/models.py
-msgid "short name"
-msgstr "lyhenne"
-
-#: indicators/models.py
 msgid "verbose name"
 msgstr "selite"
 
@@ -1361,12 +1364,48 @@ msgid "frameworks"
 msgstr "reportointikehykset"
 
 #: indicators/models.py
+msgid "increases"
+msgstr "lisää"
+
+#: indicators/models.py
+msgid "decreases"
+msgstr "pienentää"
+
+#: indicators/models.py
+msgid "is a part of"
+msgstr "on osana"
+
+#: indicators/models.py
+msgid "effect type"
+msgstr "vaikutuksen tyyppi"
+
+#: indicators/models.py
+msgid "What type of causal effect is there between the indicators"
+msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
+
+#: indicators/models.py
 msgid "common indicator"
 msgstr "yleinen mittari"
 
 #: indicators/models.py
 msgid "common indicators"
 msgstr "yleiset mittarit"
+
+#: indicators/models.py
+msgid "causal indicator"
+msgstr "vaikuttava mittari"
+
+#: indicators/models.py
+msgid "effect indicator"
+msgstr "kohdemittari"
+
+#: indicators/models.py
+msgid "related indicator"
+msgstr "liittyvä mittari"
+
+#: indicators/models.py
+msgid "related indicators"
+msgstr "liittyvät mittarit"
 
 #: indicators/models.py
 msgid "framework indicator"
@@ -1519,18 +1558,6 @@ msgid "indicator goals"
 msgstr "mittarin tavoitteet"
 
 #: indicators/models.py
-msgid "increases"
-msgstr "lisää"
-
-#: indicators/models.py
-msgid "decreases"
-msgstr "pienentää"
-
-#: indicators/models.py
-msgid "is a part of"
-msgstr "on osana"
-
-#: indicators/models.py
 msgid "high"
 msgstr "korkea"
 
@@ -1543,36 +1570,12 @@ msgid "low"
 msgstr "matala"
 
 #: indicators/models.py
-msgid "causal indicator"
-msgstr "vaikuttava mittari"
-
-#: indicators/models.py
-msgid "effect indicator"
-msgstr "kohdemittari"
-
-#: indicators/models.py
-msgid "effect type"
-msgstr "vaikutuksen tyyppi"
-
-#: indicators/models.py
-msgid "What type of causal effect is there between the indicators"
-msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
-
-#: indicators/models.py
 msgid "confidence level"
 msgstr "luottamustaso"
 
 #: indicators/models.py
 msgid "How confident we are that the causal effect is present"
 msgstr "Kuinka varmaa on, että mittarilla on kuvattu vaikutus kohteeseen"
-
-#: indicators/models.py
-msgid "related indicator"
-msgstr "liittyvä mittari"
-
-#: indicators/models.py
-msgid "related indicators"
-msgstr "liittyvät mittarit"
 
 #: indicators/models.py
 msgid "What type of effect should the action cause?"
@@ -1739,7 +1742,7 @@ msgstr "Yleiset mittarit"
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr "Herätteet"
 
@@ -1825,7 +1828,7 @@ msgstr "mallinne"
 
 #: notifications/models.py
 msgid "Do not set if content block is used in multiple templates"
-msgstr "Älä aseta jos sisältölohko on käytössä useammassa mallinteessa"
+msgstr "Jätä tyhjäksi jos sisältölohko on käytössä useammassa mallinteessa"
 
 #: notifications/models.py
 msgid "Introduction block"
@@ -1846,6 +1849,14 @@ msgstr "sisältölohko"
 #: notifications/models.py
 msgid "content blocks"
 msgstr "sisältölohkot"
+
+#: notifications/wagtail_admin.py
+msgid "Notification types"
+msgstr "Herätetyypit"
+
+#: notifications/wagtail_admin.py
+msgid "Notification contents"
+msgstr "Herätteiden sisältö"
 
 #: orgs/apps.py
 msgid "Organizations"

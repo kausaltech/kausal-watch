@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-08 08:44+0200\n"
+"POT-Creation-Date: 2022-02-22 16:26+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -101,7 +101,7 @@ msgid "Name"
 msgstr ""
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
 msgid "Basic information"
 msgstr ""
 
@@ -235,7 +235,7 @@ msgid "identifier"
 msgstr ""
 
 #: actions/export.py actions/models/action.py actions/models/category.py
-#: actions/models/plan.py indicators/models.py notifications/models.py
+#: actions/models/plan.py indicators/models.py
 msgid "name"
 msgstr ""
 
@@ -752,6 +752,10 @@ msgstr ""
 msgid "metadata_numeric_values"
 msgstr ""
 
+#: actions/models/plan.py indicators/models.py
+msgid "short name"
+msgstr ""
+
 #: actions/models/plan.py
 msgid "site URL"
 msgstr ""
@@ -1083,6 +1087,10 @@ msgstr ""
 msgid "Swedish"
 msgstr ""
 
+#: aplans/settings.py
+msgid "German"
+msgstr ""
+
 #: aplans/utils.py
 msgid "order"
 msgstr ""
@@ -1291,10 +1299,6 @@ msgid "quantities"
 msgstr ""
 
 #: indicators/models.py
-msgid "short name"
-msgstr ""
-
-#: indicators/models.py
 msgid "verbose name"
 msgstr ""
 
@@ -1355,11 +1359,47 @@ msgid "frameworks"
 msgstr ""
 
 #: indicators/models.py
+msgid "increases"
+msgstr ""
+
+#: indicators/models.py
+msgid "decreases"
+msgstr ""
+
+#: indicators/models.py
+msgid "is a part of"
+msgstr ""
+
+#: indicators/models.py
+msgid "effect type"
+msgstr ""
+
+#: indicators/models.py
+msgid "What type of causal effect is there between the indicators"
+msgstr ""
+
+#: indicators/models.py
 msgid "common indicator"
 msgstr ""
 
 #: indicators/models.py
 msgid "common indicators"
+msgstr ""
+
+#: indicators/models.py
+msgid "causal indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "effect indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "related indicator"
+msgstr ""
+
+#: indicators/models.py
+msgid "related indicators"
 msgstr ""
 
 #: indicators/models.py
@@ -1513,18 +1553,6 @@ msgid "indicator goals"
 msgstr ""
 
 #: indicators/models.py
-msgid "increases"
-msgstr ""
-
-#: indicators/models.py
-msgid "decreases"
-msgstr ""
-
-#: indicators/models.py
-msgid "is a part of"
-msgstr ""
-
-#: indicators/models.py
 msgid "high"
 msgstr ""
 
@@ -1537,35 +1565,11 @@ msgid "low"
 msgstr ""
 
 #: indicators/models.py
-msgid "causal indicator"
-msgstr ""
-
-#: indicators/models.py
-msgid "effect indicator"
-msgstr ""
-
-#: indicators/models.py
-msgid "effect type"
-msgstr ""
-
-#: indicators/models.py
-msgid "What type of causal effect is there between the indicators"
-msgstr ""
-
-#: indicators/models.py
 msgid "confidence level"
 msgstr ""
 
 #: indicators/models.py
 msgid "How confident we are that the causal effect is present"
-msgstr ""
-
-#: indicators/models.py
-msgid "related indicator"
-msgstr ""
-
-#: indicators/models.py
-msgid "related indicators"
 msgstr ""
 
 #: indicators/models.py
@@ -1733,7 +1737,7 @@ msgstr ""
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr ""
 
@@ -1839,6 +1843,14 @@ msgstr ""
 
 #: notifications/models.py
 msgid "content blocks"
+msgstr ""
+
+#: notifications/wagtail_admin.py
+msgid "Notification types"
+msgstr ""
+
+#: notifications/wagtail_admin.py
+msgid "Notification contents"
 msgstr ""
 
 #: orgs/apps.py
