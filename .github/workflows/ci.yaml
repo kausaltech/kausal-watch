@@ -3,7 +3,7 @@ on: push
 jobs:
   build_test_and_push:
     name: Build Docker images, run tests and push to Docker registry
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     env:
       APP_REPOSITORY: docker.kausal.tech/watch
       APP_IMAGE: docker.kausal.tech/watch
@@ -16,6 +16,7 @@ jobs:
       EXTRA_PYPI_INDEX: ${{ secrets.EXTRA_PYPI_INDEX }}
       EXTRA_INSTALLED_APPS_VERSIONS: kausal-watch-extensions==0.1.3
       EXTRA_INSTALLED_APPS: kausal_watch_extensions
+      DOCKER_BUILDKIT: 1
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -26,7 +27,7 @@ jobs:
       - name: Run pytest unit tests
         run: docker-compose run --rm --entrypoint '' app pytest
       - name: Stop Postgres and Redis
-        run: docker-compose down db redis
+        run: docker-compose down
       - name: Log into Docker registry
         if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/deployment/staging'
         uses: docker/login-action@v1
