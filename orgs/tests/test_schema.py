@@ -83,7 +83,8 @@ def test_create_organization_with_id_should_fail(graphql_client_query, contains_
                           'field.')
 
 
-def test_delete_organization_root(graphql_client_query_data, contains_error, uuid, token, organization):
+def test_delete_organization_root(graphql_client_query_data, contains_error, uuid, token):
+    org = OrganizationFactory()
     response = graphql_client_query_data(
         '''
         mutation($uuid: String!, $token: String!, $organization: ID!)
@@ -94,10 +95,10 @@ def test_delete_organization_root(graphql_client_query_data, contains_error, uui
           }
         }
         ''',
-        variables={'uuid': uuid, 'token': token, 'organization': str(organization.id)}
+        variables={'uuid': uuid, 'token': token, 'organization': str(org.id)}
     )
     assert response['deleteOrganization']['ok']
-    assert not Organization.objects.filter(id=organization.id).exists()
+    assert not Organization.objects.filter(id=org.id).exists()
 
 
 def test_delete_organization(graphql_client_query_data, uuid, token, organization):

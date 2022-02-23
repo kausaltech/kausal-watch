@@ -41,15 +41,6 @@ def api_client():
     return JSONAPIClient(default_format='vnd.api+json')
 
 
-# @pytest.fixture
-# def plan_admin_user(plan):
-#     user = User.objects.create(
-#         first_name='Plan', last_name='Admin', email='plan.admin@example.com'
-#     )
-#     plan.general_admins.add(user)
-#     return user
-
-
 @pytest.fixture
 def plan_list_url():
     return reverse('plan-list')

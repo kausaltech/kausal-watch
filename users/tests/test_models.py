@@ -44,10 +44,9 @@ def test_is_general_admin_for_plan_false(user, plan):
     assert not user.is_general_admin_for_plan(plan)
 
 
-def test_is_general_admin_for_plan(user, plan):
-    user.general_admin_plans.add(plan)
-    assert user.is_general_admin_for_plan()
-    assert user.is_general_admin_for_plan(plan)
+def test_is_general_admin_for_plan(plan_admin_user, plan):
+    assert plan_admin_user.is_general_admin_for_plan()
+    assert plan_admin_user.is_general_admin_for_plan(plan)
 
 
 def test_is_organization_admin_for_action_false(user, action):
@@ -90,18 +89,20 @@ def test_is_organization_admin_for_action_not_admin(action):
 
 def test_get_adminable_organizations_superuser(superuser):
     organization = OrganizationFactory()
-    assert list(superuser.get_adminable_organizations()) == [organization]
+    assert organization in superuser.get_adminable_organizations().all()
 
 
 def test_get_adminable_organizations_is_not_admin(user):
-    OrganizationFactory()
-    assert list(user.get_adminable_organizations()) == []
+    organization = OrganizationFactory()
+    assert organization not in user.get_adminable_organizations()
 
 
 def test_get_adminable_organizations_descendants(superuser):
     organization = OrganizationFactory()
     sub_org = OrganizationFactory(parent=organization)
-    assert list(superuser.get_adminable_organizations()) == [organization, sub_org]
+    adminable = superuser.get_adminable_organizations()
+    assert organization in adminable
+    assert sub_org in adminable
 
 
 def test_get_adminable_organizations_organization_plan_admin():

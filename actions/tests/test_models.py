@@ -41,11 +41,12 @@ def test_action_query_set_modifiable_by_contact_person(action, action_contact):
     assert action in Action.objects.modifiable_by(action_contact.person.user)
 
 
-def test_action_query_set_modifiable_by_distinct(action, user, action_contact):
-    assert user == action_contact.person.user
+def test_action_query_set_modifiable_by_distinct(action, user, person, action_contact):
+    assert person.user == user
+    assert person == action_contact.person
     assert list(Action.objects.modifiable_by(user)) == [action]
     # Make user a plan admin as well
-    user.general_admin_plans.add(action.plan)
+    person.general_admin_plans.add(action.plan)
     assert list(Action.objects.modifiable_by(user)) == [action]
     # When we remove the user from the action contacts, it should still be able to modify
     action_contact.delete()

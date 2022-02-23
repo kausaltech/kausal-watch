@@ -7,12 +7,12 @@ from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFacto
 pytestmark = pytest.mark.django_db
 
 
-def test_organization_user_can_edit_related_plan_general_plan_admin_false(user):
+def test_organization_user_can_edit_related_plan_general_plan_admin_false(person):
     plan = PlanFactory()
     organization = OrganizationFactory()
-    plan.general_admins.add(user)
+    plan.general_admins.add(person)
     plan.related_organizations.add(organization)
-    assert not organization.user_can_edit(user)
+    assert not organization.user_can_edit(person.user)
 
 
 def test_organization_user_can_edit_metadata_admin(person):
@@ -38,7 +38,7 @@ def test_organization_user_can_edit_metadata_admin_suborg(person):
 def test_organization_queryset_editable_by_user_related_plan_general_plan_admin_false(person):
     plan = PlanFactory()
     organization = OrganizationFactory()
-    plan.general_admins.add(person.user)
+    plan.general_admins.add(person)
     plan.related_organizations.add(organization)
     assert organization not in Organization.objects.editable_by_user(person.user)
 

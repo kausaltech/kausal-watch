@@ -93,7 +93,11 @@ class User(AbstractUser):
 
         plans = set()
         self._general_admin_for_plans = plans
-        plans.update({plan.id for plan in self.general_admin_plans.all()})
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        plans.update({plan.id for plan in person.general_admin_plans.all()})
         if plan is None:
             return bool(plans)
         else:

@@ -18,6 +18,7 @@ import reversion
 
 from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color
 from orgs.models import Organization
+from people.models import Person
 
 logger = logging.getLogger(__name__)
 
@@ -82,9 +83,9 @@ class Plan(ClusterableModel):
     )
 
     general_admins = models.ManyToManyField(
-        User, blank=True, related_name='general_admin_plans',
+        Person, blank=True, related_name='general_admin_plans',
         verbose_name=_('general administrators'),
-        help_text=_('Users that can modify everything related to the action plan')
+        help_text=_('Persons that can modify everything related to the action plan')
     )
 
     site = models.OneToOneField(

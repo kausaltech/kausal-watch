@@ -149,8 +149,9 @@ class PlanAdmin(AplansModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
-        if not user.is_superuser:
-            qs = qs.filter(general_admins=user).distinct()
+        person = user.get_corresponding_person()
+        if not user.is_superuser and person:
+            qs = qs.filter(general_admins=person).distinct()
         return qs
 
 

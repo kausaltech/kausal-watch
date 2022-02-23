@@ -35,11 +35,11 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def modifiable_by(self, user: User):
         if user.is_superuser:
             return self
-        query = Q(plan__in=user.general_admin_plans.all())
         person = user.get_corresponding_person()
-        if person is not None:
+        query = Q(responsible_parties__organization__in=user.get_adminable_organizations())
+        if person:
+            query |= Q(plan__in=person.general_admin_plans.all())
             query |= Q(contact_persons__person=person)
-        query |= Q(responsible_parties__organization__in=user.get_adminable_organizations())
         return self.filter(query).distinct()
 
     def unmerged(self):

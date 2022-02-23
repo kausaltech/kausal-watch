@@ -32,7 +32,7 @@ register(actions_factories.ImpactGroupFactory)
 register(actions_factories.PlanFactory)
 register(actions_factories.PlanDomainFactory)
 # We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
-# because `client` is already taken by dango.test.Client and the following problem appears when we register the
+# because `client` is already taken by django.test.Client and the following problem appears when we register the
 # fixture with a different name:
 # https://github.com/pytest-dev/pytest-factoryboy/issues/91
 # register(admin_site_factories.ClientFactory, 'admin_site_client')
@@ -64,12 +64,18 @@ register(pages_factories.PageLinkBlockFactory)
 register(pages_factories.QuestionBlockFactory)
 register(pages_factories.RichTextBlockFactory)
 register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan: plan.root_page))
-register(people_factories.PersonFactory)
+register(people_factories.PersonFactory, user=LazyFixture(lambda user: user))
+register(people_factories.PersonFactory, 'plan_admin_person', user=LazyFixture(lambda user: user),
+         general_admin_plans=LazyFixture(lambda plan: [plan]))
 register(users_factories.UserFactory)
 register(users_factories.UserFactory, 'superuser', is_superuser=True)
-register(users_factories.UserFactory, 'plan_admin_user', general_admin_plans=LazyFixture(lambda plan: [plan]))
 register(wagtail_factories.blocks.ImageChooserBlockFactory)
 register(wagtail_factories.factories.CollectionFactory)
+
+
+@pytest.fixture
+def plan_admin_user(plan_admin_person):
+    return plan_admin_person.user
 
 
 @pytest.fixture
