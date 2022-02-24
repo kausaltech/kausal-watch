@@ -83,7 +83,7 @@ class Plan(ClusterableModel):
     )
 
     general_admins = models.ManyToManyField(
-        Person, blank=True, related_name='general_admin_plans',
+        Person, blank=True, related_name='general_admin_plans', through='GeneralPlanAdmin',
         verbose_name=_('general administrators'),
         help_text=_('Persons that can modify everything related to the action plan')
     )
@@ -262,6 +262,25 @@ class Plan(ClusterableModel):
         if not indicator_list_pages.exists():
             root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
         return root_page
+
+
+# ParentalManyToManyField  won't help, so we need the through model:
+# https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
+# Unfortunately the reverse accessors then point to instances of the through model, not the actual target.
+class GeneralPlanAdmin(OrderedModel):
+    plan = ParentalKey(Plan, on_delete=models.CASCADE, verbose_name=_('plan'), related_name='general_admins_ordered')
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, verbose_name=_('person'),
+                               related_name='general_admin_plans_ordered')
+
+    class Meta:
+        ordering = ['plan', 'order']
+        index_together = (('plan', 'order'),)
+        unique_together = (('plan', 'person',),)
+        verbose_name = _('general plan admin')
+        verbose_name_plural = _('general plan admins')
+
+    def __str__(self):
+        return str(self.person)
 
 
 def is_valid_hostname(hostname):

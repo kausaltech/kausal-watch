@@ -15,6 +15,7 @@ from admin_site.wagtail import (
     ActivePlanEditView
 )
 from orgs.models import Organization
+from people.chooser import PersonChooser
 from .models import (
     ActionImpact, ActionStatus, Plan
 )
@@ -80,7 +81,12 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('accessibility_statement_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
-        AutocompletePanel('general_admins'),
+        CondensedInlinePanel(
+            'general_admins_ordered',
+            panels=[
+                FieldPanel('person', widget=PersonChooser),
+            ]
+        ),
         ImageChooserPanel('image'),
         FieldPanel('show_admin_link'),
         FieldPanel('has_action_primary_orgs'),
