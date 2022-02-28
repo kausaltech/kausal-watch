@@ -12,6 +12,7 @@ from wagtail.core.fields import RichTextField
 
 from actions.models import Plan
 from people.models import Person
+from aplans.utils import PlanRelatedModel
 
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
@@ -60,6 +61,12 @@ class BaseTemplateManager(models.Manager):
         return self.get(plan__identifier=plan_identifier)
 
 
+class IndirectPlanRelatedModel(PlanRelatedModel):
+    @classmethod
+    def filter_by_plan(cls, plan, qs):
+        return qs.filter(base__plan=plan)
+
+
 class BaseTemplate(ClusterableModel):
     plan = models.OneToOneField(
         Plan, on_delete=models.CASCADE, related_name='notification_base_template',
@@ -102,7 +109,7 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplate(models.Model):
+class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
     subject = models.CharField(
         verbose_name=_('subject'), max_length=200, help_text=_('Subject for email notifications')

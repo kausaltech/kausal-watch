@@ -3,7 +3,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMe
 from django.utils.translation import gettext_lazy as _
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    ActivePlanEditView
+    ActivePlanEditView, PlanFilteredFieldPanel
 )
 
 from .models import BaseTemplate
@@ -29,7 +29,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
     block_panels = [
         RichTextFieldPanel('content'),
-        FieldPanel('template', widget=CondensedPanelSingleSelect),
+        PlanFilteredFieldPanel('template', widget=CondensedPanelSingleSelect),
         FieldPanel('identifier', widget=CondensedPanelSingleSelect)
     ]
 
