@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-22 16:26+0200\n"
-"PO-Revision-Date: 2022-02-22 16:37+0200\n"
+"POT-Creation-Date: 2022-03-01 13:50+0200\n"
+"PO-Revision-Date: 2022-03-01 13:55+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -433,8 +433,8 @@ msgstr "toimenpiteen vastuutaho"
 msgid "action responsible parties"
 msgstr "toimenpiteen vastuutahot"
 
-#: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py
 msgid "person"
 msgstr "henkilö"
 
@@ -792,7 +792,7 @@ msgid "general administrators"
 msgstr "pääkäyttäjät"
 
 #: actions/models/plan.py
-msgid "Users that can modify everything related to the action plan"
+msgid "Persons that can modify everything related to the action plan"
 msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
 
 #: actions/models/plan.py
@@ -851,6 +851,18 @@ msgstr "Ensisijainen kieli ei voi olla valittuna"
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "general administrators"
+msgid "general plan admin"
+msgstr "pääkäyttäjät"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "general administrators"
+msgid "general plan admins"
+msgstr "pääkäyttäjät"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -1784,15 +1796,19 @@ msgstr "Sähköpostin Reply-To-kenttä"
 
 #: notifications/models.py
 msgid "Brand dark color"
-msgstr ""
+msgstr "Tumma brändiväri"
 
 #: notifications/models.py
 msgid "Font family"
-msgstr ""
+msgstr "Kirjasin (font-family)"
+
+#: notifications/models.py
+msgid "Leave empty unless custom font required by customer"
+msgstr "Jätä tyhjäksi ellei toimenpideohjelmakohtaista kirjasinta toivottu"
 
 #: notifications/models.py
 msgid "Font CSS style URL"
-msgstr ""
+msgstr "URL-osoite kirjasimen CSS-tyylitiedostoon"
 
 #: notifications/models.py
 msgid "base template"

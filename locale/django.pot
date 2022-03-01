@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-22 16:26+0200\n"
+"POT-Creation-Date: 2022-03-01 13:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -434,8 +434,8 @@ msgstr ""
 msgid "action responsible parties"
 msgstr ""
 
-#: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py
 msgid "person"
 msgstr ""
 
@@ -793,7 +793,7 @@ msgid "general administrators"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "Users that can modify everything related to the action plan"
+msgid "Persons that can modify everything related to the action plan"
 msgstr ""
 
 #: actions/models/plan.py
@@ -851,6 +851,14 @@ msgstr ""
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "general plan admin"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "general plan admins"
 msgstr ""
 
 #: actions/models/plan.py
@@ -1783,6 +1791,10 @@ msgstr ""
 
 #: notifications/models.py
 msgid "Font family"
+msgstr ""
+
+#: notifications/models.py
+msgid "Leave empty unless custom font required by customer"
 msgstr ""
 
 #: notifications/models.py

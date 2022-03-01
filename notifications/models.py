@@ -84,8 +84,10 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
-    font_family = models.CharField(verbose_name=_('Font family'), null=True, blank=True, max_length=200)
-    font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True)
+    font_family = models.CharField(verbose_name=_('Font family'), null=True, blank=True, max_length=200,
+                                   help_text=_('Leave empty unless custom font required by customer'))
+    font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True,
+                                   help_text=_('Leave empty unless custom font required by customer'))
 
     objects = BaseTemplateManager()
 
