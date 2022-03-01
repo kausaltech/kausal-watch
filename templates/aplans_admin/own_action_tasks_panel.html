@@ -1,0 +1,43 @@
+{% load i18n wagtailadmin_tags %}
+{% if own_tasks %}
+<div class="panel nice-padding">
+    <section>
+        <h2>{% trans "Own action tasks" %}</h2>
+        <table class="listing listing-page">
+            <col width="5%" />
+            <col />
+            <col width="15%"/>
+            <col width="15%"/>
+            <thead>
+                <tr>
+                    <th>{% trans "Action" %}</th>
+                    <th class="title">{% trans "Task" %}</th>
+                    <th>{% trans "State" %}</th>
+                    <th>{% trans "Due date" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in own_tasks %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'actions_action_modeladmin_edit' task.action.id %}" title="{% trans 'Edit this action' %}">{{ task.action.name }}</a>
+                        </td>
+                        <td class="title" valign="top">
+                            <div class="title-wrapper">
+                                <a href="{% url 'actions_action_modeladmin_edit' task.action.id %}#tab-{{ _('Tasks')|cautious_slugify }}" title="{% trans 'Edit this action task' %}">{{ task.name }}</a>
+                            </div>
+                            <ul class="actions">
+                                <li><a href="{% url 'actions_action_modeladmin_edit' task.action.id %}#tab-{{ _('Tasks')|cautious_slugify }}" class="button button-small button-secondary">{% trans "Edit" %}</a></li>
+                            </ul>
+                        </td>
+                        <td valign="top">
+                            {{ task.get_state_display }}
+                        </td>
+                        <td valign="top"><div class="human-readable-date" title="{{ task.due_at|date }}">In {% blocktrans with time_period=task.due_at|timeuntil %}{{ time_period }}{% endblocktrans %}</div></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endif %}

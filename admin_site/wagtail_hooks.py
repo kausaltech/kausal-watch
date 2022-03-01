@@ -10,6 +10,7 @@ from wagtail.core import hooks
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from .models import Client
+from actions.models import ActionTask
 
 
 class CategoryMenuItem(MenuItem):
@@ -123,10 +124,30 @@ class OwnIndicatorsPanel:
         }, request=self.request)
 
 
+class OwnActionTasksPanel:
+    name = 'own_action_tasks'
+    order = 12
+
+    def __init__(self, request):
+        self.request = request
+
+    def render(self):
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        own_tasks = (ActionTask.objects
+                     .filter(action__plan=plan, action__contact_persons__person__user=user)
+                     .exclude(state__in=[ActionTask.CANCELLED, ActionTask.COMPLETED])
+                     .order_by('due_at'))
+        return render_to_string('aplans_admin/own_action_tasks_panel.html', {
+            'own_tasks': own_tasks,
+        }, request=self.request)
+
+
 @hooks.register('construct_homepage_panels')
 def construct_homepage_panels(request, panels):
     panels.insert(0, OwnActionsPanel(request))
     panels.insert(1, OwnIndicatorsPanel(request))
+    panels.insert(2, OwnActionTasksPanel(request))
 
 
 class ClientAdmin(ModelAdmin):
