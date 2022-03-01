@@ -67,7 +67,7 @@ class IndirectPlanRelatedModel(PlanRelatedModel):
         return qs.filter(base__plan=plan)
 
 
-class BaseTemplate(ClusterableModel):
+class BaseTemplate(ClusterableModel, PlanRelatedModel):
     plan = models.OneToOneField(
         Plan, on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),

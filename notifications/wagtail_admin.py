@@ -3,7 +3,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMe
 from django.utils.translation import gettext_lazy as _
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    ActivePlanEditView, PlanFilteredFieldPanel
+    ActivePlanEditView, PlanFilteredFieldPanel, AplansCreateView
 )
 
 from .models import BaseTemplate
@@ -13,6 +13,7 @@ from .models import BaseTemplate
 class BaseTemplateAdmin(AplansModelAdmin):
     model = BaseTemplate
     add_to_settings_menu = True
+    create_view_class = AplansCreateView
     edit_view_class = ActivePlanEditView
     menu_icon = 'fa-bell'
     menu_label = _('Notifications')
@@ -83,4 +84,4 @@ class ActivePlanMenuItem(ModelAdminMenuItem):
 
     def is_shown(self, request):
         plan = request.user.get_active_admin_plan()
-        return hasattr(plan, 'notification_base_template')
+        return hasattr(plan, 'notification_base_template') or request.user.is_superuser
