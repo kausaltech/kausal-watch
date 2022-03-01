@@ -78,14 +78,16 @@
             }
         </mj-style>
 
-        <mj-font
+        {% if theme.font_css_url %}
+          <mj-font
             name="{{ theme.font_family }}"
             href="{{ theme.font_css_url }}"
-        />
+          />
+        {% endif %}
 
         <mj-attributes>
             <mj-text
-                font-family="{{ theme.font_family }}, Helvetica, Arial, sans-serif"
+                font-family="{{ theme.font_family_with_fallback }}"
                 color="#000000"
                 font-size="16px"
                 line-height="1.5"

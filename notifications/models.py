@@ -14,6 +14,10 @@ from actions.models import Plan
 from people.models import Person
 from aplans.utils import PlanRelatedModel
 
+DEFAULT_FONT_FAMILY = (
+    '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
+    'Ubuntu, roboto, noto, arial, sans-serif'
+)
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
 
@@ -95,10 +99,17 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
     def natural_key(self):
         return (self.plan.identifier,)
 
+    def _get_font_family_with_fallback(self):
+        font_family = self.font_family
+        if font_family is None or len(font_family) == 0:
+            return DEFAULT_FONT_FAMILY
+        return f'{font_family}, {DEFAULT_FONT_FAMILY}'
+
     def get_notification_context(self):
         return dict(theme=dict(
             brand_dark_color=self.brand_dark_color,
             font_family=self.font_family,
+            font_family_with_fallback=self._get_font_family_with_fallback(),
             font_css_url=self.font_css_url,
             link_in_brand_bg_color="#ffffff"
         ))
