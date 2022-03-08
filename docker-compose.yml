@@ -26,6 +26,7 @@ services:
       args:
         - EXTRA_PYPI_INDEX
         - EXTRA_INSTALLED_APPS_VERSIONS
+        - EXTRA_INSTALLED_APPS
     restart: always
     volumes:
       - aplans_media:/srv/media
