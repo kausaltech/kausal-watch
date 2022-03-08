@@ -43,6 +43,7 @@ wagtail
 wagtail-autocomplete
 wagtailfontawesome
 wagtail-generic-chooser
+wagtail-localize
 rustface
 django-npm
 django-autocomplete-light

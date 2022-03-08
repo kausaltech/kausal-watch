@@ -165,6 +165,8 @@ INSTALLED_APPS = [
     'wagtail.core',
     'wagtail.contrib.modeladmin',
     'wagtail.contrib.postgres_search',
+    'wagtail_localize',
+    'wagtail_localize.locales',  # replaces `wagtail.locales`
     'wagtailautocomplete',
     'wagtailfontawesome',
     'condensedinlinepanel',
@@ -392,6 +394,8 @@ LANGUAGES = (
     ('de', _('German')),
 )
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
+WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
+WAGTAILSIMPLETRANSLATION_SYNC_PAGE_TREE = True
 
 LANGUAGE_CODE = 'en'
 
@@ -412,6 +416,7 @@ PARLER_LANGUAGES = {
 TIME_ZONE = 'Europe/Helsinki'
 
 USE_I18N = True
+WAGTAIL_I18N_ENABLED = True
 
 USE_L10N = True
 

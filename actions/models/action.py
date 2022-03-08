@@ -658,6 +658,8 @@ class ActionTask(models.Model):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
 
+    i18n = TranslationField(fields=('name', 'comment'))
+
     objects = ActionTaskQuerySet.as_manager()
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action task')

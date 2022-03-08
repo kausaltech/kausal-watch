@@ -25,6 +25,38 @@ from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutoco
 from aplans.utils import PlanRelatedModel
 
 
+def insert_model_translation_panels(model, panels, request, plan=None):
+    """Return a list of panels containing all of `panels` and language-specific panels for fields with i18n."""
+    i18n_field = get_i18n_field(model)
+    if not i18n_field:
+        return
+
+    out = []
+    if plan is None:
+        plan = request.user.get_active_admin_plan()
+
+    # languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
+
+    field_map = {}
+    for f in i18n_field.get_translated_fields():
+        field_map.setdefault(f.original_name, {})[f.language] = f
+
+    for p in panels:
+        out.append(p)
+        if not isinstance(p, FieldPanel):
+            continue
+        t_fields = field_map.get(p.field_name)
+        if not t_fields:
+            continue
+
+        for lang_code in plan.other_languages:
+            tf = t_fields.get(lang_code)
+            if not tf:
+                continue
+            out.append(type(p)(tf.name))
+    return out
+
+
 class PlanRelatedPermissionHelper(PermissionHelper):
     def get_plans(self, obj):
         if isinstance(obj, PlanRelatedModel):
@@ -306,36 +338,6 @@ class AplansModelAdmin(ModelAdmin):
                 fields.append(FieldPanel(field.name))
             tabs.append(ObjectList(fields, heading=languages_by_code[lang_code]))
         return tabs
-
-    def insert_model_translation_tabs(self, model, panels, request, plan=None):
-        i18n_field = get_i18n_field(model)
-        if not i18n_field:
-            return
-
-        out = []
-        if plan is None:
-            plan = request.user.get_active_admin_plan()
-
-        # languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
-
-        field_map = {}
-        for f in i18n_field.get_translated_fields():
-            field_map.setdefault(f.original_name, {})[f.language] = f
-
-        for p in panels:
-            out.append(p)
-            if not isinstance(p, FieldPanel):
-                continue
-            t_fields = field_map.get(p.field_name)
-            if not t_fields:
-                continue
-
-            for lang_code in plan.other_languages:
-                tf = t_fields.get(lang_code)
-                if not tf:
-                    continue
-                out.append(type(p)(tf.name))
-        return out
 
     def _get_category_fields(self, plan, obj, with_initial=False):
         fields = {}

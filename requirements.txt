@@ -83,6 +83,7 @@ django==3.2.12
     #   graphene-django
     #   wagtail
     #   wagtail-grapple
+    #   wagtail-localize
     #   wagtailfontawesome
 django-admin-numeric-filter==0.1.6
     # via -r requirements.in
@@ -230,6 +231,8 @@ plotly==5.6.0
     # via -r requirements.in
 pluggy==1.0.0
     # via pytest
+polib==1.1.1
+    # via wagtail-localize
 promise==2.3
     # via
     #   graphene-django
@@ -371,6 +374,7 @@ wagtail==2.15.4
     #   wagtail-factories
     #   wagtail-grapple
     #   wagtail-headless-preview
+    #   wagtail-localize
     #   wagtail-orderable
     #   wagtailfontawesome
 wagtail-admin-list-controls==0.1.7
@@ -387,6 +391,8 @@ wagtail-grapple==0.12.0
     # via -r requirements.in
 wagtail-headless-preview==0.2.1
     # via wagtail-grapple
+wagtail-localize==1.1
+    # via -r requirements.in
 wagtailfontawesome==1.2.1
     # via -r requirements.in
 webencodings==0.5.1

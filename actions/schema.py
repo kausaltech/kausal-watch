@@ -3,6 +3,7 @@ import graphene_django_optimizer as gql_optimizer
 from django.db.models.query_utils import Q
 from django.forms import ModelForm
 from django.urls.base import reverse
+from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from itertools import chain
@@ -21,7 +22,7 @@ from aplans.graphql_types import (
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
-from pages.models import AplansPage
+from pages.models import AplansPage, CategoryPage
 from search.backends import get_search_backend
 
 
@@ -239,6 +240,7 @@ class CategoryNode(DjangoNode):
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
     icon_url = graphene.String()
+    category_page = graphene.Field(PageInterface)
 
     def resolve_metadata(self, info, id=None):
         query = Q()
@@ -276,6 +278,12 @@ class CategoryNode(DjangoNode):
         path = reverse('category-icon', kwargs=dict(id=self.icon.id)) + '?%s' % int(self.icon.updated_at.timestamp())
         uri = request.build_absolute_uri(path)
         return uri
+
+    def resolve_category_page(self, info):
+        try:
+            return self.category_pages.get(locale__language_code=get_language())
+        except CategoryPage.DoesNotExist:
+            return None
 
     class Meta:
         model = Category
@@ -316,7 +324,8 @@ class ActionTaskNode(DjangoNode):
         model_field='comment',
     )
     def resolve_comment(self, info):
-        comment = self.comment
+        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
+        comment = self.comment_i18n
         if comment is None:
             return None
 
@@ -349,7 +358,8 @@ class ActionNode(DjangoNode):
         model_field='name',
     )
     def resolve_name(self, info, hyphenated=False):
-        name = self.name
+        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
+        name = self.name_i18n
         if name is None:
             return None
         if hyphenated:
@@ -360,7 +370,8 @@ class ActionNode(DjangoNode):
         model_field='description',
     )
     def resolve_description(self, info):
-        description = self.description
+        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
+        description = self.description_i18n
         if description is None:
             return None
 
@@ -455,7 +466,6 @@ class Query:
     plan_categories = graphene.List(
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
     )
-    plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 
     category = graphene.Field(
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID(required=True),
@@ -502,17 +512,6 @@ class Query:
             qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
-
-    def resolve_plan_page(self, info, plan, path, **kwargs):
-        plan_obj = get_plan_from_context(info, plan)
-        if plan_obj is None:
-            return None
-
-        root = plan_obj.root_page
-        if not path.endswith('/'):
-            path = path + '/'
-        qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()
-        return gql_optimizer.query(qs, info).first()
 
     def resolve_categories(self, info, category_type):
         qs = self.categories

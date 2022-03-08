@@ -69,6 +69,15 @@ class CategoryTypeAdmin(AplansModelAdmin):
         plan = user.get_active_admin_plan()
         return qs.filter(plan=plan)
 
+    def get_edit_handler(self, instance, request):
+        panels = list(self.panels)
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
+
+        i18n_tabs = self.get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
+        return AplansTabbedInterface(tabs)
+
 
 @modeladmin_register
 class CategoryTypeMetadataAdmin(OrderableMixin, AplansModelAdmin):
@@ -312,4 +321,8 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
             metadata_panels.append(MetadataFieldPanel(key, heading=field.metadata.name))
 
         tabs.append(ObjectList(metadata_panels, heading=_('Metadata')))
+
+        i18n_tabs = self.get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
         return CategoryEditHandler(tabs)

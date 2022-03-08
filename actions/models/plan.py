@@ -8,11 +8,12 @@ from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import get_language, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from wagtail.core.models import Collection, Site
+from wagtail.core.models import Collection, Page, Site
+from wagtail.core.models.i18n import Locale
 
 import reversion
 
@@ -184,6 +185,17 @@ class Plan(ClusterableModel):
             return None
         return self.site.root_page
 
+    def get_translated_root_page(self):
+        """Return root page in activated language, fall back to default language."""
+        root = self.root_page
+        language = get_language()
+        try:
+            locale = Locale.objects.get(language_code=language)
+            root = root.get_translation(locale)
+        except (Locale.DoesNotExist, Page.DoesNotExist):
+            pass
+        return root
+
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
 
@@ -244,8 +256,6 @@ class Plan(ClusterableModel):
 
     def create_pages(self):
         """Create plan root page as well as subpages that should be always there and return plan root page."""
-        from wagtail.core.models import Page
-
         from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
 
         root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)

@@ -60,7 +60,7 @@ class MenuNodeMixin():
 
     @classmethod
     def resolver_from_plan(cls, plan, info):
-        root_page = plan.root_page
+        root_page = plan.get_translated_root_page()
         if root_page is None:
             return None
         return root_page.specific
@@ -115,7 +115,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        root = plan_obj.root_page
+        root = plan_obj.get_translated_root_page()
         if not path.endswith('/'):
             path = path + '/'
         qs = root.get_descendants(inclusive=True).live().public().filter(url_path=path).specific()

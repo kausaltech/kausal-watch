@@ -49,6 +49,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
         help_text=_("Set if the categories do not have meaningful identifiers")
     )
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
+    i18n = TranslationField(fields=('name',))
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
@@ -205,7 +206,7 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
 
     public_fields = [
         'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description',
-        'color', 'children', 'category_page', 'indicators',
+        'color', 'children', 'category_pages', 'indicators',
     ]
 
     class Meta:

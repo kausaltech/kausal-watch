@@ -12,7 +12,7 @@ from actions.models.action import ActionSchedule
 
 from admin_site.wagtail import (
     AplansCreateView, AplansModelAdmin, CondensedInlinePanel,
-    ActivePlanEditView
+    ActivePlanEditView, insert_model_translation_panels
 )
 from orgs.models import Organization
 from people.chooser import PersonChooser
@@ -103,6 +103,11 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('is_completed'),
     ]
 
+    action_implementation_phase_panels = [
+        FieldPanel('identifier'),
+        FieldPanel('name'),
+    ]
+
     action_impact_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
@@ -119,17 +124,20 @@ class PlanAdmin(AplansModelAdmin):
         return form_class
 
     def get_edit_handler(self, instance, request):
-        action_status_panels = self.insert_model_translation_tabs(
+        action_status_panels = insert_model_translation_panels(
             ActionStatus, self.action_status_panels, request, instance
         )
-        action_impact_panels = self.insert_model_translation_tabs(
+        action_implementation_phase_panels = insert_model_translation_panels(
+            ActionStatus, self.action_implementation_phase_panels, request, instance
+        )
+        action_impact_panels = insert_model_translation_panels(
             ActionImpact, self.action_impact_panels, request, instance
         )
-        action_schedule_panels = self.insert_model_translation_tabs(
+        action_schedule_panels = insert_model_translation_panels(
             ActionSchedule, self.action_schedule_panels, request, instance
         )
 
-        panels = self.insert_model_translation_tabs(
+        panels = insert_model_translation_panels(
             Plan, self.panels, request, instance
         )
         if request.user.is_superuser:
@@ -144,6 +152,11 @@ class PlanAdmin(AplansModelAdmin):
             ObjectList(panels, heading=_('Basic information')),
             ObjectList([
                 CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
+                CondensedInlinePanel(
+                    'action_implementation_phases',
+                    panels=action_implementation_phase_panels,
+                    heading=_('Action implementation phases')
+                ),
                 CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
                 CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
             ], heading=_('Action classifications')),
