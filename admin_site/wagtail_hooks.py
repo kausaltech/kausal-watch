@@ -172,7 +172,10 @@ def restrict_pages_to_plan(parent_page, pages, request):
     plan = request.user.get_active_admin_plan()
     if not plan.site_id:
         return pages.none()
-    return pages.descendant_of(plan.site.root_page, inclusive=True)
+    q = pages.descendant_of_q(plan.root_page, inclusive=True)
+    for translation in plan.root_page.get_translations():
+        q |= pages.descendant_of_q(translation, inclusive=True)
+    return pages.filter(q)
 
 
 @hooks.register("construct_page_chooser_queryset")
@@ -180,7 +183,10 @@ def restrict_chooser_pages_to_plan(pages, request):
     plan = request.user.get_active_admin_plan()
     if not plan.site_id:
         return pages.none()
-    return pages.descendant_of(plan.site.root_page, inclusive=True)
+    q = pages.descendant_of_q(plan.root_page, inclusive=True)
+    for translation in plan.root_page.get_translations():
+        q |= pages.descendant_of_q(translation, inclusive=True)
+    return pages.filter(q)
 
 
 @hooks.register('construct_page_action_menu')

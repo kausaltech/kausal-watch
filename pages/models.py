@@ -142,6 +142,8 @@ class PlanRootPage(AplansPage):
 
 
 class EmptyPage(AplansPage):
+    parent_page_types = [PlanRootPage, 'EmptyPage', 'StaticPage', 'CategoryPage']
+
     class Meta:
         verbose_name = _('Empty page')
         verbose_name_plural = _('Empty pages')
@@ -168,6 +170,8 @@ class StaticPage(AplansPage):
         FieldPanel('lead_paragraph'),
         StreamFieldPanel('body'),
     ]
+
+    parent_page_types = [PlanRootPage, EmptyPage, 'StaticPage', 'CategoryPage']
 
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLImage('header_image'),

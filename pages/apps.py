@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from django.db.models import Q
 
 
 _wagtail_get_pages_with_direct_explore_permission = None
@@ -13,7 +14,13 @@ def filter_plan_pages(user):
 
     plan = user.get_active_admin_plan()
     if plan.root_page:
-        pages = pages.descendant_of(plan.root_page, inclusive=True)
+        # pages = pages.descendant_of(plan.root_page, inclusive=True)
+        q = pages.descendant_of_q(plan.root_page, inclusive=True)
+        for translation in plan.root_page.get_translations():
+            q |= pages.descendant_of_q(translation, inclusive=True)
+        # Do not exclude global root page (i.e., parent of plan.root_page), otherwise language switcher won't work
+        q |= Q(depth=1)
+        pages = pages.filter(q)
 
     return pages
 
