@@ -1,3 +1,5 @@
+from __future__ import annotations
+import typing
 import logging
 from datetime import date
 
@@ -27,6 +29,9 @@ from users.models import User
 
 from ..monitoring_quality import determine_monitoring_quality
 
+if typing.TYPE_CHECKING:
+    from .plan import Plan
+
 
 logger = logging.getLogger(__name__)
 
@@ -49,11 +54,28 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
         return self.unmerged().exclude(status__is_completed=True)
 
 
+class ActionIdentifierSearchMixin:
+    def get_value(self, obj: Action):
+        # If the plan doesn't have meaningful action identifiers,
+        # do not index them.
+        if obj.plan.hide_action_identifiers:
+            return None
+        return super().get_value(obj)
+
+
+class ActionIdentifierSearchField(ActionIdentifierSearchMixin, index.SearchField):
+    pass
+
+
+class ActionIdentifierAutocompleteField(ActionIdentifierSearchMixin, index.AutocompleteField):
+    pass
+
+
 @reversion.register()
 class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
-    plan = ParentalKey(
+    plan: Plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
     )
@@ -177,8 +199,8 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     search_fields = [
         index.SearchField('name', boost=10),
         index.AutocompleteField('name'),
-        index.SearchField('identifier', boost=10),
-        index.AutocompleteField('identifier'),
+        ActionIdentifierSearchField('identifier', boost=10),
+        ActionIdentifierAutocompleteField('identifier'),
         index.SearchField('official_name', boost=8),
         index.AutocompleteField('official_name'),
         index.SearchField('description'),
@@ -436,6 +458,11 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
 
     def get_primary_language(self):
         return self.plan.primary_language
+
+    def get_indexed_instance(self):
+        if not self.plan.hide_action_identifiers:
+            self.identifier = None
+        return self
 
 
 class ActionResponsibleParty(OrderedModel):
