@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+from typing import Literal
 
 import environ
 from corsheaders.defaults import default_headers as default_cors_headers  # noqa
@@ -83,6 +84,13 @@ SITE_ID = 1
 
 # Logging
 if env('CONFIGURE_LOGGING'):
+    def level(level: Literal['DEBUG', 'INFO', 'WARNING']):
+        return dict(
+            handlers=['console'],
+            propagate=False,
+            level=level,
+        )
+
     LOGGING = {
         'version': 1,
         'disable_existing_loggers': True,
@@ -106,56 +114,16 @@ if env('CONFIGURE_LOGGING'):
             },
         },
         'loggers': {
-            'django.db': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            'django.template': {
-                'handlers': ['null'],
-                'level': 'WARNING',
-                'propagate': False,
-            },
-            'django': {
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-            'raven': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False
-            },
-            'blib2to3': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False
-            },
-            'generic': {
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            },
-            'parso': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
-            },
-            'requests': {
-                'handlers': ['console'],
-                'level': 'WARNING',
-                'propagate': False,
-            },
-            'PIL': {
-                'handlers': ['console'],
-                'level': 'INFO',
-                'propagate': False,
-            },
-            '': {
-                'handlers': ['console'],
-                'level': 'DEBUG',
-                'propagate': False,
-            }
+            'django.db': level('INFO'),
+            'django.template': level('WARNING'),
+            'django': level('DEBUG'),
+            'raven': level('WARNING'),
+            'blib2to3': level('INFO'),
+            'generic': level('DEBUG'),
+            'parso': level('WARNING'),
+            'requests': level('WARNING'),
+            'PIL': level('INFO'),
+            '': level('DEBUG'),
         }
     }
 
@@ -659,3 +627,4 @@ if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
+# foofff
