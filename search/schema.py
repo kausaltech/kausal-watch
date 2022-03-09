@@ -27,6 +27,7 @@ class SearchHitObject(graphene.Union):
 
 
 class SearchHit(graphene.ObjectType):
+    id = graphene.ID()
     title = graphene.String()
     url = graphene.String()
     relevance = graphene.Float()
@@ -45,6 +46,7 @@ class SearchResults(graphene.ObjectType):
         for obj in hits:
             if isinstance(obj, Action):
                 hit = dict(
+                    id='act-%d' % obj.id,
                     title=str(obj),
                     url=obj.get_view_url(),
                     plan=obj.plan,
@@ -52,6 +54,7 @@ class SearchResults(graphene.ObjectType):
                 )
             elif isinstance(obj, Indicator):
                 hit = dict(
+                    id='ind-%d' % obj.id,
                     title=str(obj),
                     url=obj.get_view_url(),
                     plan=obj.plans.first(),
@@ -59,6 +62,7 @@ class SearchResults(graphene.ObjectType):
                 )
             elif isinstance(obj, AplansPage):
                 hit = dict(
+                    id='page-%d' % obj.id,
                     title=obj.title,
                     url=obj.get_full_url(),
                     plan=obj.plan,
