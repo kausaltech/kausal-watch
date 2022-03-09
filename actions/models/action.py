@@ -459,11 +459,6 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     def get_primary_language(self):
         return self.plan.primary_language
 
-    def get_indexed_instance(self):
-        if not self.plan.hide_action_identifiers:
-            self.identifier = None
-        return self
-
 
 class ActionResponsibleParty(OrderedModel):
     action = ParentalKey(
