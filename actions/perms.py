@@ -148,16 +148,22 @@ def _sync_group_collection_perms(root_collection, group, perms):
 
 
 def _sync_group_page_perms(root_page, group):
-    # Delete all page permissions that are connected to another root page
-    GroupPagePermission.objects.filter(group=group).exclude(page=root_page).delete()
+    # Delete all page permissions that are connected to another root page that's not a translation of this one
+    qs = GroupPagePermission.objects.filter(group=group)
+    for page in root_page.get_translations(inclusive=True):
+        qs = qs.exclude(page=page)
+    qs.delete()
 
     current_perms = GroupPagePermission.objects.filter(group=group)
     perm_set = {gpp.permission_type for gpp in current_perms}
     new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
-    if perm_set != new_perm_set:
+    page_set = {gpp.page for gpp in current_perms}
+    new_page_set = set(root_page.get_translations(inclusive=True))
+    if perm_set != new_perm_set or page_set != new_page_set:
         current_perms.delete()
         for perm in new_perm_set:
-            GroupPagePermission.objects.create(page=root_page, group=group, permission_type=perm)
+            for page in new_page_set:
+                GroupPagePermission.objects.create(page=page, group=group, permission_type=perm)
 
 
 def _sync_contact_person_groups(user):
