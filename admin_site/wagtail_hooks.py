@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
@@ -172,9 +173,10 @@ def restrict_pages_to_plan(parent_page, pages, request):
     plan = request.user.get_active_admin_plan()
     if not plan.site_id:
         return pages.none()
-    q = pages.descendant_of_q(plan.root_page, inclusive=True)
-    for translation in plan.root_page.get_translations():
-        q |= pages.descendant_of_q(translation, inclusive=True)
+    # Let's assume the global root node is also part of the plan since we want it to be an explorable page
+    q = Q(depth=1)
+    for page in plan.root_page.get_translations(inclusive=True):
+        q |= pages.descendant_of_q(page, inclusive=True)
     return pages.filter(q)
 
 
