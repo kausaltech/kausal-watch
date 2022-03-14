@@ -31,7 +31,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, insert_model_translation_panels
+    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, insert_model_translation_panels, get_translation_tabs
 )
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
@@ -623,7 +623,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
 
-        i18n_tabs = self.get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         all_tabs += i18n_tabs
 
         return ActionEditHandler(all_tabs)

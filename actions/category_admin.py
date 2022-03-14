@@ -15,7 +15,7 @@ from .admin import CategoryTypeFilter
 from .models import Category, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
-    AplansTabbedInterface
+    AplansTabbedInterface, get_translation_tabs
 )
 
 
@@ -73,7 +73,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = self.get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
         return AplansTabbedInterface(tabs)
@@ -322,7 +322,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs.append(ObjectList(metadata_panels, heading=_('Metadata')))
 
-        i18n_tabs = self.get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
         return CategoryEditHandler(tabs)

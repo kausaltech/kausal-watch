@@ -35,8 +35,6 @@ def insert_model_translation_panels(model, panels, request, plan=None):
     if plan is None:
         plan = request.user.get_active_admin_plan()
 
-    # languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
-
     field_map = {}
     for f in i18n_field.get_translated_fields():
         field_map.setdefault(f.original_name, {})[f.language] = f
@@ -55,6 +53,30 @@ def insert_model_translation_panels(model, panels, request, plan=None):
                 continue
             out.append(type(p)(tf.name))
     return out
+
+
+def get_translation_tabs(instance, request, include_all_languages: bool = False):
+    i18n_field = get_i18n_field(type(instance))
+    if not i18n_field:
+        return []
+    tabs = []
+
+    user = request.user
+    plan = user.get_active_admin_plan()
+
+    languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
+    if include_all_languages:
+        languages = list(languages_by_code.keys())
+    else:
+        languages = plan.other_languages
+    for lang_code in languages:
+        fields = []
+        for field in i18n_field.get_translated_fields():
+            if field.language != lang_code:
+                continue
+            fields.append(FieldPanel(field.name))
+        tabs.append(ObjectList(fields, heading=languages_by_code[lang_code]))
+    return tabs
 
 
 class PlanRelatedPermissionHelper(PermissionHelper):
@@ -315,29 +337,6 @@ class AplansModelAdmin(ModelAdmin):
         if not self.permission_helper_class and issubclass(self.model, PlanRelatedModel):
             self.permission_helper_class = PlanRelatedPermissionHelper
         super().__init__(*args, **kwargs)
-
-    def get_translation_tabs(self, instance, request, include_all_languages: bool=False):
-        i18n_field = get_i18n_field(type(instance))
-        if not i18n_field:
-            return []
-        tabs = []
-
-        user = request.user
-        plan = user.get_active_admin_plan()
-
-        languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
-        if include_all_languages:
-            languages = list(languages_by_code.keys())
-        else:
-            languages = plan.other_languages
-        for lang_code in languages:
-            fields = []
-            for field in i18n_field.get_translated_fields():
-                if field.language != lang_code:
-                    continue
-                fields.append(FieldPanel(field.name))
-            tabs.append(ObjectList(fields, heading=languages_by_code[lang_code]))
-        return tabs
 
     def _get_category_fields(self, plan, obj, with_initial=False):
         fields = {}

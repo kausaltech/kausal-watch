@@ -8,10 +8,10 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import get_language, gettext_lazy as _
 import humanize
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 
-from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm
+from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm, get_translation_tabs
 
 from .admin import IsContactPersonFilter
 from .models import Person
@@ -40,7 +40,7 @@ class PersonForm(AplansAdminModelForm):
         return instance
 
 
-class PersonEditHandler(ObjectList):
+class PersonEditHandler(TabbedInterface):
     def on_form_bound(self):
         if self.request:
             plan = self.request.user.get_active_admin_plan()
@@ -163,7 +163,12 @@ class PersonAdmin(AplansModelAdmin):
         if user.is_general_admin_for_plan(plan):
             basic_panels.insert(-1, FieldPanel('participated_in_training'))
 
-        return PersonEditHandler(basic_panels, base_form_class=PersonForm)
+        tabs = [ObjectList(basic_panels, heading=_('General'))]
+
+        i18n_tabs = get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
+        return PersonEditHandler(tabs, base_form_class=PersonForm)
 
 
 modeladmin_register(PersonAdmin)

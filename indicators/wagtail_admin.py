@@ -18,7 +18,7 @@ from wagtail.core import hooks
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansButtonHelper, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect
+    CondensedPanelSingleSelect, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
@@ -204,7 +204,7 @@ class QuantityAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
         return AplansTabbedInterface([
             ObjectList(self.panels, heading=_('General')),
-            *self.get_translation_tabs(instance, request, include_all_languages=True)
+            *get_translation_tabs(instance, request, include_all_languages=True)
         ])
 
     def get_queryset(self, request):
