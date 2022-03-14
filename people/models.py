@@ -18,6 +18,7 @@ from django.db.models import Q
 from easy_thumbnails.files import get_thumbnailer
 from image_cropping import ImageRatioField
 from modelcluster.models import ClusterableModel
+from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.search import index
 from wagtail.images.rect import Rect
@@ -113,6 +114,8 @@ class Person(index.Indexed, ClusterableModel):
     image_height = models.PositiveIntegerField(null=True, editable=False)
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
+
+    i18n = TranslationField(fields=('title',))
 
     objects = models.Manager.from_queryset(PersonQuerySet)()
 

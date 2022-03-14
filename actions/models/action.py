@@ -192,7 +192,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
-    i18n = TranslationField(fields=('name', 'official_name', 'description'))
+    i18n = TranslationField(fields=('name', 'official_name', 'description', 'manual_status_reason'))
 
     objects = ActionQuerySet.as_manager()
 
@@ -466,8 +466,10 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name=_('action')
     )
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name='responsible_actions',
-        limit_choices_to=Q(dissolution_date=None), verbose_name=_('organization'),
+        Organization, on_delete=models.CASCADE, related_name='responsible_actions', verbose_name=_('organization'),
+        # FIXME: The following leads to a weird error in the action edit page, but only if Organization.i18n is there.
+        # WTF? Commented out for now.
+        # limit_choices_to=Q(dissolution_date=None),
     )
 
     public_fields = [

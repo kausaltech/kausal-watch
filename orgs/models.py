@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from modeltrans.fields import TranslationField
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.search import index
 
@@ -135,6 +136,8 @@ class Organization(index.Indexed, Node):
                                              through='orgs.OrganizationMetadataAdmin',
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
+
+    i18n = TranslationField(fields=('name', 'abbreviation'))
 
     objects = OrganizationManager()
 
