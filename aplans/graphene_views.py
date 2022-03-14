@@ -85,13 +85,19 @@ class APITokenMiddleware:
 
 class LocaleMiddleware:
     def process_locale_directive(self, info, directive):
+        lang = None
+        plan = None
         for arg in directive.arguments:
             if arg.name.value == 'lang':
                 lang = arg.value.value
                 if lang not in SUPPORTED_LANGUAGES:
                     raise GraphQLError("unsupported language: %s" % lang, [info])
                 info.context._graphql_query_language = lang
-                return lang
+            elif arg.name.value == 'plan':
+                plan_identifier = arg.value.value
+                plan = Plan.objects.get(identifier=plan_identifier)
+                info.context._language_fallback_plan = plan
+        return lang, plan
 
     def resolve(self, next, root, info, **kwargs):
         if root is None:
@@ -100,9 +106,13 @@ class LocaleMiddleware:
             lang = translation.get_language()
             for directive in operation.directives:
                 if directive.name.value == 'locale':
-                    lang = self.process_locale_directive(info, directive)
-                    if lang is not None:
+                    lang, plan = self.process_locale_directive(info, directive)
+                    if lang:
                         translation.activate(lang)
+                        break
+                    # If no lang was specified, look at the plan's primary language
+                    if plan:
+                        translation.activate(plan.primary_language)
                         break
             else:
                 # No locale directive found. Need to activate some language, otherwise this request would be served

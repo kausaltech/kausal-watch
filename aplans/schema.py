@@ -140,9 +140,13 @@ class LocaleDirective(GraphQLDirective):
             description='Select locale in which to return data',
             args={
                 'lang': GraphQLArgument(
-                    type_=GraphQLNonNull(GraphQLString),
-                    description='Selected language'
-                )
+                    type_=GraphQLString,
+                    description="Language code of the locale to use"
+                ),
+                'plan': GraphQLArgument(
+                    type_=GraphQLString,
+                    description="Plan whose primary language is used if lang is not specified"
+                ),
             },
             locations=[DirectiveLocation.QUERY]
         )
