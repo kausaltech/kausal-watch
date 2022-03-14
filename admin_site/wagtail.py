@@ -66,7 +66,8 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False)
 
     languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
     if include_all_languages:
-        languages = list(languages_by_code.keys())
+        # Omit main language because it's stored in the model field without a modeltrans language suffix
+        languages = [lang for lang in languages_by_code.keys() if lang != settings.LANGUAGE_CODE]
     else:
         languages = plan.other_languages
     for lang_code in languages:
