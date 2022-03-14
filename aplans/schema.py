@@ -145,7 +145,8 @@ class LocaleDirective(GraphQLDirective):
                 ),
                 'plan': GraphQLArgument(
                     type_=GraphQLString,
-                    description="Plan whose primary language is used if lang is not specified"
+                    description=("Plan whose primary language is used if lang is not specified or if lang is a "
+                                 "language unsupported by the plan")
                 ),
             },
             locations=[DirectiveLocation.QUERY]

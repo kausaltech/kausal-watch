@@ -103,16 +103,17 @@ class LocaleMiddleware:
         if root is None:
             info.context._graphql_query_language = None
             operation = info.operation
-            lang = translation.get_language()
+            activate_lang = None
             for directive in operation.directives:
                 if directive.name.value == 'locale':
                     lang, plan = self.process_locale_directive(info, directive)
-                    if lang:
-                        translation.activate(lang)
-                        break
-                    # If no lang was specified, look at the plan's primary language
                     if plan:
-                        translation.activate(plan.primary_language)
+                        activate_lang = plan.primary_language
+                    # lang can override plan language if it is an option in the plan's languages
+                    if lang and (not plan or lang in plan.other_languages):
+                        activate_lang = lang
+                    if activate_lang:
+                        translation.activate(activate_lang)
                         break
             else:
                 # No locale directive found. Need to activate some language, otherwise this request would be served
