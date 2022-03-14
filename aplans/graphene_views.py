@@ -104,6 +104,11 @@ class LocaleMiddleware:
                     if lang is not None:
                         translation.activate(lang)
                         break
+            else:
+                # No locale directive found. Need to activate some language, otherwise this request would be served
+                # using whatever language had been set while handling the previous request in the current thread.
+                assert settings.LANGUAGE_CODE in SUPPORTED_LANGUAGES
+                translation.activate(settings.LANGUAGE_CODE)
         return next(root, info, **kwargs)
 
 
