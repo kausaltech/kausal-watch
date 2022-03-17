@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Check out code
         uses: actions/checkout@v2
+      # Clean up database volume left over from previous runs. If we don't do this, after a major version upgrade the db
+      # container will refuse to start since it detects a existing incompatible database.
+      - name: Remove existing containers and volumes
+        run: docker-compose down -v
       - name: Build Docker containers
         run: docker-compose build
       - name: Start Postgres and Redis
