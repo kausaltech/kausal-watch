@@ -58,7 +58,7 @@ class ActionIdentifierSearchMixin:
     def get_value(self, obj: Action):
         # If the plan doesn't have meaningful action identifiers,
         # do not index them.
-        if obj.plan.hide_action_identifiers:
+        if not obj.plan.features.has_action_identifiers:
             return None
         return super().get_value(obj)
 
@@ -237,7 +237,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
 
     def __str__(self):
         s = ''
-        if self.plan is not None and not self.plan.hide_action_identifiers:
+        if self.plan is not None and self.plan.features.has_action_identifiers:
             s += '%s. ' % self.identifier
         s += self.name
         return s

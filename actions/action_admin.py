@@ -184,9 +184,9 @@ class CategoriedModelForm(WagtailAdminModelForm):
 
 
 class ActionEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None):
+    def get_form_class(self, request: WatchAdminRequest = None):
         user = request.user
-        plan = user.get_active_admin_plan()
+        plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
             cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
         else:
@@ -200,7 +200,7 @@ class ActionEditHandler(AplansTabbedInterface):
 
         form_class = super().get_form_class()
 
-        if plan.hide_action_identifiers or plan.actions_locked:
+        if not plan.features.has_action_identifiers or plan.actions_locked:
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
 
@@ -238,9 +238,9 @@ class ActionCreateView(AplansCreateView):
         # error when saving it
         instance = super().get_instance()
         if not instance.pk:
-            plan = self.request.user.get_active_admin_plan()
+            plan = self.request.get_active_admin_plan()
             instance.plan = plan
-            if not instance.identifier and plan.hide_action_identifiers:
+            if not instance.identifier and not plan.features.has_action_identifiers:
                 instance.generate_identifier()
 
         return instance
@@ -519,9 +519,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
 
         list_display = ['name_link']
-        if not plan.hide_action_identifiers:
+        if plan.features.has_action_identifiers:
             list_display.insert(0, 'identifier')
-        if plan.has_action_primary_orgs:
+        if plan.features.has_action_primary_orgs:
             list_display.insert(0, 'primary_org')
 
         ct = plan.category_types.filter(identifier='action').first()
@@ -546,7 +546,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self, instance: Action, request: WatchAdminRequest):
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
 
@@ -557,11 +557,11 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             field_name = getattr(panel, 'field_name', None)
             if not field_name:
                 continue
-            if field_name == 'official_name' and plan.hide_action_official_name:
+            if field_name == 'official_name' and not plan.features.has_action_official_name:
                 panels.remove(panel)
-            elif field_name == 'lead_paragraph' and plan.hide_action_lead_paragraph:
+            elif field_name == 'lead_paragraph' and not plan.features.has_action_lead_paragraph:
                 panels.remove(panel)
-            elif field_name == 'primary_org' and not plan.has_action_primary_orgs:
+            elif field_name == 'primary_org' and not plan.features.has_action_primary_orgs:
                 panels.remove(panel)
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
