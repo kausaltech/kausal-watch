@@ -23,7 +23,6 @@ class PlanFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'plan{i}')
     image = SubFactory(AplansImageFactory)
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
-    show_admin_link = False
     accessibility_statement_url = 'https://example.com'
     primary_language = get_default_language()
     other_languages = [lang_code for lang_code, _ in get_supported_languages() if lang_code != get_default_language()]

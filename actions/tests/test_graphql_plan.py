@@ -112,9 +112,11 @@ def test_plan_exists(graphql_client_query_data, plan):
     assert data['plan']['id'] == plan.identifier
 
 
-@pytest.mark.parametrize('plan__show_admin_link', [True, False])
-def test_plan_admin_url(graphql_client_query_data, plan):
+@pytest.mark.parametrize('show_admin_link', [True, False])
+def test_plan_admin_url(graphql_client_query_data, plan, show_admin_link):
     client_plan = ClientPlanFactory(plan=plan)
+    plan.features.show_admin_link = show_admin_link
+    plan.features.save()
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -125,7 +127,7 @@ def test_plan_admin_url(graphql_client_query_data, plan):
         ''',
         variables=dict(plan=plan.identifier)
     )
-    if plan.show_admin_link:
+    if show_admin_link:
         admin_url = f'https://{client_plan.client.admin_hostnames.first().hostname}'
         assert data == {'plan': {'adminUrl': admin_url}}
     else:

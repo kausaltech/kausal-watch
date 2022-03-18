@@ -93,9 +93,8 @@ def test_plan_domain_node(graphql_client_query_data):
     assert data == expected
 
 
-@pytest.mark.parametrize('show_admin_link', [True, False])
-def test_plan_node(graphql_client_query_data, show_admin_link):
-    plan = PlanFactory(show_admin_link=show_admin_link)
+def test_plan_node(graphql_client_query_data):
+    plan = PlanFactory()
     domain = PlanDomainFactory(plan=plan)
     action_schedule = ActionScheduleFactory(plan=plan)
     action = ActionFactory(plan=plan, schedule=[action_schedule])
@@ -177,7 +176,6 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
               __typename
               id
             }
-            adminUrl
             mainMenu {
               __typename
             }
@@ -189,10 +187,6 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
         ''',
         variables={'plan': plan.identifier, 'hostname': domain.hostname}
     )
-    if show_admin_link:
-        expected_admin_url = client_plan.client.get_admin_url()
-    else:
-        expected_admin_url = None
     expected = {
         'plan': {
             '__typename': 'Plan',
@@ -267,7 +261,6 @@ def test_plan_node(graphql_client_query_data, show_admin_link):
                 '__typename': 'PlanDomain',
                 'id': str(plan.domains.first().id),
             },
-            'adminUrl': expected_admin_url,
             'mainMenu': {
                 '__typename': 'MainMenu',
             },

@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import typing
 import logging
 import re
 
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -20,6 +24,10 @@ import reversion
 from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color
 from orgs.models import Organization
 from people.models import Person
+
+if typing.TYPE_CHECKING:
+    from .features import PlanFeatures
+
 
 logger = logging.getLogger(__name__)
 
@@ -71,14 +79,6 @@ class Plan(ClusterableModel):
         default=False, verbose_name=_('actions locked'),
         help_text=_('Can actions be added and the official metadata edited?'),
     )
-    allow_images_for_actions = models.BooleanField(
-        default=True, verbose_name=_('allow images for actions'),
-        help_text=_('Should custom images for individual actions be allowed')
-    )
-    show_admin_link = models.BooleanField(
-        default=False, verbose_name=_('show admin link'),
-        help_text=_('Should the public website contain a link to the admin login?'),
-    )
     organization = models.ForeignKey(
         Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
     )
@@ -114,29 +114,11 @@ class Plan(ClusterableModel):
     )
     uses_wagtail = models.BooleanField(default=True)
     statuses_updated_manually = models.BooleanField(default=False)
-    contact_persons_private = models.BooleanField(
-        default=False, verbose_name=_('Contact persons private'),
-        help_text=_('Set if the contact persons should not be visible in the public UI')
-    )
-    hide_action_identifiers = models.BooleanField(
-        default=False, verbose_name=_('Hide action identifiers'),
-        help_text=_("Set if the plan doesn't have meaningful action identifiers")
-    )
-    hide_action_official_name = models.BooleanField(
-        default=False, verbose_name=_('Hide official name field'),
-        help_text=_("Set if the plan doesn't use the official name field")
-    )
-    hide_action_lead_paragraph = models.BooleanField(
-        default=True, verbose_name=_('Hide lead paragraph'),
-        help_text=_("Set if the plan doesn't use the lead paragraph field")
-    )
-    has_action_primary_orgs = models.BooleanField(
-        default=False, verbose_name=_('Has primary organisations for actions'),
-        help_text=_("Set if actions have a clear primary organisation")
-    )
 
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
     related_plans = models.ManyToManyField('self', blank=True)
+
+    features: PlanFeatures
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
@@ -147,8 +129,7 @@ class Plan(ClusterableModel):
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
-        'action_implementation_phases', 'hide_action_identifiers', 'hide_action_official_name',
-        'hide_action_lead_paragraph', 'organization',
+        'action_implementation_phases', 'organization',
         'related_plans',
     ]
 
@@ -192,6 +173,8 @@ class Plan(ClusterableModel):
         return root.get_translation(locale)
 
     def save(self, *args, **kwargs):
+        PlanFeatures = apps.get_model('actions', 'PlanFeatures')
+
         ret = super().save(*args, **kwargs)
 
         update_fields = []
@@ -233,6 +216,9 @@ class Plan(ClusterableModel):
             if self.contact_person_group.name != group_name:
                 self.contact_person_group.name = group_name
                 self.contact_person_group.save()
+
+        if not PlanFeatures.objects.filter(plan=self).exists():
+            PlanFeatures.objects.create(plan=self)
 
         if update_fields:
             super().save(update_fields=update_fields)
@@ -334,7 +320,10 @@ class PlanDomain(models.Model):
             raise ValidationError({'hostname': _('Hostname must be a fully qualified domain name in lower-case only')})
 
     def __str__(self):
-        return str(self.hostname)
+        s = str(self.hostname)
+        if self.base_path:
+            s += ':' + self.base_path
+        return s
 
     class Meta:
         verbose_name = _('plan domain')

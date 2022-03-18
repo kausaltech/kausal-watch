@@ -8,6 +8,7 @@ from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CategoryTypeMetadata,
     CategoryTypeMetadataChoice, CategoryMetadataRichText, CategoryMetadataChoice, CategoryMetadataNumericValue
 )
+from .features import PlanFeatures
 
 
 __all__ = [
@@ -18,5 +19,5 @@ __all__ = [
     'CategoryMetadataNumericValue', 'CategoryMetadataRichText', 'CategoryType',
     'CategoryTypeMetadata', 'CategoryTypeMetadataChoice', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
-    'Scenario',
+    'Scenario', 'PlanFeatures',
 ]

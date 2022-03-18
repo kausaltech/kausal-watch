@@ -21,6 +21,7 @@ from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
+from aplans.types import WatchAdminRequest
 
 from aplans.utils import PlanRelatedModel
 
@@ -312,6 +313,8 @@ class ActivePlanEditView(AplansEditView):
 
 class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
                        PlanRelatedViewMixin, CreateView):
+    request: WatchAdminRequest
+
     def get_instance(self):
         instance = super().get_instance()
         # If it is a plan-related model, ensure the 'plan' field gets set correctly.

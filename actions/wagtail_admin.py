@@ -76,7 +76,6 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('actions_locked'),
-        FieldPanel('allow_images_for_actions'),
         FieldPanel('site_url'),
         FieldPanel('accessibility_statement_url'),
         FieldPanel('primary_language'),
@@ -88,13 +87,6 @@ class PlanAdmin(AplansModelAdmin):
             ]
         ),
         ImageChooserPanel('image'),
-        FieldPanel('show_admin_link'),
-        FieldPanel('has_action_primary_orgs'),
-        FieldPanel('statuses_updated_manually'),
-        FieldPanel('contact_persons_private'),
-        FieldPanel('hide_action_identifiers'),
-        FieldPanel('hide_action_official_name'),
-        FieldPanel('hide_action_lead_paragraph'),
     ]
 
     action_status_panels = [

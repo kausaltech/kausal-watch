@@ -13,6 +13,8 @@ import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
 from wagtail.users.models import UserProfile
 
+from aplans.types import WatchAdminRequest
+
 
 class SocialAuthExceptionMiddleware(MiddlewareMixin):
     def process_exception(self, request, exception):
@@ -34,6 +36,11 @@ class SocialAuthExceptionMiddleware(MiddlewareMixin):
         return redirect(reverse('admin:login'))
 
 
+def get_active_admin_plan(self):
+    # FIXME: Use session instead?
+    return self.user.get_active_admin_plan()
+
+
 class AdminMiddleware(MiddlewareMixin):
     def process_view(self, request, *args, **kwargs):
         user = request.user
@@ -43,11 +50,16 @@ class AdminMiddleware(MiddlewareMixin):
         profile = UserProfile.get_for_user(user)
         plan = request.user.get_active_admin_plan()
 
+        # If the user has already set the UI language, use that one.
+        # Otherwise, default to the primary language of the plan.
         if profile.preferred_language and profile.preferred_language in (x[0] for x in settings.LANGUAGES):
             activate(profile.preferred_language)
         else:
             profile.preferred_language = plan.primary_language
             profile.save(update_fields=['preferred_language'])
+
+        # Inject the helper function into the request object
+        request.get_active_admin_plan = get_active_admin_plan.__get__(request, WatchAdminRequest)
 
         if not plan.site_id:
             return

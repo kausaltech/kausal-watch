@@ -13,7 +13,8 @@ from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryMetadataChoice,
     CategoryMetadataNumericValue, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata,
-    CategoryTypeMetadataChoice, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario
+    CategoryTypeMetadataChoice, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario,
+    PlanFeatures
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -32,6 +33,12 @@ class PlanDomainNode(DjangoNode):
         fields = [
             'id', 'hostname', 'base_path', 'google_site_verification_tag', 'matomo_analytics_url',
         ]
+
+
+class PlanFeaturesNode(DjangoNode):
+    class Meta:
+        model = PlanFeatures
+        fields = public_fields(PlanFeatures)
 
 
 class PlanNode(DjangoNode):
@@ -57,6 +64,13 @@ class PlanNode(DjangoNode):
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
+
+    # FIXME: Legacy attributes, remove later
+    hide_action_identifiers = graphene.Boolean()
+    hide_action_official_name = graphene.Boolean()
+    hide_action_lead_paragraph = graphene.Boolean()
+
+    features = graphene.Field(PlanFeaturesNode, required=True)
 
     def resolve_last_action_identifier(self, info):
         return self.get_last_action_identifier()
@@ -101,7 +115,7 @@ class PlanNode(DjangoNode):
             hostname = context_hostname
             if not hostname:
                 return None
-        return self.domains.filter(hostname=hostname).first()
+        return self.domains.filter(plan=self, hostname=hostname).first()
 
     @gql_optimizer.resolver_hints(
         model_field='domains',
@@ -112,10 +126,10 @@ class PlanNode(DjangoNode):
             hostname = context_hostname
             if not hostname:
                 return None
-        return self.domains.filter(hostname=hostname)
+        return self.domains.filter(plan=self, hostname=hostname)
 
-    def resolve_admin_url(self, info):
-        if not self.show_admin_link:
+    def resolve_admin_url(self: Plan, info):
+        if not self.features.show_admin_link:
             return None
         client_plan = self.clients.first()
         if client_plan is None:
@@ -136,6 +150,24 @@ class PlanNode(DjangoNode):
     def resolve_primary_orgs(self, info):
         qs = self.actions.all().values('primary_org')
         return Organization.objects.filter(id__in=qs)
+
+    @gql_optimizer.resolver_hints(
+        select_related=('features',)
+    )
+    def resolve_hide_action_identifiers(self: Plan, info):
+        return not self.features.has_action_identifiers
+
+    @gql_optimizer.resolver_hints(
+        select_related=('features',)
+    )
+    def resolve_hide_action_lead_paragraph(self: Plan, info):
+        return not self.features.has_action_lead_paragraph
+
+    @gql_optimizer.resolver_hints(
+        select_related=('features',)
+    )
+    def resolve_hide_action_official_name(self: Plan, info):
+        return not self.features.has_action_official_name
 
     class Meta:
         model = Plan
@@ -390,8 +422,8 @@ class ActionNode(DjangoNode):
         model_field='contact_persons',
     )
     def resolve_contact_persons(self, info):
-        plan = get_plan_from_context(info)
-        if plan.contact_persons_private:
+        plan: Plan = get_plan_from_context(info)
+        if not plan.features.public_contact_persons:
             return []
         return self.contact_persons.all()
 
