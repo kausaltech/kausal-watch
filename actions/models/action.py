@@ -22,7 +22,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 import reversion
 
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
+    IdentifierField, OrderedModel, PlanRelatedModel, TranslatedModelMixin, generate_identifier
 )
 from orgs.models import Organization
 from users.models import User
@@ -72,7 +72,7 @@ class ActionIdentifierAutocompleteField(ActionIdentifierSearchMixin, index.Autoc
 
 
 @reversion.register()
-class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
+class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed, TranslatedModelMixin):
     """One action/measure tracked in an action plan."""
 
     plan: Plan = ParentalKey(

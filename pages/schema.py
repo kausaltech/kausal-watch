@@ -2,6 +2,7 @@ import graphene
 import graphene_django_optimizer as gql_optimizer
 from wagtail.core.models import Page as WagtailPage
 from grapple.types.pages import PageInterface
+from actions.models import Plan
 
 from aplans.graphql_types import get_plan_from_context
 from pages.models import AplansPage
@@ -59,7 +60,7 @@ class MenuNodeMixin():
     items = graphene.List(MenuItemNode, required=True, with_descendants=graphene.Boolean(default_value=False))
 
     @classmethod
-    def resolver_from_plan(cls, plan, info):
+    def resolver_from_plan(cls, plan: Plan, info):
         root_page = plan.get_translated_root_page()
         if root_page is None:
             return None

@@ -389,24 +389,19 @@ class ActionNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='name',
     )
-    def resolve_name(self, info, hyphenated=False):
-        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
-        name = self.name_i18n
-        if name is None:
-            return None
-        if hyphenated:
+    def resolve_name(self: Action, info, hyphenated=False):
+        name = self.get_i18n_value('name')
+        if name and hyphenated:
             name = hyphenate(name)
         return name
 
     @gql_optimizer.resolver_hints(
         model_field='description',
     )
-    def resolve_description(self, info):
-        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
-        description = self.description_i18n
+    def resolve_description(self: Action, info):
+        description = self.get_i18n_value('description')
         if description is None:
             return None
-
         return RichText(description)
 
     @gql_optimizer.resolver_hints(
