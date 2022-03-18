@@ -108,6 +108,7 @@ def update_avatar(backend, details, user, *args, **kwargs):
 
     logger.info('Updating user photo (uuid=%s, email=%s)' % (user.uuid, details.get('email')))
 
+    photo = None
     try:
         photo = get_user_photo(user)
     except Exception as e:
