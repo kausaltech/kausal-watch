@@ -7,7 +7,7 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.text import capfirst
-from django.utils.translation import gettext as _
+from django.utils.translation import get_language, gettext as _
 from django.contrib.auth import REDIRECT_FIELD_NAME
 
 from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
@@ -56,27 +56,17 @@ def insert_model_translation_panels(model, panels, request, plan=None):
     return out
 
 
-def get_translation_tabs(instance, request, include_all_languages: bool = False):
+def get_translation_tabs(instance, languages=None):
+    """Add a translation tab for each language in `languages` (by default for all non-activated languages)."""
     i18n_field = get_i18n_field(type(instance))
     if not i18n_field:
         return []
     tabs = []
-
-    user = request.user
-    plan = user.get_active_admin_plan()
-
     languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
-    if include_all_languages:
-        # Omit main language because it's stored in the model field without a modeltrans language suffix
-        languages = [lang for lang in languages_by_code.keys() if lang != settings.LANGUAGE_CODE]
-    else:
-        languages = plan.other_languages
+    if languages is None:
+        languages = [lang for lang in languages_by_code.keys() if lang != get_language()]
     for lang_code in languages:
-        fields = []
-        for field in i18n_field.get_translated_fields():
-            if field.language != lang_code:
-                continue
-            fields.append(FieldPanel(field.name))
+        fields = [FieldPanel(field.name) for field in i18n_field.get_translated_fields() if field.language == lang_code]
         tabs.append(ObjectList(fields, heading=languages_by_code[lang_code]))
     return tabs
 
@@ -367,6 +357,21 @@ class AplansModelAdmin(ModelAdmin):
     def get_index_view_extra_js(self):
         ret = super().get_index_view_extra_js()
         return ret + ['admin_site/js/wagtail_customizations.js']
+
+    def force_language_in_i18n_panels(self, panels, instance, language=None):
+        # For each panel for an i18n field `f`, use the field `f_lang` instead, where `lang` is the given language (by
+        # default the activated Django language).
+        if language is None:
+            language = get_language()
+            print(f"language: {language}")
+        new_panels = []
+        for panel in panels:
+            panel = panel.clone()
+            field_name = getattr(panel, 'field_name', None)
+            if field_name and field_name in instance._meta.model.i18n.field.fields:
+                panel.field_name += f'_{language}'
+            new_panels.append(panel)
+        return new_panels
 
 
 class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):

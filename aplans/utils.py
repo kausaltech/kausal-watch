@@ -150,6 +150,12 @@ class PlanRelatedModel:
         assert len(plans) == 1
         return self.filter_by_plan(plans[0], qs)
 
+    def get_field_in_primary_language(self, field_name):
+        assert hasattr(self._meta.model, 'i18n')
+        assert field_name in self._meta.model.i18n.field.fields
+        field_name += f'_{self.plan.primary_language}'
+        return getattr(self, field_name)
+
 
 class ChoiceArrayField(ArrayField):
     """

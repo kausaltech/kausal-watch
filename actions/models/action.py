@@ -83,7 +83,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed, Tr
         'orgs.Organization', verbose_name=_('primary organization'),
         null=True, on_delete=models.SET_NULL,
     )
-    name = models.CharField(max_length=1000, verbose_name=_('name'))
+    name = models.CharField(max_length=1000, null=True, blank=True, verbose_name=_('name'))
     official_name = models.TextField(
         null=True, blank=True, verbose_name=_('official name'),
         help_text=_('The name as approved by an official party')
@@ -192,7 +192,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed, Tr
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
-    i18n = TranslationField(fields=('name', 'official_name', 'description', 'manual_status_reason'))
+    i18n = TranslationField(
+        fields=('name', 'official_name', 'description', 'manual_status_reason'),
+        fallback_language_field='plan__primary_language',
+    )
 
     objects = ActionQuerySet.as_manager()
 
@@ -239,7 +242,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed, Tr
         s = ''
         if self.plan is not None and self.plan.features.has_action_identifiers:
             s += '%s. ' % self.identifier
-        s += self.name
+        name = self.get_field_in_primary_language('name')
+        if name:
+            s += name
         return s
 
     def clean(self):

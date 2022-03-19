@@ -202,9 +202,10 @@ class QuantityAdmin(AplansModelAdmin):
     ]
 
     def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
+        panels = self.force_language_in_i18n_panels(self.panels, instance)
         return AplansTabbedInterface([
-            ObjectList(self.panels, heading=_('General')),
-            *get_translation_tabs(instance, request, include_all_languages=True)
+            ObjectList(panels, heading=_('General')),
+            *get_translation_tabs(instance)
         ])
 
     def get_queryset(self, request):

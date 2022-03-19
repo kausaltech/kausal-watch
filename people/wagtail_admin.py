@@ -157,7 +157,8 @@ class PersonAdmin(AplansModelAdmin):
     ]
 
     def get_edit_handler(self, instance, request):
-        basic_panels = list(self.basic_panels)
+        basic_panels = self.force_language_in_i18n_panels(self.basic_panels, instance)
+
         user = request.user
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
@@ -165,7 +166,7 @@ class PersonAdmin(AplansModelAdmin):
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance)
         tabs += i18n_tabs
 
         return PersonEditHandler(tabs, base_form_class=PersonForm)

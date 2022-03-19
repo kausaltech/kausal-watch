@@ -510,9 +510,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
             if self.permission_helper.user_can_edit_obj(request.user, obj):
                 url = self.url_helper.get_action_url('edit', obj.pk)
-                return format_html('<a href="{}">{}</a>', url, obj.name)
+                return format_html('<a href="{}">{}</a>', url, obj.get_field_in_primary_language('name'))
             else:
-                return obj.name
+                return obj.get_field_in_primary_language('name')
         name_link.short_description = _('Name')
         self.name_link = name_link
 
@@ -563,6 +563,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 panels.remove(panel)
             elif field_name == 'primary_org' and not plan.features.has_action_primary_orgs:
                 panels.remove(panel)
+        panels = self.force_language_in_i18n_panels(panels, instance, instance.plan.primary_language)
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
         progress_panels = list(self.progress_panels)
@@ -623,7 +624,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, instance.plan.other_languages)
         all_tabs += i18n_tabs
 
         return ActionEditHandler(all_tabs)
