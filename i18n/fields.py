@@ -6,11 +6,12 @@ from django.db.models import fields
 from django.utils.translation import gettext_lazy as _
 
 # from .conf import get_default_language, get_fallback_chain, get_modeltrans_setting
+from .conf import get_fallback_chain
 from .utils import (
     # FallbackTransform,
     build_localized_fieldname,
     get_instance_field_value,
-    # get_language,
+    get_language,
 )
 
 try:
@@ -30,7 +31,7 @@ SUPPORTED_FIELDS = (fields.CharField, fields.TextField)
 
 # Overridden below (BB)
 # def translated_field_factory(original_field, language=None, *args, **kwargs):
-def translated_field_factory(original_field, language, default_language_field=None, *args, **kwargs):
+def translated_field_factory(original_field, language=None, default_language_field=None, *args, **kwargs):
     if not isinstance(original_field, SUPPORTED_FIELDS):
         raise ImproperlyConfigured(
             "{} is not supported by django-modeltrans.".format(original_field.__class__.__name__)
@@ -51,7 +52,6 @@ class TranslatedVirtualField:
     Arguments:
         original_field: The original field to be translated
         language: The language to translate to, or `None` to track the current active Django language.
-        [Update (BB): May not be None]
     """
 
     # Implementation inspired by HStoreVirtualMixin from:
@@ -59,7 +59,7 @@ class TranslatedVirtualField:
 
     # Overridden below (BB)
     # def __init__(self, original_field, language=None, *args, **kwargs):
-    def __init__(self, original_field, language, default_language_field=None, *args, **kwargs):
+    def __init__(self, original_field, language=None, default_language_field=None, *args, **kwargs):
         # TODO: this feels like a big hack.
         self.__dict__.update(original_field.__dict__)
 
@@ -106,26 +106,25 @@ class TranslatedVirtualField:
     def db_type(self, connection):
         return None
 
-    # Deactivated (BB)
-    # def get_instance_fallback_chain(self, instance, language):
-    #     """
-    #     Return the fallback chain for the instance.
-    #
-    #     Most of the time, it is just the configured fallback chain, but if the per-record-fallback feature
-    #     is used, the value of the field is added (if not None).
-    #     """
-    #     default = get_fallback_chain(language)
-    #
-    #     i18n_field = instance._meta.get_field("i18n")
-    #     if i18n_field.fallback_language_field:
-    #         record_fallback_language = get_instance_field_value(
-    #             instance, i18n_field.fallback_language_field
-    #         )
-    #
-    #         if record_fallback_language:
-    #             return (record_fallback_language, *default)
-    #
-    #     return default
+    def get_instance_fallback_chain(self, instance, language):
+        """
+        Return the fallback chain for the instance.
+
+        Most of the time, it is just the configured fallback chain, but if the per-record-fallback feature
+        is used, the value of the field is added (if not None).
+        """
+        default = get_fallback_chain(language)
+
+        i18n_field = instance._meta.get_field("i18n")
+        if i18n_field.fallback_language_field:
+            record_fallback_language = get_instance_field_value(
+                instance, i18n_field.fallback_language_field
+            )
+
+            if record_fallback_language:
+                return (record_fallback_language, *default)
+
+        return default
 
     def __get__(self, instance, instance_type=None):
         # This method is apparently called with instance=None from django.
@@ -158,17 +157,18 @@ class TranslatedVirtualField:
 
         # This is the _i18n version of the field, and the current language is not available,
         # so we walk the fallback chain:
-        # Deactivated (BB)
-        # for fallback_language in (language,) + self.get_instance_fallback_chain(instance, language):
-        #     if fallback_language == DEFAULT_LANGUAGE:
-        #         if original_value:
-        #             return original_value
-        #         else:
-        #             continue
-        #
-        #     field_name = build_localized_fieldname(self.original_name, fallback_language)
-        #     if field_name in instance.i18n and instance.i18n[field_name]:
-        #         return instance.i18n.get(field_name)
+        for fallback_language in (language,) + self.get_instance_fallback_chain(instance, language):
+            # Overridden below (BB)
+            # if fallback_language == DEFAULT_LANGUAGE:
+            if fallback_language == default_language:
+                if original_value:
+                    return original_value
+                else:
+                    continue
+
+            field_name = build_localized_fieldname(self.original_name, fallback_language)
+            if field_name in instance.i18n and instance.i18n[field_name]:
+                return instance.i18n.get(field_name)
 
         # finally, return the original field if all else fails.
         return getattr(instance, self.original_name)
@@ -214,9 +214,7 @@ class TranslatedVirtualField:
         In case of an explicit language (title_en), it returns "en", in case of
         `title_i18n`, it returns the currently active Django language.
         """
-        # Overridden below (BB): self.language may not be None
-        # return self.language if self.language is not None else get_language()
-        return self.language
+        return self.language if self.language is not None else get_language()
 
     # Deactivated (BB)
     # def output_field(self):

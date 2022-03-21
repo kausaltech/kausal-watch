@@ -2,9 +2,9 @@
 # from django.core.exceptions import FieldDoesNotExist
 from django.db.models.constants import LOOKUP_SEP
 # from django.db.models.lookups import Transform
-# from django.utils.translation import get_language as _get_language
-#
-# from .conf import get_available_languages, get_default_language
+from django.utils.translation import get_language as _get_language
+
+from .conf import get_available_languages, get_default_language
 
 # try:
 #     from django.db.models.fields.json import KeyTransform
@@ -14,20 +14,20 @@ from django.db.models.constants import LOOKUP_SEP
 
 # Deactivated (BB)
 # DJANGO_VERSION = django.get_version()
-#
-#
-# def get_language():
-#     """
-#     Return an active language code that is guaranteed to be in settings.LANGUAGES
-#
-#     (Django does not seem to guarantee this for us.)
-#     """
-#     lang = _get_language()
-#     if lang in get_available_languages():
-#         return lang
-#     return get_default_language()
-#
-#
+
+
+def get_language():
+    """
+    Return an active language code that is guaranteed to be in settings.LANGUAGES
+
+    (Django does not seem to guarantee this for us.)
+    """
+    lang = _get_language()
+    if lang in get_available_languages():
+        return lang
+    return get_default_language()
+
+
 # def split_translated_fieldname(field_name):
 #     _pos = field_name.rfind("_")
 #     return (field_name[0:_pos], field_name[_pos + 1 :])

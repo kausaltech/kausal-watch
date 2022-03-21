@@ -190,22 +190,3 @@ def validate_css_color(s):
             _('%(color)s is not a CSS color (e.g., "#112233", "red" or "rgb(0, 255, 127)")'),
             params={'color': s},
         )
-
-
-class TranslatedModelMixin:
-    def get_i18n_value(self, field_name: str, language: str = None):
-        """Get the given field in the given language, fall back to the default language.
-
-        If the i18n field is deferred, which can happen due to gql_optimizer, this will not work and an error is raised.
-        To work around this, you can add a statement that does nothing such as `self.i18n` to the GraphQL resolver.
-        """
-        if language is None:
-            language = get_language()
-        # key = '%s_%s' % (field_name, language)
-        # val = self.i18n.get(key)
-        # The following gets the same value as the previous commented-out lines, with the benefit of raising an error if
-        # the i18n field is deferred, which would cause access to self.i18n to silently fail.
-        val = getattr(self, f'{field_name}_{language}')
-        if val:
-            return val
-        return getattr(self, field_name)

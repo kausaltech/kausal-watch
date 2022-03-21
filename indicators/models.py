@@ -1,5 +1,4 @@
 import datetime
-from typing import Optional
 import reversion
 from dateutil.relativedelta import relativedelta
 
@@ -18,7 +17,7 @@ from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
+from aplans.utils import IdentifierField, OrderedModel
 from i18n.fields import TranslationField
 from orgs.models import Organization
 
@@ -35,7 +34,7 @@ def latest_plan():
 
 
 @reversion.register()
-class Quantity(ClusterableModel, TranslatedModelMixin):
+class Quantity(ClusterableModel):
     """The quantity that an indicator measures."""
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
@@ -53,7 +52,7 @@ class Quantity(ClusterableModel, TranslatedModelMixin):
         ordering = ('name',)
 
     def __str__(self):
-        return self.get_i18n_value('name')
+        return self.name_i18n
 
     def autocomplete_label(self):
         return str(self)

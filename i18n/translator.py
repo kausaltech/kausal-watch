@@ -163,13 +163,14 @@ def add_virtual_fields(Model, default_language_field, fields, required_languages
 
         # first, add a `<original_field_name>_i18n` virtual field to get the currently
         # active translation for a field
-        # Deactivated (BB)
-        # field = translated_field_factory(
-        #     original_field=original_field, blank=True, null=True, editable=False  # disable in admin
-        # )
-        #
-        # raise_if_field_exists(Model, field.get_field_name())
-        # field.contribute_to_class(Model, field.get_field_name())
+        field = translated_field_factory(
+            original_field=original_field, blank=True, null=True, editable=False,  # disable in admin
+            # Added (BB)
+            default_language_field=default_language_field,
+        )
+
+        raise_if_field_exists(Model, field.get_field_name())
+        field.contribute_to_class(Model, field.get_field_name())
 
         # add a virtual field pointing to the original field with name
         # <original_field_name>_<LANGUAGE_CODE>

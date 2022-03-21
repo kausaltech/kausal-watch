@@ -395,6 +395,12 @@ LANGUAGES = (
     ('de', _('German')),
 )
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
+# modeltrans out of the box falls back to LANGUAGE_CODE. The following switches this off, so `field_i18n` returns
+# `field` (instead of `field_<LANUGAGE_CODE>`) if the field has no translation for the currently active language.
+# This is what we want since we always want to fall back to whatever language `field` is in.
+MODELTRANS_FALLBACK = {
+    'default': (),
+}
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 WAGTAILSIMPLETRANSLATION_SYNC_PAGE_TREE = True
 
