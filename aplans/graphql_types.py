@@ -7,9 +7,9 @@ from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
 from grapple.registry import registry
-from modeltrans.translator import get_i18n_field
 
 from actions.models import Plan
+from i18n.translator import get_i18n_field
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):

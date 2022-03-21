@@ -4,11 +4,12 @@ from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.search import index
 
+from aplans.fields import LanguageChoiceField
 from aplans.utils import PlanRelatedModel
+from i18n.fields import TranslationField
 
 
 # TODO: Generalize and put in some other app's models.py
@@ -137,7 +138,8 @@ class Organization(index.Indexed, Node):
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
 
-    i18n = TranslationField(fields=('name', 'abbreviation'))
+    primary_language = LanguageChoiceField()
+    i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
 
     objects = OrganizationManager()
 

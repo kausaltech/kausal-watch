@@ -14,14 +14,12 @@ from django.utils import timezone
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
-from modeltrans.manager import MultilingualManager
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from admin_site.wagtail import AplansAdminModelForm
 from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
+from i18n.fields import TranslationField
 from orgs.models import Organization
 
 
@@ -42,11 +40,12 @@ class Quantity(ClusterableModel, TranslatedModelMixin):
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
 
-    i18n = TranslationField(fields=['name'])
+    i18n = TranslationField(fields=['name'])  # In language settings.LANGUAGE_CODE by default
 
     autocomplete_search_field = 'name'
 
-    objects = MultilingualManager()
+    # TODO: Check why / if we needed this
+    # objects = MultilingualManager()
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
@@ -131,7 +130,7 @@ class Framework(ClusterableModel):
     identifier = IdentifierField(unique=True)
     name = models.CharField(max_length=200, verbose_name=_('name'))
 
-    i18n = TranslationField(fields=['name'])
+    i18n = TranslationField(fields=['name'])  # In language settings.LANGUAGE_CODE by default
 
     public_fields = ['id', 'name']
 
@@ -184,7 +183,7 @@ class CommonIndicator(ClusterableModel):
         'actions.Plan', blank=True, related_name='common_indicators', through='PlanCommonIndicator'
     )
 
-    i18n = TranslationField(fields=['name', 'description'])
+    i18n = TranslationField(fields=['name', 'description'])  # In language settings.LANGUAGE_CODE by default
 
     public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators', 'dimensions']
 

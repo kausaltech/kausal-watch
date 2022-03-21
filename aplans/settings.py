@@ -149,6 +149,7 @@ INSTALLED_APPS = [
     'import_export',
     'anymail',
     'modeltrans',
+    'i18n',
 
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',

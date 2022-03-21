@@ -14,7 +14,6 @@ from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -24,6 +23,7 @@ import reversion
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, TranslatedModelMixin, generate_identifier
 )
+from i18n.fields import TranslationField
 from orgs.models import Organization
 from users.models import User
 
@@ -192,7 +192,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed, Tr
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
-    i18n = TranslationField(fields=('name', 'official_name', 'description', 'manual_status_reason'))
+    i18n = TranslationField(
+        fields=('name', 'official_name', 'description', 'manual_status_reason'),
+        default_language_field='plan__primary_language',
+    )
 
     objects = ActionQuerySet.as_manager()
 
@@ -525,7 +528,7 @@ class ActionSchedule(models.Model, PlanRelatedModel):
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'name', 'begins_at', 'ends_at'
@@ -551,7 +554,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
     identifier = IdentifierField(max_length=20)
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'is_completed'
@@ -575,7 +578,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'order', 'name', 'identifier',
@@ -599,7 +602,7 @@ class ActionDecisionLevel(models.Model, PlanRelatedModel):
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'name', 'identifier',
@@ -660,7 +663,7 @@ class ActionTask(models.Model):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
 
-    i18n = TranslationField(fields=('name', 'comment'))
+    i18n = TranslationField(fields=('name', 'comment'), default_language_field='action__plan__primary_language')
 
     objects = ActionTaskQuerySet.as_manager()
 
@@ -714,7 +717,7 @@ class ActionImpact(OrderedModel, PlanRelatedModel):
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'order',

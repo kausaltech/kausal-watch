@@ -12,7 +12,6 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 
 from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
 from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
-from modeltrans.translator import get_i18n_field
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
@@ -21,9 +20,10 @@ from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
-from aplans.types import WatchAdminRequest
 
+from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
+from i18n.translator import get_i18n_field
 
 
 def insert_model_translation_panels(model, panels, request, plan=None):

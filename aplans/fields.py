@@ -1,5 +1,5 @@
 from django import forms
-from django.core import validators
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import EmailValidator
 from django.db import models
@@ -54,3 +54,20 @@ class HostnameField(models.CharField):
             'form_class': HostnameFormField,
             **kwargs,
         })
+
+
+def get_supported_languages():
+    for x in settings.LANGUAGES:
+        yield x
+
+
+def get_default_language():
+    return settings.LANGUAGES[0][0]
+
+
+class LanguageChoiceField(models.CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('max_length', 8)
+        kwargs['choices'] = get_supported_languages()
+        kwargs.setdefault('default', get_default_language)
+        super().__init__(*args, **kwargs)

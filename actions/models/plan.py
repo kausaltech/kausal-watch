@@ -15,13 +15,14 @@ from django.utils import timezone
 from django.utils.translation import get_language, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from wagtail.core.models import Collection, Page, Site
 from wagtail.core.models.i18n import Locale
 
 import reversion
 
+from aplans.fields import LanguageChoiceField
 from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color
+from i18n.fields import TranslationField
 from orgs.models import Organization
 from people.models import Person
 
@@ -33,15 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
-
-
-def get_supported_languages():
-    for x in settings.LANGUAGES:
-        yield x
-
-
-def get_default_language():
-    return settings.LANGUAGES[0][0]
 
 
 class PlanQuerySet(models.QuerySet):
@@ -102,11 +94,8 @@ class Plan(ClusterableModel):
         Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
     )
 
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
-    other_languages = ChoiceArrayField(
-        models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
-        default=list, null=True, blank=True
-    )
+    primary_language = LanguageChoiceField()
+    other_languages = ChoiceArrayField(LanguageChoiceField(), default=list, null=True, blank=True)
     accessibility_statement_url = models.URLField(
         blank=True,
         null=True,
@@ -121,7 +110,7 @@ class Plan(ClusterableModel):
     features: PlanFeatures
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name', 'short_name'])
+    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
 
     public_fields = [
         'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
@@ -375,7 +364,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
         validators=[validate_css_color]
     )
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
@@ -408,7 +397,10 @@ class MonitoringQualityPoint(OrderedModel, PlanRelatedModel):
     )
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name', 'description_yes', 'description_no'))
+    i18n = TranslationField(
+        fields=('name', 'description_yes', 'description_no'),
+        default_language_field='plan__primary_language',
+    )
 
     public_fields = [
         'id', 'name', 'description_yes', 'description_no', 'plan', 'identifier',

@@ -2,10 +2,10 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 
-from aplans.fields import HostnameField
+from aplans.fields import HostnameField, LanguageChoiceField
 from aplans.utils import OrderedModel
+from i18n.fields import TranslationField
 
 
 class ClientQuerySet(models.QuerySet):
@@ -27,7 +27,11 @@ class Client(ClusterableModel):
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
 
-    i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
+    primary_language = LanguageChoiceField()
+    i18n = TranslationField(
+        fields=['login_header_text', 'login_button_text'],
+        default_language_field='primary_language',
+    )
 
     objects = ClientQuerySet.as_manager()
 

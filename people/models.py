@@ -18,16 +18,16 @@ from django.db.models import Q
 from easy_thumbnails.files import get_thumbnailer
 from image_cropping import ImageRatioField
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.search import index
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
 
-from orgs.models import Organization
-
 from admin_site.models import Client
+from aplans.fields import LanguageChoiceField
+from orgs.models import Organization
+from i18n.fields import TranslationField
 
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,7 @@ class Person(index.Indexed, ClusterableModel):
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
-    i18n = TranslationField(fields=('title',))
+    i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
 
     objects = models.Manager.from_queryset(PersonQuerySet)()
 

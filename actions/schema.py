@@ -357,7 +357,7 @@ class ActionTaskNode(DjangoNode):
     )
     def resolve_comment(self, info):
         self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
-        comment = self.comment_i18n
+        comment = self.get_i18n_value('comment')
         if comment is None:
             return None
 
@@ -390,6 +390,7 @@ class ActionNode(DjangoNode):
         model_field='name',
     )
     def resolve_name(self: Action, info, hyphenated=False):
+        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
         name = self.get_i18n_value('name')
         if name and hyphenated:
             name = hyphenate(name)
@@ -399,6 +400,7 @@ class ActionNode(DjangoNode):
         model_field='description',
     )
     def resolve_description(self: Action, info):
+        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
         description = self.get_i18n_value('description')
         if description is None:
             return None
