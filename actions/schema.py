@@ -6,6 +6,7 @@ from django.urls.base import reverse
 from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
+from grapple.registry import registry as grapple_registry
 from itertools import chain
 from wagtail.core.rich_text import RichText
 
@@ -272,7 +273,7 @@ class CategoryNode(DjangoNode):
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
     icon_url = graphene.String()
-    category_page = graphene.Field(PageInterface)
+    category_page = graphene.Field(grapple_registry.pages[CategoryPage])
 
     def resolve_metadata(self, info, id=None):
         query = Q()
