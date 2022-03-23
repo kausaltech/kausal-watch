@@ -167,10 +167,15 @@ class Plan(ClusterableModel):
         return self.site.root_page
 
     def get_translated_root_page(self):
+        """Return root page in activated language, fall back to default language."""
         root = self.root_page
         language = get_language()
-        locale = Locale.objects.get(language_code=language)
-        return root.get_translation(locale)
+        try:
+            locale = Locale.objects.get(language_code=language)
+            root = root.get_translation(locale)
+        except (Locale.DoesNotExist, Page.DoesNotExist):
+            pass
+        return root
 
     def save(self, *args, **kwargs):
         PlanFeatures = apps.get_model('actions', 'PlanFeatures')
