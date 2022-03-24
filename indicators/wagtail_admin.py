@@ -391,7 +391,7 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(1, FieldPanel('organization'))
             basic_panels.insert(2, FieldPanel('common'))
 
-        handler = AplansTabbedInterface(children=[
+        tabs = [
             ObjectList(basic_panels, heading=_('Basic information')),
             ObjectList([
                 CondensedInlinePanel(
@@ -401,7 +401,12 @@ class IndicatorAdmin(AplansModelAdmin):
                     ]
                 )
             ], heading=_('Contact persons')),
-        ])
+        ]
+
+        i18n_tabs = get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
+        handler = AplansTabbedInterface(tabs)
         handler.base_form_class = IndicatorForm
         return handler
 

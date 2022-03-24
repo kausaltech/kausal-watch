@@ -329,6 +329,8 @@ class Indicator(ClusterableModel, index.Indexed):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
+    i18n = TranslationField(fields=['name', 'description'])
+
     search_fields = [
         index.SearchField('name', boost=10),
         index.AutocompleteField('name'),
