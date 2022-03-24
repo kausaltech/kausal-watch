@@ -58,3 +58,4 @@ humanize
 elasticsearch>=7.0.0,<8.0.0
 rich
 elasticsearch_dsl<8.0.0
+pygments-graphql

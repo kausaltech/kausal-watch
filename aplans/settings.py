@@ -82,51 +82,6 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 SITE_ID = 1
 
-# Logging
-if env('CONFIGURE_LOGGING'):
-    def level(level: Literal['DEBUG', 'INFO', 'WARNING']):
-        return dict(
-            handlers=['console'],
-            propagate=False,
-            level=level,
-        )
-
-    LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': True,
-        'formatters': {
-            'verbose': {
-                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
-            },
-            'simple': {
-                'format': '%(levelname)s %(name)s %(asctime)s %(message)s'
-            },
-        },
-        'handlers': {
-            'null': {
-                'level': 'DEBUG',
-                'class': 'logging.NullHandler',
-            },
-            'console': {
-                'level': 'DEBUG',
-                'class': 'logging.StreamHandler',
-                'formatter': 'simple'
-            },
-        },
-        'loggers': {
-            'django.db': level('INFO'),
-            'django.template': level('WARNING'),
-            'django': level('DEBUG'),
-            'raven': level('WARNING'),
-            'blib2to3': level('INFO'),
-            'generic': level('DEBUG'),
-            'parso': level('WARNING'),
-            'requests': level('WARNING'),
-            'PIL': level('INFO'),
-            '': level('DEBUG'),
-        }
-    }
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -611,6 +566,68 @@ if not locals().get('SECRET_KEY', ''):
         except IOError:
             Exception('Please create a %s file with random characters to generate your secret key!' % secret_file)
 
+
+if DEBUG:
+    from rich.traceback import install
+    install()
+
+
+# Logging
+if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
+    def level(level: Literal['DEBUG', 'INFO', 'WARNING']):
+        return dict(
+            handlers=['rich' if DEBUG else 'console'],
+            propagate=False,
+            level=level,
+        )
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'verbose': {
+                'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            },
+            'simple': {
+                'format': '%(levelname)s %(name)s %(asctime)s %(message)s'
+            },
+            'rich': {
+                'format': '%(message)s'
+            },
+        },
+        'handlers': {
+            'null': {
+                'level': 'DEBUG',
+                'class': 'logging.NullHandler',
+            },
+            'console': {
+                'level': 'DEBUG',
+                'class': 'logging.StreamHandler',
+                'formatter': 'simple'
+            },
+            'rich': {
+                'level': 'DEBUG',
+                'class': 'aplans.log_handler.LogHandler',
+                'formatter': 'rich',
+                'log_time_format': '%Y-%m-%d %H:%M:%S.%f'
+            },
+        },
+        'loggers': {
+            'django.db': level('INFO'),
+            'django.template': level('WARNING'),
+            'django.utils.autoreload': level('INFO'),
+            'django': level('DEBUG'),
+            'raven': level('WARNING'),
+            'blib2to3': level('INFO'),
+            'generic': level('DEBUG'),
+            'parso': level('WARNING'),
+            'requests': level('WARNING'),
+            'PIL': level('INFO'),
+            '': level('DEBUG'),
+        }
+    }
+
+
 if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.django import DjangoIntegration
@@ -632,4 +649,3 @@ if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 
 HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
-# foofff

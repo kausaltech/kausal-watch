@@ -1,8 +1,6 @@
-import contextlib
 import hashlib
 import json
 import logging
-from time import time
 
 from django.conf import settings
 from django.utils import translation
@@ -14,6 +12,8 @@ from django.core.exceptions import ValidationError
 from graphene_django.views import GraphQLView
 from graphql.error import GraphQLError
 from graphql.language.ast import Variable
+from rich.console import Console
+from rich.syntax import Syntax
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import AuthenticatedUserNode
@@ -168,6 +168,12 @@ class SentryGraphQLView(GraphQLView):
         request._referer = self.request.META.get('HTTP_REFERER')
         transaction = sentry_sdk.Hub.current.scope.transaction
         logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
+        if settings.DEBUG and logger.isEnabledFor(logging.DEBUG):
+            console = Console()
+            syntax = Syntax(query, "graphql")
+            console.print(syntax)
+            if variables:
+                console.print('Variables:', variables)
 
         with sentry_sdk.push_scope() as scope:
             scope.set_context('graphql_variables', variables)
