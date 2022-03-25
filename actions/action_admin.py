@@ -15,6 +15,7 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 
@@ -453,7 +454,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('end_date'),
     ]
     internal_panels = [
-        FieldPanel('internal_notes'),
+        FieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
     ]
 
     task_panels = [
@@ -608,7 +609,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         internal_panels = list(self.internal_panels)
 
         if is_general_admin:
-            internal_panels.append(FieldPanel('internal_admin_notes'))
+            internal_panels.append(
+                FieldPanel('internal_admin_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5)))
+            )
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
             cat_panels = []
             for key, field in cat_fields.items():
