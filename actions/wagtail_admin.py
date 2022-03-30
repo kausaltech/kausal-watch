@@ -1,5 +1,7 @@
-from django.utils.translation import gettext
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import (
+    gettext, gettext_lazy as _, pgettext
+)
+from django.utils.safestring import mark_safe
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
@@ -206,7 +208,9 @@ class ActivePlanMenuItem(ModelAdminMenuItem):
 
 class ActivePlanAdmin(PlanAdmin):
     def get_menu_item(self, order=None):
-        return ActivePlanMenuItem(self, order or self.get_menu_order())
+        item = ActivePlanMenuItem(self, order or self.get_menu_order())
+        item.label = mark_safe(pgettext('hyphenated', 'Plan'))
+        return item
 
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
