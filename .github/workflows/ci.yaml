@@ -51,8 +51,14 @@ jobs:
         if: github.ref == 'refs/heads/deployment/staging'
         run: |
           docker tag ${{ env.APP_IMAGE }} ${{ env.APP_REPOSITORY }}:staging-${{ github.run_number }}
+          docker tag ${{ env.APP_IMAGE }} ${{ env.APP_REPOSITORY }}:staging-latest
           docker tag ${{ env.DB_IMAGE }} ${{ env.DB_REPOSITORY }}:staging-${{ github.run_number }}
+          docker tag ${{ env.DB_IMAGE }} ${{ env.DB_REPOSITORY }}:staging-latest
           docker tag ${{ env.ELASTICSEARCH_IMAGE }} ${{ env.ELASTICSEARCH_REPOSITORY }}:staging-${{ github.run_number }}
+          docker tag ${{ env.ELASTICSEARCH_IMAGE }} ${{ env.ELASTICSEARCH_REPOSITORY }}:staging-latest
           docker push ${{ env.APP_REPOSITORY }}:staging-${{ github.run_number }}
+          docker push ${{ env.APP_REPOSITORY }}:staging-latest
           docker push ${{ env.DB_REPOSITORY }}:staging-${{ github.run_number }}
+          docker push ${{ env.DB_REPOSITORY }}:staging-latest
           docker push ${{ env.ELASTICSEARCH_REPOSITORY }}:staging-${{ github.run_number }}
+          docker push ${{ env.ELASTICSEARCH_REPOSITORY }}:staging-latest
