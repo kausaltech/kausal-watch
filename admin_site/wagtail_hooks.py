@@ -204,3 +204,34 @@ def reorder_page_action_menu_items(menu_items, request, context):
 def enable_superscript_feature(features):
     features.default_features.append('superscript')
     features.default_features.append('subscript')
+
+
+@hooks.register('construct_settings_menu')
+def remove_settings_menu_items(request, items: list):
+    from wagtail.users.wagtail_hooks import (
+        GroupsMenuItem, UsersMenuItem
+    )
+    from wagtail.admin.wagtail_hooks import (
+        WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem
+    )
+    from wagtail.sites.wagtail_hooks import (
+        SitesMenuItem
+    )
+    from wagtail.locales.wagtail_hooks import (
+        LocalesMenuItem
+    )
+    from wagtail.contrib.redirects.wagtail_hooks import (
+        RedirectsMenuItem
+    )
+
+    item_classes_to_remove = (
+        GroupsMenuItem, UsersMenuItem,
+        WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem,
+        SitesMenuItem, LocalesMenuItem, RedirectsMenuItem
+    )
+    to_remove = []
+    for item in items:
+        if isinstance(item, item_classes_to_remove):
+            to_remove.append(item)
+    for item in to_remove:
+        items.remove(item)
