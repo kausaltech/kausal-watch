@@ -19,7 +19,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from .models import (
-    ActionImpact, ActionStatus, Plan
+    ActionImpact, ActionStatus, Plan, PlanFeatures
 )
 
 from . import category_admin  # noqa
@@ -219,6 +219,96 @@ class ActivePlanAdmin(PlanAdmin):
 
 
 modeladmin_register(ActivePlanAdmin)
+
+
+class PlanFeaturesAdmin(AplansModelAdmin):
+    model = PlanFeatures
+    menu_icon = 'tasks'
+    menu_label = _('Plan features')
+    menu_order = 501
+
+    superuser_panels = [
+        FieldPanel('allow_images_for_actions'),
+        FieldPanel('show_admin_link'),
+        FieldPanel('public_contact_persons'),
+        FieldPanel('has_action_identifiers'),
+        FieldPanel('has_action_official_name'),
+        FieldPanel('has_action_lead_paragraph'),
+        FieldPanel('has_action_primary_orgs'),
+    ]
+
+    panels = [
+        FieldPanel('enable_search'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        person = user.get_corresponding_person()
+        if not user.is_superuser and person:
+            qs = qs.filter(plan__general_admins=person).distinct()
+        return qs
+
+    def user_can_create(self):
+        return False
+
+    def get_edit_handler(self, instance, request):
+        panels = self.panels
+        if request.user.is_superuser:
+            panels += self.superuser_panels
+        handler = ObjectList(panels)
+        return handler
+
+
+# TBD: We might want to keep this for superusers.
+# modeladmin_register(PlanFeaturesAdmin)
+
+
+class ActivePlanFeaturesPermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return user.is_superuser
+
+    def user_can_create(self, user):
+        return False
+
+    def user_can_inspect_obj(self, user, obj):
+        return False
+
+    def user_can_delete_obj(self, user, obj):
+        return False
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
+
+
+class ActivePlanFeaturesMenuItem(ModelAdminMenuItem):
+    def get_context(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        context = super().get_context(request)
+        plan = request.user.get_active_admin_plan()
+        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.features.pk)
+        return context
+
+    def is_shown(self, request):
+        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
+        # this menu item is about editing a plan features instance, not listing.
+        plan = request.user.get_active_admin_plan()
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.features)
+
+
+class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
+    def get_menu_item(self, order=None):
+        item = ActivePlanFeaturesMenuItem(self, order or self.get_menu_order())
+        item.label = mark_safe(pgettext('hyphenated', 'Plan features'))
+        return item
+
+    edit_view_class = ActivePlanEditView
+    permission_helper_class = ActivePlanFeaturesPermissionHelper
+    menu_label = _('Plan features')
+    add_to_settings_menu = True
+
+
+modeladmin_register(ActivePlanFeaturesAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

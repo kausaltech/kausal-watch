@@ -1,7 +1,9 @@
+import reversion
 from django.utils.translation import gettext_lazy as _
 from django.db import models
 
 
+@reversion.register()
 class PlanFeatures(models.Model):
     plan = models.OneToOneField('actions.Plan', related_name='features', on_delete=models.CASCADE)
     allow_images_for_actions = models.BooleanField(
