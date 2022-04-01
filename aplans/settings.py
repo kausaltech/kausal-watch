@@ -21,6 +21,7 @@ root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),
+    DEPLOYMENT_TYPE=(str, 'development'),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
     EXTRA_INSTALLED_APPS=(list, []),
@@ -528,6 +529,7 @@ MEDIA_ROOT = env('MEDIA_ROOT')
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+DEPLOYMENT_TYPE = env('DEPLOYMENT_TYPE')
 SENTRY_DSN = env('SENTRY_DSN')
 
 SILENCED_SYSTEM_CHECKS = [
@@ -637,7 +639,7 @@ if SENTRY_DSN:
         send_default_pii=True,
         traces_sample_rate=1.0,
         integrations=[DjangoIntegration()],
-        environment='development' if DEBUG else 'production'
+        environment=DEPLOYMENT_TYPE,
     )
 
 if 'DATABASES' in locals():
