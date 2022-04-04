@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-01 13:50+0200\n"
+"POT-Creation-Date: 2022-04-04 20:13+0300\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -228,6 +228,34 @@ msgstr "Valitse luokka"
 #: actions/chooser.py
 msgid "Choose another category"
 msgstr "Valitse toinen luokka"
+
+#: actions/defaults.py
+msgid "On time"
+msgstr "Aikataulussa"
+
+#: actions/defaults.py
+msgid "Late"
+msgstr "Myöhässä"
+
+#: actions/defaults.py
+msgid "Cancelled or postponed"
+msgstr "Ei toteuteta tässä vaiheessa"
+
+#: actions/defaults.py
+msgid "Not started"
+msgstr "Ei aloitettu"
+
+#: actions/defaults.py
+msgid "Planning"
+msgstr "Suunnittelu"
+
+#: actions/defaults.py
+msgid "Implementation"
+msgstr "Toteutus"
+
+#: actions/defaults.py
+msgid "Completed"
+msgstr "Valmis"
 
 #: actions/export.py aplans/utils.py notifications/models.py
 msgid "identifier"
@@ -751,6 +779,78 @@ msgstr "metatiedon valinnat"
 msgid "metadata_numeric_values"
 msgstr "metatiedon numeroarvot"
 
+#: actions/models/features.py
+msgid "allow images for actions"
+msgstr "salli toimenpiteille kuvat"
+
+#: actions/models/features.py
+msgid "Should custom images for individual actions be allowed"
+msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
+
+#: actions/models/features.py
+msgid "show admin link"
+msgstr "näytä ylläpidon linkki"
+
+#: actions/models/features.py
+msgid "Should the public website contain a link to the admin login?"
+msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
+
+#: actions/models/features.py
+msgid "Contact persons private"
+msgstr "Yhteyshenkilöt salaisia"
+
+#: actions/models/features.py
+msgid "Set if the contact persons should be visible in the public UI"
+msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
+
+#: actions/models/features.py
+msgid "Hide action identifiers"
+msgstr "Piilota toimenpiteiden tunnisteet"
+
+#: actions/models/features.py
+msgid "Set if the plan uses meaningful action identifiers"
+msgstr "Aseta jos ohjelmassa käytetään toimenpiteiden tunnisteita"
+
+#: actions/models/features.py
+msgid "Hide official name field"
+msgstr "Piilota virallinen nimi -kenttä"
+
+#: actions/models/features.py
+msgid "Set if the plan uses the official name field"
+msgstr "Aseta jos ohjelmassa käytetään virallinen nimi -kenttää"
+
+#: actions/models/features.py
+msgid "Hide lead paragraph"
+msgstr "Piilota ingressi"
+
+#: actions/models/features.py
+msgid "Set if the plan uses the lead paragraph field"
+msgstr "Aseta jos ohjelma käyttää ingressikenttää toimenpiteille"
+
+#: actions/models/features.py
+msgid "Has primary organisations for actions"
+msgstr "Toimenpiteillä on pääorganisaatiot"
+
+#: actions/models/features.py
+msgid "Set if actions have a clear primary organisation (such as multi-city plans)"
+msgstr "Aseta jos toimenpiteillä on selvä pääorganisaatio"
+
+#: actions/models/features.py
+msgid "Enable site search"
+msgstr "Hakutoiminnallisuudet käytössä"
+
+#: actions/models/features.py
+msgid "Enable site-wide search functionality"
+msgstr "Ota sivuston kattava hakutoiminnallisuus käyttöön"
+
+#: actions/models/features.py
+msgid "plan feature"
+msgstr "toimenpiteen ominaisuus"
+
+#: actions/models/features.py
+msgid "plan features"
+msgstr "toimenpiteen ominaisuudet"
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr "lyhenne"
@@ -768,22 +868,6 @@ msgid "Can actions be added and the official metadata edited?"
 msgstr "Voidaanko toimenpiteitä lisätä ja virallisia tietoja muokata?"
 
 #: actions/models/plan.py
-msgid "allow images for actions"
-msgstr "salli toimenpiteille kuvat"
-
-#: actions/models/plan.py
-msgid "Should custom images for individual actions be allowed"
-msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
-
-#: actions/models/plan.py
-msgid "show admin link"
-msgstr "näytä ylläpidon linkki"
-
-#: actions/models/plan.py
-msgid "Should the public website contain a link to the admin login?"
-msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
-
-#: actions/models/plan.py
 msgid "main organization for the plan"
 msgstr "toimenpideohjelman pääorganisaatio"
 
@@ -798,46 +882,6 @@ msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvä
 #: actions/models/plan.py
 msgid "URL to accessibility statement"
 msgstr "Linkki saavutettavuusselosteeseen"
-
-#: actions/models/plan.py
-msgid "Contact persons private"
-msgstr "Yhteyshenkilöt salaisia"
-
-#: actions/models/plan.py
-msgid "Set if the contact persons should not be visible in the public UI"
-msgstr "Aseta jos yhteyshenkilöitä ei näytetä julkisessa käyttöliittymässä"
-
-#: actions/models/plan.py
-msgid "Hide action identifiers"
-msgstr "Piilota toimenpiteiden tunnisteet"
-
-#: actions/models/plan.py
-msgid "Set if the plan doesn't have meaningful action identifiers"
-msgstr "Aseta jos ohjelmassa ei käytetä toimenpiteiden tunnisteita"
-
-#: actions/models/plan.py
-msgid "Hide official name field"
-msgstr "Piilota virallinen nimi -kenttä"
-
-#: actions/models/plan.py
-msgid "Set if the plan doesn't use the official name field"
-msgstr "Aseta jos ohjelmalla ei ole virallinen nimi -kenttää käytössä"
-
-#: actions/models/plan.py
-msgid "Hide lead paragraph"
-msgstr "Piilota ingressi"
-
-#: actions/models/plan.py
-msgid "Set if the plan doesn't use the lead paragraph field"
-msgstr "Aseta jos ohjelma ei käytä ingressikenttää"
-
-#: actions/models/plan.py
-msgid "Has primary organisations for actions"
-msgstr "Toimenpiteillä on pääorganisaatiot"
-
-#: actions/models/plan.py
-msgid "Set if actions have a clear primary organisation"
-msgstr "Aseta jos toimenpiteillä on selvä pääorganisaatio"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -857,9 +901,8 @@ msgid "general plan admin"
 msgstr "toimenpideohjelman pääkäyttäjä"
 
 #: actions/models/plan.py
-#, fuzzy
 msgid "general plan admins"
-msgstr "toimenpideohjelmien pääkäyttäjät"
+msgstr "toimenpideohjelman pääkäyttäjät"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -952,7 +995,8 @@ msgstr[1] ""
 msgid "late"
 msgstr "myöhässä"
 
-#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+#: actions/wagtail_admin.py
+msgctxt "hyphenated"
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
 
@@ -963,6 +1007,10 @@ msgstr "Verkkotunnukset"
 #: actions/wagtail_admin.py
 msgid "Action statuses"
 msgstr "Toimenpiteen tilat"
+
+#: actions/wagtail_admin.py
+msgid "Action implementation phases"
+msgstr "Toimenpiteen toteutusvaiheet"
 
 #: actions/wagtail_admin.py
 msgid "Action impacts"
@@ -977,8 +1025,14 @@ msgid "Action classifications"
 msgstr "Toimenpiteiden luokittelu"
 
 #: actions/wagtail_admin.py
+msgctxt "hyphenated"
 msgid "Plan"
-msgstr "Toimenpideohjelma"
+msgstr "Toimenpide&shy;ohjelma"
+
+#: actions/wagtail_admin.py
+msgctxt "hyphenated"
+msgid "Plan features"
+msgstr "Ohjelman ominaisuudet"
 
 #: admin_site/admin.py
 #, python-format
@@ -1068,6 +1122,10 @@ msgstr "Ylläpidon palvelinnimet"
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
+
+#: admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Toimenpideohjelmat"
 
 #: aplans/fields.py
 msgid "Enter a valid hostname."
@@ -1195,22 +1253,18 @@ msgid "Choose a document"
 msgstr "Valitse asiakirja"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
-#: images/templates/wagtailimages/chooser/chooser.html
 msgid "Upload from computer"
 msgstr "Lataa tietokoneelta"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
-#: images/templates/wagtailimages/chooser/chooser.html
 msgid "Search from the service"
 msgstr "Hae palvelusta"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
-#: images/templates/wagtailimages/chooser/chooser.html
 msgid "Uploading…"
 msgstr "Lähetetään…"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
-#: images/templates/wagtailimages/chooser/chooser.html
 msgid "Upload"
 msgstr "Lähetä"
 
@@ -1225,14 +1279,6 @@ msgstr "Alt-teksti"
 #: images/models.py
 msgid "images"
 msgstr "kuvat"
-
-#: images/templates/wagtailimages/chooser/chooser.html
-msgid "Choose an image"
-msgstr "Valitse kuva"
-
-#: images/templates/wagtailimages/chooser/chooser.html
-msgid "Popular tags"
-msgstr "Suositut tagit"
 
 #: indicators/admin.py
 msgid "Downstream indicator"
@@ -1698,7 +1744,7 @@ msgstr "Muokkaa mittarin dataa"
 msgid "Quantities"
 msgstr "Suureet"
 
-#: indicators/wagtail_admin.py
+#: indicators/wagtail_admin.py people/wagtail_admin.py
 msgid "General"
 msgstr "Yleinen"
 
@@ -2268,6 +2314,28 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#, fuzzy
+#~| msgid "dimensions"
+#~ msgid "Emissions"
+#~ msgstr "mittarin dimensiot"
+
+#, fuzzy
+#~| msgid "operational"
+#~ msgid "Operational costs"
+#~ msgstr "toiminnallinen"
+
+#~ msgid "Plan"
+#~ msgstr "Toimenpideohjelma"
+
+#~ msgid "Plan features"
+#~ msgstr "Ohjelman ominaisuudet"
+
+#~ msgid "Choose an image"
+#~ msgstr "Valitse kuva"
+
+#~ msgid "Popular tags"
+#~ msgstr "Suositut tagit"
+
 #~ msgid "Filter actions"
 #~ msgstr "Suodata toimenpiteitä"
 
@@ -2359,11 +2427,6 @@ msgstr "Käyttäjät"
 #, fuzzy
 #~| msgid "parent page"
 #~ msgid "Plan front page"
-#~ msgstr "yläsivu"
-
-#, fuzzy
-#~| msgid "parent page"
-#~ msgid "Plan front pages"
 #~ msgstr "yläsivu"
 
 #, fuzzy
