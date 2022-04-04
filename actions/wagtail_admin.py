@@ -1,5 +1,5 @@
 from django.utils.translation import (
-    gettext, gettext_lazy as _, pgettext
+    gettext, gettext_lazy as _, pgettext, pgettext_lazy
 )
 from django.utils.safestring import mark_safe
 from wagtail.admin.edit_handlers import (
@@ -69,7 +69,7 @@ class PlanAdmin(AplansModelAdmin):
     model = Plan
     create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
-    menu_label = _('Plans')
+    menu_label = pgettext_lazy('hyphenated', 'Plans')
     menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
@@ -207,15 +207,15 @@ class ActivePlanMenuItem(ModelAdminMenuItem):
 
 
 class ActivePlanAdmin(PlanAdmin):
-    def get_menu_item(self, order=None):
-        item = ActivePlanMenuItem(self, order or self.get_menu_order())
-        item.label = mark_safe(pgettext('hyphenated', 'Plan'))
-        return item
-
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = _('Plan')
+    menu_label = pgettext_lazy('hyphenated', 'Plan')
     add_to_settings_menu = True
+
+    def get_menu_item(self, order=None):
+        item = ActivePlanMenuItem(self, order or self.get_menu_order())
+        item.label = mark_safe(self.menu_label)
+        return item
 
 
 modeladmin_register(ActivePlanAdmin)
@@ -224,7 +224,7 @@ modeladmin_register(ActivePlanAdmin)
 class PlanFeaturesAdmin(AplansModelAdmin):
     model = PlanFeatures
     menu_icon = 'tasks'
-    menu_label = _('Plan features')
+    menu_label = pgettext_lazy('hyphenated', 'Plan features')
     menu_order = 501
 
     superuser_panels = [
@@ -297,15 +297,15 @@ class ActivePlanFeaturesMenuItem(ModelAdminMenuItem):
 
 
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
-    def get_menu_item(self, order=None):
-        item = ActivePlanFeaturesMenuItem(self, order or self.get_menu_order())
-        item.label = mark_safe(pgettext('hyphenated', 'Plan features'))
-        return item
-
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanFeaturesPermissionHelper
-    menu_label = _('Plan features')
+    menu_label = pgettext_lazy('hyphenated', 'Plan features')
     add_to_settings_menu = True
+
+    def get_menu_item(self, order=None):
+        item = ActivePlanFeaturesMenuItem(self, order or self.get_menu_order())
+        item.label = mark_safe(self.menu_label)
+        return item
 
 
 modeladmin_register(ActivePlanFeaturesAdmin)
