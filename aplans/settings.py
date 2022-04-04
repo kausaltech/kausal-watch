@@ -48,6 +48,7 @@ env = environ.FileAwareEnv(
     SENDGRID_API_KEY=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
+    ADMIN_WILDCARD_DOMAIN=(str, ''),
 )
 
 BASE_DIR = root()
@@ -538,6 +539,9 @@ SILENCED_SYSTEM_CHECKS = [
 
 ENABLE_DEBUG_TOOLBAR = False
 
+HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
+ADMIN_WILDCARD_DOMAIN = env('ADMIN_WILDCARD_DOMAIN')
+
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.
@@ -624,6 +628,8 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             'generic': level('DEBUG'),
             'parso': level('WARNING'),
             'requests': level('WARNING'),
+            'urllib3.connectionpool': level('INFO'),
+            'elasticsearch': level('WARNING'),
             'PIL': level('INFO'),
             '': level('DEBUG'),
         }
@@ -649,5 +655,3 @@ if 'DATABASES' in locals():
 if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
-
-HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')

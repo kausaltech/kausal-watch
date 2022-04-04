@@ -10,9 +10,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
-from django.db import models
-from django.utils import timezone
-from django.utils.translation import get_language, gettext_lazy as _
+from django.db import models, transaction
+from django.utils import timezone, translation
+from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -27,6 +27,7 @@ from people.models import Person
 
 if typing.TYPE_CHECKING:
     from .features import PlanFeatures
+    from .action import ActionStatus, ActionImplementationPhase
 
 
 logger = logging.getLogger(__name__)
@@ -119,6 +120,8 @@ class Plan(ClusterableModel):
     related_plans = models.ManyToManyField('self', blank=True)
 
     features: PlanFeatures
+    action_statuses: models.QuerySet[ActionStatus]
+    action_implementation_phases: models.QuerySet[ActionImplementationPhase]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
@@ -169,7 +172,7 @@ class Plan(ClusterableModel):
     def get_translated_root_page(self):
         """Return root page in activated language, fall back to default language."""
         root = self.root_page
-        language = get_language()
+        language = translation.get_language()
         try:
             locale = Locale.objects.get(language_code=language)
             root = root.get_translation(locale)
@@ -184,7 +187,8 @@ class Plan(ClusterableModel):
 
         update_fields = []
         if self.root_collection is None:
-            obj = Collection.get_first_root_node().add_child(name=self.name)
+            with transaction.atomic():
+                obj = Collection.get_first_root_node().add_child(name=self.name)
             self.root_collection = obj
             update_fields.append('root_collection')
         else:
@@ -193,7 +197,7 @@ class Plan(ClusterableModel):
                 self.root_collection.save(update_fields=['name'])
 
         if self.site is None:
-            root_page = self.create_pages()
+            root_page = self.create_default_pages()
             site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
             site.save()
             self.site = site
@@ -240,7 +244,7 @@ class Plan(ClusterableModel):
         self.cache_invalidated_at = timezone.now()
         super().save(update_fields=['cache_invalidated_at'])
 
-    def create_pages(self):
+    def create_default_pages(self):
         """Create plan root page as well as subpages that should be always there and return plan root page."""
         from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
 
@@ -251,14 +255,84 @@ class Plan(ClusterableModel):
             root_page = Page.get_first_root_node().add_child(
                 instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='')
             )
-        action_list_pages = root_page.get_children().type(ActionListPage)
-        if not action_list_pages.exists():
-            root_page.add_child(instance=ActionListPage(title=_("Actions")))
-        indicator_list_pages = root_page.get_children().type(IndicatorListPage)
-        if not indicator_list_pages.exists():
-            root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
+
+        with translation.override(self.primary_language):
+            action_list_pages = root_page.get_children().type(ActionListPage)
+            if not action_list_pages.exists():
+                root_page.add_child(instance=ActionListPage(title=_("Actions")))
+            indicator_list_pages = root_page.get_children().type(IndicatorListPage)
+            if not indicator_list_pages.exists():
+                root_page.add_child(instance=IndicatorListPage(title=_("Indicators")))
+
         return root_page
 
+    @classmethod
+    @transaction.atomic()
+    def create_with_defaults(
+        self, identifier: str, name: str, primary_language: str, organization: Organization,
+        other_languages: typing.List[str] = [],
+        short_name: str = None, base_path: str = None, domain: str = None,
+        client_identifier: str = None, client_name: str = None, azure_ad_tenant_id: str = None
+    ) -> Plan:
+        from ..defaults import (
+            DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
+        )
+        plan = Plan(
+            identifier=identifier,
+            name=name,
+            primary_language=primary_language,
+            organization=organization,
+            other_languages=other_languages
+        )
+        default_domains = [x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost']
+        if not domain:
+            if not default_domains:
+                raise Exception("site_url not provided and no default domains configured")
+            domain = default_domains[0]
+            site_url = 'https://%s-%s' % (identifier, domain)
+        else:
+            site_url = 'https://%s' % domain
+        if base_path:
+            site_url += '/' + base_path.strip('/')
+        plan.site_url = site_url
+        plan.statuses_updated_manually = True
+        if short_name:
+            plan.short_name = short_name
+        plan.save()
+
+        with translation.override(plan.primary_language):
+            from actions.models import ActionStatus, ActionImplementationPhase
+
+            for st in DEFAULT_ACTION_STATUSES:
+                obj = ActionStatus(
+                    plan=plan, identifier=st['identifier'], name=st['name'],
+                    is_completed=st.get('is_completed', False)
+                )
+                obj.save()
+
+            for idx, st in enumerate(DEFAULT_ACTION_IMPLEMENTATION_PHASES):
+                obj = ActionImplementationPhase(
+                    plan=plan, order=idx, identifier=st['identifier'], name=st['name'],
+                )
+                obj.save()
+
+        if client_name:
+            from admin_site.models import Client, AdminHostname
+
+            client = Client.objects.filter(name=client_name).first()
+            if client is None:
+                client = Client.objects.create(name=client_name)
+            if azure_ad_tenant_id:
+                client.azure_ad_tenant_id = azure_ad_tenant_id
+                client.save()
+
+            if settings.ADMIN_WILDCARD_DOMAIN and client_identifier:
+                hostname = '%s.%s' % (client_identifier, settings.ADMIN_WILDCARD_DOMAIN)
+                hn_obj = AdminHostname.objects.filter(client=client, hostname=hostname).first()
+                if hn_obj is None:
+                    AdminHostname.objects.create(client=client, hostname=hostname)
+
+        return plan
 
 # ParentalManyToManyField  won't help, so we need the through model:
 # https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
