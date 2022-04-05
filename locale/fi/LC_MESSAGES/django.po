@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-04 20:13+0300\n"
+"POT-Creation-Date: 2022-04-05 09:05+0300\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -1175,6 +1175,10 @@ msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(
 #: content/admin.py
 msgid "Site settings"
 msgstr "Sivuston asetukset"
+
+#: content/apps.py
+msgid "According to the action plan"
+msgstr "Toimenpideohjelman mukaisesti"
 
 #: content/apps.py
 msgid "Content"
