@@ -274,7 +274,7 @@ def test_plan_node(graphql_client_query_data):
     assert data == expected
 
 
-def test_category_metadata_choice_node(
+def test_category_attribute_choice_node(
     graphql_client_query_data, plan, category_attribute_choice, category_attribute_type__ordered_choice,
     category_attribute_type_choice_option
 ):
@@ -328,61 +328,6 @@ def test_category_metadata_choice_node(
     assert data == expected
 
 
-def test_category_metadata_choice_node_shim(
-    graphql_client_query_data, plan, category_attribute_choice, category_attribute_type__ordered_choice,
-    category_attribute_type_choice_option
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            metadata {
-              ... on CategoryMetadataChoice {
-                id
-                metadata {
-                  __typename
-                }
-                category {
-                  __typename
-                }
-                choice {
-                  __typename
-                }
-                key
-                keyIdentifier
-                value
-                valueIdentifier
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'metadata': [{
-                'id': str(category_attribute_choice.id),
-                'metadata': {
-                    '__typename': 'CategoryTypeMetadata',
-                },
-                'category': {
-                    '__typename': 'Category',
-                },
-                'choice': {
-                    '__typename': 'CategoryTypeMetadataChoice',
-                },
-                'key': category_attribute_type__ordered_choice.name,
-                'keyIdentifier': category_attribute_type__ordered_choice.identifier,
-                'value': category_attribute_type_choice_option.name,
-                'valueIdentifier': category_attribute_type_choice_option.identifier,
-            }]
-        }]
-    }
-    assert data == expected
-
-
 def test_category_attribute_rich_text_node(
     graphql_client_query_data, plan, category_attribute_rich_text, category_attribute_type__rich_text
 ):
@@ -415,52 +360,6 @@ def test_category_attribute_rich_text_node(
                 'id': str(category_attribute_rich_text.id),
                 'type': {
                     '__typename': 'CategoryAttributeType',
-                },
-                'category': {
-                    '__typename': 'Category',
-                },
-                'key': category_attribute_type__rich_text.name,
-                'keyIdentifier': category_attribute_type__rich_text.identifier,
-                'value': category_attribute_rich_text.text,
-            }]
-        }]
-    }
-    assert data == expected
-
-
-def test_category_metadata_rich_text_node_shim(
-    graphql_client_query_data, plan, category_attribute_rich_text, category_attribute_type__rich_text
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            metadata {
-              ... on CategoryMetadataRichText {
-                id
-                metadata {
-                  __typename
-                }
-                category {
-                  __typename
-                }
-                key
-                keyIdentifier
-                value
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'metadata': [{
-                'id': str(category_attribute_rich_text.id),
-                'metadata': {
-                    '__typename': 'CategoryTypeMetadata',
                 },
                 'category': {
                     '__typename': 'Category',
@@ -557,52 +456,6 @@ def test_category_attribute_type_node(
     assert data == expected
 
 
-def test_category_type_metadata_node_shim(
-    graphql_client_query_data, plan, category_attribute_rich_text, category_attribute_choice,
-    category_attribute_type__rich_text, category_attribute_type__ordered_choice
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            type {
-              metadata {
-                identifier
-                name
-                format
-                choices {
-                  __typename
-                }
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'type': {
-                'metadata': [{
-                    'identifier': category_attribute_type__rich_text.identifier,
-                    'name': category_attribute_type__rich_text.name,
-                    'format': 'RICH_TEXT',
-                    'choices': [],
-                }, {
-                    'identifier': category_attribute_type__ordered_choice.identifier,
-                    'name': category_attribute_type__ordered_choice.name,
-                    'format': 'ORDERED_CHOICE',
-                    'choices': [{
-                        '__typename': 'CategoryTypeMetadataChoice',
-                    }],
-                }]
-            }
-        }]
-    }
-    assert data == expected
-
-
 def test_category_attribute_type_choice_option_node(
     graphql_client_query_data, plan, category_attribute_type_choice_option, category_attribute_choice
 ):
@@ -628,42 +481,6 @@ def test_category_attribute_type_choice_option_node(
             'type': {
                 'attributeTypes': [{
                     'choiceOptions': [{
-                        'identifier': category_attribute_type_choice_option.identifier,
-                        'name': category_attribute_type_choice_option.name,
-                    }],
-                }]
-            }
-        }]
-    }
-    assert data == expected
-
-
-def test_category_type_metadata_choice_node_shim(
-    graphql_client_query_data, plan, category_attribute_type_choice_option, category_attribute_choice
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            type {
-              metadata {
-                choices {
-                  identifier
-                  name
-                }
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'type': {
-                'metadata': [{
-                    'choices': [{
                         'identifier': category_attribute_type_choice_option.identifier,
                         'name': category_attribute_type_choice_option.name,
                     }],
@@ -731,71 +548,6 @@ def test_category_type_node(
                 }],
                 'attributeTypes': [{
                     '__typename': 'CategoryAttributeType'
-                }],
-            }
-        }]
-    }
-    assert data == expected
-
-
-def test_category_type_node_shim(
-    graphql_client_query_data, plan, category_type, category, category_level, category_attribute_type__rich_text
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            type {
-              id
-              plan {
-                __typename
-                # Workaround: I just want __typename, but this causes an error due to graphene-django-optimizer.
-                identifier
-              }
-              name
-              identifier
-              usableForActions
-              usableForIndicators
-              editableForActions
-              editableForIndicators
-              levels {
-                __typename
-              }
-              categories {
-                __typename
-              }
-              metadata {
-                __typename
-              }
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'type': {
-                'id': str(category_type.id),
-                'plan': {
-                    '__typename': 'Plan',
-                    'identifier': plan.identifier,
-                },
-                'name': category_type.name,
-                'identifier': category_type.identifier,
-                'usableForActions': category_type.usable_for_actions,
-                'usableForIndicators': category_type.usable_for_indicators,
-                'editableForActions': category_type.editable_for_actions,
-                'editableForIndicators': category_type.editable_for_indicators,
-                'levels': [{
-                    '__typename': 'CategoryLevel'
-                }],
-                'categories': [{
-                    '__typename': 'Category'
-                }],
-                'metadata': [{
-                    '__typename': 'CategoryTypeMetadata'
                 }],
             }
         }]
@@ -879,92 +631,6 @@ def test_category_node(
                 '__typename': 'CategoryAttributeRichText',
             }, {
                 '__typename': 'CategoryAttributeChoice',
-            }],
-            'level': {
-                '__typename': 'CategoryLevel',
-            },
-        }]
-    }
-    assert data == expected
-
-
-def test_category_node_shim(
-    graphql_client_query_data, plan, category_type, category, category_level, category_attribute_rich_text,
-    category_attribute_choice
-):
-    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
-    child_category = CategoryFactory(parent=category)
-    data = graphql_client_query_data(
-        '''
-        query($plan: ID!) {
-          planCategories(plan: $plan) {
-            id
-            type {
-              __typename
-            }
-            order
-            identifier
-            name
-            parent {
-              __typename
-            }
-            shortDescription
-            color
-            children {
-              __typename
-              id
-              parent {
-                __typename
-                id
-              }
-            }
-            categoryPage {
-              __typename
-            }
-            image {
-              __typename
-            }
-            metadata {
-              __typename
-            }
-            level {
-              __typename
-            }
-          }
-        }
-        ''',
-        variables={'plan': plan.identifier}
-    )
-    expected = {
-        'planCategories': [{
-            'id': str(category.id),
-            'type': {
-              '__typename': 'CategoryType',
-            },
-            'order': 1,
-            'identifier': category.identifier,
-            'name': category.name,
-            'parent': None,
-            'shortDescription': category.short_description,
-            'color': category.color,
-            'children': [{
-                '__typename': 'Category',
-                'id': str(child_category.id),
-                'parent': {
-                  '__typename': 'Category',
-                  'id': str(category.id),
-                }
-            }],
-            'categoryPage': {
-                '__typename': 'CategoryPage',
-            },
-            'image': {
-                '__typename': 'Image',
-            },
-            'metadata': [{
-                '__typename': 'CategoryMetadataRichText',
-            }, {
-                '__typename': 'CategoryMetadataChoice',
             }],
             'level': {
                 '__typename': 'CategoryLevel',
