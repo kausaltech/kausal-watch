@@ -4,9 +4,12 @@ from .action import (
     ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
     ActionStatusUpdate, ImpactGroupAction
 )
+from .attributes import (
+    AttributeType, AttributeTypeChoiceOption
+)
 from .category import (
-    Category, CategoryType, CategoryLevel, CategoryIcon, CategoryTypeMetadata,
-    CategoryTypeMetadataChoice, CategoryMetadataRichText, CategoryMetadataChoice, CategoryMetadataNumericValue
+    Category, CategoryType, CategoryLevel, CategoryIcon, CategoryAttributeType,
+    CategoryAttributeTypeChoiceOption, CategoryAttributeRichText, CategoryAttributeChoice, CategoryAttributeNumericValue
 )
 from .features import PlanFeatures
 
@@ -15,9 +18,10 @@ __all__ = [
     'Action', 'ActionContactPerson', 'ActionDecisionLevel', 'ActionImpact',
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
-    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryMetadataChoice',
-    'CategoryMetadataNumericValue', 'CategoryMetadataRichText', 'CategoryType',
-    'CategoryTypeMetadata', 'CategoryTypeMetadataChoice', 'ImpactGroup',
+    'AttributeType', 'AttributeTypeChoiceOption',
+    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryAttributeChoice',
+    'CategoryAttributeNumericValue', 'CategoryAttributeRichText', 'CategoryType',
+    'CategoryAttributeType', 'CategoryAttributeTypeChoiceOption', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
     'Scenario', 'PlanFeatures',
 ]

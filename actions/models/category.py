@@ -12,6 +12,7 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color
 )
+from .attributes import AttributeType, AttributeTypeChoiceOption
 
 
 @reversion.register()
@@ -53,7 +54,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
 
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'metadata',
+        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'attribute_types',
         'hide_category_identifiers',
     ]
 
@@ -96,84 +97,60 @@ class CategoryLevel(OrderedModel):
 
 
 @reversion.register()
-class CategoryTypeMetadata(ClusterableModel, OrderedModel):
-    class MetadataFormat(models.TextChoices):
-        ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
-        RICH_TEXT = 'rich_text', _('Rich text')
-        NUMERIC = 'numeric', _('Numeric')
+class CategoryAttributeType(AttributeType):
+    """Type of attributes that can be given to categories of a specific type."""
+    category_type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='attribute_types')
 
-    type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='metadata')
-    identifier = IdentifierField()
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    format = models.CharField(max_length=50, choices=MetadataFormat.choices, verbose_name=_('Format'))
-
-    public_fields = [
-        'identifier', 'name', 'format', 'choices'
-    ]
-
-    class Meta:
-        unique_together = (('type', 'identifier'),)
-        verbose_name = _('category metadata')
-        verbose_name_plural = _('category metadatas')
-
-    def __str__(self):
-        return self.name
+    class Meta(AttributeType.Meta):
+        unique_together = (('category_type', 'identifier'),)
+        verbose_name = _('category attribute type')
+        verbose_name_plural = _('category attribute types')
 
     def filter_siblings(self, qs):
-        return qs.filter(type=self.type)
+        return qs.filter(category_type=self.category_type)
 
     def set_category_value(self, category, val):
-        assert category.type == self.type
+        assert category.type == self.category_type
 
-        if self.format == self.MetadataFormat.ORDERED_CHOICE:
-            existing = self.category_choices.filter(category=category)
+        if self.format == self.AttributeFormat.ORDERED_CHOICE:
+            existing = self.choice_attributes.filter(category=category)
             if existing:
                 existing.delete()
             if val is not None:
-                self.category_choices.create(category=category, choice=val)
-        elif self.format == self.MetadataFormat.RICH_TEXT:
+                self.choice_attributes.create(category=category, choice=val)
+        elif self.format == self.AttributeFormat.RICH_TEXT:
             try:
-                obj = self.category_richtexts.get(category=category)
-            except self.category_richtexts.model.DoesNotExist:
+                obj = self.richtext_attributes.get(category=category)
+            except self.richtext_attributes.model.DoesNotExist:
                 if val:
-                    obj = self.category_richtexts.create(category=category, text=val)
+                    obj = self.richtext_attributes.create(category=category, text=val)
             else:
                 if not val:
                     obj.delete()
                 else:
                     obj.text = val
                     obj.save()
-        elif self.format == self.MetadataFormat.NUMERIC:
+        elif self.format == self.AttributeFormat.NUMERIC:
             try:
-                obj = self.category_numeric_values.get(category=category)
-            except self.category_numeric_values.model.DoesNotExist:
+                obj = self.numeric_value_attributes.get(category=category)
+            except self.numeric_value_attributes.model.DoesNotExist:
                 if val is not None:
-                    obj = self.category_numeric_values.create(category=category, value=val)
+                    obj = self.numeric_value_attributes.create(category=category, value=val)
             else:
                 if val is None:
                     obj.delete()
                 else:
                     obj.value = val
                     obj.save()
+        # TODO: self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
 
 
-class CategoryTypeMetadataChoice(OrderedModel):
-    metadata = ParentalKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='choices')
-    identifier = IdentifierField()
-    name = models.CharField(max_length=100, verbose_name=_('name'))
+class CategoryAttributeTypeChoiceOption(AttributeTypeChoiceOption):
+    type = ParentalKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_options')
 
-    public_fields = [
-        'identifier', 'name'
-    ]
-
-    class Meta:
-        unique_together = (('metadata', 'identifier'), ('metadata', 'order'),)
-        ordering = ('metadata', 'order')
-        verbose_name = _('category type metadata choice')
-        verbose_name_plural = _('category type metadata choices')
-
-    def __str__(self):
-        return self.name
+    class Meta(AttributeTypeChoiceOption.Meta):
+        verbose_name = _('category attribute type choice option')
+        verbose_name_plural = _('category attribute type choice options')
 
 
 class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
@@ -259,45 +236,46 @@ class CategoryIcon(models.Model):
         return 'Icon for %s' % self.category
 
 
-class CategoryMetadataRichText(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name=_('category_richtexts'))
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_richtexts'))
+class CategoryAttributeRichText(models.Model):
+    """Rich text value for a category attribute."""
+    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='richtext_attributes')
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='richtext_attributes')
     text = RichTextField(verbose_name=_('Text'))
 
     public_fields = [
-        'id', 'metadata', 'category', 'text',
+        'id', 'type', 'category', 'text',
     ]
 
     class Meta:
-        unique_together = ('category', 'metadata')
+        unique_together = ('category', 'type')
 
     def __str__(self):
-        return '%s for %s' % (self.metadata, self.category)
+        return '%s for %s' % (self.type, self.category)
 
 
-class CategoryMetadataChoice(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_choices')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_choices'))
-    choice = models.ForeignKey(CategoryTypeMetadataChoice, on_delete=models.CASCADE, related_name=_('categories'))
+class CategoryAttributeChoice(models.Model):
+    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='choice_attributes')
+    choice = models.ForeignKey(CategoryAttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='categories')
 
     class Meta:
-        unique_together = ('category', 'metadata')
+        unique_together = ('category', 'type')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.metadata, self.category)
+        return '%s (%s) for %s' % (self.choice, self.type, self.category)
 
 
-class CategoryMetadataNumericValue(models.Model):
-    metadata = models.ForeignKey(CategoryTypeMetadata, on_delete=models.CASCADE, related_name='category_numeric_values')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name=_('metadata_numeric_values'))
+class CategoryAttributeNumericValue(models.Model):
+    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='numeric_value_attributes')
     value = models.FloatField()
 
     public_fields = [
-        'id', 'metadata', 'category', 'value',
+        'id', 'type', 'category', 'value',
     ]
 
     class Meta:
-        unique_together = ('category', 'metadata')
+        unique_together = ('category', 'type')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.metadata, self.category)
+        return '%s (%s) for %s' % (self.value, self.type, self.category)

@@ -5,7 +5,7 @@ from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
-from actions.models import CategoryTypeMetadata
+from actions.models import CategoryAttributeType
 from actions.models.plan import get_default_language, get_supported_languages
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
@@ -82,23 +82,23 @@ class CategoryTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category type {i}")
 
 
-class CategoryTypeMetadataFactory(DjangoModelFactory):
+class CategoryAttributeTypeFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryTypeMetadata'
+        model = 'actions.CategoryAttributeType'
 
-    type = SubFactory(CategoryTypeFactory)
+    category_type = SubFactory(CategoryTypeFactory)
     identifier = Sequence(lambda i: f'ctm{i}')
-    name = Sequence(lambda i: f"Category type metadata {i}")
-    format = CategoryTypeMetadata.MetadataFormat.RICH_TEXT
+    name = Sequence(lambda i: f"Category attribute type {i}")
+    format = CategoryAttributeType.AttributeFormat.RICH_TEXT
 
 
-class CategoryTypeMetadataChoiceFactory(DjangoModelFactory):
+class CategoryAttributeTypeChoiceOptionFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryTypeMetadataChoice'
+        model = 'actions.CategoryAttributeTypeChoiceOption'
 
-    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
     identifier = Sequence(lambda i: f'ctmc{i}')
-    name = Sequence(lambda i: f"Category type metadata choice {i}")
+    name = Sequence(lambda i: f"Category attribute type choice option {i}")
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -114,22 +114,22 @@ class CategoryFactory(DjangoModelFactory):
                                    parent=SelfAttribute('..type.plan.root_page'))
 
 
-class CategoryMetadataRichTextFactory(DjangoModelFactory):
+class CategoryAttributeRichTextFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryMetadataRichText'
+        model = 'actions.CategoryAttributeRichText'
 
-    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.RICH_TEXT)
+    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.RICH_TEXT)
     category = SubFactory(CategoryFactory)
-    text = Sequence(lambda i: f'CategoryMetadataRichText {i}')
+    text = Sequence(lambda i: f'CategoryAttributeRichText {i}')
 
 
-class CategoryMetadataChoiceFactory(DjangoModelFactory):
+class CategoryAttributeChoiceFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryMetadataChoice'
+        model = 'actions.CategoryAttributeChoice'
 
-    metadata = SubFactory(CategoryTypeMetadataFactory, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
+    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
     category = SubFactory(CategoryFactory)
-    choice = SubFactory(CategoryTypeMetadataChoiceFactory)
+    choice = SubFactory(CategoryAttributeTypeChoiceOptionFactory)
 
 
 class CategoryLevelFactory(DjangoModelFactory):

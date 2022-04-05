@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from actions.models import CategoryTypeMetadata
+from actions.models import CategoryAttributeType
 from pages.models import StaticPage
 from admin_site.tests.factories import ClientPlanFactory
 
@@ -187,14 +187,76 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
 
 
 def test_category_types(
-    graphql_client_query_data, plan, category_type_factory, category_type_metadata_factory,
-    category_type_metadata_choice_factory
+    graphql_client_query_data, plan, category_type_factory, category_attribute_type_factory,
+    category_attribute_type_choice_option_factory
 ):
     ct = category_type_factory(plan=plan)
-    ctm1 = category_type_metadata_factory(type=ct)
-    ctm2 = category_type_metadata_factory(type=ct, format=CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE)
-    ctm2c1 = category_type_metadata_choice_factory(metadata=ctm2)
-    ctm2c2 = category_type_metadata_choice_factory(metadata=ctm2)
+    cat1 = category_attribute_type_factory(category_type=ct)
+    cat2 = category_attribute_type_factory(category_type=ct,
+                                           format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+    cat2co1 = category_attribute_type_choice_option_factory(type=cat2)
+    cat2co2 = category_attribute_type_choice_option_factory(type=cat2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+            plan(id: $plan) {
+                categoryTypes {
+                    identifier
+                    name
+                    attributeTypes {
+                        format
+                        identifier
+                        name
+                        choiceOptions {
+                            identifier
+                            name
+                        }
+                    }
+                }
+            }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'identifier': ct.identifier,
+                'name': ct.name,
+                'attributeTypes': [{
+                    'format': 'RICH_TEXT',
+                    'identifier': cat1.identifier,
+                    'name': cat1.name,
+                    'choiceOptions': [],
+                }, {
+                    'format': 'ORDERED_CHOICE',
+                    'identifier': cat2.identifier,
+                    'name': cat2.name,
+                    'choiceOptions': [{
+                        'identifier': cat2co1.identifier,
+                        'name': cat2co1.name,
+                    }, {
+                        'identifier': cat2co2.identifier,
+                        'name': cat2co2.name,
+                    }],
+                }],
+            }]
+        }
+    }
+    assert data == expected
+
+
+def test_category_types_metadata_shim(
+    graphql_client_query_data, plan, category_type_factory, category_attribute_type_factory,
+    category_attribute_type_choice_option_factory
+):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` / `choices` shim
+    ct = category_type_factory(plan=plan)
+    cat1 = category_attribute_type_factory(category_type=ct)
+    cat2 = category_attribute_type_factory(category_type=ct,
+                                           format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+    cat2co1 = category_attribute_type_choice_option_factory(type=cat2)
+    cat2co2 = category_attribute_type_choice_option_factory(type=cat2)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -224,19 +286,19 @@ def test_category_types(
                 'name': ct.name,
                 'metadata': [{
                     'format': 'RICH_TEXT',
-                    'identifier': ctm1.identifier,
-                    'name': ctm1.name,
+                    'identifier': cat1.identifier,
+                    'name': cat1.name,
                     'choices': [],
                 }, {
                     'format': 'ORDERED_CHOICE',
-                    'identifier': ctm2.identifier,
-                    'name': ctm2.name,
+                    'identifier': cat2.identifier,
+                    'name': cat2.name,
                     'choices': [{
-                        'identifier': ctm2c1.identifier,
-                        'name': ctm2c1.name,
+                        'identifier': cat2co1.identifier,
+                        'name': cat2co1.name,
                     }, {
-                        'identifier': ctm2c2.identifier,
-                        'name': ctm2c2.name,
+                        'identifier': cat2co2.identifier,
+                        'name': cat2co2.name,
                     }],
                 }],
             }]

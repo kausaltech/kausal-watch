@@ -12,7 +12,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from .admin import CategoryTypeFilter
-from .models import Category, CategoryMetadataRichText, CategoryType, CategoryTypeMetadata
+from .models import AttributeType, Category, CategoryAttributeRichText, CategoryType, CategoryAttributeType
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
     AplansTabbedInterface, get_translation_tabs
@@ -80,19 +80,19 @@ class CategoryTypeAdmin(AplansModelAdmin):
 
 
 @modeladmin_register
-class CategoryTypeMetadataAdmin(OrderableMixin, AplansModelAdmin):
-    model = CategoryTypeMetadata
-    menu_label = _('Category metadata')
+class CategoryAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
+    model = CategoryAttributeType
+    menu_label = _('Category attribute types')
     menu_order = 1200
-    list_display = ('name', 'type')
+    list_display = ('name', 'category_type')
     add_to_settings_menu = True
 
     panels = [
-        PlanFilteredFieldPanel('type'),
+        PlanFilteredFieldPanel('category_type'),
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('format'),
-        CondensedInlinePanel('choices', panels=[
+        CondensedInlinePanel('choice_options', panels=[
             FieldPanel('name'),
             FieldPanel('identifier'),
         ])
@@ -102,58 +102,58 @@ class CategoryTypeMetadataAdmin(OrderableMixin, AplansModelAdmin):
         qs = super().get_queryset(request)
         user = request.user
         plan = user.get_active_admin_plan()
-        return qs.filter(type__plan=plan).distinct()
+        return qs.filter(category_type__plan=plan).distinct()
 
 
-def get_metadata_fields(cat_type, obj, with_initial=False):
+def get_attribute_fields(cat_type, obj, with_initial=False):
     fields = {}
 
     if not obj or not obj.pk:
         with_initial = False
 
-    for metadata in cat_type.metadata.all():
+    for attribute_type in cat_type.attribute_types.all():
         initial = None
-        if metadata.format == CategoryTypeMetadata.MetadataFormat.ORDERED_CHOICE:
-            qs = metadata.choices.all()
+        if attribute_type.format == AttributeType.AttributeFormat.ORDERED_CHOICE:
+            qs = attribute_type.choice_options.all()
             if with_initial:
-                c = metadata.category_choices.filter(category=obj).first()
+                c = attribute_type.choice_attributes.filter(category=obj).first()
                 if c:
                     initial = c.choice
             field = forms.ModelChoiceField(
-                qs, label=metadata.name, initial=initial, required=False,
+                qs, label=attribute_type.name, initial=initial, required=False,
             )
-        elif metadata.format == CategoryTypeMetadata.MetadataFormat.RICH_TEXT:
+        elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
             initial = None
             if with_initial:
-                val_obj = metadata.category_richtexts.filter(category=obj).first()
+                val_obj = attribute_type.richtext_attributes.filter(category=obj).first()
                 if val_obj is not None:
                     initial = val_obj.text
 
-            field = CategoryMetadataRichText._meta.get_field('text').formfield(
+            field = CategoryAttributeRichText._meta.get_field('text').formfield(
                 initial=initial, required=False
             )
-        elif metadata.format == CategoryTypeMetadata.MetadataFormat.NUMERIC:
+        elif attribute_type.format == AttributeType.AttributeFormat.NUMERIC:
             initial = None
             if with_initial:
-                val_obj = metadata.category_numeric_values.filter(category=obj).first()
+                val_obj = attribute_type.numeric_value_attributes.filter(category=obj).first()
                 if val_obj is not None:
                     initial = val_obj.value
             field = forms.FloatField(
-                label=metadata.name, initial=initial, required=False,
+                label=attribute_type.name, initial=initial, required=False,
             )
         else:
-            raise Exception('Unsupported metadata format: %s' % metadata.format)
+            raise Exception('Unsupported attribute type format: %s' % attribute_type.format)
 
-        field.metadata = metadata
-        fields['metadata_%s' % metadata.identifier] = field
+        field.attribute_type = attribute_type
+        fields['attribute_type_%s' % attribute_type.identifier] = field
     return fields
 
 
-class MetadataFieldPanel(FieldPanel):
+class AttributeFieldPanel(FieldPanel):
     def on_form_bound(self):
         super().on_form_bound()
-        metadata_fields = get_metadata_fields(self.instance.type, self.instance, with_initial=True)
-        self.form.fields[self.field_name].initial = metadata_fields[self.field_name].initial
+        attribute_fields = get_attribute_fields(self.instance.type, self.instance, with_initial=True)
+        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 
 class CategoryAdminForm(WagtailAdminModelForm):
@@ -161,23 +161,23 @@ class CategoryAdminForm(WagtailAdminModelForm):
         obj = super().save(commit)
 
         # Update categories
-        for field_name, field in get_metadata_fields(obj.type, obj).items():
+        for field_name, field in get_attribute_fields(obj.type, obj).items():
             val = self.cleaned_data.get(field_name)
-            field.metadata.set_category_value(obj, val)
+            field.attribute_type.set_category_value(obj, val)
         return obj
 
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
         if self.instance is not None:
-            metadata_fields = get_metadata_fields(self.instance.type, self.instance, with_initial=True)
+            attribute_fields = get_attribute_fields(self.instance.type, self.instance, with_initial=True)
         else:
-            metadata_fields = {}
+            attribute_fields = {}
 
         self.base_form_class = type(
             'CategoryAdminForm',
             (CategoryAdminForm,),
-            metadata_fields
+            attribute_fields
         )
         return super().get_form_class()
 
@@ -312,15 +312,15 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         if instance and instance.type:
-            metadata_fields = get_metadata_fields(instance.type, instance, with_initial=True)
+            attribute_fields = get_attribute_fields(instance.type, instance, with_initial=True)
         else:
-            metadata_fields = {}
+            attribute_fields = {}
 
-        metadata_panels = []
-        for key, field in metadata_fields.items():
-            metadata_panels.append(MetadataFieldPanel(key, heading=field.metadata.name))
+        attribute_panels = []
+        for key, field in attribute_fields.items():
+            attribute_panels.append(AttributeFieldPanel(key, heading=field.attribute_type.name))
 
-        tabs.append(ObjectList(metadata_panels, heading=_('Metadata')))
+        tabs.append(ObjectList(attribute_panels, heading=_('Attribute')))
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
