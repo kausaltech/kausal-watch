@@ -196,6 +196,28 @@ class CategoryAttributeInterface(graphene.Interface):
             return CategoryAttributeNumericValueNode
 
 
+class CategoryMetadataInterface(graphene.Interface):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    id = graphene.ID(required=True)
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.type.name
+
+    def resolve_key_identifier(self, info):
+        return self.type.identifier
+
+    @classmethod
+    def resolve_type(cls, instance, info):
+        if isinstance(instance, CategoryAttributeRichText):
+            return CategoryMetadataRichTextNode
+        elif isinstance(instance, CategoryAttributeChoice):
+            return CategoryMetadataChoiceNode
+        elif isinstance(instance, CategoryAttributeNumericValue):
+            return CategoryMetadataNumericValueNode
+
+
 @register_django_node
 class CategoryAttributeChoiceNode(DjangoNode):
     value = graphene.String(required=True)
@@ -211,6 +233,32 @@ class CategoryAttributeChoiceNode(DjangoNode):
         model = CategoryAttributeChoice
         interfaces = (CategoryAttributeInterface,)
 
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim, which requires us to explicitly
+    # declare `choice` to use CategoryAttributeTypeChoiceOptionNode. Similarly for `type`.
+    def resolve_choice(self, info):
+        return self.choice
+    choice = graphene.Field('actions.schema.CategoryAttributeTypeChoiceOptionNode')
+
+    def resolve_type(self, info):
+        return self.type
+    type = graphene.Field('actions.schema.CategoryAttributeTypeNode')
+
+
+class CategoryMetadataChoiceNode(CategoryAttributeChoiceNode):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    metadata = graphene.Field('actions.schema.CategoryTypeMetadataNode')
+    choice = graphene.Field('actions.schema.CategoryTypeMetadataChoiceNode')
+
+    def resolve_metadata(self, info):
+        return self.type
+
+    def resolve_choice(self, info):
+        return self.choice
+
+    class Meta:
+        model = CategoryAttributeChoice
+        interfaces = (CategoryMetadataInterface,)
+
 
 @register_django_node
 class CategoryAttributeRichTextNode(DjangoNode):
@@ -225,6 +273,27 @@ class CategoryAttributeRichTextNode(DjangoNode):
         # We expose `value` instead of `text`
         fields = public_fields(CategoryAttributeRichText, remove_fields=['text'])
 
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim, which requires us to explicitly
+    # declare `type` to use CategoryAttributeTypeNode.
+    def resolve_type(self, info):
+        return self.type
+    type = graphene.Field('actions.schema.CategoryAttributeTypeNode')
+
+
+class CategoryMetadataRichTextNode(CategoryAttributeRichTextNode):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    metadata = graphene.Field('actions.schema.CategoryTypeMetadataNode')
+
+    def resolve_metadata(self, info):
+        return self.type
+
+    class Meta:
+        model = CategoryAttributeRichText
+        interfaces = (CategoryMetadataInterface,)
+        # We expose `value` instead of `text`
+        # fields = public_fields(CategoryAttributeRichText, remove_fields=['text'])
+        fields = ['id', 'category']
+
 
 @register_django_node
 class CategoryAttributeNumericValueNode(DjangoNode):
@@ -232,6 +301,25 @@ class CategoryAttributeNumericValueNode(DjangoNode):
         model = CategoryAttributeNumericValue
         interfaces = (CategoryAttributeInterface,)
         fields = public_fields(CategoryAttributeNumericValue)
+
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim, which requires us to explicitly
+    # declare `type` to use CategoryAttributeTypeNode.
+    def resolve_type(self, info):
+        return self.type
+    type = graphene.Field('actions.schema.CategoryAttributeTypeNode')
+
+
+class CategoryMetadataNumericValueNode(CategoryAttributeNumericValueNode):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    metadata = graphene.Field('actions.schema.CategoryTypeMetadataNode')
+
+    def resolve_metadata(self, info):
+        return self.type
+
+    class Meta:
+        model = CategoryAttributeNumericValue
+        interfaces = (CategoryMetadataInterface,)
+        fields = ['id', 'category', 'value']
 
 
 class CategoryLevelNode(DjangoNode):
@@ -246,12 +334,47 @@ class CategoryAttributeTypeNode(DjangoNode):
         model = CategoryAttributeType
         fields = public_fields(CategoryAttributeType)
 
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim, which requires us to explicitly
+    # declare `choice_options` to use CategoryAttributeTypeChoiceOptionNode.
+    def resolve_choice_options(self, info):
+        return self.choice_options.all()
+    choice_options = graphene.List('actions.schema.CategoryAttributeTypeChoiceOptionNode')
+
+
+class CategoryTypeMetadataNode(DjangoNode):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    class Meta:
+        model = CategoryAttributeType
+        # fields = public_fields(CategoryAttributeType)
+        fields = ['identifier', 'name', 'format']
+
+    def resolve_choices(self, info):
+        return self.choice_options.all()
+    choices = graphene.List('actions.schema.CategoryTypeMetadataChoiceNode')
+
+    # Just add this here to register CategoryMetadataRichTextNode with Graphene without setting it as the default node
+    # for the CategoryAttributeRichText model. I'm sure there is another way, but this shim needs to go soon anyway.
+    foo1 = graphene.Field('actions.schema.CategoryMetadataRichTextNode')
+    # Just add this here to register CategoryMetadataChoiceNode with Graphene without setting it as the default node
+    # for the CategoryAttributeChoice model. I'm sure there is another way, but this shim needs to go soon anyway.
+    foo2 = graphene.Field('actions.schema.CategoryMetadataChoiceNode')
+    # Similar...
+    foo3 = graphene.Field('actions.schema.CategoryMetadataNumericValueNode')
+
 
 @register_django_node
 class CategoryAttributeTypeChoiceOptionNode(DjangoNode):
     class Meta:
         model = CategoryAttributeTypeChoiceOption
         fields = public_fields(CategoryAttributeTypeChoiceOption)
+
+
+class CategoryTypeMetadataChoiceNode(DjangoNode):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    class Meta:
+        model = CategoryAttributeTypeChoiceOption
+        # fields = public_fields(CategoryAttributeTypeChoiceOption)
+        fields = ['identifier', 'name']
 
 
 @register_django_node
@@ -264,6 +387,10 @@ class CategoryTypeNode(DjangoNode):
 
     def resolve_attribute_types(self, info):
         return self.attribute_types.order_by('pk')
+
+    # TODO: Remove metadata shim when UI is migrated to use attribute_types instead
+    metadata = graphene.List(CategoryTypeMetadataNode)
+    resolve_metadata = resolve_attribute_types
 
 
 @register_django_node
@@ -321,6 +448,10 @@ class CategoryNode(DjangoNode):
     class Meta:
         model = Category
         fields = public_fields(Category, add_fields=['level', 'icon_url'])
+
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    metadata = graphene.List(CategoryMetadataInterface, id=graphene.ID(required=False))
+    resolve_metadata = resolve_attributes
 
 
 class ScenarioNode(DjangoNode):

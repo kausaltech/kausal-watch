@@ -246,6 +246,67 @@ def test_category_types(
     assert data == expected
 
 
+def test_category_types_metadata_shim(
+    graphql_client_query_data, plan, category_type_factory, category_attribute_type_factory,
+    category_attribute_type_choice_option_factory
+):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` / `choices` shim
+    ct = category_type_factory(plan=plan)
+    cat1 = category_attribute_type_factory(category_type=ct)
+    cat2 = category_attribute_type_factory(category_type=ct,
+                                           format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+    cat2co1 = category_attribute_type_choice_option_factory(type=cat2)
+    cat2co2 = category_attribute_type_choice_option_factory(type=cat2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+            plan(id: $plan) {
+                categoryTypes {
+                    identifier
+                    name
+                    metadata {
+                        format
+                        identifier
+                        name
+                        choices {
+                            identifier
+                            name
+                        }
+                    }
+                }
+            }
+        }
+        ''',
+        variables=dict(plan=plan.identifier)
+    )
+    expected = {
+        'plan': {
+            'categoryTypes': [{
+                'identifier': ct.identifier,
+                'name': ct.name,
+                'metadata': [{
+                    'format': 'RICH_TEXT',
+                    'identifier': cat1.identifier,
+                    'name': cat1.name,
+                    'choices': [],
+                }, {
+                    'format': 'ORDERED_CHOICE',
+                    'identifier': cat2.identifier,
+                    'name': cat2.name,
+                    'choices': [{
+                        'identifier': cat2co1.identifier,
+                        'name': cat2co1.name,
+                    }, {
+                        'identifier': cat2co2.identifier,
+                        'name': cat2co2.name,
+                    }],
+                }],
+            }]
+        }
+    }
+    assert data == expected
+
+
 def test_plan_root_page_exists(graphql_client_query_data, plan):
     data = graphql_client_query_data(
         '''

@@ -511,6 +511,62 @@ def test_categoryattribute_order_as_in_categoryattributetype(
     assert data == expected
 
 
+def test_categorymetadata_order_as_in_categorytypemetadata_shim(
+    graphql_client_query_data, plan, category, category_page, category_type, category_attribute_type_factory,
+    category_attribute_rich_text_factory
+):
+    # TODO: Remove when UI migrated so that it no longer uses the `metadata` shim
+    ctm0 = category_attribute_type_factory(category_type=category_type)
+    ctm1 = category_attribute_type_factory(category_type=category_type)
+    assert ctm0.order < ctm1.order
+    cmrt0 = category_attribute_rich_text_factory(type=ctm0, category=category)
+    cmrt1 = category_attribute_rich_text_factory(type=ctm1, category=category)
+
+    query = '''
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            ... on CategoryPage {
+              category {
+                metadata {
+                  ... on CategoryMetadataRichText {
+                    keyIdentifier
+                    value
+                  }
+                }
+              }
+            }
+          }
+        }
+        '''
+    query_variables = {
+        'plan': plan.identifier,
+        'path': category_page.url_path,
+    }
+    expected = {
+        'planPage': {
+            'category': {
+                'metadata': [{
+                    'keyIdentifier': ctm0.identifier,
+                    'value': cmrt0.text,
+                }, {
+                    'keyIdentifier': ctm1.identifier,
+                    'value': cmrt1.text,
+                }],
+            }
+        }
+    }
+    data = graphql_client_query_data(query, variables=query_variables)
+    assert data == expected
+
+    ctm0.order, ctm1.order = ctm1.order, ctm0.order
+    ctm0.save()
+    ctm1.save()
+    expected_metadata = expected['planPage']['category']['metadata']
+    expected_metadata[0], expected_metadata[1] = expected_metadata[1], expected_metadata[0]
+    data = graphql_client_query_data(query, variables=query_variables)
+    assert data == expected
+
+
 def test_category_page_action_list(graphql_client_query_data, plan, category, category_page):
     action_list_block = ActionListBlockFactory(category_filter=category)
     category_page.body = [
