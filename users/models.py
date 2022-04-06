@@ -10,7 +10,7 @@ from users.managers import UserManager
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
-    from actions.models import Plan
+    from actions.models import Plan, Action
 
 
 class User(AbstractUser):
@@ -193,13 +193,15 @@ class User(AbstractUser):
                 plan.is_active_admin = False
         return plans
 
-    def can_modify_action(self, action=None):
+    def can_modify_action(self, action: Action = None, plan: Plan = None):
         if self.is_superuser:
             return True
-        if action is None:
-            plan = self.get_active_admin_plan()
-        else:
-            plan = action.plan
+        if plan is None:
+            if action is None:
+                plan = self.get_active_admin_plan()
+            else:
+                plan = action.plan
+
         if plan is not None:
             if self.is_general_admin_for_plan(plan):
                 return True
@@ -208,6 +210,17 @@ class User(AbstractUser):
             return False
         return self.is_contact_person_for_action(action) \
             or self.is_organization_admin_for_action(action)
+
+    def can_create_action(self, plan: Plan):
+        assert plan is not None
+        if plan.actions_locked:
+            return False
+        if self.is_superuser:
+            return True
+        return self.is_general_admin_for_plan(plan)
+
+    def can_delete_action(self, plan: Plan, action: Action = None):
+        return self.can_create_action(plan)
 
     def can_create_indicator(self, plan):
         if self.is_superuser:

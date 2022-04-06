@@ -156,14 +156,8 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
         if not super().user_can_create(user):
             return False
 
-        if not user.can_modify_action(None):
-            return False
-
         plan = user.get_active_admin_plan()
-        if plan.actions_locked:
-            return False
-
-        return user.is_general_admin_for_plan(plan)
+        return user.can_create_action(plan)
 
 
 class CategoriedModelForm(WagtailAdminModelForm):

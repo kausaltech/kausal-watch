@@ -28,6 +28,7 @@ from people.models import Person
 if typing.TYPE_CHECKING:
     from .features import PlanFeatures
     from .action import ActionStatus, ActionImplementationPhase
+    from .category import CategoryType
 
 
 logger = logging.getLogger(__name__)
@@ -122,6 +123,7 @@ class Plan(ClusterableModel):
     features: PlanFeatures
     action_statuses: models.QuerySet[ActionStatus]
     action_implementation_phases: models.QuerySet[ActionImplementationPhase]
+    category_types: models.QuerySet[CategoryType]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
@@ -154,7 +156,7 @@ class Plan(ClusterableModel):
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
 
-    def get_related_organizations(self):
+    def get_related_organizations(self) -> models.QuerySet[Organization]:
         all_related = self.related_organizations.all()
         for org in self.related_organizations.all():
             all_related |= org.get_descendants()

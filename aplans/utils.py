@@ -1,6 +1,6 @@
 import random
 import re
-from typing import Iterable, List
+from typing import Iterable, List, Type
 
 from django import forms
 from django.contrib.postgres.fields import ArrayField
@@ -53,7 +53,7 @@ def camelcase_to_underscore(name):
 
 
 def public_fields(
-    model: models.Model,
+    model: Type[models.Model],
     add_fields: Iterable[str] = None,
     remove_fields: Iterable[str] = None
 ) -> List[str]:

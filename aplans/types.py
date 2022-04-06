@@ -12,8 +12,10 @@ class WatchRequest(HttpRequest):
     pass
 
 
-class WatchAdminRequest(WatchRequest):
+class AuthenticatedWatchRequest(HttpRequest):
     user: User
 
+
+class WatchAdminRequest(AuthenticatedWatchRequest):
     def get_active_admin_plan(self) -> Plan:
         ...

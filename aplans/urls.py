@@ -19,14 +19,13 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-from rest_framework import routers
 from rest_framework.schemas import get_schema_view
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.core import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 
-from actions.api import all_views as actions_api_views
+from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from admin_site.autocomplete import ActionAutocomplete
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
@@ -37,18 +36,19 @@ from users.views import change_admin_plan
 
 from actions.views import category_icon
 from .graphene_views import SentryGraphQLView
+from .api_router import router as api_router
 
-router = routers.DefaultRouter()
 for view in actions_api_views + indicators_api_views + insight_api_views:
-    router.register(view['name'], view['class'], basename=view.get('basename'))
+    api_router.register(view['name'], view['class'], basename=view.get('basename'))
 
-
-api_urls = path('v1/', include(router.urls))
+api_urls = []
+for router in [api_router] + actions_api_routers:
+    api_urls += router.urls
 
 urlpatterns = [
     re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
     path('admin/', admin.site.urls),
-    api_urls,
+    path('v1/', include(api_urls)),
     path('v1/docs/', TemplateView.as_view(
         template_name='swagger-ui.html',
         extra_context={'schema_url': 'openapi-schema'}

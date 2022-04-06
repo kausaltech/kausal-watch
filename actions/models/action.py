@@ -405,12 +405,12 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     def set_categories(self, type, categories):
         if isinstance(type, str):
             type = self.plan.category_types.get(identifier=type)
-        all_cats = {x.identifier: x for x in type.categories.all()}
+        all_cats = {x.id: x for x in type.categories.all()}
 
         existing_cats = set(self.categories.filter(type=type))
         new_cats = set()
         for cat in categories:
-            if isinstance(cat, str):
+            if isinstance(cat, int):
                 cat = all_cats[cat]
             new_cats.add(cat)
 
