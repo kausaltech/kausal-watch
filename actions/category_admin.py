@@ -106,6 +106,7 @@ class CategoryAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
 
 def get_attribute_fields(cat_type, obj, with_initial=False):
+    # TODO: Partly duplicated in action_admin.py
     fields = {}
 
     if not obj or not obj.pk:

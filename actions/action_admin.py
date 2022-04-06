@@ -40,7 +40,7 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .models import Action, ActionTask, CategoryType
+from .models import Action, ActionTask, ActionAttributeRichText, ActionAttributeType, AttributeType, CategoryType
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +160,7 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
         return user.can_create_action(plan)
 
 
-class CategoriedModelForm(WagtailAdminModelForm):
+class ActionAdminForm(WagtailAdminModelForm):
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
@@ -175,6 +175,13 @@ class CategoriedModelForm(WagtailAdminModelForm):
                 continue
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data)
+
+        for attribute_type, fields in get_attribute_fields(plan, obj):
+            vals = {}
+            for form_field_name, (field, model_field_name) in fields.items():
+                val = self.cleaned_data.get(form_field_name)
+                vals[model_field_name] = val
+            attribute_type.set_action_value(obj, vals)
         return obj
 
 
@@ -187,10 +194,18 @@ class ActionEditHandler(AplansTabbedInterface):
         else:
             cat_fields = {}
 
+        if self.instance is not None:
+            attribute_fields_list = get_attribute_fields(plan, self.instance, with_initial=True)
+            attribute_fields = {form_field_name: field
+                                for _, fields in attribute_fields_list
+                                for form_field_name, (field, _) in fields.items()}
+        else:
+            attribute_fields = {}
+
         self.base_form_class = type(
             'ActionAdminForm',
-            (CategoriedModelForm,),
-            cat_fields
+            (ActionAdminForm,),
+            {**cat_fields, **attribute_fields}
         )
 
         form_class = super().get_form_class()
@@ -403,6 +418,113 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
             ),
             Summary(reset_label=gettext('Reset all'), search_query_label=gettext('Search')),
         ]
+
+
+@modeladmin_register
+class ActionAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
+    model = ActionAttributeType
+    menu_label = _('Action attribute types')
+    menu_order = 1201
+    list_display = ('name', 'format')
+    add_to_settings_menu = True
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('identifier'),
+        FieldPanel('format'),
+        CondensedInlinePanel('choice_options', panels=[
+            FieldPanel('name'),
+            FieldPanel('identifier'),
+        ])
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        plan = user.get_active_admin_plan()
+        return qs.filter(plan=plan)
+
+
+def get_attribute_fields(plan, obj, with_initial=False):
+    # Return list containing pairs (attribute_type, fields), where fields is a dict mapping a form field name to a pair
+    # (field, model_field_name)
+    # TODO: Partly duplicated in category_admin.py
+    # TODO: Need to update in category_admin.py to accommodate new AttributeFormat values
+    result = []
+
+    if not obj or not obj.pk:
+        with_initial = False
+
+    for attribute_type in plan.action_attribute_types.all():
+        if attribute_type.format == AttributeType.AttributeFormat.ORDERED_CHOICE:
+            initial_choice = None
+            qs = attribute_type.choice_options.all()
+            if with_initial:
+                c = attribute_type.choice_attributes.filter(action=obj).first()
+                if c:
+                    initial_choice = c.choice
+            field = forms.ModelChoiceField(
+                qs, label=attribute_type.name, initial=initial_choice, required=False,
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'choice')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            initial_choice = None
+            initial_text = None
+            qs = attribute_type.choice_options.all()
+            if with_initial:
+                cwt = attribute_type.choice_with_text_attributes.filter(action=obj).first()
+                if cwt:
+                    initial_choice = cwt.choice
+                    initial_text = cwt.text
+            choice_field = forms.ModelChoiceField(
+                qs, label=attribute_type.name, initial=initial_choice, required=False,
+            )
+            choice_form_field_name = f'attribute_type_{attribute_type.identifier}_choice'
+            text_field = ActionAttributeRichText._meta.get_field('text').formfield(
+                initial=initial_text, required=False
+            )
+            text_field.panel_heading = attribute_type.name
+            text_form_field_name = f'attribute_type_{attribute_type.identifier}_text'
+            result.append((attribute_type, {choice_form_field_name: (choice_field, 'choice'),
+                                            text_form_field_name: (text_field, 'text')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
+            initial_text = None
+            if with_initial:
+                val_obj = attribute_type.richtext_attributes.filter(action=obj).first()
+                if val_obj is not None:
+                    initial_text = val_obj.text
+
+            field = ActionAttributeRichText._meta.get_field('text').formfield(
+                initial=initial_text, required=False
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'text')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.NUMERIC:
+            initial_value = None
+            if with_initial:
+                val_obj = attribute_type.numeric_value_attributes.filter(action=obj).first()
+                if val_obj is not None:
+                    initial_value = val_obj.value
+            field = forms.FloatField(
+                label=attribute_type.name, initial=initial_value, required=False,
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'value')}))
+        else:
+            raise Exception('Unsupported attribute type format: %s' % attribute_type.format)
+    return result
+
+
+class AttributeFieldPanel(FieldPanel):
+    def on_form_bound(self):
+        super().on_form_bound()
+        plan = self.request.user.get_active_admin_plan()
+        attribute_fields_list = get_attribute_fields(plan, self.instance, with_initial=True)
+        attribute_fields = {form_field_name: field
+                            for _, fields in attribute_fields_list
+                            for form_field_name, (field, _) in fields.items()}
+        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
@@ -619,6 +741,22 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 internal_panels.append(PlanFilteredFieldPanel('schedule'))
 
         all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
+
+        if instance:
+            attribute_fields = get_attribute_fields(plan, instance, with_initial=True)
+        else:
+            attribute_fields = []
+
+        attribute_panels = []
+        for attribute_type, fields in attribute_fields:
+            for form_field_name, (field, model_field_name) in fields.items():
+                if len(fields) > 1:
+                    heading = f'{attribute_type.name} ({model_field_name})'
+                else:
+                    heading = attribute_type.name
+                attribute_panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+
+        all_tabs.append(ObjectList(attribute_panels, heading=_('Attributes')))
 
         i18n_tabs = get_translation_tabs(instance, request)
         all_tabs += i18n_tabs

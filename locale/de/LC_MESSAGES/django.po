@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-06 14:11+0300\n"
+"POT-Creation-Date: 2022-04-06 19:02+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,119 +17,127 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: actions/action_admin.py:353 actions/admin.py:313
+#: actions/action_admin.py:368 actions/admin.py:313
 msgid "Contact person"
 msgstr "Kontaktperson"
 
-#: actions/action_admin.py:362 people/templates/people/chooser_results.html:12
+#: actions/action_admin.py:377 people/templates/people/chooser_results.html:12
 msgid "Organization"
 msgstr "Organisation"
 
-#: actions/action_admin.py:369 templates/aplans_admin/own_actions_panel.html:5
+#: actions/action_admin.py:384 templates/aplans_admin/own_actions_panel.html:5
 msgid "Own actions"
 msgstr "Eigene Maßnahmen"
 
-#: actions/action_admin.py:371
+#: actions/action_admin.py:386
 msgid "Show only actions with me as a contact person"
 msgstr "Zeige nur Maßnahmen mit mir als Kontaktperson"
 
-#: actions/action_admin.py:372
+#: actions/action_admin.py:387
 msgid "Show only actions I can modify"
 msgstr "Zeige nur Maßnahmen, die ich bearbeiten kann"
 
-#: actions/action_admin.py:373
+#: actions/action_admin.py:388
 msgid "Show all actions"
 msgstr "Zeige alle Maßnahmen"
 
-#: actions/action_admin.py:380
+#: actions/action_admin.py:395
 msgid "By last updated"
 msgstr "Nach zuletzt aktualisiert"
 
-#: actions/action_admin.py:382
+#: actions/action_admin.py:397
 msgid "No filtering"
 msgstr "Kein Filter"
 
-#: actions/action_admin.py:383
+#: actions/action_admin.py:398
 msgid "In the last 7 days"
 msgstr "In den letzten 7 Tagen"
 
-#: actions/action_admin.py:384
+#: actions/action_admin.py:399
 msgid "7–30 days ago"
 msgstr "Vor 7-30 Tagen"
 
-#: actions/action_admin.py:385
+#: actions/action_admin.py:400
 msgid "1–3 months ago"
 msgstr "Vor 1-3 Monaten"
 
-#: actions/action_admin.py:386
+#: actions/action_admin.py:401
 msgid "More than 3 months ago"
 msgstr "Vor mehr als 3 Monaten"
 
-#: actions/action_admin.py:398
+#: actions/action_admin.py:413
 msgid "Apply filters"
 msgstr "Filter anwenden"
 
-#: actions/action_admin.py:402
+#: actions/action_admin.py:417
 msgid "Advanced filters"
 msgstr "Fortgeschrittene Filter"
 
-#: actions/action_admin.py:410
+#: actions/action_admin.py:425
 msgid "Reset all"
 msgstr "Alle zurücksetzen"
 
-#: actions/action_admin.py:410
+#: actions/action_admin.py:425
 msgid "Search"
 msgstr "Suchen"
 
-#: actions/action_admin.py:419 actions/apps.py:7 actions/models/plan.py:263
+#: actions/action_admin.py:432
+msgid "Action attribute types"
+msgstr "Maßnahmenattributtypen"
+
+#: actions/action_admin.py:542 actions/apps.py:7 actions/models/plan.py:263
 msgid "Actions"
 msgstr "Maßnahmen"
 
-#: actions/action_admin.py:443
+#: actions/action_admin.py:566
 msgid "External links"
 msgstr "Externe links"
 
-#: actions/action_admin.py:497
+#: actions/action_admin.py:620
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
 
-#: actions/action_admin.py:517 people/templates/people/chooser_results.html:10
+#: actions/action_admin.py:640 people/templates/people/chooser_results.html:10
 #: templates/aplans_admin/own_actions_panel.html:14
 #: templates/aplans_admin/own_indicators_panel.html:12
 msgid "Name"
 msgstr "Name"
 
-#: actions/action_admin.py:567 actions/category_admin.py:74
-#: actions/category_admin.py:312 actions/wagtail_admin.py:146
+#: actions/action_admin.py:690 actions/category_admin.py:74
+#: actions/category_admin.py:313 actions/wagtail_admin.py:146
 #: indicators/wagtail_admin.py:395 notifications/wagtail_admin.py:58
 msgid "Basic information"
-msgstr "Grundinformation"
+msgstr "Grunddaten"
 
-#: actions/action_admin.py:579 indicators/blocks.py:40
+#: actions/action_admin.py:702 indicators/blocks.py:40
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: actions/action_admin.py:590 indicators/wagtail_admin.py:403
+#: actions/action_admin.py:713 indicators/wagtail_admin.py:403
 msgid "Contact persons"
 msgstr "Kontaktpersonen"
 
-#: actions/action_admin.py:594 actions/action_admin.py:597
+#: actions/action_admin.py:717 actions/action_admin.py:720
 msgid "Responsible parties"
 msgstr "Zuständige"
 
-#: actions/action_admin.py:604
+#: actions/action_admin.py:727
 msgid "Tasks"
 msgstr "Aufgaben"
 
-#: actions/action_admin.py:620 actions/category_admin.py:271
+#: actions/action_admin.py:743 actions/category_admin.py:272
 #: admin_site/wagtail_hooks.py:48 indicators/admin.py:268
 #: indicators/wagtail_admin.py:159
 msgid "Categories"
 msgstr "Kategorien"
 
-#: actions/action_admin.py:627
+#: actions/action_admin.py:750
 msgid "Internal information"
 msgstr "Interne Informationen"
+
+#: actions/action_admin.py:766 actions/category_admin.py:324
+msgid "Attributes"
+msgstr "Attribute"
 
 #: actions/admin.py:192
 msgid "Non-modifiable actions"
@@ -223,10 +231,6 @@ msgstr "Maßnahmen- und Indikatorkategorisierung"
 msgid "Category attribute types"
 msgstr "Kategorieattributtypen"
 
-#: actions/category_admin.py:323
-msgid "Attributes"
-msgstr "Attribute"
-
 #: actions/chooser.py:31 actions/chooser.py:37
 msgid "Choose a category"
 msgstr "Wähle eine Kategorie"
@@ -273,7 +277,7 @@ msgstr "Kennung"
 #: actions/models/action.py:715 actions/models/action.py:796
 #: actions/models/attributes.py:16 actions/models/attributes.py:34
 #: actions/models/category.py:30 actions/models/category.py:81
-#: actions/models/category.py:165 actions/models/plan.py:68
+#: actions/models/category.py:167 actions/models/plan.py:68
 #: actions/models/plan.py:419 actions/models/plan.py:441
 #: actions/models/plan.py:470 indicators/models.py:43 indicators/models.py:64
 #: indicators/models.py:93 indicators/models.py:104 indicators/models.py:132
@@ -419,7 +423,7 @@ msgstr "Setzen, wenn diese Maßnahme kein Beginn- oder Enddatum hat"
 msgid "decision-making level"
 msgstr "Entscheidungsebene"
 
-#: actions/models/action.py:156 actions/models/category.py:192
+#: actions/models/action.py:156 actions/models/category.py:194
 #: indicators/models.py:580
 msgid "categories"
 msgstr "Kategorien"
@@ -675,24 +679,24 @@ msgstr "Auswirkungsgruppenmaßnahme"
 msgid "impact group actions"
 msgstr "Auswirkungsgruppenmaßnahmen"
 
-#: actions/models/action.py:827
+#: actions/models/action.py:828
 msgid "action attribute type"
 msgstr "Maßnahmenattributtyp"
 
-#: actions/models/action.py:828
+#: actions/models/action.py:829
 msgid "action attribute types"
 msgstr "Maßnahmenattributtypen"
 
-#: actions/models/action.py:835
+#: actions/models/action.py:884
 msgid "action attribute type choice option"
 msgstr "Maßnahmenattributtyp-Wahlmöglichkeit"
 
-#: actions/models/action.py:836
+#: actions/models/action.py:885
 msgid "action attribute type choice options"
 msgstr "Maßnahmenattributtyp-Wahlmöglichkeiten"
 
-#: actions/models/action.py:843 actions/models/action.py:893
-#: actions/models/category.py:243 pages/models.py:198
+#: actions/models/action.py:892 actions/models/action.py:942
+#: actions/models/category.py:245 pages/models.py:198
 msgid "Text"
 msgstr "Text"
 
@@ -756,7 +760,7 @@ msgstr "Kategorietyp"
 msgid "category types"
 msgstr "Kategorietypen"
 
-#: actions/models/category.py:79 actions/models/category.py:161
+#: actions/models/category.py:79 actions/models/category.py:163
 #: notifications/models.py:54 notifications/models.py:131
 msgid "type"
 msgstr "Typ"
@@ -781,41 +785,41 @@ msgstr "Kategorieattributtyp"
 msgid "category attribute types"
 msgstr "Kategorieattributtypen"
 
-#: actions/models/category.py:152
+#: actions/models/category.py:154
 msgid "category attribute type choice option"
 msgstr "Kategorieattributtyp-Auswahlmöglichkeit"
 
-#: actions/models/category.py:153
+#: actions/models/category.py:155
 msgid "category attribute type choice options"
 msgstr "Kategorieattributtyp-Auswahlmöglichkeiten"
 
-#: actions/models/category.py:171
+#: actions/models/category.py:173
 msgid "parent category"
 msgstr "Elternkategorie"
 
-#: actions/models/category.py:174
+#: actions/models/category.py:176
 msgid "short description"
 msgstr "Kurzbeschreibung"
 
-#: actions/models/category.py:177
+#: actions/models/category.py:179
 msgid "theme color"
 msgstr "Themenfarbe"
 
-#: actions/models/category.py:178
+#: actions/models/category.py:180
 msgid "Set if the category has a theme color"
 msgstr "Setzen, wenn die Kategorie eine Themenfarbe hat"
 
-#: actions/models/category.py:191
+#: actions/models/category.py:193
 msgid "category"
 msgstr "Kategorie"
 
-#: actions/models/category.py:201
+#: actions/models/category.py:203
 msgid "Parent forms a loop. Leave empty if top-level category."
 msgstr ""
 "Elternkategorie formt eine Schleife. Leer lassen, wenn Kategorie der "
 "höchsten Ebene."
 
-#: actions/models/category.py:206
+#: actions/models/category.py:208
 msgid "Parent must be of same type"
 msgstr "Elternkategorie muss gleichen Typ haben"
 
@@ -2004,7 +2008,7 @@ msgstr "Motivationsblock"
 
 #: notifications/models.py:177
 msgid "Contact information block"
-msgstr "Kontaktinformationsblock"
+msgstr "Kontaktdatenblock"
 
 #: notifications/models.py:184
 msgid "content block"

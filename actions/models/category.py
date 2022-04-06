@@ -110,6 +110,8 @@ class CategoryAttributeType(AttributeType):
         return qs.filter(category_type=self.category_type)
 
     def set_category_value(self, category, val):
+        # TODO: Partly duplicated in action.py
+        # TODO: action.py contains functionality for new AttributeFormat values. This needs to be replicated here.
         assert category.type == self.category_type
 
         if self.format == self.AttributeFormat.ORDERED_CHOICE:

@@ -818,6 +818,7 @@ class ImpactGroupAction(models.Model):
         return "%s ➜ %s" % (self.action, self.group)
 
 
+@reversion.register()
 class ActionAttributeType(AttributeType, PlanRelatedModel):
     """Type of attributes that can be given to actions in a specific plan."""
     plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='action_attribute_types')
@@ -826,6 +827,54 @@ class ActionAttributeType(AttributeType, PlanRelatedModel):
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('action attribute type')
         verbose_name_plural = _('action attribute types')
+
+    def set_action_value(self, action, vals):
+        # TODO: Partly duplicated in category.py
+        assert action.plan == self.plan
+
+        if self.format == self.AttributeFormat.ORDERED_CHOICE:
+            val = vals.get('choice')
+            existing = self.choice_attributes.filter(action=action)
+            if existing:
+                existing.delete()
+            if val is not None:
+                self.choice_attributes.create(action=action, choice=val)
+        elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            choice_val = vals.get('choice')
+            text_val = vals.get('text')
+            existing = self.choice_with_text_attributes.filter(action=action)
+            if existing:
+                existing.delete()
+            if choice_val is not None or text_val:
+                self.choice_with_text_attributes.create(action=action, choice=choice_val, text=text_val)
+        elif self.format == self.AttributeFormat.RICH_TEXT:
+            val = vals.get('text')
+            try:
+                obj = self.richtext_attributes.get(action=action)
+            except self.richtext_attributes.model.DoesNotExist:
+                if val:
+                    obj = self.richtext_attributes.create(action=action, text=val)
+            else:
+                if not val:
+                    obj.delete()
+                else:
+                    obj.text = val
+                    obj.save()
+        elif self.format == self.AttributeFormat.NUMERIC:
+            val = vals.get('value')
+            try:
+                obj = self.numeric_value_attributes.get(action=action)
+            except self.numeric_value_attributes.model.DoesNotExist:
+                if val is not None:
+                    obj = self.numeric_value_attributes.create(action=action, value=val)
+            else:
+                if val is None:
+                    obj.delete()
+                else:
+                    obj.value = val
+                    obj.save()
+        else:
+            raise Exception(f"Unsupported attribute type format: {self.format}")
 
 
 class ActionAttributeTypeChoiceOption(AttributeTypeChoiceOption):
