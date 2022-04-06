@@ -23,8 +23,18 @@ RUN ln -fs /usr/bin/python3.9 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
+
+ARG EXTRA_PYPI_INDEX
+
 COPY requirements.txt requirements-prod.txt /code/
 RUN pip install -r /code/requirements-prod.txt -r /code/requirements.txt
+
+# Install extra dependencies
+COPY requirements-kausal.txt /code/
+RUN \
+    if [ ! -z "$EXTRA_PYPI_INDEX" ] ; then \
+        pip install --extra-index-url "${EXTRA_PYPI_INDEX}" -r /code/requirements-kausal.txt ; \
+    fi
 
 # Install ipython for convenience
 RUN pip install ipython
@@ -33,12 +43,6 @@ COPY package.json package-lock.json /code/
 WORKDIR /code
 RUN npm install
 
-ARG EXTRA_PYPI_INDEX
-ARG EXTRA_INSTALLED_APPS_VERSIONS
-ARG EXTRA_INSTALLED_APPS
-
-# Install extra dependencies
-RUN if [ ! -z "$EXTRA_INSTALLED_APPS_VERSIONS" ] ; then pip install --extra-index-url "${EXTRA_PYPI_INDEX}" $EXTRA_INSTALLED_APPS_VERSIONS ; fi
 
 COPY . /code/
 RUN ./manage.py collectstatic --no-input

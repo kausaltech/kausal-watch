@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import importlib
 from typing import Literal
 
 import environ
@@ -24,7 +25,6 @@ env = environ.FileAwareEnv(
     DEPLOYMENT_TYPE=(str, 'development'),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
-    EXTRA_INSTALLED_APPS=(list, []),
     CONFIGURE_LOGGING=(bool, True),
     DATABASE_URL=(str, 'sqlite:///db.sqlite3'),
     CACHE_URL=(str, 'locmemcache://'),
@@ -158,9 +158,6 @@ INSTALLED_APPS += [
     'feedback',
     'orgs',
 ]
-
-EXTRA_INSTALLED_APPS: list[str] = env.list('EXTRA_INSTALLED_APPS')  # type:ignore
-INSTALLED_APPS += EXTRA_INSTALLED_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -542,6 +539,9 @@ ENABLE_DEBUG_TOOLBAR = False
 HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
 ADMIN_WILDCARD_DOMAIN = env('ADMIN_WILDCARD_DOMAIN')
 
+
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    INSTALLED_APPS.append('kausal_watch_extensions')
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.

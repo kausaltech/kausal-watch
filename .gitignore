@@ -5,7 +5,7 @@ __pycache__/
 /db.sqlite3
 /node_modules/
 /local_settings.py
-/static
+/static/
 /tmp
 /*.bz2
 /*.xlsx
@@ -22,3 +22,4 @@ __pycache__/
 /.direnv/
 tags
 /docker-compose.override.yml
+/kausal_watch_extensions/
