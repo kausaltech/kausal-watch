@@ -27,6 +27,7 @@ from aplans.utils import (
 from orgs.models import Organization
 from users.models import User
 
+from .attributes import AttributeType, AttributeTypeChoiceOption
 from ..monitoring_quality import determine_monitoring_quality
 
 if typing.TYPE_CHECKING:
@@ -815,3 +816,84 @@ class ImpactGroupAction(models.Model):
 
     def __str__(self):
         return "%s ➜ %s" % (self.action, self.group)
+
+
+class ActionAttributeType(AttributeType, PlanRelatedModel):
+    """Type of attributes that can be given to actions in a specific plan."""
+    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='action_attribute_types')
+
+    class Meta(AttributeType.Meta):
+        unique_together = (('plan', 'identifier'),)
+        verbose_name = _('action attribute type')
+        verbose_name_plural = _('action attribute types')
+
+
+class ActionAttributeTypeChoiceOption(AttributeTypeChoiceOption):
+    type = ParentalKey(ActionAttributeType, on_delete=models.CASCADE, related_name='choice_options')
+
+    class Meta(AttributeTypeChoiceOption.Meta):
+        verbose_name = _('action attribute type choice option')
+        verbose_name_plural = _('action attribute type choice options')
+
+
+class ActionAttributeRichText(models.Model):
+    """Rich text value for an action attribute."""
+    type = models.ForeignKey(ActionAttributeType, on_delete=models.CASCADE, related_name='richtext_attributes')
+    action = ParentalKey(Action, on_delete=models.CASCADE, related_name='richtext_attributes')
+    text = RichTextField(verbose_name=_('Text'))
+
+    public_fields = [
+        'id', 'type', 'action', 'text',
+    ]
+
+    class Meta:
+        unique_together = ('action', 'type')
+
+    def __str__(self):
+        return '%s for %s' % (self.type, self.action)
+
+
+class ActionAttributeNumericValue(models.Model):
+    type = models.ForeignKey(ActionAttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
+    action = ParentalKey(Action, on_delete=models.CASCADE, related_name='numeric_value_attributes')
+    value = models.FloatField()
+
+    public_fields = [
+        'id', 'type', 'action', 'value',
+    ]
+
+    class Meta:
+        unique_together = ('action', 'type')
+
+    def __str__(self):
+        return '%s (%s) for %s' % (self.value, self.type, self.action)
+
+
+class ActionAttributeChoice(models.Model):
+    type = models.ForeignKey(ActionAttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
+    action = ParentalKey(Action, on_delete=models.CASCADE, related_name='choice_attributes')
+    choice = models.ForeignKey(
+        ActionAttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='choice_attributes'
+    )
+
+    class Meta:
+        unique_together = ('action', 'type')
+
+    def __str__(self):
+        return '%s (%s) for %s' % (self.choice, self.type, self.action)
+
+
+class ActionAttributeChoiceWithText(models.Model):
+    type = models.ForeignKey(ActionAttributeType, on_delete=models.CASCADE, related_name='choice_with_text_attributes')
+    action = ParentalKey(Action, on_delete=models.CASCADE, related_name='choice_with_text_attributes')
+    choice = models.ForeignKey(
+        ActionAttributeTypeChoiceOption, blank=True, null=True, on_delete=models.CASCADE,
+        related_name='choice_with_text_attributes',
+    )
+    text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
+
+    class Meta:
+        unique_together = ('action', 'type')
+
+    def __str__(self):
+        return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.action)

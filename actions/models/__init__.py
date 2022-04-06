@@ -1,7 +1,8 @@
 from .plan import Plan, PlanDomain, Scenario, ImpactGroup, MonitoringQualityPoint
 from .action import (
-    Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule, ActionStatus,
-    ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
+    Action, ActionAttributeType, ActionAttributeTypeChoiceOption, ActionAttributeChoice, ActionAttributeChoiceWithText,
+    ActionAttributeRichText, ActionAttributeNumericValue, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
+    ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
     ActionStatusUpdate, ImpactGroupAction
 )
 from .attributes import (
@@ -15,7 +16,9 @@ from .features import PlanFeatures
 
 
 __all__ = [
-    'Action', 'ActionContactPerson', 'ActionDecisionLevel', 'ActionImpact',
+    'Action', 'ActionAttributeType', 'ActionAttributeTypeChoiceOption', 'ActionAttributeChoice',
+    'ActionAttributeChoiceWithText', 'ActionAttributeRichText', 'ActionAttributeNumericValue', 'ActionContactPerson',
+    'ActionDecisionLevel', 'ActionImpact',
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
     'AttributeType', 'AttributeTypeChoiceOption',
