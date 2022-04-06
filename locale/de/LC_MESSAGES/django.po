@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-06 14:01+0300\n"
+"POT-Creation-Date: 2022-04-06 14:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1324,6 +1324,14 @@ msgstr "Wird hochgeladen…"
 #: documents/templates/wagtaildocs/chooser/chooser.html:30
 msgid "Upload"
 msgstr "Hochladen"
+
+#: feedback/models.py:17
+msgid "user feedback"
+msgstr "Benutzer-Feedback"
+
+#: feedback/models.py:18
+msgid "user feedbacks"
+msgstr "Benutzer-Feedbacks"
 
 #: images/models.py:11
 msgid "Image byline or credits"
