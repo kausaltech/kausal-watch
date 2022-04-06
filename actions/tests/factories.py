@@ -6,7 +6,6 @@ from wagtail_factories import StructBlockFactory
 
 import actions
 from actions.models import CategoryAttributeType
-from actions.models.plan import get_default_language, get_supported_languages
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import CategoryPageFactory
@@ -24,8 +23,8 @@ class PlanFactory(DjangoModelFactory):
     image = SubFactory(AplansImageFactory)
     site_url = Sequence(lambda i: f'https://plan{i}.example.com')
     accessibility_statement_url = 'https://example.com'
-    primary_language = get_default_language()
-    other_languages = [lang_code for lang_code, _ in get_supported_languages() if lang_code != get_default_language()]
+    primary_language = 'en'
+    other_languages = ['fi']
 
 
 class PlanDomainFactory(DjangoModelFactory):
