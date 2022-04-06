@@ -79,7 +79,7 @@ class ActionGraphGenerator(GraphGenerator):
     def make_node(self, obj):
         d = {}
         if isinstance(obj, Action):
-            url = reverse('action-detail', kwargs={'pk': obj.pk})
+            url = reverse('action-detail', kwargs={'plan_pk': obj.plan.pk, 'pk': obj.pk})
             obj_type = 'action'
         elif isinstance(obj, Indicator):
             url = reverse('indicator-detail', kwargs={'pk': obj.pk})
