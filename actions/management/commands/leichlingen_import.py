@@ -460,7 +460,7 @@ class Command(BaseCommand):
         except Plan.DoesNotExist:
             plan = Plan.create_with_defaults(
                 identifier="leichlingen-klima",
-                name="Klimastrategie der Blütenstadt Leichlingen",
+                name="Klima-Strategie der Blütenstadt Leichlingen",
                 short_name="Klimaschutz",
                 client_name="Leichlingen",
                 client_identifier='leichlingen',
