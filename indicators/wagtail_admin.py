@@ -373,7 +373,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 if num_values:
                     assert instance
                     warning_text = ngettext_lazy("If you change the dimensions of this indicator (currently "
-                                                 "%(dimensions)s), its %(num)d value will be deleted.",
+                                                 "%(dimensions)s), its single value will be deleted.",
                                                  "If you change the dimensions of this indicator (currently "
                                                  "%(dimensions)s), all its %(num)d values will be deleted.",
                                                  num_values) % {'dimensions': dimensions_str, 'num': num_values}

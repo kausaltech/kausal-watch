@@ -1195,7 +1195,7 @@ msgstr ""
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
 #: images/templates/wagtailimages/chooser/chooser.html
-msgid "Search from the service"
+msgid "Search the service"
 msgstr ""
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
@@ -1718,7 +1718,7 @@ msgstr ""
 
 #: indicators/wagtail_admin.py
 #, python-format
-msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its %(num)d value will be deleted."
+msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
 msgstr[0] ""
 msgstr[1] ""

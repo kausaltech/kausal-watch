@@ -1132,8 +1132,8 @@ msgstr "Ladda upp från dator"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
 #: images/templates/wagtailimages/chooser/chooser.html
-msgid "Search from the service"
-msgstr "Sök från tjänsten"
+msgid "Search the service"
+msgstr "Sök i tjänsten"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
 #: images/templates/wagtailimages/chooser/chooser.html

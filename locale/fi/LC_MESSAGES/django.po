@@ -1261,7 +1261,7 @@ msgid "Upload from computer"
 msgstr "Lataa tietokoneelta"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Search from the service"
+msgid "Search the service"
 msgstr "Hae palvelusta"
 
 #: documents/templates/wagtaildocs/chooser/chooser.html
@@ -1774,9 +1774,9 @@ msgstr ""
 
 #: indicators/wagtail_admin.py
 #, python-format
-msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its %(num)d value will be deleted."
+msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
-msgstr[0] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), sen %(num)d arvo poistetaan."
+msgstr[0] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), sen arvo poistetaan."
 msgstr[1] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), kaikki sen %(num)d arvoa poistetaan."
 
 #: indicators/wagtail_admin.py

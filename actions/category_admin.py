@@ -320,7 +320,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         for key, field in attribute_fields.items():
             attribute_panels.append(AttributeFieldPanel(key, heading=field.attribute_type.name))
 
-        tabs.append(ObjectList(attribute_panels, heading=_('Attribute')))
+        tabs.append(ObjectList(attribute_panels, heading=_('Attributes')))
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
