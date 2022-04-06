@@ -15,7 +15,8 @@ from orgs.models import Organization
 from people.models import Person
 
 from .models import (
-    Action, ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
+    Action, ActionAttributeRichText, ActionAttributeType, ActionAttributeChoice, ActionAttributeTypeChoiceOption,
+    ActionContactPerson, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
     CategoryAttributeType, CategoryAttributeTypeChoiceOption, CategoryAttributeChoice, CategoryAttributeRichText
 )
@@ -211,6 +212,10 @@ def remove_contact_person_perms(user, model):
 PLAN_ADMIN_PERMS = (
     (Plan, ('view', 'change')),
     (Action, ALL_PERMS),
+    (ActionAttributeType, ALL_PERMS),
+    (ActionAttributeTypeChoiceOption, ALL_PERMS),
+    (ActionAttributeChoice, ALL_PERMS),
+    (ActionAttributeRichText, ALL_PERMS),
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),
     (ActionImpact, ALL_PERMS),

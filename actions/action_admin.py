@@ -527,6 +527,7 @@ class AttributeFieldPanel(FieldPanel):
         self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 
+@modeladmin_register
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
@@ -771,6 +772,3 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         qs = qs.filter(plan=plan)
         qs = qs.select_related('plan').prefetch_related('categories')
         return qs
-
-
-modeladmin_register(ActionAdmin)
