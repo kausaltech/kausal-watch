@@ -881,8 +881,8 @@ class ActionAttributeTypeChoiceOption(AttributeTypeChoiceOption):
     type = ParentalKey(ActionAttributeType, on_delete=models.CASCADE, related_name='choice_options')
 
     class Meta(AttributeTypeChoiceOption.Meta):
-        verbose_name = _('action attribute type choice option')
-        verbose_name_plural = _('action attribute type choice options')
+        verbose_name = _('action attribute choice option')
+        verbose_name_plural = _('action attribute choice options')
 
 
 class ActionAttributeRichText(models.Model):

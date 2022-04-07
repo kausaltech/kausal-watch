@@ -103,8 +103,8 @@ class CategoryAttributeType(AttributeType):
 
     class Meta(AttributeType.Meta):
         unique_together = (('category_type', 'identifier'),)
-        verbose_name = _('category attribute type')
-        verbose_name_plural = _('category attribute types')
+        verbose_name = _('category attribute')
+        verbose_name_plural = _('category attributes')
 
     def filter_siblings(self, qs):
         return qs.filter(category_type=self.category_type)
@@ -151,8 +151,8 @@ class CategoryAttributeTypeChoiceOption(AttributeTypeChoiceOption):
     type = ParentalKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_options')
 
     class Meta(AttributeTypeChoiceOption.Meta):
-        verbose_name = _('category attribute type choice option')
-        verbose_name_plural = _('category attribute type choice options')
+        verbose_name = _('category attribute choice option')
+        verbose_name_plural = _('category attribute choice options')
 
 
 class Category(ClusterableModel, OrderedModel, PlanRelatedModel):

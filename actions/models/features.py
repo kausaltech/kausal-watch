@@ -7,11 +7,11 @@ from django.db import models
 class PlanFeatures(models.Model):
     plan = models.OneToOneField('actions.Plan', related_name='features', on_delete=models.CASCADE)
     allow_images_for_actions = models.BooleanField(
-        default=True, verbose_name=_('allow images for actions'),
+        default=True, verbose_name=_('Allow images for actions'),
         help_text=_('Should custom images for individual actions be allowed')
     )
     show_admin_link = models.BooleanField(
-        default=False, verbose_name=_('show admin link'),
+        default=False, verbose_name=_('Show admin link'),
         help_text=_('Should the public website contain a link to the admin login?'),
     )
     public_contact_persons = models.BooleanField(
@@ -19,15 +19,15 @@ class PlanFeatures(models.Model):
         help_text=_('Set if the contact persons should be visible in the public UI')
     )
     has_action_identifiers = models.BooleanField(
-        default=True, verbose_name=_('Hide action identifiers'),
+        default=True, verbose_name=_('Has action identifiers'),
         help_text=_("Set if the plan uses meaningful action identifiers")
     )
     has_action_official_name = models.BooleanField(
-        default=False, verbose_name=_('Hide official name field'),
+        default=False, verbose_name=_('Has action official name field'),
         help_text=_("Set if the plan uses the official name field")
     )
     has_action_lead_paragraph = models.BooleanField(
-        default=True, verbose_name=_('Hide lead paragraph'),
+        default=True, verbose_name=_('Has action lead paragraph'),
         help_text=_("Set if the plan uses the lead paragraph field")
     )
     has_action_primary_orgs = models.BooleanField(
