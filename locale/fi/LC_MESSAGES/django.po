@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-05 09:05+0300\n"
+"POT-Creation-Date: 2022-04-07 10:09+0300\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -81,6 +81,10 @@ msgstr "Nollaa suotimet"
 msgid "Search"
 msgstr "Haku"
 
+#: actions/action_admin.py
+msgid "Action attribute types"
+msgstr "Toimenpiteen ominaisuustyypit"
+
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
 msgstr "Toimenpiteet"
@@ -128,6 +132,10 @@ msgstr "Luokat"
 #: actions/action_admin.py
 msgid "Internal information"
 msgstr "Sisäiset tiedot"
+
+#: actions/action_admin.py actions/category_admin.py
+msgid "Attributes"
+msgstr "Ominaisuudet"
 
 #: actions/admin.py
 msgid "Non-modifiable actions"
@@ -181,6 +189,14 @@ msgstr "Aikataulu ja päätöstaso"
 msgid "action"
 msgstr "toimenpide"
 
+#: actions/api.py
+msgid "Identifier must be set"
+msgstr "Tunniste pitää asettaa"
+
+#: actions/api.py
+msgid "Identifier already exists"
+msgstr "Tunniste on jo olemassa"
+
 #: actions/blocks.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
@@ -214,12 +230,8 @@ msgid "Action and indicator categorization"
 msgstr "Toimenpiteiden ja mittareiden luokittelu"
 
 #: actions/category_admin.py
-msgid "Category metadata"
-msgstr "Luokan metatieto"
-
-#: actions/category_admin.py
-msgid "Metadata"
-msgstr "Metatieto"
+msgid "Category attribute types"
+msgstr "Luokkien ominaisuuksien tyypit"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -261,8 +273,8 @@ msgstr "Valmis"
 msgid "identifier"
 msgstr "tunniste"
 
-#: actions/export.py actions/models/action.py actions/models/category.py
-#: actions/models/plan.py indicators/models.py
+#: actions/export.py actions/models/action.py actions/models/attributes.py
+#: actions/models/category.py actions/models/plan.py indicators/models.py
 msgid "name"
 msgstr "nimi"
 
@@ -643,13 +655,53 @@ msgstr "toimenpiteen vaikuttavuusryhmä"
 msgid "impact group actions"
 msgstr "toimenpiteen vaikuttavuusryhmät"
 
+#: actions/models/action.py
+msgid "action attribute type"
+msgstr "toimenpiteen ominaisuustyyppi"
+
+#: actions/models/action.py
+msgid "action attribute types"
+msgstr "toimenpiteen ominaisuustyypit"
+
+#: actions/models/action.py
+msgid "action attribute choice option"
+msgstr "toimenpiteen ominaisuuden valintavaihtoehto"
+
+#: actions/models/action.py
+msgid "action attribute choice options"
+msgstr "toimenpiteen ominaisuuden valintavaihtoehdot"
+
+#: actions/models/action.py actions/models/category.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
+
+#: actions/models/attributes.py
+msgid "Ordered choice"
+msgstr "Järjestetty valinta"
+
+#: actions/models/attributes.py
+msgid "Optional choice with optional text"
+msgstr "Valinnainen vaihtoehto ja valinnainen seliteteksti"
+
+#: actions/models/attributes.py
+msgid "Rich text"
+msgstr "Sisältöteksti"
+
+#: actions/models/attributes.py
+msgid "Numeric"
+msgstr "Numero"
+
+#: actions/models/attributes.py
+msgid "Format"
+msgstr "Muoto"
+
 #: actions/models/category.py
 msgid "Multiple"
-msgstr ""
+msgstr "Monta"
 
 #: actions/models/category.py
 msgid "Single"
-msgstr ""
+msgstr "Yksi"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
@@ -700,36 +752,20 @@ msgid "category levels"
 msgstr "luokan tasot"
 
 #: actions/models/category.py
-msgid "Ordered choice"
-msgstr "Järjestetty valinta"
+msgid "category attribute"
+msgstr "luokan ominaisuus"
 
 #: actions/models/category.py
-msgid "Rich text"
-msgstr "Sisältöteksti"
+msgid "category attributes"
+msgstr "luokan ominaisuudet"
 
 #: actions/models/category.py
-msgid "Numeric"
-msgstr "Numero"
+msgid "category attribute choice option"
+msgstr "luokan ominaisuuden valintavaihtoehto"
 
 #: actions/models/category.py
-msgid "Format"
-msgstr "Muoto"
-
-#: actions/models/category.py
-msgid "category metadata"
-msgstr "luokan metatieto"
-
-#: actions/models/category.py
-msgid "category metadatas"
-msgstr "luokkien metatiedot"
-
-#: actions/models/category.py
-msgid "category type metadata choice"
-msgstr "luokan metatiedon valinta"
-
-#: actions/models/category.py
-msgid "category type metadata choices"
-msgstr "luokan metatietojen valinnat"
+msgid "category attribute choice options"
+msgstr "luokan ominaisuuden valintavaihtoehdot"
 
 #: actions/models/category.py
 msgid "parent category"
@@ -759,37 +795,17 @@ msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on yl
 msgid "Parent must be of same type"
 msgstr "Yläluokan on oltava samaa tyyppiä"
 
-#: actions/models/category.py
-msgid "category_richtexts"
-msgstr "luokan tekstisisällöt"
-
-#: actions/models/category.py
-msgid "metadata_richtexts"
-msgstr "metatiedon tekstisisällöt"
-
-#: actions/models/category.py pages/models.py
-msgid "Text"
-msgstr "Teksti"
-
-#: actions/models/category.py
-msgid "metadata_choices"
-msgstr "metatiedon valinnat"
-
-#: actions/models/category.py
-msgid "metadata_numeric_values"
-msgstr "metatiedon numeroarvot"
-
 #: actions/models/features.py
-msgid "allow images for actions"
-msgstr "salli toimenpiteille kuvat"
+msgid "Allow images for actions"
+msgstr "Salli toimenpiteille kuvat"
 
 #: actions/models/features.py
 msgid "Should custom images for individual actions be allowed"
 msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
 
 #: actions/models/features.py
-msgid "show admin link"
-msgstr "näytä ylläpidon linkki"
+msgid "Show admin link"
+msgstr "Näytä ylläpidon linkki"
 
 #: actions/models/features.py
 msgid "Should the public website contain a link to the admin login?"
@@ -804,24 +820,24 @@ msgid "Set if the contact persons should be visible in the public UI"
 msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
-msgid "Hide action identifiers"
-msgstr "Piilota toimenpiteiden tunnisteet"
+msgid "Has action identifiers"
+msgstr "Toimenpiteillä on tunnisteet"
 
 #: actions/models/features.py
 msgid "Set if the plan uses meaningful action identifiers"
 msgstr "Aseta jos ohjelmassa käytetään toimenpiteiden tunnisteita"
 
 #: actions/models/features.py
-msgid "Hide official name field"
-msgstr "Piilota virallinen nimi -kenttä"
+msgid "Has action official name field"
+msgstr "Toimenpiteillä on virallinen nimi -kenttä"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the official name field"
 msgstr "Aseta jos ohjelmassa käytetään virallinen nimi -kenttää"
 
 #: actions/models/features.py
-msgid "Hide lead paragraph"
-msgstr "Piilota ingressi"
+msgid "Has action lead paragraph"
+msgstr "Toimenpiteillä on ingressi"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the lead paragraph field"
@@ -882,6 +898,10 @@ msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvä
 #: actions/models/plan.py
 msgid "URL to accessibility statement"
 msgstr "Linkki saavutettavuusselosteeseen"
+
+#: actions/models/plan.py
+msgid "Theme identifier"
+msgstr "Teeman tunniste"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -1271,6 +1291,14 @@ msgstr "Lähetetään…"
 #: documents/templates/wagtaildocs/chooser/chooser.html
 msgid "Upload"
 msgstr "Lähetä"
+
+#: feedback/models.py
+msgid "user feedback"
+msgstr "käyttäjän palaute"
+
+#: feedback/models.py
+msgid "user feedbacks"
+msgstr "käyttäjien palautteet"
 
 #: images/models.py
 msgid "Image byline or credits"
@@ -2317,6 +2345,30 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Category metadata"
+#~ msgstr "Luokan metatieto"
+
+#~ msgid "Metadata"
+#~ msgstr "Metatieto"
+
+#~ msgid "category metadata"
+#~ msgstr "luokan metatieto"
+
+#~ msgid "category metadatas"
+#~ msgstr "luokkien metatiedot"
+
+#~ msgid "category_richtexts"
+#~ msgstr "luokan tekstisisällöt"
+
+#~ msgid "metadata_richtexts"
+#~ msgstr "metatiedon tekstisisällöt"
+
+#~ msgid "metadata_choices"
+#~ msgstr "metatiedon valinnat"
+
+#~ msgid "metadata_numeric_values"
+#~ msgstr "metatiedon numeroarvot"
 
 #, fuzzy
 #~| msgid "dimensions"
