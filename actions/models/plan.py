@@ -116,6 +116,7 @@ class Plan(ClusterableModel):
     )
     uses_wagtail = models.BooleanField(default=True)
     statuses_updated_manually = models.BooleanField(default=False)
+    theme_identifier = IdentifierField(verbose_name=_('Theme identifier'), null=True, blank=True)
 
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
     related_plans = models.ManyToManyField('self', blank=True)
@@ -135,7 +136,7 @@ class Plan(ClusterableModel):
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'organization',
-        'related_plans',
+        'related_plans', 'theme_identifier',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
