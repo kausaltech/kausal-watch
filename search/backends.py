@@ -18,9 +18,9 @@ class WatchSearchIndex(Elasticsearch7Index):
     def add_items(self, model, items):
         if not hasattr(model, 'get_primary_language'):
             logger.warn('Model %s does not define a primary language' % model)
-            return
-        lang = self.backend.language_code
-        items = [item for item in items if item.get_primary_language() == lang]
+        else:
+            lang = self.backend.language_code
+            items = [item for item in items if item.get_primary_language() == lang]
         return super().add_items(model, items)
 
 
@@ -58,12 +58,13 @@ class WatchAutocompleteQueryCompiler(Elasticsearch7AutocompleteQueryCompiler):
 class WatchSearchResults(Elasticsearch7SearchResults):
     def _get_es_body(self, for_count=False):
         body = super()._get_es_body(for_count)
-        body["highlight"] = {
-            "pre_tags": ["<em>"],
-            "post_tags": ["</em>"],
-            "fields": {"_all_text": {}},
-            "require_field_match": False,
-        }
+        if not for_count:
+            body["highlight"] = {
+                "pre_tags": ["<em>"],
+                "post_tags": ["</em>"],
+                "fields": {"_all_text": {}},
+                "require_field_match": False,
+            }
         return body
 
     def _get_results_from_hits(self, hits):
