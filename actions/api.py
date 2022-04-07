@@ -224,6 +224,20 @@ class ActionSerializer(serializers.ModelSerializer):
                 raise exceptions.NotFound('Plan not found')
         super().__init__(*args, **kwargs)
 
+    def get_fields(self):
+        fields = super().get_fields()
+        request: AuthenticatedWatchRequest = self.context.get('request')
+        user = None
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+
+        if user is None or (not user.is_superuser and not user.is_general_admin_for_plan(self.plan)):
+            # Remove fields that are only for admins
+            del fields['internal_notes']
+            del fields['internal_admin_notes']
+
+        return fields
+
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
         if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule', 'merged_with'):
@@ -267,12 +281,16 @@ class ActionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Action
-        fields = public_fields(Action, remove_fields=[
-            'responsible_parties', 'contact_persons', 'impact',
-            'status_updates', 'monitoring_quality_points', 'image',
-            'tasks', 'links', 'related_indicators', 'indicators',
-            'impact_groups', 'merged_actions',
-        ])
+        fields = public_fields(
+            Action,
+            add_fields=['internal_notes', 'internal_admin_notes'],
+            remove_fields=[
+                'responsible_parties', 'contact_persons', 'impact',
+                'status_updates', 'monitoring_quality_points', 'image',
+                'tasks', 'links', 'related_indicators', 'indicators',
+                'impact_groups', 'merged_actions',
+            ]
+        )
         read_only_fields = ['plan']
 
 
