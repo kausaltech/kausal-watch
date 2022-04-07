@@ -292,7 +292,7 @@ class Plan(ClusterableModel):
             if not default_domains:
                 raise Exception("site_url not provided and no default domains configured")
             domain = default_domains[0]
-            site_url = 'https://%s-%s' % (identifier, domain)
+            site_url = 'https://%s.%s' % (identifier, domain)
         else:
             site_url = 'https://%s' % domain
         if base_path:
