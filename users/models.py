@@ -103,6 +103,14 @@ class User(AbstractUser):
         else:
             return plan.pk in plans
 
+    def _get_admin_orgs(self):
+        person = self.get_corresponding_person()
+        if not person:
+            return Organization.objects.none()
+
+        orgs = person.organization_plan_admins.values_list('organization')
+        return Organization.objects.filter(id__in=orgs)
+
     def is_organization_admin_for_action(self, action=None):
         if hasattr(self, '_org_admin_for_actions'):
             actions = self._org_admin_for_actions
@@ -113,7 +121,7 @@ class User(AbstractUser):
         actions = set()
         self._org_admin_for_actions = actions
 
-        orgs = self.get_adminable_organizations()
+        orgs = self._get_admin_orgs()
 
         Action = apps.get_model('actions', 'Action')
         rp_actions = Action.objects.filter(responsible_parties__organization__in=orgs).distinct()
@@ -128,12 +136,7 @@ class User(AbstractUser):
         if self.is_superuser:
             return Organization.objects.all()
 
-        person = self.get_corresponding_person()
-        if not person:
-            return Organization.objects.none()
-
-        orgs = person.organization_plan_admins.values_list('organization')
-        return Organization.objects.filter(id__in=orgs)
+        return self._get_admin_orgs()
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:
         if adminable_plans is None:
