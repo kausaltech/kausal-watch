@@ -212,7 +212,7 @@ class CategoriesSerializer(serializers.Serializer):
 
 class ActionSerializer(serializers.ModelSerializer):
     plan: Plan
-    categories = CategoriesSerializer()
+    categories = CategoriesSerializer(required=False)
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan', None)
@@ -258,7 +258,10 @@ class ActionSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError(_('Identifier must be set'))
 
-        if self.plan.actions.filter(identifier=value).exists():
+        qs = self.plan.actions.filter(identifier=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError(_('Identifier already exists'))
 
         return value
