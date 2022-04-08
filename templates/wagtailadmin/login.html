@@ -33,7 +33,7 @@
         <h1>{% block branding_login %}{% if form.client and form.client.login_header_text %}{{ form.client.login_header_text }}{% else %}{% trans "Sign in to Kausal Watch" %}{% endif %}{% endblock %}</h1>
 
         {% if form.client and form.client.azure_ad_tenant_id %}
-        <a href="{% url 'auth_login' %}?next={{ request.GET.next }}">
+        <a href="{% url 'auth_login' %}?next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
             <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 2em; margin-top: 4em">
                 <span class="icon icon-spinner"></span><em>{% if form.client and form.client.login_button_text %}{{ form.client.login_button_text }}{% else %}{% trans 'Sign in' %}{% endif %}</em>
             </button>
