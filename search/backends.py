@@ -15,13 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class WatchSearchIndex(Elasticsearch7Index):
-    def add_items(self, model, items):
-        if not hasattr(model, 'get_primary_language'):
-            logger.warn('Model %s does not define a primary language' % model)
-        else:
-            lang = self.backend.language_code
-            items = [item for item in items if item.get_primary_language() == lang]
-        return super().add_items(model, items)
+    pass
 
 
 class WatchSearchRebuilder(ElasticsearchIndexRebuilder):

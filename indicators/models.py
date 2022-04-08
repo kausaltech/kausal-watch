@@ -9,8 +9,9 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -451,10 +452,11 @@ class Indicator(ClusterableModel, index.Indexed):
 
     @classmethod
     def get_indexed_objects(cls):
-        return super().get_indexed_objects().filter(plans__isnull=False)
-
-    def get_primary_language(self):
-        return self.plans.first().primary_language
+        # Return only the actions whose plan supports the current language
+        lang = translation.get_language()
+        qs = super().get_indexed_objects()
+        qs = qs.filter(Q(plans__primary_language=lang) | Q(plans__other_languages__contains=[lang])).distinct()
+        return qs
 
 
 @reversion.register()

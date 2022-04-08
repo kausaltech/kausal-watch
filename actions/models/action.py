@@ -9,7 +9,7 @@ from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Max, Q
 from django.urls import reverse
-from django.utils import timezone
+from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
@@ -457,8 +457,13 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         else:
             return 'https://{}/actions/{}'.format(plan.site_url, self.identifier)
 
-    def get_primary_language(self):
-        return self.plan.primary_language
+    @classmethod
+    def get_indexed_objects(cls):
+        # Return only the actions whose plan supports the current language
+        lang = translation.get_language()
+        qs = super().get_indexed_objects()
+        qs = qs.filter(Q(plan__primary_language=lang) | Q(plan__other_languages__contains=[lang]))
+        return qs
 
 
 class ActionResponsibleParty(OrderedModel):

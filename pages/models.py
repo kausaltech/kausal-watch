@@ -2,6 +2,7 @@ import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from grapple.models import (
@@ -77,10 +78,13 @@ class AplansPage(Page):
         plan = Plan.objects.filter(site=site).first()
         return plan
 
-    def get_primary_language(self):
-        if self.plan is None:
-            return None
-        return self.plan.primary_language
+    @classmethod
+    def get_indexed_objects(cls):
+        # Return only the actions whose plan supports the current language
+        lang = translation.get_language()
+        qs = super().get_indexed_objects()
+        qs = qs.filter(locale__language_code=lang)
+        return qs
 
     def get_url_parts(self, request=None):
         plan = self.plan
