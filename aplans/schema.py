@@ -109,7 +109,23 @@ class Query(
                 'people', distinct=True, filter=annotate_filter
             ))
 
-        return gql_optimizer.query(qs, info)
+        qs = gql_optimizer.query(qs, info)
+
+        if with_ancestors:
+            # Slight optimization that should prevent org.get_parent() from
+            # resulting in a new DB hit.
+            orgs_by_path = {org.path: org for org in qs}
+            org: Organization
+            for org in qs:
+                depth = int(len(org.path) / org.steplen)
+                if depth <= 1:
+                    continue
+                parent_path = org._get_basepath(org.path, depth - 1)
+                parent = orgs_by_path.get(parent_path)
+                if parent is not None:
+                    org._cached_parent_obj = parent
+
+        return qs
 
     def resolve_person(self, info, **kwargs):
         qs = Person.objects.all()

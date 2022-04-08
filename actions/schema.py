@@ -1,6 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from django.db.models.query_utils import Q
+from django.db.models import Q, Prefetch
 from django.forms import ModelForm
 from django.urls.base import reverse
 from django.utils.translation import get_language
@@ -266,6 +266,11 @@ class CategoryTypeNode(DjangoNode):
         return self.attribute_types.order_by('pk')
 
 
+def get_translated_category_page(info, **kwargs):
+    qs = CategoryPage.objects.filter(locale__language_code=get_language())
+    return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
+
+
 @register_django_node
 class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
@@ -304,6 +309,9 @@ class CategoryNode(DjangoNode):
     def resolve_actions(self, info):
         return self.action_set.all()
 
+    @gql_optimizer.resolver_hints(
+        select_related=('icon',)
+    )
     def resolve_icon_url(self, info):
         if not hasattr(self, 'icon'):
             return None
@@ -312,7 +320,17 @@ class CategoryNode(DjangoNode):
         uri = request.build_absolute_uri(path)
         return uri
 
+    @gql_optimizer.resolver_hints(
+        prefetch_related=get_translated_category_page
+    )
     def resolve_category_page(self, info):
+        # If we have prefetched the page in the right locale, use that
+        if hasattr(self, 'category_pages_locale'):
+            pages = self.category_pages_locale
+            if not len(pages):
+                return None
+            return pages[0]
+
         try:
             return self.category_pages.get(locale__language_code=get_language())
         except CategoryPage.DoesNotExist:
@@ -389,9 +407,9 @@ class ActionNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='name',
+        only=('name', 'i18n')
     )
     def resolve_name(self, info, hyphenated=False):
-        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
         name = self.name_i18n
         if name is None:
             return None

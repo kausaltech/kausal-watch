@@ -50,8 +50,10 @@ class OrganizationNode(DjangoNode):
     def resolve_contact_person_count(parent, info):
         return getattr(parent, 'contact_person_count', None)
 
-    @staticmethod
-    def resolve_parent(parent, info):
+    @gql_optimizer.resolver_hints(
+        only=('path', 'depth')
+    )
+    def resolve_parent(parent: Organization, info):
         return parent.get_parent()
 
     class Meta:
