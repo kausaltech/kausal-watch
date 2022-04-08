@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import (
-    viewsets, serializers, permissions, exceptions, relations
+    viewsets, serializers, permissions, exceptions
 )
 from rest_framework_nested import routers
 from actions.models.action import ActionImplementationPhase
