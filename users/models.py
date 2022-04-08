@@ -29,17 +29,23 @@ class User(AbstractUser):
         return self.email
 
     def get_corresponding_person(self):
+        if hasattr(self, '_corresponding_person'):
+            return self._corresponding_person
+
         from people.models import Person
 
         try:
-            return self.person
+            person = self.person
         except Person.DoesNotExist:
-            pass
+            person = None
 
-        try:
-            return Person.objects.get(email__iexact=self.email)
-        except Person.DoesNotExist:
-            return None
+        if person is None:
+            try:
+                person = Person.objects.get(email__iexact=self.email)
+            except Person.DoesNotExist:
+                pass
+        setattr(self, '_corresponding_person', person)
+        return person
 
     def is_contact_person_for_action(self, action=None):
         # Cache the contact person status
