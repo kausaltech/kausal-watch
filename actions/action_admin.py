@@ -9,8 +9,9 @@ from datetime import timedelta
 from django import forms
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.translation import get_language, gettext
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import (
+    get_language, gettext, gettext_lazy as _, pgettext_lazy
+)
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
 )
@@ -423,7 +424,7 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
 @modeladmin_register
 class ActionAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = ActionAttributeType
-    menu_label = _('Action attribute types')
+    menu_label = pgettext_lazy('hyphenated', 'Action attributes')
     menu_order = 1201
     list_display = ('name', 'format')
     add_to_settings_menu = True

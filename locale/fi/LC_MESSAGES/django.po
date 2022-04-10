@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-07 10:09+0300\n"
+"POT-Creation-Date: 2022-04-10 03:13+0300\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -82,8 +82,9 @@ msgid "Search"
 msgstr "Haku"
 
 #: actions/action_admin.py
-msgid "Action attribute types"
-msgstr "Toimenpiteen ominaisuustyypit"
+msgctxt "hyphenated"
+msgid "Action attributes"
+msgstr "Toimenpiteiden ominaisuudet"
 
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
@@ -230,8 +231,9 @@ msgid "Action and indicator categorization"
 msgstr "Toimenpiteiden ja mittareiden luokittelu"
 
 #: actions/category_admin.py
-msgid "Category attribute types"
-msgstr "Luokkien ominaisuuksien tyypit"
+msgctxt "hyphenated"
+msgid "Category attributes"
+msgstr "Luokkien ominaisuudet"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -2345,6 +2347,9 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Category attribute types"
+#~ msgstr "Luokkien ominaisuuksien tyypit"
 
 #~ msgid "Category metadata"
 #~ msgstr "Luokan metatieto"

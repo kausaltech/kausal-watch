@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-10 03:20+0300\n"
+"POT-Creation-Date: 2022-04-10 03:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -190,16 +190,12 @@ msgid "action"
 msgstr "Maßnahme"
 
 #: actions/api.py
-#, fuzzy
-#| msgid "Identifier"
 msgid "Identifier must be set"
-msgstr "Kennung"
+msgstr "Kennung muss gesetzt sein"
 
 #: actions/api.py
-#, fuzzy
-#| msgid "Person with this email already exists"
 msgid "Identifier already exists"
-msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
+msgstr "Kennung existiert bereits"
 
 #: actions/blocks.py
 msgid "Filter on category"
@@ -668,12 +664,12 @@ msgid "action attribute types"
 msgstr "Maßnahmenattributtypen"
 
 #: actions/models/action.py
-msgid "action attribute type choice option"
-msgstr "Maßnahmenattributtyp-Wahlmöglichkeit"
+msgid "action attribute choice option"
+msgstr "Maßnahmenattribut-Wahlmöglichkeit"
 
 #: actions/models/action.py
-msgid "action attribute type choice options"
-msgstr "Maßnahmenattributtyp-Wahlmöglichkeiten"
+msgid "action attribute choice options"
+msgstr "Maßnahmenattribut-Wahlmöglichkeiten"
 
 #: actions/models/action.py actions/models/category.py pages/models.py
 msgid "Text"
@@ -756,20 +752,20 @@ msgid "category levels"
 msgstr "Kategoriestufen"
 
 #: actions/models/category.py
-msgid "category attribute type"
-msgstr "Kategorieattributtyp"
+msgid "category attribute"
+msgstr "Kategorieattribut"
 
 #: actions/models/category.py
-msgid "category attribute types"
-msgstr "Kategorieattributtypen"
+msgid "category attributes"
+msgstr "Kategorieattribute"
 
 #: actions/models/category.py
-msgid "category attribute type choice option"
-msgstr "Kategorieattributtyp-Auswahlmöglichkeit"
+msgid "category attribute choice option"
+msgstr "Kategorieattribut-Wahlmöglichkeit"
 
 #: actions/models/category.py
-msgid "category attribute type choice options"
-msgstr "Kategorieattributtyp-Auswahlmöglichkeiten"
+msgid "category attribute choice options"
+msgstr "Kategorieattribut-Wahlmöglichkeiten"
 
 #: actions/models/category.py
 msgid "parent category"
@@ -800,16 +796,16 @@ msgid "Parent must be of same type"
 msgstr "Elternkategorie muss gleichen Typ haben"
 
 #: actions/models/features.py
-msgid "allow images for actions"
-msgstr "erlaube Bilder für Maßnahmen"
+msgid "Allow images for actions"
+msgstr "Erlaube Bilder für Maßnahmen"
 
 #: actions/models/features.py
 msgid "Should custom images for individual actions be allowed"
 msgstr "Sollen eigene Bilder für einzelne Maßnahmen erlaubt sein"
 
 #: actions/models/features.py
-msgid "show admin link"
-msgstr "zeige Admin-Link"
+msgid "Show admin link"
+msgstr "Zeige Admin-Link"
 
 #: actions/models/features.py
 msgid "Should the public website contain a link to the admin login?"
@@ -824,24 +820,24 @@ msgid "Set if the contact persons should be visible in the public UI"
 msgstr "Setzen, wenn die Kontaktpersonen in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: actions/models/features.py
-msgid "Hide action identifiers"
-msgstr "Verstecke Maßnahmenkennungen"
+msgid "Has action identifiers"
+msgstr "Hat Maßnahmenkennungen"
 
 #: actions/models/features.py
 msgid "Set if the plan uses meaningful action identifiers"
 msgstr "Setzen, wenn der Plan sinnvolle Maßnahmenkennungen verwendet"
 
 #: actions/models/features.py
-msgid "Hide official name field"
-msgstr "Verstecke Feld mit offiziellem Namen"
+msgid "Has action official name field"
+msgstr "Hat Feld mit offiziellem Namen"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the official name field"
 msgstr "Setze, wenn der Plan das Feld mit offiziellem Namen verwendet"
 
 #: actions/models/features.py
-msgid "Hide lead paragraph"
-msgstr "Verstecke Lead-Absatz"
+msgid "Has action lead paragraph"
+msgstr "Hat Maßnahmen-Lead-Absatz"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the lead paragraph field"
@@ -902,6 +898,10 @@ msgstr "Personen, die alles im Zusammenhang mit dem Maßnahmenplan ändern könn
 #: actions/models/plan.py
 msgid "URL to accessibility statement"
 msgstr "URL zur Erklärung zur Barrierefreiheit"
+
+#: actions/models/plan.py
+msgid "Theme identifier"
+msgstr "Themakennung"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"

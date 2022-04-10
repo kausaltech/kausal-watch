@@ -1,5 +1,5 @@
 from django import forms
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
@@ -82,7 +82,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
 @modeladmin_register
 class CategoryAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = CategoryAttributeType
-    menu_label = _('Category attribute types')
+    menu_label = pgettext_lazy('hyphenated', 'Category attributes')
     menu_order = 1200
     list_display = ('name', 'category_type')
     add_to_settings_menu = True
