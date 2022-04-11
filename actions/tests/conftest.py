@@ -4,11 +4,12 @@ from rest_framework.test import APIClient
 from django.urls import reverse
 from pytest_factoryboy import register
 
-from .factories import ActionFactory, CategoryFactory, CategoryTypeFactory
+from .factories import ActionFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 
 register(ActionFactory)
 register(CategoryFactory)
 register(CategoryTypeFactory)
+register(PlanFactory)
 # register(UserFactory)
 
 
@@ -32,8 +33,8 @@ class JSONAPIClient(APIClient):
 
 
 @pytest.fixture
-def action_list_url():
-    return reverse('action-list')
+def action_list_url(plan):
+    return reverse('action-list', args=(plan.pk,))
 
 
 @pytest.fixture

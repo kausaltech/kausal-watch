@@ -31,17 +31,13 @@ def test_plan_api_get(api_client, plan_list_url, plan):
     """
 
 
-"""
 def test_action_api_get(api_client, action_list_url, action):
-    response = api_client.get(action_list_url, data=dict(include='plan'))
+    response = api_client.get(action_list_url)
     data = response.json_data
-    assert data['meta']['pagination']['count'] == 1
-    assert len(data['data']) == 1
+    assert data['count'] == 1
+    assert len(data['results']) == 1
 
-    obj = data['data'][0]
-    assert obj['attributes']['name'] == action.name
-    assert obj['attributes']['identifier'] == action.identifier
-    plan = data['included'][0]
-    assert plan['id'] == str(action.plan_id)
-    assert plan['attributes']['name'] == action.plan.name
-"""
+    obj = data['results'][0]
+    assert obj['name'] == action.name
+    assert obj['identifier'] == action.identifier
+    assert obj['plan'] == action.plan_id
