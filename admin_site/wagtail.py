@@ -1,36 +1,42 @@
+from typing import List
 from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.admin.utils import quote
+from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
+from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
-from django.contrib.auth import REDIRECT_FIELD_NAME
-
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from modeltrans.translator import get_i18n_field
-from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin
+from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import CreateView, EditView
-from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
-from aplans.types import WatchAdminRequest
 
+from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
+from condensedinlinepanel.edit_handlers import \
+    CondensedInlinePanel as WagtailCondensedInlinePanel
+from reversion.revisions import (
+    add_to_revision, create_revision, set_comment, set_user
+)
+from wagtailautocomplete.edit_handlers import \
+    AutocompletePanel as WagtailAutocompletePanel
+
+from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
 
 
-def insert_model_translation_panels(model, panels, request, plan=None):
+def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     """Return a list of panels containing all of `panels` and language-specific panels for fields with i18n."""
     i18n_field = get_i18n_field(model)
     if not i18n_field:
-        return
+        return panels
 
     out = []
     if plan is None:
@@ -332,6 +338,15 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
         return ret
 
 
+class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
+    def get_context(self, request):
+        ret = super().get_context(request)
+        label = ret.get('label')
+        if label:
+            ret['label'] = mark_safe(label)
+        return ret
+
+
 class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
@@ -367,6 +382,10 @@ class AplansModelAdmin(ModelAdmin):
     def get_index_view_extra_js(self):
         ret = super().get_index_view_extra_js()
         return ret + ['admin_site/js/wagtail_customizations.js']
+
+    def get_menu_item(self, order=None):
+        return SafeLabelModelAdminMenuItem(self, order or self.get_menu_order())
+
 
 
 class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):

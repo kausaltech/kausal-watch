@@ -1,7 +1,7 @@
-from django.utils.translation import (
-    gettext, gettext_lazy as _, pgettext, pgettext_lazy
-)
-from django.utils.safestring import mark_safe
+from django.forms import ModelForm
+from django.utils.translation import gettext
+from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
@@ -9,24 +9,25 @@ from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
-from wagtailautocomplete.edit_handlers import AutocompletePanel
-from actions.models.action import ActionSchedule
 
+from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    AplansCreateView, AplansModelAdmin, CondensedInlinePanel,
-    ActivePlanEditView, insert_model_translation_panels
+    ActivePlanEditView, AplansCreateView, AplansModelAdmin,
+    CondensedInlinePanel, SafeLabelModelAdminMenuItem,
+    insert_model_translation_panels
 )
 from orgs.models import Organization
 from people.chooser import PersonChooser
-from .models import (
-    ActionImpact, ActionStatus, Plan, PlanFeatures
-)
 
-from . import category_admin  # noqa
 from . import action_admin  # noqa
+from . import category_admin  # noqa
+from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 
 class PlanEditHandler(TabbedInterface):
+    instance: Plan
+    form: ModelForm
+
     def get_form_class(self, request=None):
         form_class = super().get_form_class()
         return form_class
@@ -45,7 +46,7 @@ class PlanEditHandler(TabbedInterface):
 
 class PlanCreateView(AplansCreateView):
     def get_instance(self):
-        instance = super().get_instance()
+        instance: Plan = super().get_instance()
         if self.request.method == 'POST':
             return instance
 
@@ -191,7 +192,7 @@ class ActivePlanPermissionHelper(PermissionHelper):
 
 
 # FIXME: This is mostly duplicated in content/admin.py.
-class ActivePlanMenuItem(ModelAdminMenuItem):
+class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
         context = super().get_context(request)
@@ -214,7 +215,6 @@ class ActivePlanAdmin(PlanAdmin):
 
     def get_menu_item(self, order=None):
         item = ActivePlanMenuItem(self, order or self.get_menu_order())
-        item.label = mark_safe(self.menu_label)
         return item
 
 
@@ -304,7 +304,6 @@ class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
 
     def get_menu_item(self, order=None):
         item = ActivePlanFeaturesMenuItem(self, order or self.get_menu_order())
-        item.label = mark_safe(self.menu_label)
         return item
 
 
