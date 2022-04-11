@@ -109,18 +109,27 @@ class CategoryAttributeType(AttributeType):
     def filter_siblings(self, qs):
         return qs.filter(category_type=self.category_type)
 
-    def set_category_value(self, category, val):
+    def set_category_value(self, category, vals):
         # TODO: Partly duplicated in action.py
-        # TODO: action.py contains functionality for new AttributeFormat values. This needs to be replicated here.
         assert category.type == self.category_type
 
         if self.format == self.AttributeFormat.ORDERED_CHOICE:
+            val = vals.get('choice')
             existing = self.choice_attributes.filter(category=category)
             if existing:
                 existing.delete()
             if val is not None:
                 self.choice_attributes.create(category=category, choice=val)
+        elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            choice_val = vals.get('choice')
+            text_val = vals.get('text')
+            existing = self.choice_with_text_attributes.filter(category=category)
+            if existing:
+                existing.delete()
+            if choice_val is not None or text_val:
+                self.choice_with_text_attributes.create(category=category, choice=choice_val, text=text_val)
         elif self.format == self.AttributeFormat.RICH_TEXT:
+            val = vals.get('text')
             try:
                 obj = self.richtext_attributes.get(category=category)
             except self.richtext_attributes.model.DoesNotExist:
@@ -144,7 +153,8 @@ class CategoryAttributeType(AttributeType):
                 else:
                     obj.value = val
                     obj.save()
-        # TODO: self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
+        else:
+            raise Exception(f"Unsupported attribute type format: {self.format}")
 
 
 class CategoryAttributeTypeChoiceOption(AttributeTypeChoiceOption):
@@ -269,6 +279,26 @@ class CategoryAttributeChoice(models.Model):
 
     def __str__(self):
         return '%s (%s) for %s' % (self.choice, self.type, self.category)
+
+
+class CategoryAttributeChoiceWithText(models.Model):
+    type = models.ForeignKey(
+        CategoryAttributeType,
+        on_delete=models.CASCADE,
+        related_name='choice_with_text_attributes',
+    )
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='choice_with_text_attributes')
+    choice = models.ForeignKey(
+        CategoryAttributeTypeChoiceOption, blank=True, null=True, on_delete=models.CASCADE,
+        related_name='choice_with_text_attributes',
+    )
+    text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
+
+    class Meta:
+        unique_together = ('category', 'type')
+
+    def __str__(self):
+        return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.category)
 
 
 class CategoryAttributeNumericValue(models.Model):

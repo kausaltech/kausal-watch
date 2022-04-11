@@ -10,7 +10,8 @@ from .attributes import (
 )
 from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CategoryAttributeType,
-    CategoryAttributeTypeChoiceOption, CategoryAttributeRichText, CategoryAttributeChoice, CategoryAttributeNumericValue
+    CategoryAttributeTypeChoiceOption, CategoryAttributeRichText, CategoryAttributeChoice,
+    CategoryAttributeChoiceWithText, CategoryAttributeNumericValue
 )
 from .features import PlanFeatures
 
@@ -22,7 +23,7 @@ __all__ = [
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
     'AttributeType', 'AttributeTypeChoiceOption',
-    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryAttributeChoice',
+    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryAttributeChoice', 'CategoryAttributeChoiceWithText',
     'CategoryAttributeNumericValue', 'CategoryAttributeRichText', 'CategoryType',
     'CategoryAttributeType', 'CategoryAttributeTypeChoiceOption', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',

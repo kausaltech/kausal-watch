@@ -13,9 +13,9 @@ from wagtail.core.rich_text import RichText
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryAttributeChoice,
-    CategoryAttributeNumericValue, CategoryAttributeRichText, CategoryType, CategoryAttributeType,
-    CategoryAttributeTypeChoiceOption, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain,
-    Scenario, PlanFeatures
+    CategoryAttributeChoiceWithText, CategoryAttributeNumericValue, CategoryAttributeRichText, CategoryType,
+    CategoryAttributeType, CategoryAttributeTypeChoiceOption, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint,
+    Plan, PlanDomain, Scenario, PlanFeatures
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -192,8 +192,11 @@ class CategoryAttributeInterface(graphene.Interface):
             return CategoryAttributeRichTextNode
         elif isinstance(instance, CategoryAttributeChoice):
             return CategoryAttributeChoiceNode
+        elif isinstance(instance, CategoryAttributeChoiceWithText):
+            return CategoryAttributeChoiceWithTextNode
         elif isinstance(instance, CategoryAttributeNumericValue):
             return CategoryAttributeNumericValueNode
+        raise Exception(f'Unsupported type for CategoryAttributeInterface: {type(instance).__name__}')
 
 
 @register_django_node
@@ -209,6 +212,26 @@ class CategoryAttributeChoiceNode(DjangoNode):
 
     class Meta:
         model = CategoryAttributeChoice
+        interfaces = (CategoryAttributeInterface,)
+
+
+@register_django_node
+class CategoryAttributeChoiceWithTextNode(DjangoNode):
+    choice_value = graphene.String(required=False)
+    choice_value_identifier = graphene.String(required=False)
+    text_value = graphene.String(required=False)
+
+    def resolve_choice_value(self, info):
+        return self.choice.name
+
+    def resolve_choice_value_identifier(self, info):
+        return self.choice.identifier
+
+    def resolve_text_value(self, info):
+        return self.text
+
+    class Meta:
+        model = CategoryAttributeChoiceWithText
         interfaces = (CategoryAttributeInterface,)
 
 
@@ -287,6 +310,7 @@ class CategoryNode(DjangoNode):
         attributes = chain(
             self.richtext_attributes.filter(query),
             self.choice_attributes.filter(query),
+            self.choice_with_text_attributes.filter(query),
             self.numeric_value_attributes.filter(query)
         )
         return sorted(attributes, key=lambda a: a.type.order)
@@ -554,7 +578,8 @@ class Query:
         qs = Action.objects.filter(plan=plan_obj)
         if category is not None:
             # FIXME: This is sucky, maybe convert Category to a proper tree model?
-            f = Q(id=category) | Q(parent=category) | Q(parent__parent=category) | Q(parent__parent__parent=category) | Q(parent__parent__parent__parent=category)
+            f = (Q(id=category) | Q(parent=category) | Q(parent__parent=category) | Q(parent__parent__parent=category)
+                 | Q(parent__parent__parent__parent=category))
             descendant_cats = Category.objects.filter(f)
             qs = qs.filter(categories__in=descendant_cats).distinct()
 

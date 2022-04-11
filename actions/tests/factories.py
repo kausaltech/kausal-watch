@@ -81,6 +81,19 @@ class CategoryTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category type {i}")
 
 
+class CategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.Category'
+
+    type = SubFactory(CategoryTypeFactory)
+    identifier = Sequence(lambda i: f'category{i}')
+    name = Sequence(lambda i: f"Category {i}")
+    image = SubFactory(AplansImageFactory)
+    category_page = RelatedFactory(CategoryPageFactory,
+                                   factory_related_name='category',
+                                   parent=SelfAttribute('..type.plan.root_page'))
+
+
 class CategoryAttributeTypeFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryAttributeType'
@@ -100,19 +113,6 @@ class CategoryAttributeTypeChoiceOptionFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category attribute type choice option {i}")
 
 
-class CategoryFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.Category'
-
-    type = SubFactory(CategoryTypeFactory)
-    identifier = Sequence(lambda i: f'category{i}')
-    name = Sequence(lambda i: f"Category {i}")
-    image = SubFactory(AplansImageFactory)
-    category_page = RelatedFactory(CategoryPageFactory,
-                                   factory_related_name='category',
-                                   parent=SelfAttribute('..type.plan.root_page'))
-
-
 class CategoryAttributeRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryAttributeRichText'
@@ -122,11 +122,32 @@ class CategoryAttributeRichTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'CategoryAttributeRichText {i}')
 
 
+class CategoryAttributeNumericValueFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CategoryAttributeNumericValue'
+
+    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.NUMERIC)
+    category = SubFactory(CategoryFactory)
+    value = 12.3
+
+
 class CategoryAttributeChoiceFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryAttributeChoice'
 
     type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+    category = SubFactory(CategoryFactory)
+    choice = SubFactory(CategoryAttributeTypeChoiceOptionFactory)
+
+
+class CategoryAttributeChoiceWithTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CategoryAttributeChoiceWithText'
+
+    type = SubFactory(
+        CategoryAttributeTypeFactory,
+        format=CategoryAttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+    )
     category = SubFactory(CategoryFactory)
     choice = SubFactory(CategoryAttributeTypeChoiceOptionFactory)
 

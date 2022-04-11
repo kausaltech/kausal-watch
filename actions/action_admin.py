@@ -450,7 +450,6 @@ def get_attribute_fields(plan, obj, with_initial=False):
     # Return list containing pairs (attribute_type, fields), where fields is a dict mapping a form field name to a pair
     # (field, model_field_name)
     # TODO: Partly duplicated in category_admin.py
-    # TODO: Need to update in category_admin.py to accommodate new AttributeFormat values
     result = []
 
     if not obj or not obj.pk:
