@@ -258,7 +258,11 @@ class CategoryAttributeRichText(models.Model):
 class CategoryAttributeChoice(models.Model):
     type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
     category = ParentalKey(Category, on_delete=models.CASCADE, related_name='choice_attributes')
-    choice = models.ForeignKey(CategoryAttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='categories')
+    choice = models.ForeignKey(
+        CategoryAttributeTypeChoiceOption,
+        on_delete=models.CASCADE,
+        related_name='choice_attributes',
+    )
 
     class Meta:
         unique_together = ('category', 'type')

@@ -631,6 +631,8 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             'urllib3.connectionpool': level('INFO'),
             'elasticsearch': level('WARNING'),
             'PIL': level('INFO'),
+            'faker': level('INFO'),
+            'factory': level('INFO'),
             '': level('DEBUG'),
         }
     }
