@@ -1,12 +1,14 @@
 import pytest
 
-from actions.models import CategoryAttributeType
+from actions.models import ActionAttributeType, CategoryAttributeType
 from actions.tests.factories import (
-    ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
-    ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
-    ActionTaskFactory, CategoryFactory, CategoryLevelFactory, CategoryAttributeChoiceFactory,
-    CategoryAttributeChoiceWithTextFactory, CategoryAttributeNumericValueFactory, CategoryAttributeRichTextFactory,
-    CategoryTypeFactory, CategoryAttributeTypeFactory, CategoryAttributeTypeChoiceOptionFactory, ImpactGroupFactory,
+    ActionFactory, ActionAttributeChoiceFactory, ActionAttributeChoiceWithTextFactory, ActionAttributeTypeFactory,
+    ActionAttributeTypeChoiceOptionFactory, ActionAttributeNumericValueFactory, ActionAttributeRichTextFactory,
+    ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory, ActionResponsiblePartyFactory,
+    ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory, ActionTaskFactory, CategoryFactory,
+    CategoryLevelFactory, CategoryAttributeChoiceFactory, CategoryAttributeChoiceWithTextFactory,
+    CategoryAttributeNumericValueFactory, CategoryAttributeRichTextFactory, CategoryTypeFactory,
+    CategoryAttributeTypeFactory, CategoryAttributeTypeChoiceOptionFactory, ImpactGroupFactory,
     ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
@@ -117,6 +119,91 @@ def category(category_type):
 @pytest.fixture
 def category_level(category_type):
     return CategoryLevelFactory(type=category_type)
+
+
+@pytest.fixture
+def action_attribute_type__rich_text(plan):
+    return ActionAttributeTypeFactory(
+        plan=plan,
+        format=ActionAttributeType.AttributeFormat.RICH_TEXT,
+    )
+
+
+@pytest.fixture
+def action_attribute_type__numeric_value(plan):
+    return ActionAttributeTypeFactory(
+        plan=plan,
+        format=ActionAttributeType.AttributeFormat.NUMERIC,
+    )
+
+
+@pytest.fixture
+def action_attribute_type__ordered_choice(plan):
+    return ActionAttributeTypeFactory(
+        plan=plan,
+        format=ActionAttributeType.AttributeFormat.ORDERED_CHOICE,
+    )
+
+
+@pytest.fixture
+def action_attribute_type__optional_choice_with_text(plan):
+    return ActionAttributeTypeFactory(
+        plan=plan,
+        format=ActionAttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+    )
+
+
+@pytest.fixture
+def action_attribute_type_choice_option__ordered_choice(
+    action_attribute_type__ordered_choice,
+):
+    return ActionAttributeTypeChoiceOptionFactory(type=action_attribute_type__ordered_choice)
+
+
+@pytest.fixture
+def action_attribute_type_choice_option__optional_choice_with_text(
+    action_attribute_type__optional_choice_with_text,
+):
+    return ActionAttributeTypeChoiceOptionFactory(type=action_attribute_type__optional_choice_with_text)
+
+
+@pytest.fixture
+def action_attribute_rich_text(action_attribute_type__rich_text, action):
+    return ActionAttributeRichTextFactory(type=action_attribute_type__rich_text, action=action)
+
+
+@pytest.fixture
+def action_attribute_numeric_value(action_attribute_type__numeric_value, action):
+    return ActionAttributeNumericValueFactory(
+        type=action_attribute_type__numeric_value,
+        action=action,
+    )
+
+
+@pytest.fixture
+def action_attribute_choice__ordered_choice(
+    action_attribute_type__ordered_choice,
+    action,
+    action_attribute_type_choice_option__ordered_choice,
+):
+    return ActionAttributeChoiceFactory(
+        type=action_attribute_type__ordered_choice,
+        action=action,
+        choice=action_attribute_type_choice_option__ordered_choice,
+    )
+
+
+@pytest.fixture
+def action_attribute_choice__optional_choice_with_text(
+    action_attribute_type__optional_choice_with_text,
+    action,
+    action_attribute_type_choice_option__optional_choice_with_text,
+):
+    return ActionAttributeChoiceWithTextFactory(
+        type=action_attribute_type__optional_choice_with_text,
+        action=action,
+        choice=action_attribute_type_choice_option__optional_choice_with_text,
+    )
 
 
 def test_plan_domain_node(graphql_client_query_data):
@@ -323,6 +410,207 @@ def test_plan_node(graphql_client_query_data):
                 '__typename': 'Footer',
             },
         }
+    }
+    assert data == expected
+
+
+def test_action_attribute_choice_node(
+    graphql_client_query_data, plan, action_attribute_choice__ordered_choice, action_attribute_type__ordered_choice,
+    action_attribute_type_choice_option__ordered_choice
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            attributes {
+              ... on ActionAttributeChoice {
+                id
+                type {
+                  __typename
+                }
+                action {
+                  __typename
+                }
+                choice {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+                valueIdentifier
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            'attributes': [{
+                'id': str(action_attribute_choice__ordered_choice.id),
+                'type': {
+                    '__typename': 'ActionAttributeType',
+                },
+                'action': {
+                    '__typename': 'Action',
+                },
+                'choice': {
+                    '__typename': 'ActionAttributeTypeChoiceOption',
+                },
+                'key': action_attribute_type__ordered_choice.name,
+                'keyIdentifier': action_attribute_type__ordered_choice.identifier,
+                'value': action_attribute_type_choice_option__ordered_choice.name,
+                'valueIdentifier': action_attribute_type_choice_option__ordered_choice.identifier,
+            }]
+        }]
+    }
+    assert data == expected
+
+
+def test_action_attribute_choice_with_text_node(
+    graphql_client_query_data, plan, action_attribute_choice__optional_choice_with_text,
+    action_attribute_type__optional_choice_with_text, action_attribute_type_choice_option__optional_choice_with_text
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            attributes {
+              ... on ActionAttributeChoiceWithText {
+                id
+                type {
+                  __typename
+                }
+                action {
+                  __typename
+                }
+                choice {
+                  __typename
+                }
+                key
+                keyIdentifier
+                choiceValue
+                choiceValueIdentifier
+                textValue
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            'attributes': [{
+                'id': str(action_attribute_choice__optional_choice_with_text.id),
+                'type': {
+                    '__typename': 'ActionAttributeType',
+                },
+                'action': {
+                    '__typename': 'Action',
+                },
+                'choice': {
+                    '__typename': 'ActionAttributeTypeChoiceOption',
+                },
+                'key': action_attribute_type__optional_choice_with_text.name,
+                'keyIdentifier': action_attribute_type__optional_choice_with_text.identifier,
+                'choiceValue': action_attribute_type_choice_option__optional_choice_with_text.name,
+                'choiceValueIdentifier': action_attribute_type_choice_option__optional_choice_with_text.identifier,
+                'textValue': action_attribute_choice__optional_choice_with_text.text,
+            }]
+        }]
+    }
+    assert data == expected
+
+
+def test_action_attribute_rich_text_node(
+    graphql_client_query_data, plan, action_attribute_rich_text, action_attribute_type__rich_text
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            attributes {
+              ... on ActionAttributeRichText {
+                id
+                type {
+                  __typename
+                }
+                action {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            'attributes': [{
+                'id': str(action_attribute_rich_text.id),
+                'type': {
+                    '__typename': 'ActionAttributeType',
+                },
+                'action': {
+                    '__typename': 'Action',
+                },
+                'key': action_attribute_type__rich_text.name,
+                'keyIdentifier': action_attribute_type__rich_text.identifier,
+                'value': action_attribute_rich_text.text,
+            }]
+        }]
+    }
+    assert data == expected
+
+
+def test_action_attribute_numeric_value_node(
+    graphql_client_query_data, plan, action_attribute_numeric_value,
+    action_attribute_type__numeric_value
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            attributes {
+              ... on ActionAttributeNumericValue {
+                id
+                type {
+                  __typename
+                }
+                action {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            'attributes': [{
+                'id': str(action_attribute_numeric_value.id),
+                'type': {
+                    '__typename': 'ActionAttributeType',
+                },
+                'action': {
+                    '__typename': 'Action',
+                },
+                'key': action_attribute_type__numeric_value.name,
+                'keyIdentifier': action_attribute_type__numeric_value.identifier,
+                'value': action_attribute_numeric_value.value,
+            }]
+        }]
     }
     assert data == expected
 

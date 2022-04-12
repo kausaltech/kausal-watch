@@ -11,11 +11,12 @@ from itertools import chain
 from wagtail.core.rich_text import RichText
 
 from actions.models import (
-    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
-    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryAttributeChoice,
-    CategoryAttributeChoiceWithText, CategoryAttributeNumericValue, CategoryAttributeRichText, CategoryType,
-    CategoryAttributeType, CategoryAttributeTypeChoiceOption, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint,
-    Plan, PlanDomain, Scenario, PlanFeatures
+    Action, ActionAttributeChoice, ActionAttributeChoiceWithText, ActionAttributeNumericValue, ActionAttributeRichText,
+    ActionAttributeType, ActionAttributeTypeChoiceOption, ActionContactPerson, ActionImpact, ActionImplementationPhase,
+    ActionLink, ActionResponsibleParty, ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category,
+    CategoryLevel, CategoryAttributeChoice, CategoryAttributeChoiceWithText, CategoryAttributeNumericValue,
+    CategoryAttributeRichText, CategoryType, CategoryAttributeType, CategoryAttributeTypeChoiceOption, ImpactGroup,
+    ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, Scenario, PlanFeatures
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -257,10 +258,107 @@ class CategoryAttributeNumericValueNode(DjangoNode):
         fields = public_fields(CategoryAttributeNumericValue)
 
 
-class CategoryLevelNode(DjangoNode):
+class ActionAttributeInterface(graphene.Interface):
+    # TODO: Duplicated code from CategoryAttributeInterface
+    id = graphene.ID(required=True)
+    key = graphene.String(required=True)
+    key_identifier = graphene.String(required=True)
+
+    def resolve_key(self, info):
+        return self.type.name
+
+    def resolve_key_identifier(self, info):
+        return self.type.identifier
+
+    @classmethod
+    def resolve_type(cls, instance, info):
+        if isinstance(instance, ActionAttributeRichText):
+            return ActionAttributeRichTextNode
+        elif isinstance(instance, ActionAttributeChoice):
+            return ActionAttributeChoiceNode
+        elif isinstance(instance, ActionAttributeChoiceWithText):
+            return ActionAttributeChoiceWithTextNode
+        elif isinstance(instance, ActionAttributeNumericValue):
+            return ActionAttributeNumericValueNode
+        raise Exception(f'Unsupported type for ActionAttributeInterface: {type(instance).__name__}')
+
+
+@register_django_node
+class ActionAttributeChoiceNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttributeChoiceNode
+    value = graphene.String(required=True)
+    value_identifier = graphene.String(required=True)
+
+    def resolve_value(self, info):
+        return self.choice.name
+
+    def resolve_value_identifier(self, info):
+        return self.choice.identifier
+
     class Meta:
-        model = CategoryLevel
-        fields = public_fields(CategoryLevel)
+        model = ActionAttributeChoice
+        interfaces = (ActionAttributeInterface,)
+
+
+@register_django_node
+class ActionAttributeChoiceWithTextNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttributeChoiceWithTextNode
+    choice_value = graphene.String(required=False)
+    choice_value_identifier = graphene.String(required=False)
+    text_value = graphene.String(required=False)
+
+    def resolve_choice_value(self, info):
+        return self.choice.name
+
+    def resolve_choice_value_identifier(self, info):
+        return self.choice.identifier
+
+    def resolve_text_value(self, info):
+        return self.text
+
+    class Meta:
+        model = ActionAttributeChoiceWithText
+        interfaces = (ActionAttributeInterface,)
+
+
+@register_django_node
+class ActionAttributeRichTextNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttribueRichTextNode
+    value = graphene.String(required=True)
+
+    def resolve_value(self, info):
+        return self.text
+
+    class Meta:
+        model = ActionAttributeRichText
+        interfaces = (ActionAttributeInterface,)
+        # We expose `value` instead of `text`
+        fields = public_fields(ActionAttributeRichText, remove_fields=['text'])
+
+
+@register_django_node
+class ActionAttributeNumericValueNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttributeNumericValueNode
+    class Meta:
+        model = ActionAttributeNumericValue
+        interfaces = (ActionAttributeInterface,)
+        fields = public_fields(ActionAttributeNumericValue)
+
+
+@register_django_node
+class ActionAttributeTypeNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttributeTypeNode
+    class Meta:
+        model = ActionAttributeType
+        fields = public_fields(ActionAttributeType)
+
+
+@register_django_node
+class ActionAttributeTypeChoiceOptionNode(DjangoNode):
+    # TODO: Duplicated code from CategoryAttributeTypeChoiceOptionNode
+    class Meta:
+        model = ActionAttributeTypeChoiceOption
+        fields = public_fields(ActionAttributeTypeChoiceOption)
 
 
 @register_django_node
@@ -275,6 +373,12 @@ class CategoryAttributeTypeChoiceOptionNode(DjangoNode):
     class Meta:
         model = CategoryAttributeTypeChoiceOption
         fields = public_fields(CategoryAttributeTypeChoiceOption)
+
+
+class CategoryLevelNode(DjangoNode):
+    class Meta:
+        model = CategoryLevel
+        fields = public_fields(CategoryLevel)
 
 
 @register_django_node
@@ -418,6 +522,7 @@ class ActionNode(DjangoNode):
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
     similar_actions = graphene.List('actions.schema.ActionNode')
+    attributes = graphene.List(ActionAttributeInterface, id=graphene.ID(required=False))
 
     class Meta:
         model = Action
@@ -476,6 +581,18 @@ class ActionNode(DjangoNode):
             return []
         backend.more_like_this(self)
         return []
+
+    def resolve_attributes(self, info, id=None):
+        query = Q()
+        if id is not None:
+            query = Q(type__identifier=id)
+        attributes = chain(
+            self.richtext_attributes.filter(query),
+            self.choice_attributes.filter(query),
+            self.choice_with_text_attributes.filter(query),
+            self.numeric_value_attributes.filter(query)
+        )
+        return sorted(attributes, key=lambda a: a.type.order)
 
 
 class ActionScheduleNode(DjangoNode):

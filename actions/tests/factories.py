@@ -5,7 +5,7 @@ from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
-from actions.models import CategoryAttributeType
+from actions.models import ActionAttributeType, CategoryAttributeType
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import CategoryPageFactory
@@ -242,6 +242,64 @@ class ActionFactory(DjangoModelFactory):
         if create and extracted:
             for schedule in extracted:
                 obj.schedule.add(schedule)
+
+
+class ActionAttributeTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeType'
+
+    plan = SubFactory(PlanFactory)
+    identifier = Sequence(lambda i: f'aat{i}')
+    name = Sequence(lambda i: f"Action attribute type {i}")
+    format = ActionAttributeType.AttributeFormat.RICH_TEXT
+
+
+class ActionAttributeTypeChoiceOptionFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeTypeChoiceOption'
+
+    type = SubFactory(ActionAttributeTypeFactory, format=ActionAttributeType.AttributeFormat.ORDERED_CHOICE)
+    identifier = Sequence(lambda i: f'aatco{i}')
+    name = Sequence(lambda i: f"Action attribute type choice option {i}")
+
+
+class ActionAttributeRichTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeRichText'
+
+    type = SubFactory(ActionAttributeTypeFactory, format=ActionAttributeType.AttributeFormat.RICH_TEXT)
+    action = SubFactory(ActionFactory)
+    text = Sequence(lambda i: f'ActionAttributeRichText {i}')
+
+
+class ActionAttributeNumericValueFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeNumericValue'
+
+    type = SubFactory(ActionAttributeTypeFactory, format=ActionAttributeType.AttributeFormat.NUMERIC)
+    action = SubFactory(ActionFactory)
+    value = 12.3
+
+
+class ActionAttributeChoiceFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeChoice'
+
+    type = SubFactory(ActionAttributeTypeFactory, format=ActionAttributeType.AttributeFormat.ORDERED_CHOICE)
+    action = SubFactory(ActionFactory)
+    choice = SubFactory(ActionAttributeTypeChoiceOptionFactory)
+
+
+class ActionAttributeChoiceWithTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionAttributeChoiceWithText'
+
+    type = SubFactory(
+        ActionAttributeTypeFactory,
+        format=ActionAttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT,
+    )
+    action = SubFactory(ActionFactory)
+    choice = SubFactory(ActionAttributeTypeChoiceOptionFactory)
 
 
 class ActionTaskFactory(DjangoModelFactory):
