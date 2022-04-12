@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-10 03:21+0300\n"
+"POT-Creation-Date: 2022-04-12 16:36+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -82,8 +82,9 @@ msgid "Search"
 msgstr "Suchen"
 
 #: actions/action_admin.py
-msgid "Action attribute types"
-msgstr "Maßnahmenattributtypen"
+msgctxt "hyphenated"
+msgid "Action attributes"
+msgstr "Maßnahmenattribute"
 
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
@@ -97,7 +98,8 @@ msgstr "Externe links"
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
 
-#: actions/action_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -230,8 +232,9 @@ msgid "Action and indicator categorization"
 msgstr "Maßnahmen- und Indikatorkategorisierung"
 
 #: actions/category_admin.py
-msgid "Category attribute types"
-msgstr "Kategorieattributtypen"
+msgctxt "hyphenated"
+msgid "Category attributes"
+msgstr "Kategorieattribute"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -240,6 +243,14 @@ msgstr "Wähle eine Kategorie"
 #: actions/chooser.py
 msgid "Choose another category"
 msgstr "Wähle eine andere Kategorie"
+
+#: actions/chooser.py
+msgid "Choose an action"
+msgstr "Wähle eine Maßnahme"
+
+#: actions/chooser.py
+msgid "Choose another action"
+msgstr "Wähle eine andere Maßnahme"
 
 #: actions/defaults.py
 msgid "On time"
@@ -459,6 +470,14 @@ msgstr "Hat Kontaktpersonen"
 #: actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktive Aufgaben"
+
+#: actions/models/action.py
+msgid "related action"
+msgstr "verbundene Maßnahme"
+
+#: actions/models/action.py
+msgid "related actions"
+msgstr "verbundene Maßnahmen"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
@@ -991,6 +1010,10 @@ msgstr "Überwachungsqualitätspunkt"
 #: actions/models/plan.py
 msgid "monitoring quality points"
 msgstr "Überwachungsqualitätspunkte"
+
+#: actions/templates/actions/chooser_results.html
+msgid "Plan"
+msgstr "Plan"
 
 #: actions/templates/site_summary/actions.html
 #, python-format
@@ -2339,3 +2362,6 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "Category attribute types"
+#~ msgstr "Kategorieattributtypen"

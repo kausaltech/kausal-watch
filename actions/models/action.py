@@ -159,6 +159,12 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         'indicators.Indicator', blank=True, verbose_name=_('indicators'),
         through='indicators.ActionIndicator', related_name='actions'
     )
+    related_actions_unordered = models.ManyToManyField(
+        'self',
+        through='RelatedAction',
+        through_fields=('action', 'related_action'),
+        blank=True,
+    )
 
     responsible_organizations = models.ManyToManyField(
         Organization, through='ActionResponsibleParty', blank=True,
@@ -464,6 +470,29 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         qs = super().get_indexed_objects()
         qs = qs.filter(Q(plan__primary_language=lang) | Q(plan__other_languages__contains=[lang]))
         return qs
+
+
+class RelatedAction(OrderedModel):
+    action = ParentalKey(
+        Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='related_actions',
+    )
+    related_action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, verbose_name=_('related action'),
+    )
+
+    public_fields = [
+        'id', 'action', 'related_action', 'order',
+    ]
+
+    class Meta:
+        ordering = ['action', 'order']
+        index_together = (('action', 'order'),)
+        unique_together = (('action', 'related_action'),)
+        verbose_name = _('related action')
+        verbose_name_plural = _('related actions')
+
+    def __str__(self):
+        return str(self.related_action)
 
 
 class ActionResponsibleParty(OrderedModel):

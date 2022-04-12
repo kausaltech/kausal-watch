@@ -35,6 +35,7 @@ from admin_site.wagtail import (
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
     PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, insert_model_translation_panels, get_translation_tabs
 )
+from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
 from orgs.models import Organization
@@ -559,7 +560,13 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 FieldPanel('title')
             ],
             heading=_('External links')
-        )
+        ),
+        CondensedInlinePanel(
+            'related_actions',
+            panels=[
+                FieldPanel('related_action', widget=ActionChooser),
+            ]
+        ),
     ]
 
     progress_panels = [
