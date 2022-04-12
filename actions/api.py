@@ -1,3 +1,4 @@
+from __future__ import annotations
 from django.utils.translation import gettext_lazy as _
 
 from rest_framework import (
@@ -145,6 +146,8 @@ class ActionPermission(permissions.DjangoObjectPermissions):
 
 
 class CategoriesSerializer(serializers.Serializer):
+    parent: ActionSerializer
+
     def to_representation(self, instance):
         s = self.parent
         plan: Plan = s.plan
@@ -154,7 +157,7 @@ class CategoriesSerializer(serializers.Serializer):
         for ct in plan.category_types.all():
             if not ct.usable_for_actions:
                 continue
-            ct_cats = [cat.id for cat in cats if cat.type_id == ct.id]
+            ct_cats = [cat.id for cat in cats if cat.type_id == ct.pk]
             if ct.select_widget == ct.SelectWidget.SINGLE:
                 val = ct_cats[0] if len(ct_cats) else None
             else:
