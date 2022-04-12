@@ -689,6 +689,20 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 panels.remove(panel)
             elif field_name == 'primary_org' and not plan.features.has_action_primary_orgs:
                 panels.remove(panel)
+
+        if instance:
+            attribute_fields = get_attribute_fields(plan, instance, with_initial=True)
+        else:
+            attribute_fields = []
+
+        for attribute_type, fields in attribute_fields:
+            for form_field_name, (field, model_field_name) in fields.items():
+                if len(fields) > 1:
+                    heading = f'{attribute_type.name} ({model_field_name})'
+                else:
+                    heading = attribute_type.name
+                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
         progress_panels = list(self.progress_panels)
@@ -750,22 +764,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 internal_panels.append(PlanFilteredFieldPanel('schedule'))
 
         all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
-
-        if instance:
-            attribute_fields = get_attribute_fields(plan, instance, with_initial=True)
-        else:
-            attribute_fields = []
-
-        attribute_panels = []
-        for attribute_type, fields in attribute_fields:
-            for form_field_name, (field, model_field_name) in fields.items():
-                if len(fields) > 1:
-                    heading = f'{attribute_type.name} ({model_field_name})'
-                else:
-                    heading = attribute_type.name
-                attribute_panels.append(AttributeFieldPanel(form_field_name, heading=heading))
-
-        all_tabs.append(ObjectList(attribute_panels, heading=_('Attributes')))
 
         i18n_tabs = get_translation_tabs(instance, request)
         all_tabs += i18n_tabs
