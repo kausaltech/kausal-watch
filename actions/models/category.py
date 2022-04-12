@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -52,10 +54,12 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
     i18n = TranslationField(fields=('name',))
 
+    categories: models.QuerySet[Category]
+
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
         'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'attribute_types',
-        'hide_category_identifiers',
+        'hide_category_identifiers', 'select_widget',
     ]
 
     class Meta:

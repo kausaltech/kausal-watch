@@ -1,4 +1,5 @@
 import graphene
+from graphene_django.converter import convert_django_field_with_choices
 import graphene_django_optimizer as gql_optimizer
 from django.db.models import Q, Prefetch
 from django.forms import ModelForm
@@ -257,13 +258,20 @@ class CategoryAttributeTypeChoiceOptionNode(DjangoNode):
 @register_django_node
 class CategoryTypeNode(DjangoNode):
     attribute_types = graphene.List(CategoryAttributeTypeNode)
+    selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
 
     class Meta:
         model = CategoryType
-        fields = public_fields(CategoryType)
+        fields = public_fields(CategoryType, remove_fields=['select_widget'])
 
     def resolve_attribute_types(self, info):
         return self.attribute_types.order_by('pk')
+
+    @gql_optimizer.resolver_hints(
+        model_field='select_widget',
+    )
+    def resolve_selection_type(self: CategoryType, info):
+        return self.select_widget
 
 
 def get_translated_category_page(info, **kwargs):
