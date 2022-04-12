@@ -16,7 +16,7 @@ from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
-from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock
+from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock, RelatedPlanListBlock
 from actions.chooser import CategoryChooser
 from actions.models import Category, Plan
 from indicators.blocks import (
@@ -110,6 +110,7 @@ class PlanRootPage(AplansPage):
         ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
         ('indicator_showcase', IndicatorShowcaseBlock()),
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
+        ('related_plans', RelatedPlanListBlock(label=_('Related plans'))),
         ('cards', CardListBlock()),
     ])
 

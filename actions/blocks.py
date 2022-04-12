@@ -47,3 +47,8 @@ class CategoryListBlock(blocks.StructBlock):
         GraphQLString('lead'),
         GraphQLString('style'),
     ]
+
+
+@register_streamfield_block
+class RelatedPlanListBlock(blocks.StaticBlock):
+    pass

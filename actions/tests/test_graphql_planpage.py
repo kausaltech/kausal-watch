@@ -269,6 +269,24 @@ def test_action_highlights_block(graphql_client_query_data, plan):
     )
 
 
+def test_related_plan_list_block(graphql_client_query_data, plan):
+    page = plan.root_page
+    page.body = [
+        ('related_plans', None),
+    ]
+    page.save()
+    assert_body_block(
+        graphql_client_query_data,
+        plan=plan,
+        block_fields='''
+            __typename
+        ''',
+        expected={
+            '__typename': 'RelatedPlanListBlock'
+        }
+    )
+
+
 def test_card_list_block(graphql_client_query_data, plan, card_block):
     # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
     # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
