@@ -310,18 +310,15 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     panels.remove(p)
                     break
 
-        tabs = [ObjectList(panels, heading=_('Basic information'))]
-
         if instance and instance.type:
             attribute_fields = get_attribute_fields(instance.type, instance, with_initial=True)
         else:
             attribute_fields = {}
 
-        attribute_panels = []
         for key, field in attribute_fields.items():
-            attribute_panels.append(AttributeFieldPanel(key, heading=field.attribute_type.name))
+            panels.append(AttributeFieldPanel(key, heading=field.attribute_type.name))
 
-        tabs.append(ObjectList(attribute_panels, heading=_('Attributes')))
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
