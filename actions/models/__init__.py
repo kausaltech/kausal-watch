@@ -3,7 +3,7 @@ from .action import (
     Action, ActionAttributeType, ActionAttributeTypeChoiceOption, ActionAttributeChoice, ActionAttributeChoiceWithText,
     ActionAttributeRichText, ActionAttributeNumericValue, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
-    ActionStatusUpdate, ImpactGroupAction
+    ActionStatusUpdate, ImpactGroupAction, RelatedAction
 )
 from .attributes import (
     AttributeType, AttributeTypeChoiceOption
@@ -26,5 +26,5 @@ __all__ = [
     'CategoryAttributeNumericValue', 'CategoryAttributeRichText', 'CategoryType',
     'CategoryAttributeType', 'CategoryAttributeTypeChoiceOption', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
-    'Scenario', 'PlanFeatures',
+    'RelatedAction', 'Scenario', 'PlanFeatures',
 ]

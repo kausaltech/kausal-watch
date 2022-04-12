@@ -16,7 +16,7 @@ from actions.models import (
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryAttributeChoice,
     CategoryAttributeNumericValue, CategoryAttributeRichText, CategoryType, CategoryAttributeType,
     CategoryAttributeTypeChoiceOption, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain,
-    Scenario, PlanFeatures
+    PlanFeatures, RelatedAction, Scenario
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -478,6 +478,12 @@ class ActionImplementationPhaseNode(DjangoNode):
     class Meta:
         model = ActionImplementationPhase
         fields = public_fields(ActionImplementationPhase)
+
+
+class RelatedActionNode(DjangoNode):
+    class Meta:
+        model = RelatedAction
+        fields = public_fields(RelatedAction)
 
 
 class ActionResponsiblePartyNode(DjangoNode):
