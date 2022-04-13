@@ -57,6 +57,9 @@ class PlanQuerySet(models.QuerySet):
 
         return self.filter(domains__hostname=hostname.lower())
 
+    def live(self):
+        return self.filter(published_at__isnull=False, archived_at__isnull=True)
+
 
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
@@ -73,6 +76,8 @@ class Plan(ClusterableModel):
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
+    published_at = models.DateTimeField(null=True, verbose_name=_('published at'))
+    archived_at = models.DateTimeField(null=True, verbose_name=_('archived at'))
     site_url = models.URLField(
         blank=True, null=True, verbose_name=_('site URL'),
         validators=[URLValidator(('http', 'https'))]
@@ -269,6 +274,9 @@ class Plan(ClusterableModel):
                 root_page.add_child(instance=IndicatorListPage(title=_("Indicators"), locale=locale))
 
         return root_page
+
+    def is_live(self):
+        return self.published_at is not None and self.archived_at is None
 
     @classmethod
     @transaction.atomic()

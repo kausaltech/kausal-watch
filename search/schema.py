@@ -105,7 +105,13 @@ class Query:
             raise GraphQLError("Plan %s not found" % plan, [info])
         plan_filter = Q(id=plan_obj.id)
         if include_related_plans:
-            plan_filter |= Q(id__in=plan_obj.related_plans.all())
+            # If the current plan is not published yet, we include other
+            # non-published plans as well. For a production plan, we exclude
+            # all non-published plans.
+            related_plans = plan_obj.related_plans.all()
+            if plan_obj.is_live():
+                related_plans = related_plans.live()
+            plan_filter |= Q(id__in=related_plans.values_list('id', flat=True))
         plans = plans.filter(plan_filter)
         plan_ids = list(plans.values_list('id', flat=True))
 
