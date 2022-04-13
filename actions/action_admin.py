@@ -567,6 +567,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 FieldPanel('related_action', widget=ActionChooser),
             ]
         ),
+        FieldPanel('merged_with', widget=ActionChooser),
     ]
 
     progress_panels = [
