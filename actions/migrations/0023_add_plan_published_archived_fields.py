@@ -8,7 +8,7 @@ import modelcluster.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('actions', '0021_add_plan_theme_identifier'),
+        ('actions', '0022_related_actions'),
     ]
 
     operations = [
