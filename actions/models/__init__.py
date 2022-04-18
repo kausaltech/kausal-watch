@@ -1,30 +1,27 @@
 from .plan import Plan, PlanDomain, Scenario, ImpactGroup, MonitoringQualityPoint
 from .action import (
-    Action, ActionAttributeType, ActionAttributeTypeChoiceOption, ActionAttributeChoice, ActionAttributeChoiceWithText,
-    ActionAttributeRichText, ActionAttributeNumericValue, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
+    Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
     ActionStatusUpdate, ImpactGroupAction, RelatedAction
 )
 from .attributes import (
-    AttributeType, AttributeTypeChoiceOption
+    AttributeType, AttributeTypeChoiceOption, AttributeChoice, AttributeChoiceWithText, AttributeRichText,
+    AttributeNumericValue
 )
 from .category import (
-    Category, CategoryType, CategoryLevel, CategoryIcon, CategoryAttributeType,
-    CategoryAttributeTypeChoiceOption, CategoryAttributeRichText, CategoryAttributeChoice, CategoryAttributeNumericValue
+    Category, CategoryType, CategoryLevel, CategoryIcon
 )
 from .features import PlanFeatures
 
 
 __all__ = [
-    'Action', 'ActionAttributeType', 'ActionAttributeTypeChoiceOption', 'ActionAttributeChoice',
-    'ActionAttributeChoiceWithText', 'ActionAttributeRichText', 'ActionAttributeNumericValue', 'ActionContactPerson',
+    'Action', 'AttributeType', 'AttributeChoice', 'AttributeChoiceWithText', 'AttributeRichText',
+    'AttributeNumericValue', 'ActionContactPerson',
     'ActionDecisionLevel', 'ActionImpact',
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
     'AttributeType', 'AttributeTypeChoiceOption',
-    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryAttributeChoice',
-    'CategoryAttributeNumericValue', 'CategoryAttributeRichText', 'CategoryType',
-    'CategoryAttributeType', 'CategoryAttributeTypeChoiceOption', 'ImpactGroup',
+    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
     'RelatedAction', 'Scenario', 'PlanFeatures',
 ]

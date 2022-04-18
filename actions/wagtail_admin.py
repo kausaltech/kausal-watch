@@ -20,6 +20,7 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 
 from . import action_admin  # noqa
+from . import attribute_type_admin  # noqa
 from . import category_admin  # noqa
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 

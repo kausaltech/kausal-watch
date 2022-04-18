@@ -6,7 +6,7 @@ from django import forms
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import (
-    get_language, gettext, gettext_lazy as _, pgettext_lazy
+    get_language, gettext, gettext_lazy as _
 )
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
@@ -38,7 +38,7 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .models import Action, ActionTask, ActionAttributeRichText, ActionAttributeType, AttributeType, CategoryType
+from .models import Action, ActionTask, AttributeRichText, AttributeType, CategoryType
 
 logger = logging.getLogger(__name__)
 
@@ -418,31 +418,6 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
         ]
 
 
-@modeladmin_register
-class ActionAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
-    model = ActionAttributeType
-    menu_label = pgettext_lazy('hyphenated', 'Action attributes')
-    menu_order = 1201
-    list_display = ('name', 'format')
-    add_to_settings_menu = True
-
-    panels = [
-        FieldPanel('name'),
-        FieldPanel('identifier'),
-        FieldPanel('format'),
-        CondensedInlinePanel('choice_options', panels=[
-            FieldPanel('name'),
-            FieldPanel('identifier'),
-        ])
-    ]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        return qs.filter(plan=plan)
-
-
 def get_attribute_fields(plan, obj, with_initial=False):
     # Return list containing pairs (attribute_type, fields), where fields is a dict mapping a form field name to a pair
     # (field, model_field_name)
@@ -479,7 +454,7 @@ def get_attribute_fields(plan, obj, with_initial=False):
                 qs, label=attribute_type.name, initial=initial_choice, required=False,
             )
             choice_form_field_name = f'attribute_type_{attribute_type.identifier}_choice'
-            text_field = ActionAttributeRichText._meta.get_field('text').formfield(
+            text_field = AttributeRichText._meta.get_field('text').formfield(
                 initial=initial_text, required=False
             )
             text_field.panel_heading = attribute_type.name
@@ -493,7 +468,7 @@ def get_attribute_fields(plan, obj, with_initial=False):
                 if val_obj is not None:
                     initial_text = val_obj.text
 
-            field = ActionAttributeRichText._meta.get_field('text').formfield(
+            field = AttributeRichText._meta.get_field('text').formfield(
                 initial=initial_text, required=False
             )
             form_field_name = f'attribute_type_{attribute_type.identifier}'

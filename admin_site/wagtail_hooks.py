@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.template.loader import render_to_string
 from django.templatetags.static import static
@@ -49,6 +50,47 @@ def register_category_menu():
         category_menu,
         classnames='icon icon-folder-open-inverse',
         order=100
+    )
+
+
+class AttributeTypeMenuItem(MenuItem):
+    def __init__(self, content_type, **kwargs):
+        self.content_type = content_type
+        self.base_url = reverse('actions_attributetype_modeladmin_index')
+        url = f'{self.base_url}?content_type={content_type.id}'
+        # FIXME: label starts with lower-case letter for our models
+        label = content_type.model_class()._meta.verbose_name
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        content_type = request.GET.get('content_type')
+        return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
+
+
+class AttributeTypeMenu(Menu):
+    def menu_items_for_request(self, request):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        items = []
+        if user.is_general_admin_for_plan(plan):
+            plan_ct = ContentType.objects.get(app_label='actions', model='plan')
+            category_type_ct = ContentType.objects.get(app_label='actions', model='categorytype')
+            items.append(AttributeTypeMenuItem(plan_ct))
+            items.append(AttributeTypeMenuItem(category_type_ct))
+        return items
+
+
+attribute_type_menu = AttributeTypeMenu(None)
+
+
+@hooks.register('register_admin_menu_item')
+def register_attribute_type_menu():
+    return SubmenuMenuItem(
+        _('Attributes'),
+        attribute_type_menu,
+        classnames='icon icon-tag',
+        order=101,
     )
 
 

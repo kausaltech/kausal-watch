@@ -1,5 +1,5 @@
 from django import forms
-from django.utils.translation import gettext_lazy as _, pgettext_lazy
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
@@ -12,7 +12,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from .admin import CategoryTypeFilter
-from .models import AttributeType, Category, CategoryAttributeRichText, CategoryType, CategoryAttributeType
+from .models import AttributeType, AttributeRichText, Category, CategoryType
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
     AplansTabbedInterface, get_translation_tabs
@@ -79,32 +79,6 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return AplansTabbedInterface(tabs)
 
 
-@modeladmin_register
-class CategoryAttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
-    model = CategoryAttributeType
-    menu_label = pgettext_lazy('hyphenated', 'Category attributes')
-    menu_order = 1200
-    list_display = ('name', 'category_type')
-    add_to_settings_menu = True
-
-    panels = [
-        PlanFilteredFieldPanel('category_type'),
-        FieldPanel('name'),
-        FieldPanel('identifier'),
-        FieldPanel('format'),
-        CondensedInlinePanel('choice_options', panels=[
-            FieldPanel('name'),
-            FieldPanel('identifier'),
-        ])
-    ]
-
-    def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        return qs.filter(category_type__plan=plan).distinct()
-
-
 def get_attribute_fields(cat_type, obj, with_initial=False):
     # TODO: Partly duplicated in action_admin.py
     fields = {}
@@ -130,7 +104,7 @@ def get_attribute_fields(cat_type, obj, with_initial=False):
                 if val_obj is not None:
                     initial = val_obj.text
 
-            field = CategoryAttributeRichText._meta.get_field('text').formfield(
+            field = AttributeRichText._meta.get_field('text').formfield(
                 initial=initial, required=False
             )
         elif attribute_type.format == AttributeType.AttributeFormat.NUMERIC:
@@ -223,6 +197,7 @@ class CategoryDeleteView(CategoryTypeQueryParameterMixin, DeleteView):
 
 
 class CategoryAdminButtonHelper(ButtonHelper):
+    # TODO: duplicated as AttributeTypeAdminButtonHelper
     def add_button(self, *args, **kwargs):
         """
         Only show "add" button if the request contains a category type.

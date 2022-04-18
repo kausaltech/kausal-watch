@@ -6,7 +6,6 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from wagtail.core.fields import RichTextField
 
 import reversion
 
@@ -14,7 +13,6 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color
 )
-from .attributes import AttributeType, AttributeTypeChoiceOption
 
 
 @reversion.register()
@@ -100,65 +98,6 @@ class CategoryLevel(OrderedModel):
         return self.name
 
 
-@reversion.register()
-class CategoryAttributeType(AttributeType):
-    """Type of attributes that can be given to categories of a specific type."""
-    category_type = ParentalKey(CategoryType, on_delete=models.CASCADE, related_name='attribute_types')
-
-    class Meta(AttributeType.Meta):
-        unique_together = (('category_type', 'identifier'),)
-        verbose_name = _('category attribute')
-        verbose_name_plural = _('category attributes')
-
-    def filter_siblings(self, qs):
-        return qs.filter(category_type=self.category_type)
-
-    def set_category_value(self, category, val):
-        # TODO: Partly duplicated in action.py
-        # TODO: action.py contains functionality for new AttributeFormat values. This needs to be replicated here.
-        assert category.type == self.category_type
-
-        if self.format == self.AttributeFormat.ORDERED_CHOICE:
-            existing = self.choice_attributes.filter(category=category)
-            if existing:
-                existing.delete()
-            if val is not None:
-                self.choice_attributes.create(category=category, choice=val)
-        elif self.format == self.AttributeFormat.RICH_TEXT:
-            try:
-                obj = self.richtext_attributes.get(category=category)
-            except self.richtext_attributes.model.DoesNotExist:
-                if val:
-                    obj = self.richtext_attributes.create(category=category, text=val)
-            else:
-                if not val:
-                    obj.delete()
-                else:
-                    obj.text = val
-                    obj.save()
-        elif self.format == self.AttributeFormat.NUMERIC:
-            try:
-                obj = self.numeric_value_attributes.get(category=category)
-            except self.numeric_value_attributes.model.DoesNotExist:
-                if val is not None:
-                    obj = self.numeric_value_attributes.create(category=category, value=val)
-            else:
-                if val is None:
-                    obj.delete()
-                else:
-                    obj.value = val
-                    obj.save()
-        # TODO: self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
-
-
-class CategoryAttributeTypeChoiceOption(AttributeTypeChoiceOption):
-    type = ParentalKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_options')
-
-    class Meta(AttributeTypeChoiceOption.Meta):
-        verbose_name = _('category attribute choice option')
-        verbose_name_plural = _('category attribute choice options')
-
-
 class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
@@ -240,52 +179,3 @@ class CategoryIcon(models.Model):
 
     def __str__(self):
         return 'Icon for %s' % self.category
-
-
-class CategoryAttributeRichText(models.Model):
-    """Rich text value for a category attribute."""
-    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='richtext_attributes')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='richtext_attributes')
-    text = RichTextField(verbose_name=_('Text'))
-
-    public_fields = [
-        'id', 'type', 'category', 'text',
-    ]
-
-    class Meta:
-        unique_together = ('category', 'type')
-
-    def __str__(self):
-        return '%s for %s' % (self.type, self.category)
-
-
-class CategoryAttributeChoice(models.Model):
-    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='choice_attributes')
-    choice = models.ForeignKey(
-        CategoryAttributeTypeChoiceOption,
-        on_delete=models.CASCADE,
-        related_name='choice_attributes',
-    )
-
-    class Meta:
-        unique_together = ('category', 'type')
-
-    def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.type, self.category)
-
-
-class CategoryAttributeNumericValue(models.Model):
-    type = models.ForeignKey(CategoryAttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
-    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='numeric_value_attributes')
-    value = models.FloatField()
-
-    public_fields = [
-        'id', 'type', 'category', 'value',
-    ]
-
-    class Meta:
-        unique_together = ('category', 'type')
-
-    def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.type, self.category)
