@@ -8,7 +8,7 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, order_querys
 from aplans.utils import public_fields
 from indicators.models import (
     ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
-    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
+    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator, RelatedIndicator, Unit
 )
 
 
@@ -70,6 +70,11 @@ class CommonIndicatorNode(DjangoNode):
     class Meta:
         model = CommonIndicator
         fields = public_fields(CommonIndicator)
+
+
+class RelatedCommonIndicatorNode(DjangoNode):
+    class Meta:
+        model = RelatedCommonIndicator
 
 
 class FrameworkIndicatorNode(DjangoNode):

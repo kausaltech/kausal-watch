@@ -193,7 +193,10 @@ class CommonIndicator(ClusterableModel):
 
     i18n = TranslationField(fields=['name', 'description'])
 
-    public_fields = ['id', 'identifier', 'name', 'description', 'quantity', 'unit', 'indicators', 'dimensions']
+    public_fields = [
+        'id', 'identifier', 'name', 'description', 'quantity', 'unit',
+        'indicators', 'dimensions', 'related_causes', 'related_effects'
+    ]
 
     class Meta:
         verbose_name = _('common indicator')
