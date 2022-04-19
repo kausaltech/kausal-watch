@@ -2,6 +2,7 @@ import django.db.models.deletion
 import modelcluster
 import wagtail.core.fields
 from django.db import migrations, models
+from django.contrib.contenttypes.management import create_contenttypes
 
 import aplans.utils
 
@@ -117,6 +118,12 @@ def migrate_for_attribute_type(
 
 
 def migrate_data(apps, schema_editor):
+    # For some reason content types do not exist if the test database is created
+    # https://stackoverflow.com/questions/40344994/django-contenttypes-during-migration-while-running-tests
+    app_config = apps.get_app_config('actions')
+    app_config.models_module = getattr(app_config, 'models_module', True)
+    create_contenttypes(app_config)
+
     ContentType = apps.get_model('contenttypes', 'ContentType')
     # Actions
     migrate_for_attribute_type(
