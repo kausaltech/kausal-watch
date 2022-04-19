@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import datetime
 from typing import Optional
+import typing
 import reversion
 from dateutil.relativedelta import relativedelta
 
@@ -24,6 +27,9 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 from admin_site.wagtail import AplansAdminModelForm
 from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
 from orgs.models import Organization
+
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 
 User = get_user_model()
@@ -331,6 +337,8 @@ class Indicator(ClusterableModel, index.Indexed):
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'])
+
+    levels: RelatedManager[IndicatorLevel]
 
     search_fields = [
         index.SearchField('name', boost=10),
