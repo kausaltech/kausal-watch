@@ -135,13 +135,6 @@ class Plan(ClusterableModel):
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
 
-    attribute_types = GenericRelation(
-        to='actions.AttributeType',
-        related_query_name='plan',
-        content_type_field='scope_content_type',
-        object_id_field='scope_id',
-    )
-
     public_fields = [
         'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',

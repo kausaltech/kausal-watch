@@ -17,7 +17,12 @@ class AttributeType(ClusterableModel, OrderedModel):
         RICH_TEXT = 'rich_text', _('Rich text')
         NUMERIC = 'numeric', _('Numeric')
 
-    # An object that this attribute type is specific to (e.g., a plan or a category type)
+    # Model to whose instances attributes of this type can be attached
+    # TODO: Enforce Action or Category
+    object_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+
+    # An instance that this attribute type is specific to (e.g., a plan or a category type) so that it is only shown for
+    # objects within the that scope.
     # TODO: Enforce Plan or CategoryType
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
@@ -32,7 +37,7 @@ class AttributeType(ClusterableModel, OrderedModel):
     ]
 
     class Meta:
-        unique_together = (('scope_content_type', 'scope_id', 'identifier'),)
+        unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
         verbose_name = _('attribute type')
         verbose_name_plural = _('attribute types')
 

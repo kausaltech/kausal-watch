@@ -74,10 +74,10 @@ class AttributeTypeMenu(Menu):
         plan = user.get_active_admin_plan()
         items = []
         if user.is_general_admin_for_plan(plan):
-            plan_ct = ContentType.objects.get(app_label='actions', model='plan')
-            category_type_ct = ContentType.objects.get(app_label='actions', model='categorytype')
-            items.append(AttributeTypeMenuItem(plan_ct))
-            items.append(AttributeTypeMenuItem(category_type_ct))
+            action_ct = ContentType.objects.get(app_label='actions', model='action')
+            category_ct = ContentType.objects.get(app_label='actions', model='category')
+            items.append(AttributeTypeMenuItem(action_ct))
+            items.append(AttributeTypeMenuItem(category_ct))
         return items
 
 
