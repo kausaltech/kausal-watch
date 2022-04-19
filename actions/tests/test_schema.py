@@ -1,15 +1,13 @@
 import pytest
 
-from actions.models import CategoryAttributeType
+from actions.models import AttributeType
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
     ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
-    ActionTaskFactory, CategoryFactory, CategoryLevelFactory, CategoryAttributeChoiceFactory,
-    CategoryAttributeRichTextFactory, CategoryTypeFactory, CategoryAttributeTypeFactory,
-    CategoryAttributeTypeChoiceOptionFactory, ImpactGroupFactory, ImpactGroupActionFactory, PlanFactory,
-    PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
+    ActionTaskFactory, AttributeChoiceFactory, AttributeRichTextFactory, AttributeTypeFactory,
+    AttributeTypeChoiceOptionFactory, CategoryFactory, CategoryLevelFactory, CategoryTypeFactory, ImpactGroupFactory,
+    ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
-from admin_site.tests.factories import AdminHostnameFactory, ClientPlanFactory
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 
 pytestmark = pytest.mark.django_db
@@ -26,31 +24,31 @@ def category_type(plan):
 
 
 @pytest.fixture
-def category_attribute_type__rich_text(category_type):
-    return CategoryAttributeTypeFactory(category_type=category_type, format=CategoryAttributeType.AttributeFormat.RICH_TEXT)
+def attribute_type__rich_text(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.RICH_TEXT)
 
 
 @pytest.fixture
-def category_attribute_type__ordered_choice(category_type):
-    return CategoryAttributeTypeFactory(category_type=category_type, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+def attribute_type__ordered_choice(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
 
 
 @pytest.fixture
-def category_attribute_type_choice_option(category_attribute_type__ordered_choice):
-    return CategoryAttributeTypeChoiceOptionFactory(type=category_attribute_type__ordered_choice)
+def attribute_type_choice_option(attribute_type__ordered_choice):
+    return AttributeTypeChoiceOptionFactory(type=attribute_type__ordered_choice)
 
 
 @pytest.fixture
-def category_attribute_rich_text(category_attribute_type__rich_text, category):
-    return CategoryAttributeRichTextFactory(type=category_attribute_type__rich_text, category=category)
+def attribute_rich_text(attribute_type__rich_text, category):
+    return AttributeRichTextFactory(type=attribute_type__rich_text, content_object=category)
 
 
 @pytest.fixture
-def category_attribute_choice(category_attribute_type__ordered_choice, category, category_attribute_type_choice_option):
-    return CategoryAttributeChoiceFactory(
-        type=category_attribute_type__ordered_choice,
-        category=category,
-        choice=category_attribute_type_choice_option,
+def attribute_choice(attribute_type__ordered_choice, category, attribute_type_choice_option):
+    return AttributeChoiceFactory(
+        type=attribute_type__ordered_choice,
+        content_object=category,
+        choice=attribute_type_choice_option,
     )
 
 
@@ -104,8 +102,6 @@ def test_plan_node(graphql_client_query_data):
     # Switch off RelatedFactory _action because it would generate an extra action
     impact_group = ImpactGroupFactory(plan=plan)
     ImpactGroupActionFactory(group=impact_group, action=action, impact=action.impact)
-    admin_hostname = AdminHostnameFactory()
-    client_plan = ClientPlanFactory(plan=plan, client=admin_hostname.client)
     monitoring_quality_point = MonitoringQualityPointFactory(plan=plan)
     indicator_level = IndicatorLevelFactory(plan=plan)
     scenario = ScenarioFactory(plan=plan)
@@ -274,21 +270,18 @@ def test_plan_node(graphql_client_query_data):
     assert data == expected
 
 
-def test_category_attribute_choice_node(
-    graphql_client_query_data, plan, category_attribute_choice, category_attribute_type__ordered_choice,
-    category_attribute_type_choice_option
+def test_attribute_choice_node(
+    graphql_client_query_data, plan, attribute_choice, attribute_type__ordered_choice,
+    attribute_type_choice_option
 ):
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
           planCategories(plan: $plan) {
             attributes {
-              ... on CategoryAttributeChoice {
+              ... on AttributeChoice {
                 id
                 type {
-                  __typename
-                }
-                category {
                   __typename
                 }
                 choice {
@@ -308,40 +301,34 @@ def test_category_attribute_choice_node(
     expected = {
         'planCategories': [{
             'attributes': [{
-                'id': str(category_attribute_choice.id),
+                'id': str(attribute_choice.id),
                 'type': {
-                    '__typename': 'CategoryAttributeType',
-                },
-                'category': {
-                    '__typename': 'Category',
+                    '__typename': 'AttributeType',
                 },
                 'choice': {
-                    '__typename': 'CategoryAttributeTypeChoiceOption',
+                    '__typename': 'AttributeTypeChoiceOption',
                 },
-                'key': category_attribute_type__ordered_choice.name,
-                'keyIdentifier': category_attribute_type__ordered_choice.identifier,
-                'value': category_attribute_type_choice_option.name,
-                'valueIdentifier': category_attribute_type_choice_option.identifier,
+                'key': attribute_type__ordered_choice.name,
+                'keyIdentifier': attribute_type__ordered_choice.identifier,
+                'value': attribute_type_choice_option.name,
+                'valueIdentifier': attribute_type_choice_option.identifier,
             }]
         }]
     }
     assert data == expected
 
 
-def test_category_attribute_rich_text_node(
-    graphql_client_query_data, plan, category_attribute_rich_text, category_attribute_type__rich_text
+def test_attribute_rich_text_node(
+    graphql_client_query_data, plan, attribute_rich_text, attribute_type__rich_text
 ):
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
           planCategories(plan: $plan) {
             attributes {
-              ... on CategoryAttributeRichText {
+              ... on AttributeRichText {
                 id
                 type {
-                  __typename
-                }
-                category {
                   __typename
                 }
                 key
@@ -357,16 +344,13 @@ def test_category_attribute_rich_text_node(
     expected = {
         'planCategories': [{
             'attributes': [{
-                'id': str(category_attribute_rich_text.id),
+                'id': str(attribute_rich_text.id),
                 'type': {
-                    '__typename': 'CategoryAttributeType',
+                    '__typename': 'AttributeType',
                 },
-                'category': {
-                    '__typename': 'Category',
-                },
-                'key': category_attribute_type__rich_text.name,
-                'keyIdentifier': category_attribute_type__rich_text.identifier,
-                'value': category_attribute_rich_text.text,
+                'key': attribute_type__rich_text.name,
+                'keyIdentifier': attribute_type__rich_text.identifier,
+                'value': attribute_rich_text.text,
             }]
         }]
     }
@@ -411,9 +395,9 @@ def test_category_level_node(graphql_client_query_data, plan, category_level, ca
     assert data == expected
 
 
-def test_category_attribute_type_node(
-    graphql_client_query_data, plan, category_attribute_rich_text, category_attribute_choice,
-    category_attribute_type__rich_text, category_attribute_type__ordered_choice
+def test_attribute_type_node(
+    graphql_client_query_data, plan, attribute_rich_text, attribute_choice,
+    attribute_type__rich_text, attribute_type__ordered_choice
 ):
     data = graphql_client_query_data(
         '''
@@ -438,16 +422,16 @@ def test_category_attribute_type_node(
         'planCategories': [{
             'type': {
                 'attributeTypes': [{
-                    'identifier': category_attribute_type__rich_text.identifier,
-                    'name': category_attribute_type__rich_text.name,
+                    'identifier': attribute_type__rich_text.identifier,
+                    'name': attribute_type__rich_text.name,
                     'format': 'RICH_TEXT',
                     'choiceOptions': [],
                 }, {
-                    'identifier': category_attribute_type__ordered_choice.identifier,
-                    'name': category_attribute_type__ordered_choice.name,
+                    'identifier': attribute_type__ordered_choice.identifier,
+                    'name': attribute_type__ordered_choice.name,
                     'format': 'ORDERED_CHOICE',
                     'choiceOptions': [{
-                        '__typename': 'CategoryAttributeTypeChoiceOption',
+                        '__typename': 'AttributeTypeChoiceOption',
                     }],
                 }]
             }
@@ -456,8 +440,8 @@ def test_category_attribute_type_node(
     assert data == expected
 
 
-def test_category_attribute_type_choice_option_node(
-    graphql_client_query_data, plan, category_attribute_type_choice_option, category_attribute_choice
+def test_attribute_type_choice_option_node(
+    graphql_client_query_data, plan, attribute_type_choice_option, attribute_choice
 ):
     data = graphql_client_query_data(
         '''
@@ -481,8 +465,8 @@ def test_category_attribute_type_choice_option_node(
             'type': {
                 'attributeTypes': [{
                     'choiceOptions': [{
-                        'identifier': category_attribute_type_choice_option.identifier,
-                        'name': category_attribute_type_choice_option.name,
+                        'identifier': attribute_type_choice_option.identifier,
+                        'name': attribute_type_choice_option.name,
                     }],
                 }]
             }
@@ -492,7 +476,7 @@ def test_category_attribute_type_choice_option_node(
 
 
 def test_category_type_node(
-    graphql_client_query_data, plan, category_type, category, category_level, category_attribute_type__rich_text
+    graphql_client_query_data, plan, category_type, category, category_level, attribute_type__rich_text
 ):
     data = graphql_client_query_data(
         '''
@@ -547,7 +531,7 @@ def test_category_type_node(
                     '__typename': 'Category'
                 }],
                 'attributeTypes': [{
-                    '__typename': 'CategoryAttributeType'
+                    '__typename': 'AttributeType'
                 }],
             }
         }]
@@ -556,8 +540,8 @@ def test_category_type_node(
 
 
 def test_category_node(
-    graphql_client_query_data, plan, category_type, category, category_level, category_attribute_rich_text,
-    category_attribute_choice
+    graphql_client_query_data, plan, category_type, category, category_level, attribute_rich_text,
+    attribute_choice
 ):
     child_category = CategoryFactory(parent=category)
     data = graphql_client_query_data(
@@ -628,9 +612,9 @@ def test_category_node(
                 '__typename': 'Image',
             },
             'attributes': [{
-                '__typename': 'CategoryAttributeRichText',
+                '__typename': 'AttributeRichText',
             }, {
-                '__typename': 'CategoryAttributeChoice',
+                '__typename': 'AttributeChoice',
             }],
             'level': {
                 '__typename': 'CategoryLevel',

@@ -1,11 +1,12 @@
 import datetime
-from factory import RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
+from django.contrib.contenttypes.models import ContentType
+from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import actions
-from actions.models import CategoryAttributeType
+from actions.models import AttributeType
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from pages.tests.factories import CategoryPageFactory
@@ -81,23 +82,27 @@ class CategoryTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category type {i}")
 
 
-class CategoryAttributeTypeFactory(DjangoModelFactory):
+class AttributeTypeFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryAttributeType'
+        model = 'actions.AttributeType'
+        exclude = ['scope']
 
-    category_type = SubFactory(CategoryTypeFactory)
+    object_content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    scope = SubFactory(CategoryTypeFactory)
+    scope_content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.scope))
+    scope_id = SelfAttribute('scope.id')
     identifier = Sequence(lambda i: f'ctm{i}')
     name = Sequence(lambda i: f"Category attribute type {i}")
-    format = CategoryAttributeType.AttributeFormat.RICH_TEXT
+    format = AttributeType.AttributeFormat.RICH_TEXT
 
 
-class CategoryAttributeTypeChoiceOptionFactory(DjangoModelFactory):
+class AttributeTypeChoiceOptionFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryAttributeTypeChoiceOption'
+        model = 'actions.AttributeTypeChoiceOption'
 
-    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
     identifier = Sequence(lambda i: f'ctmc{i}')
-    name = Sequence(lambda i: f"Category attribute type choice option {i}")
+    name = Sequence(lambda i: f"Attribute type choice option {i}")
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -113,22 +118,30 @@ class CategoryFactory(DjangoModelFactory):
                                    parent=SelfAttribute('..type.plan.root_page'))
 
 
-class CategoryAttributeRichTextFactory(DjangoModelFactory):
+class AttributeRichTextFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryAttributeRichText'
+        model = 'actions.AttributeRichText'
+        exclude = ['content_object']
 
-    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.RICH_TEXT)
-    category = SubFactory(CategoryFactory)
-    text = Sequence(lambda i: f'CategoryAttributeRichText {i}')
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.RICH_TEXT)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    text = Sequence(lambda i: f'AttributeRichText {i}')
 
 
-class CategoryAttributeChoiceFactory(DjangoModelFactory):
+class AttributeChoiceFactory(DjangoModelFactory):
     class Meta:
-        model = 'actions.CategoryAttributeChoice'
+        model = 'actions.AttributeChoice'
+        exclude = ['content_object']
 
-    type = SubFactory(CategoryAttributeTypeFactory, format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
-    category = SubFactory(CategoryFactory)
-    choice = SubFactory(CategoryAttributeTypeChoiceOptionFactory)
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    choice = SubFactory(AttributeTypeChoiceOptionFactory)
 
 
 class CategoryLevelFactory(DjangoModelFactory):

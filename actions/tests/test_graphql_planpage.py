@@ -474,15 +474,15 @@ def test_static_page_body(graphql_client_query_data, plan, static_page):
     assert data == expected
 
 
-def test_categoryattribute_order_as_in_categoryattributetype(
-    graphql_client_query_data, plan, category, category_page, category_type, category_attribute_type_factory,
-    category_attribute_rich_text_factory
+def test_attribute_order_as_in_attribute_type(
+    graphql_client_query_data, plan, category, category_page, category_type, attribute_type_factory,
+    attribute_rich_text_factory
 ):
-    cat0 = category_attribute_type_factory(category_type=category_type)
-    cat1 = category_attribute_type_factory(category_type=category_type)
-    assert cat0.order < cat1.order
-    cmrt0 = category_attribute_rich_text_factory(type=cat0, category=category)
-    cmrt1 = category_attribute_rich_text_factory(type=cat1, category=category)
+    at0 = attribute_type_factory(scope=category_type)
+    at1 = attribute_type_factory(scope=category_type)
+    assert at0.order < at1.order
+    art0 = attribute_rich_text_factory(type=at0, content_object=category)
+    art1 = attribute_rich_text_factory(type=at1, content_object=category)
 
     query = '''
         query($plan: ID!, $path: String!) {
@@ -490,7 +490,7 @@ def test_categoryattribute_order_as_in_categoryattributetype(
             ... on CategoryPage {
               category {
                 attributes {
-                  ... on CategoryAttributeRichText {
+                  ... on AttributeRichText {
                     keyIdentifier
                     value
                   }
@@ -508,11 +508,11 @@ def test_categoryattribute_order_as_in_categoryattributetype(
         'planPage': {
             'category': {
                 'attributes': [{
-                    'keyIdentifier': cat0.identifier,
-                    'value': cmrt0.text,
+                    'keyIdentifier': at0.identifier,
+                    'value': art0.text,
                 }, {
-                    'keyIdentifier': cat1.identifier,
-                    'value': cmrt1.text,
+                    'keyIdentifier': at1.identifier,
+                    'value': art1.text,
                 }],
             }
         }
@@ -520,9 +520,9 @@ def test_categoryattribute_order_as_in_categoryattributetype(
     data = graphql_client_query_data(query, variables=query_variables)
     assert data == expected
 
-    cat0.order, cat1.order = cat1.order, cat0.order
-    cat0.save()
-    cat1.save()
+    at0.order, at1.order = at1.order, at0.order
+    at0.save()
+    at1.save()
     expected_attributes = expected['planPage']['category']['attributes']
     expected_attributes[0], expected_attributes[1] = expected_attributes[1], expected_attributes[0]
     data = graphql_client_query_data(query, variables=query_variables)

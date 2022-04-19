@@ -13,10 +13,10 @@ from wagtail.core.rich_text import RichText
 
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
-    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, CategoryAttributeChoice,
-    CategoryAttributeNumericValue, CategoryAttributeRichText, CategoryType, CategoryAttributeType,
-    CategoryAttributeTypeChoiceOption, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain,
-    PlanFeatures, RelatedAction, Scenario
+    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
+    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
+    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures, RelatedAction,
+    Scenario
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -176,7 +176,7 @@ class PlanNode(DjangoNode):
         fields = public_fields(Plan)
 
 
-class CategoryAttributeInterface(graphene.Interface):
+class AttributeInterface(graphene.Interface):
     id = graphene.ID(required=True)
     key = graphene.String(required=True)
     key_identifier = graphene.String(required=True)
@@ -189,16 +189,38 @@ class CategoryAttributeInterface(graphene.Interface):
 
     @classmethod
     def resolve_type(cls, instance, info):
-        if isinstance(instance, CategoryAttributeRichText):
-            return CategoryAttributeRichTextNode
-        elif isinstance(instance, CategoryAttributeChoice):
-            return CategoryAttributeChoiceNode
-        elif isinstance(instance, CategoryAttributeNumericValue):
-            return CategoryAttributeNumericValueNode
+        if isinstance(instance, AttributeRichText):
+            return AttributeRichTextNode
+        elif isinstance(instance, AttributeChoice):
+            return AttributeChoiceNode
+        elif isinstance(instance, AttributeChoiceWithText):
+            return AttributeChoiceWithTextNode
+        elif isinstance(instance, AttributeNumericValue):
+            return AttributeNumericValueNode
 
 
 @register_django_node
-class CategoryAttributeChoiceNode(DjangoNode):
+class AttributeChoiceWithTextNode(DjangoNode):
+    choice = graphene.String(required=False)
+    choice_identifier = graphene.String(required=False)
+    text = graphene.String(required=False)
+
+    def resolve_choice(self, info):
+        return self.choice.name
+
+    def resolve_choice_identifier(self, info):
+        return self.choice.identifier
+
+    def resolve_text(self, info):
+        return self.text
+
+    class Meta:
+        model = AttributeChoiceWithText
+        interfaces = (AttributeInterface,)
+
+
+@register_django_node
+class AttributeChoiceNode(DjangoNode):
     value = graphene.String(required=True)
     value_identifier = graphene.String(required=True)
 
@@ -209,30 +231,30 @@ class CategoryAttributeChoiceNode(DjangoNode):
         return self.choice.identifier
 
     class Meta:
-        model = CategoryAttributeChoice
-        interfaces = (CategoryAttributeInterface,)
+        model = AttributeChoice
+        interfaces = (AttributeInterface,)
 
 
 @register_django_node
-class CategoryAttributeRichTextNode(DjangoNode):
+class AttributeRichTextNode(DjangoNode):
     value = graphene.String(required=True)
 
     def resolve_value(self, info):
         return self.text
 
     class Meta:
-        model = CategoryAttributeRichText
-        interfaces = (CategoryAttributeInterface,)
+        model = AttributeRichText
+        interfaces = (AttributeInterface,)
         # We expose `value` instead of `text`
-        fields = public_fields(CategoryAttributeRichText, remove_fields=['text'])
+        fields = public_fields(AttributeRichText, remove_fields=['text'])
 
 
 @register_django_node
-class CategoryAttributeNumericValueNode(DjangoNode):
+class AttributeNumericValueNode(DjangoNode):
     class Meta:
-        model = CategoryAttributeNumericValue
-        interfaces = (CategoryAttributeInterface,)
-        fields = public_fields(CategoryAttributeNumericValue)
+        model = AttributeNumericValue
+        interfaces = (AttributeInterface,)
+        fields = public_fields(AttributeNumericValue)
 
 
 class CategoryLevelNode(DjangoNode):
@@ -242,22 +264,22 @@ class CategoryLevelNode(DjangoNode):
 
 
 @register_django_node
-class CategoryAttributeTypeNode(DjangoNode):
+class AttributeTypeNode(DjangoNode):
     class Meta:
-        model = CategoryAttributeType
-        fields = public_fields(CategoryAttributeType)
+        model = AttributeType
+        fields = public_fields(AttributeType)
 
 
 @register_django_node
-class CategoryAttributeTypeChoiceOptionNode(DjangoNode):
+class AttributeTypeChoiceOptionNode(DjangoNode):
     class Meta:
-        model = CategoryAttributeTypeChoiceOption
-        fields = public_fields(CategoryAttributeTypeChoiceOption)
+        model = AttributeTypeChoiceOption
+        fields = public_fields(AttributeTypeChoiceOption)
 
 
 @register_django_node
 class CategoryTypeNode(DjangoNode):
-    attribute_types = graphene.List(CategoryAttributeTypeNode)
+    attribute_types = graphene.List(AttributeTypeNode)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
 
     class Meta:
@@ -282,7 +304,7 @@ def get_translated_category_page(info, **kwargs):
 @register_django_node
 class CategoryNode(DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
-    attributes = graphene.List(CategoryAttributeInterface, id=graphene.ID(required=False))
+    attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
     icon_url = graphene.String()
@@ -295,6 +317,7 @@ class CategoryNode(DjangoNode):
         attributes = chain(
             self.richtext_attributes.filter(query),
             self.choice_attributes.filter(query),
+            self.choice_with_text_attributes.filter(query),
             self.numeric_value_attributes.filter(query)
         )
         return sorted(attributes, key=lambda a: a.type.order)

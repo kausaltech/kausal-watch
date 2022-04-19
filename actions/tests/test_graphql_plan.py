@@ -1,7 +1,7 @@
 import json
 import pytest
 
-from actions.models import CategoryAttributeType
+from actions.models import AttributeType
 from pages.models import StaticPage
 from admin_site.tests.factories import ClientPlanFactory
 
@@ -187,15 +187,15 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
 
 
 def test_category_types(
-    graphql_client_query_data, plan, category_type_factory, category_attribute_type_factory,
-    category_attribute_type_choice_option_factory
+    graphql_client_query_data, plan, category_type_factory, attribute_type_factory,
+    attribute_type_choice_option_factory
 ):
     ct = category_type_factory(plan=plan)
-    cat1 = category_attribute_type_factory(category_type=ct)
-    cat2 = category_attribute_type_factory(category_type=ct,
-                                           format=CategoryAttributeType.AttributeFormat.ORDERED_CHOICE)
-    cat2co1 = category_attribute_type_choice_option_factory(type=cat2)
-    cat2co2 = category_attribute_type_choice_option_factory(type=cat2)
+    cat1 = attribute_type_factory(scope=ct)
+    cat2 = attribute_type_factory(scope=ct,
+                                  format=AttributeType.AttributeFormat.ORDERED_CHOICE)
+    cat2co1 = attribute_type_choice_option_factory(type=cat2)
+    cat2co2 = attribute_type_choice_option_factory(type=cat2)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {

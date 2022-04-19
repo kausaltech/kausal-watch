@@ -168,7 +168,7 @@ class AttributeRichText(models.Model):
 
     text = RichTextField(verbose_name=_('Text'))
 
-    public_fields = ['id', 'type', 'content_object', 'text']
+    public_fields = ['id', 'type', 'text']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -188,7 +188,7 @@ class AttributeNumericValue(models.Model):
 
     value = models.FloatField()
 
-    public_fields = ['id', 'type', 'content_object', 'value']
+    public_fields = ['id', 'type', 'value']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')

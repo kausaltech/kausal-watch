@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -51,6 +52,13 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
     )
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
     i18n = TranslationField(fields=('name',))
+
+    attribute_types = GenericRelation(
+        to='actions.AttributeType',
+        related_query_name='category_type',
+        content_type_field='scope_content_type',
+        object_id_field='scope_id',
+    )
 
     categories: models.QuerySet[Category]
 
@@ -125,6 +133,23 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
     )
 
     i18n = TranslationField(fields=('name', 'short_description'))
+
+    choice_attributes = GenericRelation(
+        to='actions.AttributeChoice',
+        related_query_name='category',
+    )
+    choice_with_text_attributes = GenericRelation(
+        to='actions.AttributeChoiceWithText',
+        related_query_name='category',
+    )
+    richtext_attributes = GenericRelation(
+        to='actions.AttributeRichText',
+        related_query_name='category',
+    )
+    numeric_value_attributes = GenericRelation(
+        to='actions.AttributeNumericValue',
+        related_query_name='category',
+    )
 
     public_fields = [
         'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description',
