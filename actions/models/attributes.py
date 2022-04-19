@@ -41,32 +41,44 @@ class AttributeType(ClusterableModel, OrderedModel):
         verbose_name = _('attribute type')
         verbose_name_plural = _('attribute types')
 
-    def set_value(self, action, vals):
-        # TODO: Partly duplicated in category.py
-        assert action.plan == self.plan
+    def set_value(self, obj, vals):
+        # TODO: Remove equivalent from category.py
+        content_type = ContentType.objects.get_for_model(obj)
+        assert content_type.app_label == 'actions'
+        if content_type.model == 'action':
+            assert self.scope == obj.plan
+        elif content_type.model == 'category':
+            assert self.scope == obj.category_type
+        else:
+            raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model}")
 
         if self.format == self.AttributeFormat.ORDERED_CHOICE:
             val = vals.get('choice')
-            existing = self.choice_attributes.filter(action=action)
+            existing = self.choice_attributes.filter(content_type=content_type, object_id=obj.id)
             if existing:
                 existing.delete()
             if val is not None:
-                self.choice_attributes.create(content_object=action, choice=val)
+                AttributeChoice.objects.create(type=self, content_object=obj, choice=val)
         elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
             choice_val = vals.get('choice')
             text_val = vals.get('text')
-            existing = self.choice_with_text_attributes.filter(action=action)
+            existing = self.choice_with_text_attributes.filter(content_type=content_type, object_id=obj.id)
             if existing:
                 existing.delete()
             if choice_val is not None or text_val:
-                self.choice_with_text_attributes.create(content_object=action, choice=choice_val, text=text_val)
+                AttributeChoiceWithText.objects.create(
+                    type=self,
+                    content_object=obj,
+                    choice=choice_val,
+                    text=text_val,
+                )
         elif self.format == self.AttributeFormat.RICH_TEXT:
             val = vals.get('text')
             try:
-                obj = self.richtext_attributes.get(action=action)
+                obj = self.richtext_attributes.get(content_type=content_type, object_id=obj.id)
             except self.richtext_attributes.model.DoesNotExist:
                 if val:
-                    obj = self.richtext_attributes.create(content_object=action, text=val)
+                    obj = AttributeRichText.objects.create(type=self, content_object=obj, text=val)
             else:
                 if not val:
                     obj.delete()
@@ -76,10 +88,10 @@ class AttributeType(ClusterableModel, OrderedModel):
         elif self.format == self.AttributeFormat.NUMERIC:
             val = vals.get('value')
             try:
-                obj = self.numeric_value_attributes.get(action=action)
+                obj = self.numeric_value_attributes.get(content_type=content_type, object_id=obj.id)
             except self.numeric_value_attributes.model.DoesNotExist:
                 if val is not None:
-                    obj = self.numeric_value_attributes.create(content_object=action, value=val)
+                    obj = AttributeNumericValue.objects.create(type=self, content_object=obj, value=val)
             else:
                 if val is None:
                     obj.delete()
@@ -127,7 +139,7 @@ class AttributeChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.type, self.action)
+        return '%s (%s) for %s' % (self.choice, self.type, self.content_object)
 
 
 class AttributeChoiceWithText(models.Model):

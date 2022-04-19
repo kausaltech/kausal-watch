@@ -1,4 +1,4 @@
-from django import forms
+from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
@@ -12,7 +12,8 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from .admin import CategoryTypeFilter
-from .models import AttributeType, AttributeRichText, Category, CategoryType
+from .attribute_type_admin import get_attribute_fields
+from .models import AttributeType, Category, CategoryType
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
     AplansTabbedInterface, get_translation_tabs
@@ -79,55 +80,21 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return AplansTabbedInterface(tabs)
 
 
-def get_attribute_fields(cat_type, obj, with_initial=False):
-    # TODO: Partly duplicated in action_admin.py
-    fields = {}
-
-    if not obj or not obj.pk:
-        with_initial = False
-
-    for attribute_type in cat_type.attribute_types.all():
-        initial = None
-        if attribute_type.format == AttributeType.AttributeFormat.ORDERED_CHOICE:
-            qs = attribute_type.choice_options.all()
-            if with_initial:
-                c = attribute_type.choice_attributes.filter(category=obj).first()
-                if c:
-                    initial = c.choice
-            field = forms.ModelChoiceField(
-                qs, label=attribute_type.name, initial=initial, required=False,
-            )
-        elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
-            initial = None
-            if with_initial:
-                val_obj = attribute_type.richtext_attributes.filter(category=obj).first()
-                if val_obj is not None:
-                    initial = val_obj.text
-
-            field = AttributeRichText._meta.get_field('text').formfield(
-                initial=initial, required=False
-            )
-        elif attribute_type.format == AttributeType.AttributeFormat.NUMERIC:
-            initial = None
-            if with_initial:
-                val_obj = attribute_type.numeric_value_attributes.filter(category=obj).first()
-                if val_obj is not None:
-                    initial = val_obj.value
-            field = forms.FloatField(
-                label=attribute_type.name, initial=initial, required=False,
-            )
-        else:
-            raise Exception('Unsupported attribute type format: %s' % attribute_type.format)
-
-        field.attribute_type = attribute_type
-        fields['attribute_type_%s' % attribute_type.identifier] = field
-    return fields
+def get_category_attribute_fields(category_type, category, **kwargs):
+    category_ct = ContentType.objects.get_for_model(Category)
+    category_type_ct = ContentType.objects.get_for_model(category_type)
+    attribute_types = AttributeType.objects.filter(
+        object_content_type=category_ct,
+        scope_content_type=category_type_ct,
+        scope_id=category_type.id,
+    )
+    return get_attribute_fields(attribute_types, category, **kwargs)
 
 
 class AttributeFieldPanel(FieldPanel):
     def on_form_bound(self):
         super().on_form_bound()
-        attribute_fields = get_attribute_fields(self.instance.type, self.instance, with_initial=True)
+        attribute_fields = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
         self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 
@@ -136,16 +103,24 @@ class CategoryAdminForm(WagtailAdminModelForm):
         obj = super().save(commit)
 
         # Update categories
-        for field_name, field in get_attribute_fields(obj.type, obj).items():
-            val = self.cleaned_data.get(field_name)
-            field.attribute_type.set_category_value(obj, val)
+        # TODO: Refactor duplicated code (action_admin.py)
+        for attribute_type, fields in get_category_attribute_fields(obj.type, obj):
+            vals = {}
+            for form_field_name, (field, model_field_name) in fields.items():
+                val = self.cleaned_data.get(form_field_name)
+                vals[model_field_name] = val
+            attribute_type.set_value(obj, vals)
         return obj
 
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
+        # TODO: Refactor duplicated code (action_admin.py)
         if self.instance is not None:
-            attribute_fields = get_attribute_fields(self.instance.type, self.instance, with_initial=True)
+            attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
+            attribute_fields = {form_field_name: field
+                                for _, fields in attribute_fields_list
+                                for form_field_name, (field, _) in fields.items()}
         else:
             attribute_fields = {}
 
@@ -285,13 +260,19 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     panels.remove(p)
                     break
 
-        if instance and instance.type:
-            attribute_fields = get_attribute_fields(instance.type, instance, with_initial=True)
+        # TODO: Refactor duplicated code (action_admin.py)
+        if instance:
+            attribute_fields = get_category_attribute_fields(instance.type, instance, with_initial=True)
         else:
-            attribute_fields = {}
+            attribute_fields = []
 
-        for key, field in attribute_fields.items():
-            panels.append(AttributeFieldPanel(key, heading=field.attribute_type.name))
+        for attribute_type, fields in attribute_fields:
+            for form_field_name, (field, model_field_name) in fields.items():
+                if len(fields) > 1:
+                    heading = f'{attribute_type.name} ({model_field_name})'
+                else:
+                    heading = attribute_type.name
+                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 

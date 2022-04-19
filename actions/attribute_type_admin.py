@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -9,7 +10,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .models import Action, AttributeType, Category
+from .models import Action, AttributeRichText, AttributeType, Category
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
@@ -171,7 +172,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
             # don't add a panel for choosing a plan.
             pass
-        if (content_type.app_label, content_type.model) == ('actions', 'category'):
+        elif (content_type.app_label, content_type.model) == ('actions', 'category'):
             basic_panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser))
         else:
             raise Exception(f"Invalid content type {content_type.app_label}.{content_type.model}")
@@ -201,3 +202,81 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             | (Q(object_content_type=category_ct) & Q(scope_content_type=category_type_ct)
                & Q(scope_id__in=category_types_in_plan))
         )
+
+
+def get_attribute_fields(attribute_types, obj, with_initial=False):
+    # Return list containing pairs (attribute_type, fields), where fields is a dict mapping a form field name to a pair
+    # (field, model_field_name)
+    result = []
+
+    if not obj or not obj.pk:
+        with_initial = False
+
+    content_type = ContentType.objects.get_for_model(obj)
+    for attribute_type in attribute_types:
+        if attribute_type.format == AttributeType.AttributeFormat.ORDERED_CHOICE:
+            initial_choice = None
+            qs = attribute_type.choice_options.all()
+            if with_initial:
+                c = (attribute_type.choice_attributes
+                     .filter(content_type=content_type, object_id=obj.id)
+                     .first())
+                if c:
+                    initial_choice = c.choice
+            field = forms.ModelChoiceField(
+                qs, label=attribute_type.name, initial=initial_choice, required=False,
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'choice')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
+            initial_choice = None
+            initial_text = None
+            qs = attribute_type.choice_options.all()
+            if with_initial:
+                cwt = (attribute_type.choice_with_text_attributes
+                       .filter(content_type=content_type, object_id=obj.id)
+                       .first())
+                if cwt:
+                    initial_choice = cwt.choice
+                    initial_text = cwt.text
+            choice_field = forms.ModelChoiceField(
+                qs, label=attribute_type.name, initial=initial_choice, required=False,
+            )
+            choice_form_field_name = f'attribute_type_{attribute_type.identifier}_choice'
+            text_field = AttributeRichText._meta.get_field('text').formfield(
+                initial=initial_text, required=False
+            )
+            text_field.panel_heading = attribute_type.name
+            text_form_field_name = f'attribute_type_{attribute_type.identifier}_text'
+            result.append((attribute_type, {choice_form_field_name: (choice_field, 'choice'),
+                                            text_form_field_name: (text_field, 'text')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
+            initial_text = None
+            if with_initial:
+                val_obj = (attribute_type.richtext_attributes
+                           .filter(content_type=content_type, object_id=obj.id)
+                           .first())
+                if val_obj is not None:
+                    initial_text = val_obj.text
+
+            field = AttributeRichText._meta.get_field('text').formfield(
+                initial=initial_text, required=False
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'text')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.NUMERIC:
+            initial_value = None
+            if with_initial:
+                val_obj = (attribute_type.numeric_value_attributes
+                           .filter(content_type=content_type, object_id=obj.id)
+                           .first())
+                if val_obj is not None:
+                    initial_value = val_obj.value
+            field = forms.FloatField(
+                label=attribute_type.name, initial=initial_value, required=False,
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'value')}))
+        else:
+            raise Exception('Unsupported attribute type format: %s' % attribute_type.format)
+    return result
