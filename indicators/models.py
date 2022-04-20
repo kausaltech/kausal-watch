@@ -82,6 +82,10 @@ class Unit(ClusterableModel):
         verbose_name=_('verbose name plural')
     )
 
+    i18n = TranslationField(
+        fields=['name', 'short_name', 'verbose_name', 'verbose_name_plural']
+    )
+
     autocomplete_search_field = 'name'
 
     class Meta:
