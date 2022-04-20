@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy as _
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from .models import UserFeedback
@@ -24,6 +25,7 @@ class UserFeedbackPermissionHelper(PermissionHelper):
 class UserFeedbackAdmin(ModelAdmin):
     model = UserFeedback
     menu_icon = 'mail'
+    menu_label = _('User feedbacks')
     permission_helper_class = UserFeedbackPermissionHelper
     list_display = ['created_at', 'name', 'comment']
     inspect_view_enabled = True

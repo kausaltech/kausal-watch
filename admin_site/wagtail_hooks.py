@@ -4,6 +4,7 @@ from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
@@ -58,8 +59,7 @@ class AttributeTypeMenuItem(MenuItem):
         self.content_type = content_type
         self.base_url = reverse('actions_attributetype_modeladmin_index')
         url = f'{self.base_url}?content_type={content_type.id}'
-        # FIXME: label starts with lower-case letter for our models
-        label = content_type.model_class()._meta.verbose_name
+        label = capfirst(content_type.model_class()._meta.verbose_name)
         super().__init__(label, url, **kwargs)
 
     def is_active(self, request):

@@ -7,7 +7,7 @@ from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.contrib.modeladmin.views import DeleteView
+from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from .models import Action, AttributeRichText, AttributeType, Category
@@ -61,15 +61,29 @@ class ContentTypeQueryParameterMixin:
         return _append_content_type_query_parameter(self.request, super().delete_url)
 
 
+class AttributeTypeIndexView(IndexView):
+    page_title = _("Attributes")
+
+
 class AttributeTypeCreateView(ContentTypeQueryParameterMixin, AplansCreateView):
+    def get_object_content_type(self):
+        object_ct_id = self.request.GET.get('content_type')
+        if not object_ct_id:
+            return None
+        return ContentType.objects.get(pk=int(object_ct_id))
+
+    def get_page_subtitle(self):
+        content_type = self.get_object_content_type()
+        model_name = content_type.model_class()._meta.verbose_name_plural
+        return _("Attribute for %s") % model_name
+
     def get_instance(self):
         """Create an attribute type instance and set its object content type to the one given in GET or POST data."""
         instance = super().get_instance()
-        object_ct_id = self.request.GET.get('content_type')
-        if object_ct_id and not instance.pk:
+        object_ct = self.get_object_content_type()
+        if object_ct is not None and not instance.pk:
             assert not hasattr(instance, 'object_content_type')
             assert not hasattr(instance, 'scope_content_type')
-            object_ct = ContentType.objects.get(pk=int(object_ct_id))
             instance.object_content_type = object_ct
             if (object_ct.app_label, object_ct.model) == ('actions', 'action'):
                 scope_ct_model = 'plan'
@@ -129,7 +143,7 @@ class AttributeTypeAdminButtonHelper(ButtonHelper):
 class AttributeTypeAdminMenuItem(ModelAdminMenuItem):
     def is_shown(self, request):
         # Hide it because we will have menu items for listing attribute types of specific content types.
-        # Note that we need to register CategoryTypeAdmin nonetheless, otherwise the URLs wouldn't be set up.
+        # Note that we need to register AttributeTypeAdmin nonetheless, otherwise the URLs wouldn't be set up.
         return False
 
 
@@ -141,7 +155,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     menu_order = 1200
     list_display = ('name', 'format')
     list_filter = (AttributeTypeFilter,)
-    add_to_settings_menu = True
 
     basic_panels = [
         FieldPanel('name'),
@@ -153,6 +166,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         ])
     ]
 
+    index_view_class = AttributeTypeIndexView
     create_view_class = AttributeTypeCreateView
     edit_view_class = AttributeTypeEditView
     delete_view_class = AttributeTypeDeleteView
@@ -173,7 +187,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             # don't add a panel for choosing a plan.
             pass
         elif (content_type.app_label, content_type.model) == ('actions', 'category'):
-            basic_panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser))
+            basic_panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_("Category type")))
         else:
             raise Exception(f"Invalid content type {content_type.app_label}.{content_type.model}")
 
