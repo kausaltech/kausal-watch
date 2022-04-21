@@ -49,6 +49,8 @@ env = environ.FileAwareEnv(
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
     ADMIN_WILDCARD_DOMAIN=(str, ''),
+    CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
+    CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
 )
 
 BASE_DIR = root()
@@ -657,3 +659,10 @@ if 'DATABASES' in locals():
 if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+CELERY_BEAT_SCHEDULE = {}  # TODO
+# Required for Celery exporter: https://github.com/OvalMoney/celery-exporter
+# For configuration, see also another exporter: https://github.com/danihodovic/celery-exporter
+CELERY_WORKER_SEND_TASK_EVENTS = True
+# CELERY_TASK_SEND_SENT_EVENT = True  # required only for danihodovic/celery-exporter

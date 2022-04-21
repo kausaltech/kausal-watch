@@ -1,4 +1,39 @@
-version: '3.3'
+version: '3.8'
+x-django-environment: &django-environment
+  - ENV_FILE
+  - DATABASE_URL
+  - CACHE_URL=rediscache://redis:6379
+  - STATIC_ROOT=/srv/static
+  - LC_CTYPE=C.UTF-8
+  - DEBUG
+  - DEPLOYMENT_TYPE
+  - ALLOWED_HOSTS
+  - COOKIE_PREFIX
+  - INTERNAL_IPS
+  - SENTRY_DSN
+  - SECRET_KEY
+  - CONFIGURE_LOGGING
+  - OIDC_ISSUER_URL
+  - OIDC_CLIENT_ID
+  - OIDC_CLIENT_SECRET
+  - AZURE_AD_CLIENT_ID
+  - AZURE_AD_CLIENT_SECRET
+  - MAILGUN_API_KEY
+  - MAILGUN_SENDER_DOMAIN
+  - MAILGUN_REGION
+  - EXTRA_INSTALLED_APPS
+  - HOSTNAME_PLAN_DOMAINS
+  - ELASTICSEARCH_URL
+  - ADMIN_WILDCARD_DOMAIN
+  - CELERY_BROKER_URL=redis://redis:6379
+  - CELERY_RESULT_BACKEND=redis://redis:6379
+
+x-django-build: &django-build
+  context: .
+  dockerfile: docker/app/Dockerfile
+  args:
+    - EXTRA_PYPI_INDEX
+
 services:
   db:
     # Set DB_IMAGE to specify the image name and tag for docker-compose push
@@ -20,42 +55,42 @@ services:
   app:
     # Set APP_IMAGE to specify the image name and tag for docker-compose push
     image: ${APP_IMAGE-kausal-watch}
-    build:
-      context: .
-      dockerfile: docker/app/Dockerfile
-      args:
-        - EXTRA_PYPI_INDEX
+    build: *django-build
     restart: always
     volumes:
       - aplans_media:/srv/media
-    environment:
-      - ENV_FILE
-      - DATABASE_URL
-      - CACHE_URL=rediscache://redis:6379
-      - STATIC_ROOT=/srv/static
-      - LC_CTYPE=C.UTF-8
-      - DEBUG
-      - DEPLOYMENT_TYPE
-      - ALLOWED_HOSTS
-      - COOKIE_PREFIX
-      - INTERNAL_IPS
-      - SENTRY_DSN
-      - SECRET_KEY
-      - CONFIGURE_LOGGING
-      - OIDC_ISSUER_URL
-      - OIDC_CLIENT_ID
-      - OIDC_CLIENT_SECRET
-      - AZURE_AD_CLIENT_ID
-      - AZURE_AD_CLIENT_SECRET
-      - MAILGUN_API_KEY
-      - MAILGUN_SENDER_DOMAIN
-      - MAILGUN_REGION
-      - EXTRA_INSTALLED_APPS
-      - HOSTNAME_PLAN_DOMAINS
-      - ELASTICSEARCH_URL
+    environment: *django-environment
     depends_on:
       - db
       - redis
+    command: uwsgi
+
+  celery-worker:
+    build: *django-build
+    restart: always
+    environment: *django-environment
+    depends_on:
+      - db
+      - redis
+    command: celery worker
+
+  celery-beat:
+    build: *django-build
+    restart: always
+    environment: *django-environment
+    depends_on:
+      - db
+      - redis
+    command: celery beat
+
+  celery-exporter:
+    image: ovalmoney/celery-exporter
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - "${CELERY_EXPORTER_PORT:-127.0.0.1:9540}:9540"
+    command: --enable-events
 
   elasticsearch:
     image: ${ELASTICSEARCH_IMAGE-kausal-watch-elasticsearch}
