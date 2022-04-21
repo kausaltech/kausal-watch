@@ -682,7 +682,11 @@ CELERY_BEAT_SCHEDULE = {
         'kwargs': {
             'plan': plan,
         },
-    } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()}
+    } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()},
+    'update-index': {
+        'task': 'aplans.tasks.update_index',
+        'schedule': crontab(hour=3, minute=0),
+    },
 }
 # Required for Celery exporter: https://github.com/OvalMoney/celery-exporter
 # For configuration, see also another exporter: https://github.com/danihodovic/celery-exporter
