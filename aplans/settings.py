@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import importlib
+from celery.schedules import crontab
 from typing import Literal
 
 import environ
@@ -661,7 +662,28 @@ if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
-CELERY_BEAT_SCHEDULE = {}  # TODO
+NOTIFICATIONS_CRONTAB = {
+    'helsinki-kierto': {'hour': 7, 'minute': 40},
+    'lahti-ilmasto': {'hour': 8, 'minute': 10},
+    'viitasaari-ilmasto': {'hour': 8, 'minute': 40},
+}
+CELERY_BEAT_SCHEDULE = {
+    'update-action-status': {
+        'task': 'actions.tasks.update_action_status',
+        'schedule': crontab(hour=4, minute=0),
+    },
+    'calculate-indicators': {
+        'task': 'indicators.tasks.calculate_indicators',
+        'schedule': crontab(hour=23, minute=0),
+    },
+    **{f'send_notifications.{plan}': {
+        'task': 'notifications.tasks.send_notifications',
+        'schedule': crontab(**crontab_args),
+        'kwargs': {
+            'plan': plan,
+        },
+    } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()}
+}
 # Required for Celery exporter: https://github.com/OvalMoney/celery-exporter
 # For configuration, see also another exporter: https://github.com/danihodovic/celery-exporter
 CELERY_WORKER_SEND_TASK_EVENTS = True
