@@ -194,12 +194,20 @@ class CommonIndicator(ClusterableModel):
     plans = models.ManyToManyField(
         'actions.Plan', blank=True, related_name='common_indicators', through='PlanCommonIndicator'
     )
+    normalization_indicators = models.ManyToManyField(
+        'self', blank=True, related_name='normalizable_indicators', symmetrical=False,
+        through='CommonIndicatorNormalizator', through_fields=('normalizable', 'normalizer')
+    )
+    normalize_by_label = models.CharField(
+        max_length=200, verbose_name=_('normalize by label'), null=True, blank=True
+    )
 
-    i18n = TranslationField(fields=['name', 'description'])
+    i18n = TranslationField(fields=['name', 'description', 'normalize_by_label'])
 
     public_fields = [
         'id', 'identifier', 'name', 'description', 'quantity', 'unit',
-        'indicators', 'dimensions', 'related_causes', 'related_effects'
+        'indicators', 'dimensions', 'related_causes', 'related_effects',
+        'normalization_indicators', 'normalize_by_label', 'normalizations',
     ]
 
     class Meta:
@@ -208,6 +216,16 @@ class CommonIndicator(ClusterableModel):
 
     def __str__(self):
         return self.name
+
+
+class CommonIndicatorNormalizator(models.Model):
+    normalizable = models.ForeignKey(CommonIndicator, on_delete=models.CASCADE, related_name='normalizations')
+    normalizer = models.ForeignKey(CommonIndicator, on_delete=models.CASCADE, related_name='+')
+    unit = models.ForeignKey(Unit, on_delete=models.PROTECT, related_name='+')
+    unit_multiplier = models.FloatField()
+
+    class Meta:
+        unique_together = (('normalizable', 'normalizer'),)
 
 
 class PlanCommonIndicator(models.Model):
@@ -346,6 +364,7 @@ class Indicator(ClusterableModel, index.Indexed):
     i18n = TranslationField(fields=['name', 'description'])
 
     levels: RelatedManager[IndicatorLevel]
+    values: RelatedManager[IndicatorValue]
 
     search_fields = [
         index.SearchField('name', boost=10),
@@ -377,15 +396,16 @@ class Indicator(ClusterableModel, index.Indexed):
         return level.level if level is not None else None
 
     def handle_values_update(self):
+        update_fields = []
+
         try:
             latest_value = self.values.filter(categories__isnull=True).latest()
         except IndicatorValue.DoesNotExist:
             latest_value = None
-        else:
-            if self.latest_value == latest_value:
-                return
-        self.latest_value = latest_value
-        update_fields = ['latest_value']
+
+        if self.latest_value != latest_value:
+            self.latest_value = latest_value
+            update_fields.append('latest_value')
 
         if self.updated_values_due_at is not None:
             # If latest_value is newer than updated_values_due_at - 1 year, add 1 year to updated_values_due_at
@@ -393,6 +413,11 @@ class Indicator(ClusterableModel, index.Indexed):
             if latest_value.date >= reporting_period_start:
                 self.updated_values_due_at += relativedelta(years=1)
                 update_fields.append('updated_values_due_at')
+
+        if self.common is not None:
+            cins = CommonIndicatorNormalizator.objects.filter(normalizable=self.common)
+            for cin in cins:
+                self.generate_normalized_values(cin)
 
         self.save(update_fields=update_fields)
 
@@ -461,6 +486,34 @@ class Indicator(ClusterableModel, index.Indexed):
                 raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
                                                  % self.common.unit)})
             # Unfortunately it seems we need to check whether dimensions are equal in the form
+
+    def generate_normalized_values(self, cin: CommonIndicatorNormalizator):
+        assert cin.normalizable == self.common
+        nci = cin.normalizer
+
+        ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
+        if not ni:
+            return None
+
+        # Generate only for non-categorized values
+        ni_vals = ni.values.filter(categories__isnull=True)
+        ni_vals_by_date = {v.date: v for v in ni_vals}
+
+        vals = list(self.values.filter(categories__isnull=True))
+        for v in vals:
+            niv = ni_vals_by_date.get(v.date)
+            if not niv:
+                continue
+            if not niv.value:
+                continue
+            val = v.value / niv.value
+            val *= cin.unit_multiplier
+            v.value /= niv.value
+            v.value *= cin.unit_multiplier
+            nvals = v.normalized_values or {}
+            nvals[str(nci.id)] = val
+            v.normalized_values = nvals
+            v.save(update_fields=['normalized_values'])
 
     def __str__(self):
         return self.name
@@ -598,6 +651,9 @@ class IndicatorValue(ClusterableModel):
     )
     value = models.FloatField(verbose_name=_('value'))
     date = models.DateField(verbose_name=_('date'))
+
+    # Cached here for performance reasons
+    normalized_values = models.JSONField(null=True, blank=True)
 
     public_fields = ['id', 'indicator', 'categories', 'value', 'date']
 

@@ -1,3 +1,4 @@
+from typing import Optional
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
@@ -7,7 +8,7 @@ from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
 from indicators.models import (
-    ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
+    ActionIndicator, CommonIndicator, CommonIndicatorNormalizator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator, RelatedIndicator, Unit
 )
 
@@ -66,10 +67,23 @@ class FrameworkNode(DjangoNode):
         fields = public_fields(Framework)
 
 
+class CommonIndicatorNormalization(graphene.ObjectType):
+    normalizer = graphene.Field('indicators.schema.CommonIndicatorNode')
+    unit = graphene.Field(UnitNode)
+
+
 class CommonIndicatorNode(DjangoNode):
+    normalizations = graphene.List(CommonIndicatorNormalization)
+
     class Meta:
         model = CommonIndicator
         fields = public_fields(CommonIndicator)
+
+    @gql_optimizer.resolver_hints(
+        model_field='normalizations'
+    )
+    def resolve_normalizations(root: CommonIndicator, info):
+        return root.normalizations.all()
 
 
 class RelatedCommonIndicatorNode(DjangoNode):
@@ -83,16 +97,30 @@ class FrameworkIndicatorNode(DjangoNode):
         fields = public_fields(FrameworkIndicator)
 
 
+class NormalizedValue(graphene.ObjectType):
+    normalizer_id = graphene.ID()
+    value = graphene.Float()
+
+
 class IndicatorValueNode(DjangoNode):
     date = graphene.String()
+    normalized_values = graphene.List(NormalizedValue)
 
     class Meta:
         model = IndicatorValue
         fields = public_fields(IndicatorValue)
 
-    def resolve_date(self, info):
+    def resolve_date(self: IndicatorValue, info):
         date = self.date.isoformat()
         return date
+
+    @gql_optimizer.resolver_hints(
+        model_field='normalized_values',
+    )
+    def resolve_normalized_values(self: IndicatorValue, info):
+        if not self.normalized_values:
+            return []
+        return [dict(normalizer_id=k, value=v) for k, v in self.normalized_values.items()]
 
 
 class IndicatorGoalNode(DjangoNode):
@@ -142,6 +170,20 @@ class IndicatorNode(DjangoNode):
         if not include_dimensions:
             qs = qs.filter(categories__isnull=True).distinct()
         return qs
+
+    @gql_optimizer.resolver_hints(
+        prefetch_related=('values', 'common__normalizations'),
+        select_related=('common',)
+    )
+    def resolve_normalized_values(self: Indicator, info):
+        if not self.common:
+            return None
+        nis = self.common.normalizations.all()
+        if not nis:
+            return None
+        cin = nis[0]
+        normalizer = cin.normalizer
+        return NormalizedValues(unit=cin.unit, values=out)
 
     @gql_optimizer.resolver_hints(
         model_field='levels',
