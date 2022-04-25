@@ -86,8 +86,8 @@ class Plan(ClusterableModel):
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
-    published_at = models.DateTimeField(null=True, verbose_name=_('published at'))
-    archived_at = models.DateTimeField(null=True, verbose_name=_('archived at'))
+    published_at = models.DateTimeField(null=True, blank=True, verbose_name=_('published at'))
+    archived_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name=_('archived at'))
     site_url = models.URLField(
         blank=True, null=True, verbose_name=_('site URL'),
         validators=[URLValidator(('http', 'https'))]
