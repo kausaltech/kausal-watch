@@ -78,6 +78,7 @@ class PlanAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
+        FieldPanel('short_name'),
         FieldPanel('identifier'),
         FieldPanel('actions_locked'),
         FieldPanel('site_url'),
