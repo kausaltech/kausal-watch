@@ -143,7 +143,7 @@ class PlanNode(DjangoNode):
                 urlparse(client_url)
             except Exception:
                 raise GraphQLError('clientUrl must be a valid URL', [info])
-        return self.get_view_url(client_url)
+        return self.get_view_url(client_url=client_url)
 
     def resolve_admin_url(self: Plan, info):
         if not self.features.show_admin_link:

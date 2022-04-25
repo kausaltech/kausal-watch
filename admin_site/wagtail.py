@@ -30,6 +30,7 @@ from wagtailautocomplete.edit_handlers import \
 
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
+from actions.models import Plan
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:
@@ -147,7 +148,10 @@ class AplansButtonHelper(ButtonHelper):
     def view_live_button(self, obj, classnames_add=None, classnames_exclude=None):
         if obj is None or not hasattr(obj, 'get_view_url'):
             return None
-        url = obj.get_view_url(self.request.user.get_active_admin_plan())
+        if isinstance(obj, Plan):
+            url = obj.get_view_url()
+        else:
+            url = obj.get_view_url(plan=self.request.user.get_active_admin_plan())
         if not url:
             return None
 

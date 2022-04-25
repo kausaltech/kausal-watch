@@ -453,7 +453,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
             change_url = reverse('admin:actions_action_change', args=(self.id,))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
-            'updated_at': self.updated_at, 'view_url': self.get_view_url(plan), 'order': self.order,
+            'updated_at': self.updated_at, 'view_url': self.get_view_url(plan=plan), 'order': self.order,
         }
 
     def has_contact_persons(self):
