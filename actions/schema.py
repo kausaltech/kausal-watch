@@ -1,3 +1,6 @@
+from urllib.parse import urlparse
+from typing import Optional
+
 import graphene
 from graphene_django.converter import convert_django_field_with_choices
 import graphene_django_optimizer as gql_optimizer
@@ -63,6 +66,7 @@ class PlanNode(DjangoNode):
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     admin_url = graphene.String(required=False)
+    view_url = graphene.String(client_url=graphene.String(required=False))
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
@@ -129,6 +133,17 @@ class PlanNode(DjangoNode):
             if not hostname:
                 return None
         return self.domains.filter(plan=self, hostname=hostname)
+
+    @gql_optimizer.resolver_hints(
+        model_field='domains',
+    )
+    def resolve_view_url(self: Plan, info, client_url: Optional[str] = None):
+        if client_url:
+            try:
+                urlparse(client_url)
+            except Exception:
+                raise GraphQLError('clientUrl must be a valid URL', [info])
+        return self.get_view_url(client_url)
 
     def resolve_admin_url(self: Plan, info):
         if not self.features.show_admin_link:
@@ -424,6 +439,7 @@ class ActionNode(DjangoNode):
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
+    view_url = graphene.String(client_url=graphene.String(required=False))
     similar_actions = graphene.List('actions.schema.ActionNode')
 
     class Meta:
@@ -449,15 +465,19 @@ class ActionNode(DjangoNode):
         return name
 
     @gql_optimizer.resolver_hints(
-        model_field='description',
+        model_field=('description', 'i18n'),
     )
-    def resolve_description(self, info):
-        self.i18n  # Workaround to avoid i18n field being deferred in gql_optimizer
+    def resolve_description(self: Action, info):
         description = self.description_i18n
         if description is None:
             return None
-
         return RichText(description)
+
+    @gql_optimizer.resolver_hints(
+        model_field=('plan', 'identifier')
+    )
+    def resolve_view_url(self: Action, info, client_url: Optional[str] = None):
+        return self.get_view_url(client_url=client_url)
 
     @gql_optimizer.resolver_hints(
         model_field='categories',

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+from typing import Optional
 import logging
 from datetime import date
 
@@ -468,15 +469,10 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         return len(active_tasks)
     active_task_count.short_description = _('Active tasks')
 
-    def get_view_url(self, plan=None):
+    def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None):
         if plan is None:
             plan = self.plan
-        if not plan.site_url:
-            return None
-        if plan.site_url.startswith('http'):
-            return '{}/actions/{}'.format(plan.site_url, self.identifier)
-        else:
-            return 'https://{}/actions/{}'.format(plan.site_url, self.identifier)
+        return '%s/actions/%s' % (plan.get_view_url(client_url=client_url), self.identifier)
 
     @classmethod
     def get_indexed_objects(cls):

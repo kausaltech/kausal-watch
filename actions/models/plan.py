@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import typing
+from typing import Optional, Tuple, Type, Union
 import logging
 import re
+from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.db import models, transaction
@@ -30,6 +31,7 @@ if typing.TYPE_CHECKING:
     from .features import PlanFeatures
     from .action import ActionStatus, ActionImplementationPhase
     from .category import CategoryType
+    from django.db.models.manager import RelatedManager
 
 
 logger = logging.getLogger(__name__)
@@ -47,16 +49,23 @@ def get_default_language():
     return settings.LANGUAGES[0][0]
 
 
+def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, str], Tuple[None, None]]:
+    # Get plan identifier from hostname for development and testing
+    parts = hostname.split('.', maxsplit=1)
+    if len(parts) == 2 and parts[1].lower() in settings.HOSTNAME_PLAN_DOMAINS:
+        return (parts[0], parts[1])
+    else:
+        return (None, None)
+
+
 class PlanQuerySet(models.QuerySet):
     def for_hostname(self, hostname):
         hostname = hostname.lower()
-
         # Get plan identifier from hostname for development and testing
-        parts = hostname.split('.', maxsplit=1)
-        if len(parts) == 2 and parts[1] in settings.HOSTNAME_PLAN_DOMAINS:
-            return self.filter(identifier=parts[0])
-
-        return self.filter(domains__hostname=hostname.lower())
+        identifier, _ = get_plan_identifier_from_wildcard_domain(hostname)
+        if identifier:
+            return self.filter(identifier=identifier)
+        return self.filter(domains__hostname=hostname)
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
@@ -128,9 +137,10 @@ class Plan(ClusterableModel):
     related_plans = models.ManyToManyField('self', blank=True)
 
     features: PlanFeatures
-    action_statuses: models.QuerySet[ActionStatus]
-    action_implementation_phases: models.QuerySet[ActionImplementationPhase]
-    category_types: models.QuerySet[CategoryType]
+    action_statuses: RelatedManager[ActionStatus]
+    action_implementation_phases: RelatedManager[ActionImplementationPhase]
+    category_types: RelatedManager[CategoryType]
+    domains: RelatedManager[PlanDomain]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
@@ -190,7 +200,7 @@ class Plan(ClusterableModel):
         return root
 
     def save(self, *args, **kwargs):
-        PlanFeatures = apps.get_model('actions', 'PlanFeatures')
+        PlanFeatures: Type[PlanFeatures] = apps.get_model('actions', 'PlanFeatures')
 
         ret = super().save(*args, **kwargs)
 
@@ -278,6 +288,65 @@ class Plan(ClusterableModel):
 
     def is_live(self):
         return self.published_at is not None and self.archived_at is None
+
+    def get_view_url(self, client_url: Optional[str] = None) -> str:
+        """Return an URL for the homepage of the plan.
+
+        If `client_url` is given, try to return the URL that matches the supplied
+        `client_url` the best:
+          1. If `client_url` is from a wildcard domain, return the hostname that
+             matches the wildcard (with matching protocol and port).
+          2. Otherwise, see if the plan has a PlanDomain matching the hostname
+             (possibly with a URL path prefix).
+          3. If not, return the main URL.
+        """
+        port = hostname = scheme = None
+        if client_url:
+            parts = urlparse(client_url)
+            hostname = parts.netloc.split(':')[0]
+            scheme = parts.scheme
+            if scheme not in ('https', 'http'):
+                raise Exception('Invalid scheme in client_url')
+            port = parts.port
+            if scheme == 'https' and port == 443:
+                port = None
+            elif scheme == 'http' and port == 80:
+                port = None
+
+        base_path = None
+        if hostname:
+            _, wildcard_hostname = get_plan_identifier_from_wildcard_domain(hostname)
+            if wildcard_hostname:
+                hostname = '%s.%s' % (self.identifier, wildcard_hostname)
+                base_path = '/'
+            else:
+                domains = self.domains.all()
+                for domain in domains:
+                    if domain.hostname == hostname:
+                        hostname = domain.hostname
+                        base_path = domain.base_path or '/'
+                        break
+                else:
+                    hostname = None
+
+        if hostname:
+            if not scheme:
+                scheme = 'https'
+            if not base_path:
+                base_path = ''
+            else:
+                base_path = base_path.rstrip('/')
+            if port:
+                port_str = ':%s' % port
+            else:
+                port_str = ''
+            return '%s://%s%s%s' % (scheme, hostname, port_str, base_path)
+        else:
+            if self.site_url.startswith('http'):
+                url = self.site_url.rstrip('/')
+            else:
+                url = 'https://%s' % self.site_url
+            return url
 
     @classmethod
     @transaction.atomic()
