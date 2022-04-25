@@ -135,12 +135,17 @@ class Plan(ClusterableModel):
 
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
     related_plans = models.ManyToManyField('self', blank=True)
+    parent = models.ForeignKey(
+        'self', verbose_name=_('parent'), blank=True, null=True, related_name='children',
+        on_delete=models.SET_NULL
+    )
 
     features: PlanFeatures
     action_statuses: RelatedManager[ActionStatus]
     action_implementation_phases: RelatedManager[ActionImplementationPhase]
     category_types: RelatedManager[CategoryType]
     domains: RelatedManager[PlanDomain]
+    children: RelatedManager[Plan]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'])
@@ -152,7 +157,7 @@ class Plan(ClusterableModel):
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'organization',
-        'related_plans', 'theme_identifier',
+        'related_plans', 'theme_identifier', 'parent', 'children',
     ]
 
     objects = models.Manager.from_queryset(PlanQuerySet)()
