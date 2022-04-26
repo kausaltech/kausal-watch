@@ -104,7 +104,12 @@ class Organization(index.Indexed, Node):
                                      help_text=_('A distinct name for this organization (generated automatically)'))
 
     logo = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+        'images.AplansImage',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='+',
+        help_text=_('An optional logo for this organization'),
     )
 
     founding_date = models.DateField(blank=True,
@@ -261,9 +266,13 @@ class OrganizationMetadataAdmin(models.Model):
         Organization,
         on_delete=models.CASCADE,
         verbose_name=_('organization'),
+        related_name='organization_metadata_admins',
     )
     person = models.ForeignKey(
         'people.Person',
         on_delete=models.CASCADE,
         verbose_name=_('person'),
     )
+
+    def __str__(self):
+        return str(self.person)
