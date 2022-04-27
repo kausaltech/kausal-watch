@@ -9,6 +9,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.search import index
 
 from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModel, get_default_language, get_supported_languages
 
 
 # TODO: Generalize and put in some other app's models.py
@@ -48,6 +49,10 @@ class Node(MP_Node, ClusterableModel):
 
 
 class OrganizationClass(models.Model):
+    class Meta:
+        # FIXME: Probably we can't rely on this with i18n
+        ordering = ['name']
+
     identifier = models.CharField(max_length=255, unique=True, editable=False)
     name = models.CharField(max_length=255)
 
@@ -55,6 +60,8 @@ class OrganizationClass(models.Model):
                                         help_text=_('The time at which the resource was created'))
     last_modified_time = models.DateTimeField(auto_now=True,
                                               help_text=_('The time at which the resource was updated'))
+
+    i18n = TranslationField(fields=('name',))
 
     def __str__(self):
         return self.name
@@ -86,13 +93,12 @@ class OrganizationManager(models.Manager):
 
 class Organization(index.Indexed, Node):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
-
     classification = models.ForeignKey(OrganizationClass,
                                        on_delete=models.PROTECT,
                                        blank=True,
                                        null=True,
                                        help_text=_('An organization category, e.g. committee'))
-
+    # TODO: Check if we can / should remove this since already `Node` specifies `name`
     name = models.CharField(max_length=255,
                             help_text=_('A primary name, e.g. a legally recognized name'))
     abbreviation = models.CharField(max_length=50,
@@ -102,7 +108,6 @@ class Organization(index.Indexed, Node):
                                      editable=False,
                                      null=True,
                                      help_text=_('A distinct name for this organization (generated automatically)'))
-
     logo = models.ForeignKey(
         'images.AplansImage',
         null=True,
@@ -111,7 +116,6 @@ class Organization(index.Indexed, Node):
         related_name='+',
         help_text=_('An optional logo for this organization'),
     )
-
     founding_date = models.DateField(blank=True,
                                      null=True,
                                      help_text=_('A date of founding'))
@@ -136,11 +140,11 @@ class Organization(index.Indexed, Node):
                                          blank=True,
                                          editable=False,
                                          on_delete=models.SET_NULL)
-
     metadata_admins = models.ManyToManyField('people.Person',
                                              through='orgs.OrganizationMetadataAdmin',
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
 
     i18n = TranslationField(fields=('name', 'abbreviation'))
 

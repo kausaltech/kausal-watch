@@ -23,7 +23,10 @@ from wagtail.core.models.i18n import Locale
 
 import reversion
 
-from aplans.utils import ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color
+from aplans.utils import (
+    ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color, get_default_language,
+    get_supported_languages
+)
 from orgs.models import Organization
 from people.models import Person
 
@@ -38,15 +41,6 @@ logger = logging.getLogger(__name__)
 
 
 User = get_user_model()
-
-
-def get_supported_languages():
-    for x in settings.LANGUAGES:
-        yield x
-
-
-def get_default_language():
-    return settings.LANGUAGES[0][0]
 
 
 def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, str], Tuple[None, None]]:

@@ -3,6 +3,7 @@ import re
 from typing import Iterable, List, Type
 
 from django import forms
+from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -201,3 +202,12 @@ class TranslatedModelMixin:
         if val:
             return val
         return getattr(self, field_name)
+
+
+def get_supported_languages():
+    for x in settings.LANGUAGES:
+        yield x
+
+
+def get_default_language():
+    return settings.LANGUAGES[0][0]

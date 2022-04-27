@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-12 16:36+0300\n"
+"POT-Creation-Date: 2022-04-27 17:30+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -81,11 +81,6 @@ msgstr "Alle zurücksetzen"
 msgid "Search"
 msgstr "Suchen"
 
-#: actions/action_admin.py
-msgctxt "hyphenated"
-msgid "Action attributes"
-msgstr "Maßnahmenattribute"
-
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
 msgstr "Maßnahmen"
@@ -135,10 +130,6 @@ msgstr "Kategorien"
 msgid "Internal information"
 msgstr "Interne Informationen"
 
-#: actions/action_admin.py actions/category_admin.py
-msgid "Attributes"
-msgstr "Attribute"
-
 #: actions/admin.py
 msgid "Non-modifiable actions"
 msgstr "Unveränderbare Maßnahmen"
@@ -167,7 +158,7 @@ msgstr "Zeige auch zusammengeführte Maßnahmen"
 msgid "Impact"
 msgstr "Auswinkungen"
 
-#: actions/admin.py
+#: actions/admin.py actions/attribute_type_admin.py
 msgid "Category type"
 msgstr "Kategorietyp"
 
@@ -198,6 +189,24 @@ msgstr "Kennung muss gesetzt sein"
 #: actions/api.py
 msgid "Identifier already exists"
 msgstr "Kennung existiert bereits"
+
+#: actions/attribute_type_admin.py
+msgid "Object type"
+msgstr "Objekttyp"
+
+#: actions/attribute_type_admin.py admin_site/wagtail_hooks.py
+msgid "Attributes"
+msgstr "Attribute"
+
+#: actions/attribute_type_admin.py
+#, python-format
+msgid "Attribute for %s"
+msgstr "Attribut für %s"
+
+#: actions/attribute_type_admin.py indicators/wagtail_admin.py
+#: people/wagtail_admin.py
+msgid "General"
+msgstr "Allgemein"
 
 #: actions/blocks.py
 msgid "Filter on category"
@@ -231,11 +240,6 @@ msgstr "Kategorietypen"
 msgid "Action and indicator categorization"
 msgstr "Maßnahmen- und Indikatorkategorisierung"
 
-#: actions/category_admin.py
-msgctxt "hyphenated"
-msgid "Category attributes"
-msgstr "Kategorieattribute"
-
 #: actions/chooser.py
 msgid "Choose a category"
 msgstr "Wähle eine Kategorie"
@@ -243,6 +247,14 @@ msgstr "Wähle eine Kategorie"
 #: actions/chooser.py
 msgid "Choose another category"
 msgstr "Wähle eine andere Kategorie"
+
+#: actions/chooser.py
+msgid "Choose a category type"
+msgstr "Wähle einen Kategorietyp"
+
+#: actions/chooser.py
+msgid "Choose another category type"
+msgstr "Wähle einen anderen Kategorietype"
 
 #: actions/chooser.py
 msgid "Choose an action"
@@ -674,26 +686,6 @@ msgstr "Auswirkungsgruppenmaßnahme"
 msgid "impact group actions"
 msgstr "Auswirkungsgruppenmaßnahmen"
 
-#: actions/models/action.py
-msgid "action attribute type"
-msgstr "Maßnahmenattributtyp"
-
-#: actions/models/action.py
-msgid "action attribute types"
-msgstr "Maßnahmenattributtypen"
-
-#: actions/models/action.py
-msgid "action attribute choice option"
-msgstr "Maßnahmenattribut-Wahlmöglichkeit"
-
-#: actions/models/action.py
-msgid "action attribute choice options"
-msgstr "Maßnahmenattribut-Wahlmöglichkeiten"
-
-#: actions/models/action.py actions/models/category.py pages/models.py
-msgid "Text"
-msgstr "Text"
-
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Geordnete Auswahl"
@@ -713,6 +705,26 @@ msgstr "Numerisch"
 #: actions/models/attributes.py
 msgid "Format"
 msgstr "Format"
+
+#: actions/models/attributes.py
+msgid "attribute type"
+msgstr "Attributtyp"
+
+#: actions/models/attributes.py
+msgid "attribute types"
+msgstr "Attributtypen"
+
+#: actions/models/attributes.py
+msgid "attribute choice option"
+msgstr "Attribut-Wahlmöglichkeit"
+
+#: actions/models/attributes.py
+msgid "attribute choice options"
+msgstr "Attribut-Wahlmöglichkeiten"
+
+#: actions/models/attributes.py pages/models.py
+msgid "Text"
+msgstr "Text"
 
 #: actions/models/category.py
 msgid "Multiple"
@@ -769,22 +781,6 @@ msgstr "Kategoriestufe"
 #: actions/models/category.py
 msgid "category levels"
 msgstr "Kategoriestufen"
-
-#: actions/models/category.py
-msgid "category attribute"
-msgstr "Kategorieattribut"
-
-#: actions/models/category.py
-msgid "category attributes"
-msgstr "Kategorieattribute"
-
-#: actions/models/category.py
-msgid "category attribute choice option"
-msgstr "Kategorieattribut-Wahlmöglichkeit"
-
-#: actions/models/category.py
-msgid "category attribute choice options"
-msgstr "Kategorieattribut-Wahlmöglichkeiten"
 
 #: actions/models/category.py
 msgid "parent category"
@@ -891,6 +887,14 @@ msgid "short name"
 msgstr "Kurzname"
 
 #: actions/models/plan.py
+msgid "published at"
+msgstr "veröffentlicht am"
+
+#: actions/models/plan.py
+msgid "archived at"
+msgstr "archiviert am"
+
+#: actions/models/plan.py
 msgid "site URL"
 msgstr "Seiten-URL"
 
@@ -921,6 +925,10 @@ msgstr "URL zur Erklärung zur Barrierefreiheit"
 #: actions/models/plan.py
 msgid "Theme identifier"
 msgstr "Themakennung"
+
+#: actions/models/plan.py
+msgid "parent"
+msgstr "Vorgänger"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -974,10 +982,6 @@ msgstr "Szenario"
 #: actions/models/plan.py
 msgid "scenarios"
 msgstr "Szenarien"
-
-#: actions/models/plan.py
-msgid "parent"
-msgstr "Vorgänger"
 
 #: actions/models/plan.py
 msgid "weight"
@@ -1317,6 +1321,10 @@ msgstr "Benutzer-Feedback"
 msgid "user feedbacks"
 msgstr "Benutzer-Feedbacks"
 
+#: feedback/wagtail_admin.py
+msgid "User feedbacks"
+msgstr "Benutzer-Feedbacks"
+
 #: images/models.py
 msgid "Image byline or credits"
 msgstr "Bild-Byline oder Bildnachweise"
@@ -1486,6 +1494,10 @@ msgstr "Wirkungstyp"
 #: indicators/models.py
 msgid "What type of causal effect is there between the indicators"
 msgstr "Welche Art von kausaler Wirkung es zwischen den Indikatoren gibt"
+
+#: indicators/models.py
+msgid "normalize by label"
+msgstr "normalisiere nach Kennzeichnung"
 
 #: indicators/models.py
 msgid "common indicator"
@@ -1793,10 +1805,6 @@ msgstr "Indikatordaten bearbeiten"
 msgid "Quantities"
 msgstr "Größen"
 
-#: indicators/wagtail_admin.py people/wagtail_admin.py
-msgid "General"
-msgstr "Allgemein"
-
 #: indicators/wagtail_admin.py
 msgid "Units"
 msgstr "Einheiten"
@@ -1999,6 +2007,10 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Ein eindeutiger Name für diese Organisation (automatisch erstellt)"
 
 #: orgs/models.py
+msgid "An optional logo for this organization"
+msgstr "Ein optionales Logo für diese Organisation"
+
+#: orgs/models.py
 msgid "A date of founding"
 msgstr "Ein Gründungsdatum"
 
@@ -2065,6 +2077,10 @@ msgstr "Indikator-Highlights"
 #: pages/models.py
 msgid "Action highlights"
 msgstr "Maßnahmen-Highlights"
+
+#: pages/models.py
+msgid "Related plans"
+msgstr "Verbundene Pläne"
 
 #: pages/models.py
 msgid "Front page"
@@ -2362,6 +2378,3 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
-
-#~ msgid "Category attribute types"
-#~ msgstr "Kategorieattributtypen"
