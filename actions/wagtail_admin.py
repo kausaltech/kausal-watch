@@ -255,7 +255,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         return False
 
     def get_edit_handler(self, instance, request):
-        panels = self.panels
+        panels = list(self.panels)
         if request.user.is_superuser:
             panels += self.superuser_panels
         handler = ObjectList(panels)
