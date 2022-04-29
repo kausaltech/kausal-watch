@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
@@ -102,6 +103,17 @@ class AttributeFieldPanel(FieldPanel):
 
 
 class CategoryAdminForm(WagtailAdminModelForm):
+    def clean_identifier(self):
+        # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
+        # `type`, in which case the unique_together constraints of Category will not be checked. We do it manually here.
+        # Similarly, the unique_together containing `external_identifier` will not be checked, but `external_identifier`
+        # is not part of the form, so no need to check.
+        identifier = self.cleaned_data['identifier']
+        type = self.instance.type
+        if Category.objects.filter(type=type, identifier=identifier).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(_("There is already a category with this identifier."))
+        return identifier
+
     def save(self, commit=True):
         obj = super().save(commit)
 

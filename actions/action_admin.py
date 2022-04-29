@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import (
@@ -161,6 +162,15 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 
 
 class ActionAdminForm(WagtailAdminModelForm):
+    def clean_identifier(self):
+        # Since we hide the plan in the form, `validate_unique()` will be called with `exclude` containing `plan`, in
+        # which case the unique_together constraints of Action will not be checked. We do it manually here.
+        identifier = self.cleaned_data['identifier']
+        plan = self.instance.plan
+        if Action.objects.filter(plan=plan, identifier=identifier).exclude(pk=self.instance.pk).exists():
+            raise ValidationError(_("There is already an action with this identifier."))
+        return identifier
+
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
