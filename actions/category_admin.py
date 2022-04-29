@@ -94,7 +94,10 @@ def get_category_attribute_fields(category_type, category, **kwargs):
 class AttributeFieldPanel(FieldPanel):
     def on_form_bound(self):
         super().on_form_bound()
-        attribute_fields = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
+        attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
+        attribute_fields = {form_field_name: field
+                            for _, fields in attribute_fields_list
+                            for form_field_name, (field, _) in fields.items()}
         self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 

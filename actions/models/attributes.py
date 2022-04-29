@@ -48,7 +48,7 @@ class AttributeType(ClusterableModel, OrderedModel):
         if content_type.model == 'action':
             assert self.scope == obj.plan
         elif content_type.model == 'category':
-            assert self.scope == obj.category_type
+            assert self.scope == obj.type
         else:
             raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model}")
 
