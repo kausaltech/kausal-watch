@@ -391,7 +391,6 @@ class AplansModelAdmin(ModelAdmin):
         return SafeLabelModelAdminMenuItem(self, order or self.get_menu_order())
 
 
-
 class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):
     """Remove empty new forms from data"""
 
@@ -401,13 +400,11 @@ class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelF
         initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
         total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
 
-        delete = data.get('%s-DELETE' % prefix, None)
-        if delete is not None and delete != '':
-            delete = delete.lstrip('[').rstrip(']')
-            if delete == '':
-                delete = []
-            else:
-                delete = [int(x) for x in delete.split(',')]
+        delete = data.get('%s-DELETE' % prefix, '').lstrip('[').rstrip(']')
+        if delete:
+            delete = [int(x) for x in delete.split(',')]
+        else:
+            delete = []
 
         for idx in range(initial_forms, total_forms):
             keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
