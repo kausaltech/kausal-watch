@@ -172,20 +172,6 @@ class IndicatorNode(DjangoNode):
         return qs
 
     @gql_optimizer.resolver_hints(
-        prefetch_related=('values', 'common__normalizations'),
-        select_related=('common',)
-    )
-    def resolve_normalized_values(self: Indicator, info):
-        if not self.common:
-            return None
-        nis = self.common.normalizations.all()
-        if not nis:
-            return None
-        cin = nis[0]
-        normalizer = cin.normalizer
-        return NormalizedValues(unit=cin.unit, values=out)
-
-    @gql_optimizer.resolver_hints(
         model_field='levels',
     )
     def resolve_level(self, info, plan):
