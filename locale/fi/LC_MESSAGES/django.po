@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-10 03:13+0300\n"
+"POT-Creation-Date: 2022-05-02 12:39+0200\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: actions/action_admin.py
+msgid "There is already an action with this identifier."
+msgstr "Tällä tunnisteella on jo toimenpide."
 
 #: actions/action_admin.py actions/admin.py
 msgid "Contact person"
@@ -81,11 +85,6 @@ msgstr "Nollaa suotimet"
 msgid "Search"
 msgstr "Haku"
 
-#: actions/action_admin.py
-msgctxt "hyphenated"
-msgid "Action attributes"
-msgstr "Toimenpiteiden ominaisuudet"
-
 #: actions/action_admin.py actions/apps.py actions/models/plan.py
 msgid "Actions"
 msgstr "Toimenpiteet"
@@ -98,7 +97,8 @@ msgstr "Ulkopuoliset linkit"
 msgid "Last updated"
 msgstr "Viimeksi päivitetty"
 
-#: actions/action_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: orgs/models.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -134,10 +134,6 @@ msgstr "Luokat"
 msgid "Internal information"
 msgstr "Sisäiset tiedot"
 
-#: actions/action_admin.py actions/category_admin.py
-msgid "Attributes"
-msgstr "Ominaisuudet"
-
 #: actions/admin.py
 msgid "Non-modifiable actions"
 msgstr "Ei-muokattavat toimenpiteet"
@@ -166,7 +162,7 @@ msgstr "Näytä myös yhdistetyt toimenpiteet"
 msgid "Impact"
 msgstr "Vaikuttavuus"
 
-#: actions/admin.py
+#: actions/admin.py actions/attribute_type_admin.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
 
@@ -197,6 +193,25 @@ msgstr "Tunniste pitää asettaa"
 #: actions/api.py
 msgid "Identifier already exists"
 msgstr "Tunniste on jo olemassa"
+
+#: actions/attribute_type_admin.py
+msgid "Object type"
+msgstr "Objektin tyyppi"
+
+#: actions/attribute_type_admin.py admin_site/wagtail_hooks.py
+msgid "Attributes"
+msgstr "Ominaisuudet"
+
+#: actions/attribute_type_admin.py
+#, fuzzy, python-format
+#| msgid "Attributes"
+msgid "Attribute for %s"
+msgstr "Ominaisuudet"
+
+#: actions/attribute_type_admin.py indicators/wagtail_admin.py
+#: people/wagtail_admin.py
+msgid "General"
+msgstr "Yleinen"
 
 #: actions/blocks.py
 msgid "Filter on category"
@@ -231,9 +246,8 @@ msgid "Action and indicator categorization"
 msgstr "Toimenpiteiden ja mittareiden luokittelu"
 
 #: actions/category_admin.py
-msgctxt "hyphenated"
-msgid "Category attributes"
-msgstr "Luokkien ominaisuudet"
+msgid "There is already a category with this identifier."
+msgstr "Tällä tunnisteella on jo luokka."
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -242,6 +256,22 @@ msgstr "Valitse luokka"
 #: actions/chooser.py
 msgid "Choose another category"
 msgstr "Valitse toinen luokka"
+
+#: actions/chooser.py
+msgid "Choose a category type"
+msgstr "Valitse luokan tyyppi"
+
+#: actions/chooser.py
+msgid "Choose another category type"
+msgstr "Valitse toinen luokan tyyppi"
+
+#: actions/chooser.py
+msgid "Choose an action"
+msgstr "Valitse toimenpide"
+
+#: actions/chooser.py
+msgid "Choose another action"
+msgstr "Valitse toinen toimenpide"
 
 #: actions/defaults.py
 msgid "On time"
@@ -277,6 +307,7 @@ msgstr "tunniste"
 
 #: actions/export.py actions/models/action.py actions/models/attributes.py
 #: actions/models/category.py actions/models/plan.py indicators/models.py
+#: orgs/models.py
 msgid "name"
 msgstr "nimi"
 
@@ -461,6 +492,14 @@ msgstr "Yhteyshenkilöt nimetty"
 #: actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
+
+#: actions/models/action.py
+msgid "related action"
+msgstr "liittyvä toimenpide"
+
+#: actions/models/action.py
+msgid "related actions"
+msgstr "liittyvät toimenpiteet"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
@@ -657,26 +696,6 @@ msgstr "toimenpiteen vaikuttavuusryhmä"
 msgid "impact group actions"
 msgstr "toimenpiteen vaikuttavuusryhmät"
 
-#: actions/models/action.py
-msgid "action attribute type"
-msgstr "toimenpiteen ominaisuustyyppi"
-
-#: actions/models/action.py
-msgid "action attribute types"
-msgstr "toimenpiteen ominaisuustyypit"
-
-#: actions/models/action.py
-msgid "action attribute choice option"
-msgstr "toimenpiteen ominaisuuden valintavaihtoehto"
-
-#: actions/models/action.py
-msgid "action attribute choice options"
-msgstr "toimenpiteen ominaisuuden valintavaihtoehdot"
-
-#: actions/models/action.py actions/models/category.py pages/models.py
-msgid "Text"
-msgstr "Teksti"
-
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Järjestetty valinta"
@@ -696,6 +715,26 @@ msgstr "Numero"
 #: actions/models/attributes.py
 msgid "Format"
 msgstr "Muoto"
+
+#: actions/models/attributes.py
+msgid "attribute type"
+msgstr "ominaisuustyyppi"
+
+#: actions/models/attributes.py
+msgid "attribute types"
+msgstr "ominaisuustyypit"
+
+#: actions/models/attributes.py
+msgid "attribute choice option"
+msgstr "ominaisuuden valintavaihtoehto"
+
+#: actions/models/attributes.py
+msgid "attribute choice options"
+msgstr "ominaisuuden valintavaihtoehdot"
+
+#: actions/models/attributes.py pages/models.py
+msgid "Text"
+msgstr "Teksti"
 
 #: actions/models/category.py
 msgid "Multiple"
@@ -752,22 +791,6 @@ msgstr "luokan taso"
 #: actions/models/category.py
 msgid "category levels"
 msgstr "luokan tasot"
-
-#: actions/models/category.py
-msgid "category attribute"
-msgstr "luokan ominaisuus"
-
-#: actions/models/category.py
-msgid "category attributes"
-msgstr "luokan ominaisuudet"
-
-#: actions/models/category.py
-msgid "category attribute choice option"
-msgstr "luokan ominaisuuden valintavaihtoehto"
-
-#: actions/models/category.py
-msgid "category attribute choice options"
-msgstr "luokan ominaisuuden valintavaihtoehdot"
 
 #: actions/models/category.py
 msgid "parent category"
@@ -874,6 +897,14 @@ msgid "short name"
 msgstr "lyhenne"
 
 #: actions/models/plan.py
+msgid "published at"
+msgstr "julkaisuaika"
+
+#: actions/models/plan.py
+msgid "archived at"
+msgstr "arkistointiaika"
+
+#: actions/models/plan.py
 msgid "site URL"
 msgstr "sivuston osoite"
 
@@ -904,6 +935,11 @@ msgstr "Linkki saavutettavuusselosteeseen"
 #: actions/models/plan.py
 msgid "Theme identifier"
 msgstr "Teeman tunniste"
+
+#: actions/models/plan.py
+#, fuzzy
+msgid "parent"
+msgstr ""
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -959,10 +995,6 @@ msgid "scenarios"
 msgstr "skenaariot"
 
 #: actions/models/plan.py
-msgid "parent"
-msgstr "yläluokka"
-
-#: actions/models/plan.py
 msgid "weight"
 msgstr "paino"
 
@@ -993,6 +1025,10 @@ msgstr "seurannan laatupiste"
 #: actions/models/plan.py
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
+
+#: actions/templates/actions/chooser_results.html
+msgid "Plan"
+msgstr "Toimenpideohjelma"
 
 #: actions/templates/site_summary/actions.html
 #, python-format
@@ -1302,6 +1338,10 @@ msgstr "käyttäjän palaute"
 msgid "user feedbacks"
 msgstr "käyttäjien palautteet"
 
+#: feedback/wagtail_admin.py
+msgid "User feedbacks"
+msgstr "Käyttäjien palautteet"
+
 #: images/models.py
 msgid "Image byline or credits"
 msgstr "Kuvateksti tai tekijän tiedot"
@@ -1471,6 +1511,11 @@ msgstr "vaikutuksen tyyppi"
 #: indicators/models.py
 msgid "What type of causal effect is there between the indicators"
 msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
+
+#: indicators/models.py
+#, fuzzy
+msgid "normalize by label"
+msgstr ""
 
 #: indicators/models.py
 msgid "common indicator"
@@ -1778,10 +1823,6 @@ msgstr "Muokkaa mittarin dataa"
 msgid "Quantities"
 msgstr "Suureet"
 
-#: indicators/wagtail_admin.py people/wagtail_admin.py
-msgid "General"
-msgstr "Yleinen"
-
 #: indicators/wagtail_admin.py
 msgid "Units"
 msgstr "Yksiköt"
@@ -1960,12 +2001,24 @@ msgid "A node cannot be its own parent."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
 
 #: orgs/models.py
+msgid "Parent"
+msgstr "Yläorganisaatio"
+
+#: orgs/models.py
 msgid "The time at which the resource was created"
 msgstr "Aika jolloin organisaatio luotiin"
 
 #: orgs/models.py
 msgid "The time at which the resource was updated"
 msgstr "Aika jolloin organisaatiota päivitettiin"
+
+#: orgs/models.py
+msgid "organizations"
+msgstr "organisaatiot"
+
+#: orgs/models.py
+msgid "Classification"
+msgstr "Luokittelu"
 
 #: orgs/models.py
 msgid "An organization category, e.g. committee"
@@ -1976,6 +2029,10 @@ msgid "A primary name, e.g. a legally recognized name"
 msgstr "Virallinen nimi"
 
 #: orgs/models.py
+msgid "Abbreviation"
+msgstr "Lyhenne"
+
+#: orgs/models.py
 msgid "A commonly used abbreviation"
 msgstr "Yleisesti käytetty lyhenne"
 
@@ -1984,12 +2041,32 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Organisaation yksikäsitteinen nimi (luodaan automaattisesti)"
 
 #: orgs/models.py
+msgid "An optional logo for this organization"
+msgstr "Valinnainen logo tälle organisaatiolle"
+
+#: orgs/models.py
 msgid "A date of founding"
 msgstr "Perustamispäivämäärä"
 
 #: orgs/models.py
 msgid "A date of dissolution"
 msgstr "Lakkauttamispäivämäärä"
+
+#: orgs/models.py
+msgid "plan admin"
+msgstr "toimenpideohjelman ylläpitäjä"
+
+#: orgs/models.py
+msgid "plan admins"
+msgstr "toimenpideohjelman ylläpitäjät"
+
+#: orgs/models.py
+msgid "metadata admin"
+msgstr "perustietojen ylläpitäjä"
+
+#: orgs/models.py
+msgid "metadata admins"
+msgstr "perustietojen ylläpitäjät"
 
 #: pages/blocks.py
 msgid "Question"
@@ -2050,6 +2127,10 @@ msgstr "Mittarinostot"
 #: pages/models.py
 msgid "Action highlights"
 msgstr "Toimenpidenostot"
+
+#: pages/models.py
+msgid "Related plans"
+msgstr "Liittyvät toimenpideohjelmat"
 
 #: pages/models.py
 msgid "Front page"
@@ -2348,6 +2429,26 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#~ msgctxt "hyphenated"
+#~ msgid "Action attributes"
+#~ msgstr "Toimenpiteiden ominaisuudet"
+
+#~ msgctxt "hyphenated"
+#~ msgid "Category attributes"
+#~ msgstr "Luokkien ominaisuudet"
+
+#~ msgid "category attribute"
+#~ msgstr "luokan ominaisuus"
+
+#~ msgid "category attributes"
+#~ msgstr "luokan ominaisuudet"
+
+#~ msgid "category attribute choice option"
+#~ msgstr "luokan ominaisuuden valintavaihtoehto"
+
+#~ msgid "category attribute choice options"
+#~ msgstr "luokan ominaisuuden valintavaihtoehdot"
+
 #~ msgid "Category attribute types"
 #~ msgstr "Luokkien ominaisuuksien tyypit"
 
@@ -2385,9 +2486,6 @@ msgstr "Käyttäjät"
 #~ msgid "Operational costs"
 #~ msgstr "toiminnallinen"
 
-#~ msgid "Plan"
-#~ msgstr "Toimenpideohjelma"
-
 #~ msgid "Plan features"
 #~ msgstr "Ohjelman ominaisuudet"
 
@@ -2399,9 +2497,6 @@ msgstr "Käyttäjät"
 
 #~ msgid "Filter actions"
 #~ msgstr "Suodata toimenpiteitä"
-
-#~ msgid "admin for organization"
-#~ msgstr "ylläpitäjä organisaatiolle"
 
 #~ msgid "admins for organization"
 #~ msgstr "ylläpitäjät organisaatiolle"
@@ -2441,9 +2536,6 @@ msgstr "Käyttäjät"
 
 #~ msgid "content pages"
 #~ msgstr "sisältösivut"
-
-#~ msgid "published at"
-#~ msgstr "julkaisuaika"
 
 #~ msgid "blog post"
 #~ msgstr "blogikirjoitus"
@@ -2499,9 +2591,6 @@ msgstr "Käyttäjät"
 #~| msgid "content pages"
 #~ msgid "Static pages"
 #~ msgstr "sisältösivut"
-
-#~ msgid "Input organization name"
-#~ msgstr "Syötä organisaation nimi"
 
 #~ msgid "Edit values"
 #~ msgstr "mittarin arvot"

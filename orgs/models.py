@@ -17,7 +17,7 @@ class Node(MP_Node, ClusterableModel):
     class Meta:
         abstract = True
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, verbose_name=_("name"))
 
     node_order_by = ['name']
 
@@ -36,13 +36,13 @@ class Node(MP_Node, ClusterableModel):
             }
         )
         return rendered
-    get_as_listing_header.short_description = 'Name'
+    get_as_listing_header.short_description = _('Name')
     get_as_listing_header.admin_order_field = 'name'
 
     # Duplicate get_parent from super class just to set short_description below
     def get_parent(self, *args, **kwargs):
         return super().get_parent(*args, **kwargs)
-    get_parent.short_description = 'Parent'
+    get_parent.short_description = _('Parent')
 
     def __str__(self):
         return self.name
@@ -93,16 +93,22 @@ class OrganizationManager(models.Manager):
 
 class Organization(index.Indexed, Node):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
+    class Meta:
+        verbose_name = _("organization")
+        verbose_name_plural = _("organizations")
+
     classification = models.ForeignKey(OrganizationClass,
                                        on_delete=models.PROTECT,
                                        blank=True,
                                        null=True,
+                                       verbose_name=_("Classification"),
                                        help_text=_('An organization category, e.g. committee'))
     # TODO: Check if we can / should remove this since already `Node` specifies `name`
     name = models.CharField(max_length=255,
                             help_text=_('A primary name, e.g. a legally recognized name'))
     abbreviation = models.CharField(max_length=50,
                                     blank=True,
+                                    verbose_name=_("Abbreviation"),
                                     help_text=_('A commonly used abbreviation'))
     distinct_name = models.CharField(max_length=400,
                                      editable=False,
@@ -244,6 +250,8 @@ class OrganizationPlanAdmin(models.Model, PlanRelatedModel):
         constraints = [
             models.UniqueConstraint(fields=['organization', 'plan', 'person'], name='unique_organization_plan_admin')
         ]
+        verbose_name = _("plan admin")
+        verbose_name_plural = _("plan admins")
 
     organization = ParentalKey(
         Organization, on_delete=models.CASCADE, related_name='organization_plan_admins', verbose_name=_('organization'),
@@ -265,6 +273,8 @@ class OrganizationMetadataAdmin(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['organization', 'person'], name='unique_organization_metadata_admin')
         ]
+        verbose_name = _("metadata admin")
+        verbose_name_plural = _("metadata admins")
 
     organization = ParentalKey(
         Organization,
