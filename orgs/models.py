@@ -8,7 +8,6 @@ from modeltrans.fields import TranslationField
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.search import index
 
-from aplans.utils import PlanRelatedModel
 from aplans.utils import PlanRelatedModel, get_default_language, get_supported_languages
 
 
@@ -152,7 +151,7 @@ class Organization(index.Indexed, Node):
                                              blank=True)
     primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
 
-    i18n = TranslationField(fields=('name', 'abbreviation'))
+    i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
 
     objects = OrganizationManager()
 

@@ -143,7 +143,7 @@ class Plan(ClusterableModel):
     children: RelatedManager[Plan]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name', 'short_name'])
+    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
 
     public_fields = [
         'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
@@ -548,7 +548,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
         validators=[validate_css_color]
     )
 
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
@@ -581,7 +581,10 @@ class MonitoringQualityPoint(OrderedModel, PlanRelatedModel):
     )
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name', 'description_yes', 'description_no'))
+    i18n = TranslationField(
+        fields=('name', 'description_yes', 'description_no'),
+        default_language_field='plan__primary_language',
+    )
 
     public_fields = [
         'id', 'name', 'description_yes', 'description_no', 'plan', 'identifier',

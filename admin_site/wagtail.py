@@ -63,7 +63,10 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     return out
 
 
-def get_translation_tabs(instance, request, include_all_languages: bool = False):
+def get_translation_tabs(instance, request, include_all_languages: bool = False, default_language=None):
+    if default_language is None:
+        default_language = settings.LANGUAGE_CODE
+
     i18n_field = get_i18n_field(type(instance))
     if not i18n_field:
         return []
@@ -75,7 +78,7 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False)
     languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
     if include_all_languages:
         # Omit main language because it's stored in the model field without a modeltrans language suffix
-        languages = [lang for lang in languages_by_code.keys() if lang != settings.LANGUAGE_CODE]
+        languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
         languages = plan.other_languages
     for lang_code in languages:

@@ -361,7 +361,7 @@ class Indicator(ClusterableModel, index.Indexed):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
-    i18n = TranslationField(fields=['name', 'description'])
+    i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language')
 
     levels: RelatedManager[IndicatorLevel]
     values: RelatedManager[IndicatorValue]

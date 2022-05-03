@@ -225,6 +225,12 @@ class UnitAdmin(ModelAdmin):
         FieldPanel('verbose_name_plural'),
     ]
 
+    def get_edit_handler(self, instance, request):
+        return AplansTabbedInterface([
+            ObjectList(self.panels, heading=_('General')),
+            *get_translation_tabs(instance, request, include_all_languages=True)
+        ])
+
 
 class IndicatorForm(AplansAdminModelForm):
     LEVEL_CHOICES = (('', _('[not in active plan]')),) + Indicator.LEVELS

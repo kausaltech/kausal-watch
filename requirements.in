@@ -38,7 +38,8 @@ factory-boy==3.1.0  # pinned to old version due to https://github.com/wagtail/wa
 wagtail-factories
 pytest-factoryboy
 libvoikko
-django-modeltrans
+#django-modeltrans
+-e git+https://github.com/kausaltech/django-modeltrans.git@wip/default-language-field#egg=django-modeltrans
 wagtail
 wagtail-autocomplete
 wagtailfontawesome

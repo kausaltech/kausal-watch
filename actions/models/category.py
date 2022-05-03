@@ -51,7 +51,7 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
         help_text=_("Set if the categories do not have meaningful identifiers")
     )
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -90,7 +90,7 @@ class CategoryLevel(OrderedModel):
     )
     name = models.CharField(max_length=100, verbose_name=_('name'))
     name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
-    i18n = TranslationField(fields=('name',))
+    i18n = TranslationField(fields=('name',), default_language_field='type__plan__primary_language')
 
     public_fields = [
         'id', 'name', 'name_plural', 'order', 'type',
@@ -132,7 +132,7 @@ class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
         validators=[validate_css_color]
     )
 
-    i18n = TranslationField(fields=('name', 'short_description'))
+    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__plan__primary_language')
 
     choice_attributes = GenericRelation(
         to='actions.AttributeChoice',

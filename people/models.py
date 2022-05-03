@@ -127,7 +127,7 @@ class Person(index.Indexed, ClusterableModel):
         verbose_name=_('contact for actions')
     )
 
-    i18n = TranslationField(fields=('title',))
+    i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
 
     objects = models.Manager.from_queryset(PersonQuerySet)()
 
