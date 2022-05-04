@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
@@ -12,7 +13,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansCreateView, AplansModelAdmin,
+    ActivePlanEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem,
     insert_model_translation_panels
 )
@@ -65,6 +66,14 @@ class PlanCreateView(AplansCreateView):
         ) for identifier, name, is_completed in STATUSES]
 
         return instance
+
+
+class PlanForm(AplansAdminModelForm):
+    def clean_primary_language(self):
+        primary_language = self.cleaned_data['primary_language']
+        if self.instance and primary_language != self.instance.primary_language:
+            raise ValidationError("Changing the primary language is not supported yet.")
+        return primary_language
 
 
 class PlanAdmin(AplansModelAdmin):
@@ -159,7 +168,7 @@ class PlanAdmin(AplansModelAdmin):
             ], heading=_('Action classifications')),
         ]
 
-        handler = PlanEditHandler(tabs)
+        handler = PlanEditHandler(tabs, base_form_class=PlanForm)
         return handler
 
     def get_queryset(self, request):
