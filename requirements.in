@@ -39,7 +39,7 @@ wagtail-factories
 pytest-factoryboy
 libvoikko
 #django-modeltrans
--e git+https://github.com/kausaltech/django-modeltrans.git@wip/default-language-field#egg=django-modeltrans
+-e git+https://github.com/kausaltech/django-modeltrans.git#egg=django-modeltrans
 wagtail
 wagtail-autocomplete
 wagtailfontawesome

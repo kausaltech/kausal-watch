@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements.in
 #
--e git+https://github.com/kausaltech/django-modeltrans.git@wip/default-language-field#egg=django-modeltrans
+-e git+https://github.com/kausaltech/django-modeltrans.git#egg=django-modeltrans
     # via -r requirements.in
 -e git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
     # via -r requirements.in
