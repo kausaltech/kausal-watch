@@ -20,6 +20,46 @@ class UnitNode(DjangoNode):
             'id', 'name', 'short_name', 'verbose_name', 'verbose_name_plural',
         ]
 
+    @gql_optimizer.resolver_hints(
+        model_field='name',
+        only=('name', 'i18n')
+    )
+    def resolve_name(self, info):
+        name = self.name_i18n
+        if name is None:
+            return None
+        return name
+
+    @gql_optimizer.resolver_hints(
+        model_field='short_name',
+        only=('short_name', 'i18n')
+    )
+    def resolve_short_name(self, info):
+        short_name = self.short_name_i18n
+        if short_name is None:
+            return None
+        return short_name
+
+    @gql_optimizer.resolver_hints(
+        model_field='verbose_name',
+        only=('verbose_name', 'i18n')
+    )
+    def resolve_verbose_name(self, info):
+        verbose_name = self.verbose_name_i18n
+        if verbose_name is None:
+            return None
+        return verbose_name
+
+    @gql_optimizer.resolver_hints(
+        model_field='verbose_name_plural',
+        only=('verbose_name_plural', 'i18n')
+    )
+    def resolve_verbose_name_plural(self, info):
+        verbose_name_plural = self.verbose_name_plural_i18n
+        if verbose_name_plural is None:
+            return None
+        return verbose_name_plural
+
 
 class QuantityNode(DjangoNode):
     class Meta:
