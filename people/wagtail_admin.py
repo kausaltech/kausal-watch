@@ -154,6 +154,17 @@ class PersonAdmin(AplansModelAdmin):
             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
         ),
         FieldPanel('image', widget=AvatarWidget),
+        # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of the
+        # default value.
+        # TODO: No way to specify `primary_contact`.
+        # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
+        # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
+        # ordering because the order as displayed in the person admin view is not what we want -- the order we want
+        # should rather be the one as specified in the action edit view.
+        FieldPanel(
+            'contact_for_actions_unordered',
+            widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
+        ),
     ]
 
     def get_edit_handler(self, instance, request):

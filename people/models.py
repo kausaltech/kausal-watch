@@ -115,6 +115,13 @@ class Person(index.Indexed, ClusterableModel):
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
 
+    contact_for_actions_unordered = models.ManyToManyField(
+        'actions.Action',
+        through='actions.ActionContactPerson',
+        blank=True,
+        verbose_name=_('contact for actions')
+    )
+
     i18n = TranslationField(fields=('title',))
 
     objects = models.Manager.from_queryset(PersonQuerySet)()
