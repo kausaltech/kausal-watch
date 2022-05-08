@@ -18,7 +18,7 @@ from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
-    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures, RelatedAction,
+    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
     Scenario
 )
 from orgs.models import Organization
@@ -521,12 +521,6 @@ class ActionImplementationPhaseNode(DjangoNode):
     class Meta:
         model = ActionImplementationPhase
         fields = public_fields(ActionImplementationPhase)
-
-
-class RelatedActionNode(DjangoNode):
-    class Meta:
-        model = RelatedAction
-        fields = public_fields(RelatedAction)
 
 
 class ActionResponsiblePartyNode(DjangoNode):

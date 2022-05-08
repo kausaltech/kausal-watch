@@ -2,7 +2,7 @@ from .plan import Plan, PlanDomain, Scenario, ImpactGroup, MonitoringQualityPoin
 from .action import (
     Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
-    ActionStatusUpdate, ImpactGroupAction, RelatedAction
+    ActionStatusUpdate, ImpactGroupAction
 )
 from .attributes import (
     AttributeType, AttributeTypeChoiceOption, AttributeChoice, AttributeChoiceWithText, AttributeRichText,
@@ -23,5 +23,5 @@ __all__ = [
     'AttributeType', 'AttributeTypeChoiceOption',
     'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
-    'RelatedAction', 'Scenario', 'PlanFeatures',
+    'Scenario', 'PlanFeatures',
 ]
