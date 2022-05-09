@@ -99,20 +99,22 @@ class Query:
                 (query is None and autocomplete is None)):
             raise GraphQLError("You must supply either query or autocomplete", [info])
 
-        plans = Plan.objects.all()
         plan_obj = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
             raise GraphQLError("Plan %s not found" % plan, [info])
-        plan_filter = Q(id=plan_obj.id)
-        if include_related_plans:
-            # If the current plan is not published yet, we include other
-            # non-published plans as well. For a production plan, we exclude
-            # all non-published plans.
-            related_plans = plan_obj.related_plans.all()
-            if plan_obj.is_live():
+        if only_other_plans:
+            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=plan_obj.related_plans.all()))
+        else:
+            qs = Q(id=plan_obj.id)
+            if include_related_plans:
+                # If the current plan is not published yet, we include other
+                # non-published plans as well. For a production plan, we exclude
+                # all non-published plans.
+                related_plans = plan_obj.related_plans.all()
                 related_plans = related_plans.live()
-            plan_filter |= Q(id__in=related_plans.values_list('id', flat=True))
-        plans = plans.filter(plan_filter)
+                qs |= Q(id__in=related_plans.values_list('id', flat=True))
+            plans = Plan.objects.filter(qs)
+
         plan_ids = list(plans.values_list('id', flat=True))
 
         #backend = get_search_backend()
@@ -127,12 +129,9 @@ class Query:
         for path in root_page_paths:
             page_filter |= Q(path__startswith=path)
 
-        filter_method_name = 'filter'
-        if only_other_plans:
-            filter_method_name = 'exclude'
         querysets = [
-            getattr(Action.objects, filter_method_name)(plan__in=plan_ids).select_related('plan', 'plan__organization'),
-            getattr(Page.objects, filter_method_name)(page_filter).live().specific(),
+            Action.objects.filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
+            Page.objects.filter(page_filter).live().specific(),
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
