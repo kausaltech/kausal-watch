@@ -26,11 +26,19 @@ class SiteGeneralContent(models.Model):
     )
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
+    accessibility_contact_name = models.CharField(
+        max_length=200, blank=True, null=True,
+        verbose_name=_('Accessibility contact name')
+    )
+    accessibility_contact_email = models.EmailField(
+        blank=True, null=True, verbose_name=_('Accessibility contact email')
+    )
 
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name',
         'official_name_description', 'copyright_text', 'creative_commons_license',
-        'github_api_repository', 'github_ui_repository'
+        'github_api_repository', 'github_ui_repository',
+        'accessibility_contact_name', 'accessibility_contact_email'
     ]
 
     class Meta:
