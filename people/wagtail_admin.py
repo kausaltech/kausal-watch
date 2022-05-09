@@ -5,7 +5,8 @@ from dal import autocomplete
 from datetime import timedelta
 from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
-from django.forms.fields import BooleanField
+from django.db import transaction
+from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import get_language, gettext_lazy as _
@@ -21,6 +22,7 @@ from aplans.types import WatchAdminRequest
 
 from .admin import IsContactPersonFilter
 from .models import Person
+from orgs.models import OrganizationPlanAdmin
 
 if typing.TYPE_CHECKING:
     from users.models import User
@@ -41,11 +43,22 @@ class AvatarWidget(AdminFileWidget):
 
 
 class PersonForm(AplansAdminModelForm):
-    is_admin_for_active_plan = BooleanField(required=False)
+    is_admin_for_active_plan = BooleanField(required=False, label=_('is plan admin'))
+    organization_plan_admin_orgs = ModelMultipleChoiceField(
+        queryset=None, required=False, widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+        label=_('plan admin organizations'),
+    )
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
+        if self.plan:
+            orgs_field = self.fields['organization_plan_admin_orgs']
+            orgs_field.queryset = self.plan.get_related_organizations().filter(dissolution_date=None)
+            if self.instance.pk is not None:
+                orgs_field.initial = (
+                    self.instance.organization_plan_admins.filter(plan=self.plan).values_list('organization', flat=True)
+                )
 
     def save(self, commit=True):
         if 'image' in self.files:
@@ -57,6 +70,13 @@ class PersonForm(AplansAdminModelForm):
                 instance.general_admin_plans.add(self.plan)
             elif is_admin_for_active_plan is False:
                 instance.general_admin_plans.remove(self.plan)
+
+            organization_plan_admin_orgs = self.cleaned_data.get('organization_plan_admin_orgs')
+            if organization_plan_admin_orgs is not None:
+                with transaction.atomic():
+                    OrganizationPlanAdmin.objects.filter(plan=self.plan, person=instance).delete()
+                    for org in organization_plan_admin_orgs:
+                        OrganizationPlanAdmin.objects.create(organization=org, plan=self.plan, person=instance)
         return instance
 
 
@@ -66,7 +86,7 @@ class PersonEditHandler(TabbedInterface):
             plan = self.request.user.get_active_admin_plan()
             if self.form.initial.get('organization') is None:
                 self.form.initial['organization'] = plan.organization
-            if self.instance.pk:
+            if self.instance.pk is not None:
                 self.form.initial['is_admin_for_active_plan'] = plan in self.instance.general_admin_plans.all()
         super().on_form_bound()
 
@@ -209,7 +229,11 @@ class PersonAdmin(AplansModelAdmin):
             'contact_for_actions_unordered',
             widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
         ),
-        FieldPanel('is_admin_for_active_plan', heading=_('is plan admin')),
+        FieldPanel('is_admin_for_active_plan'),
+        FieldPanel(
+            'organization_plan_admin_orgs',
+            widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+        ),
     ]
 
     def get_edit_handler(self, instance, request):
