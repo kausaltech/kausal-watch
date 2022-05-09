@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-02 12:39+0200\n"
+"POT-Creation-Date: 2022-05-09 09:55+0300\n"
 "PO-Revision-Date: 2022-03-01 13:57+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -937,7 +937,6 @@ msgid "Theme identifier"
 msgstr "Teeman tunniste"
 
 #: actions/models/plan.py
-#, fuzzy
 msgid "parent"
 msgstr ""
 
@@ -1513,7 +1512,6 @@ msgid "What type of causal effect is there between the indicators"
 msgstr "Minkälainen kausaalinen vaikutus mittarien välillä on"
 
 #: indicators/models.py
-#, fuzzy
 msgid "normalize by label"
 msgstr ""
 
@@ -2216,7 +2214,7 @@ msgstr "Mittarille"
 msgid "Not a contact person"
 msgstr "Ei ole yhteyshenkilö"
 
-#: people/admin.py people/wagtail_admin.py
+#: people/admin.py people/models.py people/wagtail_admin.py
 msgid "contact for actions"
 msgstr "yhteyshenkilönä toimenpiteille"
 
@@ -2296,6 +2294,10 @@ msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 #: people/wagtail_admin.py
 msgid "last login"
 msgstr "kirjautunut viimeksi"
+
+#: people/wagtail_admin.py
+msgid "is plan admin"
+msgstr "on pääkäyttäjä"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"

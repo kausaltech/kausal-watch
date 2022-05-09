@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import os
 import re
 import io
 import hashlib
+import typing
 import uuid
 import requests
 import logging
@@ -28,10 +31,12 @@ import willow
 from orgs.models import Organization
 
 from admin_site.models import Client
+if typing.TYPE_CHECKING:
+    from users.models import User as UserModel
 
 
 logger = logging.getLogger(__name__)
-User = get_user_model()
+User: typing.Type[UserModel] = get_user_model()
 
 DEFAULT_AVATAR_SIZE = 360
 

@@ -1,4 +1,5 @@
 import logging
+import typing
 
 from dal import autocomplete
 from datetime import timedelta
@@ -12,9 +13,13 @@ from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from admin_site.wagtail import AplansModelAdmin, AplansAdminModelForm, get_translation_tabs
+from aplans.types import WatchAdminRequest
 
 from .admin import IsContactPersonFilter
 from .models import Person
+
+if typing.TYPE_CHECKING:
+    from users.models import User
 
 
 logger = logging.getLogger(__name__)
@@ -67,7 +72,9 @@ class PersonAdmin(AplansModelAdmin):
             return display_for_value(False, None, boolean=True)
         return super().get_empty_value_display(field)
 
-    def get_list_display(self, request):
+    def get_list_display(self, request: WatchAdminRequest):
+        plan = request.get_active_admin_plan()
+
         try:
             humanize.activate(get_language())
         except FileNotFoundError as e:
@@ -122,9 +129,18 @@ class PersonAdmin(AplansModelAdmin):
         last_logged_in.admin_order_field = 'user__last_login'
         last_logged_in._name = 'last_logged_in'
 
+        def is_plan_admin(obj: Person):
+            user: User = obj.user
+            if user is None:
+                return False
+            return user.is_general_admin_for_plan(plan)
+        is_plan_admin.short_description = _('is plan admin')
+        is_plan_admin._name = 'is_plan_admin'
+        is_plan_admin.boolean = True
+
         user = request.user
-        plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
+            fields.append(is_plan_admin)
             fields.append(last_logged_in)
             fields.append('participated_in_training')
 
