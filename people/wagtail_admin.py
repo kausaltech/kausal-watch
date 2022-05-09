@@ -241,7 +241,7 @@ class PersonAdmin(AplansModelAdmin):
         user = request.user
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            basic_panels.insert(-1, FieldPanel('participated_in_training'))
+            basic_panels.append(FieldPanel('participated_in_training'))
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
