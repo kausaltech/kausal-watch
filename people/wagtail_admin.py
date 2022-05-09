@@ -66,7 +66,7 @@ class PersonEditHandler(TabbedInterface):
             plan = self.request.user.get_active_admin_plan()
             if self.form.initial.get('organization') is None:
                 self.form.initial['organization'] = plan.organization
-            if self.instance:
+            if self.instance.pk:
                 self.form.initial['is_admin_for_active_plan'] = plan in self.instance.general_admin_plans.all()
         super().on_form_bound()
 
