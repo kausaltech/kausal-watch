@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-04-27 17:30+0300\n"
+"POT-Creation-Date: 2022-05-09 15:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,6 +16,10 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: actions/action_admin.py
+msgid "There is already an action with this identifier."
+msgstr "Es gibt bereits eine Maßnahme mit dieser Kennung."
 
 #: actions/action_admin.py actions/admin.py
 msgid "Contact person"
@@ -94,7 +98,7 @@ msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: people/templates/people/chooser_results.html
+#: orgs/models.py people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -240,6 +244,10 @@ msgstr "Kategorietypen"
 msgid "Action and indicator categorization"
 msgstr "Maßnahmen- und Indikatorkategorisierung"
 
+#: actions/category_admin.py
+msgid "There is already a category with this identifier."
+msgstr "Es gibt bereits eine Kategorie mit dieser Kennung."
+
 #: actions/chooser.py
 msgid "Choose a category"
 msgstr "Wähle eine Kategorie"
@@ -298,6 +306,7 @@ msgstr "Kennung"
 
 #: actions/export.py actions/models/action.py actions/models/attributes.py
 #: actions/models/category.py actions/models/plan.py indicators/models.py
+#: orgs/models.py
 msgid "name"
 msgstr "Name"
 
@@ -1270,6 +1279,14 @@ msgid "Link to GitHub repository for UI"
 msgstr "Link zum Github-Repository für UI"
 
 #: content/models.py
+msgid "Accessibility contact name"
+msgstr "Name des Barrierefreiheitsansprechpartners"
+
+#: content/models.py
+msgid "Accessibility contact email"
+msgstr "E-Mail-Adresse des Barrierefreiheitsansprechpartners"
+
+#: content/models.py
 msgid "site general content"
 msgstr "Allgemeiner Seiteninhalt"
 
@@ -1983,6 +2000,10 @@ msgid "A node cannot be its own parent."
 msgstr "Ein Knoten kann nicht sein eiger Elternknoten sein."
 
 #: orgs/models.py
+msgid "Parent"
+msgstr "Vorgänger"
+
+#: orgs/models.py
 msgid "The time at which the resource was created"
 msgstr "Zeitpunkt, zu dem die Ressource erstellt wurde"
 
@@ -1991,12 +2012,24 @@ msgid "The time at which the resource was updated"
 msgstr "Zeitpunkt, zu dem die Ressource aktualisiert wurde"
 
 #: orgs/models.py
+msgid "organizations"
+msgstr "Organisationen"
+
+#: orgs/models.py
+msgid "Classification"
+msgstr "Klassifizierung"
+
+#: orgs/models.py
 msgid "An organization category, e.g. committee"
 msgstr "Eine Organisationskategorie, z. B. Ausschuss"
 
 #: orgs/models.py
 msgid "A primary name, e.g. a legally recognized name"
 msgstr "Ein primärer Name, z. B. ein gesetzlich anerkannter Name"
+
+#: orgs/models.py
+msgid "Abbreviation"
+msgstr "Abkürzung"
 
 #: orgs/models.py
 msgid "A commonly used abbreviation"
@@ -2017,6 +2050,22 @@ msgstr "Ein Gründungsdatum"
 #: orgs/models.py
 msgid "A date of dissolution"
 msgstr "Ein Auflösungsdatum"
+
+#: orgs/models.py
+msgid "plan admin"
+msgstr "Plan-Admin"
+
+#: orgs/models.py
+msgid "plan admins"
+msgstr "Plan-Admins"
+
+#: orgs/models.py
+msgid "metadata admin"
+msgstr "Metadaten-Admin"
+
+#: orgs/models.py
+msgid "metadata admins"
+msgstr "Metadaten-Admins"
 
 #: pages/blocks.py
 msgid "Question"
@@ -2166,7 +2215,7 @@ msgstr "Für einen Indikator"
 msgid "Not a contact person"
 msgstr "Keine Kontaktperson"
 
-#: people/admin.py people/wagtail_admin.py
+#: people/admin.py people/models.py people/wagtail_admin.py
 msgid "contact for actions"
 msgstr "Kontakt für Maßnahmen"
 
@@ -2246,6 +2295,10 @@ msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
 #: people/wagtail_admin.py
 msgid "last login"
 msgstr "letzte Anmeldung"
+
+#: people/wagtail_admin.py
+msgid "is plan admin"
+msgstr "ist Plan-Admin"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"

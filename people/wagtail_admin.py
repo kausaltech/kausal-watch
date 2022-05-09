@@ -209,7 +209,7 @@ class PersonAdmin(AplansModelAdmin):
             'contact_for_actions_unordered',
             widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
         ),
-        FieldPanel('is_admin_for_active_plan'),
+        FieldPanel('is_admin_for_active_plan', heading=_('is plan admin')),
     ]
 
     def get_edit_handler(self, instance, request):
