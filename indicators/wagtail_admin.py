@@ -18,7 +18,7 @@ from wagtail.core import hooks
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansButtonHelper, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, get_translation_tabs
+    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
@@ -300,13 +300,6 @@ class IndicatorForm(AplansAdminModelForm):
                     level=chosen_level,
                 )
         return super()._save_m2m()
-
-
-class InitializeFormWithPlanMixin:
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs.update({'plan': self.request.user.get_active_admin_plan()})
-        return kwargs
 
 
 class IndicatorCreateView(InitializeFormWithPlanMixin, AplansCreateView):

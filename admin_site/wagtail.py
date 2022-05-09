@@ -475,3 +475,10 @@ class CondensedPanelSingleSelect(Select):
         if value is None:
             return ''
         return str(value)
+
+
+class InitializeFormWithPlanMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'plan': self.request.user.get_active_admin_plan()})
+        return kwargs
