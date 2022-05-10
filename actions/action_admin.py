@@ -25,7 +25,7 @@ from admin_list_controls.components import (
 )
 from admin_list_controls.filters import ChoiceFilter, RadioFilter
 from admin_list_controls.views import ListControlsIndexView
-from dal import autocomplete
+from dal import autocomplete, forward as dal_forward
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
@@ -486,11 +486,14 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ],
             heading=_('External links')
         ),
-        CondensedInlinePanel(
+        FieldPanel(
             'related_actions',
-            panels=[
-                FieldPanel('related_action', widget=ActionChooser),
-            ]
+            widget=autocomplete.ModelSelect2Multiple(
+                url='action-autocomplete',
+                forward=(
+                    dal_forward.Const(True, 'related_plans'),
+                )
+            )
         ),
         FieldPanel('merged_with', widget=ActionChooser),
     ]

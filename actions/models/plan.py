@@ -13,6 +13,7 @@ from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -414,6 +415,21 @@ class Plan(ClusterableModel):
                     AdminHostname.objects.create(client=client, hostname=hostname)
 
         return plan
+
+    def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
+        q = Q(related_plans=self)
+        if self.parent_id:
+            q |= Q(id=self.parent_id)
+            q |= Q(parent=self.parent_id)
+
+        if not inclusive:
+            q &= ~Q(id=self.id)
+        else:
+            q |= Q(id=self.id)
+
+        qs: PlanQuerySet = Plan.objects.filter(q)
+
+        return qs
 
 # ParentalManyToManyField  won't help, so we need the through model:
 # https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
