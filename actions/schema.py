@@ -77,14 +77,15 @@ class PlanNode(DjangoNode):
     hide_action_lead_paragraph = graphene.Boolean()
 
     features = graphene.Field(PlanFeaturesNode, required=True)
+    all_related_plans = graphene.List('actions.schema.PlanNode', required=True)
 
-    def resolve_last_action_identifier(self, info):
+    def resolve_last_action_identifier(self: Plan, info):
         return self.get_last_action_identifier()
 
     @gql_optimizer.resolver_hints(
         model_field='category_types',
     )
-    def resolve_category_types(self, info, usable_for_indicators=None, usable_for_actions=None):
+    def resolve_category_types(self: Plan, info, usable_for_indicators=None, usable_for_actions=None):
         qs = self.category_types.all()
         if usable_for_indicators is not None:
             qs = qs.filter(usable_for_indicators=usable_for_indicators)
@@ -185,6 +186,13 @@ class PlanNode(DjangoNode):
     )
     def resolve_hide_action_official_name(self: Plan, info):
         return not self.features.has_action_official_name
+
+    @gql_optimizer.resolver_hints(
+        select_related=('parent',),
+        prefetch_related=('children', 'parent__children'),
+    )
+    def resolve_all_related_plans(self: Plan, info):
+        return self.get_all_related_plans()
 
     class Meta:
         model = Plan
