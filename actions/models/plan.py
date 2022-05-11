@@ -422,6 +422,8 @@ class Plan(ClusterableModel):
             q |= Q(id=self.parent_id)
             q |= Q(parent=self.parent_id)
 
+        q |= Q(parent_id=self.id)
+
         if not inclusive:
             q &= ~Q(id=self.id)
         else:

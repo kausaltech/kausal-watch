@@ -1,5 +1,6 @@
 import logging
 from itertools import chain
+from typing import Optional
 
 from django.utils.translation import get_language
 from django.db.models import Q
@@ -99,19 +100,18 @@ class Query:
                 (query is None and autocomplete is None)):
             raise GraphQLError("You must supply either query or autocomplete", [info])
 
-        plan_obj = Plan.objects.filter(identifier=plan).first()
+        plan_obj: Optional[Plan] = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
             raise GraphQLError("Plan %s not found" % plan, [info])
+        related_plans = plan_obj.get_all_related_plans().live()
         if only_other_plans:
-            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=plan_obj.related_plans.all()))
+            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=related_plans))
         else:
             qs = Q(id=plan_obj.id)
             if include_related_plans:
                 # If the current plan is not published yet, we include other
                 # non-published plans as well. For a production plan, we exclude
                 # all non-published plans.
-                related_plans = plan_obj.related_plans.all()
-                related_plans = related_plans.live()
                 qs |= Q(id__in=related_plans.values_list('id', flat=True))
             plans = Plan.objects.filter(qs)
 
