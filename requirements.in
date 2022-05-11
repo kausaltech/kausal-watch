@@ -1,6 +1,6 @@
 django
 #-e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster
--e git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
+git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
 djangorestframework
 django-helusers
 social-auth-app-django
@@ -39,7 +39,7 @@ wagtail-factories
 pytest-factoryboy
 libvoikko
 #django-modeltrans
--e git+https://github.com/kausaltech/django-modeltrans.git#egg=django-modeltrans
+git+https://github.com/kausaltech/django-modeltrans.git#egg=django-modeltrans
 wagtail
 wagtail-autocomplete
 wagtailfontawesome
