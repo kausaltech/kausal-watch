@@ -189,7 +189,6 @@ class PlanNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         select_related=('parent',),
-        prefetch_related=('children', 'parent__children'),
     )
     def resolve_all_related_plans(self: Plan, info):
         return self.get_all_related_plans()
