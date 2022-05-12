@@ -323,7 +323,7 @@ class IndicatorAdmin(AplansModelAdmin):
     menu_icon = 'fa-bar-chart'
     menu_order = 3
     menu_label = _('Indicators')
-    list_display = ('name', 'unit_display', 'quantity', 'has_data',)
+    list_display = ('name', 'organization', 'unit_display', 'quantity', 'has_data',)
     list_filter = (DisconnectedIndicatorFilter,)
     search_fields = ('name',)
     permission_helper_class = IndicatorPermissionHelper
