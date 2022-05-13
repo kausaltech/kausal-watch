@@ -54,9 +54,6 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
     except User.DoesNotExist:
         return
 
-    if user.social_auth.exists():
-        return
-
     return {
         'user': user,
         'is_new': False,
