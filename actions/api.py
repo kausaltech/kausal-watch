@@ -1,25 +1,41 @@
 from __future__ import annotations
+
+import copy
+import typing
+from typing import Optional
+
+from django.db import models
 from django.utils.translation import gettext_lazy as _
+from rest_framework import exceptions, permissions, serializers, viewsets
 
-from rest_framework import (
-    viewsets, serializers, permissions, exceptions
-)
+from drf_spectacular.utils import extend_schema, extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from rest_framework_nested import routers
+
 from actions.models.action import ActionImplementationPhase
-from aplans.types import AuthenticatedWatchRequest
-
-
-from aplans.utils import register_view_helper, public_fields
-from aplans.model_images import ModelWithImageViewMixin, ModelWithImageSerializerMixin
+from actions.models.plan import PlanQuerySet
+from aplans.api_router import router
+from aplans.model_images import (
+    ModelWithImageSerializerMixin, ModelWithImageViewMixin
+)
+from aplans.permissions import AnonReadOnly
+from aplans.rest_api import (
+    BulkListSerializer, BulkModelViewSet, PlanRelatedModelSerializer
+)
+from aplans.types import AuthenticatedWatchRequest, WatchAPIRequest
+from aplans.utils import public_fields, register_view_helper
 from orgs.models import Organization
 from people.models import Person
 from users.models import User
+
 from .models import (
-    Plan, Action, ActionImpact, ActionSchedule, Category, CategoryType, Scenario, ActionStatus,
-    ActionTask, ActionDecisionLevel, ImpactGroup, ImpactGroupAction
+    Action, ActionDecisionLevel, ActionImpact, ActionSchedule, ActionStatus,
+    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, Plan,
+    Scenario
 )
-from aplans.api_router import router
-from aplans.permissions import AnonReadOnly
+
+if typing.TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 all_views = []
 all_routers = []
@@ -27,6 +43,18 @@ all_routers = []
 
 def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
+
+
+class BulkRouter(routers.SimpleRouter):
+    routes = copy.deepcopy(routers.SimpleRouter.routes)
+    routes[0].mapping.update({
+        'put': 'bulk_update',
+        'patch': 'partial_bulk_update',
+    })
+
+
+class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
+    pass
 
 
 class ActionImpactSerializer(serializers.ModelSerializer):
@@ -76,9 +104,50 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
         'identifier': ('exact',),
     }
 
+    request: WatchAPIRequest
+
+    @classmethod
+    def get_available_plans(
+        cls, queryset: Optional[PlanQuerySet] = None, request: Optional[WatchAPIRequest] = None
+    ) -> PlanQuerySet:
+        user: Optional[User]
+        if not request or not request.user or not request.user.is_authenticated:
+            user = None
+        else:
+            assert isinstance(request.user, User)
+            user = request.user
+
+        if queryset is None:
+            queryset = Plan.objects.all()  # type: ignore
+            assert queryset is not None
+
+        if user is not None:
+            return queryset.live() | queryset.filter(id__in=user.get_adminable_plans())
+        return queryset.live()
+
+    @classmethod
+    def get_default_plan(
+        cls, queryset: Optional[PlanQuerySet] = None, request: Optional[WatchAPIRequest] = None
+    ) -> Plan:
+        plans = cls.get_available_plans(queryset=queryset, request=request)
+        plan = None
+        if request is not None:
+            if hasattr(request, 'get_active_admin_plan'):
+                admin_plan = request.get_active_admin_plan()
+                plan = plans.filter(id=admin_plan.id).first()
+
+        if plan is None:
+            plan = plans.first()
+        assert plan is not None
+        return plan
+
+    def get_queryset(self) -> PlanQuerySet:
+        qs = super().get_queryset()
+        return self.get_available_plans(qs, self.request)
+
 
 router.register('plan', PlanViewSet, basename='plan')
-plan_router = routers.NestedSimpleRouter(router, 'plan', lookup='plan')
+plan_router = NestedBulkRouter(router, 'plan', lookup='plan')
 all_routers.append(plan_router)
 
 
@@ -125,10 +194,13 @@ class ActionPermission(permissions.DjangoObjectPermissions):
         return True
 
     def has_permission(self, request: AuthenticatedWatchRequest, view):
-        plan_pk = view.kwargs['plan_pk']
-        plan = Plan.objects.filter(id=plan_pk).first()
-        if plan is None:
-            raise exceptions.NotFound(detail='Plan not found')
+        plan_pk = view.kwargs.get('plan_pk')
+        if plan_pk:
+            plan = Plan.objects.filter(id=plan_pk).first()
+            if plan is None:
+                raise exceptions.NotFound(detail='Plan not found')
+        else:
+            plan = Plan.objects.live().first()
         perms = self.get_required_permissions(request.method, Action)
         for perm in perms:
             if not self.check_action_permission(request.user, perm, plan):
@@ -145,7 +217,15 @@ class ActionPermission(permissions.DjangoObjectPermissions):
         return True
 
 
-class CategoriesSerializer(serializers.Serializer):
+@extend_schema_field(dict(
+    type='object',
+    additionalProperties=dict(
+        type='array',
+        title='categories',
+        items=dict(type='integer'),
+    )
+))
+class ActionCategoriesSerializer(serializers.Serializer):
     parent: ActionSerializer
 
     def to_representation(self, instance):
@@ -213,19 +293,8 @@ class CategoriesSerializer(serializers.Serializer):
             instance.set_categories(ct_id, cats)
 
 
-class ActionSerializer(serializers.ModelSerializer):
-    plan: Plan
-    categories = CategoriesSerializer(required=False)
-
-    def __init__(self, *args, **kwargs):
-        self.plan = kwargs.pop('plan', None)
-        if not self.plan:
-            view = kwargs['context']['view']
-            plan_pk = view.kwargs['plan_pk']
-            self.plan = Plan.objects.filter(pk=plan_pk).prefetch_related('category_types').first()
-            if self.plan is None:
-                raise exceptions.NotFound('Plan not found')
-        super().__init__(*args, **kwargs)
+class ActionSerializer(PlanRelatedModelSerializer):
+    categories = ActionCategoriesSerializer(required=False)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -251,6 +320,9 @@ class ActionSerializer(serializers.ModelSerializer):
                 field_kwargs['queryset'] = self.plan.get_related_organizations()
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
+        elif field_name == 'related_actions':
+            related_plans = self.plan.get_all_related_plans(inclusive=True)
+            field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan__in=related_plans)
 
         return field_class, field_kwargs
 
@@ -262,12 +334,20 @@ class ActionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_('Identifier must be set'))
 
         qs = self.plan.actions.filter(identifier=value)
-        if self.instance is not None:
-            qs = qs.exclude(pk=self.instance.pk)
+        if self._instance is not None:
+            qs = qs.exclude(pk=self._instance.pk)
         if qs.exists():
             raise serializers.ValidationError(_('Identifier already exists'))
 
         return value
+
+    def run_validation(self, data: dict):
+        if self.parent:
+            assert isinstance(self.instance, models.query.QuerySet)
+            self._instance = self.instance.get(id=data['id'])
+        else:
+            self._instance = self.instance
+        return super().run_validation(data)
 
     def create(self, validated_data: dict):
         validated_data['plan'] = self.plan
@@ -287,6 +367,7 @@ class ActionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Action
+        list_serializer_class = BulkListSerializer
         fields = public_fields(
             Action,
             add_fields=['internal_notes', 'internal_admin_notes'],
@@ -300,8 +381,17 @@ class ActionSerializer(serializers.ModelSerializer):
         read_only_fields = ['plan']
 
 
-class ActionViewSet(viewsets.ModelViewSet):
+@extend_schema(
+    tags=['action']
+)
+class ActionViewSet(BulkModelViewSet):
     serializer_class = ActionSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        if 'plan_pk' not in self.kwargs:
+            plan = PlanViewSet.get_default_plan(request=self.request)
+            kwargs['plan'] = plan
+        return super().get_serializer(*args, **kwargs)
 
     def get_permissions(self):
         if self.action == 'list':
@@ -311,7 +401,13 @@ class ActionViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        return Action.objects.filter(plan=self.kwargs['plan_pk'])\
+        plan_pk = self.kwargs.get('plan_pk')
+        if not plan_pk:
+            return Action.objects.none()
+        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
+        if plan is None:
+            raise exceptions.NotFound(detail="Plan not found")
+        return Action.objects.filter(plan=plan_pk)\
             .prefetch_related('schedule', 'categories')
 
 

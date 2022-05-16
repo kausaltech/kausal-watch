@@ -53,7 +53,7 @@ def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, 
         return (None, None)
 
 
-class PlanQuerySet(models.QuerySet):
+class PlanQuerySet(models.QuerySet['Plan']):
     def for_hostname(self, hostname):
         hostname = hostname.lower()
         # Get plan identifier from hostname for development and testing
@@ -155,7 +155,7 @@ class Plan(ClusterableModel):
         'related_plans', 'theme_identifier', 'parent', 'children',
     ]
 
-    objects = models.Manager.from_queryset(PlanQuerySet)()
+    objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
 
     class Meta:
         verbose_name = _('plan')

@@ -62,3 +62,4 @@ elasticsearch_dsl<8.0.0
 pygments-graphql
 drf-nested-routers
 celery
+drf-spectacular

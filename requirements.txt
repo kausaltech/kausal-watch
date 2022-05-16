@@ -15,7 +15,9 @@ anyascii==0.3.0
 asgiref==3.5.0
     # via django
 attrs==21.4.0
-    # via pytest
+    # via
+    #   jsonschema
+    #   pytest
 beautifulsoup4==4.9.3
     # via wagtail
 billiard==3.6.4.0
@@ -96,6 +98,7 @@ django==3.2.12
     #   django-treebeard
     #   djangorestframework
     #   drf-nested-routers
+    #   drf-spectacular
     #   easy-thumbnails
     #   graphene-django
     #   wagtail
@@ -156,10 +159,13 @@ djangorestframework==3.13.1
     # via
     #   -r requirements.in
     #   drf-nested-routers
+    #   drf-spectacular
     #   wagtail
 draftjs-exporter==2.1.7
     # via wagtail
 drf-nested-routers==0.93.4
+    # via -r requirements.in
+drf-spectacular==0.22.1
     # via -r requirements.in
 easy-thumbnails==2.8.1
     # via -r requirements.in
@@ -203,7 +209,9 @@ humanize==4.0.0
 idna==3.3
     # via requests
 inflection==0.5.1
-    # via pytest-factoryboy
+    # via
+    #   drf-spectacular
+    #   pytest-factoryboy
 iniconfig==1.1.1
     # via pytest
 itypes==1.2.0
@@ -212,6 +220,8 @@ jinja2==3.0.3
     # via
     #   -r requirements.in
     #   coreschema
+jsonschema==4.5.1
+    # via drf-spectacular
 kombu==5.2.4
     # via celery
 l18n==2021.3
@@ -282,6 +292,8 @@ pyjwt==2.3.0
     # via social-auth-core
 pyparsing==3.0.7
     # via packaging
+pyrsistent==0.18.1
+    # via jsonschema
 pytest==7.0.1
     # via
     #   pytest-cov
@@ -313,6 +325,7 @@ pytz==2021.3
 pyyaml==6.0
     # via
     #   -r requirements.in
+    #   drf-spectacular
     #   tablib
 redis==4.1.4
     # via django-redis
@@ -392,6 +405,7 @@ uritemplate==4.1.1
     # via
     #   -r requirements.in
     #   coreapi
+    #   drf-spectacular
 urllib3==1.26.8
     # via
     #   elasticsearch

@@ -3,6 +3,7 @@ import typing
 
 from django.apps import apps
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
@@ -11,6 +12,7 @@ from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan, Action
+    from people.models import Person
 
 
 class User(AbstractUser):
@@ -24,11 +26,13 @@ class User(AbstractUser):
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL
     )
 
+    _corresponding_person: Person
+
     autocomplete_search_field = 'email'
     def autocomplete_label(self):
         return self.email
 
-    def get_corresponding_person(self):
+    def get_corresponding_person(self) -> typing.Optional[Person]:
         if hasattr(self, '_corresponding_person'):
             return self._corresponding_person
 
@@ -168,7 +172,7 @@ class User(AbstractUser):
         self.save(update_fields=['selected_admin_plan'])
         return plan
 
-    def get_adminable_plans(self):
+    def get_adminable_plans(self) -> models.QuerySet[Plan]:
         from actions.models import Plan
 
         is_action_contact = self.is_contact_person_for_action()
@@ -177,23 +181,25 @@ class User(AbstractUser):
         is_org_admin = self.is_organization_admin_for_action()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
                 and not is_org_admin and not is_indicator_contact:
-            return []
+            return Plan.objects.none()
 
         # Cache adminable plans for each request
         if hasattr(self, '_adminable_plans'):
             plans = self._adminable_plans
         else:
-            plans = set()
             if self.is_superuser:
-                plans.update(Plan.objects.all())
+                plans = Plan.objects.all()
             else:
-                plans.update(Plan.objects.filter(actions__in=self._contact_for_actions).distinct())
-                plans.update(Plan.objects.filter(indicators__in=self._contact_for_indicators).distinct())
-                plans.update(Plan.objects.filter(id__in=self._general_admin_for_plans))
-                plans.update(Plan.objects.filter(actions__in=self._org_admin_for_actions).distinct())
+                q = Q(actions__in=self._contact_for_actions)
+                q |= Q(indicators__in=self._contact_for_indicators)
+                q |= Q(id__in=self._general_admin_for_plans)
+                q |= Q(actions__in=self._org_admin_for_actions)
+                plans = Plan.objects.filter(q).distinct()
             self._adminable_plans = plans
+        return plans
 
-        plans = sorted(list(plans), key=lambda x: x.name)
+    def get_adminable_plans_mark_selected(self) -> models.QuerySet[Plan]:
+        plans = self.get_adminable_plans()
         active_plan = self.get_active_admin_plan(plans)
         for plan in plans:
             if plan == active_plan:
@@ -201,6 +207,7 @@ class User(AbstractUser):
             else:
                 plan.is_active_admin = False
         return plans
+
 
     def can_modify_action(self, action: Action = None, plan: Plan = None):
         if self.is_superuser:

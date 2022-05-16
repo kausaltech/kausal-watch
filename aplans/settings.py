@@ -145,6 +145,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework.authtoken',
+    'drf_spectacular',
     'django_filters',
     'grapple',
     'graphene_django',
@@ -321,6 +322,16 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Kausal Watch REST API',
+    'DESCRIPTION': 'Monitor and manage action plans',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '^/v1',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
 }
 
 

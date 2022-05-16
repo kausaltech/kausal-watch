@@ -3,7 +3,7 @@
 
 {% block sidebar %}
 <div id="content-related">
-    {% with plans=request.user.get_adminable_plans %}
+    {% with plans=request.user.get_adminable_plans_mark_selected %}
     {% if plans|length > 1 %}
     <div class="module" id="plan-selector">
         <h2>{% trans 'Select action plan' %}</h2>
