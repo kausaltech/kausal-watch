@@ -197,7 +197,10 @@ class ActionAdminForm(WagtailAdminModelForm):
 
 
 class ActionEditHandler(AplansTabbedInterface):
+    instance: Action
+
     def get_form_class(self, request: WatchAdminRequest = None):
+        assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
@@ -254,16 +257,23 @@ class ActionEditHandler(AplansTabbedInterface):
 
 
 class ActionCreateView(AplansCreateView):
-    def get_instance(self):
+    def get_instance(self) -> Action:
         # Override default implementation, which would try to create an
         # instance of self.model (i.e., Action) without a plan, causing an
         # error when saving it
-        instance = super().get_instance()
-        if not instance.pk:
-            plan = self.request.get_active_admin_plan()
-            instance.plan = plan
-            if not instance.identifier and not plan.features.has_action_identifiers:
-                instance.generate_identifier()
+        instance: Action = super().get_instance()
+        if instance.pk:
+            return instance
+
+        plan = self.request.get_active_admin_plan()
+        instance.plan = plan
+        if not instance.identifier and not plan.features.has_action_identifiers:
+            instance.generate_identifier()
+        if plan.features.has_action_primary_orgs:
+            person = self.request.user.get_corresponding_person()
+            if person is not None:
+                default_org = plan.get_related_organizations().filter(id=person.organization_id).first()
+                instance.primary_org = default_org
 
         return instance
 
