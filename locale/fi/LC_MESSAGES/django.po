@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-09 09:55+0300\n"
-"PO-Revision-Date: 2022-03-01 13:57+0200\n"
+"POT-Creation-Date: 2022-05-17 10:08+0300\n"
+"PO-Revision-Date: 2022-05-17 08:22+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -492,14 +492,6 @@ msgstr "Yhteyshenkilöt nimetty"
 #: actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
-
-#: actions/models/action.py
-msgid "related action"
-msgstr "liittyvä toimenpide"
-
-#: actions/models/action.py
-msgid "related actions"
-msgstr "liittyvät toimenpiteet"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
@@ -1284,6 +1276,18 @@ msgstr "Linkki rajapintaprojektin GitHubiin"
 #: content/models.py
 msgid "Link to GitHub repository for UI"
 msgstr "Linkki käyttöliittymäprojektin GitHubiin"
+
+#: content/models.py
+msgid "Body responsible for site accessibility"
+msgstr "Sivuston saavutettavuudesta vastaa"
+
+#: content/models.py
+msgid "Set if different from the owner of the site"
+msgstr "Aseta jos eri kuin sivuston omistajaorganisaatio"
+
+#: content/models.py
+msgid "Accessibility contact email"
+msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
 
 #: content/models.py
 msgid "site general content"
@@ -2292,12 +2296,18 @@ msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
 #: people/wagtail_admin.py
-msgid "last login"
-msgstr "kirjautunut viimeksi"
-
-#: people/wagtail_admin.py
 msgid "is plan admin"
 msgstr "on pääkäyttäjä"
+
+#: people/wagtail_admin.py
+#, fuzzy
+#| msgid "admins for organization"
+msgid "plan admin organizations"
+msgstr "ylläpitäjät organisaatiolle"
+
+#: people/wagtail_admin.py
+msgid "last login"
+msgstr "kirjautunut viimeksi"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"
@@ -2431,6 +2441,12 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#~ msgid "related action"
+#~ msgstr "liittyvä toimenpide"
+
+#~ msgid "related actions"
+#~ msgstr "liittyvät toimenpiteet"
+
 #~ msgctxt "hyphenated"
 #~ msgid "Action attributes"
 #~ msgstr "Toimenpiteiden ominaisuudet"
@@ -2499,9 +2515,6 @@ msgstr "Käyttäjät"
 
 #~ msgid "Filter actions"
 #~ msgstr "Suodata toimenpiteitä"
-
-#~ msgid "admins for organization"
-#~ msgstr "ylläpitäjät organisaatiolle"
 
 #~ msgid "Responsible organization"
 #~ msgstr "Vastuuorganisaatio"

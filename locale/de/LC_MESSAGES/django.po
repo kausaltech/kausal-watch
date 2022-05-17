@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-09 16:28+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"POT-Creation-Date: 2022-05-17 10:08+0300\n"
+"PO-Revision-Date: 2022-05-17 11:52+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -491,14 +491,6 @@ msgstr "Hat Kontaktpersonen"
 #: actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktive Aufgaben"
-
-#: actions/models/action.py
-msgid "related action"
-msgstr "verbundene Maßnahme"
-
-#: actions/models/action.py
-msgid "related actions"
-msgstr "verbundene Maßnahmen"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
@@ -1279,8 +1271,12 @@ msgid "Link to GitHub repository for UI"
 msgstr "Link zum Github-Repository für UI"
 
 #: content/models.py
-msgid "Accessibility contact name"
-msgstr "Name des Barrierefreiheitsansprechpartners"
+msgid "Body responsible for site accessibility"
+msgstr "Für Barrierefreiheit zuständige Stelle"
+
+#: content/models.py
+msgid "Set if different from the owner of the site"
+msgstr "Setzen, wenn anders als Seiteninhaber"
 
 #: content/models.py
 msgid "Accessibility contact email"
@@ -2435,3 +2431,12 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "related action"
+#~ msgstr "verbundene Maßnahme"
+
+#~ msgid "related actions"
+#~ msgstr "verbundene Maßnahmen"
+
+#~ msgid "Accessibility contact name"
+#~ msgstr "Name des Barrierefreiheitsansprechpartners"
