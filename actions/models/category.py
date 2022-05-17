@@ -69,6 +69,10 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
         default=False, verbose_name=_('hide category identifiers'),
         help_text=_("Set if the categories do not have meaningful identifiers")
     )
+    common = models.ForeignKey(
+        CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
+        related_name='category_type_instances'
+    )
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
