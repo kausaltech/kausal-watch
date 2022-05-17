@@ -26,6 +26,7 @@ class PlanFactory(DjangoModelFactory):
     accessibility_statement_url = 'https://example.com'
     primary_language = 'en'
     other_languages = ['fi']
+    published_at = datetime.datetime(2021, 1, 1)
 
 
 class PlanDomainFactory(DjangoModelFactory):
