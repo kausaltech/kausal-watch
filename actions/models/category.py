@@ -12,22 +12,15 @@ import reversion
 
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
-    validate_css_color
+    validate_css_color, get_supported_languages
 )
 
 
-@reversion.register()
-class CategoryType(ClusterableModel, PlanRelatedModel):
-    """Type of the categories.
-
-    Is used to group categories together. One action plan can have several
-    category types.
-    """
+class CategoryTypeBase(models.Model):
     class SelectWidget(models.TextChoices):
         MULTIPLE = 'multiple', _('Multiple')
         SINGLE = 'single', _('Single')
 
-    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
     usable_for_actions = models.BooleanField(
@@ -46,11 +39,36 @@ class CategoryType(ClusterableModel, PlanRelatedModel):
         default=False,
         verbose_name=_('editable for indicators'),
     )
+    select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
+
+    class Meta:
+        abstract = True
+
+
+class CommonCategoryType(CategoryTypeBase):
+    primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
+    i18n = TranslationField(fields=('name',), default_language_field='primary_language')
+
+    class Meta:
+        unique_together = (('identifier',),)
+        verbose_name = _('common category type')
+        verbose_name_plural = _('common category types')
+        ordering = ('identifier',)
+
+
+@reversion.register()
+class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
+    """Type of the categories.
+
+    Is used to group categories together. One action plan can have several
+    category types.
+    """
+
+    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
     hide_category_identifiers = models.BooleanField(
         default=False, verbose_name=_('hide category identifiers'),
         help_text=_("Set if the categories do not have meaningful identifiers")
     )
-    select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
@@ -106,30 +124,74 @@ class CategoryLevel(OrderedModel):
         return self.name
 
 
-class Category(ClusterableModel, OrderedModel, PlanRelatedModel):
+class CategoryBase(OrderedModel):
+    identifier = IdentifierField()
+    name = models.CharField(max_length=100, verbose_name=_('name'))
+    short_description = models.TextField(
+        max_length=200, blank=True, verbose_name=_('short description')
+    )
+    image = models.ForeignKey(
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    color = models.CharField(
+        max_length=50, blank=True, null=True, verbose_name=_('theme color'),
+        help_text=_('Set if the category has a theme color'),
+        validators=[validate_css_color]
+    )
+
+    class Meta:
+        abstract = True
+
+
+class CommonCategory(CategoryBase):
+    type = models.ForeignKey(
+        CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
+        verbose_name=_('type')
+    )
+    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__primary_language')
+
+    class Meta:
+        unique_together = (('type', 'identifier'),)
+
+    def __str__(self):
+        return self.name
+
+
+class CommonCategoryImage(models.Model):
+    category = models.ForeignKey(
+        CommonCategory, on_delete=models.CASCADE, related_name='images',
+        verbose_name=_('category')
+    )
+    language = models.CharField(max_length=20, choices=get_supported_languages(), null=True, blank=True)
+    image = models.ForeignKey(
+        'images.AplansImage', on_delete=models.CASCADE, related_name='+'
+    )
+
+    class Meta:
+        unique_together = (('category', 'language'),)
+
+    def __str__(self):
+        return '%s [%s]' % (self.category, self.language)
+
+
+class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
     type = models.ForeignKey(
         CategoryType, on_delete=models.PROTECT, related_name='categories',
         verbose_name=_('type')
     )
-    identifier = IdentifierField()
+    common = models.ForeignKey(
+        CommonCategory, on_delete=models.PROTECT, related_name='category_instances',
+        null=True, blank=True, verbose_name=_('common category'),
+    )
     external_identifier = models.CharField(max_length=50, blank=True, null=True, editable=False)
-    name = models.CharField(max_length=100, verbose_name=_('name'))
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')
-    )
-    short_description = models.TextField(
-        max_length=200, blank=True, verbose_name=_('short description')
-    )
-    color = models.CharField(
-        max_length=50, blank=True, null=True, verbose_name=_('theme color'),
-        help_text=_('Set if the category has a theme color'),
-        validators=[validate_css_color]
     )
 
     i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__plan__primary_language')
