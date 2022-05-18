@@ -34,7 +34,7 @@ django-anymail[sendgrid]
 django-reversion
 pytest-django
 pytest-cov
-factory-boy==3.1.0  # pinned to old version due to https://github.com/wagtail/wagtail-factories/issues/38
+factory-boy
 wagtail-factories
 pytest-factoryboy
 libvoikko
