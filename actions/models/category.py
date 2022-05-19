@@ -45,6 +45,7 @@ class CategoryTypeBase(models.Model):
         abstract = True
 
 
+@reversion.register()
 class CommonCategoryType(CategoryTypeBase):
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
     i18n = TranslationField(fields=('name',), default_language_field='primary_language')
@@ -54,6 +55,9 @@ class CommonCategoryType(CategoryTypeBase):
         verbose_name = _('common category type')
         verbose_name_plural = _('common category types')
         ordering = ('identifier',)
+
+    def __str__(self):
+        return f"{self.name}: {self.identifier}"
 
 
 @reversion.register()

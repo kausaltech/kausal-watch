@@ -9,7 +9,7 @@ from .attributes import (
     AttributeNumericValue
 )
 from .category import (
-    Category, CategoryType, CategoryLevel, CategoryIcon
+    Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryType
 )
 from .features import PlanFeatures
 
@@ -21,7 +21,7 @@ __all__ = [
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
     'AttributeType', 'AttributeTypeChoiceOption',
-    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'ImpactGroup',
+    'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'CommonCategory', 'CommonCategoryType', 'ImpactGroup',
     'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
     'Scenario', 'PlanFeatures',
 ]

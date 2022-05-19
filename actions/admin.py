@@ -17,8 +17,8 @@ from people.models import Person
 from .export import ActionResource
 from .models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionResponsibleParty, ActionSchedule,
-    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction,
-    MonitoringQualityPoint, Plan, Scenario
+    ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryType, CommonCategoryType, ImpactGroup,
+    ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from .perms import ActionRelatedAdminPermMixin
 
@@ -269,6 +269,24 @@ class CategoryTypeFilter(admin.SimpleListFilter):
         user = request.user
         plan = user.get_active_admin_plan()
         choices = [(i.id, i.name) for i in plan.category_types.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(type=self.value())
+        else:
+            return queryset
+
+
+class CommonCategoryTypeFilter(admin.SimpleListFilter):
+    title = _('Common category type')
+    parameter_name = 'common_category_type'
+
+    def lookups(self, request, model_admin):
+        # user = request.user
+        # plan = user.get_active_admin_plan()
+        # choices = [(i.id, i.name) for i in plan.category_types.all()]
+        choices = [(i.id, i.name) for i in CommonCategoryType.objects.all()]
         return choices
 
     def queryset(self, request, queryset):
