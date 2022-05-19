@@ -1,5 +1,6 @@
 import datetime
 from django.contrib.contenttypes.models import ContentType
+from django.utils.timezone import make_aware
 from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
@@ -26,7 +27,7 @@ class PlanFactory(DjangoModelFactory):
     accessibility_statement_url = 'https://example.com'
     primary_language = 'en'
     other_languages = ['fi']
-    published_at = datetime.datetime(2021, 1, 1)
+    published_at = make_aware(datetime.datetime(2021, 1, 1))
 
 
 class PlanDomainFactory(DjangoModelFactory):
