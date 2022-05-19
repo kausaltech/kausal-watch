@@ -124,7 +124,6 @@ INSTALLED_APPS = [
     'wagtail.admin',
     'wagtail.core',
     'wagtail.contrib.modeladmin',
-    'wagtail.contrib.postgres_search',
     'wagtail_localize',
     'wagtail_localize.locales',  # replaces `wagtail.locales`
     'wagtailautocomplete',
@@ -458,7 +457,7 @@ WAGTAILADMIN_USER_LOGIN_FORM = 'admin_site.forms.LoginForm'
 WAGTAILSEARCH_BACKENDS = {
     # Will be overridden below if ELASTICSEARCH_URL is specified
     'default': {
-        'BACKEND': 'wagtail.contrib.postgres_search.backend',
+        'BACKEND': 'wagtail.search.backends.database',
     }
 }
 
