@@ -1,7 +1,7 @@
 from dal import autocomplete
 from django.db.models import Q
 
-from actions.models import Action
+from actions.models import Action, Category, CategoryType
 from aplans.types import WatchAdminRequest
 
 
@@ -29,5 +29,27 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
         qs = Action.objects.filter(plan__in=plans).select_related('plan')
         if self.q:
             qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q) | Q(official_name__icontains=self.q))
+
+        return qs
+
+
+class CategoryAutocomplete(autocomplete.Select2QuerySetView):
+    request: WatchAdminRequest
+
+    def get_result_label(self, result: Category):
+        return str(result)
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return Category.objects.none()
+
+        plan = self.request.get_active_admin_plan()
+        ct_id = self.forwarded.get('type', None)
+        if not ct_id:
+            return Category.objects.none()
+        ct = plan.category_types.get(id=ct_id)
+        qs = ct.categories.all()
+        if self.q:
+            qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q))
 
         return qs

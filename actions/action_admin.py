@@ -81,10 +81,23 @@ def _get_category_fields(plan, model, obj, with_initial=False):
         field_class = forms.ModelMultipleChoiceField
         if cat_type.select_widget == CategoryType.SelectWidget.SINGLE:
             field_class = ModelChoiceFieldWithValueInList
+
+            widget = autocomplete.ModelSelect2(
+                url='category-autocomplete',
+                forward=(
+                    dal_forward.Const(cat_type.id, 'type'),
+                )
+            )
         else:
             field_class = forms.ModelMultipleChoiceField
+            widget = autocomplete.ModelSelect2Multiple(
+                url='category-autocomplete',
+                forward=(
+                    dal_forward.Const(cat_type.id, 'type'),
+                )
+            )
         field = field_class(
-            qs, label=cat_type.name, initial=initial, required=False,
+            qs, label=cat_type.name, initial=initial, required=False, widget=widget
         )
         field.category_type = cat_type
         fields['categories_%s' % cat_type.identifier] = field
