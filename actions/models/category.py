@@ -165,7 +165,7 @@ class CommonCategory(CategoryBase):
         return self.name
 
 
-class CommonCategoryImage(models.Model):
+class CommonCategoryIcon(models.Model):
     category = models.ForeignKey(
         CommonCategory, on_delete=models.CASCADE, related_name='images',
         verbose_name=_('category')
@@ -194,9 +194,6 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
         null=True, blank=True, verbose_name=_('common category'),
     )
     external_identifier = models.CharField(max_length=50, blank=True, null=True, editable=False)
-    image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
-    )
     parent = models.ForeignKey(
         'self', null=True, blank=True, on_delete=models.SET_NULL, related_name='children',
         verbose_name=_('parent category')

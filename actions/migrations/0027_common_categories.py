@@ -68,7 +68,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='category_type_instances', to='actions.commoncategorytype'),
         ),
         migrations.CreateModel(
-            name='CommonCategoryImage',
+            name='CommonCategoryIcon',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('language', models.CharField(blank=True, choices=[('fi', 'Finnish'), ('en', 'English'), ('sv', 'Swedish'), ('de', 'German')], max_length=20, null=True)),
