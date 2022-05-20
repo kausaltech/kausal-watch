@@ -41,6 +41,11 @@ class CategoryTypeBase(models.Model):
     )
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
 
+    public_fields = [
+        'name', 'identifier', 'editable_for_actions', 'editable_for_indicators', 'usable_for_indicators',
+        'usable_for_actions'
+    ]
+
     class Meta:
         abstract = True
 
@@ -49,6 +54,10 @@ class CategoryTypeBase(models.Model):
 class CommonCategoryType(CategoryTypeBase):
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
     i18n = TranslationField(fields=('name',), default_language_field='primary_language')
+
+    public_fields = CategoryTypeBase.public_fields + [
+        'category_type_instances', 'categories'
+    ]
 
     class Meta:
         unique_together = (('identifier',),)
@@ -88,10 +97,8 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
 
     categories: models.QuerySet[Category]
 
-    public_fields = [
-        'id', 'plan', 'name', 'identifier', 'editable_for_actions', 'editable_for_indicators',
-        'usable_for_indicators', 'usable_for_actions', 'levels', 'categories', 'attribute_types',
-        'hide_category_identifiers', 'select_widget',
+    public_fields = CategoryTypeBase.public_fields + [
+        'id', 'plan', 'levels', 'categories', 'attribute_types', 'hide_category_identifiers'
     ]
 
     class Meta:
@@ -147,16 +154,25 @@ class CategoryBase(OrderedModel):
         validators=[validate_css_color]
     )
 
+    public_fields = [
+        'identifier', 'name', 'short_description', 'image', 'color'
+    ]
+
     class Meta:
         abstract = True
 
 
+@reversion.register()
 class CommonCategory(CategoryBase):
     type = models.ForeignKey(
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
     i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__primary_language')
+
+    public_fields = CategoryBase.public_fields + [
+        'type', 'category_instances'
+    ]
 
     class Meta:
         unique_together = (('type', 'identifier'),)
@@ -219,7 +235,7 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
     )
 
     public_fields = [
-        'id', 'type', 'order', 'identifier', 'external_identifier', 'name', 'parent', 'short_description',
+        'id', 'type', 'order', 'identifier', 'common', 'external_identifier', 'name', 'parent', 'short_description',
         'color', 'children', 'category_pages', 'indicators',
     ]
 
