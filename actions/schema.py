@@ -339,6 +339,13 @@ class CategoryNode(DjangoNode):
     icon_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
 
+    def resolve_image(self, info):
+        if self.image:
+            return self.image
+        if self.common:
+            return self.common.image
+        return None
+
     def resolve_attributes(self, info, id=None):
         query = Q()
         if id is not None:
