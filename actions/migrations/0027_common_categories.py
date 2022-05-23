@@ -40,6 +40,11 @@ class Migration(migrations.Migration):
                 'unique_together': {('identifier',)},
             },
         ),
+        migrations.AddField(
+            model_name='plan',
+            name='common_category_types',
+            field=models.ManyToManyField(blank=True, related_name='plans', to='actions.CommonCategoryType'),
+        ),
         migrations.CreateModel(
             name='CommonCategory',
             fields=[
