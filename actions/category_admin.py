@@ -423,6 +423,15 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
+class CommonCategoryEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        if self.instance.pk:
+            form_class.base_fields['identifier'].disabled = True
+            form_class.base_fields['identifier'].required = False
+        return form_class
+
+
 @modeladmin_register
 class CommonCategoryAdmin(AplansModelAdmin):
     menu_label = _('Common categories')
@@ -461,4 +470,4 @@ class CommonCategoryAdmin(AplansModelAdmin):
         )
         tabs += i18n_tabs
 
-        return AplansTabbedInterface(tabs)
+        return CommonCategoryEditHandler(tabs)
