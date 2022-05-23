@@ -29,6 +29,15 @@ def _append_query_parameter(request, url, parameter):
     return url
 
 
+class CategoryTypeDeleteView(DeleteView):
+    def delete_instance(self):
+        # When deleting a category type which is an instantiation of a common category type, remove link from plan
+        plan = self.instance.plan
+        cct = self.instance.common
+        plan.common_category_types.remove(cct)
+        return super().delete_instance()
+
+
 @modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
@@ -38,6 +47,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     add_to_settings_menu = True
+    delete_view_class = CategoryTypeDeleteView
 
     panels = [
         FieldPanel('name'),
