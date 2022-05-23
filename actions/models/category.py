@@ -3,10 +3,13 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from modeltrans.translator import get_i18n_field
+from modeltrans.utils import get_available_languages
 
 import reversion
 
@@ -67,6 +70,28 @@ class CommonCategoryType(CategoryTypeBase):
 
     def __str__(self):
         return f"{self.name}: {self.identifier}"
+
+    def instantiate_for_plan(self, plan):
+        """Create category type corresponding to this one and link it to the given plan."""
+        if plan.category_types.filter(common=self).exists():
+            raise Exception(f"Instantiation of common category type '{self}' for plan '{plan}' exists already")
+        translated_fields = get_i18n_field(CategoryType).fields
+        other_languages = [lang for lang in get_available_languages() if lang != plan.primary_language]
+        # Inherit fields from CategoryTypeBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the
+        # primary language of the the active plan, and the same for other translated fields.
+        # TODO: Something like this should be put in modeltrans to implement changing the per-instance default
+        # language.
+        # Temporarily override language so that the `_i18n` suffix field falls back to the original field
+        with translation.override(plan.primary_language):
+            translated_values = {field: getattr(self, f'{field}_i18n') for field in translated_fields}
+        for field in translated_fields:
+            for lang in other_languages:
+                value = getattr(self, f'{field}_{lang}')
+                if value:
+                    translated_values[f'{field}_{lang}'] = value
+        inherited_fields = [f.name for f in CategoryTypeBase._meta.fields if f.name not in translated_fields]
+        inherited_values = {field: getattr(self, field) for field in inherited_fields}
+        plan.category_types.create(common=self, **inherited_values, **translated_values)
 
 
 @reversion.register()
