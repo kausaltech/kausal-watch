@@ -5,7 +5,7 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
+from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
@@ -311,12 +311,30 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         return CategoryEditHandler(tabs)
 
 
+class CommonCategoryTypePermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return user.is_superuser
+
+    def user_can_create(self, user):
+        return user.is_superuser
+
+    # def user_can_inspect_obj(self, user, obj):
+    #     return user.is_superuser
+
+    def user_can_delete_obj(self, user, obj):
+        return user.is_superuser
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_superuser
+
+
 @modeladmin_register
 class CommonCategoryTypeAdmin(AplansModelAdmin):
     model = CommonCategoryType
     menu_icon = 'fa-briefcase'
     menu_label = _('Common category types')
     menu_order = 1101
+    permission_helper_class = CommonCategoryTypePermissionHelper
     list_display = ('name',)
     search_fields = ('name',)
     add_to_settings_menu = True
