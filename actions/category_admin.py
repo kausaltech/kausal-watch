@@ -73,12 +73,14 @@ class CategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         panels = list(self.panels)
+        if instance and instance.common:
+            panels.insert(1, FieldPanel('common'))
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return AplansTabbedInterface(tabs)
+        return CategoryTypeEditHandler(tabs)
 
 
 def get_category_attribute_fields(category_type, category, **kwargs):
@@ -145,6 +147,18 @@ class CategoryEditHandler(AplansTabbedInterface):
             attribute_fields
         )
         return super().get_form_class()
+
+
+class CategoryTypeEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        common_field = form_class.base_fields.get('common')
+        # The field should be displayed if and only if editing an instance that has a common category type. If it is,
+        # make it read-only.
+        if common_field:
+            common_field.disabled = True
+            common_field.required = False
+        return form_class
 
 
 class CategoryTypeQueryParameterMixin:

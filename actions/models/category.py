@@ -84,7 +84,7 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     )
     common = models.ForeignKey(
         CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
-        related_name='category_type_instances'
+        verbose_name=_('common category type'), related_name='category_type_instances'
     )
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
