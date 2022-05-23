@@ -303,9 +303,6 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     heading = attribute_type.name
                 panels.append(AttributeFieldPanel(form_field_name, heading=heading))
 
-        if request.user.is_superuser:
-            panels.insert(0, FieldPanel('common'))
-
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
