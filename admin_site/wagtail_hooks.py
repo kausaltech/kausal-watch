@@ -71,14 +71,9 @@ class CommonCategoryMenuItem(MenuItem):
 
 class CommonCategoryMenu(Menu):
     def menu_items_for_request(self, request):
-        user = request.user
-        plan = user.get_active_admin_plan()
-        items = []
-        if user.is_general_admin_for_plan(plan):
-            for common_category_type in CommonCategoryType.objects.all():
-                item = CommonCategoryMenuItem(common_category_type)
-                items.append(item)
-        return items
+        if request.user.is_superuser:
+            return [CommonCategoryMenuItem(cct) for cct in CommonCategoryType.objects.all()]
+        return []
 
 
 common_category_menu = CommonCategoryMenu(None)
