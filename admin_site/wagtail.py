@@ -327,14 +327,17 @@ class ActivePlanEditView(AplansEditView):
         new_common_category_types = form.cleaned_data['common_category_types']
         for added_cct in new_common_category_types.difference(old_common_category_types):
             # Create category type corresponding to this common category type and link it to this plan
-            added_cct.instantiate_for_plan(self.instance)
+            ct = added_cct.instantiate_for_plan(self.instance)
+            # Create categories for the common categories having that common category type
+            for common_category in added_cct.categories.all():
+                common_category.instantiate_for_category_type(ct)
         for removed_cct in old_common_category_types.difference(new_common_category_types):
             try:
                 self.instance.category_types.filter(common=removed_cct).delete()
             except ProtectedError:
                 # Actually validation should have been done before this method is called, but it seems to work for now
-                error = (f"Could not remove common category type '{removed_cct}' because categories with the "
-                         "corresponding category type exist.")
+                error = _(f"Could not remove common category type '{removed_cct}' from the plan because categories "
+                          "with the corresponding category type exist.")
                 form.add_error('common_category_types', error)
                 messages.validation_error(self.request, self.get_error_message(), form)
                 return self.render_to_response(self.get_context_data(form=form))

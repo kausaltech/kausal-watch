@@ -81,6 +81,7 @@ class CommonCategoryType(CategoryTypeBase):
         # primary language of the the active plan, and the same for other translated fields.
         # TODO: Something like this should be put in modeltrans to implement changing the per-instance default
         # language.
+        # TODO: Duplicated in CommonCategory.instantiate_for_category_type()
         # Temporarily override language so that the `_i18n` suffix field falls back to the original field
         with translation.override(plan.primary_language):
             translated_values = {field: getattr(self, f'{field}_i18n') for field in translated_fields}
@@ -91,7 +92,7 @@ class CommonCategoryType(CategoryTypeBase):
                     translated_values[f'{field}_{lang}'] = value
         inherited_fields = [f.name for f in CategoryTypeBase._meta.fields if f.name not in translated_fields]
         inherited_values = {field: getattr(self, field) for field in inherited_fields}
-        plan.category_types.create(common=self, **inherited_values, **translated_values)
+        return plan.category_types.create(common=self, **inherited_values, **translated_values)
 
 
 @reversion.register()
@@ -204,6 +205,28 @@ class CommonCategory(CategoryBase):
 
     def __str__(self):
         return self.name
+
+    def instantiate_for_category_type(self, category_type):
+        """Create category corresponding to this one and set its type to the given one."""
+        if category_type.categories.filter(common=self).exists():
+            raise Exception(f"Instantiation of common category '{self}' for category type '{category_type}' exists "
+                            "already")
+        translated_fields = get_i18n_field(Category).fields
+        other_languages = [lang for lang in get_available_languages() if lang != category_type.plan.primary_language]
+        # Inherit fields from CategoryBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the primary
+        # language of the the active plan, and the same for other translated fields.
+        # TODO: Duplicated in CommonCategoryType.instantiate_for_plan()
+        # Temporarily override language so that the `_i18n` suffix field falls back to the original field
+        with translation.override(category_type.plan.primary_language):
+            translated_values = {field: getattr(self, f'{field}_i18n') for field in translated_fields}
+        for field in translated_fields:
+            for lang in other_languages:
+                value = getattr(self, f'{field}_{lang}')
+                if value:
+                    translated_values[f'{field}_{lang}'] = value
+        inherited_fields = [f.name for f in CategoryBase._meta.fields if f.name not in translated_fields]
+        inherited_values = {field: getattr(self, field) for field in inherited_fields}
+        return category_type.categories.create(common=self, **inherited_values, **translated_values)
 
 
 class CommonCategoryIcon(models.Model):
