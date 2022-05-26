@@ -70,7 +70,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='categorytype',
             name='common',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='category_type_instances', to='actions.commoncategorytype'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='category_type_instances', to='actions.commoncategorytype', verbose_name='common category type'),
+        ),
+        migrations.AddField(
+            model_name='categorytype',
+            name='synchronize_with_pages',
+            field=models.BooleanField(default=False, help_text='Set if categories of this type should be synchronized with pages', verbose_name='synchronize with pages'),
         ),
         migrations.CreateModel(
             name='CommonCategoryIcon',

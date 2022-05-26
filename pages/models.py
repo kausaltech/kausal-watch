@@ -18,7 +18,7 @@ from wagtail.search import index
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock, RelatedPlanListBlock
 from actions.chooser import CategoryChooser
-from actions.models import Category, Plan
+from actions.models import Category, CategoryType, Plan
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
@@ -192,6 +192,13 @@ class StaticPage(AplansPage):
     class Meta:
         verbose_name = _('Content page')
         verbose_name_plural = _('Content pages')
+
+
+class CategoryTypePage(StaticPage):
+    category_type = models.ForeignKey(
+        CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
+        related_name='category_type_pages',
+    )
 
 
 class CategoryPage(AplansPage):

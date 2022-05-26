@@ -68,6 +68,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
             FieldPanel('name',),
             FieldPanel('name_plural',)
         ]),
+        FieldPanel('synchronize_with_pages'),
     ]
 
     def get_form_fields_exclude(self, request):

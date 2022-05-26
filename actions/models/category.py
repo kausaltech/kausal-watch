@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
-from django.db import models
+from django.db import models, transaction
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -112,6 +112,10 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
         CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
         verbose_name=_('common category type'), related_name='category_type_instances'
     )
+    synchronize_with_pages = models.BooleanField(
+        default=False, verbose_name=_("synchronize with pages"),
+        help_text=_("Set if categories of this type should be synchronized with pages")
+    )
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
@@ -135,6 +139,19 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
 
     def __str__(self):
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
+
+    @transaction.atomic
+    def save(self, *args, **kwargs):
+        if self.synchronize_with_pages:
+            from pages.models import CategoryTypePage
+            try:
+                page = CategoryTypePage.objects.get(category_type=self)
+            except CategoryTypePage.DoesNotExist:
+                page = CategoryTypePage(category_type=self, title=self.name)
+                self.plan.root_page.add_child(instance=page)
+                for category in self.categories.all():
+                    category.create_page(page)
+        super().save(*args, **kwargs)
 
 
 @reversion.register()
@@ -320,6 +337,20 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
 
     def generate_identifier(self):
         self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
+
+    def create_page(self, parent):
+        from pages.models import CategoryPage
+        page = CategoryPage(category=self, title=self.name)
+        parent.add_child(instance=page)
+
+    @transaction.atomic()
+    def save(self, *args, **kwargs):
+        if self.type.synchronize_with_pages:
+            for page in self.category_pages.all():
+                page.title = self.name
+                page.draft_title = self.name
+                page.save()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         if self.identifier and self.type and not self.type.hide_category_identifiers:
