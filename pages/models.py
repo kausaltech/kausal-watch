@@ -200,6 +200,9 @@ class CategoryTypePage(StaticPage):
         related_name='category_type_pages',
     )
 
+    # Omit title field -- should be edited in CategoryTypeAdmin
+    content_panels = [p for p in StaticPage.content_panels if p.field_name != 'title']
+
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
@@ -212,9 +215,11 @@ class CategoryPage(AplansPage):
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
-    ])
+    ], null=True, blank=True)
 
-    content_panels = AplansPage.content_panels + [
+    # Omit title field -- should be edited in CategoryAdmin
+    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
+    content_panels = inherited_content_panels + [
         FieldPanel('category', widget=CategoryChooser),
         StreamFieldPanel('body'),
     ]
