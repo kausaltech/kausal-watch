@@ -1,7 +1,7 @@
 import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import make_aware
-from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
+from factory import LazyAttribute, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
@@ -10,7 +10,6 @@ import actions
 from actions.models import AttributeType
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
-from pages.tests.factories import CategoryPageFactory
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
@@ -82,6 +81,7 @@ class CategoryTypeFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'ct{i}')
     name = Sequence(lambda i: f"Category type {i}")
+    synchronize_with_pages = False
 
 
 class AttributeTypeFactory(DjangoModelFactory):
@@ -114,10 +114,8 @@ class CategoryFactory(DjangoModelFactory):
     type = SubFactory(CategoryTypeFactory)
     identifier = Sequence(lambda i: f'category{i}')
     name = Sequence(lambda i: f"Category {i}")
+    name_fi = Sequence(lambda i: f"Category {i} (FI)")
     image = SubFactory(AplansImageFactory)
-    category_page = RelatedFactory(CategoryPageFactory,
-                                   factory_related_name='category',
-                                   parent=SelfAttribute('..type.plan.root_page'))
 
 
 class AttributeRichTextFactory(DjangoModelFactory):

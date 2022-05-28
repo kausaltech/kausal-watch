@@ -4,12 +4,13 @@ from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.utils import translation
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, override
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
+from wagtail.core.models import Page
 
 import reversion
 
@@ -142,16 +143,25 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
 
     @transaction.atomic
     def save(self, *args, **kwargs):
-        if self.synchronize_with_pages:
-            from pages.models import CategoryTypePage
-            try:
-                page = CategoryTypePage.objects.get(category_type=self)
-            except CategoryTypePage.DoesNotExist:
-                page = CategoryTypePage(category_type=self, title=self.name)
-                self.plan.root_page.add_child(instance=page)
-                for category in self.categories.all():
-                    category.create_page(page)
         super().save(*args, **kwargs)
+        if self.synchronize_with_pages:
+            self.synchronize_pages()
+
+    def synchronize_pages(self):
+        from pages.models import CategoryTypePage
+        for root_page in self.plan.root_page.get_translations(inclusive=True):
+            with override(root_page.locale.language_code):
+                try:
+                    ct_page = root_page.get_children().type(CategoryTypePage).get()
+                except Page.DoesNotExist:
+                    ct_page = CategoryTypePage(category_type=self, title=self.name_i18n)
+                    root_page.add_child(instance=ct_page)
+                else:
+                    ct_page.title = self.name_i18n
+                    ct_page.draft_title = self.name_i18n
+                    ct_page.save()
+            for category in self.categories.all():
+                category.synchronize_page(ct_page)
 
 
 @reversion.register()
@@ -338,19 +348,26 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
     def generate_identifier(self):
         self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
 
-    def create_page(self, parent):
+    def synchronize_page(self, parent):
         from pages.models import CategoryPage
-        page = CategoryPage(category=self, title=self.name)
-        parent.add_child(instance=page)
+        with override(parent.locale.language_code):
+            try:
+                page = self.category_pages.child_of(parent).get()
+                # page = parent.get_children().type(CategoryPage).get(category=self)
+            except CategoryPage.DoesNotExist:
+                page = CategoryPage(category=self, title=self.name_i18n)
+                parent.add_child(instance=page)
+            else:
+                page.title = self.name_i18n
+                page.draft_title = self.name_i18n
+                page.save()
 
     @transaction.atomic()
     def save(self, *args, **kwargs):
-        if self.type.synchronize_with_pages:
-            for page in self.category_pages.all():
-                page.title = self.name
-                page.draft_title = self.name
-                page.save()
         super().save(*args, **kwargs)
+        if self.type.synchronize_with_pages:
+            for ct_page in self.type.category_type_pages.all():
+                self.synchronize_page(ct_page)
 
     def __str__(self):
         if self.identifier and self.type and not self.type.hide_category_identifiers:

@@ -1,10 +1,12 @@
 import pytest
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
+from wagtail.core.models import Locale
 
 from actions.models import Action
-from actions.tests.factories import ActionFactory, CategoryFactory
+from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
 from orgs.tests.factories import OrganizationFactory
+from pages.models import CategoryPage, CategoryTypePage
 
 pytestmark = pytest.mark.django_db
 
@@ -76,3 +78,51 @@ def test_category_color_valid(color):
     category = CategoryFactory()
     category.color = color
     category.full_clean()
+
+
+def test_category_type_synchronize_pages_when_synchronization_activated(plan, category):
+    assert not plan.root_page.get_children().type(CategoryTypePage).exists()
+    assert not plan.root_page.get_children().type(CategoryPage).exists()
+    category.type.synchronize_with_pages = True
+    category.type.save()
+    ct_page = category.type.category_type_pages.child_of(plan.root_page).get()
+    page = ct_page.get_children().get()
+    assert page.title == category.name
+
+
+def test_category_type_synchronize_pages_translated():
+    category = CategoryFactory(type__synchronize_with_pages=True)
+    plan = category.type.plan
+    language = plan.other_languages[0]
+    locale = Locale.objects.create(language_code=language)
+    translated_root_page = plan.root_page.copy_for_translation(locale)
+    category.type.synchronize_pages()
+    ct_page = category.type.category_type_pages.child_of(translated_root_page).get()
+    assert ct_page.title == category.type.name
+    page = ct_page.get_children().get()
+    assert page.title == getattr(category, f'name_{language}')
+
+
+def test_category_type_synchronize_pages_exists():
+    category = CategoryFactory(type__synchronize_with_pages=True)
+    plan = category.type.plan
+    category.type.synchronize_pages()
+    category.type.name = "Changed category type name"
+    category.type.save()
+    category.name = "Changed category name"
+    category.save()
+    category.type.synchronize_pages()
+    ct_page = category.type.category_type_pages.child_of(plan.root_page).get()
+    assert ct_page.title == category.type.name
+    page = ct_page.get_children().get()
+    assert page.title == category.name
+
+
+def test_category_type_creating_category_creates_page():
+    category_type = CategoryTypeFactory(synchronize_with_pages=True)
+    category_type.synchronize_pages()
+    ct_page = category_type.category_type_pages.child_of(category_type.plan.root_page).get()
+    assert not ct_page.get_children().exists()
+    CategoryFactory(type=category_type)
+    ct_page.refresh_from_db()
+    assert ct_page.get_children().exists()
