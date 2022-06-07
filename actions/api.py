@@ -497,18 +497,49 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     avatar_url = serializers.SerializerMethodField()
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.context.get('authorized_for_plan') is None:
+            self.fields.pop('email')
+
     def get_avatar_url(self, obj):
         return obj.get_avatar_url(self.context['request'])
 
     class Meta:
         model = Person
-        fields = ('first_name', 'last_name', 'avatar_url')
+        fields = ('id', 'first_name', 'last_name', 'avatar_url', 'email')
 
 
 @register_view
 class PersonViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.plan = None
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({'authorized_for_plan': self.plan})
+        return context
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        plan_identifier = self.request.query_params.get('plan', None)
+        if plan_identifier is None:
+            return queryset
+        if self.request.user is None or not self.request.user.is_authenticated:
+            exceptions.PermissionDenied(detail="Not authorized")
+        try:
+            plan = Plan.objects.get(identifier=plan_identifier)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+        user = self.request.user
+        if hasattr(user, 'is_general_admin_for_plan') and user.is_general_admin_for_plan(plan):
+            self.plan = plan
+            return queryset.available_for_plan(plan)
+        raise exceptions.PermissionDenied(detail="Not authorized")
 
 
 class ActionTaskSerializer(serializers.HyperlinkedModelSerializer):

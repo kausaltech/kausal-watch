@@ -45,3 +45,8 @@ def api_client():
 @pytest.fixture
 def plan_list_url():
     return reverse('plan-list')
+
+
+@pytest.fixture
+def person_list_url():
+    return reverse('person-list')
