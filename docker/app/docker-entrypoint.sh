@@ -2,8 +2,10 @@
 
 set -e
 
+DB_ENDPOINT=${DB_ENDPOINT:-db:5432}
+
 if [ "$1" = 'uwsgi' -o "$1" = 'celery' ]; then
-    /wait-for-it.sh db:5432
+    /wait-for-it.sh $DB_ENDPOINT
     cd /code
     python manage.py migrate --no-input
     if [ -d '/docker-entrypoint.d' ]; then
