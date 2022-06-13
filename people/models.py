@@ -126,6 +126,10 @@ class Person(index.Indexed, ClusterableModel):
         blank=True,
         verbose_name=_('contact for actions')
     )
+    created_by = models.ForeignKey(
+        User, related_name='created_persons', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
+    )
 
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
 
