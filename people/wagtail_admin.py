@@ -12,6 +12,7 @@ from django.utils.html import format_html
 from django.utils.translation import get_language, gettext_lazy as _
 import humanize
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from admin_site.wagtail import (
@@ -43,6 +44,20 @@ class AvatarWidget(AdminFileWidget):
 
 
 class PersonForm(AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            self.instance.created_by = self.user
+
+    def save(self, commit=True):
+        if 'image' in self.files:
+            self.instance.image_cropping = None
+        return super().save(commit)
+
+
+class PersonFormForGeneralAdmin(PersonForm):
     is_admin_for_active_plan = BooleanField(required=False, label=_('is plan admin'))
     organization_plan_admin_orgs = ModelMultipleChoiceField(
         queryset=None, required=False, widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
@@ -50,33 +65,30 @@ class PersonForm(AplansAdminModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
-        if self.plan:
-            orgs_field = self.fields['organization_plan_admin_orgs']
-            orgs_field.queryset = self.plan.get_related_organizations().filter(dissolution_date=None)
-            if self.instance.pk is not None:
-                orgs_field.initial = (
-                    self.instance.organization_plan_admins.filter(plan=self.plan).values_list('organization', flat=True)
-                )
+        assert self.user.is_general_admin_for_plan(self.plan)
+        self.fields['organization_plan_admin_orgs'].queryset = (
+            self.plan.get_related_organizations().filter(dissolution_date=None)
+        )
+        if self.instance.pk is not None:
+            self.fields['organization_plan_admin_orgs'].initial = (
+                self.instance.organization_plan_admins.filter(plan=self.plan).values_list('organization', flat=True)
+            )
 
     def save(self, commit=True):
-        if 'image' in self.files:
-            self.instance.image_cropping = None
         instance = super().save(commit)
-        if self.plan:
-            is_admin_for_active_plan = self.cleaned_data.get('is_admin_for_active_plan')
-            if is_admin_for_active_plan is True:
-                instance.general_admin_plans.add(self.plan)
-            elif is_admin_for_active_plan is False:
-                instance.general_admin_plans.remove(self.plan)
+        is_admin_for_active_plan = self.cleaned_data.get('is_admin_for_active_plan')
+        if is_admin_for_active_plan is True:
+            instance.general_admin_plans.add(self.plan)
+        elif is_admin_for_active_plan is False:
+            instance.general_admin_plans.remove(self.plan)
 
-            organization_plan_admin_orgs = self.cleaned_data.get('organization_plan_admin_orgs')
-            if organization_plan_admin_orgs is not None:
-                with transaction.atomic():
-                    OrganizationPlanAdmin.objects.filter(plan=self.plan, person=instance).delete()
-                    for org in organization_plan_admin_orgs:
-                        OrganizationPlanAdmin.objects.create(organization=org, plan=self.plan, person=instance)
+        organization_plan_admin_orgs = self.cleaned_data.get('organization_plan_admin_orgs')
+        if organization_plan_admin_orgs is not None:
+            with transaction.atomic():
+                OrganizationPlanAdmin.objects.filter(plan=self.plan, person=instance).delete()
+                for org in organization_plan_admin_orgs:
+                    OrganizationPlanAdmin.objects.create(organization=org, plan=self.plan, person=instance)
         return instance
 
 
@@ -91,18 +103,66 @@ class PersonEditHandler(TabbedInterface):
         super().on_form_bound()
 
 
-class PersonCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+class InitializeFormWithUserMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
+
+class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView):
+    def form_valid(self, form, *args, **kwargs):
+        # Make sure form only contains is_admin_for_active_plan
+        # TODO: Also do this for organization_plan_admin_orgs?
+        plan = self.request.user.get_active_admin_plan()
+        is_general_admin = self.request.user.is_general_admin_for_plan(plan)
+        contains_admin_flag = form.cleaned_data.get('is_admin_for_active_plan') is not None
+
+        def iff(a, b):
+            return (a and b) or (not a and not b)
+
+        assert iff(contains_admin_flag, is_general_admin)
+        return super().form_valid(form, *args, **kwargs)
+
+
+class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansEditView):
     pass
 
 
-class PersonEditView(InitializeFormWithPlanMixin, AplansEditView):
-    pass
+class PersonPermissionHelper(PermissionHelper):
+    def _user_can_edit_or_delete(self, user, person):
+        if user.is_superuser or person.created_by == user:
+            return True
+
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            related_orgs = plan.get_related_organizations().filter(dissolution_date=None)
+            if person.organization in related_orgs:
+                return True
+
+        return False
+
+    def user_can_edit_obj(self, user, obj: Person):
+        if not super().user_can_edit_obj(user, obj):
+            return False
+        return self._user_can_edit_or_delete(user, obj)
+
+    def user_can_delete_obj(self, user, obj: Person):
+        if not super().user_can_delete_obj(user, obj):
+            return False
+        return self._user_can_edit_or_delete(user, obj)
+
+    def user_can_create(self, user):
+        if not super().user_can_create(user):
+            return False
+        return True
 
 
 class PersonAdmin(AplansModelAdmin):
     model = Person
     create_view_class = PersonCreateView
     edit_view_class = PersonEditView
+    permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
     menu_order = 10
@@ -229,11 +289,6 @@ class PersonAdmin(AplansModelAdmin):
             'contact_for_actions_unordered',
             widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
         ),
-        FieldPanel('is_admin_for_active_plan'),
-        FieldPanel(
-            'organization_plan_admin_orgs',
-            widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
-        ),
     ]
 
     def get_edit_handler(self, instance, request):
@@ -241,14 +296,22 @@ class PersonAdmin(AplansModelAdmin):
         user = request.user
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
+            form_class = PersonFormForGeneralAdmin
             basic_panels.append(FieldPanel('participated_in_training'))
+            basic_panels.append(FieldPanel('is_admin_for_active_plan'))
+            basic_panels.append(FieldPanel(
+                'organization_plan_admin_orgs',
+                widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+            ))
+        else:
+            form_class = PersonForm
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return PersonEditHandler(tabs, base_form_class=PersonForm)
+        return PersonEditHandler(tabs, base_form_class=form_class)
 
 
 modeladmin_register(PersonAdmin)
