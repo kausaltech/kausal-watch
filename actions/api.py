@@ -493,6 +493,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         'name': ('exact', 'in'),
     }
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        plan_identifier = self.request.query_params.get('plan', None)
+        if plan_identifier is None:
+            return queryset
+        try:
+            plan = Plan.objects.get(identifier=plan_identifier)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+        return plan.get_related_organizations()
+
 
 class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
     avatar_url = serializers.SerializerMethodField()
