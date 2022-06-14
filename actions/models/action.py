@@ -48,6 +48,15 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
             query |= Q(contact_persons__person=person)
         return self.filter(query).distinct()
 
+    def user_is_contact_for(self, user: User):
+        person = user.get_corresponding_person()
+        qs = self.filter(Q(contact_persons__person=person)).distinct()
+        return qs
+
+    def user_is_org_admin_for(self, user: User, plan: Optional[Plan] = None):
+        plan_admin_orgs = Organization.objects.user_is_plan_admin_for(user, plan)
+        return self.filter(responsible_parties__organization__in=plan_admin_orgs).distinct()
+
     def unmerged(self):
         return self.filter(merged_with__isnull=True)
 

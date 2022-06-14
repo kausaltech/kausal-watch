@@ -1,5 +1,11 @@
+from __future__ import annotations
+
+import functools
+import typing
+from typing import Optional
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -9,6 +15,10 @@ from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.search import index
 
 from aplans.utils import PlanRelatedModel, get_default_language, get_supported_languages
+
+if typing.TYPE_CHECKING:
+    from actions.models import Plan
+    from users.models import User
 
 
 # TODO: Generalize and put in some other app's models.py
@@ -67,18 +77,31 @@ class OrganizationClass(models.Model):
 
 
 class OrganizationQuerySet(MP_NodeQuerySet):
-    def editable_by_user(self, user):
+    def editable_by_user(self, user: User):
         if user.is_superuser:
             return self
         person = user.get_corresponding_person()
-        if person:
-            # TODO: Improve efficiency
-            editable_orgs = []
-            for org in person.metadata_adminable_organizations.all():
-                editable_orgs.append(org.pk)
-                editable_orgs += [descendant.pk for descendant in org.get_descendants()]
-            return self.filter(id__in=editable_orgs)
-        return self.none()
+        if not person:
+            return self.none()
+
+        metadata_admin_orgs = person.metadata_adminable_organizations.only('path')
+        filters = [Q(path__startswith=org.path) for org in metadata_admin_orgs]
+        if not filters:
+            return self.none()
+        qs = functools.reduce(lambda x, y: x | y, filters)
+        return self.filter(qs)
+
+    def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
+        person = user.get_corresponding_person()
+        adm_objs = OrganizationPlanAdmin.objects.filter(person=person)
+        if plan is not None:
+            adm_objs = adm_objs.filter(plan=plan)
+        admin_orgs = self.model.objects.filter(organization_plan_admins__in=adm_objs).only('path').distinct()
+        if not admin_orgs:
+            return self.none()
+        filters = [Q(path__startswith=org.path) for org in admin_orgs]
+        qs = functools.reduce(lambda x, y: x | y, filters)
+        return self.filter(qs)
 
 
 class OrganizationManager(models.Manager):
@@ -88,6 +111,9 @@ class OrganizationManager(models.Manager):
 
     def editable_by_user(self, user):
         return self.get_queryset().editable_by_user(user)
+
+    def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
+        return self.get_queryset().user_is_plan_admin_for(user, plan)
 
 
 class Organization(index.Indexed, Node):
