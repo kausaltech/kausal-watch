@@ -1,3 +1,4 @@
+from typing import Any
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.template.loader import render_to_string
@@ -8,9 +9,12 @@ from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
+from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.core import hooks
 from wagtail.images.edit_handlers import ImageChooserPanel
+
+from aplans.types import WatchAdminRequest
 
 from .models import Client
 
@@ -134,42 +138,48 @@ def register_plan_chooser():
     )
 
 
-class OwnActionsPanel:
+class OwnActionsPanel(Component):
     name = 'own_actions'
     order = 10
+    template_name = 'aplans_admin/own_actions_panel.html'
 
-    def __init__(self, request):
-        self.request = request
-
-    def render(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-        own_actions = plan.actions.filter(contact_persons__person__user=user).distinct().order_by('order')
-        return render_to_string('aplans_admin/own_actions_panel.html', {
-            'own_actions': own_actions,
-        }, request=self.request)
+    def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
+        request: WatchAdminRequest = parent_context['request']
+        ctx = super().get_context_data(parent_context)
+        user = request.user
+        plan = request.get_active_admin_plan()
+        ctx['own_actions'] = plan.actions.filter(contact_persons__person__user=user).distinct().order_by('order')
+        return ctx
 
 
-class OwnIndicatorsPanel:
+class OwnIndicatorsPanel(Component):
     name = 'own_indicators'
     order = 11
+    template_name = 'aplans_admin/own_indicators_panel.html'
 
-    def __init__(self, request):
-        self.request = request
-
-    def render(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-        own_indicators = plan.indicators.filter(contact_persons__person__user=user).distinct()
-        return render_to_string('aplans_admin/own_indicators_panel.html', {
-            'own_indicators': own_indicators,
-        }, request=self.request)
+    def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
+        request: WatchAdminRequest = parent_context['request']
+        ctx = super().get_context_data(parent_context)
+        user = request.user
+        plan = request.get_active_admin_plan()
+        ctx['own_indicators'] = plan.indicators.filter(contact_persons__person__user=user).distinct()
+        return ctx
 
 
 @hooks.register('construct_homepage_panels')
 def construct_homepage_panels(request, panels):
-    panels.insert(0, OwnActionsPanel(request))
-    panels.insert(1, OwnIndicatorsPanel(request))
+    from wagtail.admin.site_summary import SiteSummaryPanel
+
+    allowed_panels = (SiteSummaryPanel,)
+    panels_to_remove = []
+    for panel in panels:
+        if not isinstance(panel, allowed_panels):
+            panels_to_remove.append(panel)
+    for panel in panels_to_remove:
+        panels.remove(panel)
+
+    panels.insert(0, OwnActionsPanel())
+    panels.insert(1, OwnIndicatorsPanel())
 
 
 class ClientAdmin(ModelAdmin):

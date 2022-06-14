@@ -33,7 +33,7 @@ from people.models import Person
 
 if typing.TYPE_CHECKING:
     from .features import PlanFeatures
-    from .action import ActionStatus, ActionImplementationPhase
+    from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
     from django.db.models.manager import RelatedManager
 
@@ -136,6 +136,7 @@ class Plan(ClusterableModel):
     )
 
     features: PlanFeatures
+    actions: RelatedManager[Action]
     action_statuses: RelatedManager[ActionStatus]
     action_implementation_phases: RelatedManager[ActionImplementationPhase]
     category_types: RelatedManager[CategoryType]

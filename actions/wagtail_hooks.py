@@ -1,19 +1,24 @@
+from typing import Any, Mapping
 from django.templatetags.static import static
 from wagtail.core import hooks
 from wagtail.admin.site_summary import SummaryItem
 
+from aplans.types import WatchAdminRequest
+
 from . import wagtail_admin  # noqa
+
 
 class ActionsSummaryItem(SummaryItem):
     order = 200
     template = 'site_summary/actions.html'
+    request: WatchAdminRequest
 
-    def get_context(self):
-        plan = self.request.user.get_active_admin_plan()
-        return {
-            'total_actions': plan.actions.active().count(),
-            'plan': plan,
-        }
+    def get_context_data(self, parent_context: Mapping[str, Any]) -> Mapping[str, Any]:
+        ctx = super().get_context_data(parent_context)
+        plan = self.request.get_active_admin_plan()
+        ctx['total_actions'] = plan.actions.active().count()
+        ctx['plan'] = plan
+        return ctx
 
     def is_shown(self):
         return True
