@@ -15,14 +15,17 @@ def test_plan_can_be_saved(plan):
 
 def test_plan_get_related_organizations(plan):
     assert plan.organization
+    plan_org = plan.organization
     org = OrganizationFactory()
+    # Creating a new root org might've changed the path of plan_org
+    plan_org.refresh_from_db()
     sub_org1 = OrganizationFactory(parent=plan.organization)
     sub_org2 = OrganizationFactory(parent=org)
     result = list(plan.get_related_organizations())
     assert result == [plan.organization, sub_org1]
     plan.related_organizations.add(org)
-    result = list(plan.get_related_organizations())
-    assert result == [plan.organization, sub_org1, org, sub_org2]
+    result = set(plan.get_related_organizations())
+    assert result == set([plan_org, sub_org1, org, sub_org2])
 
 
 def test_action_query_set_modifiable_by_not_modifiable(action, user):
