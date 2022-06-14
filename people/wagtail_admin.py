@@ -131,7 +131,10 @@ class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, A
 
 class PersonPermissionHelper(PermissionHelper):
     def _user_can_edit_or_delete(self, user, person):
-        if user.is_superuser or person.created_by == user:
+        if user.is_superuser:
+            return True
+        # The creating user has edit rights until the created user first logs in
+        if person.created_by == user and not person.user.last_login:
             return True
 
         plan = user.get_active_admin_plan()
