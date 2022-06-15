@@ -21,7 +21,7 @@ Create a file called `.env` in your repo root with the following contents:
 
 ```
 DEBUG=1
-DATABASE_URL=postgres:///aplans
+DATABASE_URL=postgis:///aplans
 ```
 
 Make sure you have created a Postgres database with the same name (here `aplans`).
@@ -54,7 +54,7 @@ In particular, you will need to set the database credentials; for example:
 
 ```
 POSTGRES_PASSWORD=change_me
-DATABASE_URL=postgres://watch:change_me@db/watch
+DATABASE_URL=postgis://watch:change_me@db/watch
 ```
 
 ## Contributing
