@@ -8,6 +8,8 @@ from graphql.type import (
 )
 from grapple.registry import registry as grapple_registry
 
+from . import graphql_gis  # noqa
+
 from aplans.utils import public_fields
 from content.models import SiteGeneralContent
 from actions import schema as actions_schema

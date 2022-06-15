@@ -52,6 +52,7 @@ env = environ.FileAwareEnv(
     ADMIN_WILDCARD_DOMAIN=(str, ''),
     CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
+    GOOGLE_MAPS_V3_APIKEY=(str, ''),
 )
 
 BASE_DIR = root()
@@ -132,6 +133,7 @@ INSTALLED_APPS = [
     'generic_chooser',
     'wagtailorderable',
     'admin_list_controls',
+    'wagtailgeowidget',
 
     'modelcluster',
     'taggit',
@@ -553,6 +555,8 @@ ENABLE_DEBUG_TOOLBAR = False
 
 HOSTNAME_PLAN_DOMAINS = env('HOSTNAME_PLAN_DOMAINS')
 ADMIN_WILDCARD_DOMAIN = env('ADMIN_WILDCARD_DOMAIN')
+
+GOOGLE_MAPS_V3_APIKEY = env('GOOGLE_MAPS_V3_APIKEY')
 
 
 if importlib.util.find_spec('kausal_watch_extensions') is not None:

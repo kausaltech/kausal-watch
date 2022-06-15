@@ -434,6 +434,7 @@ wagtail==2.16.2
     #   wagtail-localize
     #   wagtail-orderable
     #   wagtailfontawesome
+    #   wagtailgeowidget
 wagtail-admin-list-controls==0.1.7
     # via -r requirements.in
 wagtail-autocomplete==0.8.1
@@ -453,6 +454,8 @@ wagtail-localize==1.1.2
 wagtail-orderable @ git+https://github.com/kausaltech/wagtail-orderable.git
     # via -r requirements.in
 wagtailfontawesome==1.2.1
+    # via -r requirements.in
+wagtailgeowidget==6.1.0
     # via -r requirements.in
 wcwidth==0.2.5
     # via prompt-toolkit

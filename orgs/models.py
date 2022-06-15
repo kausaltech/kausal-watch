@@ -4,6 +4,7 @@ import functools
 import typing
 from typing import Optional
 from django.conf import settings
+from django.contrib.gis.db import models as gis_models
 from django.db import models
 from django.db.models import Q
 from django.template.loader import render_to_string
@@ -104,7 +105,7 @@ class OrganizationQuerySet(MP_NodeQuerySet):
         return self.filter(qs)
 
 
-class OrganizationManager(models.Manager):
+class OrganizationManager(gis_models.Manager):
     """Duplicate MP_NodeManager but use OrganizationQuerySet instead of MP_NodeQuerySet."""
     def get_queryset(self):
         return OrganizationQuerySet(self.model).order_by('path')
@@ -116,7 +117,7 @@ class OrganizationManager(models.Manager):
         return self.get_queryset().user_is_plan_admin_for(user, plan)
 
 
-class Organization(index.Indexed, Node):
+class Organization(index.Indexed, Node, gis_models.Model):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
     class Meta:
         verbose_name = _("organization")
@@ -176,6 +177,7 @@ class Organization(index.Indexed, Node):
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
     primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
+    location = gis_models.PointField(verbose_name=_('Location'), srid=4326, null=True, blank=True)
 
     i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
 

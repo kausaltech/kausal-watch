@@ -63,3 +63,4 @@ pygments-graphql
 drf-nested-routers
 celery
 drf-spectacular
+wagtailgeowidget
