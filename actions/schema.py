@@ -21,10 +21,11 @@ from actions.models import (
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
     Scenario
 )
+from aplans.types import WatchAPIRequest
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
-    DjangoNode, get_plan_from_context, order_queryset, register_django_node, set_active_plan
+    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
@@ -57,7 +58,10 @@ class PlanNode(DjangoNode):
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
-    actions = graphene.List('actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True)
+    actions = graphene.List(
+        'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(),
+        only_mine=graphene.Boolean(default_value=False), required=True
+    )
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
     image = graphene.Field('images.schema.ImageNode', required=False)
 
@@ -157,12 +161,18 @@ class PlanNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='actions',
     )
-    def resolve_actions(self, info, identifier=None, id=None):
+    def resolve_actions(self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False):
+        user = info.context.user
         qs = self.actions.filter(plan=self)
         if identifier:
             qs = qs.filter(identifier=identifier)
         if id:
             qs = qs.filter(id=id)
+        if only_mine:
+            if not user.is_authenticated or not user.is_staff:
+                qs = qs.none()
+            else:
+                qs = qs.user_has_staff_role_for(user, plan=self)
         return qs
 
     def resolve_primary_orgs(self, info):
@@ -565,6 +575,7 @@ class ActionLinkNode(DjangoNode):
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
     plans_for_hostname = graphene.List(PlanNode, hostname=graphene.String())
+    my_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
 
@@ -603,6 +614,13 @@ class Query:
         info.context._plan_hostname = hostname
         plans = Plan.objects.for_hostname(hostname.lower())
         return list(gql_optimizer.query(plans, info))
+
+    def resolve_my_plans(self, info: GQLInfo):
+        user = info.context.user
+        if user is None:
+            return []
+        plans = Plan.objects.user_has_staff_role_for(info.context.user)
+        return gql_optimizer.query(plans, info)
 
     def resolve_plan_actions(self, info, plan, first=None, category=None, order_by=None, **kwargs):
         plan_obj = get_plan_from_context(info, plan)

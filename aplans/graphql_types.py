@@ -2,6 +2,8 @@ import functools
 import graphene
 import re
 
+from graphql.execution import ResolveInfo
+from graphql.language.ast import OperationDefinition
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -10,6 +12,7 @@ from grapple.registry import registry
 from modeltrans.translator import get_i18n_field
 
 from actions.models import Plan
+from aplans.types import WatchAPIRequest
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -127,3 +130,8 @@ def replace_image_node(cls):
 
 class AuthenticatedUserNode(graphene.ObjectType):
     pass
+
+
+class GQLInfo(ResolveInfo):
+    context: WatchAPIRequest
+    operation: OperationDefinition

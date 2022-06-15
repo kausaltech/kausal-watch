@@ -69,7 +69,6 @@ class APITokenMiddleware:
         context = info.context
 
         if root is None:
-            info.context.user = None
             operation = info.operation
             for directive in operation.directives:
                 if directive.name.value == 'auth':

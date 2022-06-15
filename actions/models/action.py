@@ -55,7 +55,12 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
 
     def user_is_org_admin_for(self, user: User, plan: Optional[Plan] = None):
         plan_admin_orgs = Organization.objects.user_is_plan_admin_for(user, plan)
-        return self.filter(responsible_parties__organization__in=plan_admin_orgs).distinct()
+        query = Q(responsible_parties__organization__in=plan_admin_orgs) | Q(primary_org__in=plan_admin_orgs)
+        return self.filter(query).distinct()
+
+    def user_has_staff_role_for(self, user: User, plan: Optional[Plan] = None):
+        qs = self.user_is_contact_for(user) | self.user_is_org_admin_for(user, plan)
+        return qs
 
     def unmerged(self):
         return self.filter(merged_with__isnull=True)

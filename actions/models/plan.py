@@ -8,7 +8,6 @@ from urllib.parse import urlparse
 
 from django.apps import apps
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
@@ -35,13 +34,11 @@ if typing.TYPE_CHECKING:
     from .features import PlanFeatures
     from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
+    from users.models import User
     from django.db.models.manager import RelatedManager
 
 
 logger = logging.getLogger(__name__)
-
-
-User = get_user_model()
 
 
 def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, str], Tuple[None, None]]:
@@ -64,6 +61,14 @@ class PlanQuerySet(models.QuerySet['Plan']):
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
+
+    def user_has_staff_role_for(self, user: User):
+        if not user.is_authenticated or not user.is_staff:
+            return self.none()
+        Action = Plan.objects.model.actions.field.model
+        staff_actions = Action.objects.user_has_staff_role_for(user).values_list('plan').distinct()
+        # FIXME: Add indicators
+        return self.filter(id__in=staff_actions)
 
 
 @reversion.register(follow=[
