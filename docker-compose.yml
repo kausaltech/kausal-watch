@@ -26,6 +26,7 @@ x-django-environment: &django-environment
   - ADMIN_WILDCARD_DOMAIN
   - CELERY_BROKER_URL=redis://redis:6379
   - CELERY_RESULT_BACKEND=redis://redis:6379
+  - GOOGLE_MAPS_V3_APIKEY
 
 x-django-build: &django-build
   context: .
