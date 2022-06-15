@@ -1,7 +1,7 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_helpers import CreateModelInstanceMutation, DeleteModelInstanceMutation, UpdateModelInstanceMutation
-from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, register_django_node
+from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, GQLInfo, register_django_node
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
 from orgs.forms import NodeForm
@@ -30,7 +30,7 @@ class OrganizationNode(DjangoNode):
         description='Number of contact persons that are associated with this organization'
     )
     parent = graphene.Field(lambda: OrganizationNode, required=False)
-    logo = graphene.Field('images.schema.ImageNode', required=False)
+    logo = graphene.Field('images.schema.ImageNode', parent_fallback=graphene.Boolean(default_value=False), required=False)
 
     @staticmethod
     def resolve_ancestors(parent, info):
@@ -55,6 +55,22 @@ class OrganizationNode(DjangoNode):
     )
     def resolve_parent(parent: Organization, info):
         return parent.get_parent()
+
+    @gql_optimizer.resolver_hints(
+        only=('logo',)
+    )
+    def resolve_logo(self: Organization, info: GQLInfo, parent_fallback=False):
+        if self.logo is not None:
+            return self.logo
+        if parent_fallback:
+            # Iterate through parents to find one that might have a logo
+            org = self.get_parent()
+            while org is not None:
+                if org.logo is not None:
+                    return org.logo
+                org = org.get_parent()
+        return None
+
 
     class Meta:
         model = Organization
