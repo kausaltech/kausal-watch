@@ -453,6 +453,15 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
+    def set_responsible_parties(self, organization_ids):
+        existing_orgs = set((p.organization for p in self.responsible_parties.all()))
+        new_orgs = set(Organization.objects.filter(pk__in=organization_ids))
+        ActionResponsibleParty.objects.filter(
+            action=self, organization__in=(existing_orgs - new_orgs)
+        ).delete()
+        for org in new_orgs - existing_orgs:
+            ActionResponsibleParty.objects.create(organization=org, action=self)
+
     def generate_identifier(self):
         self.identifier = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 

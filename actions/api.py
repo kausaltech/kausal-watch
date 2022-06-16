@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, permissions, serializers, viewsets
 
 from drf_spectacular.utils import extend_schema, extend_schema_field
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.types import OpenApiTypes  # noqa
 from rest_framework_nested import routers
 
 from actions.models.action import ActionImplementationPhase
@@ -35,7 +35,7 @@ from .models import (
 )
 
 if typing.TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models import QuerySet  # noqa
 
 all_views = []
 all_routers = []
@@ -293,8 +293,22 @@ class ActionCategoriesSerializer(serializers.Serializer):
             instance.set_categories(ct_id, cats)
 
 
+class ActionResponsiblePartySerializer(serializers.Serializer):
+    def to_representation(self, value):
+        return [v.organization_id for v in value.all()]
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert isinstance(instance, Action)
+        assert instance.pk is not None
+        instance.set_responsible_parties(validated_data)
+
+
 class ActionSerializer(PlanRelatedModelSerializer):
     categories = ActionCategoriesSerializer(required=False)
+    responsible_parties = ActionResponsiblePartySerializer(required=False)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -359,10 +373,13 @@ class ActionSerializer(PlanRelatedModelSerializer):
 
     def update(self, instance, validated_data):
         categories = validated_data.pop('categories', None)
+        responsible_parties = validated_data.pop('responsible_parties', None)
         validated_data.pop('plan', None)
         instance = super().update(instance, validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
+        if responsible_parties is not None:
+            self.fields['responsible_parties'].update(instance, responsible_parties)
         return instance
 
     class Meta:
@@ -372,7 +389,7 @@ class ActionSerializer(PlanRelatedModelSerializer):
             Action,
             add_fields=['internal_notes', 'internal_admin_notes'],
             remove_fields=[
-                'responsible_parties', 'contact_persons', 'impact',
+                'contact_persons', 'impact',
                 'status_updates', 'monitoring_quality_points', 'image',
                 'tasks', 'links', 'related_indicators', 'indicators',
                 'impact_groups', 'merged_actions',
