@@ -306,9 +306,23 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
         instance.set_responsible_parties(validated_data)
 
 
+class ActionContactPersonSerializer(serializers.Serializer):
+    def to_representation(self, value):
+        return [v.person_id for v in value.all()]
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert isinstance(instance, Action)
+        assert instance.pk is not None
+        instance.set_contact_persons(validated_data)
+
+
 class ActionSerializer(PlanRelatedModelSerializer):
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False)
+    contact_persons = ActionContactPersonSerializer(required=False)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -366,20 +380,29 @@ class ActionSerializer(PlanRelatedModelSerializer):
     def create(self, validated_data: dict):
         validated_data['plan'] = self.plan
         categories = validated_data.pop('categories', None)
+        responsible_parties = validated_data.pop('responsible_parties', None)
+        contact_persons = validated_data.pop('contact_persons', None)
         instance = super().create(validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
+        if responsible_parties is not None:
+            self.fields['responsible_parties'].update(instance, responsible_parties)
+        if contact_persons is not None:
+            self.fields['contact_persons'].update(instance, contact_persons)
         return instance
 
     def update(self, instance, validated_data):
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
+        contact_persons = validated_data.pop('contact_persons', None)
         validated_data.pop('plan', None)
         instance = super().update(instance, validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
         if responsible_parties is not None:
             self.fields['responsible_parties'].update(instance, responsible_parties)
+        if contact_persons is not None:
+            self.fields['contact_persons'].update(instance, contact_persons)
         return instance
 
     class Meta:
@@ -389,7 +412,7 @@ class ActionSerializer(PlanRelatedModelSerializer):
             Action,
             add_fields=['internal_notes', 'internal_admin_notes'],
             remove_fields=[
-                'contact_persons', 'impact',
+                'impact',
                 'status_updates', 'monitoring_quality_points', 'image',
                 'tasks', 'links', 'related_indicators', 'indicators',
                 'impact_groups', 'merged_actions',

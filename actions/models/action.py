@@ -27,6 +27,7 @@ from aplans.utils import (
 )
 from orgs.models import Organization
 from users.models import User
+from people.models import Person
 
 from ..monitoring_quality import determine_monitoring_quality
 
@@ -461,6 +462,15 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         ).delete()
         for org in new_orgs - existing_orgs:
             ActionResponsibleParty.objects.create(organization=org, action=self)
+
+    def set_contact_persons(self, person_ids):
+        existing_persons = set((p.person for p in self.contact_persons.all()))
+        new_persons = set(Person.objects.filter(pk__in=person_ids))
+        ActionContactPerson.objects.filter(
+            action=self, person__in=(existing_persons - new_persons)
+        ).delete()
+        for person in new_persons - existing_persons:
+            ActionContactPerson.objects.create(person=person, action=self)
 
     def generate_identifier(self):
         self.identifier = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
