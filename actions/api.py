@@ -326,7 +326,7 @@ class ActionSerializer(PlanRelatedModelSerializer):
 
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
-        if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule', 'merged_with'):
+        if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule'):
             field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan=self.plan)
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
