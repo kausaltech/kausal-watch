@@ -14,6 +14,7 @@ from grapple.registry import registry as grapple_registry
 from itertools import chain
 from wagtail.core.rich_text import RichText
 
+from actions.action_admin import ActionAdmin
 from actions.models import (
     Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
@@ -482,6 +483,7 @@ class ActionNode(DjangoNode):
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
     view_url = graphene.String(client_url=graphene.String(required=False))
+    edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
 
     class Meta:
@@ -520,6 +522,15 @@ class ActionNode(DjangoNode):
     )
     def resolve_view_url(self: Action, info, client_url: Optional[str] = None):
         return self.get_view_url(client_url=client_url)
+
+    def resolve_edit_url(self: Action, info):
+        client_plan = self.plan.clients.first()
+        if client_plan is None:
+            return None
+        base_url = client_plan.client.get_admin_url().rstrip('/')
+        url_helper = ActionAdmin().url_helper
+        edit_url = url_helper.get_action_url('edit', self.id).lstrip('/')
+        return f'{base_url}/{edit_url}'
 
     @gql_optimizer.resolver_hints(
         model_field='categories',
