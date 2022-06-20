@@ -154,7 +154,9 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
                 try:
                     ct_page = root_page.get_children().type(CategoryTypePage).get()
                 except Page.DoesNotExist:
-                    ct_page = CategoryTypePage(category_type=self, title=self.name_i18n)
+                    ct_page = CategoryTypePage(
+                        category_type=self, title=self.name_i18n, show_in_menus=True, show_in_footer=True
+                    )
                     root_page.add_child(instance=ct_page)
                 else:
                     ct_page.title = self.name_i18n
@@ -355,7 +357,13 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
                 page = self.category_pages.child_of(parent).get()
                 # page = parent.get_children().type(CategoryPage).get(category=self)
             except CategoryPage.DoesNotExist:
-                page = CategoryPage(category=self, title=self.name_i18n)
+                if self.parent is None:
+                    is_root = True
+                else:
+                    is_root = False
+                page = CategoryPage(
+                    category=self, title=self.name_i18n, show_in_menus=is_root, show_in_footer=is_root
+                )
                 parent.add_child(instance=page)
             else:
                 page.title = self.name_i18n

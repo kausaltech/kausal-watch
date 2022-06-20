@@ -286,10 +286,14 @@ class Plan(ClusterableModel):
         with translation.override(self.primary_language):
             action_list_pages = root_page.get_children().type(ActionListPage)
             if not action_list_pages.exists():
-                root_page.add_child(instance=ActionListPage(title=_("Actions"), locale=locale))
+                root_page.add_child(instance=ActionListPage(
+                    title=_("Actions"), locale=locale, show_in_menus=True, show_in_footer=True,
+                ))
             indicator_list_pages = root_page.get_children().type(IndicatorListPage)
             if not indicator_list_pages.exists():
-                root_page.add_child(instance=IndicatorListPage(title=_("Indicators"), locale=locale))
+                root_page.add_child(instance=IndicatorListPage(
+                    title=_("Indicators"), locale=locale, show_in_menus=True, show_in_footer=True
+                ))
 
         return root_page
 
