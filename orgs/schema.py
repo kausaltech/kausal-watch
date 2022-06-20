@@ -4,6 +4,7 @@ from aplans.graphql_helpers import CreateModelInstanceMutation, DeleteModelInsta
 from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, GQLInfo, register_django_node
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
+from actions.models import Plan
 from orgs.forms import NodeForm
 from orgs.models import Organization, OrganizationClass
 
@@ -31,6 +32,7 @@ class OrganizationNode(DjangoNode):
     )
     parent = graphene.Field(lambda: OrganizationNode, required=False)
     logo = graphene.Field('images.schema.ImageNode', parent_fallback=graphene.Boolean(default_value=False), required=False)
+    plans_with_action_responsibilities = graphene.List('actions.schema.PlanNode')
 
     @staticmethod
     def resolve_ancestors(parent, info):
@@ -71,6 +73,8 @@ class OrganizationNode(DjangoNode):
                 org = org.get_parent()
         return None
 
+    def resolve_plans_with_action_responsibilities(root, info):
+        return Plan.objects.filter(id__in=root.responsible_for_actions.values_list('plan'))
 
     class Meta:
         model = Organization

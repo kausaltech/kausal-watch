@@ -83,6 +83,11 @@ def test_organization_node(graphql_client_query_data):
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     ActionContactFactory(action=action)
+    # Implicitly create another plan not owned by `organization` for testing plansWithActionResponsibilities
+    arp = ActionResponsiblePartyFactory(organization=organization)
+    plan_with_action_responsiblity = arp.action.plan
+    assert plan_with_action_responsiblity != plan
+    assert plan_with_action_responsiblity.organization != organization
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -99,6 +104,10 @@ def test_organization_node(graphql_client_query_data):
             # }
             actionCount
             contactPersonCount
+            plansWithActionResponsibilities {
+              __typename
+              id
+            }
           }
         }
         ''',
@@ -113,6 +122,13 @@ def test_organization_node(graphql_client_query_data):
             'url': organization.url,
             'actionCount': 1,
             'contactPersonCount': 1,
+            'plansWithActionResponsibilities': [{
+                '__typename': 'Plan',
+                'id': str(plan.identifier),
+            }, {
+                '__typename': 'Plan',
+                'id': str(plan_with_action_responsiblity.identifier),
+            }],
         }]
     }
     assert data == expected
