@@ -139,6 +139,7 @@ class Plan(ClusterableModel):
         'self', verbose_name=_('parent'), blank=True, null=True, related_name='children',
         on_delete=models.SET_NULL
     )
+    common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
 
     features: PlanFeatures
     actions: RelatedManager[Action]

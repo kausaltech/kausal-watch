@@ -5,28 +5,37 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
+from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .admin import CategoryTypeFilter
+from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
 from .attribute_type_admin import get_attribute_fields
-from .models import AttributeType, Category, CategoryType
+from .models import AttributeType, Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
     AplansTabbedInterface, get_translation_tabs
 )
 
 
-def _append_category_type_query_parameter(request, url):
-    category_type = request.GET.get('category_type')
-    if category_type:
+def _append_query_parameter(request, url, parameter):
+    value = request.GET.get(parameter)
+    if value:
         assert '?' not in url
-        return f'{url}?category_type={category_type}'
+        return f'{url}?{parameter}={value}'
     return url
+
+
+class CategoryTypeDeleteView(DeleteView):
+    def delete_instance(self):
+        # When deleting a category type which is an instantiation of a common category type, remove link from plan
+        plan = self.instance.plan
+        cct = self.instance.common
+        plan.common_category_types.remove(cct)
+        return super().delete_instance()
 
 
 @modeladmin_register
@@ -38,6 +47,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     add_to_settings_menu = True
+    delete_view_class = CategoryTypeDeleteView
 
     panels = [
         FieldPanel('name'),
@@ -58,6 +68,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
             FieldPanel('name',),
             FieldPanel('name_plural',)
         ]),
+        FieldPanel('synchronize_with_pages'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -73,12 +84,14 @@ class CategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         panels = list(self.panels)
+        if instance and instance.common:
+            panels.insert(1, FieldPanel('common'))
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return AplansTabbedInterface(tabs)
+        return CategoryTypeEditHandler(tabs)
 
 
 def get_category_attribute_fields(category_type, category, **kwargs):
@@ -144,25 +157,44 @@ class CategoryEditHandler(AplansTabbedInterface):
             (CategoryAdminForm,),
             attribute_fields
         )
-        return super().get_form_class()
+        form_class = super().get_form_class()
+        if self.instance and self.instance.common:
+            form_class.base_fields['identifier'].disabled = True
+            form_class.base_fields['identifier'].required = False
+            # TODO: Hide "parent" field instead of disabling?
+            form_class.base_fields['parent'].disabled = True
+            form_class.base_fields['parent'].required = False
+        return form_class
+
+
+class CategoryTypeEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        common_field = form_class.base_fields.get('common')
+        # The field should be displayed if and only if editing an instance that has a common category type. If it is,
+        # make it read-only.
+        if common_field:
+            common_field.disabled = True
+            common_field.required = False
+        return form_class
 
 
 class CategoryTypeQueryParameterMixin:
     @property
     def index_url(self):
-        return _append_category_type_query_parameter(self.request, super().index_url)
+        return _append_query_parameter(self.request, super().index_url, 'category_type')
 
     @property
     def create_url(self):
-        return _append_category_type_query_parameter(self.request, super().create_url)
+        return _append_query_parameter(self.request, super().create_url, 'category_type')
 
     @property
     def edit_url(self):
-        return _append_category_type_query_parameter(self.request, super().edit_url)
+        return _append_query_parameter(self.request, super().edit_url, 'category_type')
 
     @property
     def delete_url(self):
-        return _append_category_type_query_parameter(self.request, super().delete_url)
+        return _append_query_parameter(self.request, super().delete_url, 'category_type')
 
 
 class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
@@ -196,23 +228,23 @@ class CategoryAdminButtonHelper(ButtonHelper):
         """
         if 'category_type' in self.request.GET:
             data = super().add_button(*args, **kwargs)
-            data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+            data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
             return data
         return None
 
     def inspect_button(self, *args, **kwargs):
         data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def edit_button(self, *args, **kwargs):
         data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def delete_button(self, *args, **kwargs):
         data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_category_type_query_parameter(self.request, data['url'])
+        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
 
@@ -295,3 +327,183 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         tabs += i18n_tabs
 
         return CategoryEditHandler(tabs)
+
+
+class CommonCategoryTypePermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return user.is_superuser
+
+    def user_can_create(self, user):
+        return user.is_superuser
+
+    # def user_can_inspect_obj(self, user, obj):
+    #     return user.is_superuser
+
+    def user_can_delete_obj(self, user, obj):
+        return user.is_superuser
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_superuser
+
+
+@modeladmin_register
+class CommonCategoryTypeAdmin(AplansModelAdmin):
+    model = CommonCategoryType
+    menu_icon = 'fa-briefcase'
+    menu_label = _('Common category types')
+    menu_order = 1101
+    permission_helper_class = CommonCategoryTypePermissionHelper
+    list_display = ('name',)
+    search_fields = ('name',)
+    add_to_settings_menu = True
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('identifier'),
+        FieldPanel('primary_language'),
+        FieldPanel('select_widget'),
+        MultiFieldPanel([
+            FieldRowPanel([
+                FieldPanel('usable_for_actions'),
+                FieldPanel('editable_for_actions'),
+            ]),
+            FieldRowPanel([
+                FieldPanel('usable_for_indicators'),
+                FieldPanel('editable_for_indicators'),
+            ]),
+        ], heading=_('Action and indicator categorization'), classname='collapsible collapsed'),
+    ]
+
+    def get_edit_handler(self, instance, request):
+        panels = list(self.panels)
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
+
+        i18n_tabs = get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
+        return AplansTabbedInterface(tabs)
+
+
+class CommonCategoryTypeQueryParameterMixin:
+    @property
+    def index_url(self):
+        return _append_query_parameter(self.request, super().index_url, 'common_category_type')
+
+    @property
+    def create_url(self):
+        return _append_query_parameter(self.request, super().create_url, 'common_category_type')
+
+    @property
+    def edit_url(self):
+        return _append_query_parameter(self.request, super().edit_url, 'common_category_type')
+
+    @property
+    def delete_url(self):
+        return _append_query_parameter(self.request, super().delete_url, 'common_category_type')
+
+
+class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCreateView):
+    def get_instance(self):
+        """Create a common category instance and set its type to the one given in the GET or POST data."""
+        instance = super().get_instance()
+        common_category_type = self.request.GET.get('common_category_type')
+        if common_category_type and not instance.pk:
+            assert not hasattr(instance, 'type')
+            instance.type = CommonCategoryType.objects.get(pk=int(common_category_type))
+            # if not instance.identifier and instance.type.hide_category_identifiers:
+            #     instance.generate_identifier()
+        return instance
+
+
+class CommonCategoryEditView(CommonCategoryTypeQueryParameterMixin, AplansEditView):
+    pass
+
+
+class CommonCategoryDeleteView(CommonCategoryTypeQueryParameterMixin, DeleteView):
+    pass
+
+
+class CommonCategoryAdminButtonHelper(ButtonHelper):
+    def add_button(self, *args, **kwargs):
+        """
+        Only show "add" button if the request contains a common category type.
+
+        Set GET parameter common_category_type to the type for the URL when clicking the button.
+        """
+        if 'common_category_type' in self.request.GET:
+            data = super().add_button(*args, **kwargs)
+            data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+            return data
+        return None
+
+    def inspect_button(self, *args, **kwargs):
+        data = super().inspect_button(*args, **kwargs)
+        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        return data
+
+    def edit_button(self, *args, **kwargs):
+        data = super().edit_button(*args, **kwargs)
+        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        return data
+
+    def delete_button(self, *args, **kwargs):
+        data = super().delete_button(*args, **kwargs)
+        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        return data
+
+
+class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
+    def is_shown(self, request):
+        # Hide it because we will have menu items for listing common categories of specific types.
+        # Note that we need to register CommonCategoryAdmin nonetheless, otherwise the URLs wouldn't be set up.
+        return False
+
+
+class CommonCategoryEditHandler(AplansTabbedInterface):
+    def get_form_class(self, request=None):
+        form_class = super().get_form_class()
+        if self.instance.pk:
+            form_class.base_fields['identifier'].disabled = True
+            form_class.base_fields['identifier'].required = False
+        return form_class
+
+
+@modeladmin_register
+class CommonCategoryAdmin(AplansModelAdmin):
+    menu_label = _('Common categories')
+    menu_order = 1301
+    list_display = ('name', 'type')
+    list_filter = (CommonCategoryTypeFilter,)
+    model = CommonCategory
+    add_to_settings_menu = True
+
+    panels = [
+        FieldPanel('name'),
+        FieldPanel('identifier'),
+        FieldPanel('short_description'),
+        ImageChooserPanel('image'),
+        FieldPanel('color'),
+    ]
+
+    create_view_class = CommonCategoryCreateView
+    edit_view_class = CommonCategoryEditView
+    # Do we need to create a view for inspect_view?
+    delete_view_class = CommonCategoryDeleteView
+    button_helper_class = CommonCategoryAdminButtonHelper
+
+    def get_menu_item(self, order=None):
+        return CommonCategoryAdminMenuItem(self, order or self.get_menu_order())
+
+    def get_edit_handler(self, instance, request):
+        panels = list(self.panels)
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
+
+        i18n_tabs = get_translation_tabs(
+            instance,
+            request,
+            include_all_languages=True,
+            default_language=instance.type.primary_language,
+        )
+        tabs += i18n_tabs
+
+        return CommonCategoryEditHandler(tabs)

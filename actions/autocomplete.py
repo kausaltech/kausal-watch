@@ -1,7 +1,7 @@
 from dal import autocomplete
 from django.db.models import Q
 
-from actions.models import Action, Category, CategoryType
+from actions.models import Action, Category, CommonCategoryType
 from aplans.types import WatchAdminRequest
 
 
@@ -53,3 +53,16 @@ class CategoryAutocomplete(autocomplete.Select2QuerySetView):
             qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q))
 
         return qs
+
+
+class CommonCategoryTypeAutocomplete(autocomplete.Select2QuerySetView):
+    request: WatchAdminRequest
+
+    def get_result_label(self, result: CommonCategoryType):
+        return str(result)
+
+    def get_queryset(self):
+        if not self.request.user.is_authenticated:
+            return CommonCategoryType.objects.none()
+
+        return CommonCategoryType.objects.all()

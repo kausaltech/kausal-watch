@@ -17,6 +17,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from aplans.types import WatchAdminRequest
 
 from .models import Client
+from actions.models import CommonCategoryType
 
 
 class CategoryMenuItem(MenuItem):
@@ -55,6 +56,40 @@ def register_category_menu():
         category_menu,
         classnames='icon icon-folder-open-inverse',
         order=100
+    )
+
+
+class CommonCategoryMenuItem(MenuItem):
+    def __init__(self, common_category_type, **kwargs):
+        self.common_category_type = common_category_type
+        self.base_url = reverse('actions_commoncategory_modeladmin_index')
+        url = f'{self.base_url}?common_category_type={common_category_type.id}'
+        label = common_category_type.name
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        common_category_type = request.GET.get('common_category_type')
+        return request.path.startswith(self.base_url) and common_category_type == str(self.common_category_type.pk)
+
+
+class CommonCategoryMenu(Menu):
+    def menu_items_for_request(self, request):
+        if request.user.is_superuser:
+            return [CommonCategoryMenuItem(cct) for cct in CommonCategoryType.objects.all()]
+        return []
+
+
+common_category_menu = CommonCategoryMenu(None)
+
+
+@hooks.register('register_admin_menu_item')
+def register_common_category_menu():
+    return SubmenuMenuItem(
+        _('Common categories'),
+        common_category_menu,
+        classnames='icon icon-folder-open-inverse',
+        order=101
     )
 
 

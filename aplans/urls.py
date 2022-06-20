@@ -26,7 +26,7 @@ from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_url
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
-from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete
+from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView
@@ -73,6 +73,11 @@ urlpatterns = [
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
+    re_path(
+        r'^commoncategorytype-autocomplete/$',
+        CommonCategoryTypeAutocomplete.as_view(),
+        name='commoncategorytype-autocomplete',
+    ),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
     path('auth/', include('social_django.urls', namespace='social')),

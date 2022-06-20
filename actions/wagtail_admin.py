@@ -1,3 +1,4 @@
+from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext
@@ -165,6 +166,10 @@ class PlanAdmin(AplansModelAdmin):
                 ),
                 CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
                 CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
+                FieldPanel(
+                    'common_category_types',
+                    widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
+                )
             ], heading=_('Action classifications')),
         ]
 

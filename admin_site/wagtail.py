@@ -4,6 +4,8 @@ from urllib.parse import urljoin
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.db import transaction
+from django.db.models import ProtectedError
 from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
@@ -319,6 +321,28 @@ class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClass
 
 
 class ActivePlanEditView(AplansEditView):
+    @transaction.atomic()
+    def form_valid(self, form):
+        old_common_category_types = self.instance.common_category_types.all()
+        new_common_category_types = form.cleaned_data['common_category_types']
+        for added_cct in new_common_category_types.difference(old_common_category_types):
+            # Create category type corresponding to this common category type and link it to this plan
+            ct = added_cct.instantiate_for_plan(self.instance)
+            # Create categories for the common categories having that common category type
+            for common_category in added_cct.categories.all():
+                common_category.instantiate_for_category_type(ct)
+        for removed_cct in old_common_category_types.difference(new_common_category_types):
+            try:
+                self.instance.category_types.filter(common=removed_cct).delete()
+            except ProtectedError:
+                # Actually validation should have been done before this method is called, but it seems to work for now
+                error = _(f"Could not remove common category type '{removed_cct}' from the plan because categories "
+                          "with the corresponding category type exist.")
+                form.add_error('common_category_types', error)
+                messages.validation_error(self.request, self.get_error_message(), form)
+                return self.render_to_response(self.get_context_data(form=form))
+        return super().form_valid(form)
+
     def get_success_url(self):
         # After editing the plan, don't redirect to the index page as AplansEditView does.
         return self.url_helper.get_action_url('edit', self.instance.pk)

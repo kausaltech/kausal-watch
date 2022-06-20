@@ -19,7 +19,7 @@ from actions.models import (
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario
+    Scenario, CommonCategory, CommonCategoryType
 )
 from aplans.types import WatchAPIRequest
 from orgs.models import Organization
@@ -328,6 +328,13 @@ class CategoryTypeNode(DjangoNode):
         return self.select_widget
 
 
+@register_django_node
+class CommonCategoryTypeNode(DjangoNode):
+    class Meta:
+        model = CommonCategoryType
+        fields = public_fields(CommonCategoryType)
+
+
 def get_translated_category_page(info, **kwargs):
     qs = CategoryPage.objects.filter(locale__language_code=get_language())
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
@@ -341,6 +348,13 @@ class CategoryNode(DjangoNode):
     actions = graphene.List('actions.schema.ActionNode')
     icon_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
+
+    def resolve_image(self, info):
+        if self.image:
+            return self.image
+        if self.common:
+            return self.common.image
+        return None
 
     def resolve_attributes(self, info, id=None):
         query = Q()
@@ -402,6 +416,13 @@ class CategoryNode(DjangoNode):
     class Meta:
         model = Category
         fields = public_fields(Category, add_fields=['level', 'icon_url'])
+
+
+@register_django_node
+class CommonCategoryNode(DjangoNode):
+    class Meta:
+        model = CommonCategory
+        fields = public_fields(CommonCategory)
 
 
 class ScenarioNode(DjangoNode):

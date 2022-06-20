@@ -18,7 +18,7 @@ from wagtail.search import index
 
 from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock, RelatedPlanListBlock
 from actions.chooser import CategoryChooser
-from actions.models import Category, Plan
+from actions.models import Category, CategoryType, Plan
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
@@ -194,6 +194,16 @@ class StaticPage(AplansPage):
         verbose_name_plural = _('Content pages')
 
 
+class CategoryTypePage(StaticPage):
+    category_type = models.ForeignKey(
+        CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
+        related_name='category_type_pages',
+    )
+
+    # Omit title field -- should be edited in CategoryTypeAdmin
+    content_panels = [p for p in StaticPage.content_panels if p.field_name != 'title']
+
+
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
         Category, on_delete=models.PROTECT, null=False, verbose_name=_('Category'),
@@ -205,9 +215,11 @@ class CategoryPage(AplansPage):
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
-    ])
+    ], null=True, blank=True)
 
-    content_panels = AplansPage.content_panels + [
+    # Omit title field -- should be edited in CategoryAdmin
+    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
+    content_panels = inherited_content_panels + [
         FieldPanel('category', widget=CategoryChooser),
         StreamFieldPanel('body'),
     ]

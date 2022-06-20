@@ -9,6 +9,7 @@ from actions.tests.factories import (
     ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
+from pages.tests.factories import CategoryPageFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -544,6 +545,7 @@ def test_category_node(
     attribute_choice
 ):
     child_category = CategoryFactory(parent=category)
+    CategoryPageFactory(category=category)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
