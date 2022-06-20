@@ -307,6 +307,11 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
     ('footer', 'show_in_footer', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
 ])
 def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descendants, expected_pages):
+    # Some pages (e.g., action and indicator list) are in menus and footers by default; remove for this test
+    for page in plan.root_page.get_children().specific():
+        page.show_in_menus = False
+        page.show_in_footer = False
+        page.save()
     pages = add_menu_test_pages(plan.root_page, menu_key)
     data = graphql_client_query_data(
         menu_query(menu_field, with_descendants),
@@ -323,6 +328,10 @@ def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descen
 
 
 def test_footer_children_only_shown(graphql_client_query_data, plan):
+    # Some pages (e.g., action and indicator list) are in menus and footers by default; remove for this test
+    for page in plan.root_page.get_children().specific():
+        page.show_in_footer = False
+        page.save()
     page1 = StaticPage(title="page1", show_in_footer=True)
     plan.root_page.add_child(instance=page1)
     page2 = StaticPage(title="page2", show_in_footer=True)
