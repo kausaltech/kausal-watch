@@ -75,7 +75,7 @@ class OrganizationNode(DjangoNode):
     class Meta:
         model = Organization
         fields = [
-            'id', 'abbreviation', 'name', 'classification', 'distinct_name', 'location',
+            'id', 'abbreviation', 'name', 'description', 'url', 'classification', 'distinct_name', 'location',
         ]
 
 

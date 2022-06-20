@@ -13,6 +13,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
+from wagtail.core.fields import RichTextField
 from wagtail.search import index
 
 from aplans.utils import PlanRelatedModel, get_default_language, get_supported_languages
@@ -148,6 +149,8 @@ class Organization(index.Indexed, Node, gis_models.Model):
         related_name='+',
         help_text=_('An optional logo for this organization'),
     )
+    description = RichTextField(blank=True, verbose_name=_('description'))
+    url = models.URLField(blank=True, verbose_name=_('URL'))
     founding_date = models.DateField(blank=True,
                                      null=True,
                                      help_text=_('A date of founding'))

@@ -1,5 +1,6 @@
 from factory import Sequence, SubFactory
 from factory.django import DjangoModelFactory
+from wagtail.core.rich_text import RichText
 
 from orgs.models import Namespace, Organization, OrganizationPlanAdmin, OrganizationClass, OrganizationIdentifier
 from people.tests.factories import PersonFactory
@@ -28,6 +29,8 @@ class OrganizationFactory(DjangoModelFactory):
     classification = SubFactory(OrganizationClassFactory)
     name = Sequence(lambda i: f"Organization {i}")
     abbreviation = Sequence(lambda i: f'org{i}')
+    description = RichText("<p>Description</p>")
+    url = 'https://example.org'
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

@@ -90,6 +90,8 @@ def test_organization_node(graphql_client_query_data):
             __typename
             id
             name
+            description
+            url
             # Tested in separate test case
             # ancestors {
             #   __typename
@@ -107,6 +109,8 @@ def test_organization_node(graphql_client_query_data):
             '__typename': 'Organization',
             'id': str(organization.id),
             'name': organization.name,
+            'description': str(organization.description),
+            'url': organization.url,
             'actionCount': 1,
             'contactPersonCount': 1,
         }]
