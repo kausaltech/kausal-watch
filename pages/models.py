@@ -1,6 +1,7 @@
 import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import URLValidator
 from django.db import models
 from django.utils import translation
 from django.utils.text import slugify
@@ -9,6 +10,8 @@ from grapple.models import (
     GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
     GraphQLString, GraphQLField
 )
+from modelcluster.fields import ParentalKey
+from modeltrans.fields import TranslationField
 from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
@@ -22,6 +25,7 @@ from actions.models import Category, CategoryType, Plan
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
+from aplans.utils import OrderedModel
 from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -300,3 +304,31 @@ class IndicatorListPage(FixedSlugPage):
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
+
+
+class PlanLink(OrderedModel):
+    """A link related to a plan."""
+
+    plan = ParentalKey(Plan, on_delete=models.CASCADE, verbose_name=_('plan'), related_name='links')
+    url = models.URLField(max_length=400, verbose_name=_('URL'), validators=[URLValidator(('http', 'https'))])
+    title = models.CharField(max_length=254, verbose_name=_('title'), blank=True)
+
+    public_fields = [
+        'id', 'plan', 'url', 'title', 'order'
+    ]
+
+    i18n = TranslationField(
+        fields=['title', 'url'],
+        default_language_field='plan__primary_language',
+    )
+
+    class Meta:
+        ordering = ['plan', 'order']
+        index_together = (('plan', 'order'),)
+        verbose_name = _('plan link')
+        verbose_name_plural = _('plan links')
+
+    def __str__(self):
+        if self.title:
+            return f'{self.title}: {self.url}'
+        return self.url

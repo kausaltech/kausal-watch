@@ -19,6 +19,7 @@ from admin_site.wagtail import (
     insert_model_translation_panels
 )
 from orgs.models import Organization
+from pages.models import PlanLink
 from people.chooser import PersonChooser
 
 from . import action_admin  # noqa
@@ -154,6 +155,17 @@ class PlanAdmin(AplansModelAdmin):
                 FieldPanel('google_site_verification_tag'),
                 FieldPanel('matomo_analytics_url'),
             ], heading=_('Domains')))
+
+        links_panel = CondensedInlinePanel(
+            'links',
+            panels=[
+                FieldPanel('url'),
+                FieldPanel('title')
+            ],
+            heading=_('External links')
+        )
+        links_panel.panels = insert_model_translation_panels(PlanLink, links_panel.panels, request, instance)
+        panels.append(links_panel)
 
         tabs = [
             ObjectList(panels, heading=_('Basic information')),

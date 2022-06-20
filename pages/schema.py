@@ -23,10 +23,15 @@ class MenuItemNode(graphene.ObjectType):
         return parent.page.id
 
     def resolve_page(parent, info):
-        return parent.page.specific
+        if parent.page:
+            return parent.page.specific
+        return None
 
     def resolve_link_text(parent, info):
-        return parent.page.title
+        if parent.page:
+            assert not parent.link_text and not parent.external_url
+            return parent.page.title
+        return parent.link_text
 
     def resolve_parent(parent, info):
         parent = WagtailPage.objects.parent_of(parent.page).specific().first()
@@ -82,7 +87,12 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
         else:
             pages = parent.get_children()
         pages = pages.live().public().in_menu().specific()
-        return [MenuItemNode(page=page) for page in pages]
+        page_items = [MenuItemNode(page=page) for page in pages]
+        links = parent.plan.links
+        external_link_items = [
+            MenuItemNode(external_url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
+        ]
+        return page_items + external_link_items
 
 
 class FooterNode(MenuNodeMixin, graphene.ObjectType):
