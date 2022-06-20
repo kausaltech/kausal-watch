@@ -271,6 +271,36 @@ def test_plan_node(graphql_client_query_data):
     assert data == expected
 
 
+def test_plan_actions_responsible_organization(graphql_client_query_data):
+    plan = PlanFactory()
+    ActionFactory(plan=plan)  # org is not responsible
+    action = ActionFactory(plan=plan)
+    arp = ActionResponsiblePartyFactory(action=action)
+    org = arp.organization
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $org: ID!) {
+          plan(id: $plan) {
+            actions(responsibleOrganization: $org) {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier, 'org': org.id}
+    )
+    expected = {
+        'plan': {
+            'actions': [{
+                '__typename': 'Action',
+                'id': str(action.id),
+            }],
+        }
+    }
+    assert data == expected
+
+
 def test_attribute_choice_node(
     graphql_client_query_data, plan, attribute_choice, attribute_type__ordered_choice,
     attribute_type_choice_option

@@ -59,8 +59,8 @@ class PlanNode(DjangoNode):
         usable_for_actions=graphene.Boolean()
     )
     actions = graphene.List(
-        'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(),
-        only_mine=graphene.Boolean(default_value=False), required=True
+        'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True,
+        only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False)
     )
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
     image = graphene.Field('images.schema.ImageNode', required=False)
@@ -161,7 +161,9 @@ class PlanNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='actions',
     )
-    def resolve_actions(self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False):
+    def resolve_actions(
+        self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None
+    ):
         user = info.context.user
         qs = self.actions.filter(plan=self)
         if identifier:
@@ -173,6 +175,8 @@ class PlanNode(DjangoNode):
                 qs = qs.none()
             else:
                 qs = qs.user_has_staff_role_for(user, plan=self)
+        if responsible_organization:
+            qs = qs.filter(responsible_organizations=responsible_organization)
         return qs
 
     def resolve_primary_orgs(self, info):
