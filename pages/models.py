@@ -74,7 +74,7 @@ class AplansPage(Page):
     @functools.cached_property
     def plan(self) -> Optional[Plan]:
         root_page = PlanRootPage.objects.ancestor_of(self, inclusive=True).first()
-        site = Site.objects.filter(root_page=root_page).first()
+        site = Site.objects.filter(root_page__translation_key=root_page.translation_key).first()
         plan = Plan.objects.filter(site=site).first()
         return plan
 
