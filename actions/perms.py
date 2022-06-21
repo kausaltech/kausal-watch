@@ -123,7 +123,6 @@ def _get_or_create_group(name, perms=None):
     return group
 
 
-@lru_cache
 def get_or_create_action_contact_person_group():
     perms = get_action_contact_person_perms()
     group = _get_or_create_group('Action contact persons', perms)
