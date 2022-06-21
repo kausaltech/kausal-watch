@@ -97,7 +97,7 @@ class ActionGraphGenerator(GraphGenerator):
         d['url'] = self.request.build_absolute_uri(url) if self.request else url
         d['type'] = obj_type
         d['object_id'] = obj.id
-        d['name'] = obj.name
+        d['name'] = obj.name_i18n
         d['id'] = self.make_node_id(obj)
         d['identifier'] = obj.identifier if obj.identifier else None
 
