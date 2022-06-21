@@ -178,10 +178,10 @@ plan_router.register(
 class ActionPermission(permissions.DjangoObjectPermissions):
     def check_action_permission(self, user: User, perm: str, plan: Plan, action: Action = None):
         # Check for object permissions first
-        if not user.has_perms(perm):
+        if not user.has_perms([perm]):
             return False
         if perm == 'actions.change_action':
-            if not user.can_modify_action(plan=plan):
+            if not user.can_modify_action(action=action, plan=plan):
                 return False
         elif perm == 'actions.add_action':
             if not user.can_create_action(plan=plan):
