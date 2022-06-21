@@ -15,7 +15,10 @@ class CategoryChooserBlock(blocks.ChooserBlock):
 
     @cached_property
     def widget(self):
-        return CategoryChooser
+        return CategoryChooser()
+
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
 
 
 @register_streamfield_block
