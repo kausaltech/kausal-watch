@@ -357,12 +357,10 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
                 page = self.category_pages.child_of(parent).get()
                 # page = parent.get_children().type(CategoryPage).get(category=self)
             except CategoryPage.DoesNotExist:
-                if self.parent is None:
-                    is_root = True
-                else:
-                    is_root = False
+                is_root = self.parent is None
                 page = CategoryPage(
-                    category=self, title=self.name_i18n, show_in_menus=is_root, show_in_footer=is_root
+                    category=self, title=self.name_i18n, show_in_menus=is_root, show_in_footer=is_root,
+                    body=[('action_list', {'category_filter': self})]
                 )
                 parent.add_child(instance=page)
             else:
