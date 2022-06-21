@@ -1,4 +1,5 @@
 import pytest
+from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
@@ -127,3 +128,82 @@ def test_person_api_get_unknown_plan(
     assert response.status_code == 404
     keys = data.keys()
     assert len(keys) == 1 and 'detail' in keys
+
+
+def test_action_api_post_unauthenticated(
+        api_client, action_list_url, action):
+    response = api_client.post(action_list_url, {'name': 'foo'})
+    assert response.status_code == 401
+
+
+def test_action_api_put_unauthenticated(
+        api_client, action, action_detail_url):
+    response = api_client.put(action_detail_url, data={
+        'id': action.pk,
+        'identifier': action.identifier,
+        'name': 'renamed'
+    })
+    assert response.status_code == 401
+
+
+def test_action_post_as_contact_person_denied(
+        api_client, action, action_list_url, action_contact_factory):
+    contact = action_contact_factory()
+    user = contact.person.user
+    api_client.force_login(user)
+    response = api_client.post(action_list_url, data={'name': 'bar'})
+    assert response.status_code == 403
+
+
+def test_action_put_as_contact_person_denied_for_other_action(
+        api_client, action, action_detail_url, action_contact_factory):
+    contact = action_contact_factory()
+    user = contact.person.user
+    assert not user.is_superuser
+    assert action.plan not in user.person.general_admin_plans.all()
+    assert contact.action != action
+    api_client.force_login(user)
+    response = api_client.put(action_detail_url, data={
+        'identifier': 'ID-1',
+        'id': action.id,
+        'name': 'bar'})
+    assert response.status_code == 403
+
+
+def test_action_put_as_contact_person_allowed_for_own_action(
+        api_client, plan, action_contact_factory):
+    contact = action_contact_factory(action__plan=plan)
+    user = contact.person.user
+    assert not user.is_superuser
+    assert contact.action.plan not in user.person.general_admin_plans.all()
+    api_client.force_login(user)
+    url = reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': contact.action.pk})
+    response = api_client.put(url, data={
+        'identifier': 'ID-1',
+        'id': contact.action.id,
+        'name': 'bar'})
+    assert response.status_code == 200
+
+
+def test_action_post_as_plan_admin_allowed(
+        api_client, plan, action_list_url, plan_factory, person_factory):
+    admin_person = person_factory(general_admin_plans=[plan])
+    api_client.force_login(admin_person.user)
+    response = api_client.post(action_list_url, data={
+        'identifier': 'ID-1',
+        'name': '_name_',
+        'plan': plan.pk})
+    assert response.status_code == 201
+
+
+def test_action_put_as_plan_admin_allowed(
+        api_client, plan, action, action_detail_url, person_factory):
+    plan_of_admin_person = action.plan
+    admin_person = person_factory(general_admin_plans=[plan_of_admin_person])
+    api_client.force_login(admin_person.user)
+    response = api_client.put(action_detail_url, data={
+        'id': action.pk,
+        'identifier': 'ID-1',
+        'name': 'bar',
+        'plan': plan_of_admin_person.pk})
+    assert response.status_code == 200

@@ -38,6 +38,11 @@ def action_list_url(plan):
 
 
 @pytest.fixture
+def action_detail_url(plan, action):
+    return reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': action.pk})
+
+
+@pytest.fixture
 def api_client():
     return JSONAPIClient(default_format='vnd.api+json')
 
