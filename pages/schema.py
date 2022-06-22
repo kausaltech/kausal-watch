@@ -3,44 +3,33 @@ import graphene_django_optimizer as gql_optimizer
 from wagtail.core.models import Page as WagtailPage
 from grapple.types.pages import PageInterface
 
-from aplans.graphql_types import get_plan_from_context
+from aplans.graphql_types import get_plan_from_context, register_graphene_node
 from pages.models import AplansPage
 
 
-class MenuItemNode(graphene.ObjectType):
+@register_graphene_node
+class PageMenuItemNode(graphene.ObjectType):
     class Meta:
-        name = 'MenuItem'
+        name = 'PageMenuItem'
 
     id = graphene.ID(required=True)
-    page = graphene.Field(PageInterface, required=False)
-    external_url = graphene.String(required=False)
-    link_text = graphene.String(required=True)
+    page = graphene.Field(PageInterface, required=True)
+    parent = graphene.Field('pages.schema.PageMenuItemNode')
+    children = graphene.List('pages.schema.PageMenuItemNode')
 
-    parent = graphene.Field('pages.schema.MenuItemNode')
-    children = graphene.List('pages.schema.MenuItemNode')
+    def resolve_id(item, info):
+        return item.page.id
 
-    def resolve_id(parent, info):
-        return parent.page.id
-
-    def resolve_page(parent, info):
-        if parent.page:
-            return parent.page.specific
-        return None
-
-    def resolve_link_text(parent, info):
-        if parent.page:
-            assert not parent.link_text and not parent.external_url
-            return parent.page.title
-        return parent.link_text
-
-    def resolve_parent(parent, info):
-        parent = WagtailPage.objects.parent_of(parent.page).specific().first()
+    def resolve_parent(item, info):
+        if not item.page:
+            return None
+        parent = WagtailPage.objects.parent_of(item.page).specific().first()
         if parent is None:
-            return
-        return MenuItemNode(page=parent)
+            return None
+        return PageMenuItemNode(page=parent)
 
-    def resolve_children(parent, info):
-        pages = parent.page.get_children().live().public()
+    def resolve_children(item, info):
+        pages = item.page.get_children().live().public()
         # TODO: Get rid of this terrible hack
         if 'footer' in info.path:
             footer_page_ids = [page.id
@@ -48,7 +37,21 @@ class MenuItemNode(graphene.ObjectType):
                                for page in Model.objects.filter(show_in_footer=True)]
             pages = pages.filter(id__in=footer_page_ids)
         pages = pages.specific()
-        return [MenuItemNode(page=page) for page in pages]
+        return [PageMenuItemNode(page=page) for page in pages]
+
+
+@register_graphene_node
+class ExternalLinkMenuItemNode(graphene.ObjectType):
+    class Meta:
+        name = 'ExternalLinkMenuItem'
+
+    url = graphene.String(required=True)
+    link_text = graphene.String(required=True)
+
+
+class MenuItem(graphene.Union):
+    class Meta:
+        types = (PageMenuItemNode, ExternalLinkMenuItemNode)
 
 
 class MenuNodeMixin():
@@ -61,7 +64,7 @@ class MenuNodeMixin():
     not use polymorphism in resolver methods.
     https://docs.graphene-python.org/en/latest/types/objecttypes/#resolverimplicitstaticmethod
     """
-    items = graphene.List(MenuItemNode, required=True, with_descendants=graphene.Boolean(default_value=False))
+    items = graphene.List(MenuItem, required=True, with_descendants=graphene.Boolean(default_value=False))
 
     @classmethod
     def resolver_from_plan(cls, plan, info):
@@ -87,10 +90,10 @@ class MainMenuNode(MenuNodeMixin, graphene.ObjectType):
         else:
             pages = parent.get_children()
         pages = pages.live().public().in_menu().specific()
-        page_items = [MenuItemNode(page=page) for page in pages]
+        page_items = [PageMenuItemNode(page=page) for page in pages]
         links = parent.plan.links
         external_link_items = [
-            MenuItemNode(external_url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
+            ExternalLinkMenuItemNode(url=link.url_i18n, link_text=link.title_i18n) for link in links.all()
         ]
         return page_items + external_link_items
 
@@ -114,7 +117,7 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
                            for Model in AplansPage.get_subclasses()
                            for page in Model.objects.filter(show_in_footer=True)]
         pages = pages.filter(id__in=footer_page_ids).specific()
-        return [MenuItemNode(page=page) for page in pages]
+        return [PageMenuItemNode(page=page) for page in pages]
 
 
 class Query:

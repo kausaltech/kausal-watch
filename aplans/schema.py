@@ -23,7 +23,7 @@ from people.models import Person
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, get_plan_from_context
+from .graphql_types import DjangoNode, get_plan_from_context, graphene_registry
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -189,5 +189,5 @@ schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
     directives=specified_directives + [LocaleDirective(), AuthDirective()],
-    types=[] + list(grapple_registry.models.values())
+    types=graphene_registry + list(grapple_registry.models.values())
 )

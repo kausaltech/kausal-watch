@@ -8,11 +8,13 @@ import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
-from grapple.registry import registry
+from grapple.registry import registry as grapple_registry
 from modeltrans.translator import get_i18n_field
 
 from actions.models import Plan
 from aplans.types import WatchAPIRequest
+
+graphene_registry = []
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -116,15 +118,21 @@ def order_queryset(qs, node_class, order_by):
     return qs
 
 
+def register_graphene_node(cls):
+    global graphene_registry
+    graphene_registry.append(cls)
+    return cls
+
+
 def register_django_node(cls):
     model = cls._meta.model
-    registry.django_models[model] = cls
+    grapple_registry.django_models[model] = cls
     return cls
 
 
 def replace_image_node(cls):
     model = cls._meta.model
-    registry.images[model] = cls
+    grapple_registry.images[model] = cls
     return cls
 
 
