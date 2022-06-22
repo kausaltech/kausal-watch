@@ -11,8 +11,8 @@ pytestmark = pytest.mark.django_db
 def expected_menu_item_for_page(page):
     return {
         'id': str(page.id),
-        'linkText': page.title,
         'page': {
+            'title': page.title,
             # We strip the trailing slash of url_path in pages/apps.py
             'urlPath': page.url_path.rstrip('/'),
             'slug': page.slug,
@@ -30,11 +30,13 @@ def menu_query(menu_field='mainMenu', with_descendants=False):
           plan(id: $plan) {
             %(menu)s {
               items(withDescendants: %(with_descendants_str)s) {
-                id
-                linkText
-                page {
-                  urlPath
-                  slug
+                ... on PageMenuItem {
+                    id
+                    page {
+                      title
+                      urlPath
+                      slug
+                    }
                 }
               }
             }
@@ -344,9 +346,11 @@ def test_footer_children_only_shown(graphql_client_query_data, plan):
           plan(id: $plan) {
             footer {
               items {
-                id
-                children {
-                  id
+                ... on PageMenuItem {
+                    id
+                    children {
+                      id
+                    }
                 }
               }
             }
