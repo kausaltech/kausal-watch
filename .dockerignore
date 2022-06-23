@@ -1,7 +1,7 @@
-__pycache__/
-/.mypy_cache/
-/static/
-/.direnv/
+__pycache__
+.mypy_cache
+static
+.direnv
 .env
 .env.*
 .idea
@@ -9,4 +9,7 @@ db.sqlite3
 env
 media
 venv
-/kausal_watch_extensions
+kausal_watch_extensions
+Attic
+tmp
+node_modules

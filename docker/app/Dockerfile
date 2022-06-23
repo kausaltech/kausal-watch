@@ -1,4 +1,4 @@
-FROM ubuntu:21.10
+FROM ubuntu:22.04
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -11,7 +11,7 @@ RUN mkdir -p /srv/media
 
 RUN apt-get update
 
-RUN apt-get install -y python3.9 python3-pip libpython3.9-dev \
+RUN apt-get install -y python3.10 python3-pip libpython3.10-dev \
 	postgresql-client-common postgresql-client libpq-dev \
 	gettext git \
 	zlib1g-dev libjpeg8-dev libtiff-dev libopenjp2-7-dev libwebp-dev \
@@ -21,7 +21,7 @@ RUN apt-get install -y voikko-fi libvoikko1 libhfstospell11
 
 RUN apt-get install -y binutils libproj-dev gdal-bin
 
-RUN ln -fs /usr/bin/python3.9 /usr/bin/python3
+RUN ln -fs /usr/bin/python3.10 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
 RUN pip install --upgrade pip
