@@ -57,3 +57,8 @@ def plan_list_url():
 @pytest.fixture
 def person_list_url():
     return reverse('person-list')
+
+
+@pytest.fixture(autouse=True)
+def disable_search_autoupdate(settings):
+    settings.WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = False
