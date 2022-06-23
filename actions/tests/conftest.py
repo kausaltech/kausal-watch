@@ -14,6 +14,8 @@ register(PlanFactory)
 
 
 class JSONAPIClient(APIClient):
+    default_format = 'json'
+
     def request(self, **kwargs):
         resp = super().request(**kwargs)
         resp.json_data = json.loads(resp.content)
@@ -44,7 +46,7 @@ def action_detail_url(plan, action):
 
 @pytest.fixture
 def api_client():
-    return JSONAPIClient(default_format='vnd.api+json')
+    return JSONAPIClient()
 
 
 @pytest.fixture
