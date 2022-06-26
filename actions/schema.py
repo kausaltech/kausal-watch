@@ -63,6 +63,7 @@ class PlanNode(DjangoNode):
         'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True,
         only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False)
     )
+    action_attribute_types = graphene.List('actions.schema.AttributeTypeNode')
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
     image = graphene.Field('images.schema.ImageNode', required=False)
 
@@ -179,6 +180,9 @@ class PlanNode(DjangoNode):
         if responsible_organization:
             qs = qs.filter(responsible_organizations=responsible_organization)
         return qs
+
+    def resolve_action_attribute_types(self, info):
+        return self.action_attribute_types.order_by('pk')
 
     def resolve_primary_orgs(self, info):
         qs = self.actions.all().values('primary_org')
@@ -345,8 +349,24 @@ def get_translated_category_page(info, **kwargs):
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
 
 
+class AttributesMixin:
+    attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
+
+    def resolve_attributes(self, info, id=None):
+        query = Q()
+        if id is not None:
+            query = Q(type__identifier=id)
+        attributes = chain(
+            self.richtext_attributes.filter(query),
+            self.choice_attributes.filter(query),
+            self.choice_with_text_attributes.filter(query),
+            self.numeric_value_attributes.filter(query)
+        )
+        return sorted(attributes, key=lambda a: a.type.order)
+
+
 @register_django_node
-class CategoryNode(DjangoNode):
+class CategoryNode(AttributesMixin, DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
     attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
@@ -360,18 +380,6 @@ class CategoryNode(DjangoNode):
         if self.common:
             return self.common.image
         return None
-
-    def resolve_attributes(self, info, id=None):
-        query = Q()
-        if id is not None:
-            query = Q(type__identifier=id)
-        attributes = chain(
-            self.richtext_attributes.filter(query),
-            self.choice_attributes.filter(query),
-            self.choice_with_text_attributes.filter(query),
-            self.numeric_value_attributes.filter(query)
-        )
-        return sorted(attributes, key=lambda a: a.type.order)
 
     def resolve_level(self, info):
         depth = 0
@@ -473,7 +481,7 @@ class ActionTaskNode(DjangoNode):
 
 
 @register_django_node
-class ActionNode(DjangoNode):
+class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean())

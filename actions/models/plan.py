@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import Group
+from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator
 from django.db import models, transaction
@@ -151,6 +152,13 @@ class Plan(ClusterableModel):
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
+
+    action_attribute_types = GenericRelation(
+        to='actions.AttributeType',
+        related_query_name='plan',
+        content_type_field='scope_content_type',
+        object_id_field='scope_id',
+    )
 
     public_fields = [
         'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
