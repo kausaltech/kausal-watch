@@ -218,7 +218,7 @@ class CategoryBase(OrderedModel):
 
 
 @reversion.register()
-class CommonCategory(CategoryBase):
+class CommonCategory(CategoryBase, ClusterableModel):
     type = models.ForeignKey(
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
@@ -259,8 +259,8 @@ class CommonCategory(CategoryBase):
 
 
 class CommonCategoryIcon(models.Model):
-    category = models.ForeignKey(
-        CommonCategory, on_delete=models.CASCADE, related_name='images',
+    category = ParentalKey(
+        CommonCategory, on_delete=models.CASCADE, related_name='icons',
         verbose_name=_('category')
     )
     language = models.CharField(max_length=20, choices=get_supported_languages(), null=True, blank=True)

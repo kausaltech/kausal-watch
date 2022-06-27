@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
 )
+from wagtail.admin.edit_handlers import InlinePanel
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
@@ -483,6 +484,13 @@ class CommonCategoryAdmin(AplansModelAdmin):
         FieldPanel('short_description'),
         ImageChooserPanel('image'),
         FieldPanel('color'),
+        # Didn't use CondensedInlinePanel for the following because there is a bug:
+        # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if and
+        # only if the inline instance is collapsed.
+        InlinePanel('icons', heading=_("Icons"), panels=[
+            FieldPanel('language'),
+            ImageChooserPanel('image'),
+        ]),
     ]
 
     create_view_class = CommonCategoryCreateView
