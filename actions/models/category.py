@@ -162,8 +162,8 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
                     ct_page.title = self.name_i18n
                     ct_page.draft_title = self.name_i18n
                     ct_page.save()
-            for category in self.categories.all():
-                category.synchronize_page(ct_page)
+            for category in self.categories.filter(parent__isnull=True):
+                category.synchronize_pages(ct_page)
 
 
 @reversion.register()
@@ -350,6 +350,12 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
     def generate_identifier(self):
         self.identifier = generate_identifier(self.type.categories.all(), 'c', 'identifier')
 
+    def synchronize_pages(self, parent):
+        """Create page for this category, then for all its children."""
+        page = self.synchronize_page(parent)
+        for child in self.children.all():
+            child.synchronize_pages(page)
+
     def synchronize_page(self, parent):
         from pages.models import CategoryPage
         with override(parent.locale.language_code):
@@ -367,6 +373,7 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
                 page.title = self.name_i18n
                 page.draft_title = self.name_i18n
                 page.save()
+        return page
 
     @transaction.atomic()
     def save(self, *args, **kwargs):
