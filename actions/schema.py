@@ -20,7 +20,7 @@ from actions.models import (
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario, CommonCategory, CommonCategoryType
+    Scenario, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
 from aplans.types import WatchAPIRequest
 from orgs.models import Organization
@@ -432,7 +432,22 @@ class CategoryNode(AttributesMixin, DjangoNode):
 
 
 @register_django_node
+class CommonCategoryIconNode(DjangoNode):
+    class Meta:
+        model = CommonCategoryIcon
+        fields = public_fields(CommonCategoryIcon)
+
+
+@register_django_node
 class CommonCategoryNode(DjangoNode):
+    icon = graphene.Field(CommonCategoryIconNode, required=False)
+
+    def resolve_icon(root, info):
+        try:
+            return root.icons.get(language=get_language())
+        except CommonCategoryIcon.DoesNotExist:
+            return None
+
     class Meta:
         model = CommonCategory
         fields = public_fields(CommonCategory)

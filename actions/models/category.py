@@ -259,7 +259,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
 
 
 class CommonCategoryIcon(models.Model):
-    category = ParentalKey(
+    common_category = ParentalKey(
         CommonCategory, on_delete=models.CASCADE, related_name='icons',
         verbose_name=_('category')
     )
@@ -268,11 +268,15 @@ class CommonCategoryIcon(models.Model):
         'images.AplansImage', on_delete=models.CASCADE, related_name='+'
     )
 
+    public_fields = [
+        'common_category', 'language', 'image',
+    ]
+
     class Meta:
-        unique_together = (('category', 'language'),)
+        unique_together = (('common_category', 'language'),)
 
     def __str__(self):
-        return '%s [%s]' % (self.category, self.language)
+        return '%s [%s]' % (self.common_category, self.language)
 
 
 class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
