@@ -18,3 +18,8 @@ footer .actions {
     font-weight: 400;
     font-size: 0.9em;
 }
+
+
+div.field.model_choice_field_with_value_in_list.model_select2 label {
+    padding-top: 0;
+}
