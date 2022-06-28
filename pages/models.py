@@ -325,8 +325,8 @@ class PlanLink(OrderedModel):
     class Meta:
         ordering = ['plan', 'order']
         index_together = (('plan', 'order'),)
-        verbose_name = _('plan link')
-        verbose_name_plural = _('plan links')
+        verbose_name = _('external plan link')
+        verbose_name_plural = _('external plan links')
 
     def __str__(self):
         if self.title:

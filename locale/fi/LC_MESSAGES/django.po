@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-17 10:08+0300\n"
+"POT-Creation-Date: 2022-06-28 12:27+0300\n"
 "PO-Revision-Date: 2022-05-17 08:22+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -89,7 +89,7 @@ msgstr "Haku"
 msgid "Actions"
 msgstr "Toimenpiteet"
 
-#: actions/action_admin.py
+#: actions/action_admin.py actions/wagtail_admin.py
 msgid "External links"
 msgstr "Ulkopuoliset linkit"
 
@@ -104,6 +104,11 @@ msgstr "Viimeksi päivitetty"
 msgid "Name"
 msgstr "Nimi"
 
+#: actions/action_admin.py actions/category_admin.py
+#: admin_site/wagtail_hooks.py indicators/admin.py indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Luokat"
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 msgid "Basic information"
@@ -117,18 +122,13 @@ msgstr "Eteneminen"
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
-#: actions/action_admin.py
+#: actions/action_admin.py actions/api.py
 msgid "Responsible parties"
 msgstr "Toimenpiteen vastuutahot"
 
 #: actions/action_admin.py
 msgid "Tasks"
 msgstr "Tehtävät"
-
-#: actions/action_admin.py actions/category_admin.py
-#: admin_site/wagtail_hooks.py indicators/admin.py indicators/wagtail_admin.py
-msgid "Categories"
-msgstr "Luokat"
 
 #: actions/action_admin.py
 msgid "Internal information"
@@ -162,9 +162,13 @@ msgstr "Näytä myös yhdistetyt toimenpiteet"
 msgid "Impact"
 msgstr "Vaikuttavuus"
 
-#: actions/admin.py actions/attribute_type_admin.py
+#: actions/admin.py actions/attribute_type_admin.py pages/models.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
+
+#: actions/admin.py
+msgid "Common category type"
+msgstr "Yleisten luokkien tyypit"
 
 #: actions/admin.py
 msgid "Responsible organizations"
@@ -249,6 +253,18 @@ msgstr "Toimenpiteiden ja mittareiden luokittelu"
 msgid "There is already a category with this identifier."
 msgstr "Tällä tunnisteella on jo luokka."
 
+#: actions/category_admin.py
+msgid "Common category types"
+msgstr "Yleisten luokkien tyypit"
+
+#: actions/category_admin.py admin_site/wagtail_hooks.py
+msgid "Common categories"
+msgstr "Yleiset luokat"
+
+#: actions/category_admin.py
+msgid "Icons"
+msgstr "Ikonit"
+
 #: actions/chooser.py
 msgid "Choose a category"
 msgstr "Valitse luokka"
@@ -332,7 +348,7 @@ msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
 #: actions/models/action.py actions/models/plan.py content/models.py
-#: indicators/models.py notifications/models.py orgs/models.py
+#: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
 msgstr "toimenpideohjelma"
 
@@ -361,6 +377,7 @@ msgid "Lead paragraph"
 msgstr "Ingressi"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py
 msgid "description"
 msgstr "kuvaus"
 
@@ -443,6 +460,10 @@ msgstr "luokat"
 #: actions/models/action.py indicators/models.py
 msgid "indicators"
 msgstr "mittarit"
+
+#: actions/models/action.py
+msgid "related actions"
+msgstr "liittyvät toimenpiteet"
 
 #: actions/models/action.py
 msgid "responsible organizations"
@@ -640,11 +661,11 @@ msgstr "toimenpiteen vaikuttavuusluokka"
 msgid "action impact classes"
 msgstr "toimenpiteen vaikuttavuusluokat"
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py indicators/models.py orgs/models.py pages/models.py
 msgid "URL"
 msgstr "URL"
 
-#: actions/models/action.py
+#: actions/models/action.py pages/models.py
 msgid "title"
 msgstr "otsikko"
 
@@ -668,7 +689,7 @@ msgstr "tekijä"
 msgid "content"
 msgstr "sisältö"
 
-#: actions/models/action.py
+#: actions/models/action.py people/models.py
 msgid "created by"
 msgstr "luoja"
 
@@ -753,12 +774,28 @@ msgid "editable for indicators"
 msgstr "muokattavissa mittareille"
 
 #: actions/models/category.py
+msgid "common category type"
+msgstr "yleisen luokan tyyppi"
+
+#: actions/models/category.py
+msgid "common category types"
+msgstr "yhteisten luokkien tyypit"
+
+#: actions/models/category.py
 msgid "hide category identifiers"
 msgstr "piilota kategorioiden tunnisteet"
 
 #: actions/models/category.py
 msgid "Set if the categories do not have meaningful identifiers"
 msgstr "Aseta jos kategorioilla ei ole tunnisteita"
+
+#: actions/models/category.py
+msgid "synchronize with pages"
+msgstr "synkronoi sivujen kanssa"
+
+#: actions/models/category.py
+msgid "Set if categories of this type should be synchronized with pages"
+msgstr "Aseta jos luokat tulee synkronoida sivujen kanssa"
 
 #: actions/models/category.py
 msgid "category type"
@@ -785,10 +822,6 @@ msgid "category levels"
 msgstr "luokan tasot"
 
 #: actions/models/category.py
-msgid "parent category"
-msgstr "yläluokka"
-
-#: actions/models/category.py
 msgid "short description"
 msgstr "lyhyt kuvaus"
 
@@ -803,6 +836,14 @@ msgstr "Aseta jos kategorialla on teemaväri"
 #: actions/models/category.py
 msgid "category"
 msgstr "luokka"
+
+#: actions/models/category.py
+msgid "common category"
+msgstr "yleinen luokka"
+
+#: actions/models/category.py
+msgid "parent category"
+msgstr "yläluokka"
 
 #: actions/models/category.py
 msgid "Parent forms a loop. Leave empty if top-level category."
@@ -1149,6 +1190,11 @@ msgstr "Muokkaa"
 #, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
+
+#: admin_site/wagtail.py
+#, python-brace-format
+msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgstr ""
 
 #: admin_site/wagtail.py
 #, python-format
@@ -2055,6 +2101,10 @@ msgid "A date of dissolution"
 msgstr "Lakkauttamispäivämäärä"
 
 #: orgs/models.py
+msgid "Location"
+msgstr "Sijainti"
+
+#: orgs/models.py
 msgid "plan admin"
 msgstr "toimenpideohjelman ylläpitäjä"
 
@@ -2198,6 +2248,14 @@ msgstr "Luokkasivut"
 msgid "lead content"
 msgstr "johdanto"
 
+#: pages/models.py
+msgid "external plan link"
+msgstr "Ulkopuolinen linkki"
+
+#: pages/models.py
+msgid "external plan links"
+msgstr "Ulkopuoliset linkit"
+
 #: pages/wagtail_admin.py
 msgid "More"
 msgstr "Lisää"
@@ -2300,8 +2358,6 @@ msgid "is plan admin"
 msgstr "on pääkäyttäjä"
 
 #: people/wagtail_admin.py
-#, fuzzy
-#| msgid "admins for organization"
 msgid "plan admin organizations"
 msgstr "ylläpitäjät organisaatiolle"
 
@@ -2444,9 +2500,6 @@ msgstr "Käyttäjät"
 #~ msgid "related action"
 #~ msgstr "liittyvä toimenpide"
 
-#~ msgid "related actions"
-#~ msgstr "liittyvät toimenpiteet"
-
 #~ msgctxt "hyphenated"
 #~ msgid "Action attributes"
 #~ msgstr "Toimenpiteiden ominaisuudet"
@@ -2548,9 +2601,6 @@ msgstr "Käyttäjät"
 
 #~ msgid "content page"
 #~ msgstr "sisältösivu"
-
-#~ msgid "content pages"
-#~ msgstr "sisältösivut"
 
 #~ msgid "blog post"
 #~ msgstr "blogikirjoitus"
