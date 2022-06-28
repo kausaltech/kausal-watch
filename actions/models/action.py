@@ -174,7 +174,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         'indicators.Indicator', blank=True, verbose_name=_('indicators'),
         through='indicators.ActionIndicator', related_name='actions'
     )
-    related_actions = models.ManyToManyField('self', blank=True)
+    related_actions = models.ManyToManyField('self', blank=True, verbose_name=_('related actions'))
 
     responsible_organizations = models.ManyToManyField(
         Organization, through='ActionResponsibleParty', blank=True,
