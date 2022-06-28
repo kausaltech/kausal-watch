@@ -233,7 +233,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
         unique_together = (('type', 'identifier'),)
 
     def __str__(self):
-        return self.name
+        return '[%s] %s' % (self.identifier, self.name)
 
     def instantiate_for_category_type(self, category_type):
         """Create category corresponding to this one and set its type to the given one."""

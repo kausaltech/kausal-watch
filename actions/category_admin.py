@@ -473,7 +473,7 @@ class CommonCategoryEditHandler(AplansTabbedInterface):
 class CommonCategoryAdmin(AplansModelAdmin):
     menu_label = _('Common categories')
     menu_order = 1301
-    list_display = ('name', 'type')
+    list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
     add_to_settings_menu = True
