@@ -498,9 +498,11 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('official_name'),
         FieldPanel('name', classname='full title'),
         FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        ImageChooserPanel('image'),
         FieldPanel('lead_paragraph'),
         RichTextFieldPanel('description'),
+    ]
+    basic_related_panels = [
+        ImageChooserPanel('image'),
         CondensedInlinePanel(
             'links',
             panels=[
@@ -630,6 +632,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         all_tabs = []
 
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
         panels = list(self.basic_panels)
         for panel in list(panels):
             field_name = getattr(panel, 'field_name', None)
@@ -655,6 +658,17 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 else:
                     heading = attribute_type.name
                 panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+
+        if is_general_admin:
+            cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
+            cat_panels = []
+            for key, field in cat_fields.items():
+                cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+            if cat_panels:
+                panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
+
+        for panel in self.basic_related_panels:
+            panels.append(panel)
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
@@ -696,21 +710,12 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ], heading=_('Tasks')),
         ]
 
-        is_general_admin = request.user.is_general_admin_for_plan(plan)
-
         internal_panels = list(self.internal_panels)
 
         if is_general_admin:
             internal_panels.append(
                 FieldPanel('internal_admin_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5)))
             )
-            cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
-            cat_panels = []
-            for key, field in cat_fields.items():
-                cat_panels.append(CategoryFieldPanel(key, heading=field.label))
-            if cat_panels:
-                internal_panels.insert(0, MultiFieldPanel(cat_panels, heading=_('Categories')))
-
             if plan.action_impacts.exists():
                 internal_panels.append(PlanFilteredFieldPanel('impact'))
             if plan.action_schedules.exists():
