@@ -12,6 +12,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
+from wagtailsvg.edit_handlers import SvgChooserPanel
 
 from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
 from .attribute_type_admin import get_attribute_fields
@@ -490,6 +491,7 @@ class CommonCategoryAdmin(AplansModelAdmin):
         InlinePanel('icons', heading=_("Icons"), panels=[
             FieldPanel('language'),
             ImageChooserPanel('image'),
+            SvgChooserPanel('svg'),
         ]),
     ]
 

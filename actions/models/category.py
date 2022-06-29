@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.core.exceptions import ValidationError
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _, override
 from modelcluster.fields import ParentalKey
@@ -11,6 +12,7 @@ from modeltrans.fields import TranslationField
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
 from wagtail.core.models import Page
+from wagtailsvg.models import Svg
 
 import reversion
 
@@ -257,26 +259,18 @@ class CommonCategory(CategoryBase, ClusterableModel):
         inherited_values = {field: getattr(self, field) for field in inherited_fields}
         return category_type.categories.create(common=self, **inherited_values, **translated_values)
 
-
-class CommonCategoryIcon(models.Model):
-    common_category = ParentalKey(
-        CommonCategory, on_delete=models.CASCADE, related_name='icons',
-        verbose_name=_('category')
-    )
-    language = models.CharField(max_length=20, choices=get_supported_languages(), null=True, blank=True)
-    image = models.ForeignKey(
-        'images.AplansImage', on_delete=models.CASCADE, related_name='+'
-    )
-
-    public_fields = [
-        'common_category', 'language', 'image',
-    ]
-
-    class Meta:
-        unique_together = (('common_category', 'language'),)
-
-    def __str__(self):
-        return '%s [%s]' % (self.common_category, self.language)
+    def get_icon(self, language=None):
+        """Get CommonCategoryIcon in the given language, falling back to an icon without a language."""
+        if language is None:
+            try:
+                return self.icons.get(language__isnull=True)
+            except CommonCategoryIcon.DoesNotExist:
+                return None
+        # At this point, language is not None
+        try:
+            return self.icons.get(language=language)
+        except CommonCategoryIcon.DoesNotExist:
+            return self.get_icon(language=None)
 
 
 class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
@@ -392,11 +386,75 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
         else:
             return self.name
 
+    def _get_icon_without_fallback_to_common_category(self, language=None):
+        if language is None:
+            try:
+                return self.icons.get(language__isnull=True)
+            except CategoryIcon.DoesNotExist:
+                return None
+        # At this point, language is not None
+        try:
+            return self.icons.get(language=language)
+        except CategoryIcon.DoesNotExist:
+            return self._get_icon_without_fallback_to_common_category(language=None)
 
-class CategoryIcon(models.Model):
-    category = models.OneToOneField(Category, on_delete=models.CASCADE, related_name='icon')
-    data = models.TextField()
+    def get_icon(self, language=None):
+        """Get CategoryIcon in the given language, falling back to no language and the common category's icon.
+
+        If self has an icon (no matter the language, if any), does not fall back to the common category's icon.
+        Otherwise falls back to the common category's icon in the requested language and finally to the common
+        category's icon without a language.
+        """
+        if self.icons.exists():
+            return self._get_icon_without_fallback_to_common_category(language)
+        if self.common:
+            return self.common.get_icon(language)
+        return None
+
+
+class Icon(models.Model):
+    # When subclassing, remember to set Meta.constraints = Icon.Meta.constraints
+    svg = models.ForeignKey(Svg, blank=True, null=True, on_delete=models.CASCADE, related_name='+')
+    image = models.ForeignKey('images.AplansImage', blank=True, null=True, on_delete=models.CASCADE, related_name='+')
+    language = models.CharField(max_length=20, choices=get_supported_languages(), null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def clean(self):
+        if (self.svg and self.image) or (not self.svg and not self.image):
+            error = _('Either SVG or image must be set')
+            raise ValidationError({'svg': error, 'image': error})
+
+    class Meta:
+        abstract = True
+        constraints = [
+            # svg XOR image must be set
+            models.CheckConstraint(
+                check=(Q(svg__isnull=True) & Q(image__isnull=False)) | (Q(svg__isnull=False) & Q(image__isnull=True)),
+                name='%(app_label)s_%(class)s_svg_xor_image'
+            ),
+        ]
+
+
+class CommonCategoryIcon(Icon):
+    common_category = ParentalKey(
+        CommonCategory, on_delete=models.CASCADE, related_name='icons',
+        verbose_name=_('common category')
+    )
+
+    class Meta:
+        unique_together = (('common_category', 'language'),)
+        constraints = Icon.Meta.constraints
+
     def __str__(self):
-        return 'Icon for %s' % self.category
+        return '%s [%s]' % (self.common_category, self.language)
+
+
+class CategoryIcon(Icon):
+    category = ParentalKey(Category, on_delete=models.CASCADE, related_name='icons', verbose_name=_('category'))
+
+    class Meta:
+        unique_together = (('category', 'language'),)
+        constraints = Icon.Meta.constraints
+
+    def __str__(self):
+        return '%s [%s]' % (self.category, self.language)

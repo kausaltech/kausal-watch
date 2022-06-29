@@ -6,7 +6,6 @@ from graphene_django.converter import convert_django_field_with_choices
 import graphene_django_optimizer as gql_optimizer
 from django.db.models import Q, Prefetch
 from django.forms import ModelForm
-from django.urls.base import reverse
 from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
@@ -20,9 +19,8 @@ from actions.models import (
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario, CommonCategory, CommonCategoryIcon, CommonCategoryType
+    Scenario, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
-from aplans.types import WatchAPIRequest
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
@@ -371,7 +369,8 @@ class CategoryNode(AttributesMixin, DjangoNode):
     attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
     actions = graphene.List('actions.schema.ActionNode')
-    icon_url = graphene.String()
+    icon_image = graphene.Field('images.schema.ImageNode')
+    icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
 
     def resolve_image(self, info):
@@ -400,17 +399,6 @@ class CategoryNode(AttributesMixin, DjangoNode):
         return self.action_set.all()
 
     @gql_optimizer.resolver_hints(
-        select_related=('icon',)
-    )
-    def resolve_icon_url(self, info):
-        if not hasattr(self, 'icon'):
-            return None
-        request = info.context
-        path = reverse('category-icon', kwargs=dict(id=self.icon.id)) + '?%s' % int(self.icon.updated_at.timestamp())
-        uri = request.build_absolute_uri(path)
-        return uri
-
-    @gql_optimizer.resolver_hints(
         prefetch_related=get_translated_category_page
     )
     def resolve_category_page(self, info):
@@ -426,27 +414,39 @@ class CategoryNode(AttributesMixin, DjangoNode):
         except CategoryPage.DoesNotExist:
             return None
 
+    def resolve_icon_image(root, info):
+        icon = root.get_icon(get_language())
+        if icon:
+            return icon.image
+        return None
+
+    def resolve_icon_svg_url(root, info):
+        icon = root.get_icon(get_language())
+        if icon and icon.svg:
+            return info.context.build_absolute_uri(icon.svg.file.url)
+        return None
+
     class Meta:
         model = Category
         fields = public_fields(Category, add_fields=['level', 'icon_url'])
 
 
 @register_django_node
-class CommonCategoryIconNode(DjangoNode):
-    class Meta:
-        model = CommonCategoryIcon
-        fields = public_fields(CommonCategoryIcon)
-
-
-@register_django_node
 class CommonCategoryNode(DjangoNode):
-    icon = graphene.Field(CommonCategoryIconNode, required=False)
+    icon_image = graphene.Field('images.schema.ImageNode')
+    icon_svg_url = graphene.String()
 
-    def resolve_icon(root, info):
-        try:
-            return root.icons.get(language=get_language())
-        except CommonCategoryIcon.DoesNotExist:
-            return None
+    def resolve_icon_image(root, info):
+        icon = root.get_icon(get_language())
+        if icon:
+            return icon.image
+        return None
+
+    def resolve_icon_svg_url(root, info):
+        icon = root.get_icon(get_language())
+        if icon and icon.svg:
+            return info.context.build_absolute_uri(icon.svg.file.url)
+        return None
 
     class Meta:
         model = CommonCategory

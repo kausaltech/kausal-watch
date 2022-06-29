@@ -14,10 +14,14 @@ def remove_default_site_summary_items(hooks):
     from wagtail.documents.wagtail_hooks import add_documents_summary_item
     from wagtail.images.wagtail_hooks import add_images_summary_item
     from wagtail.admin.wagtail_hooks import add_pages_summary_item
+    from wagtailsvg.wagtail_hooks import add_svg_summary_item
 
+    hooks_to_remove = [
+        add_documents_summary_item, add_images_summary_item, add_pages_summary_item, add_svg_summary_item
+    ]
     summary_hooks = hooks._hooks['construct_homepage_summary_items']
     for item in list(summary_hooks):
-        if item[0] in (add_documents_summary_item, add_images_summary_item, add_pages_summary_item):
+        if item[0] in hooks_to_remove:
             summary_hooks.remove(item)
 
 

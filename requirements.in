@@ -64,3 +64,4 @@ drf-nested-routers
 celery
 drf-spectacular
 wagtailgeowidget
+wagtailsvg

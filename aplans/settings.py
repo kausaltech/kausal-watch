@@ -124,6 +124,7 @@ INSTALLED_APPS = [
     'wagtail.search',
     'wagtail.admin',
     'wagtail.core',
+    'wagtailsvg',
     'wagtail.contrib.modeladmin',
     'wagtail_localize',
     'wagtail_localize.locales',  # replaces `wagtail.locales`
