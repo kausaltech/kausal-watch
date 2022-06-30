@@ -10,7 +10,7 @@ from . import wagtail_admin  # noqa
 
 class ActionsSummaryItem(SummaryItem):
     order = 200
-    template = 'site_summary/actions.html'
+    template_name = 'site_summary/actions.html'
     request: WatchAdminRequest
 
     def get_context_data(self, parent_context: Mapping[str, Any]) -> Mapping[str, Any]:

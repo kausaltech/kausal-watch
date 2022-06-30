@@ -428,7 +428,7 @@ class CategoryNode(AttributesMixin, DjangoNode):
 
     class Meta:
         model = Category
-        fields = public_fields(Category, add_fields=['level', 'icon_url'])
+        fields = public_fields(Category, add_fields=['level', 'icon_image', 'icon_svg_url'])
 
 
 @register_django_node
