@@ -323,6 +323,16 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     heading = attribute_type.name
                 panels.append(AttributeFieldPanel(form_field_name, heading=heading))
 
+        if request.user.is_superuser:
+            # Didn't use CondensedInlinePanel for the following because there is a bug:
+            # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
+            # and only if the inline instance is collapsed.
+            panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
+                FieldPanel('language'),
+                ImageChooserPanel('image'),
+                SvgChooserPanel('svg'),
+            ]))
+
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)
@@ -485,14 +495,6 @@ class CommonCategoryAdmin(AplansModelAdmin):
         FieldPanel('short_description'),
         ImageChooserPanel('image'),
         FieldPanel('color'),
-        # Didn't use CondensedInlinePanel for the following because there is a bug:
-        # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if and
-        # only if the inline instance is collapsed.
-        InlinePanel('icons', heading=_("Icons"), panels=[
-            FieldPanel('language'),
-            ImageChooserPanel('image'),
-            SvgChooserPanel('svg'),
-        ]),
     ]
 
     create_view_class = CommonCategoryCreateView
@@ -506,6 +508,17 @@ class CommonCategoryAdmin(AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         panels = list(self.panels)
+
+        if request.user.is_superuser:
+            # Didn't use CondensedInlinePanel for the following because there is a bug:
+            # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
+            # and only if the inline instance is collapsed.
+            panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
+                FieldPanel('language'),
+                ImageChooserPanel('image'),
+                SvgChooserPanel('svg'),
+            ]))
+
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(
