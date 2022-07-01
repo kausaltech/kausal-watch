@@ -110,6 +110,7 @@ INSTALLED_APPS = [
     'import_export',
     'anymail',
     'modeltrans',
+    'corsheaders',
 
     'wagtail.contrib.forms',
     'wagtail.contrib.redirects',
@@ -338,7 +339,7 @@ SPECTACULAR_SETTINGS = {
 }
 
 
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = list(default_cors_headers) + [
     'sentry-trace',
     'x-cache-plan-identifier',
