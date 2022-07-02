@@ -1,7 +1,7 @@
 version: '3.8'
 x-django-environment: &django-environment
   - ENV_FILE
-  - DATABASE_URL=${DATABASE_URL:-postgis://watch:watchpass@db/watch}
+  - DATABASE_URL
   - CACHE_URL=rediscache://redis:6379
   - STATIC_ROOT=/srv/static
   - LC_CTYPE=C.UTF-8
@@ -44,7 +44,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=watch
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-watchpass}
+      - POSTGRES_PASSWORD
     volumes:
       - db_data:/var/lib/postgresql/data/
 
