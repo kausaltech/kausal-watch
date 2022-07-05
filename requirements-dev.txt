@@ -12,10 +12,10 @@ click==7.1.2
     # via pip-tools
 decorator==4.4.2
     # via ipython
-ipython-genutils==0.2.0
-    # via traitlets
 ipython==7.19.0
     # via -r requirements-dev.in
+ipython-genutils==0.2.0
+    # via traitlets
 isort==5.7.0
     # via -r requirements-dev.in
 jedi==0.17.2
@@ -60,7 +60,7 @@ toml==0.10.2
     #   autopep8
 traitlets==5.0.5
     # via ipython
-ujson==4.0.1
+ujson==5.4.0
     # via
     #   python-jsonrpc-server
     #   python-language-server
