@@ -110,7 +110,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
-    public_fields = ['identifier', 'name']
+    public_fields = ['id', 'identifier', 'name']
 
     class Meta:
         unique_together = (('type', 'identifier'), ('type', 'order'),)

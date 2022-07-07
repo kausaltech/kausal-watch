@@ -319,10 +319,26 @@ class ActionContactPersonSerializer(serializers.Serializer):
         instance.set_contact_persons(validated_data)
 
 
+class AttributeChoiceSerializer(serializers.Serializer):
+    def to_representation(self, value):
+        return {v.type.identifier: v.choice_id for v in value.all()}
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert isinstance(instance, Action)
+        assert instance.pk is not None
+        for attribute_type_identifier, choice_id in validated_data.items():
+            instance.set_choice_attribute(attribute_type_identifier, choice_id)
+
+
 class ActionSerializer(PlanRelatedModelSerializer):
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False)
     contact_persons = ActionContactPersonSerializer(required=False)
+    choice_attributes = AttributeChoiceSerializer(required=False)
+    # TODO: Other attributes
 
     def get_fields(self):
         fields = super().get_fields()
@@ -382,6 +398,7 @@ class ActionSerializer(PlanRelatedModelSerializer):
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
+        choice_attributes = validated_data.pop('choice_attributes', None)
         instance = super().create(validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
@@ -389,12 +406,15 @@ class ActionSerializer(PlanRelatedModelSerializer):
             self.fields['responsible_parties'].update(instance, responsible_parties)
         if contact_persons is not None:
             self.fields['contact_persons'].update(instance, contact_persons)
+        if choice_attributes is not None:
+            self.fields['choice_attributes'].update(instance, choice_attributes)
         return instance
 
     def update(self, instance, validated_data):
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
+        choice_attributes = validated_data.pop('choice_attributes', None)
         validated_data.pop('plan', None)
         instance = super().update(instance, validated_data)
         if categories is not None:
@@ -403,6 +423,8 @@ class ActionSerializer(PlanRelatedModelSerializer):
             self.fields['responsible_parties'].update(instance, responsible_parties)
         if contact_persons is not None:
             self.fields['contact_persons'].update(instance, contact_persons)
+        if choice_attributes is not None:
+            self.fields['choice_attributes'].update(instance, choice_attributes)
         return instance
 
     class Meta:
