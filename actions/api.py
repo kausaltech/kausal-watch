@@ -333,6 +333,20 @@ class AttributeChoiceSerializer(serializers.Serializer):
             instance.set_choice_attribute(attribute_type_identifier, choice_id)
 
 
+class AttributeChoiceWithTextSerializer(serializers.Serializer):
+    def to_representation(self, value):
+        return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in value.all()}
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert isinstance(instance, Action)
+        assert instance.pk is not None
+        for attribute_type_identifier, item in validated_data.items():
+            instance.set_choice_with_text_attribute(attribute_type_identifier, item['choice'], item['text'])
+
+
 class AttributeNumericValueSerializer(serializers.Serializer):
     def to_representation(self, value):
         return {v.type.identifier: v.value for v in value.all()}
@@ -347,13 +361,28 @@ class AttributeNumericValueSerializer(serializers.Serializer):
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
 
 
+class AttributeRichTextSerializer(serializers.Serializer):
+    def to_representation(self, value):
+        return {v.type.identifier: v.text for v in value.all()}
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert isinstance(instance, Action)
+        assert instance.pk is not None
+        for attribute_type_identifier, value in validated_data.items():
+            instance.set_rich_text_attribute(attribute_type_identifier, value)
+
+
 class ActionSerializer(PlanRelatedModelSerializer):
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False)
     contact_persons = ActionContactPersonSerializer(required=False)
     choice_attributes = AttributeChoiceSerializer(required=False)
+    choice_with_text_attributes = AttributeChoiceWithTextSerializer(required=False)
     numeric_value_attributes = AttributeNumericValueSerializer(required=False)
-    # TODO: Other attributes
+    rich_text_attributes = AttributeRichTextSerializer(required=False)
 
     def get_fields(self):
         fields = super().get_fields()
@@ -414,7 +443,9 @@ class ActionSerializer(PlanRelatedModelSerializer):
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
         choice_attributes = validated_data.pop('choice_attributes', None)
+        choice_with_text_attributes = validated_data.pop('choice_with_text_attributes', None)
         numeric_value_attributes = validated_data.pop('numeric_value_attributes', None)
+        rich_text_attributes = validated_data.pop('numeririch_text_attributes', None)
         instance = super().create(validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
@@ -424,8 +455,12 @@ class ActionSerializer(PlanRelatedModelSerializer):
             self.fields['contact_persons'].update(instance, contact_persons)
         if choice_attributes is not None:
             self.fields['choice_attributes'].update(instance, choice_attributes)
+        if choice_with_text_attributes is not None:
+            self.fields['choice_with_text_attributes'].update(instance, choice_with_text_attributes)
         if numeric_value_attributes is not None:
             self.fields['numeric_value_attributes'].update(instance, numeric_value_attributes)
+        if rich_text_attributes is not None:
+            self.fields['rich_text_attributes'].update(instance, rich_text_attributes)
         return instance
 
     def update(self, instance, validated_data):
@@ -433,7 +468,9 @@ class ActionSerializer(PlanRelatedModelSerializer):
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
         choice_attributes = validated_data.pop('choice_attributes', None)
+        choice_with_text_attributes = validated_data.pop('choice_with_text_attributes', None)
         numeric_value_attributes = validated_data.pop('numeric_value_attributes', None)
+        rich_text_attributes = validated_data.pop('rich_text_attributes', None)
         validated_data.pop('plan', None)
         instance = super().update(instance, validated_data)
         if categories is not None:
@@ -444,8 +481,12 @@ class ActionSerializer(PlanRelatedModelSerializer):
             self.fields['contact_persons'].update(instance, contact_persons)
         if choice_attributes is not None:
             self.fields['choice_attributes'].update(instance, choice_attributes)
+        if choice_with_text_attributes is not None:
+            self.fields['choice_with_text_attributes'].update(instance, choice_with_text_attributes)
         if numeric_value_attributes is not None:
             self.fields['numeric_value_attributes'].update(instance, numeric_value_attributes)
+        if rich_text_attributes is not None:
+            self.fields['rich_text_attributes'].update(instance, rich_text_attributes)
         return instance
 
     class Meta:

@@ -255,8 +255,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
-        'impact_groups', 'monitoring_quality_points', 'implementation_phase',
-        'manual_status_reason', 'links', 'primary_org', 'order', 'choice_attributes', 'numeric_value_attributes',
+        'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
+        'primary_org', 'order', 'choice_attributes',  'choice_with_text_attributes', 'numeric_value_attributes',
+        'rich_text_attributes',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
@@ -469,6 +470,26 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
                 existing_attribute.choice_id = choice_option_id
                 existing_attribute.save()
 
+    def set_choice_with_text_attribute(self, type, choice_option_id, text):
+        if isinstance(type, str):
+            type = self.plan.action_attribute_types.get(identifier=type)
+        try:
+            existing_attribute = self.choice_with_text_attributes.get(type=type)
+        except self.choice_with_text_attributes.model.DoesNotExist:
+            if choice_option_id is not None or text:
+                self.choice_with_text_attributes.create(
+                    type=type,
+                    choice_id=choice_option_id,
+                    text=text,
+                )
+        else:
+            if choice_option_id is None and not text:
+                existing_attribute.delete()
+            else:
+                existing_attribute.choice_id = choice_option_id
+                existing_attribute.text = text
+                existing_attribute.save()
+
     def set_numeric_value_attribute(self, type, value):
         if isinstance(type, str):
             type = self.plan.action_attribute_types.get(identifier=type)
@@ -482,6 +503,21 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
                 existing_attribute.delete()
             else:
                 existing_attribute.value = value
+                existing_attribute.save()
+
+    def set_rich_text_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.plan.action_attribute_types.get(identifier=type)
+        try:
+            existing_attribute = self.rich_text_attributes.get(type=type)
+        except self.rich_text_attributes.model.DoesNotExist:
+            if value is not None:
+                self.rich_text_attributes.create(type=type, text=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.text = value
                 existing_attribute.save()
 
     def set_responsible_parties(self, organization_ids):
