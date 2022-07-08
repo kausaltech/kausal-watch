@@ -256,7 +256,7 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase',
-        'manual_status_reason', 'links', 'primary_org', 'order', 'choice_attributes',
+        'manual_status_reason', 'links', 'primary_org', 'order', 'choice_attributes', 'numeric_value_attributes',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
@@ -457,18 +457,32 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     def set_choice_attribute(self, type, choice_option_id):
         if isinstance(type, str):
             type = self.plan.action_attribute_types.get(identifier=type)
-
         try:
-            existing_choice = self.choice_attributes.get(type=type)
+            existing_attribute = self.choice_attributes.get(type=type)
         except self.choice_attributes.model.DoesNotExist:
             if choice_option_id is not None:
                 self.choice_attributes.create(type=type, choice_id=choice_option_id)
         else:
             if choice_option_id is None:
-                existing_choice.delete()
+                existing_attribute.delete()
             else:
-                existing_choice.choice_id = choice_option_id
-                existing_choice.save()
+                existing_attribute.choice_id = choice_option_id
+                existing_attribute.save()
+
+    def set_numeric_value_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.plan.action_attribute_types.get(identifier=type)
+        try:
+            existing_attribute = self.numeric_value_attributes.get(type=type)
+        except self.numeric_value_attributes.model.DoesNotExist:
+            if value is not None:
+                self.numeric_value_attributes.create(type=type, value=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.value = value
+                existing_attribute.save()
 
     def set_responsible_parties(self, organization_ids):
         existing_orgs = set((p.organization for p in self.responsible_parties.all()))
