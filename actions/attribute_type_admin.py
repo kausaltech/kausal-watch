@@ -267,7 +267,7 @@ def get_attribute_fields(attribute_types, obj, with_initial=False):
         elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
             initial_text = None
             if with_initial:
-                val_obj = (attribute_type.richtext_attributes
+                val_obj = (attribute_type.rich_text_attributes
                            .filter(content_type=content_type, object_id=obj.id)
                            .first())
                 if val_obj is not None:

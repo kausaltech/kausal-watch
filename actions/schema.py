@@ -355,7 +355,7 @@ class AttributesMixin:
         if id is not None:
             query = Q(type__identifier=id)
         attributes = chain(
-            self.richtext_attributes.filter(query),
+            self.rich_text_attributes.filter(query),
             self.choice_attributes.filter(query),
             self.choice_with_text_attributes.filter(query),
             self.numeric_value_attributes.filter(query)

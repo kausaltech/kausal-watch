@@ -75,8 +75,8 @@ class AttributeType(ClusterableModel, OrderedModel):
         elif self.format == self.AttributeFormat.RICH_TEXT:
             val = vals.get('text')
             try:
-                obj = self.richtext_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.richtext_attributes.model.DoesNotExist:
+                obj = self.rich_text_attributes.get(content_type=content_type, object_id=obj.id)
+            except self.rich_text_attributes.model.DoesNotExist:
                 if val:
                     obj = AttributeRichText.objects.create(type=self, content_object=obj, text=val)
             else:
@@ -169,7 +169,7 @@ class AttributeRichText(models.Model):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
-        related_name='richtext_attributes',
+        related_name='rich_text_attributes',
     )
 
     # `content_object` must fit `type`

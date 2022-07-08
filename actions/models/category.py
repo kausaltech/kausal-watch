@@ -300,7 +300,7 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
         to='actions.AttributeChoiceWithText',
         related_query_name='category',
     )
-    richtext_attributes = GenericRelation(
+    rich_text_attributes = GenericRelation(
         to='actions.AttributeRichText',
         related_query_name='category',
     )
