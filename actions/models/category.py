@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models, transaction
 from django.db.models import Q
@@ -11,7 +12,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
-from wagtail.core.models import Page
+from wagtail.core.models import Page, Collection
 from wagtailsvg.models import Svg
 
 import reversion
@@ -58,6 +59,15 @@ class CategoryTypeBase(models.Model):
 
 @reversion.register()
 class CommonCategoryType(CategoryTypeBase):
+    has_collection = models.BooleanField(
+        default=False, verbose_name=_('has a collection'),
+        help_text=_('Set if this category type should have its own collection for images')
+    )
+    # collection for photos and icons
+    collection = models.OneToOneField(
+        Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='common_category_type',
+    )
+
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
     i18n = TranslationField(fields=('name',), default_language_field='primary_language')
 
@@ -96,6 +106,18 @@ class CommonCategoryType(CategoryTypeBase):
         inherited_fields = [f.name for f in CategoryTypeBase._meta.fields if f.name not in translated_fields]
         inherited_values = {field: getattr(self, field) for field in inherited_fields}
         return plan.category_types.create(common=self, **inherited_values, **translated_values)
+
+    def save(self, *args, **kwargs):
+        ret = super().save(*args, **kwargs)
+        if self.has_collection and self.collection is None:
+            with transaction.atomic():
+                ct_coll = Collection.objects.filter(name=settings.COMMON_CATEGORY_COLLECTION).first()
+                if ct_coll is None:
+                    ct_coll = Collection.get_first_root_node().add_child(name=settings.COMMON_CATEGORY_COLLECTION)
+                obj = ct_coll.add_child(name=self.name)
+                self.collection = obj
+                self.save(update_fields=['collection'])
+        return ret
 
 
 @reversion.register()

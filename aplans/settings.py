@@ -561,6 +561,8 @@ ADMIN_WILDCARD_DOMAIN = env('ADMIN_WILDCARD_DOMAIN')
 
 GOOGLE_MAPS_V3_APIKEY = env('GOOGLE_MAPS_V3_APIKEY')
 
+COMMON_CATEGORIES_COLLECTION = 'Common Categories'
+
 
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     INSTALLED_APPS.append('kausal_watch_extensions')

@@ -65,7 +65,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
                 FieldPanel('usable_for_indicators'),
                 FieldPanel('editable_for_indicators'),
             ]),
-        ], heading=_('Action and indicator categorization'), classname='collapsible collapsed'),
+        ], heading=_('Action and indicator categorization'), classname='collapsible'),
         CondensedInlinePanel('levels', panels=[
             FieldPanel('name',),
             FieldPanel('name_plural',)
@@ -374,6 +374,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('primary_language'),
         FieldPanel('select_widget'),
+        FieldPanel('has_collection'),
         MultiFieldPanel([
             FieldRowPanel([
                 FieldPanel('usable_for_actions'),
@@ -383,7 +384,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
                 FieldPanel('usable_for_indicators'),
                 FieldPanel('editable_for_indicators'),
             ]),
-        ], heading=_('Action and indicator categorization'), classname='collapsible collapsed'),
+        ], heading=_('Action and indicator categorization'), classname='collapsible'),
     ]
 
     def get_edit_handler(self, instance, request):

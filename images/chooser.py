@@ -11,18 +11,16 @@ def get_context_data(self):
     if plan.root_collection is not None:
         collections = plan.root_collection.get_descendants(inclusive=True)
     else:
-        collections = []
+        collections = Collection.objects.none()
+
+    if self.request.user.is_superuser:
+        collections |= Collection.objects.filter(common_category_type__isnull=False)
 
     if len(collections) < 2:
         collections = None
-    else:
-        collections = collections.annotate(
-            display_order=Case(
-                When(depth=1, then=Value('')),
-                default='name')
-        ).order_by('display_order')
-
     ret['collections'] = collections
+    if 'popular_tags' in ret:
+        ret['popular_tags'] = []
     return ret
 
 
