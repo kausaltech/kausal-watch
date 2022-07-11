@@ -1,12 +1,14 @@
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import IdentifierField, OrderedModel
+from indicators.models import Unit
 
 
 @reversion.register()
@@ -31,15 +33,23 @@ class AttributeType(ClusterableModel, OrderedModel):
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
+    unit = models.ForeignKey(
+        Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
+        verbose_name=_('Unit (only if format is numeric)'),
+    )
 
     public_fields = [
-        'identifier', 'name', 'format', 'choice_options'
+        'identifier', 'name', 'format', 'unit', 'choice_options'
     ]
 
     class Meta:
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
         verbose_name = _('attribute type')
         verbose_name_plural = _('attribute types')
+
+    def clean(self):
+        if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
+            raise ValidationError({'unit': _('Unit must only be used for numeric attribute types')})
 
     def set_value(self, obj, vals):
         # TODO: Remove equivalent from category.py

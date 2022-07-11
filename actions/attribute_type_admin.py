@@ -160,6 +160,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('format'),
+        FieldPanel('unit'),
         CondensedInlinePanel('choice_options', panels=[
             FieldPanel('name'),
             FieldPanel('identifier'),
