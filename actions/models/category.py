@@ -384,9 +384,13 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
                 # page = parent.get_children().type(CategoryPage).get(category=self)
             except CategoryPage.DoesNotExist:
                 is_root = self.parent is None
+                body = [('action_list', {'category_filter': self})]
+                if self.children.exists():
+                    # TODO: Make heading customizable
+                    category_list_block = ('category_list', {'heading': _("Subcategories"), 'style': 'cards'})
+                    body.insert(0, category_list_block)
                 page = CategoryPage(
-                    category=self, title=self.name_i18n, show_in_menus=is_root, show_in_footer=is_root,
-                    body=[('action_list', {'category_filter': self})]
+                    category=self, title=self.name_i18n, show_in_menus=is_root, show_in_footer=is_root, body=body,
                 )
                 parent.add_child(instance=page)
             else:
