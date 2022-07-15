@@ -4,11 +4,16 @@ from rest_framework.test import APIClient
 from django.urls import reverse
 from pytest_factoryboy import register
 
-from .factories import ActionFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+from .factories import (
+    ActionFactory, CategoryFactory, CategoryTypeFactory, CommonCategoryFactory, CommonCategoryTypeFactory,
+    PlanFactory
+)
 
 register(ActionFactory)
 register(CategoryFactory)
 register(CategoryTypeFactory)
+register(CommonCategoryFactory)
+register(CommonCategoryTypeFactory)
 register(PlanFactory)
 # register(UserFactory)
 

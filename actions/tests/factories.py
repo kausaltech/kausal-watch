@@ -74,6 +74,15 @@ class ActionImpactFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Action impact {i}")
 
 
+class CommonCategoryTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CommonCategoryType'
+
+    primary_language = 'en'
+    identifier = Sequence(lambda i: f'cct{i}')
+    name = Sequence(lambda i: f"Common category type {i}")
+
+
 class CategoryTypeFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CategoryType'
@@ -81,6 +90,7 @@ class CategoryTypeFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'ct{i}')
     name = Sequence(lambda i: f"Category type {i}")
+    common = SubFactory(CommonCategoryTypeFactory)
     synchronize_with_pages = False
 
 
@@ -107,6 +117,17 @@ class AttributeTypeChoiceOptionFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Attribute type choice option {i}")
 
 
+class CommonCategoryFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.CommonCategory'
+
+    type = SubFactory(CommonCategoryTypeFactory)
+    identifier = Sequence(lambda i: f'categorytype{i}')
+    name = Sequence(lambda i: f"Category type {i}")
+    name_fi = Sequence(lambda i: f"Category type {i} (FI)")
+    image = SubFactory(AplansImageFactory)
+
+
 class CategoryFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.Category'
@@ -116,6 +137,7 @@ class CategoryFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category {i}")
     name_fi = Sequence(lambda i: f"Category {i} (FI)")
     image = SubFactory(AplansImageFactory)
+    common = SubFactory(CommonCategoryFactory)
 
 
 class AttributeRichTextFactory(DjangoModelFactory):

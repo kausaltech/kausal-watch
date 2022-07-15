@@ -506,6 +506,9 @@ def test_attribute_type_choice_option_node(
     assert data == expected
 
 
+# TODO: test_common_category_type_node
+
+
 def test_category_type_node(
     graphql_client_query_data, plan, category_type, category, category_level, attribute_type__rich_text
 ):
@@ -526,6 +529,9 @@ def test_category_type_node(
               usableForIndicators
               editableForActions
               editableForIndicators
+              common {
+                __typename
+              }
               levels {
                 __typename
               }
@@ -555,6 +561,9 @@ def test_category_type_node(
                 'usableForIndicators': category_type.usable_for_indicators,
                 'editableForActions': category_type.editable_for_actions,
                 'editableForIndicators': category_type.editable_for_indicators,
+                'common': {
+                    '__typename': 'CommonCategoryType'
+                },
                 'levels': [{
                     '__typename': 'CategoryLevel'
                 }],
@@ -568,6 +577,9 @@ def test_category_type_node(
         }]
     }
     assert data == expected
+
+
+# TODO: test_common_category_node
 
 
 def test_category_node(
