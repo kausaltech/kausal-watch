@@ -88,7 +88,7 @@ def register_common_category_menu():
         _('Common categories'),
         common_category_menu,
         classnames='icon icon-folder-open-inverse',
-        order=101
+        order=110
     )
 
 
@@ -128,7 +128,7 @@ def register_attribute_type_menu():
         _('Attributes'),
         attribute_type_menu,
         classnames='icon icon-tag',
-        order=101,
+        order=120,
     )
 
 

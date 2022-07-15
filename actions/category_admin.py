@@ -269,7 +269,6 @@ class CategoryAdminMenuItem(ModelAdminMenuItem):
 @modeladmin_register
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
-    menu_order = 1300
     list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
@@ -484,7 +483,6 @@ class CommonCategoryEditHandler(AplansTabbedInterface):
 @modeladmin_register
 class CommonCategoryAdmin(AplansModelAdmin):
     menu_label = _('Common categories')
-    menu_order = 1301
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
