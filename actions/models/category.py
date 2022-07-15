@@ -153,7 +153,7 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     categories: models.QuerySet[Category]
 
     public_fields = CategoryTypeBase.public_fields + [
-        'id', 'plan', 'levels', 'categories', 'attribute_types', 'hide_category_identifiers'
+        'id', 'plan', 'common', 'levels', 'categories', 'hide_category_identifiers'
     ]
 
     class Meta:
@@ -234,7 +234,7 @@ class CategoryBase(OrderedModel):
     )
 
     public_fields = [
-        'identifier', 'name', 'short_description', 'image', 'color'
+        'id', 'identifier', 'name', 'short_description', 'image', 'color'
     ]
 
     class Meta:
@@ -331,9 +331,8 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
         related_query_name='category',
     )
 
-    public_fields = [
-        'id', 'type', 'order', 'identifier', 'common', 'external_identifier', 'name', 'parent', 'short_description',
-        'color', 'children', 'category_pages', 'indicators',
+    public_fields = CategoryBase.public_fields + [
+        'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
     ]
 
     class Meta:

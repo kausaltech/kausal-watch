@@ -19,7 +19,7 @@ from actions.models import (
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
     CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
+    Scenario, CommonCategory, CommonCategoryType
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -52,6 +52,7 @@ class PlanNode(DjangoNode):
     serve_file_base_url = graphene.String(required=True)
     primary_language = graphene.String(required=True)
     pages = graphene.List(PageInterface)
+    category_type = graphene.Field('actions.schema.CategoryTypeNode', id=graphene.ID(required=True))
     category_types = graphene.List(
         'actions.schema.CategoryTypeNode',
         usable_for_indicators=graphene.Boolean(),
@@ -85,6 +86,9 @@ class PlanNode(DjangoNode):
 
     def resolve_last_action_identifier(self: Plan, info):
         return self.get_last_action_identifier()
+
+    def resolve_category_type(self, info, id):
+        return self.category_types.get(id=id)
 
     @gql_optimizer.resolver_hints(
         model_field='category_types',

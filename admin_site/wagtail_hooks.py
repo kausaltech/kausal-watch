@@ -1,7 +1,6 @@
 from typing import Any
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.template.loader import render_to_string
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html

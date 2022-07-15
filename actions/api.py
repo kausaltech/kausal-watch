@@ -572,35 +572,134 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
         fields = '__all__'
 
 
+class CategoryPermission(permissions.DjangoObjectPermissions):
+    # TODO: Refactor duplicated code with ActionPermission
+    def check_category_permission(self, user: User, perm: str, category_type: CategoryType, category: Category = None):
+        # Check for object permissions first
+        if not user.has_perms([perm]):
+            return False
+        if perm == 'actions.change_category':
+            if not user.can_modify_category(category=category):
+                return False
+        elif perm == 'actions.add_category':
+            if not user.can_create_category(category_type=category_type):
+                return False
+        elif perm == 'actions.delete_category':
+            if not user.can_delete_category(category_type=category_type):
+                return False
+        else:
+            return False
+        return True
+
+    def has_permission(self, request: AuthenticatedWatchRequest, view):
+        category_type_pk = view.kwargs.get('category_type_pk')
+        if category_type_pk:
+            category_type = CategoryType.objects.filter(id=category_type_pk).first()
+            if category_type is None:
+                raise exceptions.NotFound(detail='Category type not found')
+        else:
+            category_type = CategoryType.objects.live().first()
+        perms = self.get_required_permissions(request.method, Category)
+        for perm in perms:
+            if not self.check_category_permission(request.user, perm, category_type):
+                return False
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        perms = self.get_required_object_permissions(request.method, Category)
+        if not perms and request.method in permissions.SAFE_METHODS:
+            return True
+        for perm in perms:
+            if not self.check_category_permission(request.user, perm, obj.type, obj):
+                return False
+        return True
+
+
 @register_view
 class CategoryTypeViewSet(viewsets.ModelViewSet):
     queryset = CategoryType.objects.all()
     serializer_class = CategoryTypeSerializer
-    filterset_fields = {
-        'plan': ('exact',),
-        'plan__identifier': ('exact',),
-    }
+
+    def get_serializer(self, *args, **kwargs):
+        if 'plan_pk' not in self.kwargs:
+            plan = PlanViewSet.get_default_plan(request=self.request)
+            kwargs['plan'] = plan
+        return super().get_serializer(*args, **kwargs)
+
+    def get_queryset(self):
+        plan_pk = self.kwargs.get('plan_pk')
+        if not plan_pk:
+            return CategoryType.objects.none()
+        plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
+        if plan is None:
+            raise exceptions.NotFound(detail="Plan not found")
+        return CategoryType.objects.filter(plan=plan_pk)\
+            .prefetch_related('categories')
 
 
-class CategorySerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
-    included_serializers = {
-        'parent': 'actions.api.CategorySerializer',
-    }
+plan_router.register(
+    'category-types', CategoryTypeViewSet, basename='category-type',
+)
+category_type_router = NestedBulkRouter(plan_router, 'category-types', lookup='category_type')
+all_routers.append(category_type_router)
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    def __init__(self, *args, **kwargs):
+        # TODO: Refactor duplicated code from aplans.rest_api.PlanRelatedModelSerializer
+        self.category_type = kwargs.pop('category_type', None)
+        if not self.category_type:
+            context = kwargs.get('context')
+            if context is not None:
+                view = context['view']
+                category_type_pk = view.kwargs['category_type_pk']
+                category_type = CategoryType.objects.filter(pk=category_type_pk).first()
+                if category_type is None:
+                    raise exceptions.NotFound('Category type not found')
+                self.category_type = category_type
+            else:
+                # Probably used for schema generation
+                self.category_type = CategoryType.objects.first()
+        super().__init__(*args, **kwargs)
+
+    def create(self, validated_data: dict):
+        validated_data['type'] = self.category_type
+        instance = super().create(validated_data)
+        return instance
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        # We might want to do some stuff with related objects here
+        return instance
 
     class Meta:
         model = Category
-        fields = '__all__'
+        list_serializer_class = BulkListSerializer
+        fields = public_fields(
+            Category,
+            remove_fields=['category_pages', 'children', 'indicators', 'level']
+        )
+        read_only_fields = ['type']
 
 
-@register_view
-class CategoryViewSet(viewsets.ModelViewSet, ModelWithImageViewMixin):
-    queryset = Category.objects.all()
+class CategoryViewSet(BulkModelViewSet):
     serializer_class = CategorySerializer
-    filterset_fields = {
-        'type': ('exact', 'in'),
-        'type__plan': ('exact',),
-        'type__plan__identifier': ('exact',),
-    }
+
+    def get_permissions(self):
+        if self.action == 'list':
+            permission_classes = [AnonReadOnly]
+        else:
+            permission_classes = [CategoryPermission]
+        return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        category_type_pk = self.kwargs.get('category_type_pk')
+        if not category_type_pk:
+            return Category.objects.none()
+        return Category.objects.filter(type=category_type_pk)
+
+
+category_type_router.register('categories', CategoryViewSet, basename='category')
 
 
 class OrganizationSerializer(serializers.ModelSerializer):

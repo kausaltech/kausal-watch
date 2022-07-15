@@ -257,3 +257,17 @@ class User(AbstractUser):
                     return True
 
         return self.is_contact_person_for_indicator(indicator)
+
+    def can_modify_category(self, category=None):
+        if self.is_superuser:
+            return True
+        if category is None:
+            plan = self.get_active_admin_plan()
+        else:
+            plan = category.type.plan
+        return self.is_general_admin_for_plan(plan)
+
+    def can_create_category(self, category_type):
+        if self.is_superuser:
+            return True
+        return self.is_general_admin_for_plan(category_type.plan)
