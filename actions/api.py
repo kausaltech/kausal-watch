@@ -494,7 +494,10 @@ class ActionSerializer(PlanRelatedModelSerializer):
         list_serializer_class = BulkListSerializer
         fields = public_fields(
             Action,
-            add_fields=['internal_notes', 'internal_admin_notes'],
+            add_fields=[
+                'internal_notes', 'internal_admin_notes', 'choice_attributes', 'choice_with_text_attributes',
+                'numeric_value_attributes', 'rich_text_attributes',
+            ],
             remove_fields=[
                 'impact',
                 'status_updates', 'monitoring_quality_points', 'image',
