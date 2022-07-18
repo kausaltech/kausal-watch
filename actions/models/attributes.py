@@ -1,5 +1,5 @@
 import reversion
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -217,3 +217,83 @@ class AttributeNumericValue(models.Model):
 
     def __str__(self):
         return '%s (%s) for %s' % (self.value, self.type, self.content_object)
+
+
+class ModelWithAttributes(models.Model):
+    """Fields for models with attributes.
+
+    Models inheriting from this should implement the method
+    get_attribute_type_by_identifier(self, identifier).
+    """
+    choice_attributes = GenericRelation(to='actions.AttributeChoice')
+    choice_with_text_attributes = GenericRelation(to='actions.AttributeChoiceWithText')
+    rich_text_attributes = GenericRelation(to='actions.AttributeRichText')
+    numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
+
+    def set_choice_attribute(self, type, choice_option_id):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.choice_attributes.get(type=type)
+        except self.choice_attributes.model.DoesNotExist:
+            if choice_option_id is not None:
+                self.choice_attributes.create(type=type, choice_id=choice_option_id)
+        else:
+            if choice_option_id is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.choice_id = choice_option_id
+                existing_attribute.save()
+
+    def set_choice_with_text_attribute(self, type, choice_option_id, text):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.choice_with_text_attributes.get(type=type)
+        except self.choice_with_text_attributes.model.DoesNotExist:
+            if choice_option_id is not None or text:
+                self.choice_with_text_attributes.create(
+                    type=type,
+                    choice_id=choice_option_id,
+                    text=text,
+                )
+        else:
+            if choice_option_id is None and not text:
+                existing_attribute.delete()
+            else:
+                existing_attribute.choice_id = choice_option_id
+                existing_attribute.text = text
+                existing_attribute.save()
+
+    def set_numeric_value_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.numeric_value_attributes.get(type=type)
+        except self.numeric_value_attributes.model.DoesNotExist:
+            if value is not None:
+                self.numeric_value_attributes.create(type=type, value=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.value = value
+                existing_attribute.save()
+
+    def set_rich_text_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.rich_text_attributes.get(type=type)
+        except self.rich_text_attributes.model.DoesNotExist:
+            if value is not None:
+                self.rich_text_attributes.create(type=type, text=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.text = value
+                existing_attribute.save()
+
+    class Meta:
+        abstract = True

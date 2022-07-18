@@ -21,6 +21,7 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color, get_supported_languages
 )
+from .attributes import ModelWithAttributes
 
 
 class CategoryTypeBase(models.Model):
@@ -295,7 +296,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
             return self.get_icon(language=None)
 
 
-class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
+class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
     type = models.ForeignKey(
@@ -313,23 +314,6 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
     )
 
     i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__plan__primary_language')
-
-    choice_attributes = GenericRelation(
-        to='actions.AttributeChoice',
-        related_query_name='category',
-    )
-    choice_with_text_attributes = GenericRelation(
-        to='actions.AttributeChoiceWithText',
-        related_query_name='category',
-    )
-    rich_text_attributes = GenericRelation(
-        to='actions.AttributeRichText',
-        related_query_name='category',
-    )
-    numeric_value_attributes = GenericRelation(
-        to='actions.AttributeNumericValue',
-        related_query_name='category',
-    )
 
     public_fields = CategoryBase.public_fields + [
         'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
@@ -435,6 +419,9 @@ class Category(CategoryBase, ClusterableModel, PlanRelatedModel):
         if self.common:
             return self.common.get_icon(language)
         return None
+
+    def get_attribute_type_by_identifier(self, identifier):
+        return self.type.attribute_types.get(identifier=identifier)
 
 
 class Icon(models.Model):

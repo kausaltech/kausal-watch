@@ -29,6 +29,7 @@ from orgs.models import Organization
 from users.models import User
 from people.models import Person
 
+from .attributes import ModelWithAttributes
 from ..monitoring_quality import determine_monitoring_quality
 
 if typing.TYPE_CHECKING:
@@ -88,7 +89,7 @@ class ActionIdentifierAutocompleteField(ActionIdentifierSearchMixin, index.Autoc
 
 
 @reversion.register()
-class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
+class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
     plan: Plan = ParentalKey(
@@ -208,22 +209,6 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
-    choice_attributes = GenericRelation(
-        to='actions.AttributeChoice',
-        related_query_name='action',
-    )
-    choice_with_text_attributes = GenericRelation(
-        to='actions.AttributeChoiceWithText',
-        related_query_name='action',
-    )
-    rich_text_attributes = GenericRelation(
-        to='actions.AttributeRichText',
-        related_query_name='action',
-    )
-    numeric_value_attributes = GenericRelation(
-        to='actions.AttributeNumericValue',
-        related_query_name='action',
-    )
 
     i18n = TranslationField(
         fields=('name', 'official_name', 'description', 'manual_status_reason'),
@@ -454,71 +439,6 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
-    def set_choice_attribute(self, type, choice_option_id):
-        if isinstance(type, str):
-            type = self.plan.action_attribute_types.get(identifier=type)
-        try:
-            existing_attribute = self.choice_attributes.get(type=type)
-        except self.choice_attributes.model.DoesNotExist:
-            if choice_option_id is not None:
-                self.choice_attributes.create(type=type, choice_id=choice_option_id)
-        else:
-            if choice_option_id is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.choice_id = choice_option_id
-                existing_attribute.save()
-
-    def set_choice_with_text_attribute(self, type, choice_option_id, text):
-        if isinstance(type, str):
-            type = self.plan.action_attribute_types.get(identifier=type)
-        try:
-            existing_attribute = self.choice_with_text_attributes.get(type=type)
-        except self.choice_with_text_attributes.model.DoesNotExist:
-            if choice_option_id is not None or text:
-                self.choice_with_text_attributes.create(
-                    type=type,
-                    choice_id=choice_option_id,
-                    text=text,
-                )
-        else:
-            if choice_option_id is None and not text:
-                existing_attribute.delete()
-            else:
-                existing_attribute.choice_id = choice_option_id
-                existing_attribute.text = text
-                existing_attribute.save()
-
-    def set_numeric_value_attribute(self, type, value):
-        if isinstance(type, str):
-            type = self.plan.action_attribute_types.get(identifier=type)
-        try:
-            existing_attribute = self.numeric_value_attributes.get(type=type)
-        except self.numeric_value_attributes.model.DoesNotExist:
-            if value is not None:
-                self.numeric_value_attributes.create(type=type, value=value)
-        else:
-            if value is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.value = value
-                existing_attribute.save()
-
-    def set_rich_text_attribute(self, type, value):
-        if isinstance(type, str):
-            type = self.plan.action_attribute_types.get(identifier=type)
-        try:
-            existing_attribute = self.rich_text_attributes.get(type=type)
-        except self.rich_text_attributes.model.DoesNotExist:
-            if value is not None:
-                self.rich_text_attributes.create(type=type, text=value)
-        else:
-            if value is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.text = value
-                existing_attribute.save()
-
     def set_responsible_parties(self, organization_ids):
         existing_orgs = set((p.organization for p in self.responsible_parties.all()))
         new_orgs = set(Organization.objects.filter(pk__in=organization_ids))
@@ -577,6 +497,9 @@ class Action(OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
         qs = super().get_indexed_objects()
         qs = qs.filter(Q(plan__primary_language=lang) | Q(plan__other_languages__contains=[lang]))
         return qs
+
+    def get_attribute_type_by_identifier(self, identifier):
+        return self.plan.action_attribute_types.get(identifier=identifier)
 
 
 class ActionResponsibleParty(OrderedModel):

@@ -327,7 +327,6 @@ class AttributeChoiceSerializer(serializers.Serializer):
         return data
 
     def update(self, instance: Action, validated_data):
-        assert isinstance(instance, Action)
         assert instance.pk is not None
         for attribute_type_identifier, choice_id in validated_data.items():
             instance.set_choice_attribute(attribute_type_identifier, choice_id)
@@ -341,7 +340,6 @@ class AttributeChoiceWithTextSerializer(serializers.Serializer):
         return data
 
     def update(self, instance: Action, validated_data):
-        assert isinstance(instance, Action)
         assert instance.pk is not None
         for attribute_type_identifier, item in validated_data.items():
             instance.set_choice_with_text_attribute(attribute_type_identifier, item['choice'], item['text'])
@@ -355,7 +353,6 @@ class AttributeNumericValueSerializer(serializers.Serializer):
         return data
 
     def update(self, instance: Action, validated_data):
-        assert isinstance(instance, Action)
         assert instance.pk is not None
         for attribute_type_identifier, value in validated_data.items():
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
@@ -369,7 +366,6 @@ class AttributeRichTextSerializer(serializers.Serializer):
         return data
 
     def update(self, instance: Action, validated_data):
-        assert isinstance(instance, Action)
         assert instance.pk is not None
         for attribute_type_identifier, value in validated_data.items():
             instance.set_rich_text_attribute(attribute_type_identifier, value)
