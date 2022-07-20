@@ -172,23 +172,9 @@ def register_plan_chooser():
     )
 
 
-class OwnActionsPanel(Component):
-    name = 'own_actions'
-    order = 10
-    template_name = 'aplans_admin/own_actions_panel.html'
-
-    def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
-        request: WatchAdminRequest = parent_context['request']
-        ctx = super().get_context_data(parent_context)
-        user = request.user
-        plan = request.get_active_admin_plan()
-        ctx['own_actions'] = plan.actions.filter(contact_persons__person__user=user).distinct().order_by('order')
-        return ctx
-
-
 class OwnIndicatorsPanel(Component):
     name = 'own_indicators'
-    order = 11
+    order = 102
     template_name = 'aplans_admin/own_indicators_panel.html'
 
     def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
@@ -212,7 +198,6 @@ def construct_homepage_panels(request, panels):
     for panel in panels_to_remove:
         panels.remove(panel)
 
-    panels.insert(0, OwnActionsPanel())
     panels.insert(1, OwnIndicatorsPanel())
 
 
