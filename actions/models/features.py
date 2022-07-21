@@ -49,10 +49,5 @@ class PlanFeatures(models.Model):
         verbose_name = _('plan feature')
         verbose_name_plural = _('plan features')
 
-    def save(self, *args, **kwargs):
-        ret = super().save(*args, **kwargs)
-        self.plan.invalidate_cache()
-        return ret
-
     def __str__(self):
         return "Features for %s" % self.plan
