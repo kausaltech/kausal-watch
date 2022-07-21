@@ -112,9 +112,9 @@ class CommonCategoryType(CategoryTypeBase):
         ret = super().save(*args, **kwargs)
         if self.has_collection and self.collection is None:
             with transaction.atomic():
-                ct_coll = Collection.objects.filter(name=settings.COMMON_CATEGORY_COLLECTION).first()
+                ct_coll = Collection.objects.filter(name=settings.COMMON_CATEGORIES_COLLECTION).first()
                 if ct_coll is None:
-                    ct_coll = Collection.get_first_root_node().add_child(name=settings.COMMON_CATEGORY_COLLECTION)
+                    ct_coll = Collection.get_first_root_node().add_child(name=settings.COMMON_CATEGORIES_COLLECTION)
                 obj = ct_coll.add_child(name=self.name)
                 self.collection = obj
                 self.save(update_fields=['collection'])

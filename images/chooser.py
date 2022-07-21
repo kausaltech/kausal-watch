@@ -1,4 +1,4 @@
-from django.db.models import Case, Value, When
+from wagtail.core.models import Collection
 
 
 _wagtail_get_context_data = None
