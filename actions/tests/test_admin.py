@@ -1,9 +1,20 @@
+from __future__ import annotations
+
+import typing
+
 import pytest
 from django.urls import reverse
 from pytest_django.asserts import assertContains
 
-from actions.tests.factories import ActionContactFactory, PlanFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
+from actions.action_admin import ActionAdmin
 from actions.wagtail_admin import ActivePlanAdmin
+from conftest import ModelAdminEditTest
+
+if typing.TYPE_CHECKING:
+    from users.models import User
+    from people.models import Person
+    from actions.models import Action
 
 pytestmark = pytest.mark.django_db
 
@@ -88,3 +99,27 @@ def test_can_access_plan_edit_page(plan_admin_user, client):
     client.force_login(plan_admin_user)
     response = client.get(url)
     assert response.status_code == 200
+
+
+def test_action_admin(
+    plan_admin_user: User, action_contact_person: Person, action: Action,
+    test_modeladmin_edit: ModelAdminEditTest
+):
+    post_data = dict(name='Modified name', identifier=action.identifier)
+    import ipdb; ipdb.sset_trace()
+    test_modeladmin_edit(
+        ActionAdmin, action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
+    )
+    action.refresh_from_db()
+    return
+    #assert action.name == post_data['name']
+    test_modeladmin_edit(
+        ActionAdmin, action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=True
+    )
+    other_action = ActionFactory.create(plan=action.plan)
+    test_modeladmin_edit(
+        ActionAdmin, other_action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
+    )
+    test_modeladmin_edit(
+        ActionAdmin, other_action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=False
+    )

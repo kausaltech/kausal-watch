@@ -1,9 +1,15 @@
+from __future__ import annotations
+
+import typing
+from typing import Protocol, Type
 import json
 import pytest
 import wagtail_factories
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
+from pytest_django.asserts import assertRedirects
 from rest_framework.authtoken.models import Token
+from django.urls import reverse
 
 from actions.tests import factories as actions_factories
 # from admin_site.tests import factories as admin_site_factories
@@ -14,6 +20,13 @@ from orgs.tests import factories as orgs_factories
 from users.tests import factories as users_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
+
+if typing.TYPE_CHECKING:
+    from django.db.models import Model
+    from wagtail.contrib.modeladmin.options import ModelAdmin
+    from users.models import User
+    import django.test.client
+
 
 register(actions_factories.ActionContactFactory, 'action_contact')
 register(actions_factories.ActionFactory)
@@ -63,7 +76,7 @@ register(pages_factories.PageLinkBlockFactory)
 # register(pages_factories.QuestionAnswerBlockFactory)
 register(pages_factories.QuestionBlockFactory)
 register(pages_factories.RichTextBlockFactory)
-register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan: plan.root_page))
+register(pages_factories.StaticPageFactory, parent=LazyFixture(lambda plan_with_pages: plan_with_pages.root_page))
 register(people_factories.PersonFactory, user=LazyFixture(lambda user: user))
 register(people_factories.PersonFactory, 'plan_admin_person', user=LazyFixture(lambda user: user),
          general_admin_plans=LazyFixture(lambda plan: [plan]))
@@ -76,6 +89,13 @@ register(wagtail_factories.factories.CollectionFactory)
 @pytest.fixture
 def plan_admin_user(plan_admin_person):
     return plan_admin_person.user
+
+
+@pytest.fixture
+def action_contact_person(action):
+    user = users_factories.UserFactory.create()
+    person = people_factories.PersonFactory.create(contact_for_actions=[action], user=user)
+    return person
 
 
 @pytest.fixture
@@ -118,3 +138,57 @@ def contains_error():
             expected_parts['message'] = message
         return any(expected_parts.items() <= error.items() for error in response['errors'])
     return func
+
+
+@pytest.fixture(autouse=True)
+def disable_search_autoupdate(settings):
+    settings.WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = False
+
+
+class ModelAdminEditTest(Protocol):
+    def __call__(
+        self, admin_class: Type[ModelAdmin], instance: Model, user: User,
+        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...
+
+
+@pytest.fixture
+def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTest:
+    def test_admin(
+        admin_class: Type[ModelAdmin], instance: Model, user: User,
+        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True
+    ):
+        adm = admin_class()
+        edit_name = adm.url_helper.get_action_url_name('edit')
+        edit_url = reverse(edit_name, kwargs=dict(instance_pk=instance.pk))
+        client.logout()
+        response = client.get(edit_url)
+        # Should return a redirect to login page
+        assert response.status_code == 302
+        client.force_login(user)
+
+        response = client.get(edit_url)
+        if can_inspect:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 403
+
+        # FIXME: Not working yet
+        """
+        # form = response.context_data['form']
+        response = client.post(edit_url, data=dict(post_data))
+        if can_edit:
+            assert response.status_code == 200
+        else:
+            assert response.status_code == 403
+
+        if response.status_code != 302:
+            form = response.context_data.get('form')
+            if form is not None:
+                print('Form errors:')
+                print(form.errors)
+                import ipdb; ipdb.set_trace()
+
+        assertRedirects(response, adm.url_helper.get_action_url_name('index'))
+        """
+
+    return test_admin
