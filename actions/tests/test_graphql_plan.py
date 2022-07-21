@@ -248,7 +248,8 @@ def test_category_types(
     assert data == expected
 
 
-def test_plan_root_page_exists(graphql_client_query_data, plan):
+def test_plan_root_page_exists(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -268,7 +269,8 @@ def test_plan_root_page_exists(graphql_client_query_data, plan):
     assert any(page['__typename'] == 'PlanRootPage' and page['id'] == str(plan.root_page.id) for page in pages)
 
 
-def test_plan_root_page_contains_block(graphql_client_query_data, plan):
+def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     hero_data = {'layout': 'big_image', 'heading': 'foo', 'lead': 'bar'}
     plan.root_page.body = json.dumps([
         {'type': 'front_page_hero', 'value': hero_data},
@@ -308,7 +310,8 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan):
     ('footer', 'show_in_footer', False, ['page1_in_menu', 'page2_in_menu']),
     ('footer', 'show_in_footer', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
 ])
-def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descendants, expected_pages):
+def test_menu(graphql_client_query_data, menu_field, menu_key, with_descendants, expected_pages, plan_with_pages):
+    plan = plan_with_pages
     # Some pages (e.g., action and indicator list) are in menus and footers by default; remove for this test
     for page in plan.root_page.get_children().specific():
         page.show_in_menus = False
@@ -329,7 +332,8 @@ def test_menu(graphql_client_query_data, plan, menu_field, menu_key, with_descen
     assert data == expected
 
 
-def test_footer_children_only_shown(graphql_client_query_data, plan):
+def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     # Some pages (e.g., action and indicator list) are in menus and footers by default; remove for this test
     for page in plan.root_page.get_children().specific():
         page.show_in_footer = False

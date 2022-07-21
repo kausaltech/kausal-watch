@@ -64,6 +64,10 @@ def person_list_url():
     return reverse('person-list')
 
 
-@pytest.fixture(autouse=True)
-def disable_search_autoupdate(settings):
-    settings.WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = False
+@pytest.fixture
+def plan_with_pages(plan):
+    from actions.models.plan import set_default_page_creation
+
+    with set_default_page_creation(True):
+        plan.save()
+    return plan

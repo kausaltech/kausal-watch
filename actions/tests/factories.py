@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import typing
 import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import make_aware
@@ -6,15 +9,16 @@ from factory.django import DjangoModelFactory
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
+from aplans.factories import ModelFactory
 import actions
-from actions.models import AttributeType
+from actions.models import AttributeType, Plan
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 
-class PlanFactory(DjangoModelFactory):
+class PlanFactory(ModelFactory[Plan]):
     class Meta:
         model = 'actions.Plan'
 
@@ -27,6 +31,15 @@ class PlanFactory(DjangoModelFactory):
     primary_language = 'en'
     other_languages = ['fi']
     published_at = make_aware(datetime.datetime(2021, 1, 1))
+
+    @classmethod
+    def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
+        from actions.models.plan import set_default_page_creation
+
+        with set_default_page_creation(create_default_pages):
+            manager = cls._get_manager(model_class)
+            obj = manager.create(*args, **kwargs)
+        return obj
 
 
 class PlanDomainFactory(DjangoModelFactory):
@@ -231,7 +244,7 @@ class ActionFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'action{i}')
     official_name = name
     image = SubFactory(AplansImageFactory)
-    description = "Action description"
+    description = "<p>Action description</p>"
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..plan'))
     status = SubFactory(ActionStatusFactory, plan=SelfAttribute('..plan'))
     implementation_phase = SubFactory(ActionImplementationPhaseFactory, plan=SelfAttribute('..plan'))

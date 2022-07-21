@@ -10,6 +10,8 @@ from actions.tests.factories import (
 )
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 from pages.tests.factories import CategoryPageFactory
+from orgs.tests.factories import PersonFactory
+
 
 pytestmark = pytest.mark.django_db
 
@@ -94,8 +96,8 @@ def test_plan_domain_node(graphql_client_query_data):
     assert data == expected
 
 
-def test_plan_node(graphql_client_query_data):
-    plan = PlanFactory()
+def test_plan_node(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     domain = PlanDomainFactory(plan=plan)
     action_schedule = ActionScheduleFactory(plan=plan)
     action = ActionFactory(plan=plan, schedule=[action_schedule])
@@ -583,9 +585,10 @@ def test_category_type_node(
 
 
 def test_category_node(
-    graphql_client_query_data, plan, category_type, category, category_level, attribute_rich_text,
+    graphql_client_query_data, plan_with_pages, category_type, category, category_level, attribute_rich_text,
     attribute_choice
 ):
+    plan = plan_with_pages
     child_category = CategoryFactory(parent=category)
     CategoryPageFactory(category=category)
     data = graphql_client_query_data(

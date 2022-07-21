@@ -1,4 +1,5 @@
 from __future__ import annotations
+from contextlib import contextmanager
 
 import typing
 from typing import Optional, Tuple, Type, Union
@@ -70,6 +71,16 @@ class PlanQuerySet(models.QuerySet['Plan']):
         staff_actions = Action.objects.user_has_staff_role_for(user).values_list('plan').distinct()
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
+
+
+_skip_default_page_creation = False
+
+@contextmanager
+def set_default_page_creation(enabled: bool):
+    global _skip_default_page_creation
+    _skip_default_page_creation = not enabled
+    yield
+    _skip_default_page_creation = False
 
 
 @reversion.register(follow=[
@@ -230,7 +241,7 @@ class Plan(ClusterableModel):
                 self.root_collection.name = self.name
                 self.root_collection.save(update_fields=['name'])
 
-        if self.site is None:
+        if self.site is None and not _skip_default_page_creation:
             root_page = self.create_default_pages()
             site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
             site.save()

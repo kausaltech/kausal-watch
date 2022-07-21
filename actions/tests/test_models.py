@@ -83,7 +83,8 @@ def test_category_color_valid(color):
     category.full_clean()
 
 
-def test_category_type_synchronize_pages_when_synchronization_activated(plan, category):
+def test_category_type_synchronize_pages_when_synchronization_activated(plan_with_pages, category):
+    plan = plan_with_pages
     assert not plan.root_page.get_children().type(CategoryTypePage).exists()
     assert not plan.root_page.get_children().type(CategoryPage).exists()
     category.type.synchronize_with_pages = True
@@ -93,9 +94,9 @@ def test_category_type_synchronize_pages_when_synchronization_activated(plan, ca
     assert page.title == category.name
 
 
-def test_category_type_synchronize_pages_translated():
-    category = CategoryFactory(type__synchronize_with_pages=True)
-    plan = category.type.plan
+def test_category_type_synchronize_pages_translated(plan_with_pages):
+    category = CategoryFactory(type__synchronize_with_pages=True, type__plan=plan_with_pages)
+    plan = plan_with_pages
     language = plan.other_languages[0]
     locale = Locale.objects.create(language_code=language)
     translated_root_page = plan.root_page.copy_for_translation(locale)
@@ -106,9 +107,9 @@ def test_category_type_synchronize_pages_translated():
     assert page.title == getattr(category, f'name_{language}')
 
 
-def test_category_type_synchronize_pages_exists():
-    category = CategoryFactory(type__synchronize_with_pages=True)
-    plan = category.type.plan
+def test_category_type_synchronize_pages_exists(plan_with_pages):
+    category = CategoryFactory(type__synchronize_with_pages=True, type__plan=plan_with_pages)
+    plan = plan_with_pages
     category.type.synchronize_pages()
     category.type.name = "Changed category type name"
     category.type.save()
@@ -121,8 +122,8 @@ def test_category_type_synchronize_pages_exists():
     assert page.title == category.name
 
 
-def test_category_type_creating_category_creates_page():
-    category_type = CategoryTypeFactory(synchronize_with_pages=True)
+def test_category_type_creating_category_creates_page(plan_with_pages):
+    category_type = CategoryTypeFactory(synchronize_with_pages=True, plan=plan_with_pages)
     category_type.synchronize_pages()
     ct_page = category_type.category_type_pages.child_of(category_type.plan.root_page).get()
     assert not ct_page.get_children().exists()

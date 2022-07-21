@@ -85,7 +85,8 @@ def expected_result_multi_use_image_fragment(image_block):
     }
 
 
-def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_block):
+def test_front_page_hero_block(graphql_client_query_data, front_page_hero_block, plan_with_pages):
+    plan = plan_with_pages
     page = plan.root_page
     page.body = [
         ('front_page_hero', front_page_hero_block),
@@ -114,7 +115,8 @@ def test_front_page_hero_block(graphql_client_query_data, plan, front_page_hero_
     )
 
 
-def test_category_list_block(graphql_client_query_data, plan, category_list_block):
+def test_category_list_block(graphql_client_query_data, category_list_block, plan_with_pages):
+    plan = plan_with_pages
     page = plan.root_page
     page.body = [
         ('category_list', category_list_block),
@@ -136,7 +138,8 @@ def test_category_list_block(graphql_client_query_data, plan, category_list_bloc
     )
 
 
-def test_indicator_group_block(graphql_client_query_data, plan, indicator_block):
+def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_with_pages):
+    plan = plan_with_pages
     indicator = indicator_block['indicator']
     assert not indicator.goals.exists()
     assert not indicator.levels.exists()
@@ -209,7 +212,8 @@ def test_indicator_group_block(graphql_client_query_data, plan, indicator_block)
     )
 
 
-def test_indicator_highlights_block(graphql_client_query_data, plan):
+def test_indicator_highlights_block(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     page = plan.root_page
     page.body = [
         ('indicator_highlights', None),
@@ -227,15 +231,15 @@ def test_indicator_highlights_block(graphql_client_query_data, plan):
     )
 
 
-def test_indicator_showcase_block(graphql_client_query_data, plan, indicator_showcase_block):
-    page = plan.root_page
+def test_indicator_showcase_block(graphql_client_query_data, plan_with_pages, indicator_showcase_block):
+    page = plan_with_pages.root_page
     page.body = [
         ('indicator_showcase', indicator_showcase_block),
     ]
     page.save()
     assert_body_block(
         graphql_client_query_data,
-        plan=plan,
+        plan=plan_with_pages,
         block_fields='''
             title
             body
@@ -251,15 +255,15 @@ def test_indicator_showcase_block(graphql_client_query_data, plan, indicator_sho
     )
 
 
-def test_action_highlights_block(graphql_client_query_data, plan):
-    page = plan.root_page
+def test_action_highlights_block(plan_with_pages, graphql_client_query_data):
+    page = plan_with_pages.root_page
     page.body = [
         ('action_highlights', None),
     ]
     page.save()
     assert_body_block(
         graphql_client_query_data,
-        plan=plan,
+        plan=plan_with_pages,
         block_fields='''
             __typename
         ''',
@@ -269,7 +273,8 @@ def test_action_highlights_block(graphql_client_query_data, plan):
     )
 
 
-def test_related_plan_list_block(graphql_client_query_data, plan):
+def test_related_plan_list_block(graphql_client_query_data, plan_with_pages):
+    plan = plan_with_pages
     page = plan.root_page
     page.body = [
         ('related_plans', None),
@@ -287,7 +292,8 @@ def test_related_plan_list_block(graphql_client_query_data, plan):
     )
 
 
-def test_card_list_block(graphql_client_query_data, plan, card_block):
+def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages):
+    plan = plan_with_pages
     # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
     # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
     # https://github.com/wagtail/wagtail-factories/issues/40
@@ -328,7 +334,7 @@ def test_card_list_block(graphql_client_query_data, plan, card_block):
     )
 
 
-def test_question_answer_block(graphql_client_query_data, plan, static_page, question_block):
+def test_question_answer_block(graphql_client_query_data, plan_with_pages, static_page, question_block):
     question_answer_block = QuestionAnswerBlockFactory(questions=[question_block])
     static_page.body = [
         ('qa_section', question_answer_block),
@@ -336,7 +342,7 @@ def test_question_answer_block(graphql_client_query_data, plan, static_page, que
     static_page.save()
     assert_body_block(
         graphql_client_query_data,
-        plan=plan,
+        plan=plan_with_pages,
         page=static_page,
         block_fields='''
             heading
@@ -357,7 +363,7 @@ def test_question_answer_block(graphql_client_query_data, plan, static_page, que
     )
 
 
-def test_static_page_lead_paragraph(graphql_client_query_data, plan, static_page):
+def test_static_page_lead_paragraph(graphql_client_query_data, plan_with_pages, static_page):
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $path: String!) {
@@ -372,7 +378,7 @@ def test_static_page_lead_paragraph(graphql_client_query_data, plan, static_page
         }
         ''',
         variables={
-            'plan': plan.identifier,
+            'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
         }
     )
@@ -387,7 +393,7 @@ def test_static_page_lead_paragraph(graphql_client_query_data, plan, static_page
     assert data == expected
 
 
-def test_static_page_header_image(graphql_client_query_data, plan, static_page):
+def test_static_page_header_image(graphql_client_query_data, plan_with_pages, static_page):
     data = graphql_client_query_data(
         '''
         query($plan: ID!, $path: String!) {
@@ -401,7 +407,7 @@ def test_static_page_header_image(graphql_client_query_data, plan, static_page):
         }
         ''' + MULTI_USE_IMAGE_FRAGMENT,
         variables={
-            'plan': plan.identifier,
+            'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
         }
     )
@@ -424,7 +430,7 @@ def test_static_page_header_image(graphql_client_query_data, plan, static_page):
     assert data == expected
 
 
-def test_static_page_body(graphql_client_query_data, plan, static_page):
+def test_static_page_body(graphql_client_query_data, plan_with_pages, static_page):
     # We omit checking non-primitive blocks as they get their own tests.
     data = graphql_client_query_data(
         '''
@@ -447,7 +453,7 @@ def test_static_page_body(graphql_client_query_data, plan, static_page):
         }
         ''',
         variables={
-            'plan': plan.identifier,
+            'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
         }
     )
@@ -475,7 +481,7 @@ def test_static_page_body(graphql_client_query_data, plan, static_page):
 
 
 def test_attribute_order_as_in_attribute_type(
-    graphql_client_query_data, plan, category, category_page, category_type, attribute_type_factory,
+    graphql_client_query_data, plan_with_pages, category, category_page, category_type, attribute_type_factory,
     attribute_rich_text_factory
 ):
     at0 = attribute_type_factory(scope=category_type)
@@ -501,7 +507,7 @@ def test_attribute_order_as_in_attribute_type(
         }
         '''
     query_variables = {
-        'plan': plan.identifier,
+        'plan': plan_with_pages.identifier,
         'path': category_page.url_path,
     }
     expected = {
@@ -529,7 +535,7 @@ def test_attribute_order_as_in_attribute_type(
     assert data == expected
 
 
-def test_category_page_action_list(graphql_client_query_data, plan, category, category_page):
+def test_category_page_action_list(graphql_client_query_data, plan_with_pages, category, category_page):
     action_list_block = ActionListBlockFactory(category_filter=category)
     category_page.body = [
         ('action_list', action_list_block),
@@ -537,7 +543,7 @@ def test_category_page_action_list(graphql_client_query_data, plan, category, ca
     category_page.save()
     assert_body_block(
         graphql_client_query_data,
-        plan=plan,
+        plan=plan_with_pages,
         page=category_page,
         block_fields='''
             categoryFilter {
