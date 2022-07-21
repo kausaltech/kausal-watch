@@ -1,5 +1,8 @@
 import pytest
 from django.urls import reverse
+from orgs.tests.factories import OrganizationFactory
+from orgs.models import Organization
+
 
 pytestmark = pytest.mark.django_db
 
@@ -207,3 +210,48 @@ def test_action_put_as_plan_admin_allowed(
         'name': 'bar',
         'plan': plan_of_admin_person.pk})
     assert response.status_code == 200
+
+
+def test_action_responsible_party_patch(
+        api_client, action, action_detail_url, plan_admin_user):
+    plan = action.plan
+    plan_org = plan.organization
+    other_org = OrganizationFactory.create()
+
+    api_client.force_login(plan_admin_user)
+    # Check that normal case works
+    response = api_client.patch(action_detail_url, data={
+        'responsible_parties': [plan_org.pk],
+    })
+    assert response.status_code == 200
+
+    assert action.responsible_parties.count() == 1
+    assert action.responsible_parties.first().organization == plan_org
+
+    # Ensure that only orgs that are available for the plan
+    # can be selected.
+    response = api_client.patch(action_detail_url, data={
+        'responsible_parties': [other_org.pk],
+    })
+    assert response.status_code == 400
+
+    response = api_client.patch(action_detail_url, data={
+        'responsible_parties': [],
+    })
+    assert response.status_code == 200
+    assert action.responsible_parties.count() == 0
+
+    response = api_client.patch(action_detail_url, data={
+        'responsible_parties': ['abc'],
+    })
+    assert response.status_code == 400
+
+    response = api_client.patch(action_detail_url, data={
+        'responsible_parties': plan_org.pk,
+    })
+    assert response.status_code == 400
+
+
+def test_openapi_schema(api_client, openapi_url):
+    resp = api_client.get(openapi_url)
+    assert resp.status_code == 200

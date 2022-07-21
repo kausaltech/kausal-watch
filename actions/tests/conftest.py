@@ -22,21 +22,11 @@ class JSONAPIClient(APIClient):
     default_format = 'json'
 
     def request(self, **kwargs):
+        if 'HTTP_ACCEPT' not in kwargs:
+            kwargs['HTTP_ACCEPT'] = 'application/json'
         resp = super().request(**kwargs)
         resp.json_data = json.loads(resp.content)
         return resp
-
-
-# @pytest.fixture
-# def action_contact_user(action):
-#     user = User.objects.create(
-#         first_name='Contact', last_name='Person', email='contact.person@example.com'
-#     )
-#     person = Person.objects.create(
-#         email=user.email, first_name=user.first_name, last_name=user.last_name
-#     )
-#     action.contact_persons.add(person)
-#     return user
 
 
 @pytest.fixture
@@ -50,8 +40,14 @@ def action_detail_url(plan, action):
 
 
 @pytest.fixture
+def openapi_url():
+    return reverse('schema')
+
+
+@pytest.fixture
 def api_client():
-    return JSONAPIClient()
+    client = JSONAPIClient()
+    return client
 
 
 @pytest.fixture
