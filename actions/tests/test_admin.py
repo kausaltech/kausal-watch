@@ -106,12 +106,12 @@ def test_action_admin(
     test_modeladmin_edit: ModelAdminEditTest
 ):
     post_data = dict(name='Modified name', identifier=action.identifier)
-    import ipdb; ipdb.sset_trace()
     test_modeladmin_edit(
         ActionAdmin, action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
     )
-    action.refresh_from_db()
     return
+    # FIXME
+    action.refresh_from_db()
     #assert action.name == post_data['name']
     test_modeladmin_edit(
         ActionAdmin, action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=True
