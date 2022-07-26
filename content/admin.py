@@ -1,10 +1,12 @@
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail.contrib.modeladmin.views import EditView
 
 from .models import SiteGeneralContent
-from actions.wagtail_admin import ActivePlanEditView, ActivePlanPermissionHelper
+from actions.wagtail_admin import ActivePlanPermissionHelper
+from admin_site.wagtail import SuccessUrlEditPageMixin
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
@@ -29,10 +31,14 @@ class SiteGeneralContentMenuItem(ModelAdminMenuItem):
         return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.general_content)
 
 
+class SiteGeneralContentEditView(SuccessUrlEditPageMixin, EditView):
+    pass
+
+
 @modeladmin_register
 class SiteGeneralContentAdmin(ModelAdmin):
     model = SiteGeneralContent
-    edit_view_class = ActivePlanEditView
+    edit_view_class = SiteGeneralContentEditView
     permission_helper_class = SiteGeneralContentPermissionHelper
     add_to_settings_menu = True
     menu_icon = 'cogs'

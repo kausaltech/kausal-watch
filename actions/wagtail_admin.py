@@ -10,12 +10,13 @@ from wagtail.admin.edit_handlers import (
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.views import EditView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
-    CondensedInlinePanel, SafeLabelModelAdminMenuItem,
+    ActivePlanEditView, AplansEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
+    CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
 from orgs.models import Organization
@@ -324,8 +325,12 @@ class ActivePlanFeaturesMenuItem(ModelAdminMenuItem):
         return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.features)
 
 
+class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
+    pass
+
+
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
-    edit_view_class = ActivePlanEditView
+    edit_view_class = ActivePlanFeaturesEditView
     permission_helper_class = ActivePlanFeaturesPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan features')
     add_to_settings_menu = True

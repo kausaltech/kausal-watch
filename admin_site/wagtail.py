@@ -320,7 +320,13 @@ class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClass
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class ActivePlanEditView(AplansEditView):
+class SuccessUrlEditPageMixin:
+    """After editing a model instance, redirect to the edit page again instead of the index page."""
+    def get_success_url(self):
+        return self.url_helper.get_action_url('edit', self.instance.pk)
+
+
+class ActivePlanEditView(SuccessUrlEditPageMixin, AplansEditView):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()
@@ -342,10 +348,6 @@ class ActivePlanEditView(AplansEditView):
                 messages.validation_error(self.request, self.get_error_message(), form)
                 return self.render_to_response(self.get_context_data(form=form))
         return super().form_valid(form)
-
-    def get_success_url(self):
-        # After editing the plan, don't redirect to the index page as AplansEditView does.
-        return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
 class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,

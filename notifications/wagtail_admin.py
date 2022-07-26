@@ -3,10 +3,14 @@ from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMe
 from django.utils.translation import gettext_lazy as _
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    ActivePlanEditView, PlanFilteredFieldPanel, AplansCreateView
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
 )
 
 from .models import BaseTemplate
+
+
+class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
+    pass
 
 
 @modeladmin_register
@@ -14,7 +18,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     model = BaseTemplate
     add_to_settings_menu = True
     create_view_class = AplansCreateView
-    edit_view_class = ActivePlanEditView
+    edit_view_class = BaseTemplateEditView
     menu_icon = 'fa-bell'
     menu_label = _('Notifications')
 
