@@ -271,3 +271,8 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.is_general_admin_for_plan(category_type.plan)
+
+    def can_delete_category(self, category_type):
+        if self.is_superuser:
+            return True
+        return self.is_general_admin_for_plan(category_type.plan)
