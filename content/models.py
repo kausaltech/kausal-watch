@@ -5,6 +5,10 @@ from django.utils.translation import gettext_lazy as _
 
 @reversion.register()
 class SiteGeneralContent(models.Model):
+    class ActionTerm(models.TextChoices):
+        ACTION = 'action', _('Action')
+        STRATEGY = 'strategy', _('Strategy')
+
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
         unique=True
@@ -34,12 +38,15 @@ class SiteGeneralContent(models.Model):
     accessibility_contact_email = models.EmailField(
         blank=True, null=True, verbose_name=_('Accessibility contact email')
     )
+    action_term = models.CharField(
+        max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION
+    )
 
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name',
         'official_name_description', 'copyright_text', 'creative_commons_license',
         'github_api_repository', 'github_ui_repository',
-        'accessibility_responsible_body', 'accessibility_contact_email'
+        'accessibility_responsible_body', 'accessibility_contact_email', 'action_term',
     ]
 
     class Meta:

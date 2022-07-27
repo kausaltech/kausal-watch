@@ -57,6 +57,7 @@ class SiteGeneralContentAdmin(ModelAdmin):
         FieldPanel('creative_commons_license'),
         FieldPanel('github_api_repository'),
         FieldPanel('github_ui_repository'),
+        FieldPanel('action_term'),
     ]
 
     def get_queryset(self, request):
