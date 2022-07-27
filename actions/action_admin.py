@@ -31,7 +31,8 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, insert_model_translation_panels, get_translation_tabs
+    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, SafeLabelModelAdminMenuItem,
+    insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
@@ -454,6 +455,10 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
             Summary(reset_label=gettext('Reset all'), search_query_label=gettext('Search')),
         ]
 
+    def get_page_title(self):
+        plan = self.request.user.get_active_admin_plan()
+        return plan.general_content.get_action_term_display_plural()
+
 
 def get_action_attribute_fields(plan, action, **kwargs):
     action_ct = ContentType.objects.get_for_model(Action)
@@ -477,13 +482,19 @@ class AttributeFieldPanel(FieldPanel):
         self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
 
 
+class ActionMenuItem(SafeLabelModelAdminMenuItem):
+    def get_label_from_context(self, context, request):
+        # Ignore context; the label is going to be the configured term for "Action"
+        plan = request.user.get_active_admin_plan()
+        return plan.general_content.get_action_term_display_plural()
+
+
 @modeladmin_register
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
     index_view_class = ActionIndexView
     menu_icon = 'fa-cubes'  # change as required
-    menu_label = _('Actions')
     menu_order = 1
     list_display = ('identifier', 'name_link')
     list_display_add_buttons = 'name_link'
@@ -736,3 +747,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         qs = qs.filter(plan=plan)
         qs = qs.select_related('plan').prefetch_related('categories')
         return qs
+
+    def get_menu_item(self, order=None):
+        return ActionMenuItem(self, order or self.get_menu_order())

@@ -372,9 +372,13 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
 
 
 class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
+    def get_label_from_context(self, context, request):
+        # This method may be trivial, but we override it elsewhere
+        return context.get('label')
+
     def get_context(self, request):
         ret = super().get_context(request)
-        label = ret.get('label')
+        label = self.get_label_from_context(ret, request)
         if label:
             ret['label'] = mark_safe(label)
         return ret

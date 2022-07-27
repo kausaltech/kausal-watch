@@ -6,8 +6,16 @@ from django.utils.translation import gettext_lazy as _
 @reversion.register()
 class SiteGeneralContent(models.Model):
     class ActionTerm(models.TextChoices):
+        # When changing terms, make sure to also change ACTION_TERM_PLURAL below.
+        # Get a printable SiteGeneralContent instance's action term with `instance.get_action_term_display()` and, for
+        # plural, `instance.get_action_term_display_plural()`.
         ACTION = 'action', _('Action')
         STRATEGY = 'strategy', _('Strategy')
+
+    ACTION_TERM_PLURAL = {
+        ActionTerm.ACTION: _('Actions'),
+        ActionTerm.STRATEGY: _('Strategies'),
+    }
 
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
@@ -58,3 +66,7 @@ class SiteGeneralContent(models.Model):
             return str(self.plan)
         else:
             return '[unknown]'
+
+    def get_action_term_display_plural(self):
+        # Analogous to get_action_term_display, which Django automatically generates
+        return SiteGeneralContent.ACTION_TERM_PLURAL[SiteGeneralContent.ActionTerm(self.action_term)]
