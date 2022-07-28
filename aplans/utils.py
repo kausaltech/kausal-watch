@@ -105,6 +105,14 @@ class OrderedModel(models.Model):
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
 
+    def __init__(self, *args, order_on_create=None, **kwargs):
+        """
+        Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
+        None, the order will instead be set to <maximum existing order> + 1.
+        """
+        super().__init__(*args, **kwargs)
+        self.order_on_create = order_on_create
+
     @property
     def sort_order(self):
         return self.order
@@ -128,7 +136,10 @@ class OrderedModel(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk is None:
-            self.order = self.get_sort_order_max() + 1
+            if getattr(self, 'order_on_create', None) is not None:
+                self.order = self.order_on_create
+            else:
+                self.order = self.get_sort_order_max() + 1
         super().save(*args, **kwargs)
 
     class Meta:

@@ -484,6 +484,7 @@ class ActionSerializer(ModelWithAttributesSerializerMixin, PlanRelatedModelSeria
 
     def create(self, validated_data: dict):
         validated_data['plan'] = self.plan
+        validated_data['order_on_create'] = validated_data.get('order')
         categories = validated_data.pop('categories', None)
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
@@ -687,6 +688,7 @@ class CategorySerializer(ModelWithAttributesSerializerMixin, serializers.ModelSe
 
     def create(self, validated_data: dict):
         validated_data['type'] = self.category_type
+        validated_data['order_on_create'] = validated_data.get('order')
         instance = super().create(validated_data)
         return instance
 
