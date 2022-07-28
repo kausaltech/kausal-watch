@@ -1,6 +1,8 @@
 from __future__ import annotations
 import typing
 
+from django.db import models
+from django.utils.translation import gettext_lazy as _
 from rest_framework import response, status, viewsets, exceptions, serializers
 from rest_framework.exceptions import ValidationError
 
@@ -128,3 +130,18 @@ class PlanRelatedModelSerializer(serializers.ModelSerializer):
                 self.plan = get_default_plan()
 
         super().__init__(*args, **kwargs)
+
+
+class ProtectedError(exceptions.APIException):
+    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    default_detail = _('Cannot delete instance because other objects reference it.')
+    default_code = 'protected_error'
+
+
+class HandleProtectedErrorMixin:
+    """Mixin for viewsets that use DRF's DestroyModelMixin to handle ProtectedError gracefully."""
+    def perform_destroy(self, instance):
+        try:
+            super().perform_destroy(instance)
+        except models.ProtectedError as e:
+            raise ProtectedError(detail=str(e))

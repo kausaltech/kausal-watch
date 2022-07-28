@@ -20,7 +20,7 @@ from aplans.model_images import (
 )
 from aplans.permissions import AnonReadOnly
 from aplans.rest_api import (
-    BulkListSerializer, BulkModelViewSet, PlanRelatedModelSerializer
+    BulkListSerializer, BulkModelViewSet, HandleProtectedErrorMixin, PlanRelatedModelSerializer
 )
 from aplans.types import AuthenticatedWatchRequest, WatchAPIRequest
 from aplans.utils import public_fields, register_view_helper
@@ -531,7 +531,7 @@ class ActionSerializer(ModelWithAttributesSerializerMixin, PlanRelatedModelSeria
 @extend_schema(
     tags=['action']
 )
-class ActionViewSet(BulkModelViewSet):
+class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = ActionSerializer
 
     def get_serializer(self, *args, **kwargs):
@@ -705,7 +705,7 @@ class CategorySerializer(ModelWithAttributesSerializerMixin, serializers.ModelSe
         read_only_fields = ['type']
 
 
-class CategoryViewSet(BulkModelViewSet):
+class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = CategorySerializer
 
     def get_permissions(self):
