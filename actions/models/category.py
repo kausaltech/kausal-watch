@@ -256,6 +256,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
 
     class Meta:
         unique_together = (('type', 'identifier'),)
+        ordering = ('type', 'order')
 
     def __str__(self):
         return '[%s] %s' % (self.identifier, self.name)

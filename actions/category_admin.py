@@ -481,7 +481,7 @@ class CommonCategoryEditHandler(AplansTabbedInterface):
 
 
 @modeladmin_register
-class CommonCategoryAdmin(AplansModelAdmin):
+class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Common categories')
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
