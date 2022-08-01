@@ -23,7 +23,7 @@ from aplans.rest_api import (
     BulkListSerializer, BulkModelViewSet, HandleProtectedErrorMixin, PlanRelatedModelSerializer
 )
 from aplans.types import AuthenticatedWatchRequest, WatchAPIRequest
-from aplans.utils import public_fields, register_view_helper
+from aplans.utils import generate_identifier, public_fields, register_view_helper
 from orgs.models import Organization
 from people.models import Person
 from users.models import User
@@ -428,6 +428,16 @@ class ActionSerializer(ModelWithAttributesSerializerMixin, PlanRelatedModelSeria
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False)
     contact_persons = ActionContactPersonSerializer(required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        initial_data = getattr(self, 'initial_data', None)
+        must_generate_identifiers = not self.plan.features.has_action_identifiers
+        identifier_missing = initial_data is not None and not initial_data.get('identifier')
+        if must_generate_identifiers and identifier_missing:
+            # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so to
+            # avoid an error when we omit an identifier, we need to do it here
+            self.initial_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def get_fields(self):
         fields = super().get_fields()
