@@ -364,6 +364,7 @@ LANGUAGES = (
     ('en', _('English')),
     ('sv', _('Swedish')),
     ('de', _('German')),
+    ('dk', _('Danish')),
 )
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
 MODELTRANS_FALLBACK = {'default': ()}  # use language in default_language_field instead of a global fallback
@@ -378,9 +379,10 @@ PARLER_LANGUAGES = {
         {'code': 'en'},
         {'code': 'sv'},
         {'code': 'de'},
+        {'code': 'dk'},
     ),
     'default': {
-        'fallbacks': ['en', 'fi', 'sv', 'de'],
+        'fallbacks': ['en', 'fi', 'sv', 'de', 'dk'],
         'hide_untranslated': False,   # the default; let .active_translations() return fallbacks too.
     }
 }
@@ -492,6 +494,20 @@ if ELASTICSEARCH_URL:
                 }
             }
         },
+        'dk': {
+            'analyzer': {
+                'default': {
+                    'type': 'danish'
+                }
+            }
+        },
+        'de': {
+            'analyzer': {
+                'default': {
+                    'type': 'german'
+                }
+            }
+        },
         'en': {
             'analyzer': {
                 'default': {
@@ -500,7 +516,7 @@ if ELASTICSEARCH_URL:
             }
         },
     }
-    for lang in ('fi', 'sv', 'en'):
+    for lang in ANALYSIS_CONFIG.keys():
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
             'BACKEND': 'search.backends',
             'URLS': [ELASTICSEARCH_URL],
