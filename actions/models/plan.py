@@ -75,6 +75,7 @@ class PlanQuerySet(models.QuerySet['Plan']):
 
 _skip_default_page_creation = False
 
+
 @contextmanager
 def set_default_page_creation(enabled: bool):
     global _skip_default_page_creation
@@ -463,6 +464,7 @@ class Plan(ClusterableModel):
 
         return qs
 
+
 # ParentalManyToManyField  won't help, so we need the through model:
 # https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
 # Unfortunately the reverse accessors then point to instances of the through model, not the actual target.
@@ -485,7 +487,7 @@ class GeneralPlanAdmin(OrderedModel):
 def is_valid_hostname(hostname):
     if len(hostname) > 255:
         return False
-    allowed = re.compile("(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
+    allowed = re.compile(r"(?!-)[A-Z\d-]{1,63}(?<!-)$", re.IGNORECASE)
     return all(allowed.match(x) for x in hostname.split("."))
 
 
