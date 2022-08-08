@@ -130,3 +130,22 @@ def test_category_type_creating_category_creates_page(plan_with_pages):
     CategoryFactory(type=category_type)
     ct_page.refresh_from_db()
     assert ct_page.get_children().exists()
+
+
+def test_plan_action_staleness_returns_default(plan):
+    assert plan.get_action_days_until_considered_stale() == plan.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+
+
+def test_plan_action_staleness_returns_set_value(plan_factory):
+    plan1 = plan_factory()
+    plan2 = plan_factory()
+    plan3 = plan_factory()
+    plan1.action_days_until_considered_stale = 230
+    plan1.save()
+    plan2.action_days_until_considered_stale = 231
+    plan2.save()
+    plan3.action_days_until_considered_stale = 0
+    plan3.save()
+    assert plan1.get_action_days_until_considered_stale() == 230
+    assert plan2.get_action_days_until_considered_stale() == 231
+    assert plan3.get_action_days_until_considered_stale() == 0

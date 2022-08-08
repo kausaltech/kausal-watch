@@ -12,7 +12,7 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator, RegexValidator
+from django.core.validators import URLValidator, RegexValidator, MaxValueValidator
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
@@ -92,6 +92,9 @@ class Plan(ClusterableModel):
 
     Most information in this service is linked to a Plan.
     """
+    DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 180
+    MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 730
+
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     short_name = models.CharField(max_length=50, verbose_name=_('short name'), null=True, blank=True)
@@ -153,6 +156,16 @@ class Plan(ClusterableModel):
         on_delete=models.SET_NULL
     )
     common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
+
+    action_days_until_considered_stale = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE)],
+        verbose_name=_('Days until actions considered stale'),
+        help_text=_(
+            'Actions not updated since this many days are considered stale. '
+            'If you leave this blank the default of %(default_days)s '
+            'will be used' % {
+                'default_days': DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+            }))
 
     features: PlanFeatures
     actions: RelatedManager[Action]
@@ -463,6 +476,10 @@ class Plan(ClusterableModel):
         qs: PlanQuerySet = Plan.objects.filter(q)
 
         return qs
+
+    def get_action_days_until_considered_stale(self):
+        days = self.action_days_until_considered_stale
+        return days if days is not None else self.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
 
 
 # ParentalManyToManyField  won't help, so we need the through model:

@@ -15,7 +15,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
+    ActivePlanEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
@@ -182,7 +182,8 @@ class PlanAdmin(AplansModelAdmin):
                 FieldPanel(
                     'common_category_types',
                     widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
-                )
+                ),
+                FieldPanel('action_days_until_considered_stale')
             ], heading=_('Action classifications')),
         ]
 
