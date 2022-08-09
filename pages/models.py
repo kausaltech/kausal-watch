@@ -26,7 +26,8 @@ from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
 from aplans.utils import OrderedModel
-from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock
+from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock
+
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
@@ -116,6 +117,7 @@ class PlanRootPage(AplansPage):
         ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
         ('related_plans', RelatedPlanListBlock(label=_('Related plans'))),
         ('cards', CardListBlock()),
+        ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
     ])
 
     content_panels = AplansPage.content_panels + [

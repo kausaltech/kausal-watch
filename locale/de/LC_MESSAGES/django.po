@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-09 14:39+0300\n"
-"PO-Revision-Date: 2022-08-09 14:41+0300\n"
+"POT-Creation-Date: 2022-08-09 17:59+0300\n"
+"PO-Revision-Date: 2022-08-09 18:11+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -2228,6 +2228,14 @@ msgstr "Großes Bild"
 msgid "Small image"
 msgstr "Kleines Bild"
 
+#: pages/blocks.py pages/models.py
+msgid "Category"
+msgstr "Kategorie"
+
+#: pages/blocks.py
+msgid "Links"
+msgstr "Links"
+
 #: pages/models.py
 msgid "show in footer"
 msgstr "zeige in Fußleiste"
@@ -2273,6 +2281,10 @@ msgid "Related plans"
 msgstr "Verbundene Pläne"
 
 #: pages/models.py
+msgid "Links to actions in specific category"
+msgstr "Links zu Maßnahmen in bestimmter Kategorie"
+
+#: pages/models.py
 msgid "Front page"
 msgstr "Titelseite"
 
@@ -2315,10 +2327,6 @@ msgstr "Inhaltseite"
 #: pages/models.py
 msgid "Content pages"
 msgstr "Inhaltseiten"
-
-#: pages/models.py
-msgid "Category"
-msgstr "Kategorie"
 
 #: pages/models.py
 msgid "Action list"

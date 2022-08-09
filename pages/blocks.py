@@ -1,11 +1,14 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 from uuid import UUID
 from wagtail.core import blocks
 from wagtail.images.blocks import ImageChooserBlock
+
+from actions.blocks import CategoryChooserBlock
+from actions.models import Category
 
 
 class ListBlockWithIncrementingChildIds(GrappleListBlock):
@@ -108,4 +111,24 @@ class CardListBlock(blocks.StructBlock):
         GraphQLString('heading'),
         GraphQLString('lead'),
         GraphQLStreamfield('cards'),
+    ]
+
+
+@register_streamfield_block
+class ActionCategoryFilterCardBlock(blocks.StructBlock):
+    heading = blocks.CharBlock(label=_('Heading'))
+    lead = blocks.CharBlock(label=_('Lead'))
+    category = CategoryChooserBlock(label=_('Category'))
+    graphql_fields = [
+        GraphQLString('heading'),
+        GraphQLString('lead'),
+        GraphQLForeignKey('category', Category),
+    ]
+
+
+@register_streamfield_block
+class ActionCategoryFilterCardsBlock(blocks.StructBlock):
+    cards = blocks.ListBlock(ActionCategoryFilterCardBlock(), label=_('Links'))
+    graphql_fields = [
+        GraphQLStreamfield('cards')
     ]
