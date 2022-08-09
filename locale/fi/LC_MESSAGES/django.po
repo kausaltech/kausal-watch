@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-06-28 12:27+0300\n"
-"PO-Revision-Date: 2022-05-17 08:22+0300\n"
+"POT-Creation-Date: 2022-08-09 14:26+0300\n"
+"PO-Revision-Date: 2022-08-09 14:26+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -84,10 +84,6 @@ msgstr "Nollaa suotimet"
 #: actions/action_admin.py
 msgid "Search"
 msgstr "Haku"
-
-#: actions/action_admin.py actions/apps.py actions/models/plan.py
-msgid "Actions"
-msgstr "Toimenpiteet"
 
 #: actions/action_admin.py actions/wagtail_admin.py
 msgid "External links"
@@ -198,6 +194,14 @@ msgstr "Tunniste pitää asettaa"
 msgid "Identifier already exists"
 msgstr "Tunniste on jo olemassa"
 
+#: actions/apps.py
+msgid "collection"
+msgstr "kokoelma"
+
+#: actions/apps.py actions/models/plan.py content/models.py
+msgid "Actions"
+msgstr "Toimenpiteet"
+
 #: actions/attribute_type_admin.py
 msgid "Object type"
 msgstr "Objektin tyyppi"
@@ -254,16 +258,16 @@ msgid "There is already a category with this identifier."
 msgstr "Tällä tunnisteella on jo luokka."
 
 #: actions/category_admin.py
+msgid "Icons"
+msgstr "Ikonit"
+
+#: actions/category_admin.py
 msgid "Common category types"
 msgstr "Yleisten luokkien tyypit"
 
 #: actions/category_admin.py admin_site/wagtail_hooks.py
 msgid "Common categories"
 msgstr "Yleiset luokat"
-
-#: actions/category_admin.py
-msgid "Icons"
-msgstr "Ikonit"
 
 #: actions/chooser.py
 msgid "Choose a category"
@@ -730,12 +734,20 @@ msgid "Format"
 msgstr "Muoto"
 
 #: actions/models/attributes.py
+msgid "Unit (only if format is numeric)"
+msgstr "Yksikkö (ainoastaan jos mouto on numeerinen)"
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr "ominaisuustyyppi"
 
 #: actions/models/attributes.py
 msgid "attribute types"
 msgstr "ominaisuustyypit"
+
+#: actions/models/attributes.py
+msgid "Unit must only be used for numeric attribute types"
+msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -772,6 +784,14 @@ msgstr "muokattavissa toimenpiteille"
 #: actions/models/category.py
 msgid "editable for indicators"
 msgstr "muokattavissa mittareille"
+
+#: actions/models/category.py
+msgid "has a collection"
+msgstr "kategorialla on kokoelma"
+
+#: actions/models/category.py
+msgid "Set if this category type should have its own collection for images"
+msgstr "Aseta jos tälle kategoriatyypille halutaan oma kokoelma kuvia varten"
 
 #: actions/models/category.py
 msgid "common category type"
@@ -834,10 +854,6 @@ msgid "Set if the category has a theme color"
 msgstr "Aseta jos kategorialla on teemaväri"
 
 #: actions/models/category.py
-msgid "category"
-msgstr "luokka"
-
-#: actions/models/category.py
 msgid "common category"
 msgstr "yleinen luokka"
 
@@ -846,12 +862,26 @@ msgid "parent category"
 msgstr "yläluokka"
 
 #: actions/models/category.py
+msgid "category"
+msgstr "luokka"
+
+#: actions/models/category.py
 msgid "Parent forms a loop. Leave empty if top-level category."
 msgstr "Riippuvuuksista muodostuu silmukka. Jätä tyhjäksi jos kyseessä on ylätason luokka."
 
 #: actions/models/category.py
 msgid "Parent must be of same type"
 msgstr "Yläluokan on oltava samaa tyyppiä"
+
+#: actions/models/category.py
+#, fuzzy
+#| msgid "categories"
+msgid "Subcategories"
+msgstr "luokat"
+
+#: actions/models/category.py
+msgid "Either SVG or image must be set"
+msgstr "Aseta joko SVG tai kuva"
 
 #: actions/models/features.py
 msgid "Allow images for actions"
@@ -972,6 +1002,15 @@ msgstr "Teeman tunniste"
 #: actions/models/plan.py
 msgid "parent"
 msgstr ""
+
+#: actions/models/plan.py
+msgid "Days until actions considered stale"
+msgstr "Kuinka monen päivän jälkeen toimenpiteen tila on vanhentunut "
+
+#: actions/models/plan.py
+#, python-format
+msgid "Actions not updated since this many days are considered stale. If you leave this blank the default of %(default_days)s will be used."
+msgstr "Toimenpiteitä, jotka ovat olleet päivittämättä näin monta päivää, pidetään vanhentuneina. Jos jätät tämän tyhjäksi, käytössä on oletusarvo %(default_days)s."
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -1242,6 +1281,10 @@ msgstr "kuva"
 msgid "image cropping"
 msgstr "kuvan rajaus"
 
+#: aplans/rest_api.py
+msgid "Cannot delete instance because other objects reference it."
+msgstr ""
+
 #: aplans/settings.py
 msgid "Finnish"
 msgstr "suomi"
@@ -1256,7 +1299,11 @@ msgstr "ruotsi"
 
 #: aplans/settings.py
 msgid "German"
-msgstr ""
+msgstr "saksa"
+
+#: aplans/settings.py
+msgid "Danish"
+msgstr "tanska"
 
 #: aplans/utils.py
 msgid "order"
@@ -1278,6 +1325,18 @@ msgstr "Toimenpideohjelman mukaisesti"
 #: content/apps.py
 msgid "Content"
 msgstr "Sisältö"
+
+#: content/models.py
+msgid "Action"
+msgstr "Toimenpide"
+
+#: content/models.py
+msgid "Strategy"
+msgstr "strateginen"
+
+#: content/models.py
+msgid "Strategies"
+msgstr "strategiat"
 
 #: content/models.py
 msgid "site title"
@@ -1336,6 +1395,10 @@ msgid "Accessibility contact email"
 msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
 
 #: content/models.py
+msgid "Term to use for 'action'"
+msgstr "Nimi, jolla kutsutaan toimenpiteitä"
+
+#: content/models.py
 msgid "site general content"
 msgstr "sivuston yleisen sisältö"
 
@@ -1345,7 +1408,7 @@ msgstr "sivuston yleiset sisällöt"
 
 #: documents/chooser.py
 msgid "Server Error"
-msgstr ""
+msgstr "Palvelinvirhe"
 
 #: documents/chooser.py
 msgid "Report this error to your webmaster with the following information:"

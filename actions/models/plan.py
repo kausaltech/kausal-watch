@@ -163,7 +163,7 @@ class Plan(ClusterableModel):
         help_text=_(
             'Actions not updated since this many days are considered stale. '
             'If you leave this blank the default of %(default_days)s '
-            'will be used' % {
+            'will be used.' % {
                 'default_days': DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
             }))
 

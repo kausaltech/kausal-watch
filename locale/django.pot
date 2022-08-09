@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-05-17 10:08+0300\n"
+"POT-Creation-Date: 2022-08-09 14:39+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -86,11 +86,7 @@ msgstr ""
 msgid "Search"
 msgstr ""
 
-#: actions/action_admin.py actions/apps.py actions/models/plan.py
-msgid "Actions"
-msgstr ""
-
-#: actions/action_admin.py
+#: actions/action_admin.py actions/wagtail_admin.py
 msgid "External links"
 msgstr ""
 
@@ -103,6 +99,11 @@ msgstr ""
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
+msgstr ""
+
+#: actions/action_admin.py actions/category_admin.py
+#: admin_site/wagtail_hooks.py indicators/admin.py indicators/wagtail_admin.py
+msgid "Categories"
 msgstr ""
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
@@ -118,17 +119,12 @@ msgstr ""
 msgid "Contact persons"
 msgstr ""
 
-#: actions/action_admin.py
+#: actions/action_admin.py actions/api.py
 msgid "Responsible parties"
 msgstr ""
 
 #: actions/action_admin.py
 msgid "Tasks"
-msgstr ""
-
-#: actions/action_admin.py actions/category_admin.py
-#: admin_site/wagtail_hooks.py indicators/admin.py indicators/wagtail_admin.py
-msgid "Categories"
 msgstr ""
 
 #: actions/action_admin.py
@@ -163,8 +159,12 @@ msgstr ""
 msgid "Impact"
 msgstr ""
 
-#: actions/admin.py actions/attribute_type_admin.py
+#: actions/admin.py actions/attribute_type_admin.py pages/models.py
 msgid "Category type"
+msgstr ""
+
+#: actions/admin.py
+msgid "Common category type"
 msgstr ""
 
 #: actions/admin.py
@@ -193,6 +193,14 @@ msgstr ""
 
 #: actions/api.py
 msgid "Identifier already exists"
+msgstr ""
+
+#: actions/apps.py
+msgid "collection"
+msgstr ""
+
+#: actions/apps.py actions/models/plan.py content/models.py
+msgid "Actions"
 msgstr ""
 
 #: actions/attribute_type_admin.py
@@ -247,6 +255,18 @@ msgstr ""
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Icons"
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Common category types"
+msgstr ""
+
+#: actions/category_admin.py admin_site/wagtail_hooks.py
+msgid "Common categories"
 msgstr ""
 
 #: actions/chooser.py
@@ -332,7 +352,7 @@ msgid "contact persons"
 msgstr ""
 
 #: actions/models/action.py actions/models/plan.py content/models.py
-#: indicators/models.py notifications/models.py orgs/models.py
+#: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
 msgstr ""
 
@@ -361,6 +381,7 @@ msgid "Lead paragraph"
 msgstr ""
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py
 msgid "description"
 msgstr ""
 
@@ -442,6 +463,10 @@ msgstr ""
 
 #: actions/models/action.py indicators/models.py
 msgid "indicators"
+msgstr ""
+
+#: actions/models/action.py
+msgid "related actions"
 msgstr ""
 
 #: actions/models/action.py
@@ -640,11 +665,11 @@ msgstr ""
 msgid "action impact classes"
 msgstr ""
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py indicators/models.py orgs/models.py pages/models.py
 msgid "URL"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py pages/models.py
 msgid "title"
 msgstr ""
 
@@ -668,7 +693,7 @@ msgstr ""
 msgid "content"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py people/models.py
 msgid "created by"
 msgstr ""
 
@@ -709,11 +734,19 @@ msgid "Format"
 msgstr ""
 
 #: actions/models/attributes.py
+msgid "Unit (only if format is numeric)"
+msgstr ""
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr ""
 
 #: actions/models/attributes.py
 msgid "attribute types"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "Unit must only be used for numeric attribute types"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -753,11 +786,35 @@ msgid "editable for indicators"
 msgstr ""
 
 #: actions/models/category.py
+msgid "has a collection"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Set if this category type should have its own collection for images"
+msgstr ""
+
+#: actions/models/category.py
+msgid "common category type"
+msgstr ""
+
+#: actions/models/category.py
+msgid "common category types"
+msgstr ""
+
+#: actions/models/category.py
 msgid "hide category identifiers"
 msgstr ""
 
 #: actions/models/category.py
 msgid "Set if the categories do not have meaningful identifiers"
+msgstr ""
+
+#: actions/models/category.py
+msgid "synchronize with pages"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Set if categories of this type should be synchronized with pages"
 msgstr ""
 
 #: actions/models/category.py
@@ -785,10 +842,6 @@ msgid "category levels"
 msgstr ""
 
 #: actions/models/category.py
-msgid "parent category"
-msgstr ""
-
-#: actions/models/category.py
 msgid "short description"
 msgstr ""
 
@@ -801,6 +854,14 @@ msgid "Set if the category has a theme color"
 msgstr ""
 
 #: actions/models/category.py
+msgid "common category"
+msgstr ""
+
+#: actions/models/category.py
+msgid "parent category"
+msgstr ""
+
+#: actions/models/category.py
 msgid "category"
 msgstr ""
 
@@ -810,6 +871,14 @@ msgstr ""
 
 #: actions/models/category.py
 msgid "Parent must be of same type"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Subcategories"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Either SVG or image must be set"
 msgstr ""
 
 #: actions/models/features.py
@@ -930,6 +999,15 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "parent"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Days until actions considered stale"
+msgstr ""
+
+#: actions/models/plan.py
+#, python-format
+msgid "Actions not updated since this many days are considered stale. If you leave this blank the default of %(default_days)s will be used."
 msgstr ""
 
 #: actions/models/plan.py indicators/models.py
@@ -1145,6 +1223,11 @@ msgid "%s could not be created due to errors."
 msgstr ""
 
 #: admin_site/wagtail.py
+#, python-brace-format
+msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgstr ""
+
+#: admin_site/wagtail.py
 #, python-format
 msgid "Add %(related_verbose_name)s"
 msgstr ""
@@ -1190,6 +1273,10 @@ msgstr ""
 msgid "image cropping"
 msgstr ""
 
+#: aplans/rest_api.py
+msgid "Cannot delete instance because other objects reference it."
+msgstr ""
+
 #: aplans/settings.py
 msgid "Finnish"
 msgstr ""
@@ -1204,6 +1291,10 @@ msgstr ""
 
 #: aplans/settings.py
 msgid "German"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Danish"
 msgstr ""
 
 #: aplans/utils.py
@@ -1225,6 +1316,18 @@ msgstr ""
 
 #: content/apps.py
 msgid "Content"
+msgstr ""
+
+#: content/models.py
+msgid "Action"
+msgstr ""
+
+#: content/models.py
+msgid "Strategy"
+msgstr ""
+
+#: content/models.py
+msgid "Strategies"
 msgstr ""
 
 #: content/models.py
@@ -1281,6 +1384,10 @@ msgstr ""
 
 #: content/models.py
 msgid "Accessibility contact email"
+msgstr ""
+
+#: content/models.py
+msgid "Term to use for 'action'"
 msgstr ""
 
 #: content/models.py
@@ -2049,6 +2156,10 @@ msgid "A date of dissolution"
 msgstr ""
 
 #: orgs/models.py
+msgid "Location"
+msgstr ""
+
+#: orgs/models.py
 msgid "plan admin"
 msgstr ""
 
@@ -2190,6 +2301,14 @@ msgstr ""
 
 #: pages/models.py
 msgid "lead content"
+msgstr ""
+
+#: pages/models.py
+msgid "external plan link"
+msgstr ""
+
+#: pages/models.py
+msgid "external plan links"
 msgstr ""
 
 #: pages/wagtail_admin.py
