@@ -18,8 +18,8 @@ function changeCompletedAt() {
 $(document).on("change", selectSelector, changeCompletedAt);
 
 // The same after creating the form
-const editButtonSelector = 'li[class~="condensed-inline-panel__action-edit"]'
-$(document).on('click', editButtonSelector, function (ev) {
+const selector = 'li[class~="condensed-inline-panel__action-edit"], button[class~="condensed-inline-panel__top-add-button"]'
+$(document).on('click', selector, function (ev) {
     setTimeout(function () {
         changeCompletedAt();
     }, 0);
