@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-09 17:59+0300\n"
-"PO-Revision-Date: 2022-08-09 18:11+0300\n"
+"POT-Creation-Date: 2022-08-10 15:39+0300\n"
+"PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -1005,9 +1005,8 @@ msgid "Days until actions considered stale"
 msgstr "Tage bis Maßnahmen als veraltet gelten"
 
 #: actions/models/plan.py
-#, python-format
-msgid "Actions not updated since this many days are considered stale. If you leave this blank the default of %(default_days)s will be used."
-msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird der Standardwert von %(default_days)s verwendet."
+msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"

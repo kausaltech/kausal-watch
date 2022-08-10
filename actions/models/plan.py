@@ -162,10 +162,7 @@ class Plan(ClusterableModel):
         verbose_name=_('Days until actions considered stale'),
         help_text=_(
             'Actions not updated since this many days are considered stale. '
-            'If you leave this blank the default of %(default_days)s '
-            'will be used.' % {
-                'default_days': DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
-            }))
+            'If you leave this blank a default value will be used.'))
 
     features: PlanFeatures
     actions: RelatedManager[Action]
