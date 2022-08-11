@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-10 15:37+0300\n"
-"PO-Revision-Date: 2022-08-10 15:37+0300\n"
+"POT-Creation-Date: 2022-08-11 17:02+0300\n"
+"PO-Revision-Date: 2022-08-11 17:08+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1986,6 +1986,96 @@ msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity
 msgid "Notifications"
 msgstr "Herätteet"
 
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "action_not_updated"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelman\n"
+"tietojen päivittämisestä. Ohjelmavahdissa näytetään, mitä\n"
+"toimenpiteissä on jo tehty ja mitä aiotaan jatkossa\n"
+"tehdä. Edellisestä kerrasta, kun muokkasit toimenpiteen\n"
+"kuvausta, on vierähtänyt jo kuusi kuukautta. Käythän\n"
+"täydentämässä toimenpiteen kuvausta ja kirjoittamassa\n"
+"siihen viimeisimmät kuulumiset. Voit samalla lisätä\n"
+"toimenpiteelle myös seuraavan tehtävän."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "not_enough_tasks"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelman\n"
+"tietojen päivittämisestä. Ohjelmavahdissa näytetään, mitä\n"
+"toimenpiteissä on jo tehty ja mitä aiotaan jatkossa\n"
+"tehdä. Tämän vuoksi jokaisella toimenpiteellä on hyvä olla\n"
+"aina sovittuna vähintään yksi seuraava tehtävä, joka\n"
+"tapahtuu vuoden sisällä. Merkitsethän toimenpiteelle\n"
+"tehtävät, joista näkee, mitä toimenpiteessä seuraavaksi on\n"
+"suunniteltu tehtävän."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "task_due_soon"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelmaan\n"
+"kirjaamistasi tehtävistä. Toimenpideohjelmassa on tehtävä,\n"
+"jonka tavoitepäivämäärä (deadline) lähestyy. Muistathan\n"
+"käydä merkitsemässä tehtävän valmiiksi heti, kun se on\n"
+"valmistunut. Kun deadline on mennyt, toimenpide merkitään\n"
+"myöhässä olevaksi. Voit muokata tehtävän tietoja\n"
+"allaolevasta linkistä."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "task_late"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelmaan\n"
+"kirjaamistasi tehtävistä. Toimenpideohjelmassa on tehtävä,\n"
+"jonka deadline on mennyt. Toimenpide näytetään myöhässä\n"
+"olevana, kunnes merkitset tehtävän valmistuneeksi ja\n"
+"täydennät siihen lisätietoja."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "updated_indicator_values_due_soon"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values is approaching. Please go and update the indicator with the latest values."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelman\n"
+"mittaritietojen päivittämisestä. Mittaritietojen\n"
+"tavoitepäivämäärä lähestyy.  Käythän päivittämässä\n"
+"mittariin uusimmat arvot."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "updated_indicator_values_late"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
+msgstr ""
+"Tämä on automaattinen muistutusviesti toimenpideohjelman\n"
+"mittaritietojen päivittämisestä. Mittaritietojen\n"
+"tavoitepäivämäärä on mennyt. Käythän päivittämässä\n"
+"mittariin uusimmat arvot."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "motivation"
+msgid "Thank you for keeping the action plan updated. Up-to-date information about the actions is essential for us to achieve our goals."
+msgstr ""
+"Kiitos, että pidät ohjelmavahdin ajan tasalla. Ajantasainen\n"
+"tieto toimenpiteistä on välttämätöntä, jotta saavutamme\n"
+"tavoitteemme."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "outro"
+msgid ""
+"If you are having difficulties using the action plan watch platform, please send an email to the administrators of the action plan.\n"
+"\n"
+"Thank you for taking part in implementing the action plan!\n"
+"\n"
+"Kind regards, the action plan administrators."
+msgstr ""
+"Mikäli sinulla on ohjelmavahdin käyttöön liittyviä ongelmia,\n"
+"laita viestiä toimenpideohjelman pääkäyttäjälle.\n"
+"\n"
+"Kiitos, että olet mukana toteuttamassa toimenpideohjelmaa!\n"
+"\n"
+"Ystävällisin terveisin toimenpideohjelman ylläpitäjät"
+
 #: notifications/models.py
 msgid "Task is late"
 msgstr "Tehtävä on myöhässä"
@@ -2566,6 +2656,24 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#, fuzzy
+#~| msgid "Task is due soon"
+#~ msgctxt "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
+#~ msgid "task_due_soon"
+#~ msgstr "Tehtävän tavoitepäivämäärä lähestyy"
+
+#, fuzzy
+#~| msgid "Task is late"
+#~ msgctxt "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
+#~ msgid "task_late"
+#~ msgstr "Tehtävä on myöhässä"
+
+#, fuzzy
+#~| msgid "Updated indicator values are late"
+#~ msgctxt "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
+#~ msgid "updated_indicator_values_late"
+#~ msgstr "Mittarin päivitys on myöhässä"
 
 #~ msgid "related action"
 #~ msgstr "liittyvä toimenpide"
