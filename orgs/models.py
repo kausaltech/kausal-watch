@@ -241,14 +241,30 @@ class Organization(index.Indexed, Node, gis_models.Model):
     def user_can_change_related_to_plan(self, user, plan):
         return user.is_general_admin_for_plan(plan)
 
-    def __str__(self):
-        if self.distinct_name:
-            name = self.distinct_name
-        else:
-            name = self.name
-        if self.dissolution_date:
-            return self.name + ' (dissolved)'
+    def get_fully_qualified_name(self):
+        parents = []
+        org = self.get_parent()
+        while org is not None:
+            parents.append(org)
+            org = org.get_parent()
+        name = self.name
+        if parents:
+            def get_org_path_str(org: Organization):
+                # if org.abbreviation:
+                #     return org.abbreviation
+                return org.name
+
+            parent_path = ' | '.join([get_org_path_str(org) for org in parents])
+            name += ' (%s)' % parent_path
         return name
+
+    def __str__(self):
+        if self.name is None:
+            return '[None]'
+        fq_name = self.get_fully_qualified_name()
+        if self.dissolution_date:
+            fq_name += ' [dissolved]'
+        return fq_name
 
 
 class Namespace(models.Model):
