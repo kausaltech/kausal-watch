@@ -52,6 +52,8 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
 
     def user_is_contact_for(self, user: User):
         person = user.get_corresponding_person()
+        if person is None:
+            return self.none()
         qs = self.filter(Q(contact_persons__person=person)).distinct()
         return qs
 
