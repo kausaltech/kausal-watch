@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-11 17:02+0300\n"
+"POT-Creation-Date: 2022-08-11 19:26+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2176,11 +2176,19 @@ msgid "A primary name, e.g. a legally recognized name"
 msgstr ""
 
 #: orgs/models.py
-msgid "Abbreviation"
+msgid "Short name"
 msgstr ""
 
 #: orgs/models.py
-msgid "A commonly used abbreviation"
+msgid "A simplified short version of name for the general public"
+msgstr ""
+
+#: orgs/models.py
+msgid "Internal abbreviation"
+msgstr ""
+
+#: orgs/models.py
+msgid "An internally used abbreviation"
 msgstr ""
 
 #: orgs/models.py

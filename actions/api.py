@@ -740,7 +740,7 @@ category_type_router.register('categories', CategoryViewSet, basename='category'
 class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
-        fields = ('id', 'name', 'abbreviation',)
+        fields = ('id', 'name', 'abbreviation', 'internal_abbreviation')
 
 
 @register_view

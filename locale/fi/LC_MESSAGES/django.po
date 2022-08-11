@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-11 17:02+0300\n"
-"PO-Revision-Date: 2022-08-11 17:08+0300\n"
+"POT-Creation-Date: 2022-08-11 19:26+0300\n"
+"PO-Revision-Date: 2022-08-11 19:31+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -2229,12 +2229,20 @@ msgid "A primary name, e.g. a legally recognized name"
 msgstr "Virallinen nimi"
 
 #: orgs/models.py
-msgid "Abbreviation"
-msgstr "Lyhenne"
+msgid "Short name"
+msgstr "Lyhyt nimi"
 
 #: orgs/models.py
-msgid "A commonly used abbreviation"
-msgstr "Yleisesti käytetty lyhenne"
+msgid "A simplified short version of name for the general public"
+msgstr "Lyhyt ja tunnistettava versio nimestä suurta yleisöä varten"
+
+#: orgs/models.py
+msgid "Internal abbreviation"
+msgstr "Sisäinen lyhenne"
+
+#: orgs/models.py
+msgid "An internally used abbreviation"
+msgstr "Organisaation sisäinen tunniste sisäiseen käyttöön"
 
 #: orgs/models.py
 msgid "A distinct name for this organization (generated automatically)"
@@ -2656,6 +2664,9 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Abbreviation"
+#~ msgstr "Lyhenne"
 
 #, fuzzy
 #~| msgid "Task is due soon"

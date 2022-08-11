@@ -135,8 +135,12 @@ class Organization(index.Indexed, Node, gis_models.Model):
                             help_text=_('A primary name, e.g. a legally recognized name'))
     abbreviation = models.CharField(max_length=50,
                                     blank=True,
-                                    verbose_name=_("Abbreviation"),
-                                    help_text=_('A commonly used abbreviation'))
+                                    verbose_name=_("Short name"),
+                                    help_text=_('A simplified short version of name for the general public'))
+    internal_abbreviation = models.CharField(max_length=50,
+                                             blank=True,
+                                             verbose_name=_("Internal abbreviation"),
+                                             help_text=_('An internally used abbreviation'))
     distinct_name = models.CharField(max_length=400,
                                      editable=False,
                                      null=True,
@@ -248,6 +252,8 @@ class Organization(index.Indexed, Node, gis_models.Model):
             parents.append(org)
             org = org.get_parent()
         name = self.name
+        if self.internal_abbreviation:
+            name = f'{self.internal_abbreviation} - {name}'
         if parents:
             def get_org_path_str(org: Organization):
                 # if org.abbreviation:
