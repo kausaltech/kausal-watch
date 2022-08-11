@@ -614,6 +614,9 @@ if not locals().get('SECRET_KEY', ''):
 
 
 if DEBUG:
+    from aplans.watchfiles_reloader import replace_reloader
+    replace_reloader()
+
     from rich.traceback import install
     install()
 
@@ -673,6 +676,8 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             'PIL': level('INFO'),
             'faker': level('INFO'),
             'factory': level('INFO'),
+            'watchfiles': level('INFO'),
+            'watchdog': level('INFO'),
             '': level('DEBUG'),
         }
     }
