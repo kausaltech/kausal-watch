@@ -29,6 +29,7 @@ class User(AbstractUser):
     _corresponding_person: Person
 
     autocomplete_search_field = 'email'
+
     def autocomplete_label(self):
         return self.email
 
@@ -122,25 +123,18 @@ class User(AbstractUser):
         return Organization.objects.filter(id__in=orgs)
 
     def is_organization_admin_for_action(self, action=None):
+        actions = None
         if hasattr(self, '_org_admin_for_actions'):
             actions = self._org_admin_for_actions
-            if action is None:
-                return bool(actions)
-            return action.pk in actions
-
-        actions = set()
-        self._org_admin_for_actions = actions
-
-        orgs = self._get_admin_orgs()
-
-        Action = apps.get_model('actions', 'Action')
-        rp_actions = Action.objects.filter(responsible_parties__organization__in=orgs).distinct()
-        actions.update({act.id for act in rp_actions})
-
+        else:
+            Action = apps.get_model('actions', 'Action')
+            actions = Action.objects.user_is_org_admin_for(self)
+            self._org_admin_for_actions = actions
+        # Ensure below that the actions queryset is evaluated to make
+        # the cache efficient (it will use queryset's cache)
         if action is None:
             return bool(actions)
-        else:
-            return action.pk in actions
+        return action in actions
 
     def get_adminable_organizations(self):
         if self.is_superuser:
@@ -207,7 +201,6 @@ class User(AbstractUser):
             else:
                 plan.is_active_admin = False
         return plans
-
 
     def can_modify_action(self, action: Action = None, plan: Plan = None):
         if self.is_superuser:
