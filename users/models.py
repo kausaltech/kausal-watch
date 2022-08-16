@@ -136,6 +136,20 @@ class User(AbstractUser):
             return bool(actions)
         return action in actions
 
+    def is_organization_admin_for_indicator(self, indicator=None):
+        indicators = None
+        if hasattr(self, '_org_admin_for_indicators'):
+            indicators = self._org_admin_for_indicators
+        else:
+            Indicator = apps.get_model('indicators', 'Indicator')
+            indicators = Indicator.objects.filter(organization__in=self.get_adminable_organizations())
+            self._org_admin_for_indicators = indicators
+        # Ensure below that the indicators queryset is evaluated to make
+        # the cache efficient (it will use queryset's cache)
+        if indicator is None:
+            return bool(indicators)
+        return indicator in indicators
+
     def get_adminable_organizations(self):
         if self.is_superuser:
             return Organization.objects.all()
@@ -173,8 +187,9 @@ class User(AbstractUser):
         is_indicator_contact = self.is_contact_person_for_indicator()
         is_general_admin = self.is_general_admin_for_plan()
         is_org_admin = self.is_organization_admin_for_action()
+        is_indicator_org_admin = self.is_organization_admin_for_indicator()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
-                and not is_org_admin and not is_indicator_contact:
+                and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
             return Plan.objects.none()
 
         # Cache adminable plans for each request
@@ -188,6 +203,7 @@ class User(AbstractUser):
                 q |= Q(indicators__in=self._contact_for_indicators)
                 q |= Q(id__in=self._general_admin_for_plans)
                 q |= Q(actions__in=self._org_admin_for_actions)
+                q |= Q(indicators__in=self._org_admin_for_indicators)
                 plans = Plan.objects.filter(q).distinct()
             self._adminable_plans = plans
         return plans
@@ -249,7 +265,7 @@ class User(AbstractUser):
                 if self.is_general_admin_for_plan(plan):
                     return True
 
-        return self.is_contact_person_for_indicator(indicator)
+        return self.is_contact_person_for_indicator(indicator) or self.is_organization_admin_for_indicator(indicator)
 
     def can_modify_category(self, category=None):
         if self.is_superuser:
