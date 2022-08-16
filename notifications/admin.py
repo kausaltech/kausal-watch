@@ -1,5 +1,4 @@
 from ckeditor.widgets import CKEditorWidget
-from django import forms
 from django.contrib import admin
 
 from admin_site.admin import AplansModelAdmin

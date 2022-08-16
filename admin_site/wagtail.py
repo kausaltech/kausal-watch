@@ -299,7 +299,16 @@ class PlanRelatedViewMixin:
 class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
                      PlanRelatedViewMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
-        form_valid_return = super().form_valid(form, *args, **kwargs)
+        try:
+            form_valid_return = super().form_valid(form, *args, **kwargs)
+        except ProtectedError as e:
+            for o in e.protected_objects:
+                name = type(o)._meta.verbose_name_plural
+                error = _("Error deleting items. Try first deleting any %(name)s that are in use.") % {'name': name}
+                form.add_error(None, error)
+                form.add_error(None, _('In use: "%(instance)s".') % {'instance': str(o)})
+            messages.validation_error(self.request, self.get_error_message(), form)
+            return self.render_to_response(self.get_context_data(form=form))
 
         if hasattr(form.instance, 'handle_admin_save'):
             form.instance.handle_admin_save()

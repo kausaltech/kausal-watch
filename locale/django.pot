@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-11 19:26+0300\n"
+"POT-Creation-Date: 2022-08-16 10:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1218,6 +1218,16 @@ msgstr ""
 
 #: admin_site/wagtail.py
 #, python-format
+msgid "Error deleting items. Try first deleting any %(name)s that are in use."
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "In use: \"%(instance)s\"."
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
 msgid "%s could not be created due to errors."
 msgstr ""
 
@@ -2076,11 +2086,12 @@ msgid "Font CSS style URL"
 msgstr ""
 
 #: notifications/models.py
-msgid "base template"
+msgctxt "partitive"
+msgid "notification settings"
 msgstr ""
 
 #: notifications/models.py
-msgid "base templates"
+msgid "notification settings"
 msgstr ""
 
 #: notifications/models.py

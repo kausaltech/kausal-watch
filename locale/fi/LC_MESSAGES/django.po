@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-11 19:26+0300\n"
-"PO-Revision-Date: 2022-08-11 19:31+0300\n"
+"POT-Creation-Date: 2022-08-16 10:22+0300\n"
+"PO-Revision-Date: 2022-08-16 10:23+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1226,6 +1226,16 @@ msgstr "Muokkaa"
 
 #: admin_site/wagtail.py
 #, python-format
+msgid "Error deleting items. Try first deleting any %(name)s that are in use."
+msgstr "Kohteiden poistaminen ei onnistunut. Poista ensin sellaiset %(name)s jotka ovat vielä käytössä."
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "In use: \"%(instance)s\"."
+msgstr "Käytössä: \"%(instance)s\""
+
+#: admin_site/wagtail.py
+#, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s ei voitu tallentaa virheiden takia."
 
@@ -2129,12 +2139,13 @@ msgid "Font CSS style URL"
 msgstr "URL-osoite kirjasimen CSS-tyylitiedostoon"
 
 #: notifications/models.py
-msgid "base template"
-msgstr "pohjamallinne"
+msgctxt "partitive"
+msgid "notification settings"
+msgstr "heräteasetuksia"
 
 #: notifications/models.py
-msgid "base templates"
-msgstr "pohjamallinteet"
+msgid "notification settings"
+msgstr "heräteasetukset"
 
 #: notifications/models.py
 msgid "subject"
@@ -2664,6 +2675,12 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "base template"
+#~ msgstr "pohjamallinne"
+
+#~ msgid "base templates"
+#~ msgstr "pohjamallinteet"
 
 #~ msgid "Abbreviation"
 #~ msgstr "Lyhenne"

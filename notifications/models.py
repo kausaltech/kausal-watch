@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.core.fields import RichTextField
@@ -91,9 +91,11 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
 
     objects = BaseTemplateManager()
 
+    verbose_name_partitive = pgettext_lazy('partitive', 'notification settings')
+
     class Meta:
-        verbose_name = _('base template')
-        verbose_name_plural = _('base templates')
+        verbose_name = _('notification settings')
+        verbose_name_plural = _('notification settings')
 
     def __str__(self):
         return str(self.plan)
@@ -166,9 +168,9 @@ class ContentBlockManager(models.Manager):
 class ContentBlock(models.Model):
     content = RichTextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
-    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
+    base = ParentalKey(BaseTemplate, on_delete=models.PROTECT, related_name='content_blocks', editable=False)
     template = models.ForeignKey(
-        NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
+        NotificationTemplate, null=True, blank=True, on_delete=models.PROTECT, related_name='content_blocks',
         verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
     )
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'), choices=(
