@@ -151,7 +151,7 @@ class NotEnoughTasksNotification(Notification):
         return dict(action=self.obj.get_notification_context(self.plan))
 
     def generate_notifications(self):
-        contacts = self.obj._contact_persons
+        contacts = self.obj._notification_recipients
         for person in contacts:
             days_since = self.notification_last_sent(person)
             if days_since is not None:
@@ -170,7 +170,7 @@ class ActionNotUpdatedNotification(Notification):
         return dict(action=self.obj.get_notification_context(self.plan), last_updated_at=self.obj.updated_at)
 
     def generate_notifications(self):
-        contacts = self.obj._contact_persons
+        contacts = self.obj._notification_recipients
         for person in contacts:
             days_since = self.notification_last_sent(person)
             if days_since is not None:
@@ -208,7 +208,7 @@ class NotificationEngine:
         actions = self.plan.actions.select_related('status')
         for act in actions:
             act.plan = self.plan  # prevent DB query
-            act._contact_persons = []  # same, filled in later
+            act._notification_recipients = []  # same, filled in later
             if act.identifier in self.ignore_actions:
                 act._ignore = True
             else:
@@ -217,7 +217,7 @@ class NotificationEngine:
 
         for indicator in indicators:
             indicator.plan = self.plan  # prevent DB query
-            indicator._contact_persons = []  # same, filled in later
+            indicator._notification_recipients = []  # same, filled in later
             if indicator.identifier in self.ignore_indicators:
                 indicator._ignore = True
             else:
@@ -235,7 +235,7 @@ class NotificationEngine:
                 persons_by_id[ac.person_id] = ac.person
                 ac.person._notifications = {}
             action = self.actions_by_id[ac.action_id]
-            action._contact_persons.append(persons_by_id[ac.person_id])
+            action._notification_recipients.append(persons_by_id[ac.person_id])
 
         indicator_contacts = IndicatorContactPerson.objects.filter(indicator__in=indicators).select_related('person')
         for ic in indicator_contacts:
@@ -243,9 +243,36 @@ class NotificationEngine:
                 persons_by_id[ic.person_id] = ic.person
                 ic.person._notifications = {}
             indicator = self.indicators_by_id[ic.indicator_id]
-            indicator._contact_persons.append(persons_by_id[ic.person_id])
+            indicator._notification_recipients.append(persons_by_id[ic.person_id])
 
+        admin_people = []
+        for action in self.actions_by_id.values():
+            admin_people += self.ensure_action_notification_recipient(action)
+        for indicator in self.indicators_by_id.values():
+            admin_people += self.ensure_indicator_notification_recipient(indicator)
+        for person in admin_people:
+            persons_by_id[person.id] = person
         self.persons_by_id = persons_by_id
+
+    def ensure_action_notification_recipient(self, action):
+        if action._notification_recipients:
+            return []
+        organizations = set((p.organization for p in action.responsible_parties.all()))
+        organizations.add(action.primary_org)
+        people = [opa.person for opa in self.plan.organization_plan_admins.filter(organization__in=organizations)]
+        for person in people:
+            person._notifications = {}
+        action._notification_recipients = people
+        return people
+
+    def ensure_indicator_notification_recipient(self, indicator):
+        if indicator._notification_recipients:
+            return []
+        people = [opa.person for opa in self.plan.organization_plan_admins.filter(organization=indicator.organization)]
+        for person in people:
+            person._notifications = {}
+        indicator._notification_recipients = people
+        return people
 
     def generate_task_notifications(self, task: ActionTask):
         if task.state in (ActionTask.CANCELLED, ActionTask.COMPLETED):
@@ -262,7 +289,7 @@ class NotificationEngine:
             notif = TaskDueSoonNotification(self.plan, task, diff)
         else:
             return
-        notif.generate_notifications(task.action._contact_persons)
+        notif.generate_notifications(task.action._notification_recipients)
 
     def generate_indicator_notifications(self, indicator: Indicator):
         if indicator.updated_values_due_at is None:
@@ -276,7 +303,7 @@ class NotificationEngine:
             notif = UpdatedIndicatorValuesDueSoonNotification(self.plan, indicator, diff)
         else:
             return
-        notif.generate_notifications(indicator._contact_persons)
+        notif.generate_notifications(indicator._notification_recipients)
 
     def make_action_notifications(self, action: Action):
         # Generate a notification if action doesn't have at least
