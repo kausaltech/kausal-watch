@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-16 10:22+0300\n"
+"POT-Creation-Date: 2022-08-18 10:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1002,6 +1002,22 @@ msgid "parent"
 msgstr ""
 
 #: actions/models/plan.py
+msgid "The primary action classification"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Used for primary navigation and grouping of actions"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A secondary action classification"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
+msgstr ""
+
+#: actions/models/plan.py
 msgid "Days until actions considered stale"
 msgstr ""
 
@@ -1015,6 +1031,18 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "Primary language must not be selected"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Category type must belong to plan"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "You must create and choose a primary category type for classifying actions"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Primary and secondary classification cannot be the same"
 msgstr ""
 
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py

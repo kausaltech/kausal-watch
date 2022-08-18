@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-16 10:22+0300\n"
-"PO-Revision-Date: 2022-08-16 10:23+0300\n"
+"POT-Creation-Date: 2022-08-18 10:12+0300\n"
+"PO-Revision-Date: 2022-08-18 10:12+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1004,6 +1004,22 @@ msgid "parent"
 msgstr ""
 
 #: actions/models/plan.py
+msgid "The primary action classification"
+msgstr "Toimenpiteiden pääluokittelu"
+
+#: actions/models/plan.py
+msgid "Used for primary navigation and grouping of actions"
+msgstr "Käytetään toimenpiteiden ensisijaiseen luokitteluun esimerkiksi sivuston navigaatiossa"
+
+#: actions/models/plan.py
+msgid "A secondary action classification"
+msgstr "Toimenpiteiden toissijainen luokittelu"
+
+#: actions/models/plan.py
+msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
+msgstr "Jätä tyhjäksi ellei erikseen toivottu. Sivustolla korostetaan toimenpiteiden luokittelua tällä kategorialla "
+
+#: actions/models/plan.py
 msgid "Days until actions considered stale"
 msgstr "Kuinka monen päivän jälkeen toimenpiteen tila on vanhentunut "
 
@@ -1018,6 +1034,18 @@ msgstr "toimenpideohjelmat"
 #: actions/models/plan.py
 msgid "Primary language must not be selected"
 msgstr "Ensisijainen kieli ei voi olla valittuna"
+
+#: actions/models/plan.py
+msgid "Category type must belong to plan"
+msgstr "Luokan tyypin täytyy kuulua toimenpideohjelmaan "
+
+#: actions/models/plan.py
+msgid "You must create and choose a primary category type for classifying actions"
+msgstr "Toimenpiteiden pääluokitteluun on valittava luokan tyyppi"
+
+#: actions/models/plan.py
+msgid "Primary and secondary classification cannot be the same"
+msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
@@ -2675,6 +2703,19 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Leave empty unless specifically required."
+#~ msgstr "Jätä tyhjäksi ellei erikseen toivottu."
+
+#, fuzzy
+#~| msgid "Choose a category type"
+#~ msgid "The primary category type"
+#~ msgstr "Valitse luokan tyyppi"
+
+#, fuzzy
+#~| msgid "common category type"
+#~ msgid "A secondary category type"
+#~ msgstr "yleisen luokan tyyppi"
 
 #~ msgid "base template"
 #~ msgstr "pohjamallinne"

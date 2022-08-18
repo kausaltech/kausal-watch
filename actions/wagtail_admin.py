@@ -22,6 +22,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
+from actions.chooser import CategoryTypeChooser
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
@@ -171,6 +172,7 @@ class PlanAdmin(AplansModelAdmin):
         tabs = [
             ObjectList(panels, heading=_('Basic information')),
             ObjectList([
+                FieldPanel('primary_action_classification', widget=CategoryTypeChooser),
                 CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
                 CondensedInlinePanel(
                     'action_implementation_phases',
@@ -183,6 +185,7 @@ class PlanAdmin(AplansModelAdmin):
                     'common_category_types',
                     widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
                 ),
+                FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
                 FieldPanel('action_days_until_considered_stale')
             ], heading=_('Action classifications')),
         ]

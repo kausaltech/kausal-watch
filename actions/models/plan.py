@@ -157,6 +157,21 @@ class Plan(ClusterableModel):
     )
     common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
 
+    primary_action_classification = models.ForeignKey(
+        'actions.CategoryType', blank=True, null=True, on_delete=models.PROTECT,
+        related_name='plans_with_primary_classification',
+        verbose_name=_('The primary action classification'),
+        help_text=_('Used for primary navigation and grouping of actions')
+    )
+    secondary_action_classification = models.ForeignKey(
+        'actions.CategoryType', blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='plans_with_secondary_classification',
+        verbose_name=_('A secondary action classification'),
+        help_text=(_('Leave empty unless specifically required. Action'
+                     'filters based on this category are displayed '
+                     'more prominently than filters of other '
+                     'categories.')))
+
     action_days_until_considered_stale = models.PositiveIntegerField(
         null=True, blank=True, validators=[MaxValueValidator(MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE)],
         verbose_name=_('Days until actions considered stale'),
@@ -190,6 +205,7 @@ class Plan(ClusterableModel):
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
+        'primary_action_classification', 'secondary_action_classification'
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
@@ -209,6 +225,22 @@ class Plan(ClusterableModel):
     def clean(self):
         if self.primary_language in self.other_languages:
             raise ValidationError({'other_languages': _('Primary language must not be selected')})
+
+        for field in ['primary_action_classification', 'secondary_action_classification']:
+            value = getattr(self, field)
+            if value and value not in self.category_types.all():
+                raise ValidationError({field: _('Category type must belong to plan')})
+
+        if self.actions.exists() and self.primary_action_classification is None:
+            raise ValidationError(
+                {'primary_action_classification': _(
+                    'You must create and choose a primary category type for classifying actions'
+                )})
+
+        if (self.secondary_action_classification and
+                self.secondary_action_classification == self.primary_action_classification):
+            raise ValidationError({'secondary_action_classification': _(
+                'Primary and secondary classification cannot be the same')})
 
     def get_related_organizations(self) -> models.QuerySet[Organization]:
         all_related = self.related_organizations.all()
