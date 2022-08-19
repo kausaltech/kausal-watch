@@ -206,9 +206,6 @@ class CategoryTypePage(StaticPage):
         related_name='category_type_pages',
     )
 
-    # Omit title field -- should be edited in CategoryTypeAdmin
-    content_panels = [p for p in StaticPage.content_panels if p.field_name != 'title']
-
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(

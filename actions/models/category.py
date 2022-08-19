@@ -183,10 +183,6 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
                         category_type=self, title=self.name_i18n, show_in_menus=True, show_in_footer=True
                     )
                     root_page.add_child(instance=ct_page)
-                else:
-                    ct_page.title = self.name_i18n
-                    ct_page.draft_title = self.name_i18n
-                    ct_page.save()
             for category in self.categories.filter(parent__isnull=True):
                 category.synchronize_pages(ct_page)
 
