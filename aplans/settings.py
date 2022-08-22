@@ -359,9 +359,18 @@ GRAPHENE = {
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
+# While Django seems to prefer lower-case regions in language codes (e.g., 'en-us' instead of 'en-US'; cf.
+# https://github.com/django/django/blob/main/django/conf/global_settings.py), the Accept-Language header is
+# case-insensitive, and Django also seems to be able to deal with upper case.
+# https://docs.djangoproject.com/en/4.1/topics/i18n/#term-language-code
+# On the other hand, i18next strongly suggests regions to be in upper case lest some features break.
+# https://www.i18next.com/how-to/faq#how-should-the-language-codes-be-formatted
+# Since we send the language code of a plan to the client, let's make sure we use the upper-case format everywhere in
+# the backend already so we don't end up with different formats.
 LANGUAGES = (
     ('fi', _('Finnish')),
     ('en', _('English')),
+    ('en-AU', _('Australian English')),
     ('sv', _('Swedish')),
     ('de', _('German')),
     ('da', _('Danish')),
