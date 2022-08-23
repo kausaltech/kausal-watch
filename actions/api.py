@@ -6,6 +6,7 @@ from typing import Optional
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from rest_framework import exceptions, permissions, serializers, viewsets
 
 from drf_spectacular.utils import extend_schema, extend_schema_field
@@ -512,6 +513,7 @@ class ActionSerializer(ModelWithAttributesSerializerMixin, PlanRelatedModelSeria
         responsible_parties = validated_data.pop('responsible_parties', None)
         contact_persons = validated_data.pop('contact_persons', None)
         validated_data.pop('plan', None)
+        instance.updated_at = timezone.now()
         instance = super().update(instance, validated_data)
         if categories is not None:
             self.fields['categories'].update(instance, categories)
@@ -649,7 +651,6 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
         return True
 
 
-@register_view
 class CategoryTypeViewSet(viewsets.ModelViewSet):
     queryset = CategoryType.objects.all()
     serializer_class = CategoryTypeSerializer
