@@ -48,6 +48,20 @@ class Quantity(ClusterableModel, TranslatedModelMixin):
     """The quantity that an indicator measures."""
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at')
+    )
+    updated_by = models.ForeignKey(
+        User, related_name='updated_quantities', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('updated by'),
+    )
+    created_by = models.ForeignKey(
+        User, related_name='created_quantities', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
+    )
 
     i18n = TranslationField(fields=['name'])
 
@@ -67,6 +81,7 @@ class Quantity(ClusterableModel, TranslatedModelMixin):
         return str(self)
 
 
+@reversion.register()
 class Unit(ClusterableModel):
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
     short_name = models.CharField(
@@ -80,6 +95,20 @@ class Unit(ClusterableModel):
     verbose_name_plural = models.CharField(
         max_length=100, null=True, blank=True,
         verbose_name=_('verbose name plural')
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at')
+    )
+    updated_by = models.ForeignKey(
+        User, related_name='updated_units', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('updated by'),
+    )
+    created_by = models.ForeignKey(
+        User, related_name='created_units', blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
     )
 
     i18n = TranslationField(

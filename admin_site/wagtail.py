@@ -524,3 +524,10 @@ class InitializeFormWithPlanMixin:
         kwargs = super().get_form_kwargs()
         kwargs.update({'plan': self.request.user.get_active_admin_plan()})
         return kwargs
+
+
+class InitializeFormWithUserMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs

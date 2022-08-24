@@ -17,7 +17,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from admin_site.wagtail import (
     AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView, InitializeFormWithPlanMixin,
-    get_translation_tabs
+    InitializeFormWithUserMixin, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 
@@ -101,13 +101,6 @@ class PersonEditHandler(TabbedInterface):
             if self.instance.pk is not None:
                 self.form.initial['is_admin_for_active_plan'] = plan in self.instance.general_admin_plans.all()
         super().on_form_bound()
-
-
-class InitializeFormWithUserMixin:
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs.update({'user': self.request.user})
-        return kwargs
 
 
 class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView):

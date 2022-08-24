@@ -18,7 +18,7 @@ from wagtail.core import hooks
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansButtonHelper, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
+    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, InitializeFormWithUserMixin, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
@@ -190,8 +190,28 @@ class IndicatorButtonHelper(AplansButtonHelper):
         return buttons
 
 
+class QuantityForm(AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            self.instance.created_by = self.user
+        # Set updated_by even when creating a new instance since updated_at is also set when creating
+        self.instance.updated_by = self.user
+
+
+class QuantityCreateView(InitializeFormWithUserMixin, AplansCreateView):
+    pass
+
+
+class QuantityEditView(InitializeFormWithUserMixin, AplansEditView):
+    pass
+
+
 class QuantityAdmin(AplansModelAdmin):
     model = Quantity
+    create_view_class = QuantityCreateView
+    edit_view_class = QuantityEditView
     menu_icon = 'fa-thermometer-half'
     menu_order = 6
     menu_label = _('Quantities')
@@ -202,17 +222,38 @@ class QuantityAdmin(AplansModelAdmin):
     ]
 
     def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
-        return AplansTabbedInterface([
+        tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
-        ])
+        ]
+        return AplansTabbedInterface(tabs, base_form_class=QuantityForm)
 
     def get_queryset(self, request):
         return super().get_queryset(request).order_by('name_i18n')
 
 
+class UnitForm(AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is None:
+            self.instance.created_by = self.user
+        # Set updated_by even when creating a new instance since updated_at is also set when creating
+        self.instance.updated_by = self.user
+
+
+class UnitCreateView(InitializeFormWithUserMixin, AplansCreateView):
+    pass
+
+
+class UnitEditView(InitializeFormWithUserMixin, AplansEditView):
+    pass
+
+
 class UnitAdmin(ModelAdmin):
     model = Unit
+    create_view_class = UnitCreateView
+    edit_view_class = UnitEditView
     menu_icon = 'fa-eur'
     menu_order = 5
     menu_label = _('Units')
@@ -226,10 +267,11 @@ class UnitAdmin(ModelAdmin):
     ]
 
     def get_edit_handler(self, instance, request):
-        return AplansTabbedInterface([
+        tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
-        ])
+        ]
+        return AplansTabbedInterface(tabs, base_form_class=UnitForm)
 
 
 class IndicatorForm(AplansAdminModelForm):
