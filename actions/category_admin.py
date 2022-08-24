@@ -54,6 +54,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('identifier'),
+        FieldPanel('short_description'),
         FieldPanel('hide_category_identifiers'),
         FieldPanel('select_widget'),
         MultiFieldPanel([
@@ -371,6 +372,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('identifier'),
+        FieldPanel('short_description'),
         FieldPanel('primary_language'),
         FieldPanel('select_widget'),
         FieldPanel('has_collection'),

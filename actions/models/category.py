@@ -31,6 +31,7 @@ class CategoryTypeBase(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
+    short_description = models.TextField(verbose_name=_('short description'), null=True, blank=True)
     usable_for_actions = models.BooleanField(
         default=False,
         verbose_name=_('usable for action categorization'),
@@ -51,7 +52,7 @@ class CategoryTypeBase(models.Model):
 
     public_fields = [
         'name', 'identifier', 'editable_for_actions', 'editable_for_indicators', 'usable_for_indicators',
-        'usable_for_actions'
+        'short_description', 'usable_for_actions'
     ]
 
     class Meta:
@@ -70,7 +71,7 @@ class CommonCategoryType(CategoryTypeBase):
     )
 
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
-    i18n = TranslationField(fields=('name',), default_language_field='primary_language')
+    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='primary_language')
 
     class Meta:
         unique_together = (('identifier',),)
@@ -138,7 +139,7 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
         default=False, verbose_name=_("synchronize with pages"),
         help_text=_("Set if categories of this type should be synchronized with pages")
     )
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
         to='actions.AttributeType',
