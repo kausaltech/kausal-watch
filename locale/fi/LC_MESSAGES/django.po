@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-08-18 10:12+0300\n"
-"PO-Revision-Date: 2022-08-18 10:12+0300\n"
+"PO-Revision-Date: 2022-08-25 18:20+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -735,7 +735,7 @@ msgstr "Muoto"
 
 #: actions/models/attributes.py
 msgid "Unit (only if format is numeric)"
-msgstr "Yksikkö (ainoastaan jos mouto on numeerinen)"
+msgstr "Yksikkö (ainoastaan jos muoto on numeerinen)"
 
 #: actions/models/attributes.py
 msgid "attribute type"
