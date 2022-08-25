@@ -26,6 +26,7 @@ class OrganizationClassNode(DjangoNode):
 @register_django_node
 class OrganizationNode(DjangoNode):
     ancestors = graphene.List(lambda: OrganizationNode)
+    descendants = graphene.List(lambda: OrganizationNode)
     action_count = graphene.Int(description='Number of actions this organization is responsible for')
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization'
@@ -37,6 +38,10 @@ class OrganizationNode(DjangoNode):
     @staticmethod
     def resolve_ancestors(parent, info):
         return parent.get_ancestors()
+
+    @staticmethod
+    def resolve_descendants(parent, info):
+        return parent.get_descendants()
 
     @staticmethod
     @gql_optimizer.resolver_hints(
