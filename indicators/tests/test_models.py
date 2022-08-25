@@ -32,3 +32,20 @@ def test_indicator_updated_values_due_at_resolution(time_resolution, should_rais
             indicator.full_clean()
     else:
         indicator.full_clean()
+
+
+def test_indicator_plans_with_access_include_plans_with_same_organization(plan):
+    indicator = IndicatorFactory(organization=plan.organization)
+    assert plan in indicator.get_plans_with_access()
+    assert plan not in indicator.plans.all()
+
+
+def test_indicator_plans_with_access_dont_include_other_plans(plan):
+    indicator = IndicatorFactory()
+    assert plan not in indicator.get_plans_with_access()
+    assert plan not in indicator.plans.all()
+
+
+def test_indicator_plans_with_access_includes_indicator_plan(plan, indicator):
+    indicator.plans.add(plan)
+    assert plan in indicator.get_plans_with_access()

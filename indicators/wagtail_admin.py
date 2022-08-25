@@ -54,12 +54,14 @@ class IndicatorPermissionHelper(PermissionHelper):
         if user.is_superuser:
             return True
 
-        obj_plans = obj.plans.all()
-        for plan in obj_plans:
+        for plan in obj.get_plans_with_access():
             if user.is_general_admin_for_plan(plan):
                 return True
 
-        return user.is_contact_person_for_indicator(obj)
+        return (
+            user.is_contact_person_for_indicator(obj) or
+            user.is_organization_admin_for_indicator(obj)
+        )
 
     def user_can_delete_obj(self, user: User, obj: Indicator):
         if not super().user_can_delete_obj(user, obj):

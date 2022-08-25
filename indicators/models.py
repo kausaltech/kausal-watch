@@ -420,6 +420,16 @@ class Indicator(ClusterableModel, index.Indexed):
     def get_latest_graph(self):
         return self.graphs.latest()
 
+    def get_plans_with_access(self):
+        Plan = apps.get_model('actions', 'Plan')
+        return (
+            self.plans.all() |
+            # For unconnected indicators, allow seeing and
+            # connecting them for plan admins for plans
+            # with same organization as indicator organization
+            Plan.objects.filter(organization=self.organization)
+        )
+
     def get_level_for_plan(self, plan):
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None
