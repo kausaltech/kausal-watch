@@ -4,6 +4,7 @@ from typing import Iterable, List, Type
 
 from django import forms
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -222,3 +223,41 @@ def get_supported_languages():
 
 def get_default_language():
     return settings.LANGUAGES[0][0]
+
+
+User = get_user_model()
+
+
+class ModificationTracking(models.Model):
+    updated_at = models.DateTimeField(
+        auto_now=True, editable=False, verbose_name=_('updated at')
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, editable=False, verbose_name=_('created at')
+    )
+    updated_by = models.ForeignKey(
+        User, blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('updated by'),
+        related_name="%(app_label)s_updated_%(class)s",
+    )
+    created_by = models.ForeignKey(
+        User, blank=True, null=True, on_delete=models.SET_NULL,
+        verbose_name=_('created by'),
+        related_name="%(app_label)s_created_%(class)s",
+    )
+
+    class Meta:
+        abstract = True
+
+    def update_modification_metadata(self, user, operation):
+        if operation == 'edit':
+            self.updated_by = user
+            self.save(update_fields=['updated_by'])
+        elif operation == 'create':
+            self.created_by = user
+            self.save(update_fields=['created_by'])
+
+    def handle_admin_save(self, context=None):
+        if hasattr(super(), 'handle_admin_save'):
+            super().handle_admin_save(context=context)
+        self.update_modification_metadata(context.get('user'), context.get('operation'))

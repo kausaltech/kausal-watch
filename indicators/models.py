@@ -23,7 +23,7 @@ from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
+from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
@@ -42,24 +42,10 @@ def latest_plan():
 
 
 @reversion.register()
-class Quantity(ClusterableModel, TranslatedModelMixin):
+class Quantity(ClusterableModel, TranslatedModelMixin, ModificationTracking):
     """The quantity that an indicator measures."""
 
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
-    updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at')
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at')
-    )
-    updated_by = models.ForeignKey(
-        User, related_name='updated_quantities', blank=True, null=True, on_delete=models.SET_NULL,
-        verbose_name=_('updated by'),
-    )
-    created_by = models.ForeignKey(
-        User, related_name='created_quantities', blank=True, null=True, on_delete=models.SET_NULL,
-        verbose_name=_('created by'),
-    )
 
     i18n = TranslationField(fields=['name'])
 
@@ -80,7 +66,7 @@ class Quantity(ClusterableModel, TranslatedModelMixin):
 
 
 @reversion.register()
-class Unit(ClusterableModel):
+class Unit(ClusterableModel, ModificationTracking):
     name = models.CharField(max_length=40, verbose_name=_('name'), unique=True)
     short_name = models.CharField(
         max_length=40, null=True, blank=True,
@@ -93,20 +79,6 @@ class Unit(ClusterableModel):
     verbose_name_plural = models.CharField(
         max_length=100, null=True, blank=True,
         verbose_name=_('verbose name plural')
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at')
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at')
-    )
-    updated_by = models.ForeignKey(
-        User, related_name='updated_units', blank=True, null=True, on_delete=models.SET_NULL,
-        verbose_name=_('updated by'),
-    )
-    created_by = models.ForeignKey(
-        User, related_name='created_units', blank=True, null=True, on_delete=models.SET_NULL,
-        verbose_name=_('created by'),
     )
 
     i18n = TranslationField(

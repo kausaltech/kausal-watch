@@ -12,14 +12,14 @@ from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail.admin.edit_handlers import FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminGroup, modeladmin_register
+from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
 from wagtail.core import hooks
 
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansButtonHelper, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, InitializeFormWithUserMixin, get_translation_tabs
+    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 from people.chooser import PersonChooser
@@ -194,27 +194,11 @@ class IndicatorButtonHelper(AplansButtonHelper):
 
 
 class QuantityForm(AplansAdminModelForm):
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-        if self.instance.pk is None:
-            self.instance.created_by = self.user
-        # Set updated_by even when creating a new instance since updated_at is also set when creating
-        self.instance.updated_by = self.user
-
-
-class QuantityCreateView(InitializeFormWithUserMixin, AplansCreateView):
-    pass
-
-
-class QuantityEditView(InitializeFormWithUserMixin, AplansEditView):
     pass
 
 
 class QuantityAdmin(AplansModelAdmin):
     model = Quantity
-    create_view_class = QuantityCreateView
-    edit_view_class = QuantityEditView
     menu_icon = 'fa-thermometer-half'
     menu_order = 6
     menu_label = _('Quantities')
@@ -236,27 +220,11 @@ class QuantityAdmin(AplansModelAdmin):
 
 
 class UnitForm(AplansAdminModelForm):
-    def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop('user')
-        super().__init__(*args, **kwargs)
-        if self.instance.pk is None:
-            self.instance.created_by = self.user
-        # Set updated_by even when creating a new instance since updated_at is also set when creating
-        self.instance.updated_by = self.user
-
-
-class UnitCreateView(InitializeFormWithUserMixin, AplansCreateView):
     pass
 
 
-class UnitEditView(InitializeFormWithUserMixin, AplansEditView):
-    pass
-
-
-class UnitAdmin(ModelAdmin):
+class UnitAdmin(AplansModelAdmin):
     model = Unit
-    create_view_class = UnitCreateView
-    edit_view_class = UnitEditView
     menu_icon = 'fa-eur'
     menu_order = 5
     menu_label = _('Units')

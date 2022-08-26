@@ -17,7 +17,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 
 from admin_site.wagtail import (
     AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView, InitializeFormWithPlanMixin,
-    InitializeFormWithUserMixin, get_translation_tabs
+    get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 
@@ -103,7 +103,7 @@ class PersonEditHandler(TabbedInterface):
         super().on_form_bound()
 
 
-class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView):
+class PersonCreateView(InitializeFormWithPlanMixin, AplansCreateView):
     def form_valid(self, form, *args, **kwargs):
         # Make sure form only contains is_admin_for_active_plan
         # TODO: Also do this for organization_plan_admin_orgs?
@@ -118,7 +118,7 @@ class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin,
         return super().form_valid(form, *args, **kwargs)
 
 
-class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansEditView):
+class PersonEditView(InitializeFormWithPlanMixin, AplansEditView):
     pass
 
 

@@ -311,7 +311,10 @@ class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClass
             return self.render_to_response(self.get_context_data(form=form))
 
         if hasattr(form.instance, 'handle_admin_save'):
-            form.instance.handle_admin_save()
+            form.instance.handle_admin_save(context={
+                'user': self.request.user,
+                'operation': 'edit'
+            })
 
         with create_revision():
             set_comment(self.get_success_message(self.instance))
@@ -375,7 +378,10 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
         ret = super().form_valid(form, *args, **kwargs)
 
         if hasattr(form.instance, 'handle_admin_save'):
-            form.instance.handle_admin_save()
+            form.instance.handle_admin_save(context={
+                'user': self.request.user,
+                'operation': 'create'
+            })
 
         return ret
 
@@ -503,11 +509,4 @@ class InitializeFormWithPlanMixin:
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs.update({'plan': self.request.user.get_active_admin_plan()})
-        return kwargs
-
-
-class InitializeFormWithUserMixin:
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs.update({'user': self.request.user})
         return kwargs
