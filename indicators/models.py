@@ -276,7 +276,7 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
-class Indicator(ClusterableModel, index.Indexed):
+class Indicator(ClusterableModel, index.Indexed, ModificationTracking):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
@@ -349,12 +349,6 @@ class Indicator(ClusterableModel, index.Indexed):
     #    "yearly_ghg_emission_reductions_left": "1963000",
     # }
 
-    updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at')
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at')
-    )
     contact_persons_unordered = models.ManyToManyField(
         'people.Person', through='IndicatorContactPerson', blank=True,
         related_name='contact_for_indicators', verbose_name=_('contact persons')

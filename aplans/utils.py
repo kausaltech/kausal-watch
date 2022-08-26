@@ -258,6 +258,4 @@ class ModificationTracking(models.Model):
             self.save(update_fields=['created_by'])
 
     def handle_admin_save(self, context=None):
-        if hasattr(super(), 'handle_admin_save'):
-            super().handle_admin_save(context=context)
         self.update_modification_metadata(context.get('user'), context.get('operation'))
