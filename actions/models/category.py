@@ -73,6 +73,10 @@ class CommonCategoryType(CategoryTypeBase):
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
     i18n = TranslationField(fields=('name', 'short_description'), default_language_field='primary_language')
 
+    public_fields = CategoryTypeBase.public_fields + [
+        'categories'
+    ]
+
     class Meta:
         unique_together = (('identifier',),)
         verbose_name = _('common category type')
