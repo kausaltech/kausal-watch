@@ -447,7 +447,7 @@ class PrevSiblingField(serializers.Field):
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.SerializerMetaclass):
-    left_sibling = PrevSiblingField(allow_null=True)
+    left_sibling = PrevSiblingField(allow_null=True, required=False)
 
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
@@ -456,13 +456,16 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
         return fields
 
     def create(self, validated_data: dict):
-        left_sibling = validated_data.pop('left_sibling')
+        left_sibling = validated_data.pop('left_sibling', None)
         instance = super().create(validated_data)
         self._update_tree_position(instance, left_sibling)
         return instance
 
     def update(self, instance, validated_data):
-        left_sibling = validated_data.pop('left_sibling')
+        # FIXME: Since left_sibling has allow_null=True, we should distinguish whether left_sibling is None because it
+        # is not in validated_data or because validated_data['left_sibling'] is None. Sending a PUT request and omitting
+        # left_sibling might inadvertently move the node.
+        left_sibling = validated_data.pop('left_sibling', None)
         instance = super().update(instance, validated_data)
         self._update_tree_position(instance, left_sibling)
         return instance
@@ -925,8 +928,8 @@ class TreebeardParentField(serializers.Field):
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
-    parent = TreebeardParentField(allow_null=True)
-    left_sibling = PrevSiblingField(allow_null=True)
+    parent = TreebeardParentField(allow_null=True, required=False)
+    left_sibling = PrevSiblingField(allow_null=True, required=False)
 
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
@@ -940,8 +943,8 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         return data
 
     def create(self, validated_data):
-        parent = validated_data.pop('parent')
-        left_sibling = validated_data.pop('left_sibling')
+        parent = validated_data.pop('parent', None)
+        left_sibling = validated_data.pop('left_sibling', None)
         instance = Organization(**validated_data)
         # This sucks, but I don't think Treebeard provides an easier way of doing this
         if left_sibling is None:
@@ -958,8 +961,11 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         return instance
 
     def update(self, instance, validated_data):
-        parent = validated_data.pop('parent')
-        left_sibling = validated_data.pop('left_sibling')
+        # FIXME: Since left_sibling has allow_null=True, we should distinguish whether left_sibling is None because it
+        # is not in validated_data or because validated_data['left_sibling'] is None. Similarly for parent. Sending a
+        # PUT request and omitting one of these fields might inadvertently move the node.
+        parent = validated_data.pop('parent', None)
+        left_sibling = validated_data.pop('left_sibling', None)
         super().update(instance, validated_data)
         if left_sibling is None:
             if parent is None:
@@ -974,8 +980,6 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
 
 
 class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSerializer):
-    # parent = serializers.PrimaryKeyRelatedField(read_only=True)
-
     class Meta:
         model = Organization
         fields = public_fields(Organization)
