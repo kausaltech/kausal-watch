@@ -503,6 +503,18 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
 
+    def get_siblings(self):
+        return Action.objects.filter(plan=self.plan)
+
+    def get_prev_sibling(self):
+        # TODO: Refactor duplicated code in Category
+        previous_sibling = None
+        for sibling in self.get_siblings():
+            if sibling.id == self.id:
+                return previous_sibling
+            previous_sibling = sibling
+        assert False  # should have returned above at some point
+
 
 class ActionResponsibleParty(OrderedModel):
     action = ParentalKey(

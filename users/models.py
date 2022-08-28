@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 from helusers.models import AbstractUser
 from users.managers import UserManager
-from orgs.models import Organization
+from orgs.models import Organization, OrganizationMetadataAdmin
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan, Action
@@ -285,3 +285,26 @@ class User(AbstractUser):
         if self.is_superuser:
             return True
         return self.is_general_admin_for_plan(category_type.plan)
+
+    def can_modify_organization(self, organization=None):
+        if self.is_superuser:
+            return True
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+        if organization is None:
+            # FIXME: Make sure we don't allow plan admins to modify organizations unrelated to them
+            return OrganizationMetadataAdmin.objects.filter(person=person).exists()
+        else:
+            return organization.organization_metadata_admins.filter(person=person).exists()
+
+    def can_create_organization(self):
+        if self.is_superuser:
+            return True
+        return self.is_general_admin_for_plan()
+
+    def can_delete_organization(self):
+        if self.is_superuser:
+            return True
+        # FIXME: Make sure we don't allow plan admins to delete organizations unrelated to them
+        return self.is_general_admin_for_plan()

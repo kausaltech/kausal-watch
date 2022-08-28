@@ -30,7 +30,12 @@ class Node(MP_Node, ClusterableModel):
 
     name = models.CharField(max_length=255, verbose_name=_("name"))
 
-    node_order_by = ['name']
+    # Disabled `node_order_by` for now. If we used this, then we wouldn't be able to use "left sibling" to specify a
+    # position of a node, e.g., when calling the REST API from the grid editor. Since it would be significant work to
+    # change it (e.g., disable move handles in grid editor, distinguish cases in the backend whether model has
+    # node_order_by, etc.) and some customers might want to order their organizations in some way, I decided to disable
+    # `node_order_by`.
+    # node_order_by = ['name']
 
     public_fields = ['id', 'name']
 
@@ -190,10 +195,16 @@ class Organization(index.Indexed, Node, gis_models.Model):
 
     objects = OrganizationManager()
 
+    public_fields = ['id', 'name', 'abbreviation', 'internal_abbreviation', 'parent']
+
     search_fields = [
         index.AutocompleteField('name', partial_match=True),
         index.AutocompleteField('abbreviation', partial_match=True),
     ]
+
+    @property
+    def parent(self):
+        return self.get_parent()
 
     def generate_distinct_name(self, levels=1):
         # FIXME: This relies on legacy identifiers

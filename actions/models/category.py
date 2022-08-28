@@ -421,6 +421,18 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def get_attribute_type_by_identifier(self, identifier):
         return self.type.attribute_types.get(identifier=identifier)
 
+    def get_siblings(self):
+        return Category.objects.filter(type=self.type, parent=self.parent)
+
+    def get_prev_sibling(self):
+        # TODO: Refactor duplicated code in Action
+        previous_sibling = None
+        for sibling in self.get_siblings():
+            if sibling.id == self.id:
+                return previous_sibling
+            previous_sibling = sibling
+        assert False  # should have returned above at some point
+
 
 class Icon(models.Model):
     # When subclassing, remember to set Meta.constraints = Icon.Meta.constraints

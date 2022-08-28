@@ -23,7 +23,7 @@ from aplans.permissions import AnonReadOnly
 from aplans.rest_api import (
     BulkListSerializer, BulkModelViewSet, HandleProtectedErrorMixin, PlanRelatedModelSerializer
 )
-from aplans.types import AuthenticatedWatchRequest, WatchAPIRequest
+from aplans.types import AuthenticatedWatchRequest, WatchAdminRequest, WatchAPIRequest
 from aplans.utils import generate_identifier, public_fields, register_view_helper
 from orgs.models import Organization
 from people.models import Person
@@ -177,7 +177,8 @@ plan_router.register(
 
 
 class ActionPermission(permissions.DjangoObjectPermissions):
-    def check_action_permission(self, user: User, perm: str, plan: Plan, action: Action = None):
+    # TODO: Refactor duplicated code with CategoryPermission and OrganizationPermission
+    def check_permission(self, user: User, perm: str, plan: Plan, action: Action = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -204,7 +205,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
             plan = Plan.objects.live().first()
         perms = self.get_required_permissions(request.method, Action)
         for perm in perms:
-            if not self.check_action_permission(request.user, perm, plan):
+            if not self.check_permission(request.user, perm, plan):
                 return False
         return True
 
@@ -213,7 +214,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
         for perm in perms:
-            if not self.check_action_permission(request.user, perm, obj.plan, obj):
+            if not self.check_permission(request.user, perm, obj.plan, obj):
                 return False
         return True
 
@@ -425,7 +426,127 @@ class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetacla
                 self.fields[field_name].update(instance, data)
 
 
-class ActionSerializer(ModelWithAttributesSerializerMixin, PlanRelatedModelSerializer):
+class PrevSiblingField(serializers.Field):
+    # Instances must implement method get_prev_sibling(). (Treebeard nodes do that.) Must be used in ModelSerializer so
+    # we can get the model for to_internal_value().
+    # FIXME: This is ugly.
+    def get_attribute(self, instance):
+        return instance.get_prev_sibling()
+
+    def to_representation(self, value):
+        # value is the left sibling of the original instance
+        if value is None:
+            return None
+        return value.id
+
+    def to_internal_value(self, data):
+        # FIXME: No validation (e.g., permission checking)
+        model = self.parent.Meta.model
+        return model.objects.get(id=data)
+
+
+# Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
+class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.SerializerMetaclass):
+    left_sibling = PrevSiblingField(allow_null=True)
+
+    def get_field_names(self, declared_fields, info):
+        fields = super().get_field_names(declared_fields, info)
+        # fields += self._tree_position_fields
+        fields.append('left_sibling')
+        return fields
+
+    def create(self, validated_data: dict):
+        left_sibling = validated_data.pop('left_sibling')
+        instance = super().create(validated_data)
+        self._update_tree_position(instance, left_sibling)
+        return instance
+
+    def update(self, instance, validated_data):
+        left_sibling = validated_data.pop('left_sibling')
+        instance = super().update(instance, validated_data)
+        self._update_tree_position(instance, left_sibling)
+        return instance
+
+    # The following would make `order` unique only relative to parent, i.e., each first child gets order 0.
+    # Unforutnately just ordering by the `order` field then gives unintended results. We'd like instances ordered by
+    # DFS.
+    # def _update_tree_position(self, instance, left_sibling):
+    #     if left_sibling is None:
+    #         new_order = 0
+    #     else:
+    #         new_order = left_sibling.order + 1
+    #     # Set instance.order to new_order if this doesn't lead to duplicates; otherwise reorder all siblings
+    #     siblings = (instance._meta.model.objects
+    #                 .filter(type=instance.type, parent=instance.parent)
+    #                 .exclude(id=instance.id))
+    #     if siblings.filter(order=new_order).exists():
+    #         if left_sibling is None:
+    #             left_sibling_seen = True
+    #             left_sibling_id = None
+    #         else:
+    #             left_sibling_seen = False
+    #             left_sibling_id = left_sibling.id
+    #
+    #         for i, child in enumerate(siblings):
+    #             child.order = i
+    #             if left_sibling_seen:
+    #                 child.order += 1
+    #             child.save()
+    #             if child.id == left_sibling_id:
+    #                 left_sibling_seen = True
+    #     instance.order = new_order
+    #     instance.save()
+
+    def _reorder_descendants(self, node, next_order, instance_to_move, predecessor):
+        """
+        Order descendants of `node` (including `node`) consecutively starting at `next_order` and put
+        `instance_to_move` (followed by its descendants) after `predecessor` in the ordering.
+
+        Return an order value that can be used for the next node.
+        """
+        instance_to_move_id = getattr(instance_to_move, 'id', None)
+        predecessor_id = getattr(predecessor, 'id', None)
+
+        node.order = next_order
+        next_order += 1
+        node.save()
+
+        if node.id == predecessor_id:
+            # Put instance_to_move after node (it is either a child or a sibling)
+            next_order = self._reorder_descendants(instance_to_move, next_order, instance_to_move, predecessor)
+
+        if hasattr(node, 'children'):
+            for child in node.children.exclude(id=instance_to_move_id):
+                next_order = self._reorder_descendants(child, next_order, instance_to_move, predecessor)
+        return next_order
+
+    def _update_tree_position(self, instance, left_sibling):
+        # When changing the `order` value of instance, we also need to change it for all its descendants, potentially
+        # leading to new collisions, so we just reorder everything here
+
+        # Model may or may not have parent field
+        parent = getattr(instance, 'parent', None)
+
+        # New predecessor of instance in ordering, not necessarily a sibling of instance
+        if left_sibling is None:
+            predecessor = parent
+        else:
+            predecessor = left_sibling
+
+        order = 0
+        if left_sibling is None and parent is None:
+            # instance gets order 0
+            order = self._reorder_descendants(instance, order, instance, predecessor)
+
+        for root in instance.get_siblings().exclude(id=instance.id):
+            order = self._reorder_descendants(root, order, instance, predecessor)
+
+
+class ActionSerializer(
+    ModelWithAttributesSerializerMixin,
+    NonTreebeardModelWithTreePositionSerializerMixin,
+    PlanRelatedModelSerializer,
+):
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False)
     contact_persons = ActionContactPersonSerializer(required=False)
@@ -609,8 +730,8 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class CategoryPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission
-    def check_category_permission(self, user: User, perm: str, category_type: CategoryType, category: Category = None):
+    # TODO: Refactor duplicated code with ActionPermission and OrganizationPermission
+    def check_permission(self, user: User, perm: str, category_type: CategoryType, category: Category = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -637,7 +758,7 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
             category_type = CategoryType.objects.live().first()
         perms = self.get_required_permissions(request.method, Category)
         for perm in perms:
-            if not self.check_category_permission(request.user, perm, category_type):
+            if not self.check_permission(request.user, perm, category_type):
                 return False
         return True
 
@@ -646,7 +767,7 @@ class CategoryPermission(permissions.DjangoObjectPermissions):
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
         for perm in perms:
-            if not self.check_category_permission(request.user, perm, obj.type, obj):
+            if not self.check_permission(request.user, perm, obj.type, obj):
                 return False
         return True
 
@@ -679,7 +800,11 @@ category_type_router = NestedBulkRouter(plan_router, 'category-types', lookup='c
 all_routers.append(category_type_router)
 
 
-class CategorySerializer(ModelWithAttributesSerializerMixin, serializers.ModelSerializer):
+class CategorySerializer(
+    ModelWithAttributesSerializerMixin,
+    NonTreebeardModelWithTreePositionSerializerMixin,
+    serializers.ModelSerializer,
+):
     def __init__(self, *args, **kwargs):
         # TODO: Refactor duplicated code from aplans.rest_api.PlanRelatedModelSerializer
         self.category_type = kwargs.pop('category_type', None)
@@ -713,7 +838,7 @@ class CategorySerializer(ModelWithAttributesSerializerMixin, serializers.ModelSe
         list_serializer_class = BulkListSerializer
         fields = public_fields(
             Category,
-            remove_fields=['category_pages', 'children', 'indicators', 'level']
+            remove_fields=['category_pages', 'children', 'indicators', 'level', 'order']
         )
         read_only_fields = ['type']
 
@@ -738,10 +863,130 @@ class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
 category_type_router.register('categories', CategoryViewSet, basename='category')
 
 
-class OrganizationSerializer(serializers.ModelSerializer):
+class OrganizationPermission(permissions.DjangoObjectPermissions):
+    # TODO: Refactor duplicated code with ActionPermission and CategoryPermission
+    def check_permission(self, user: User, perm: str, organization: Organization = None):
+        # Check for object permissions first
+        if not user.has_perms([perm]):
+            return False
+        if perm == 'orgs.change_organization':
+            if not user.can_modify_organization(organization=organization):
+                return False
+        elif perm == 'orgs.add_organization':
+            if not user.can_create_organization():
+                return False
+        elif perm == 'orgs.delete_organization':
+            if not user.can_delete_organization():
+                return False
+        else:
+            return False
+        return True
+
+    def has_permission(self, request: AuthenticatedWatchRequest, view):
+        # plan_pk = view.kwargs.get('plan_pk')
+        # if plan_pk:
+        #     plan = Plan.objects.filter(id=plan_pk).first()
+        #     if plan is None:
+        #         raise exceptions.NotFound(detail='Plan not found')
+        # else:
+        #     plan = Plan.objects.live().first()
+        perms = self.get_required_permissions(request.method, Organization)
+        for perm in perms:
+            if not self.check_permission(request.user, perm):
+                return False
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        perms = self.get_required_object_permissions(request.method, Organization)
+        if not perms and request.method in permissions.SAFE_METHODS:
+            return True
+        for perm in perms:
+            if not self.check_permission(request.user, perm, obj):
+                return False
+        return True
+
+
+class TreebeardParentField(serializers.Field):
+    # For serializers of Treebeard node models
+    def get_attribute(self, instance):
+        return instance.get_parent()
+
+    def to_representation(self, value):
+        # value is the parent of the original instance
+        if value is None:
+            return None
+        return value.id
+
+    def to_internal_value(self, data):
+        # FIXME: No validation (e.g., permission checking)
+        model = self.parent.Meta.model
+        return model.objects.get(id=data)
+
+
+# Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
+class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
+    parent = TreebeardParentField(allow_null=True)
+    left_sibling = PrevSiblingField(allow_null=True)
+
+    def get_field_names(self, declared_fields, info):
+        fields = super().get_field_names(declared_fields, info)
+        fields += ['parent', 'left_sibling']
+        return fields
+
+    def validate(self, data):
+        left_sibling = data['left_sibling']
+        if left_sibling is not None and left_sibling.parent != data['parent']:
+            raise exceptions.ValidationError("Instance and left sibling have different parents")
+        return data
+
+    def create(self, validated_data):
+        parent = validated_data.pop('parent')
+        left_sibling = validated_data.pop('left_sibling')
+        instance = Organization(**validated_data)
+        # This sucks, but I don't think Treebeard provides an easier way of doing this
+        if left_sibling is None:
+            if parent is None:
+                Organization.add_root(instance=instance)
+            else:
+                right_sibling = parent.get_first_child()
+                if right_sibling is None:
+                    parent.add_child(instance=instance)
+                else:
+                    right_sibling.add_sibling('left', instance=instance)
+        else:
+            left_sibling.add_sibling('right', instance=instance)
+        return instance
+
+    def update(self, instance, validated_data):
+        parent = validated_data.pop('parent')
+        left_sibling = validated_data.pop('left_sibling')
+        super().update(instance, validated_data)
+        if left_sibling is None:
+            if parent is None:
+                first_root = Organization.get_first_root_node()
+                assert first_root is not None  # if there were no root, there would be no node and thus no `instance`
+                instance.move(first_root, 'left')
+            else:
+                instance.move(parent, 'first-child')
+        else:
+            instance.move(left_sibling, 'right')
+        return instance
+
+
+class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSerializer):
+    # parent = serializers.PrimaryKeyRelatedField(read_only=True)
+
     class Meta:
         model = Organization
-        fields = ('id', 'name', 'abbreviation', 'internal_abbreviation')
+        fields = public_fields(Organization)
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        # Add instance to active plan's related organizations
+        request: WatchAdminRequest = self.context.get('request')
+        plan = request.get_active_admin_plan()
+        plan.related_organizations.add(instance)
+        return instance
 
 
 @register_view
@@ -751,6 +996,13 @@ class OrganizationViewSet(viewsets.ModelViewSet):
     filterset_fields = {
         'name': ('exact', 'in'),
     }
+
+    def get_permissions(self):
+        if self.action == 'list':
+            permission_classes = [AnonReadOnly]
+        else:
+            permission_classes = [OrganizationPermission]
+        return [permission() for permission in permission_classes]
 
     def get_queryset(self):
         queryset = super().get_queryset()
