@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime
-from typing import Optional
 import typing
 import reversion
 from dateutil.relativedelta import relativedelta
@@ -24,7 +23,6 @@ from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from admin_site.wagtail import AplansAdminModelForm
 from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin
 from orgs.models import Organization
 
@@ -345,11 +343,13 @@ class Indicator(ClusterableModel, index.Indexed):
     )
     min_value = models.FloatField(
         null=True, blank=True, verbose_name=_('minimum value'),
-        help_text=_('What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum.')
+        help_text=_('What is the minimum value this indicator can reach? '
+                    'It is used in visualizations as the Y axis minimum.')
     )
     max_value = models.FloatField(
         null=True, blank=True, verbose_name=_('maximum value'),
-        help_text=_('What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum.')
+        help_text=_('What is the maximum value this indicator can reach? '
+                    'It is used in visualizations as the Y axis maximum.')
     )
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
     categories = models.ManyToManyField('actions.Category', blank=True, related_name='indicators')
