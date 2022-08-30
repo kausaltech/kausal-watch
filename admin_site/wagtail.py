@@ -505,7 +505,9 @@ class AutocompletePanel(WagtailAutocompletePanel):
         def render_js_init(self, id):
             ret = old_render_js_init(self, id)
             if self.placeholder_text:
-                ret += "\nsetTimeout(function() { $('#%s').attr('placeholder', '%s'); }, 5000);" % (id, quote(self.placeholder_text))
+                ret += "\nsetTimeout(function() { $('#%s').attr('placeholder', '%s'); }, 5000);" % (
+                    id, quote(self.placeholder_text)
+                )
             return ret
 
         self.widget.get_context = get_context
