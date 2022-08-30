@@ -2,6 +2,7 @@ import json
 
 from dal import autocomplete
 from django import forms
+from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path, reverse
@@ -352,6 +353,23 @@ class IndicatorForm(AplansAdminModelForm):
         return super()._save_m2m()
 
 
+class IndicatorAdminOrganizationFilter(SimpleListFilter):
+    title = _('Organization')
+    parameter_name = 'organization'
+
+    def lookups(self, request, model_admin):
+        # Only show organizations that have indicators and are related to the current plan
+        orgs_with_indicators = Indicator.objects.values_list('organization')
+        plan = request.user.get_active_admin_plan()
+        filtered_orgs = plan.related_organizations.filter(id__in=orgs_with_indicators)
+        return [(org.id, org.name) for org in filtered_orgs]
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(organization=self.value())
+        return queryset
+
+
 class IndicatorCreateView(InitializeFormWithPlanMixin, AplansCreateView):
     pass
 
@@ -456,10 +474,8 @@ class IndicatorAdmin(AplansModelAdmin):
     def get_list_filter(self, request):
         list_filter = super().get_list_filter(request)
         if request.user.is_superuser:
-            # Superusers get all indicators from all organizations, so offer them a way to filter by organization.
-            # Non-superusers users get only indicators from the organization of the currently active plan.
-            # TODO: Make this into a searchable dropdown or something
-            list_filter += ('organization',)
+            list_filter += (IndicatorAdminOrganizationFilter,)
+
         return list_filter
 
     def unit_display(self, obj):
@@ -476,10 +492,12 @@ class IndicatorAdmin(AplansModelAdmin):
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
-        if not request.user.is_superuser:
-            plan = request.user.get_active_admin_plan()
-            qs = qs.filter(organization=plan.organization).distinct().select_related('unit', 'quantity')
-        return qs
+        plan = request.user.get_active_admin_plan()
+        if request.user.is_superuser:
+            qs = qs.filter(organization__in=plan.related_organizations.all())
+        else:
+            qs = qs.filter(organization=plan.organization)
+        return qs.select_related('unit', 'quantity')
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
