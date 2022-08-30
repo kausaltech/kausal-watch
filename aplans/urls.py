@@ -28,6 +28,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete
 from orgs.autocomplete import OrganizationAutocomplete
+from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete
 from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView
 from indicators.api import all_views as indicators_api_views
@@ -71,6 +72,8 @@ urlpatterns = [
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
+    re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
+    re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
     re_path(
         r'^commoncategorytype-autocomplete/$',
         CommonCategoryTypeAutocomplete.as_view(),

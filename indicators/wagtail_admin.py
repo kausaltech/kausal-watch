@@ -391,8 +391,12 @@ class IndicatorAdmin(AplansModelAdmin):
         # Some fields should only be editable if the indicator is not linked to a common indicator
         show_dimensions_section = request.user.is_general_admin_for_plan(plan)
         if not instance or not instance.common:
-            basic_panels.insert(1, FieldPanel('quantity'))
-            basic_panels.insert(2, FieldPanel('unit'))
+            basic_panels.insert(
+                1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete'))
+            )
+            basic_panels.insert(
+                2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete'))
+            )
             if show_dimensions_section:
                 basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                     FieldPanel('dimension', widget=CondensedPanelSingleSelect)
