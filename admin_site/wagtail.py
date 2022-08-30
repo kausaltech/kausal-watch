@@ -403,28 +403,6 @@ class AplansModelAdmin(ModelAdmin):
             self.permission_helper_class = PlanRelatedPermissionHelper
         super().__init__(*args, **kwargs)
 
-    def _get_category_fields(self, plan, obj, with_initial=False):
-        fields = {}
-        if self.model == Action:
-            filter_name = 'editable_for_actions'
-        elif self.model == Indicator:
-            filter_name = 'editable_for_indicators'
-        else:
-            raise Exception()
-
-        for cat_type in plan.category_types.filter(**{filter_name: True}):
-            qs = cat_type.categories.all()
-            if obj and with_initial:
-                initial = obj.categories.filter(type=cat_type)
-            else:
-                initial = None
-            field = forms.ModelMultipleChoiceField(
-                qs, label=cat_type.name, initial=initial, required=False,
-            )
-            field.category_type = cat_type
-            fields['categories_%s' % cat_type.identifier] = field
-        return fields
-
     def get_index_view_extra_js(self):
         ret = super().get_index_view_extra_js()
         return ret + ['admin_site/js/wagtail_customizations.js']
