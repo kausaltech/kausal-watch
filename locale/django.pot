@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-18 10:12+0300\n"
+"POT-Creation-Date: 2022-08-31 14:49+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,8 @@ msgstr ""
 msgid "Contact person"
 msgstr ""
 
-#: actions/action_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr ""
 
@@ -473,7 +474,7 @@ msgstr ""
 msgid "responsible organizations"
 msgstr ""
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "updated at"
 msgstr ""
 
@@ -624,7 +625,7 @@ msgstr ""
 msgid "completed by"
 msgstr ""
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "created at"
 msgstr ""
 
@@ -693,7 +694,7 @@ msgstr ""
 msgid "content"
 msgstr ""
 
-#: actions/models/action.py people/models.py
+#: actions/models/action.py aplans/utils.py people/models.py
 msgid "created by"
 msgstr ""
 
@@ -770,6 +771,10 @@ msgid "Single"
 msgstr ""
 
 #: actions/models/category.py
+msgid "short description"
+msgstr ""
+
+#: actions/models/category.py
 msgid "usable for action categorization"
 msgstr ""
 
@@ -839,10 +844,6 @@ msgstr ""
 
 #: actions/models/category.py
 msgid "category levels"
-msgstr ""
-
-#: actions/models/category.py
-msgid "short description"
 msgstr ""
 
 #: actions/models/category.py
@@ -1323,6 +1324,10 @@ msgid "English"
 msgstr ""
 
 #: aplans/settings.py
+msgid "Australian English"
+msgstr ""
+
+#: aplans/settings.py
 msgid "Swedish"
 msgstr ""
 
@@ -1341,6 +1346,10 @@ msgstr ""
 #: aplans/utils.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
+msgstr ""
+
+#: aplans/utils.py
+msgid "updated by"
 msgstr ""
 
 #: content/admin.py
@@ -1989,6 +1998,10 @@ msgid "If you change the dimensions of this indicator (currently %(dimensions)s)
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
 msgstr[0] ""
 msgstr[1] ""
+
+#: indicators/wagtail_admin.py
+msgid "Advanced options"
+msgstr ""
 
 #: indicators/wagtail_admin.py
 #, python-format

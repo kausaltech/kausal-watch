@@ -10,7 +10,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail.admin.edit_handlers import FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
 from wagtail.contrib.modeladmin.views import InstanceSpecificView
@@ -381,8 +381,11 @@ class IndicatorAdmin(AplansModelAdmin):
         RichTextFieldPanel('description'),
     ]
 
+    advanced_panels = []
+
     def get_edit_handler(self, instance, request):
         basic_panels = list(self.basic_panels)
+        advanced_panels = list(self.advanced_panels)
         plan = request.user.get_active_admin_plan()
         dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
         if not dimensions_str:
@@ -398,7 +401,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete'))
             )
             if show_dimensions_section:
-                basic_panels.append(CondensedInlinePanel('dimensions', panels=[
+                advanced_panels.append(CondensedInlinePanel('dimensions', panels=[
                     FieldPanel('dimension', widget=CondensedPanelSingleSelect)
                 ]))
                 # If the indicator has values, show a warning that these would be deleted by changing dimensions
@@ -412,7 +415,12 @@ class IndicatorAdmin(AplansModelAdmin):
                                                  num_values) % {'dimensions': dimensions_str, 'num': num_values}
                     # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
                     # the ugly gap, but it seems nontrivial to do properly.
-                    basic_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+                    advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+                basic_panels.append(
+                    MultiFieldPanel(
+                        children=advanced_panels, heading=_('Advanced options'), classname='collapsible collapsed'
+                    )
+                )
         else:
             info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
                           "edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {

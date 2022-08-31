@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-18 10:12+0300\n"
-"PO-Revision-Date: 2022-08-25 18:20+0300\n"
+"POT-Creation-Date: 2022-08-31 14:49+0300\n"
+"PO-Revision-Date: 2022-08-31 14:55+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -25,7 +25,8 @@ msgstr "Tällä tunnisteella on jo toimenpide."
 msgid "Contact person"
 msgstr "Yhteyshenkilö"
 
-#: actions/action_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr "Organisaatio"
 
@@ -473,7 +474,7 @@ msgstr "liittyvät toimenpiteet"
 msgid "responsible organizations"
 msgstr "vastuuorganisaatiot"
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "updated at"
 msgstr "päivitysaika"
 
@@ -624,7 +625,7 @@ msgstr "Päivämäärä jolloin tehtävä valmistui"
 msgid "completed by"
 msgstr "käyttäjä joka merkitsi tehtävän valmiiksi"
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "created at"
 msgstr "luomisaika"
 
@@ -693,7 +694,7 @@ msgstr "tekijä"
 msgid "content"
 msgstr "sisältö"
 
-#: actions/models/action.py people/models.py
+#: actions/models/action.py aplans/utils.py people/models.py
 msgid "created by"
 msgstr "luoja"
 
@@ -770,6 +771,10 @@ msgid "Single"
 msgstr "Yksi"
 
 #: actions/models/category.py
+msgid "short description"
+msgstr "lyhyt kuvaus"
+
+#: actions/models/category.py
 msgid "usable for action categorization"
 msgstr "käytetään toimenpiteiden luokitukseen"
 
@@ -840,10 +845,6 @@ msgstr "luokan taso"
 #: actions/models/category.py
 msgid "category levels"
 msgstr "luokan tasot"
-
-#: actions/models/category.py
-msgid "short description"
-msgstr "lyhyt kuvaus"
 
 #: actions/models/category.py
 msgid "theme color"
@@ -1331,6 +1332,10 @@ msgid "English"
 msgstr "englanti"
 
 #: aplans/settings.py
+msgid "Australian English"
+msgstr "Englanti (Australia)"
+
+#: aplans/settings.py
 msgid "Swedish"
 msgstr "ruotsi"
 
@@ -1350,6 +1355,10 @@ msgstr "järjestys"
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
+
+#: aplans/utils.py
+msgid "updated by"
+msgstr "viimeksi päivittänyt"
 
 #: content/admin.py
 msgid "Site settings"
@@ -1997,6 +2006,10 @@ msgid "If you change the dimensions of this indicator (currently %(dimensions)s)
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
 msgstr[0] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), sen arvo poistetaan."
 msgstr[1] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), kaikki sen %(num)d arvoa poistetaan."
+
+#: indicators/wagtail_admin.py
+msgid "Advanced options"
+msgstr "Edistyneet valinnat"
 
 #: indicators/wagtail_admin.py
 #, python-format
