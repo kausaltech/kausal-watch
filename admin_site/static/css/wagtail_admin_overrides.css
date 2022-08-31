@@ -197,3 +197,12 @@ expects main contact as 3rd element in container */
     font-size: 80%;
     color: white;
 }
+
+
+/* Prevent wagtail dropdown button arrow pseudo
+   element from being rendered uglily on top
+   of an autocomplete widget */
+.model_select2 .input select~span:after {
+  content: none;
+  display: none;
+}
