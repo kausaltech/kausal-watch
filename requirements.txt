@@ -144,7 +144,7 @@ django-js-asset==2.0.0
     #   django-ckeditor
 django-modelcluster==5.3
     # via wagtail
-django-modeltrans @ git+https://github.com/kausaltech/django-modeltrans.git
+django-modeltrans @ git+https://github.com/kausaltech/django-modeltrans.git@v0.7.2-kausal-lang-fallback-fix
     # via -r requirements.in
 django-npm==1.0.0
     # via -r requirements.in
