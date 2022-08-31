@@ -23,7 +23,7 @@ from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking
+from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
@@ -276,7 +276,7 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
-class Indicator(ClusterableModel, index.Indexed, ModificationTracking):
+class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
@@ -399,6 +399,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking):
     def get_level_for_plan(self, plan):
         level = self.levels.filter(plan=plan).first()
         return level.level if level is not None else None
+
+    def initialize_plan_defaults(self, plan):
+        self.organization = plan.organization
 
     def handle_values_update(self):
         update_fields = []

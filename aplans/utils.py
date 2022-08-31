@@ -147,7 +147,17 @@ class OrderedModel(models.Model):
         abstract = True
 
 
-class PlanRelatedModel:
+class PlanDefaultsModel:
+    '''Model instances of this mixin have
+    some plan-specific default values that
+    must be set when creating new instances
+    in the admin.
+    '''
+    def initialize_plan_defaults(self, plan):
+        raise NotImplementedError()
+
+
+class PlanRelatedModel(PlanDefaultsModel):
     @classmethod
     def filter_by_plan(cls, plan, qs):
         return qs.filter(plan=plan)
@@ -155,7 +165,7 @@ class PlanRelatedModel:
     def get_plans(self):
         return [self.plan]
 
-    def set_plan(self, plan):
+    def initialize_plan_defaults(self, plan):
         self.plan = plan
 
     def filter_siblings(self, qs):

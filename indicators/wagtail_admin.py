@@ -421,8 +421,12 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
         if request.user.is_superuser:
-            basic_panels.insert(1, FieldPanel('organization'))
-            basic_panels.insert(2, FieldPanel('common'))
+            basic_panels.insert(
+                1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))
+            )
+            basic_panels.insert(
+                2, FieldPanel('common')
+            )
 
         tabs = [
             ObjectList(basic_panels, heading=_('Basic information')),

@@ -31,7 +31,7 @@ from wagtailautocomplete.edit_handlers import \
     AutocompletePanel as WagtailAutocompletePanel
 
 from aplans.types import WatchAdminRequest
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanRelatedModel, PlanDefaultsModel
 from actions.models import Plan
 
 
@@ -368,10 +368,12 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
 
     def get_instance(self):
         instance = super().get_instance()
-        # If it is a plan-related model, ensure the 'plan' field gets set correctly.
-        if isinstance(instance, PlanRelatedModel):
-            if not instance.pk:
-                instance.set_plan(self.request.user.get_active_admin_plan())
+        # If it is a model directly or indirectly related to the
+        # active plan, ensure the 'plan' field or other plan related
+        # fields get set correctly.
+        if isinstance(instance, PlanDefaultsModel):
+            plan = self.request.user.get_active_admin_plan()
+            instance.initialize_plan_defaults(plan)
         return instance
 
     def form_valid(self, form, *args, **kwargs):
