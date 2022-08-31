@@ -216,6 +216,9 @@ class CommonIndicator(ClusterableModel):
     def __str__(self):
         return self.name
 
+    def autocomplete_label(self):
+        return str(self)
+
 
 class CommonIndicatorNormalizator(models.Model):
     normalizable = models.ForeignKey(CommonIndicator, on_delete=models.CASCADE, related_name='normalizations')

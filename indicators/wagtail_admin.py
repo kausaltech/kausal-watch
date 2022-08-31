@@ -425,7 +425,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))
             )
             basic_panels.insert(
-                2, FieldPanel('common')
+                2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
             )
 
         tabs = [

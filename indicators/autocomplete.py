@@ -1,6 +1,6 @@
 from dal import autocomplete
 
-from indicators.models import Unit, Quantity
+from indicators.models import Unit, Quantity, CommonIndicator
 from aplans.types import WatchAdminRequest
 
 
@@ -23,3 +23,7 @@ class QuantityAutocomplete(BaseAutocomplete):
 
 class UnitAutocomplete(BaseAutocomplete):
     model = Unit
+
+
+class CommonIndicatorAutocomplete(BaseAutocomplete):
+    model = CommonIndicator
