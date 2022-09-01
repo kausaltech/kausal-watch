@@ -534,7 +534,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plans__primary_language=lang) | Q(plans__other_languages__contains=[lang])).distinct()
+        qs = qs.filter(Q(plans__primary_language__iexact=lang) | Q(plans__other_languages__icontains=[lang])).distinct()
         return qs
 
 

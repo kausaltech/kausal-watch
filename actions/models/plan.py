@@ -262,7 +262,7 @@ class Plan(ClusterableModel):
         root = self.root_page
         language = translation.get_language()
         try:
-            locale = Locale.objects.get(language_code=language)
+            locale = Locale.objects.get(language_code__iexact=language)
             root = root.get_translation(locale)
         except (Locale.DoesNotExist, Page.DoesNotExist):
             pass

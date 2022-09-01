@@ -289,7 +289,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
                 return None
         # At this point, language is not None
         try:
-            return self.icons.get(language=language)
+            return self.icons.get(language__iexact=language)
         except CommonCategoryIcon.DoesNotExist:
             return self.get_icon(language=None)
 

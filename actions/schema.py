@@ -347,7 +347,7 @@ class CommonCategoryTypeNode(DjangoNode):
 
 
 def get_translated_category_page(info, **kwargs):
-    qs = CategoryPage.objects.filter(locale__language_code=get_language())
+    qs = CategoryPage.objects.filter(locale__language_code__iexact=get_language())
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
 
 
@@ -414,7 +414,7 @@ class CategoryNode(AttributesMixin, DjangoNode):
             return pages[0]
 
         try:
-            return self.category_pages.get(locale__language_code=get_language())
+            return self.category_pages.get(locale__language_code__iexact=get_language())
         except CategoryPage.DoesNotExist:
             return None
 

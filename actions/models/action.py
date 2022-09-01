@@ -497,7 +497,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plan__primary_language=lang) | Q(plan__other_languages__contains=[lang]))
+        qs = qs.filter(Q(plan__primary_language__iexact=lang) | Q(plan__other_languages__icontains=[lang]))
         return qs
 
     def get_attribute_type_by_identifier(self, identifier):
