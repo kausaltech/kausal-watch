@@ -172,13 +172,18 @@ class DisconnectedIndicatorFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         return (
             (None, _('in active plan')),
+            ('2', _('not in active plan')),
             ('1', _('all')),
         )
 
     def queryset(self, request, queryset):
-        if self.value() != '1':
-            plan = request.user.get_active_admin_plan()
-            return queryset.filter(levels__plan=plan)
+        plan = request.user.get_active_admin_plan()
+        if self.value() == '1':
+            pass
+        elif self.value() == '2':
+            queryset = queryset.exclude(id__in=IndicatorLevel.objects.filter(plan=plan).values_list('indicator_id'))
+        else:
+            queryset = queryset.filter(levels__plan=plan)
         return queryset
 
     def choices(self, changelist):
