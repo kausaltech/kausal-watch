@@ -421,7 +421,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             self.status = status
             self.save(update_fields=['status'])
 
-    def handle_admin_save(self):
+    def handle_admin_save(self, context: Optional[dict] = None):
         self.recalculate_status(force_update=True)
 
     def set_categories(self, type, categories):
