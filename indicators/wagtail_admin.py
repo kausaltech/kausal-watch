@@ -3,17 +3,23 @@ import json
 from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
-from django.contrib.admin.utils import quote
-from django.core.exceptions import ValidationError
+from django.contrib.admin.utils import quote, unquote
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import re_path, reverse
+from django.utils.decorators import method_decorator
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail.admin.edit_handlers import FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
+from wagtail.admin import messages
+from wagtail.admin.edit_handlers import (
+    FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
+)
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup, modeladmin_register
-from wagtail.contrib.modeladmin.views import InstanceSpecificView
+from wagtail.contrib.modeladmin.views import InstanceSpecificView, WMABaseView
 from wagtail.core import hooks
 
 from admin_site.wagtail import (
@@ -176,6 +182,46 @@ class IndicatorButtonHelper(AplansButtonHelper):
             'title': _('Edit indicator data'),
         }
 
+    def include_in_active_plan_with_level_button(
+            self,
+            pk,
+            obj,
+            level_identifier,
+            level_name,
+            classnames_add=None,
+            classnames_exclude=None,
+    ):
+        classnames_add = classnames_add or []
+        classnames = self.finalise_classname(
+            classnames_add=classnames_add + ['icon', 'icon-fa-link'],
+            classnames_exclude=classnames_exclude,
+        )
+        return {
+            'classname': classnames,
+            'label': _("Set level %(level)s") % {'level': level_name},
+            'title': _("Include this indicator in the active plan with level %(level)s") % {
+                'level': level_name
+            },
+            'url': self.url_helper.get_action_url(
+                'set_indicator_level_in_active_plan',
+                level_identifier,
+                quote(pk),
+            ),
+        }
+
+    def exclude_from_active_plan_button(self, pk, obj, classnames_add=None, classnames_exclude=None):
+        classnames_add = classnames_add or []
+        classnames = self.finalise_classname(
+            classnames_add=classnames_add + ['icon', 'icon-fa-unlink'],
+            classnames_exclude=classnames_exclude,
+        )
+        return {
+            'classname': classnames,
+            'label': _("Exclude from plan"),
+            'title': _("Exclude this indicator from the active plan"),
+            'url': self.url_helper.get_action_url('exclude_from_active_plan', quote(pk)),
+        }
+
     def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None,
                             classnames_exclude=None):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
@@ -189,6 +235,36 @@ class IndicatorButtonHelper(AplansButtonHelper):
             )
             if edit_values_button:
                 buttons.insert(1, edit_values_button)
+
+        if ('set_indicator_level_in_active_plan' not in exclude
+                and obj is not None
+                and ph.user_can_edit_obj(self.request.user, obj)):
+            plan = self.request.user.get_active_admin_plan()
+            try:
+                current_level = obj.levels.get(plan=plan).level
+            except IndicatorLevel.DoesNotExist:
+                current_level = None
+
+            for level_identifier, level_name in Indicator.LEVELS:
+                if level_identifier != current_level:
+                    button = self.include_in_active_plan_with_level_button(
+                        pk=getattr(obj, self.opts.pk.attname),
+                        obj=obj,
+                        level_identifier=level_identifier,
+                        level_name=level_name,
+                        classnames_add=classnames_add,
+                        classnames_exclude=classnames_exclude,
+                    )
+                    buttons.append(button)
+
+            if current_level:
+                exclude_button = self.exclude_from_active_plan_button(
+                    pk=getattr(obj, self.opts.pk.attname),
+                    obj=obj,
+                    classnames_add=classnames_add,
+                    classnames_exclude=classnames_exclude,
+                )
+                buttons.append(exclude_button)
 
         return buttons
 
@@ -346,6 +422,80 @@ class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
     pass
 
 
+class SetIndicatorLevelInActivePlanView(WMABaseView):
+    # page_title = _("Add indicator to active plan")
+    indicator_pk = None
+    template_name = 'indicators/set_indicator_level_in_active_plan.html'
+    level = None
+
+    def __init__(self, model_admin, level, indicator_pk):
+        self.level = level
+        self.indicator_pk = unquote(indicator_pk)
+        self.indicator = get_object_or_404(Indicator, pk=self.indicator_pk)
+        super().__init__(model_admin)
+
+    def check_action_permitted(self, user):
+        return self.permission_helper.user_can_edit_obj(user, self.indicator)
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not self.check_action_permitted(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_meta_title(self):
+        plan = self.request.user.get_active_admin_plan()
+        if self.level:
+            msg = _("Confirm including %(indicator)s in plan %(plan)s with level %(level)s")
+        else:
+            msg = _("Confirm excluding %(indicator)s from plan %(plan)s")
+        return msg % {'level': self.level, 'indicator': self.indicator, 'plan': plan}
+
+    def confirmation_message(self):
+        plan = self.request.user.get_active_admin_plan()
+        if self.level:
+            msg = _("Do you really want to include the indicator '%(indicator)s' in the plan '%(plan)s' "
+                    "with level '%(level)s'?")
+        else:
+            msg = _("Do you really want to exclude the indicator '%(indicator)s' from the plan '%(plan)s'?")
+        return msg % {'level': self.level, 'indicator': self.indicator, 'plan': plan}
+
+    def set_level(self, plan):
+        assert self.level
+        try:
+            indicator_level = self.indicator.levels.get(plan=plan)
+        except IndicatorLevel.DoesNotExist:
+            self.indicator.levels.create(plan=plan, level=self.level)
+        else:
+            indicator_level.level = self.level
+            indicator_level.save()
+
+    def remove_from_plan(self, plan):
+        assert not self.level
+        try:
+            indicator_level = self.indicator.levels.get(plan=plan)
+        except IndicatorLevel.DoesNotExist:
+            raise ValueError(_("The indicator is not included in the plan"))
+        indicator_level.delete()
+
+    def post(self, request, *args, **kwargs):
+        plan = request.user.get_active_admin_plan()
+        try:
+            if self.level:
+                self.set_level(plan)
+            else:
+                self.remove_from_plan(plan)
+        except ValueError as e:
+            messages.error(request, e)
+            return redirect(self.index_url)
+        if self.level:
+            msg = _("Indicator '%(indicator)s' has been included in plan '%(plan)s' with level '%(level)s'.")
+        else:
+            msg = _("Indicator '%(indicator)s' has been excluded from plan '%(plan)s'.")
+        messages.success(request, msg % {'level': self.level, 'indicator': self.indicator, 'plan': plan})
+        return redirect(self.index_url)
+
+
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     create_view_class = IndicatorCreateView
@@ -491,8 +641,37 @@ class IndicatorAdmin(AplansModelAdmin):
                 self.edit_values_view,
                 name=self.url_helper.get_action_url_name('edit_values')
             ),
+            re_path(
+                # self.url_helper.get_action_url_pattern('set_indicator_level_in_active_plan'),
+                r'^%s/%s/%s/(?P<level>[-\w]+)/(?P<instance_pk>[-\w]+)/$' % (
+                    self.opts.app_label,
+                    self.opts.model_name,
+                    'set_indicator_level_in_active_plan',
+                ),
+                self.set_indicator_level_in_active_plan_view,
+                name=self.url_helper.get_action_url_name('set_indicator_level_in_active_plan')
+            ),
+            re_path(
+                self.url_helper.get_action_url_pattern('exclude_from_active_plan'),
+                self.exclude_from_active_plan_view,
+                name=self.url_helper.get_action_url_name('exclude_from_active_plan')
+            ),
         )
         return urls
+
+    def set_indicator_level_in_active_plan_view(self, request, level, instance_pk):
+        return SetIndicatorLevelInActivePlanView.as_view(
+            model_admin=self,
+            level=level,
+            indicator_pk=instance_pk,
+        )(request)
+
+    def exclude_from_active_plan_view(self, request, instance_pk):
+        return SetIndicatorLevelInActivePlanView.as_view(
+            model_admin=self,
+            level=None,
+            indicator_pk=instance_pk,
+        )(request)
 
 
 class CommonIndicatorForm(AplansAdminModelForm):
