@@ -478,7 +478,7 @@ class IndicatorAdmin(AplansModelAdmin):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
         if request.user.is_superuser:
-            qs = qs.filter(organization__in=plan.related_organizations.all())
+            qs = qs.filter(organization__in=plan.get_related_organizations())
         else:
             qs = qs.filter(organization=plan.organization)
         return qs.select_related('unit', 'quantity')
