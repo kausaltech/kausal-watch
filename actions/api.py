@@ -836,6 +836,18 @@ class CategorySerializer(
         # We might want to do some stuff with related objects here
         return instance
 
+    def validate_identifier(self, value):
+        if not value:
+            raise serializers.ValidationError(_("Identifier must be set"))
+
+        qs = Category.objects.filter(type=self.category_type, identifier=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(_("Identifier already exists"))
+
+        return value
+
     class Meta:
         model = Category
         list_serializer_class = BulkListSerializer
