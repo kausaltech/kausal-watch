@@ -360,7 +360,7 @@ class AttributeChoiceWithTextSerializer(serializers.Serializer):
     def update(self, instance: Action, validated_data):
         assert instance.pk is not None
         for attribute_type_identifier, item in validated_data.items():
-            instance.set_choice_with_text_attribute(attribute_type_identifier, item['choice'], item['text'])
+            instance.set_choice_with_text_attribute(attribute_type_identifier, item.get('choice'), item.get('text'))
 
 
 class AttributeNumericValueSerializer(serializers.Serializer):
