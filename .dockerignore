@@ -2,8 +2,8 @@ __pycache__
 .mypy_cache
 static
 .direnv
-.env
-.env.*
+/.env*
+/.direnv/
 .idea
 db.sqlite3
 env
@@ -13,3 +13,4 @@ kausal_watch_extensions
 Attic
 tmp
 node_modules
+*~
