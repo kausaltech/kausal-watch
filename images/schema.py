@@ -4,6 +4,8 @@ from graphql.error import GraphQLError
 from wagtail.images.models import SourceImageIOError
 
 from aplans.graphql_types import DjangoNode, replace_image_node
+import graphene_django_optimizer as gql_optimizer
+
 
 from .models import AplansImage, AplansRendition
 
@@ -40,7 +42,10 @@ class ImageNode(DjangoNode):
             'focal_point_height', 'height', 'width', 'image_credit', 'alt_text'
         ]
 
-    def resolve_rendition(self, info, size=None, crop=True):
+    @gql_optimizer.resolver_hints(
+        prefetch_related=('renditions',)
+    )
+    def resolve_rendition(root: AplansImage, info, size=None, crop=True):
         if size is not None:
             try:
                 width, height = size.split('x')
@@ -69,7 +74,7 @@ class ImageNode(DjangoNode):
                 format_str = 'fill-%s-c50' % size
             else:
                 format_str = 'max-%s' % size
-            rendition = self.get_rendition(format_str)
+            rendition = root.get_rendition(format_str)
         except (FileNotFoundError, SourceImageIOError) as e:
             # We ignore the error so that the query will not fail, but report it to
             # Sentry anyway.

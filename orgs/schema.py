@@ -64,7 +64,8 @@ class OrganizationNode(DjangoNode):
         return parent.get_parent()
 
     @gql_optimizer.resolver_hints(
-        only=('logo',)
+        only=('logo',),
+        select_related=('logo',)
     )
     def resolve_logo(self: Organization, info: GQLInfo, parent_fallback=False):
         if self.logo is not None:

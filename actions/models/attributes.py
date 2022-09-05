@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -37,6 +39,8 @@ class AttributeType(ClusterableModel, OrderedModel):
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
         verbose_name=_('Unit (only if format is numeric)'),
     )
+
+    choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     public_fields = [
         'identifier', 'name', 'format', 'unit', 'choice_options'

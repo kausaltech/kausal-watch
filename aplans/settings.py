@@ -53,6 +53,7 @@ env = environ.FileAwareEnv(
     CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
+    LOG_SQL_QUERIES=(bool, False),
 )
 
 BASE_DIR = root()
@@ -77,6 +78,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 CACHES = {
     'default': env.cache(),
+    'renditions': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'watch-renditions',
+    }
 }
 
 ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
@@ -671,7 +676,7 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             },
         },
         'loggers': {
-            'django.db': level('INFO'),
+            'django.db': level('DEBUG' if env('LOG_SQL_QUERIES') else 'INFO'),
             'django.template': level('WARNING'),
             'django.utils.autoreload': level('INFO'),
             'django': level('DEBUG'),

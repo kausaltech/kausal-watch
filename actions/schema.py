@@ -418,13 +418,23 @@ class CategoryNode(AttributesMixin, DjangoNode):
         except CategoryPage.DoesNotExist:
             return None
 
-    def resolve_icon_image(root, info):
+    @gql_optimizer.resolver_hints(
+        prefetch_related=('icons',),
+        select_related=('common',),
+        only=('common',)
+    )
+    def resolve_icon_image(root: Category, info):
         icon = root.get_icon(get_language())
         if icon:
             return icon.image
         return None
 
-    def resolve_icon_svg_url(root, info):
+    @gql_optimizer.resolver_hints(
+        prefetch_related=('icons',),
+        select_related=('common',),
+        only=('common',)
+    )
+    def resolve_icon_svg_url(root: Category, info):
         icon = root.get_icon(get_language())
         if icon and icon.svg:
             return info.context.build_absolute_uri(icon.svg.file.url)
@@ -525,7 +535,8 @@ class ActionNode(AttributesMixin, DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='name',
-        only=('name', 'i18n')
+        select_related=('plan'),
+        only=('name', 'i18n', 'plan__primary_language'),
     )
     def resolve_name(self, info, hyphenated=False):
         name = self.name_i18n
