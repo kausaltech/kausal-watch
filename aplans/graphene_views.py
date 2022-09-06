@@ -20,7 +20,7 @@ from .graphql_types import AuthenticatedUserNode
 from .code_rev import REVISION
 from users.models import User
 
-SUPPORTED_LANGUAGES = {x[0] for x in settings.LANGUAGES}
+SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 logger = logging.getLogger(__name__)
 
 
@@ -91,7 +91,7 @@ class LocaleMiddleware:
                     lang = variable_vals.get(arg.value.name.value)
                 else:
                     lang = arg.value.value
-                if lang not in SUPPORTED_LANGUAGES:
+                if lang.lower() not in SUPPORTED_LANGUAGES:
                     raise GraphQLError("unsupported language: %s" % lang, [info])
                 info.context._graphql_query_language = lang
                 return lang
@@ -110,7 +110,7 @@ class LocaleMiddleware:
             else:
                 # No locale directive found. Need to activate some language, otherwise this request would be served
                 # using whatever language had been set while handling the previous request in the current thread.
-                assert settings.LANGUAGE_CODE in SUPPORTED_LANGUAGES
+                assert settings.LANGUAGE_CODE.lower() in SUPPORTED_LANGUAGES
                 translation.activate(settings.LANGUAGE_CODE)
         return next(root, info, **kwargs)
 
