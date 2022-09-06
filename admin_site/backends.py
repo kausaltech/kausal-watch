@@ -5,7 +5,6 @@ from .models import Client
 
 class AzureADAuth(AzureADTenantOAuth2):
     name = 'azure_ad'
-    AUTHORIZATION_URL = 'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
     DEFAULT_SCOPE = ['openid', 'profile', 'email', 'User.Read']
 
     def __init__(self, *args, **kwargs):
