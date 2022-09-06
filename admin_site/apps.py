@@ -1,5 +1,8 @@
-from django.contrib.admin.apps import AdminConfig
 from django.apps import AppConfig
+from django.contrib.admin.apps import AdminConfig
+from django.db.models.fields import BLANK_CHOICE_DASH
+from django.utils.translation import get_language_info
+from wagtail.admin.localization import get_available_admin_languages
 
 
 _wagtail_collection_save_instance = None
@@ -20,6 +23,15 @@ def collection_index_get_queryset(self):
         return plan.root_collection.get_descendants(inclusive=False)
 
 
+def _get_language_choices():
+    language_choices = [
+        (lang_code, get_language_info(lang_code.lower())['name_local'])
+        for lang_code, lang_name in get_available_admin_languages()
+    ]
+    return sorted(BLANK_CHOICE_DASH + language_choices,
+                  key=lambda l: l[1].lower())
+
+
 class AdminSiteConfig(AdminConfig):
     default_site = 'admin_site.admin.AplansAdminSite'
 
@@ -35,6 +47,13 @@ class AdminSiteConfig(AdminConfig):
             _wagtail_collection_save_instance = Create.save_instance
             Create.save_instance = collection_save_instance
             Index.get_queryset = collection_index_get_queryset
+
+        global _wagtail_preferred_language_choices_func
+
+        # Monkey-patch Wagtail's _get_language_choices to transform language codes to lower case. See the comment above
+        # LANGUAGES in settings.py for details about this.
+        from wagtail.admin.forms import account
+        account.LocalePreferencesForm.base_fields['preferred_language']._choices.choices_func = _get_language_choices
 
 
 class AdminSiteStatic(AppConfig):
