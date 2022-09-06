@@ -324,6 +324,10 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
         instance.set_responsible_parties(validated_data)
 
 
+@extend_schema_field(dict(
+    type='object',
+    title=_('Contact persons'),
+))
 class ActionContactPersonSerializer(serializers.Serializer):
     def to_representation(self, value):
         return [v.person_id for v in value.all()]
@@ -551,8 +555,8 @@ class ActionSerializer(
     PlanRelatedModelSerializer,
 ):
     categories = ActionCategoriesSerializer(required=False)
-    responsible_parties = ActionResponsiblePartySerializer(required=False)
-    contact_persons = ActionContactPersonSerializer(required=False)
+    responsible_parties = ActionResponsiblePartySerializer(required=False, label=_('Responsible parties'))
+    contact_persons = ActionContactPersonSerializer(required=False, label=_('Contact persons'))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
