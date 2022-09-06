@@ -9,7 +9,6 @@ from . import wagtail_admin  # noqa
 
 
 class ActionsSummaryItem(SummaryItem):
-    order = 200
     template_name = 'site_summary/actions.html'
     request: WatchAdminRequest
 
@@ -24,7 +23,7 @@ class ActionsSummaryItem(SummaryItem):
         return True
 
 
-@hooks.register('construct_homepage_summary_items')
+@hooks.register('construct_homepage_summary_items', order=1001)
 def add_actions_summary_item(request, items):
     items.append(ActionsSummaryItem(request))
 

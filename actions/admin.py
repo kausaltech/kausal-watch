@@ -4,12 +4,8 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 import dal
-from admin_numeric_filter.admin import NumericFilterModelAdmin, RangeNumericFilter
-from admin_ordering.admin import OrderableAdmin
 from admin_site.admin import AplansExportMixin, AplansModelAdmin
 from admin_site.filters import AutocompleteFilter
-from ckeditor.widgets import CKEditorWidget
-from image_cropping import ImageCroppingMixin
 from indicators.admin import ActionIndicatorAdmin
 from orgs.models import Organization
 from people.models import Person
@@ -60,7 +56,7 @@ class ActionStatusAdmin(admin.TabularInline):
     extra = 0
 
 
-class ActionImplementationPhaseAdmin(OrderableAdmin, admin.TabularInline):
+class ActionImplementationPhaseAdmin(admin.TabularInline):
     model = ActionImplementationPhase
     extra = 0
     ordering_field = 'order'
@@ -68,7 +64,7 @@ class ActionImplementationPhaseAdmin(OrderableAdmin, admin.TabularInline):
     fields = ('order', 'name', 'identifier',)
 
 
-class ActionImpactAdmin(OrderableAdmin, admin.TabularInline):
+class ActionImpactAdmin(admin.TabularInline):
     model = ActionImpact
     extra = 0
     ordering_field = 'order'
@@ -87,7 +83,7 @@ class ImpactGroupAdmin(PlanRelatedAdmin):
 
 
 @admin.register(MonitoringQualityPoint)
-class MonitoringQualityPointAdmin(OrderableAdmin, PlanRelatedAdmin):
+class MonitoringQualityPointAdmin(PlanRelatedAdmin):
     model = MonitoringQualityPoint
     ordering_field = 'order'
     ordering_field_hide_input = True
@@ -96,7 +92,7 @@ class MonitoringQualityPointAdmin(OrderableAdmin, PlanRelatedAdmin):
 
 
 @admin.register(Plan)
-class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
+class PlanAdmin(AplansModelAdmin):
     autocomplete_fields = ('general_admins',)
     inlines = [
         ActionStatusAdmin, ActionImplementationPhaseAdmin, ActionImpactAdmin,
@@ -122,7 +118,7 @@ class PlanAdmin(ImageCroppingMixin, AplansModelAdmin):
         return True
 
 
-class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
+class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     model = ActionResponsibleParty
     ordering_field = 'order'
     ordering_field_hide_input = True
@@ -130,7 +126,7 @@ class ActionResponsiblePartyAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, a
     fields = ('organization', 'order',)
 
 
-class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, OrderableAdmin, admin.TabularInline):
+class ActionContactPersonAdmin(ActionRelatedAdminPermMixin, admin.TabularInline):
     model = ActionContactPerson
     ordering_field = 'order'
     ordering_field_hide_input = True
@@ -183,8 +179,6 @@ class ActionTaskAdmin(ActionRelatedAdminPermMixin, admin.StackedInline):
 
     def get_formset(self, *args, **kwargs):
         formset = super().get_formset(*args, **kwargs)
-        if 'comment' in formset.form.base_fields:
-            formset.form.base_fields['comment'].widget = CKEditorWidget(config_name='lite')
         return formset
 
 
@@ -358,7 +352,7 @@ class ContactPersonFilter(AutocompleteFilter):
 
 
 @admin.register(Action)
-class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin, AplansModelAdmin):
+class ActionAdmin(AplansExportMixin, AplansModelAdmin):
     search_fields = ('name', 'identifier')
     list_display = ('__str__', 'impact', 'has_contact_persons', 'active_task_count')
 
@@ -397,9 +391,6 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
         )
 
         form = super().get_form(request, obj, **kwargs)
-
-        if 'description' in form.base_fields:
-            form.base_fields['description'].widget = CKEditorWidget()
 
         # Limit choices to what's available in the action plan
         if 'plan' in form.base_fields:
@@ -446,10 +437,7 @@ class ActionAdmin(ImageCroppingMixin, NumericFilterModelAdmin, AplansExportMixin
         plan = user.get_active_admin_plan()
 
         filters = []
-        if user.is_general_admin_for_plan(plan):
-            filters.append(('internal_priority', RangeNumericFilter))
-        else:
-            filters.append(ModifiableActionsFilter)
+        filters.append(ModifiableActionsFilter)
         filters.append(ImpactFilter)
         filters.append(ContactPersonFilter)
         filters.append(MergedActionsFilter)
@@ -631,8 +619,6 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
             person = request.user.get_corresponding_person()
             field = form.base_fields['author']
             field.initial = person
-        if 'content' in form.base_fields:
-            form.base_fields['content'].widget = CKEditorWidget(config_name='lite')
         if 'action' in form.base_fields:
             form.base_fields['action'].queryset = plan.actions.unmerged().modifiable_by(request.user)
 
@@ -640,7 +626,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
 
 
 @admin.register(Category)
-class CategoryAdmin(ImageCroppingMixin, AplansModelAdmin):
+class CategoryAdmin(AplansModelAdmin):
     list_display = ['__str__', 'type']
     fields = ('type', 'parent', 'identifier', 'name', 'short_description', 'color', 'image')
 

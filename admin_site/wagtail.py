@@ -15,15 +15,13 @@ from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from wagtail.admin import messages
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import CreateView, EditView
+from wagtail.admin.panels import InlinePanel
 
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import \
-    CondensedInlinePanel as WagtailCondensedInlinePanel
 from reversion.revisions import (
     add_to_revision, create_revision, set_comment, set_user
 )
@@ -135,16 +133,16 @@ class AplansAdminModelForm(WagtailAdminModelForm):
 class PlanFilteredFieldPanel(FieldPanel):
     """Filters the related model queryset based on the active plan."""
 
-    def on_form_bound(self):
-        super().on_form_bound()
+    class BoundPanel(FieldPanel.BoundPanel):
+        request: WatchAdminRequest
 
-        field = self.bound_field.field
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        related_model = field.queryset.model
-        assert issubclass(related_model, PlanRelatedModel)
-        field.queryset = related_model.filter_by_plan(plan, field.queryset)
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            field = self.bound_field.field
+            plan = self.request.get_active_admin_plan()
+            related_model = field.queryset.model
+            assert issubclass(related_model, PlanRelatedModel)
+            field.queryset = related_model.filter_by_plan(plan, field.queryset)
 
 
 class AplansButtonHelper(ButtonHelper):
@@ -200,12 +198,24 @@ class AplansTabbedInterface(TabbedInterface):
 
 
 class FormClassMixin:
+    request: WatchAdminRequest
+    model_admin: ModelAdmin
+
     def get_form_class(self):
         handler = self.get_edit_handler()
         if isinstance(handler, AplansTabbedInterface):
             return handler.get_form_class(self.request)
         else:
             return handler.get_form_class()
+
+    def get_edit_handler(self):
+        try:
+            edit_handler = self.model_admin.get_edit_handler()
+        except TypeError:
+            edit_handler = self.model_admin.get_edit_handler(
+                instance=self.instance, request=self.request,
+            )
+        return edit_handler.bind_to_model(self.model_admin.model)
 
 
 class PersistIndexViewFiltersMixin:
@@ -419,48 +429,8 @@ class AplansModelAdmin(ModelAdmin):
         return SafeLabelModelAdminMenuItem(self, order or self.get_menu_order())
 
 
-class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):
-    """Remove empty new forms from data"""
-
-    def process_post_data(self, data, *args, **kwargs):
-        prefix = kwargs['prefix']
-
-        initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
-        total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
-
-        delete = data.get('%s-DELETE' % prefix, '').lstrip('[').rstrip(']')
-        if delete:
-            delete = [int(x) for x in delete.split(',')]
-        else:
-            delete = []
-
-        for idx in range(initial_forms, total_forms):
-            keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
-            for key in keys:
-                if data[key]:
-                    break
-            else:
-                delete.append(idx)
-
-        if delete:
-            data = data.copy()
-            data['%s-DELETE' % prefix] = '[%s]' % (','.join([str(x) for x in sorted(delete)]))
-
-        return super().process_post_data(data, *args, **kwargs)
-
-
-class CondensedInlinePanel(WagtailCondensedInlinePanel):
-    formset_class = EmptyFromTolerantBaseCondensedInlinePanelFormSet
-
-    def on_instance_bound(self):
-        label = self.label
-        new_card_header_text = self.new_card_header_text
-        super().on_instance_bound()
-        related_name = {
-            'related_verbose_name': self.db_field.related_model._meta.verbose_name,
-        }
-        self.label = label or _('Add %(related_verbose_name)s') % related_name
-        self.new_card_header_text = new_card_header_text or _('New %(related_verbose_name)s') % related_name
+class CondensedInlinePanel(InlinePanel):
+    pass
 
 
 class AutocompletePanel(WagtailAutocompletePanel):

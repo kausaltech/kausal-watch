@@ -16,6 +16,7 @@ from wagtail.admin.edit_handlers import (
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.views import IndexView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 import humanize
@@ -211,20 +212,18 @@ class ActionAdminForm(WagtailAdminModelForm):
 
 
 class ActionEditHandler(AplansTabbedInterface):
-    instance: Action
-
-    def get_form_class(self, request: WatchAdminRequest = None):
+    def get_form_class(self, request: WatchAdminRequest|None = None, instance: Action|None = None):
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
+            cat_fields = _get_category_fields(plan, Action, instance, with_initial=True)
         else:
             cat_fields = {}
 
         # TODO: Refactor duplicated code (category_admin.py)
-        if self.instance is not None:
-            attribute_fields_list = get_action_attribute_fields(plan, self.instance, with_initial=True)
+        if instance is not None:
+            attribute_fields_list = get_action_attribute_fields(plan, instance, with_initial=True)
             attribute_fields = {form_field_name: field
                                 for _, fields in attribute_fields_list
                                 for form_field_name, (field, _) in fields.items()}
@@ -292,7 +291,7 @@ class ActionCreateView(AplansCreateView):
         return instance
 
 
-class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
+class ActionIndexView(PersistIndexViewFiltersMixin, IndexView):
     def filter_by_person(self, queryset, value):
         if not value:
             return queryset
@@ -490,7 +489,7 @@ class ActionMenuItem(SafeLabelModelAdminMenuItem):
 
 
 @modeladmin_register
-class ActionAdmin(OrderableMixin, AplansModelAdmin):
+class ActionAdmin(AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
     index_view_class = ActionIndexView
@@ -625,8 +624,10 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         list_display.append('updated_at_delta')
 
+        """
         if not plan.actions_locked and request.user.is_general_admin_for_plan(plan):
             list_display.insert(0, 'index_order')
+        """
 
         out = tuple(list_display)
         request._action_admin_list_display = out
@@ -716,7 +717,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 CondensedInlinePanel(
                     'tasks',
                     panels=task_panels,
-                    card_header_from_js_safe=self.get_task_header_formatter()
                 )
             ], heading=_('Tasks')),
         ]

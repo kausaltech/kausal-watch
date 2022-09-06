@@ -2,8 +2,8 @@ import functools
 import graphene
 import re
 
-from graphql.execution import ResolveInfo
-from graphql.language.ast import OperationDefinition
+from graphql import GraphQLResolveInfo
+from graphql.language.ast import OperationDefinitionNode
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -140,6 +140,6 @@ class AuthenticatedUserNode(graphene.ObjectType):
     pass
 
 
-class GQLInfo(ResolveInfo):
+class GQLInfo(GraphQLResolveInfo):
     context: WatchAPIRequest
-    operation: OperationDefinition
+    operation: OperationDefinitionNode

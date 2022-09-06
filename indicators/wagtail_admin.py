@@ -342,7 +342,10 @@ class IndicatorForm(AplansAdminModelForm):
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
             return None
-        sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+        fs = self.formsets['dimensions']
+        if not hasattr(fs, 'cleaned_data'):
+            return None
+        sorted_form_data = sorted(fs.cleaned_data, key=lambda d: d.get('ORDER'))
         return [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
 
     def clean(self):

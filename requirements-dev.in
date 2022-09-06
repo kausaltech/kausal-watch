@@ -1,5 +1,4 @@
 -c requirements.txt
-pywatchman
 watchfiles
 #python-language-server[Rope,Pyflakes,McCabe,YAPF]
 isort

@@ -53,6 +53,7 @@ env = environ.FileAwareEnv(
     CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
+    ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
 )
 
@@ -91,12 +92,13 @@ SECRET_KEY = env('SECRET_KEY')
 SERVER_EMAIL = env('SERVER_EMAIL')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
+WAGTAILADMIN_BASE_URL = env('ADMIN_BASE_URL')
+
 SITE_ID = 1
 
 # Application definition
 
 INSTALLED_APPS = [
-    'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
     'dal',
@@ -129,14 +131,13 @@ INSTALLED_APPS = [
     'wagtail.images',
     'wagtail.search',
     'wagtail.admin',
-    'wagtail.core',
+    'wagtail',
     'wagtailsvg',
     'wagtail.contrib.modeladmin',
     'wagtail_localize',
     'wagtail_localize.locales',  # replaces `wagtail.locales`
     'wagtailautocomplete',
     'wagtailfontawesome',
-    'condensedinlinepanel',
     'generic_chooser',
     'wagtailorderable',
     'admin_list_controls',
@@ -145,10 +146,7 @@ INSTALLED_APPS = [
     'modelcluster',
     'taggit',
 
-    'admin_ordering',
-    'ckeditor',
     'easy_thumbnails',
-    'image_cropping',
     'reversion',
 
     'rest_framework',
@@ -431,40 +429,6 @@ if env.str('MAILGUN_API_KEY'):
 if env.str('SENDGRID_API_KEY'):
     EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
     ANYMAIL['SENDGRID_API_KEY'] = env.str('SENDGRID_API_KEY')
-
-# ckeditor for rich-text admin fields
-CKEDITOR_CONFIGS = {
-    'default': {
-        'skin': 'moono-lisa',
-        'toolbar_Basic': [
-            ['Source', '-', 'Bold', 'Italic']
-        ],
-        'toolbar_Full': [
-            ['Format', 'Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
-            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
-            ['Link', 'Unlink'],
-            ['HorizontalRule'],
-            ['Source'],
-        ],
-        'removePlugins': 'uploadimage,uploadwidget',
-        'extraPlugins': '',
-        'toolbar': 'Full',
-        'height': 300,
-        'format_tags': 'p;h3;h4;h5;h6;pre'
-    },
-    'lite': {
-        'skin': 'moono-lisa',
-        'toolbar_Full': [
-            ['Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
-            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
-            ['Link', 'Unlink'],
-        ],
-        'removePlugins': 'uploadimage,uploadwidget',
-        'extraPlugins': '',
-        'toolbar': 'Full',
-        'height': 150,
-    }
-}
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'

@@ -3,8 +3,9 @@ import graphene_django_optimizer as gql_optimizer
 
 from django.db.models import Count, Q
 from graphql.error import GraphQLError
+from graphql import DirectiveLocation
 from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+    GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
 )
 from grapple.registry import registry as grapple_registry
 
@@ -188,6 +189,6 @@ class AuthDirective(GraphQLDirective):
 schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
-    directives=specified_directives + [LocaleDirective(), AuthDirective()],
+    directives=specified_directives + (LocaleDirective(), AuthDirective()),
     types=graphene_registry + list(grapple_registry.models.values())
 )

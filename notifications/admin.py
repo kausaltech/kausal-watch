@@ -1,4 +1,3 @@
-from ckeditor.widgets import CKEditorWidget
 from django.contrib import admin
 
 from admin_site.admin import AplansModelAdmin
@@ -56,9 +55,6 @@ class NotificationTemplateAdmin(AplansModelAdmin):
 
         choices = [x for x in form.base_fields['type'].choices if x[0] not in existing_types]
         form.base_fields['type'].choices = choices
-
-        if 'content' in form.base_fields:
-            form.base_fields['content'].widget = CKEditorWidget(config_name='lite')
         return form
 
 
@@ -84,8 +80,6 @@ class ContentBlockAdmin(AplansModelAdmin):
         form = super().get_form(request, obj, **kwargs)
         plan = request.user.get_active_admin_plan()
 
-        if 'content' in form.base_fields:
-            form.base_fields['content'].widget = CKEditorWidget(config_name='lite')
         field = form.base_fields.get('template')
         if field:
             field.queryset = field.queryset.filter(base=plan.notification_base_template)

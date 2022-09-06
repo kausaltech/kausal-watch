@@ -9,8 +9,9 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
+from wagtail.admin.staticfiles import versioned_static
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
-from wagtail.core import hooks
+from wagtail import hooks
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from aplans.types import WatchAdminRequest
@@ -201,6 +202,11 @@ def construct_homepage_panels(request, panels):
     panels.insert(1, OwnIndicatorsPanel())
 
 
+@hooks.register('construct_homepage_summary_items', order=1000)
+def remove_default_site_summary_items(request, items: list):
+    items.clear()
+
+
 class ClientAdmin(ModelAdmin):
     model = Client
     menu_icon = 'fa-bank'  # change as required
@@ -227,17 +233,17 @@ modeladmin_register(ClientAdmin)
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_admin_overrides.css")
+        versioned_static("css/wagtail_admin_overrides.css")
     )
 
-
+"""
 @hooks.register("insert_editor_css", order=900)
 def editor_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
         static("css/wagtail_editor_overrides.css")
     )
-
+"""
 
 @hooks.register("construct_explorer_page_queryset")
 def restrict_pages_to_plan(parent_page, pages, request):

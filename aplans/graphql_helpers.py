@@ -1,7 +1,8 @@
 import graphene
 from graphene_django.forms.mutation import DjangoModelFormMutation
+from graphql import GraphQLResolveInfo
 from graphql.error import GraphQLError
-from graphql.utils.ast_to_dict import ast_to_dict
+from graphql.utilities.ast_to_dict import ast_to_dict
 
 from .graphql_types import AuthenticatedUserNode
 
@@ -35,7 +36,7 @@ def collect_fields(node, fragments):
     return field
 
 
-def get_fields(info):
+def get_fields(info: GraphQLResolveInfo):
     """A convenience function to call collect_fields with info
     Args:
         info (ResolveInfo)
@@ -44,7 +45,7 @@ def get_fields(info):
     """
 
     fragments = {}
-    node = ast_to_dict(info.field_asts[0])
+    node = ast_to_dict(info.field_nodes[0])
 
     for name, value in info.fragments.items():
         fragments[name] = ast_to_dict(value)

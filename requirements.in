@@ -1,6 +1,6 @@
 django
 #-e git+https://github.com/juyrjola/django-modelcluster.git#egg=django-modelcluster
-git+https://github.com/kausaltech/wagtail-orderable.git#egg=wagtail-orderable
+wagtail-orderable
 djangorestframework
 django-helusers
 social-auth-app-django
@@ -19,8 +19,10 @@ django-image-cropping
 easy-thumbnails
 Pillow
 sentry-sdk
-graphene-django
-graphene-django-optimizer==0.8.0
+git+https://github.com/graphql-python/graphene-django.git#egg=graphene-django
+git+https://github.com/kausaltech/graphene-django-optimizer.git#egg=graphene-django-optimizer
+graphql-core>=3.2.0
+graphql-relay>=3.2.0
 aniso8601
 wagtail-condensedinlinepanel
 django-admin-numeric-filter
@@ -40,11 +42,11 @@ pytest-factoryboy
 libvoikko
 #django-modeltrans
 git+https://github.com/kausaltech/django-modeltrans.git#egg=django-modeltrans
-wagtail
+wagtail>3.0
 wagtail-autocomplete
 wagtailfontawesome
 wagtail-generic-chooser
-wagtail-localize
+git+https://github.com/kausaltech/wagtail-localize.git@3782adf#egg=wagtail-localize
 rustface
 django-npm
 django-autocomplete-light
@@ -52,7 +54,7 @@ coreapi
 pyyaml
 django_redis
 uritemplate
-wagtail_grapple
+git+https://github.com/kausaltech/wagtail-grapple.git#egg=wagtail-grapple
 tinycss2
 wagtail-admin-list-controls
 humanize

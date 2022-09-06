@@ -6,8 +6,6 @@ from django.db.models import Q
 from django.contrib import admin
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from ckeditor.widgets import CKEditorWidget
-from admin_ordering.admin import OrderableAdmin
 
 from admin_site.admin import AplansImportExportMixin, AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
@@ -197,7 +195,7 @@ class DisconnectedIndicatorFilter(admin.SimpleListFilter):
             }
 
 
-class IndicatorContactPersonAdmin(OrderableAdmin, admin.TabularInline):
+class IndicatorContactPersonAdmin(admin.TabularInline):
     model = IndicatorContactPerson
     ordering_field = 'order'
     ordering_field_hide_input = True
@@ -252,10 +250,6 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         )
 
         form = super().get_form(request, obj, **kwargs)
-
-        if 'description' in form.base_fields:
-            form.base_fields['description'].widget = CKEditorWidget()
-
         return form
 
     def get_fieldsets(self, request, obj=None):

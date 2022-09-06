@@ -21,15 +21,6 @@
       if (form_submitted)
         return;
 
-      if (typeof(window.CKEDITOR) !== 'undefined') {
-        for (var instanceName in window.CKEDITOR.instances) {
-          var instance = window.CKEDITOR.instances[instanceName];
-          if (instance.checkDirty()) {
-            instance.updateElement();
-          }
-        }
-      }
-
       var form_state = form.serialize();
       if (initial_form_state != form_state) {
         var message = "You have unsaved changes on this page.";
