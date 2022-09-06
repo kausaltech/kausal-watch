@@ -84,9 +84,13 @@ class APITokenMiddleware:
 
 class LocaleMiddleware:
     def process_locale_directive(self, info, directive):
+        variable_vals = info.variable_values
         for arg in directive.arguments:
             if arg.name.value == 'lang':
-                lang = arg.value.value
+                if isinstance(arg.value, Variable):
+                    lang = variable_vals.get(arg.value.name.value)
+                else:
+                    lang = arg.value.value
                 if lang not in SUPPORTED_LANGUAGES:
                     raise GraphQLError("unsupported language: %s" % lang, [info])
                 info.context._graphql_query_language = lang
