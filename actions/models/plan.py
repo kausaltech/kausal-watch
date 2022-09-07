@@ -380,10 +380,13 @@ class Plan(ClusterableModel):
             scheme = parts.scheme
             if scheme not in ('https', 'http'):
                 raise Exception('Invalid scheme in client_url')
-            port = parts.port
-            if scheme == 'https' and port == 443:
-                port = None
-            elif scheme == 'http' and port == 80:
+            try:
+                port = parts.port
+                if scheme == 'https' and port == 443:
+                    port = None
+                elif scheme == 'http' and port == 80:
+                    port = None
+            except ValueError:
                 port = None
 
         base_path = None
