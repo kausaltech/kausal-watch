@@ -214,6 +214,13 @@ class PlanNode(DjangoNode):
     def resolve_all_related_plans(self: Plan, info):
         return self.get_all_related_plans()
 
+    @gql_optimizer.resolver_hints(
+        select_related=('image',),
+        only=('image',)
+    )
+    def resolve_image(root: Plan, info):
+        return root.image
+
     class Meta:
         model = Plan
         fields = public_fields(Plan)
