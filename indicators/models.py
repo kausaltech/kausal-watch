@@ -691,29 +691,21 @@ class IndicatorValue(ClusterableModel):
 class IndicatorGoal(models.Model):
     """The numeric goal which the organization has set for an indicator."""
 
-    plan = models.ForeignKey(
-        'actions.Plan', related_name='indicator_goals', on_delete=models.CASCADE,
-        verbose_name=_('plan'), null=True
-    )
     indicator = models.ForeignKey(
         Indicator, related_name='goals', on_delete=models.CASCADE,
         verbose_name=_('indicator')
     )
-    scenario = models.ForeignKey(
-        'actions.Scenario', related_name='indicator_goals', blank=True, null=True,
-        on_delete=models.CASCADE, verbose_name=_('scenario'),
-    )
     value = models.FloatField()
     date = models.DateField(verbose_name=_('date'))
 
-    public_fields = ['id', 'plan', 'indicator', 'scenario', 'value', 'date']
+    public_fields = ['id', 'indicator', 'value', 'date']
 
     class Meta:
         verbose_name = _('indicator goal')
         verbose_name_plural = _('indicator goals')
         ordering = ('indicator', 'date')
         get_latest_by = 'date'
-        unique_together = (('indicator', 'plan', 'scenario', 'date'),)
+        unique_together = (('indicator', 'date'),)
 
     def __str__(self):
         indicator = self.indicator

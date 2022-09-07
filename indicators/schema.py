@@ -7,6 +7,7 @@ from graphql.error import GraphQLError
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
+from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator, CommonIndicator, CommonIndicatorNormalizator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator, RelatedIndicator, Unit
@@ -165,17 +166,28 @@ class IndicatorValueNode(DjangoNode):
 
 class IndicatorGoalNode(DjangoNode):
     date = graphene.String()
+    scenario = graphene.Field(ScenarioNode)
 
     class Meta:
         model = IndicatorGoal
-        fields = public_fields(IndicatorGoal)
+        fields = public_fields(IndicatorGoal) + ['scenario']
+
+    def resolve_scenario(self: IndicatorGoal, info):
+        # Scenarios are not used anymore for indicator goals. The UI
+        # expects them to be, and they might be again in the future.
+        return None
 
 
 @register_django_node
 class IndicatorNode(DjangoNode):
     ORDERABLE_FIELDS = ['updated_at']
 
-    goals = graphene.List(IndicatorGoalNode, plan=graphene.ID())
+    goals = graphene.List(IndicatorGoalNode, plan=graphene.ID(
+        default_value=None,
+        description=('[Deprecated] Has no effect. '
+                     'The same indicator cannot have different goals '
+                     'for the same organization for different plans.')
+    ))
     values = graphene.List(IndicatorValueNode, include_dimensions=graphene.Boolean())
     level = graphene.String(plan=graphene.ID())
     actions = graphene.List('actions.schema.ActionNode', plan=graphene.ID())
@@ -188,10 +200,8 @@ class IndicatorNode(DjangoNode):
         model_field='goals',
     )
     def resolve_goals(self, info, plan=None):
-        qs = self.goals.all()
-        if plan is not None:
-            qs = qs.filter(plan__identifier=plan)
-        return qs
+        # The plan parameter has been deprecated
+        return self.goals.all()
 
     @gql_optimizer.resolver_hints(
         model_field='actions',
@@ -250,7 +260,7 @@ class Query:
             qs = qs.filter(latest_value__isnull=not has_data)
 
         if has_goals is not None:
-            qs = qs.filter(goals__plan__identifier=plan).distinct()
+            qs = qs.filter(goals__isnull=(not has_goals)).distinct()
 
         qs = order_queryset(qs, IndicatorNode, order_by)
         if first is not None:

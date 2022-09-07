@@ -459,10 +459,6 @@ def test_indicator_goal_node(graphql_client_query_data):
             goals {
               __typename
               id
-              plan {
-                __typename
-                id
-              }
               indicator {
                 __typename
                 id
@@ -484,18 +480,11 @@ def test_indicator_goal_node(graphql_client_query_data):
             'goals': [{
                 '__typename': 'IndicatorGoal',
                 'id': str(indicator_goal.id),
-                'plan': {
-                    '__typename': 'Plan',
-                    'id': str(indicator_goal.plan.identifier),
-                },
                 'indicator': {
                     '__typename': 'Indicator',
                     'id': str(indicator.id),
                 },
-                'scenario': {
-                    '__typename': 'Scenario',
-                    'id': str(indicator_goal.scenario.id),
-                },
+                'scenario': None,
                 'value': indicator_goal.value,
                 'date': indicator_goal.date.isoformat(),
             }]
@@ -753,3 +742,32 @@ def test_indicator_dimension_node(graphql_client_query_data):
         }
     }
     assert data == expected
+
+
+def test_plan_indicators_has_goals_parameter(graphql_client_query_data):
+    plan = PlanFactory()
+    indicators = [
+        (IndicatorFactory(), False),
+        (IndicatorGoalFactory().indicator, True)
+    ]
+    for indicator, has_goals in indicators:
+        indicator.plans.add(plan)
+    for indicator, has_goals in indicators:
+        data = graphql_client_query_data(
+            '''
+            query($plan: ID!, $has_goals: Boolean!) {
+              planIndicators(plan: $plan, hasGoals: $has_goals) {
+                id
+              }
+            }
+            ''',
+            variables=dict(plan=plan.identifier, has_goals=has_goals)
+        )
+        expected = {
+            'planIndicators': [
+                {
+                    'id': str(indicator.id)
+                }
+            ]
+        }
+        assert data == expected
