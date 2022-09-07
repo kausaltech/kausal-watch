@@ -142,7 +142,7 @@ django-js-asset==2.0.0
     #   django-ckeditor
 django-modelcluster==6.0
     # via wagtail
-django-modeltrans @ git+https://github.com/kausaltech/django-modeltrans.git
+django-modeltrans @ https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
     # via -r requirements.in
 django-npm==1.0.0
     # via -r requirements.in
@@ -152,7 +152,7 @@ django-permissionedforms==0.1
     # via wagtail
 django-redis==5.2.0
     # via -r requirements.in
-django-reversion==5.0.2
+django-reversion @ https://github.com/kausaltech/django-reversion/archive/7b67c9df.zip
     # via -r requirements.in
 django-taggit==3.0.0
     # via wagtail
@@ -191,11 +191,11 @@ faker==14.2.0
     # via factory-boy
 graphene==3.1
     # via graphene-django
-graphene-django @ git+https://github.com/graphql-python/graphene-django.git
+graphene-django @ https://github.com/graphql-python/graphene-django/archive/2aeb86ba3bed7dc821cc8508e1dca8297aa7dea4.zip
     # via
     #   -r requirements.in
     #   wagtail-grapple
-graphene-django-optimizer @ git+https://github.com/kausaltech/graphene-django-optimizer.git
+graphene-django-optimizer @ https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip
     # via -r requirements.in
 graphql-core==3.2.1
     # via
@@ -424,11 +424,11 @@ wagtail-generic-chooser==0.4.0
     # via
     #   -r requirements.in
     #   wagtailsvg
-wagtail-grapple @ git+https://github.com/kausaltech/wagtail-grapple.git
+wagtail-grapple @ https://github.com/kausaltech/wagtail-grapple/archive/d899abc82047a1c22f0df8d19a8232b173ba17b0.zip
     # via -r requirements.in
 wagtail-headless-preview==0.3.0
     # via wagtail-grapple
-wagtail-localize @ git+https://github.com/kausaltech/wagtail-localize.git@3782adf
+wagtail-localize @ https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
     # via -r requirements.in
 wagtail-orderable==1.1.0
     # via -r requirements.in
