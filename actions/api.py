@@ -324,6 +324,10 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
         instance.set_responsible_parties(validated_data)
 
 
+@extend_schema_field(dict(
+    type='object',
+    title=_('Contact persons'),
+))
 class ActionContactPersonSerializer(serializers.Serializer):
     def to_representation(self, value):
         return [v.person_id for v in value.all()]
@@ -360,7 +364,7 @@ class AttributeChoiceWithTextSerializer(serializers.Serializer):
     def update(self, instance: Action, validated_data):
         assert instance.pk is not None
         for attribute_type_identifier, item in validated_data.items():
-            instance.set_choice_with_text_attribute(attribute_type_identifier, item['choice'], item['text'])
+            instance.set_choice_with_text_attribute(attribute_type_identifier, item.get('choice'), item.get('text'))
 
 
 class AttributeNumericValueSerializer(serializers.Serializer):
@@ -551,8 +555,8 @@ class ActionSerializer(
     PlanRelatedModelSerializer,
 ):
     categories = ActionCategoriesSerializer(required=False)
-    responsible_parties = ActionResponsiblePartySerializer(required=False)
-    contact_persons = ActionContactPersonSerializer(required=False)
+    responsible_parties = ActionResponsiblePartySerializer(required=False, label=_('Responsible parties'))
+    contact_persons = ActionContactPersonSerializer(required=False, label=_('Contact persons'))
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -835,6 +839,18 @@ class CategorySerializer(
         instance = super().update(instance, validated_data)
         # We might want to do some stuff with related objects here
         return instance
+
+    def validate_identifier(self, value):
+        if not value:
+            raise serializers.ValidationError(_("Identifier must be set"))
+
+        qs = Category.objects.filter(type=self.category_type, identifier=value)
+        if self.instance is not None:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(_("Identifier already exists"))
+
+        return value
 
     class Meta:
         model = Category

@@ -203,7 +203,7 @@ class Plan(ClusterableModel):
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
-        'action_implementation_phases', 'organization',
+        'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification'
     ]

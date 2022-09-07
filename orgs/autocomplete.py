@@ -24,6 +24,11 @@ class OrganizationAutocomplete(autocomplete.Select2QuerySetView):
             qs = qs.filter(responsible_actions__action__plan=plan).distinct()
 
         if self.q:
-            qs = qs.filter(Q(distinct_name__icontains=self.q) | Q(name__icontains=self.q))
+            qs = qs.filter(
+                Q(distinct_name__icontains=self.q) |
+                Q(name__icontains=self.q) |
+                Q(internal_abbreviation__icontains=self.q) |
+                Q(abbreviation__icontains=self.q)
+            )
 
         return qs

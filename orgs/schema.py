@@ -1,3 +1,4 @@
+from actions.models.plan import PlanQuerySet
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from aplans.graphql_helpers import CreateModelInstanceMutation, DeleteModelInstanceMutation, UpdateModelInstanceMutation
@@ -80,7 +81,8 @@ class OrganizationNode(DjangoNode):
         return None
 
     def resolve_plans_with_action_responsibilities(root, info):
-        return Plan.objects.filter(id__in=root.responsible_for_actions.values_list('plan'))
+        qs: PlanQuerySet = Plan.objects.filter(id__in=root.responsible_for_actions.values_list('plan'))
+        return qs.live()
 
     class Meta:
         model = Organization
