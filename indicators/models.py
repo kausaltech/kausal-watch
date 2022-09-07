@@ -693,7 +693,7 @@ class IndicatorGoal(models.Model):
 
     plan = models.ForeignKey(
         'actions.Plan', related_name='indicator_goals', on_delete=models.CASCADE,
-        verbose_name=_('plan')
+        verbose_name=_('plan'), null=True
     )
     indicator = models.ForeignKey(
         Indicator, related_name='goals', on_delete=models.CASCADE,
