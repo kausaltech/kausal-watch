@@ -49,6 +49,7 @@ class AplansPage(Page):
     ]
 
     settings_panels = [
+        *Page.settings_panels,
         MultiFieldPanel([
             FieldPanel('slug'),
             *common_settings_panels
