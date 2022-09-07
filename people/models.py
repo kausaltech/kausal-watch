@@ -27,6 +27,7 @@ from wagtail.search import index
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
+from aplans.types import WatchRequest
 
 from orgs.models import Organization
 
@@ -236,8 +237,8 @@ class Person(index.Indexed, ClusterableModel):
         bottom = max(face[3] for face in faces)
         self.image_cropping = ','.join([str(x) for x in (left, top, right, bottom)])
 
-    def get_avatar_url(self, request, size=None):
-        if not request or not self.image:
+    def get_avatar_url(self, request: WatchRequest, size: str | None = None) -> str | None:
+        if not self.image:
             return None
 
         try:
@@ -265,9 +266,13 @@ class Person(index.Indexed, ClusterableModel):
                 tn_args['crop'] = 30
 
             out_image = get_thumbnailer(self.image).get_thumbnail(tn_args)
+            if out_image is None:
+                return None
             url = out_image.url
 
-        return request.build_absolute_uri(url)
+        if request:
+            url = request.build_absolute_uri(url)
+        return url
 
     def save(self, *args, **kwargs):
         old_cropping = self.image_cropping
@@ -372,13 +377,13 @@ class Person(index.Indexed, ClusterableModel):
 
 
 # Override wagtail default avatar_url templatetag (registered in people/apps.py)
-def avatar_url(context, user, size=50, gravatar_only=False):
+def avatar_url(context, user: UserModel, size=50, gravatar_only=False):
     if user is None:
         return wagtail_avatar_url(user, size, gravatar_only)
 
     person = user.get_corresponding_person()
     if person is not None:
-        url = person.get_avatar_url(context['request'], '%dx%d' % (size, size))
+        url = person.get_avatar_url(request=context.get('request'), size='%dx%d' % (size, size))
         if url:
             return url
     return wagtail_avatar_url(user, size, gravatar_only)

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import sys
 import importlib
 from celery.schedules import crontab
 from typing import Literal
@@ -93,6 +94,7 @@ SERVER_EMAIL = env('SERVER_EMAIL')
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 
 WAGTAILADMIN_BASE_URL = env('ADMIN_BASE_URL')
+WAGTAILADMIN_COMMENTS_ENABLED = True
 
 SITE_ID = 1
 
@@ -592,8 +594,9 @@ if not locals().get('SECRET_KEY', ''):
 
 
 if DEBUG:
-    from aplans.watchfiles_reloader import replace_reloader
-    replace_reloader()
+    if len(sys.argv) > 1 and 'runserver' in sys.argv[1]:
+        from aplans.watchfiles_reloader import replace_reloader
+        replace_reloader()
 
     from rich.traceback import install
     install()

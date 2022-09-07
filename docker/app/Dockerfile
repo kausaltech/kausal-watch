@@ -24,12 +24,24 @@ RUN apt-get install -y binutils libproj-dev gdal-bin
 RUN ln -fs /usr/bin/python3.10 /usr/bin/python3
 RUN ln -fs /usr/bin/python3 /usr/bin/python
 RUN ln -fs /usr/bin/pip3 /usr/bin/pip
+
+#RUN useradd --no-log-init -m -d /appuser -r appuser
+#RUN chown appuser /code /srv/media /srv
+
+# Switch to the app user
+#USER appuser
+
 RUN pip install --upgrade pip
 
 ARG EXTRA_PYPI_INDEX
 
 COPY requirements.txt requirements-prod.txt /code/
 RUN pip install -r /code/requirements-prod.txt -r /code/requirements.txt
+
+ARG INSTALL_DEV_DEPS
+COPY requirements-dev.txt /code/
+RUN if [ ! -z "${INSTALL_DEV_DEPS}" ] ; then pip install -r /code/requirements-dev.txt ; fi
+
 
 # Install extra dependencies
 COPY requirements-kausal.txt /code/
@@ -45,11 +57,12 @@ COPY package.json package-lock.json /code/
 WORKDIR /code
 RUN npm install
 
-
 COPY . /code/
+
 RUN ./manage.py collectstatic --no-input
 RUN ./manage.py compilemessages
 COPY ./docker/app/docker-entrypoint.sh /
 COPY ./docker/app/wait-for-it.sh /
 
+EXPOSE 8000/tcp
 ENTRYPOINT ["/bin/bash", "/docker-entrypoint.sh"]

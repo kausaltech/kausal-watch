@@ -1,0 +1,16 @@
+x-common-runtime: &common-runtime
+  restart: 'no'
+
+x-django-build:
+  args:
+
+services:
+  app:
+    build:
+      args:
+        - INSTALL_DEV_DEPS=1
+    volumes:
+      - ./:/code
+    command: runserver
+    ports:
+      - "127.0.0.1:8000:8000"

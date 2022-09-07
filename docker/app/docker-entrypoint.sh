@@ -4,7 +4,7 @@ set -e
 
 DB_ENDPOINT=${DB_ENDPOINT:-db:5432}
 
-if [ "$1" = 'uwsgi' -o "$1" = 'celery' ]; then
+if [ "$1" = 'uwsgi' -o "$1" = 'celery' -o "$1" = 'runserver' ]; then
     /wait-for-it.sh $DB_ENDPOINT
     cd /code
     python manage.py migrate --no-input
@@ -27,6 +27,9 @@ if [ "$1" = 'uwsgi' ]; then
         --module aplans.wsgi
 elif [ "$1" = 'celery' ]; then
     exec celery -A aplans "$2" -l INFO
+elif [ "$1" = 'runserver' ]; then
+    cd /code
+    python manage.py runserver 0.0.0.0:8000
 fi
 
 exec "$@"
