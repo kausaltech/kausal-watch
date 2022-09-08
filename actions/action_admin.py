@@ -18,7 +18,6 @@ from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 
-import humanize
 from admin_list_controls.actions import SubmitForm, TogglePanel
 from admin_list_controls.components import (
     Block, Button, Columns, Icon, Panel, Spacer, Summary
@@ -37,6 +36,7 @@ from admin_site.wagtail import (
 from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
+from aplans.utils import naturaltime
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
@@ -583,18 +583,13 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         if not obj.updated_at:
             return None
         delta = now - obj.updated_at
-        return humanize.naturaltime(delta)
+        return naturaltime(delta)
     updated_at_delta.short_description = _('Last updated')
 
     def get_list_display(self, request: WatchAdminRequest):
         cached_list_display = getattr(request, '_action_admin_list_display', None)
         if cached_list_display:
             return cached_list_display
-
-        try:
-            humanize.activate(get_language())
-        except FileNotFoundError as e:
-            logger.warning(e)
 
         def name_link(obj):
             from django.utils.html import format_html
