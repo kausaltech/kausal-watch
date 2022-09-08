@@ -10,7 +10,7 @@ import sentry_sdk
 from actions.models import Plan
 from django.core.exceptions import ValidationError
 from graphene_django.views import GraphQLView
-from graphql import ExecutionResult
+from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
 from graphql.error import GraphQLError
 from graphql.language.ast import VariableNode
 from rich.console import Console
@@ -29,7 +29,7 @@ class APITokenMiddleware:
     # def authenticate_user(self, info):
     #     raise GraphQLError('Token not found', [info])
 
-    def process_auth_directive(self, info, directive):
+    def process_auth_directive(self, info: GraphQLResolveInfo, directive: DirectiveNode):
         user = None
         token = None
         variable_vals = info.variable_values
@@ -66,7 +66,7 @@ class APITokenMiddleware:
 
         info.context.user = user
 
-    def resolve(self, next, root, info, **kwargs):
+    def resolve(self, next, root, info: GraphQLResolveInfo, **kwargs):
         context = info.context
 
         if root is None:
@@ -88,7 +88,7 @@ class LocaleMiddleware:
         variable_vals = info.variable_values
         for arg in directive.arguments:
             if arg.name.value == 'lang':
-                if isinstance(arg.value, Variable):
+                if isinstance(arg.value, VariableNode):
                     lang = variable_vals.get(arg.value.name.value)
                 else:
                     lang = arg.value.value
@@ -172,7 +172,8 @@ class SentryGraphQLView(GraphQLView):
         request._referer = self.request.META.get('HTTP_REFERER')
         transaction = sentry_sdk.Hub.current.scope.transaction
         logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
-        if settings.DEBUG and logger.isEnabledFor(logging.DEBUG) and query:
+        debug_logging = settings.DEBUG and logger.isEnabledFor(logging.DEBUG)
+        if debug_logging and query:
             console = Console()
             syntax = Syntax(query, "graphql")
             console.print(syntax)
@@ -200,16 +201,28 @@ class SentryGraphQLView(GraphQLView):
 
             # If 'invalid' is set, it's a bad request
             if result and result.errors:
-                # FIXME: Check for result.invalid
+                if debug_logging:
+                    from rich.traceback import Traceback
+                    console = Console()
+
+                    def print_error(err: GraphQLError):
+                        console.print(err)
+                        oe = err.original_error
+                        if oe:
+                            tb = Traceback.from_exception(
+                                type(oe), oe, traceback=oe.__traceback__
+                            )
+                            console.print(tb)
+                else:
+                    def print_error(err: GraphQLError):
+                        pass
+
                 for error in result.errors:
-                    """
-                    print(error)
+                    print_error(error)
                     err = error.original_error
-                    tb = Traceback.from_exception(type(err), err, traceback=err.__traceback__)
-                    console.print(tb)
-                    """
-                    if hasattr(error, 'original_error'):
-                        error = error.original_error
-                    sentry_sdk.capture_exception(error)
+                    if not err:
+                        # It's an invalid query
+                        continue
+                    sentry_sdk.capture_exception(err)
 
         return result
