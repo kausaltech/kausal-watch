@@ -25,7 +25,9 @@ click==8.1.3
     #   -c requirements.txt
     #   pip-tools
 decorator==5.1.1
-    # via ipython
+    # via
+    #   ipdb
+    #   ipython
 dill==0.3.5.1
     # via pylint
 django==3.2.15
@@ -47,8 +49,12 @@ idna==3.3
     # via
     #   -c requirements.txt
     #   anyio
-ipython==8.5.0
+ipdb==0.13.9
     # via -r requirements-dev.in
+ipython==8.5.0
+    # via
+    #   -r requirements-dev.in
+    #   ipdb
 isort==5.10.1
     # via
     #   -r requirements-dev.in
@@ -134,7 +140,9 @@ sqlparse==0.4.2
 stack-data==0.5.0
     # via ipython
 toml==0.10.2
-    # via autopep8
+    # via
+    #   autopep8
+    #   ipdb
 tomli==2.0.1
     # via
     #   -c requirements.txt
