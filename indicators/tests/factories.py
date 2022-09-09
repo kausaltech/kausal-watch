@@ -5,7 +5,7 @@ from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
 import indicators
-from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory, ScenarioFactory
+from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
 from pages.tests.factories import PageLinkBlockFactory
 from people.tests.factories import PersonFactory
 
@@ -151,9 +151,7 @@ class IndicatorGoalFactory(DjangoModelFactory):
     class Meta:
         model = 'indicators.IndicatorGoal'
 
-    plan = SubFactory(PlanFactory)
     indicator = SubFactory(IndicatorFactory)
-    scenario = SubFactory(ScenarioFactory, plan=SelfAttribute('..plan'))
     value = 1.23
     date = datetime.date(2020, 12, 31)
 

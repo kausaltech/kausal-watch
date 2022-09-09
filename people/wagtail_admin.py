@@ -6,20 +6,22 @@ from datetime import timedelta
 from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.db import transaction
+from django.db.models import F
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import get_language, gettext_lazy as _
-import humanize
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.views import IndexView
 
 from admin_site.wagtail import (
     AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView, InitializeFormWithPlanMixin,
     InitializeFormWithUserMixin, get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
+from aplans.utils import naturaltime
 
 from .admin import IsContactPersonFilter
 from .models import Person
@@ -122,6 +124,29 @@ class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, A
     pass
 
 
+class PersonIndexView(IndexView):
+    def get_ordering(self, request, queryset):
+        ret = super().get_ordering(request, queryset)
+        out = []
+        for order in ret:
+            field = order
+            if order[0] == '-':
+                field = field[1:]
+                desc = True
+            else:
+                desc = False
+            if field != 'user__last_login':
+                out.append(order)
+                continue
+            order = F('user__last_login')
+            if desc:
+                order = order.desc(nulls_last=True)
+            else:
+                order = order.asc(nulls_first=True)
+            out.append(order)
+        return out
+
+
 class PersonPermissionHelper(PermissionHelper):
     def _user_can_edit_or_delete(self, user, person):
         if user.is_superuser:
@@ -158,6 +183,7 @@ class PersonAdmin(AplansModelAdmin):
     model = Person
     create_view_class = PersonCreateView
     edit_view_class = PersonEditView
+    index_view_class = PersonIndexView
     permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
@@ -178,11 +204,6 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_list_display(self, request: WatchAdminRequest):
         plan = request.get_active_admin_plan()
-
-        try:
-            humanize.activate(get_language())
-        except FileNotFoundError as e:
-            logger.warning(e)
 
         def edit_url(obj):
             if self.permission_helper.user_can_edit_obj(request.user, obj):
@@ -209,6 +230,7 @@ class PersonAdmin(AplansModelAdmin):
             else:
                 return obj.first_name
         first_name.short_description = _('first name')
+        first_name.admin_order_field = 'first_name'
 
         def last_name(obj):
             url = edit_url(obj)
@@ -217,6 +239,7 @@ class PersonAdmin(AplansModelAdmin):
             else:
                 return obj.last_name
         last_name.short_description = _('last name')
+        last_name.admin_order_field = 'last_name'
 
         fields = [avatar, first_name, last_name, 'title', 'organization']
 
@@ -228,7 +251,7 @@ class PersonAdmin(AplansModelAdmin):
             delta = now - user.last_login
             if delta > timedelta(days=30):
                 return user.last_login.date()
-            return humanize.naturaltime(delta)
+            return naturaltime(delta)
         last_logged_in.short_description = _('last login')
         last_logged_in.admin_order_field = 'user__last_login'
         last_logged_in._name = 'last_logged_in'

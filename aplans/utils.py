@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import random
 import re
 from typing import Iterable, List, Type
@@ -11,10 +12,14 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
 
+import logging
+import humanize
 import libvoikko
 import pytz
 from tinycss2.color3 import parse_color
 
+
+logger = logging.getLogger(__name__)
 
 LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
@@ -47,6 +52,21 @@ def hyphenate(s):
             _hyphenation_cache[t.tokenText] = val
             out += val
     return out
+
+
+def naturaltime(dt: datetime | timedelta) -> str:
+    lang: str | None = get_language().split('-')[0]
+    if lang == 'en':
+        # Default locale
+        lang = None
+
+    try:
+        # This should be fast
+        humanize.activate(lang)
+    except FileNotFoundError as e:
+        logger.warning(e)
+
+    return humanize.naturaltime(dt)
 
 
 def camelcase_to_underscore(name):

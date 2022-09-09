@@ -1,3 +1,5 @@
+import importlib
+
 from django.apps import AppConfig
 from django.contrib.admin.apps import AdminConfig
 from django.db.models.fields import BLANK_CHOICE_DASH
@@ -58,3 +60,8 @@ class AdminSiteConfig(AdminConfig):
 
 class AdminSiteStatic(AppConfig):
     name = 'admin_site'
+
+
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    from kausal_watch_extensions import perform_early_init
+    perform_early_init()
