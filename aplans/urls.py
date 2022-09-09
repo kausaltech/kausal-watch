@@ -30,7 +30,7 @@ from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete, Commo
 from orgs.autocomplete import OrganizationAutocomplete
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
 from people.autocomplete import PersonAutocomplete
-from admin_site.views import RootRedirectView
+from admin_site.views import RootRedirectView, WadminRedirectView
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
 from users.views import change_admin_plan
@@ -50,7 +50,6 @@ api_urlconf = [
 
 urlpatterns = [
     re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
-    path('admin/', admin.site.urls),
     *api_urlconf,
     path('v1/docs/', TemplateView.as_view(
         template_name='swagger-ui.html',
@@ -65,8 +64,9 @@ urlpatterns = [
         template_name='graphql-voyager.html',
     ), name='graphql-voyager'),
 
-    re_path(r'^wadmin/autocomplete/', include(autocomplete_admin_urls)),
-    re_path(r'^wadmin/', include(wagtailadmin_urls)),
+    re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
+    re_path(r'^admin/', include(wagtailadmin_urls)),
+    re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
     # re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),

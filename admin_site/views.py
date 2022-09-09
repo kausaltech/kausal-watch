@@ -1,3 +1,5 @@
+import re
+from typing import Optional, Any
 from collections import OrderedDict
 from urllib.parse import urlencode
 
@@ -75,3 +77,11 @@ class RootRedirectView(RedirectView):
         else:
             url = reverse('wagtailadmin_home')
         return url
+
+
+class WadminRedirectView(RedirectView):
+    permanent = True
+
+    def get_redirect_url(self, *args: Any, **kwargs: Any) -> Optional[str]:
+        new_path = re.sub('^/wadmin', '/admin', self.request.get_full_path())
+        return new_path

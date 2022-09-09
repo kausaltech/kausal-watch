@@ -1,7 +1,6 @@
 import re
 
 from django.conf import settings
-from django.contrib import messages
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -11,6 +10,7 @@ from django.utils.translation import gettext_lazy as _
 
 import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
+from wagtail.admin import messages
 from wagtail.users.models import UserProfile
 
 from aplans.types import WatchAdminRequest
@@ -33,7 +33,7 @@ class SocialAuthExceptionMiddleware(MiddlewareMixin):
 
         message = _('Login was unsuccessful.')
         messages.error(request, message, extra_tags='social-auth ' + backend_name)
-        return redirect(reverse('admin:login'))
+        return redirect(reverse('auth_login'))
 
 
 def get_active_admin_plan(self):

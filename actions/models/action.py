@@ -465,10 +465,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_notification_context(self, plan=None):
         if plan is None:
             plan = self.plan
-        if plan.uses_wagtail:
-            change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
-        else:
-            change_url = reverse('admin:actions_action_change', args=(self.id,))
+        change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
             'updated_at': self.updated_at, 'view_url': self.get_view_url(plan=plan), 'order': self.order,
