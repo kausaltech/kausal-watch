@@ -99,6 +99,11 @@ def action_contact_person(action):
 
 
 @pytest.fixture
+def action_contact_person_user(action_contact_person):
+    return action_contact_person.user
+
+
+@pytest.fixture
 def graphql_client_query(client):
     def func(*args, **kwargs):
         response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
