@@ -358,13 +358,14 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             child.synchronize_pages(page)
 
     def synchronize_page(self, parent):
+        # If the page already exists, its existing parent page might be different from `parent` because the category may
+        # have moved in the hierarchy
         from pages.models import CategoryPage
+        is_root = self.parent is None
         with override(parent.locale.language_code):
             try:
-                page = self.category_pages.child_of(parent).get()
-                # page = parent.get_children().type(CategoryPage).get(category=self)
+                page = self.category_pages.get(locale=parent.locale)
             except CategoryPage.DoesNotExist:
-                is_root = self.parent is None
                 body = [('action_list', {'category_filter': self})]
                 if self.children.exists():
                     # TODO: Make heading customizable
@@ -375,8 +376,26 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 )
                 parent.add_child(instance=page)
             else:
+                update_page_parent = page.get_parent().specific != parent
+                prev_cat = Category.objects.filter(type=self.type, parent=self.parent, order__lt=self.order).last()
+                if prev_cat is None:
+                    prev_cat_page = None
+                    update_page_sibling = page.get_prev_sibling() is not None
+                else:
+                    prev_cat_page = prev_cat.category_pages.filter(locale=parent.locale).first()
+                    update_page_sibling = page.get_prev_sibling() != prev_cat_page
+                if update_page_parent or update_page_sibling:
+                    if prev_cat_page:
+                        page.move(prev_cat_page, 'right')
+                    else:
+                        page.move(parent, 'first-child')
+                    # page.get_parent() (or sibling data) is now stale, but page.refresh_from_db() won't cut it with
+                    # treebeard
+                    page = Page.objects.get(pk=page.pk)
                 page.title = self.name_i18n
                 page.draft_title = self.name_i18n
+                page.show_in_menus = is_root
+                page.show_in_footer = is_root
                 page.save()
         return page
 
@@ -384,8 +403,13 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.type.synchronize_with_pages:
-            for ct_page in self.type.category_type_pages.all():
-                self.synchronize_page(ct_page)
+            # We need to synchronize multiple page trees if there are multiple languages
+            if self.parent:
+                parent_pages = self.parent.category_pages.all()
+            else:
+                parent_pages = self.type.category_type_pages.all()
+            for parent_page in parent_pages:
+                self.synchronize_page(parent_page)
 
     def __str__(self):
         if self.identifier and self.type and not self.type.hide_category_identifiers:

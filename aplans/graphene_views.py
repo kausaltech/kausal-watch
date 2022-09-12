@@ -117,6 +117,10 @@ class LocaleMiddleware:
 
 
 class SentryGraphQLView(GraphQLView):
+    graphiql_version = "2.0.7"
+    graphiql_sri = "sha256-qQ6pw7LwTLC+GfzN+cJsYXfVWRKH9O5o7+5H96gTJhQ="
+    graphiql_css_sri = "sha256-gQryfbGYeYFxnJYnfPStPYFt0+uv8RP8Dm++eh00G9c="
+
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
             kwargs['middleware'] = (APITokenMiddleware, LocaleMiddleware)

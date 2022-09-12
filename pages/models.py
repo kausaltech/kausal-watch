@@ -228,7 +228,7 @@ class CategoryPage(AplansPage):
         StreamFieldPanel('body'),
     ]
 
-    parent_page_types = [PlanRootPage, EmptyPage, StaticPage, 'CategoryPage']
+    parent_page_types = [PlanRootPage, EmptyPage, StaticPage, 'CategoryPage', 'CategoryTypePage']
     subpage_types = [StaticPage, 'CategoryPage']
 
     graphql_fields = AplansPage.graphql_fields + [

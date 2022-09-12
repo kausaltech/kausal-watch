@@ -134,6 +134,31 @@ def test_category_type_creating_category_creates_page(plan_with_pages):
     assert ct_page.get_children().exists()
 
 
+def test_category_move_to_new_parent_changes_page_hierarchy(plan_with_pages):
+    category_type = CategoryTypeFactory(synchronize_with_pages=True, plan=plan_with_pages)
+    ct_page = category_type.category_type_pages.get()
+    cat1 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
+    cat2 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
+    assert cat1.category_pages.get().get_parent().specific == ct_page
+    assert cat2.category_pages.get().get_parent().specific == ct_page
+    cat2.parent = cat1
+    cat2.save()
+    assert cat1.category_pages.get().get_parent().specific == ct_page
+    assert cat2.category_pages.get().get_parent().specific == cat1.category_pages.get()
+
+
+def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
+    category_type = CategoryTypeFactory(synchronize_with_pages=True, plan=plan_with_pages)
+    ct_page = category_type.category_type_pages.get()
+    cat1 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
+    cat2 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
+    assert cat1.order < cat2.order
+    assert cat1.category_pages.get().get_next_sibling().specific == cat2.category_pages.get()
+    cat1.order = cat2.order + 1
+    cat1.save()
+    assert cat2.category_pages.get().get_next_sibling().specific == cat1.category_pages.get()
+
+
 def test_plan_action_staleness_returns_default(plan):
     assert plan.get_action_days_until_considered_stale() == plan.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
 
