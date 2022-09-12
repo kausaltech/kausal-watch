@@ -1,5 +1,9 @@
+import typing
 from django.apps import AppConfig
 from django.conf import settings
+
+if typing.TYPE_CHECKING:
+    from wagtail.core.models import Page
 
 
 def get_pages_with_direct_explore_permission(user):
@@ -42,10 +46,37 @@ def resolve_page_url_path(self, info):
     return self.url_path.rstrip('/')
 
 
+def resolve_parent(self: 'Page', info, **kwargs):
+    from pages.models import PlanRootPage
+    if isinstance(self.specific, PlanRootPage):
+        return None
+    parent = self.get_parent()
+    if parent is None or parent.depth == 1:
+        return None
+    return parent
+
+
+def resolve_siblings(self, info, **kwargs):
+    return []
+
+
+def resolve_ancestors(self, info, **kwargs):
+    from grapple.utils import resolve_queryset
+
+    qs = self.get_ancestors().live().public().specific()
+    qs = qs.filter(depth__gt=2)
+    return resolve_queryset(qs, info, **kwargs)
+
+
 def patch_grapple_url_resolvers():
     from grapple.types.pages import PageInterface
 
     PageInterface.resolve_url_path = resolve_page_url_path
+    PageInterface.resolve_parent = resolve_parent
+    PageInterface.resolve_siblings = resolve_siblings
+    PageInterface.resolve_next_siblings = resolve_siblings
+    PageInterface.resolve_previous_siblings = resolve_siblings
+    PageInterface.resolve_ancestors = resolve_ancestors
 
 
 class PagesConfig(AppConfig):
