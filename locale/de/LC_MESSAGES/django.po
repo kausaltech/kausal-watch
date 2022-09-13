@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-10 15:39+0300\n"
+"POT-Creation-Date: 2022-09-13 16:02+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -25,7 +25,8 @@ msgstr "Es gibt bereits eine Maßnahme mit dieser Kennung."
 msgid "Contact person"
 msgstr "Kontaktperson"
 
-#: actions/action_admin.py people/templates/people/chooser_results.html
+#: actions/action_admin.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr "Organisation"
 
@@ -114,7 +115,7 @@ msgstr "Grunddaten"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: actions/action_admin.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Kontaktpersonen"
 
@@ -472,7 +473,7 @@ msgstr "verbundene Maßnahmen"
 msgid "responsible organizations"
 msgstr "Zuständige Organisationen"
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "updated at"
 msgstr "aktualisiert am"
 
@@ -623,7 +624,7 @@ msgstr "Das Datum, an dem die Aufgabe fertiggestellt wurde"
 msgid "completed by"
 msgstr "fertiggestellt von"
 
-#: actions/models/action.py indicators/models.py
+#: actions/models/action.py aplans/utils.py
 msgid "created at"
 msgstr "erstellt am"
 
@@ -692,7 +693,7 @@ msgstr "Autor"
 msgid "content"
 msgstr "Inhalt"
 
-#: actions/models/action.py people/models.py
+#: actions/models/action.py aplans/utils.py people/models.py
 msgid "created by"
 msgstr "erstellt von"
 
@@ -727,6 +728,10 @@ msgstr "Rich-Text"
 #: actions/models/attributes.py
 msgid "Numeric"
 msgstr "Numerisch"
+
+#: actions/models/attributes.py actions/models/category.py
+msgid "help text"
+msgstr "Hilfetext"
 
 #: actions/models/attributes.py
 msgid "Format"
@@ -767,6 +772,10 @@ msgstr "Mehrfach"
 #: actions/models/category.py
 msgid "Single"
 msgstr "Einfach"
+
+#: actions/models/category.py
+msgid "lead paragraph"
+msgstr "Lead-Absatz"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
@@ -839,10 +848,6 @@ msgstr "Kategoriestufe"
 #: actions/models/category.py
 msgid "category levels"
 msgstr "Kategoriestufen"
-
-#: actions/models/category.py
-msgid "short description"
-msgstr "Kurzbeschreibung"
 
 #: actions/models/category.py
 msgid "theme color"
@@ -1001,6 +1006,22 @@ msgid "parent"
 msgstr "Vorgänger"
 
 #: actions/models/plan.py
+msgid "The primary action classification"
+msgstr "Die primäre Maßnahmenklassifizierung"
+
+#: actions/models/plan.py
+msgid "Used for primary navigation and grouping of actions"
+msgstr "Verwendet für primäre Navigation und Gruppieren von Maßnahmen"
+
+#: actions/models/plan.py
+msgid "A secondary action classification"
+msgstr "Eine sekundäre Maßnahmenklassifizierung"
+
+#: actions/models/plan.py
+msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
+msgstr ""
+
+#: actions/models/plan.py
 msgid "Days until actions considered stale"
 msgstr "Tage bis Maßnahmen als veraltet gelten"
 
@@ -1015,6 +1036,18 @@ msgstr "Pläne"
 #: actions/models/plan.py
 msgid "Primary language must not be selected"
 msgstr "Hautsprache darf nicht ausgewählt sein"
+
+#: actions/models/plan.py
+msgid "Category type must belong to plan"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "You must create and choose a primary category type for classifying actions"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Primary and secondary classification cannot be the same"
+msgstr ""
 
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
@@ -1053,7 +1086,7 @@ msgstr "Plandomäne"
 msgid "plan domains"
 msgstr "Plandomänen"
 
-#: actions/models/plan.py indicators/models.py
+#: actions/models/plan.py
 msgid "scenario"
 msgstr "Szenario"
 
@@ -1217,6 +1250,16 @@ msgstr "Bearbeiten"
 
 #: admin_site/wagtail.py
 #, python-format
+msgid "Error deleting items. Try first deleting any %(name)s that are in use."
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "In use: \"%(instance)s\"."
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
 msgid "%s could not be created due to errors."
 msgstr "%s konnte wegen Fehlern nicht erstellt werden."
 
@@ -1284,6 +1327,10 @@ msgid "English"
 msgstr "Englisch"
 
 #: aplans/settings.py
+msgid "Australian English"
+msgstr ""
+
+#: aplans/settings.py
 msgid "Swedish"
 msgstr "Schwedisch"
 
@@ -1303,6 +1350,10 @@ msgstr "Sortierung"
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ist keine CSS-Forge (z. B. \"#112233\", \"red\" oder \"rgb(0, 255, 127)\")"
+
+#: aplans/utils.py
+msgid "updated by"
+msgstr "aktualisiert von"
 
 #: content/admin.py
 msgid "Site settings"
@@ -1491,6 +1542,10 @@ msgstr "Zeige Indikatoren"
 #: indicators/admin.py
 msgid "in active plan"
 msgstr "in aktivem Plan"
+
+#: indicators/admin.py
+msgid "not in active plan"
+msgstr "nicht in aktivem Plan"
 
 #: indicators/admin.py
 msgid "all"
@@ -1896,6 +1951,14 @@ msgstr "Änderungen konnten nicht gespeichert werden"
 msgid "Changes were saved"
 msgstr "Änderungen gespeichert"
 
+#: indicators/templates/indicators/set_indicator_level_in_active_plan.html
+msgid "Yes"
+msgstr ""
+
+#: indicators/templates/indicators/set_indicator_level_in_active_plan.html
+msgid "No"
+msgstr ""
+
 #: indicators/wagtail_admin.py
 msgid "Choose a quantity"
 msgstr "Wähle eine Größe"
@@ -1912,14 +1975,6 @@ msgstr "Bearbeite diese Größe"
 msgid "Indicator dimensions"
 msgstr "Indikatordimensionen"
 
-#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
-msgid "Edit data"
-msgstr "Daten bearbeiten"
-
-#: indicators/wagtail_admin.py
-msgid "Edit indicator data"
-msgstr "Indikatordaten bearbeiten"
-
 #: indicators/wagtail_admin.py
 msgid "Quantities"
 msgstr "Größen"
@@ -1930,7 +1985,7 @@ msgstr "Einheiten"
 
 #: indicators/wagtail_admin.py
 msgid "[not in active plan]"
-msgstr "[nicht an aktivem Plan]"
+msgstr "[nicht in aktivem Plan]"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
@@ -1950,6 +2005,10 @@ msgid "If you change the dimensions of this indicator (currently %(dimensions)s)
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
 msgstr[0] "Wenn Sie die Dimensionen dieses Indikators (aktuell %(dimensions)s) verändern, wird sein einziger Wert gelöscht."
 msgstr[1] "Wenn Sie die Dimensionen dieses Indikators (aktuell %(dimensions)s) verändern, werden seine %(num)d Werte gelöscht."
+
+#: indicators/wagtail_admin.py
+msgid "Advanced options"
+msgstr "Fortgeschrittene Optionen"
 
 #: indicators/wagtail_admin.py
 #, python-format
@@ -1976,6 +2035,51 @@ msgstr "Dieser Gemeinsame Indikator hat mit ihm verbundene Indikatoren, daher k�
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr "Benachrichtigungen"
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "action_not_updated"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "not_enough_tasks"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "task_due_soon"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "task_late"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "updated_indicator_values_due_soon"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values is approaching. Please go and update the indicator with the latest values."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "updated_indicator_values_late"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "motivation"
+msgid "Thank you for keeping the action plan updated. Up-to-date information about the actions is essential for us to achieve our goals."
+msgstr ""
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "outro"
+msgid ""
+"If you are having difficulties using the action plan watch platform, please send an email to the administrators of the action plan.\n"
+"\n"
+"Thank you for taking part in implementing the action plan!\n"
+"\n"
+"Kind regards, the action plan administrators."
+msgstr ""
 
 #: notifications/models.py
 msgid "Task is late"
@@ -2030,12 +2134,13 @@ msgid "Font CSS style URL"
 msgstr "Schriftart CSS-Style-URL"
 
 #: notifications/models.py
-msgid "base template"
-msgstr "Basisvorlage"
+msgctxt "partitive"
+msgid "notification settings"
+msgstr "Benachrichtigungseinstellungen"
 
 #: notifications/models.py
-msgid "base templates"
-msgstr "Basisvorlagen"
+msgid "notification settings"
+msgstr "Benachrichtigungseinstellungen"
 
 #: notifications/models.py
 msgid "subject"
@@ -2130,12 +2235,20 @@ msgid "A primary name, e.g. a legally recognized name"
 msgstr "Ein primärer Name, z. B. ein gesetzlich anerkannter Name"
 
 #: orgs/models.py
-msgid "Abbreviation"
-msgstr "Abkürzung"
+msgid "Short name"
+msgstr "Kurzname"
 
 #: orgs/models.py
-msgid "A commonly used abbreviation"
-msgstr "Eine gebräuchliche Abkürzung"
+msgid "A simplified short version of name for the general public"
+msgstr ""
+
+#: orgs/models.py
+msgid "Internal abbreviation"
+msgstr "Interne Abkürzung"
+
+#: orgs/models.py
+msgid "An internally used abbreviation"
+msgstr "Eine intern verwendete Abkürzung"
 
 #: orgs/models.py
 msgid "A distinct name for this organization (generated automatically)"
@@ -2493,6 +2606,10 @@ msgstr "Letzter Datenpunkt"
 msgid "Edit this indicator"
 msgstr "Bearbeite diesen Indikator"
 
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Edit data"
+msgstr "Daten bearbeiten"
+
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "This page has unsaved changes."
 msgstr "Diese Seite hat ungespeicherte Änderunge"
@@ -2557,6 +2674,21 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "short description"
+#~ msgstr "Kurzbeschreibung"
+
+#~ msgid "Edit indicator data"
+#~ msgstr "Indikatordaten bearbeiten"
+
+#~ msgid "base template"
+#~ msgstr "Basisvorlage"
+
+#~ msgid "base templates"
+#~ msgstr "Basisvorlagen"
+
+#~ msgid "Abbreviation"
+#~ msgstr "Abkürzung"
 
 #~ msgid "related action"
 #~ msgstr "verbundene Maßnahme"
