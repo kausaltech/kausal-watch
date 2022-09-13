@@ -327,8 +327,16 @@ class AttributeTypeChoiceOptionNode(DjangoNode):
         fields = public_fields(AttributeTypeChoiceOption)
 
 
+# TODO: Remove this when production UI is updated
+class ResolveShortDescriptionFromLeadParagraphShim:
+    short_description = graphene.String()
+
+    def resolve_short_description(root, info):
+        return root.lead_paragraph
+
+
 @register_django_node
-class CategoryTypeNode(DjangoNode):
+class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
     attribute_types = graphene.List(AttributeTypeNode)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
 
@@ -347,7 +355,7 @@ class CategoryTypeNode(DjangoNode):
 
 
 @register_django_node
-class CommonCategoryTypeNode(DjangoNode):
+class CommonCategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
     class Meta:
         model = CommonCategoryType
         fields = public_fields(CommonCategoryType)
@@ -375,7 +383,7 @@ class AttributesMixin:
 
 
 @register_django_node
-class CategoryNode(AttributesMixin, DjangoNode):
+class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin, DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
     attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
@@ -453,7 +461,7 @@ class CategoryNode(AttributesMixin, DjangoNode):
 
 
 @register_django_node
-class CommonCategoryNode(DjangoNode):
+class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
 

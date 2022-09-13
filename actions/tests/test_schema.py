@@ -605,7 +605,7 @@ def test_category_node(
             parent {
               __typename
             }
-            shortDescription
+            leadParagraph
             color
             children {
               __typename
@@ -642,7 +642,7 @@ def test_category_node(
             'identifier': category.identifier,
             'name': category.name,
             'parent': None,
-            'shortDescription': category.short_description,
+            'leadParagraph': category.lead_paragraph,
             'color': category.color,
             'children': [{
                 '__typename': 'Category',

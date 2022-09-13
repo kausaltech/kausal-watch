@@ -31,7 +31,7 @@ class CategoryTypeBase(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
-    short_description = models.TextField(verbose_name=_('short description'), null=True, blank=True)
+    lead_paragraph = models.TextField(verbose_name=_('lead paragraph'), null=True, blank=True)
     usable_for_actions = models.BooleanField(
         default=False,
         verbose_name=_('usable for action categorization'),
@@ -52,7 +52,7 @@ class CategoryTypeBase(models.Model):
 
     public_fields = [
         'name', 'identifier', 'editable_for_actions', 'editable_for_indicators', 'usable_for_indicators',
-        'short_description', 'usable_for_actions'
+        'lead_paragraph', 'usable_for_actions'
     ]
 
     class Meta:
@@ -71,7 +71,7 @@ class CommonCategoryType(CategoryTypeBase):
     )
 
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
-    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='primary_language')
 
     public_fields = CategoryTypeBase.public_fields + [
         'categories'
@@ -143,7 +143,7 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
         default=False, verbose_name=_("synchronize with pages"),
         help_text=_("Set if categories of this type should be synchronized with pages")
     )
-    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -219,7 +219,7 @@ class CategoryLevel(OrderedModel):
 class CategoryBase(OrderedModel):
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    short_description = models.TextField(
+    lead_paragraph = models.TextField(
         max_length=200, blank=True, verbose_name=_('short description')
     )
     image = models.ForeignKey(
@@ -232,7 +232,7 @@ class CategoryBase(OrderedModel):
     )
 
     public_fields = [
-        'id', 'identifier', 'name', 'short_description', 'image', 'color'
+        'id', 'identifier', 'name', 'lead_paragraph', 'image', 'color'
     ]
 
     class Meta:
@@ -245,7 +245,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
-    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='type__primary_language')
 
     public_fields = CategoryBase.public_fields + [
         'type', 'category_instances'
@@ -311,7 +311,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         verbose_name=_('parent category')
     )
 
-    i18n = TranslationField(fields=('name', 'short_description'), default_language_field='type__plan__primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='type__plan__primary_language')
 
     public_fields = CategoryBase.public_fields + [
         'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
