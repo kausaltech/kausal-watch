@@ -34,6 +34,7 @@ class AttributeType(ClusterableModel, OrderedModel):
 
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    help_text = models.TextField(verbose_name=_('help text'))
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
     unit = models.ForeignKey(
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
@@ -43,7 +44,7 @@ class AttributeType(ClusterableModel, OrderedModel):
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     public_fields = [
-        'identifier', 'name', 'format', 'unit', 'choice_options'
+        'identifier', 'name', 'help_text', 'format', 'unit', 'choice_options'
     ]
 
     class Meta:

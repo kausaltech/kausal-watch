@@ -55,6 +55,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
+        FieldPanel('help_text'),
         FieldPanel('hide_category_identifiers'),
         FieldPanel('select_widget'),
         MultiFieldPanel([
@@ -282,6 +283,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('lead_paragraph'),
         ImageChooserPanel('image'),
         FieldPanel('color'),
+        FieldPanel('help_text'),
     ]
 
     create_view_class = CategoryCreateView
@@ -373,6 +375,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
+        FieldPanel('help_text'),
         FieldPanel('primary_language'),
         FieldPanel('select_widget'),
         FieldPanel('has_collection'),
@@ -496,6 +499,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('lead_paragraph'),
         ImageChooserPanel('image'),
         FieldPanel('color'),
+        FieldPanel('help_text'),
     ]
 
     create_view_class = CommonCategoryCreateView
