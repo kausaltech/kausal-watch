@@ -360,7 +360,7 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
         model_field='categories',
     )
     def resolve_categories(self: CategoryType, info, only_root: bool):
-        qs = self.categories
+        qs = self.categories.all()
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
