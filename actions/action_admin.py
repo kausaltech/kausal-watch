@@ -15,7 +15,6 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
-from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from admin_list_controls.actions import SubmitForm, TogglePanel
@@ -24,6 +23,7 @@ from admin_list_controls.components import (
 )
 from admin_list_controls.filters import ChoiceFilter, RadioFilter
 from admin_list_controls.views import ListControlsIndexView
+
 from dal import autocomplete, forward as dal_forward
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
@@ -37,6 +37,7 @@ from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
+from aplans.extensions import modeladmin_register
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
