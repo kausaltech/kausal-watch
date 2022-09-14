@@ -339,6 +339,9 @@ class ResolveShortDescriptionFromLeadParagraphShim:
 class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
     attribute_types = graphene.List(AttributeTypeNode)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
+    categories = graphene.List(
+        'actions.schema.CategoryNode', only_root=graphene.Boolean(default_value=False)
+    )
 
     class Meta:
         model = CategoryType
@@ -352,6 +355,15 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
     )
     def resolve_selection_type(self: CategoryType, info):
         return self.select_widget
+
+    @gql_optimizer.resolver_hints(
+        model_field='categories',
+    )
+    def resolve_categories(self: CategoryType, info, only_root: bool):
+        qs = self.categories
+        if only_root:
+            qs = qs.filter(parent__isnull=True)
+        return qs
 
 
 @register_django_node

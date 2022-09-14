@@ -19,7 +19,9 @@ from wagtail.core.models import Page, Site
 from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
-from actions.blocks import ActionHighlightsBlock, ActionListBlock, CategoryListBlock, RelatedPlanListBlock
+from actions.blocks import (
+    ActionHighlightsBlock, ActionListBlock, CategoryListBlock, CategoryTreeMapBlock, RelatedPlanListBlock
+)
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
 from indicators.blocks import (
@@ -174,6 +176,8 @@ class StaticPage(AplansPage):
         ('heading', blocks.CharBlock(classname='full title', label=_('Heading'))),
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
+        ('category_list', CategoryListBlock(label=_('Category list'))),
+        ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
     ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
