@@ -56,7 +56,7 @@ class AttributeType(ClusterableModel, OrderedModel):
 
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    help_text = models.TextField(verbose_name=_('help text'))
+    help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
     unit = models.ForeignKey(
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',

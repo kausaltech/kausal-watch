@@ -32,7 +32,7 @@ class CategoryTypeBase(models.Model):
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
     lead_paragraph = models.TextField(verbose_name=_('lead paragraph'), null=True, blank=True)
-    help_text = models.TextField(verbose_name=_('help text'))
+    help_text = models.TextField(verbose_name=_('help text'), blank=True)
     usable_for_actions = models.BooleanField(
         default=False,
         verbose_name=_('usable for action categorization'),
@@ -231,7 +231,7 @@ class CategoryBase(OrderedModel):
         help_text=_('Set if the category has a theme color'),
         validators=[validate_css_color]
     )
-    help_text = models.TextField(verbose_name=_('help text'))
+    help_text = models.TextField(verbose_name=_('help text'), blank=True)
 
     public_fields = [
         'id', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text',
