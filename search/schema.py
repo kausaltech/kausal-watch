@@ -138,6 +138,8 @@ class Query:
             querysets.append(Indicator.objects.filter(plans__in=plan_ids))
 
         lang = get_language()
+        # For now just string the region from the language as we don't have separate backends for regions at the moment
+        lang = lang.split('-')[0]
         backend = 'default-%s' % lang
         results = []
         for qs in querysets:
