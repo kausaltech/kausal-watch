@@ -94,6 +94,8 @@ class CommonCategoryTypeFactory(DjangoModelFactory):
     primary_language = 'en'
     identifier = Sequence(lambda i: f'cct{i}')
     name = Sequence(lambda i: f"Common category type {i}")
+    lead_paragraph = "foo"
+    help_text = "bar"
 
 
 class CategoryTypeFactory(DjangoModelFactory):
@@ -103,6 +105,8 @@ class CategoryTypeFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'ct{i}')
     name = Sequence(lambda i: f"Category type {i}")
+    lead_paragraph = "foo"
+    help_text = "bar"
     common = SubFactory(CommonCategoryTypeFactory)
     synchronize_with_pages = False
 
@@ -118,6 +122,7 @@ class AttributeTypeFactory(DjangoModelFactory):
     scope_id = SelfAttribute('scope.id')
     identifier = Sequence(lambda i: f'ctm{i}')
     name = Sequence(lambda i: f"Category attribute type {i}")
+    help_text = "foo"
     format = AttributeType.AttributeFormat.RICH_TEXT
 
 
@@ -139,6 +144,8 @@ class CommonCategoryFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category type {i}")
     name_fi = Sequence(lambda i: f"Category type {i} (FI)")
     image = SubFactory(AplansImageFactory)
+    lead_paragraph = "foo"
+    help_text = "bar"
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -151,6 +158,8 @@ class CategoryFactory(DjangoModelFactory):
     name_fi = Sequence(lambda i: f"Category {i} (FI)")
     image = SubFactory(AplansImageFactory)
     common = SubFactory(CommonCategoryFactory)
+    lead_paragraph = "foo"
+    help_text = "bar"
 
 
 class AttributeRichTextFactory(DjangoModelFactory):

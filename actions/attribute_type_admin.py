@@ -159,6 +159,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     basic_panels = [
         FieldPanel('name'),
         FieldPanel('identifier'),
+        FieldPanel('help_text'),
         FieldPanel('format'),
         FieldPanel('unit'),
         CondensedInlinePanel('choice_options', panels=[

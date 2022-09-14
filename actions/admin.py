@@ -628,7 +628,7 @@ class ActionStatusUpdateAdmin(AplansModelAdmin):
 @admin.register(Category)
 class CategoryAdmin(AplansModelAdmin):
     list_display = ['__str__', 'type']
-    fields = ('type', 'parent', 'identifier', 'name', 'short_description', 'color', 'image')
+    fields = ('type', 'parent', 'identifier', 'name', 'lead_paragraph', 'color', 'image')
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

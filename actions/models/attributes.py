@@ -1,16 +1,38 @@
 from __future__ import annotations
+import typing
 
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import IdentifierField, OrderedModel
 from indicators.models import Unit
+
+if typing.TYPE_CHECKING:
+    from .plan import Plan
+
+
+class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
+    def for_categories(self, plan: 'Plan'):
+        from .category import CategoryType
+
+        ct = ContentType.objects.get_for_model(CategoryType)
+        ct_qs = CategoryType.objects.filter(plan=plan).values('id')
+        f = Q(scope_content_type=ct) & Q(scope_id__in=ct_qs)
+        return self.filter(f)
+
+    def for_actions(self, plan: 'Plan'):
+        from .plan import Plan
+
+        ct = ContentType.objects.get_for_model(Plan)
+        f = Q(scope_content_type=ct) & Q(scope_id=plan.id)
+        return self.filter(f)
 
 
 @reversion.register()
@@ -34,6 +56,7 @@ class AttributeType(ClusterableModel, OrderedModel):
 
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
     unit = models.ForeignKey(
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
@@ -43,8 +66,10 @@ class AttributeType(ClusterableModel, OrderedModel):
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     public_fields = [
-        'identifier', 'name', 'format', 'unit', 'choice_options'
+        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'choice_options'
     ]
+
+    objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
 
     class Meta:
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)

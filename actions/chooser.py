@@ -4,7 +4,9 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.search.backends import get_search_backend
 from wagtail.core import hooks
 
-from .models import Action, Category, CategoryType, Plan
+from aplans.types import WatchAdminRequest
+
+from .models import Action, Category, CategoryType, Plan, AttributeType
 
 
 class CategoryChooserMixin(ModelChooserMixin):
@@ -46,8 +48,10 @@ def register_category_chooser_viewset():
 
 
 class CategoryTypeChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
     def get_unfiltered_object_list(self):
-        plan = self.request.user.get_active_admin_plan()
+        plan = self.request.get_active_admin_plan()
         return CategoryType.objects.filter(plan=plan)
 
     def get_object_list(self, search_term=None, **kwargs):
@@ -87,8 +91,10 @@ def register_category_type_chooser_viewset():
 
 
 class ActionChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
     def get_unfiltered_object_list(self):
-        plan = self.request.user.get_active_admin_plan()
+        plan = self.request.get_active_admin_plan()
         related_plans = Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
         objects = Action.objects.filter(plan__in=related_plans)
         return objects
@@ -137,3 +143,45 @@ class ActionChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_action_chooser_viewset():
     return ActionChooserViewSet('action_chooser', url_prefix='action-chooser')
+
+
+class AttributeTypeChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        return AttributeType.objects.for_categories(plan)
+
+    def get_object_list(self, search_term=None, **kwargs):
+        objs = self.get_unfiltered_object_list()
+
+        if search_term:
+            search_backend = get_search_backend()
+            objs = search_backend.autocomplete(search_term, objs)
+
+        return objs
+
+    def user_can_create(self, user):
+        return False
+
+
+class AttributeTypeChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = AttributeTypeChooserMixin
+
+    icon = 'folder-open-inverse'
+    model = AttributeType
+    page_title = _("Choose an attribute")
+    per_page = 30
+    fields = ['identifier', 'name']
+
+
+class AttributeTypeChooser(AdminChooser):
+    choose_one_text = _('Choose an attribute')
+    choose_another_text = _('Choose another attribute')
+    model = AttributeType
+    choose_modal_url_name = 'attribute_type_chooser:choose'
+
+
+@hooks.register('register_admin_viewset')
+def register_attribute_type_chooser_viewset():
+    return AttributeTypeChooserViewSet('attribute_type_chooser', url_prefix='attribute-type-chooser')

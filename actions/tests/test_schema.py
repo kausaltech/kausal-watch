@@ -440,6 +440,7 @@ def test_attribute_type_node(
               attributeTypes {
                 identifier
                 name
+                helpText
                 format
                 choiceOptions {
                   __typename
@@ -457,11 +458,13 @@ def test_attribute_type_node(
                 'attributeTypes': [{
                     'identifier': attribute_type__rich_text.identifier,
                     'name': attribute_type__rich_text.name,
+                    'helpText': attribute_type__rich_text.help_text,
                     'format': 'RICH_TEXT',
                     'choiceOptions': [],
                 }, {
                     'identifier': attribute_type__ordered_choice.identifier,
                     'name': attribute_type__ordered_choice.name,
+                    'helpText': attribute_type__ordered_choice.help_text,
                     'format': 'ORDERED_CHOICE',
                     'choiceOptions': [{
                         '__typename': 'AttributeTypeChoiceOption',
@@ -527,6 +530,8 @@ def test_category_type_node(
               }
               name
               identifier
+              leadParagraph
+              helpText
               usableForActions
               usableForIndicators
               editableForActions
@@ -559,6 +564,8 @@ def test_category_type_node(
                 },
                 'name': category_type.name,
                 'identifier': category_type.identifier,
+                'leadParagraph': category_type.lead_paragraph,
+                'helpText': category_type.help_text,
                 'usableForActions': category_type.usable_for_actions,
                 'usableForIndicators': category_type.usable_for_indicators,
                 'editableForActions': category_type.editable_for_actions,
@@ -605,7 +612,8 @@ def test_category_node(
             parent {
               __typename
             }
-            shortDescription
+            leadParagraph
+            helpText
             color
             children {
               __typename
@@ -642,7 +650,8 @@ def test_category_node(
             'identifier': category.identifier,
             'name': category.name,
             'parent': None,
-            'shortDescription': category.short_description,
+            'leadParagraph': category.lead_paragraph,
+            'helpText': category.help_text,
             'color': category.color,
             'children': [{
                 '__typename': 'Category',
