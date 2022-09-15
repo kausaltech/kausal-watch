@@ -285,7 +285,6 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     TIME_RESOLUTIONS = (
         ('year', _('year')),
         ('month', _('month')),
-        ('week', _('week')),
         ('day', _('day'))
     )
     LEVELS = (
