@@ -15,6 +15,7 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
+from wagtail.contrib.modeladmin.views import IndexView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from admin_list_controls.actions import SubmitForm, TogglePanel
