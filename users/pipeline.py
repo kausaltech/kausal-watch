@@ -8,6 +8,7 @@ from wagtail.users.models import UserProfile
 from admin_site.msgraph import get_user_photo
 
 from .models import User
+from .base import uuid_to_username
 
 logger = logging.getLogger('users.login')
 
@@ -131,3 +132,45 @@ def update_avatar(backend, details, user, *args, **kwargs):
     except Exception as e:
         logger.error('Failed to set user profile photo: %s' % str(e))
         capture_exception(e)
+
+
+def get_username(details, backend, response, *args, **kwargs):
+    """Sets the `username` argument.
+
+    If the user exists already, use the existing username. Otherwise
+    generate username from the `new_uuid` using the
+    `helusers.utils.uuid_to_username` function.
+    """
+
+    user = details.get('user')
+    if not user:
+        user_uuid = kwargs.get('uid')
+        if not user_uuid:
+            return
+
+        username = uuid_to_username(user_uuid)
+    else:
+        username = user.username
+
+    return {
+        'username': username
+    }
+
+
+def store_end_session_url(details, backend, response, user=None, *args, **kwargs):
+    if not user or not user.is_authenticated:
+        return
+
+    if not hasattr(backend, 'get_end_session_url'):
+        return
+    request = kwargs['request']
+    if not request:
+        return
+
+    end_session_url = backend.get_end_session_url(request, response['id_token'])
+    if not end_session_url:
+        return
+
+    request.session['social_auth_end_session_url'] = end_session_url
+    if 'id_token' in response:
+        request.session['social_auth_id_token'] = response['id_token']

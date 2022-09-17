@@ -283,11 +283,8 @@ SOCIAL_AUTH_PIPELINE = (
     # the unique identifier of the given user in the provider.
     'social_core.pipeline.social_auth.social_uid',
 
-    # Reset logged-in user if UUID differs
-    'helusers.pipeline.ensure_uuid_match',
-
     # Generate username from UUID
-    'helusers.pipeline.get_username',
+    'users.pipeline.get_username',
 
     # Checks if the current social-account is already associated in the site.
     'social_core.pipeline.social_auth.social_user',
