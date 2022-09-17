@@ -992,6 +992,8 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
                 instance.move(parent, 'first-child')
         else:
             instance.move(left_sibling, 'right')
+        # Reload because object is stale after move
+        instance = instance._meta.model.objects.get(pk=instance.pk)
         return instance
 
 

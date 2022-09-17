@@ -285,7 +285,6 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     TIME_RESOLUTIONS = (
         ('year', _('year')),
         ('month', _('month')),
-        ('week', _('week')),
         ('day', _('day'))
     )
     LEVELS = (
@@ -707,12 +706,8 @@ class IndicatorGoal(models.Model):
     def __str__(self):
         indicator = self.indicator
         date = self.date.isoformat()
-        if self.scenario is not None:
-            scenario_str = ' [%s]' % self.scenario.identifier
-        else:
-            scenario_str = ''
 
-        return f"{indicator}{scenario_str} {date} {self.value}"
+        return f"{indicator} {date} {self.value}"
 
 
 class RelatedIndicator(IndicatorRelationship):

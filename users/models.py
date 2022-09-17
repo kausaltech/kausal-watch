@@ -1,14 +1,16 @@
 from __future__ import annotations
 import typing
+import uuid
 
 from django.apps import apps
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from helusers.models import AbstractUser
 from users.managers import UserManager
 from orgs.models import Organization, OrganizationMetadataAdmin
+
+from .base import AbstractUser
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan, Action

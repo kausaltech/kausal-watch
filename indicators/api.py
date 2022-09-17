@@ -13,7 +13,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from sentry_sdk import capture_exception, push_scope
 
-from .models import ActionIndicator, Indicator, IndicatorLevel, IndicatorValue, RelatedIndicator, Unit
+from .models import ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, RelatedIndicator, Unit
 from orgs.models import Organization
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
@@ -201,7 +201,7 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
         return created_objs
 
 
-class IndicatorValueSerializer(serializers.ModelSerializer):
+class IndicatorDataPointMixin:
     def validate_date(self, date):
         indicator = self.context['indicator']
         if indicator.time_resolution == 'year':
@@ -211,6 +211,9 @@ class IndicatorValueSerializer(serializers.ModelSerializer):
             if date.day != 1:
                 raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month))
         return date
+
+
+class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
 
     def validate_categories(self, cats):
         indicator = self.context['indicator']
@@ -239,6 +242,16 @@ class IndicatorValueSerializer(serializers.ModelSerializer):
         model = IndicatorValue
         fields = ['date', 'value', 'categories']
         list_serializer_class = IndicatorValueListSerializer
+
+
+class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
+    def to_internal_value(self, data):
+        data['indicator_id'] = self.context['indicator'].pk
+        return data
+
+    class Meta:
+        model = IndicatorGoal
+        fields = ['date', 'value']
 
 
 class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
@@ -303,6 +316,17 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         for obj in indicator.goals.all().order_by('date'):
             resp.append(dict(date=obj.date, value=obj.value))
         return Response(resp)
+
+    @goals.mapping.post
+    def update_goals(self, request, pk=None):
+        indicator = Indicator.objects.get(pk=pk)
+        serializer = IndicatorGoalSerializer(data=request.data, many=True, context={'indicator': indicator})
+        if serializer.is_valid():
+            IndicatorGoal.objects.filter(indicator=indicator).delete()
+            serializer.create(serializer.validated_data)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({})
 
     @values.mapping.post
     def update_values(self, request, pk=None):
