@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-31 14:49+0300\n"
-"PO-Revision-Date: 2022-08-31 14:55+0300\n"
+"POT-Creation-Date: 2022-09-19 22:41+0300\n"
+"PO-Revision-Date: 2022-09-19 22:42+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -115,7 +115,7 @@ msgstr "Perustiedot"
 msgid "Progress"
 msgstr "Eteneminen"
 
-#: actions/action_admin.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
@@ -159,7 +159,8 @@ msgstr "Näytä myös yhdistetyt toimenpiteet"
 msgid "Impact"
 msgstr "Vaikuttavuus"
 
-#: actions/admin.py actions/attribute_type_admin.py pages/models.py
+#: actions/admin.py actions/attribute_type_admin.py actions/blocks.py
+#: pages/models.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
 
@@ -212,10 +213,9 @@ msgid "Attributes"
 msgstr "Ominaisuudet"
 
 #: actions/attribute_type_admin.py
-#, fuzzy, python-format
-#| msgid "Attributes"
+#, python-format
 msgid "Attribute for %s"
-msgstr "Ominaisuudet"
+msgstr "Ominaisuus kohteelle %s"
 
 #: actions/attribute_type_admin.py indicators/wagtail_admin.py
 #: people/wagtail_admin.py
@@ -243,8 +243,8 @@ msgid "Table"
 msgstr "Taulukko"
 
 #: actions/blocks.py
-msgid "Tree map"
-msgstr ""
+msgid "Value attribute"
+msgstr "Arvo-ominaisuus"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -293,6 +293,14 @@ msgstr "Valitse toimenpide"
 #: actions/chooser.py
 msgid "Choose another action"
 msgstr "Valitse toinen toimenpide"
+
+#: actions/chooser.py
+msgid "Choose an attribute"
+msgstr "Valitse ominaisuus"
+
+#: actions/chooser.py
+msgid "Choose another attribute"
+msgstr "Valitse toinen ominaisuus"
 
 #: actions/defaults.py
 msgid "On time"
@@ -351,6 +359,78 @@ msgstr "muut mittarit"
 #: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
+
+#: actions/forms.py
+msgid "Plan name"
+msgstr "Toimenpideohjelman nimi"
+
+#: actions/forms.py
+msgid "The official plan name in full form"
+msgstr "Toimenpideohjelman virallinen nimi kokonaisuudessaan"
+
+#: actions/forms.py
+msgid "Plan identifier"
+msgstr "Toimenpideohjelman tunniste"
+
+#: actions/forms.py
+msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgstr "Yksikäsitteinen tunniste, jolla toimenpideohjelma yksilöidään teknisesti. Tästä muodostetaan testisivuston osoite: https://&lt;plan-identifier&gt;.test.kausal.tech. Käytä pieniä kirjaimia ja yhdysmerkkejä."
+
+#: actions/forms.py
+msgid "Short name of plan"
+msgstr "Toimenpideohjelman lyhyt nimi"
+
+#: actions/forms.py
+msgid "A shorter version of the plan name"
+msgstr "Lyhyt versio toimenpideohjelman nimestä"
+
+#: actions/forms.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgstr "Toimenpideohjelman julkinen koko domain-nimi, esim. climate.cityname.gov. Jätä tyhjäksi, jos ei vielä tiedossa."
+
+#: actions/forms.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
+msgstr "Täytä tämä usean toimenpideohjelman sivustolle, jos tämä toimenpideohjelma ei sijaitse juuriosoitteessa."
+
+#: actions/forms.py
+msgid "Name of client"
+msgstr "Asiakkaan nimi"
+
+#: actions/forms.py
+msgid "Name of the customer administering the plan"
+msgstr "Toimenpideohjelmaa hallinnoivan asiiakkaan nimi"
+
+#: actions/forms.py
+msgid "Azure AD tenant id"
+msgstr "Azure AD:n tenant-tunniste"
+
+#: actions/forms.py
+msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
+msgstr "Useimmiten host-nimi, eli kaikki @-merkin oikealla puolella työntekijöiden sähköpostiosoitteissa"
+
+#: actions/forms.py
+msgid "Client subdomain for admin UI"
+msgstr "Asiakkaan alidomaini ylläpitokäyttöliittymässä"
+
+#: actions/forms.py
+msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
+msgstr "Pienellä kirjoitettu lyhyt nimi, josta tulee osa ylläpitokäyttöliittymän kirjautumisosoitetta - esimerkiksi \"sunnydale\" osoitteessa sunnydale.watch.kausal.tech"
+
+#: actions/forms.py
+msgid "Identifier already in use"
+msgstr "Tunniste on jo olemassa"
+
+#: actions/forms.py
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
+msgstr "Käytä tunnisteisiin vain pieniä kirjaimia englannin kielen aakkosista, ja tarvittaessa yhdysmerkkejä (-) sanojen välissä"
+
+#: actions/forms.py
+msgid "Plan name already in use"
+msgstr "Toimenpideohjelman nimi on jo käytössä"
+
+#: actions/forms.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
 
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
@@ -730,6 +810,12 @@ msgstr "Sisältöteksti"
 msgid "Numeric"
 msgstr "Numero"
 
+#: actions/models/attributes.py actions/models/category.py
+#, fuzzy
+#| msgid "Alt text"
+msgid "help text"
+msgstr "Alt-teksti"
+
 #: actions/models/attributes.py
 msgid "Format"
 msgstr "Muoto"
@@ -771,8 +857,10 @@ msgid "Single"
 msgstr "Yksi"
 
 #: actions/models/category.py
-msgid "short description"
-msgstr "lyhyt kuvaus"
+#, fuzzy
+#| msgid "Lead paragraph"
+msgid "lead paragraph"
+msgstr "Ingressi"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
@@ -1085,7 +1173,7 @@ msgstr "toimenpideohjelman verkkotunnus"
 msgid "plan domains"
 msgstr "toimenpideohjelman verkkotunnukset"
 
-#: actions/models/plan.py indicators/models.py
+#: actions/models/plan.py
 msgid "scenario"
 msgstr "skenaario"
 
@@ -1128,6 +1216,18 @@ msgstr "seurannan laatupisteet"
 #: actions/templates/actions/chooser_results.html
 msgid "Plan"
 msgstr "Toimenpideohjelma"
+
+#: actions/templates/create_plan/plan_form.html
+msgid "Create a new plan"
+msgstr "Luo uusi toimenpideohjelma"
+
+#: actions/templates/create_plan/plan_form.html
+msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
+msgstr "Tällä lomakkeella pääkäyttäjät voivat luoda uusia toimenpideohjelmia. Jos olet epävarma lomakkeen alaosan teknisistä kentistä, ne voi jättää tyhjäksi. Yritä antaa toimenpideohjelmalle samanlainen tunniste kuin muilla vastaavilla ohjelmilla."
+
+#: actions/templates/create_plan/plan_form.html
+msgid "Create"
+msgstr "Tallenna"
 
 #: actions/templates/site_summary/actions.html
 #, python-format
@@ -1190,6 +1290,10 @@ msgstr "Toimenpide&shy;ohjelma"
 msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Ohjelman ominaisuudet"
+
+#: actions/wagtail_hooks.py
+msgid "Create plan"
+msgstr "Luo toimenpideohjelma"
 
 #: admin_site/admin.py
 #, python-format
@@ -1549,6 +1653,10 @@ msgid "in active plan"
 msgstr "aktiivisessa toimenpideohjelmassa"
 
 #: indicators/admin.py
+msgid "not in active plan"
+msgstr "ei mukana toimenpideohjelmassa"
+
+#: indicators/admin.py
 msgid "all"
 msgstr "kaikki"
 
@@ -1713,10 +1821,6 @@ msgstr "vuosi"
 #: indicators/models.py
 msgid "month"
 msgstr "kuukausi"
-
-#: indicators/models.py
-msgid "week"
-msgstr "viikko"
 
 #: indicators/models.py
 msgid "day"
@@ -1967,14 +2071,6 @@ msgstr "Muokkaa tätä suuretta"
 #: indicators/wagtail_admin.py
 msgid "Indicator dimensions"
 msgstr "Mittarin dimensiot"
-
-#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
-msgid "Edit data"
-msgstr "Muokkaa dataa"
-
-#: indicators/wagtail_admin.py
-msgid "Edit indicator data"
-msgstr "Muokkaa mittarin dataa"
 
 #: indicators/wagtail_admin.py
 msgid "Quantities"
@@ -2445,6 +2541,12 @@ msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Category type"
+msgid "Category tree map"
+msgstr "Luokan tyyppi"
+
+#: pages/models.py
 msgid "Content page"
 msgstr "Sisältösivu"
 
@@ -2652,6 +2754,10 @@ msgstr "Viimeisin datapiste"
 msgid "Edit this indicator"
 msgstr "Muokkaa tätä mittaria"
 
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Edit data"
+msgstr "Muokkaa dataa"
+
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "This page has unsaved changes."
 msgstr "Sivulla on tallentamattomia muutoksia"
@@ -2717,6 +2823,15 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#~ msgid "short description"
+#~ msgstr "lyhyt kuvaus"
+
+#~ msgid "week"
+#~ msgstr "viikko"
+
+#~ msgid "Edit indicator data"
+#~ msgstr "Muokkaa mittarin dataa"
+
 #~ msgid "Leave empty unless specifically required."
 #~ msgstr "Jätä tyhjäksi ellei erikseen toivottu."
 
@@ -2767,9 +2882,6 @@ msgstr "Käyttäjät"
 #~ msgctxt "hyphenated"
 #~ msgid "Category attributes"
 #~ msgstr "Luokkien ominaisuudet"
-
-#~ msgid "category attribute"
-#~ msgstr "luokan ominaisuus"
 
 #~ msgid "category attributes"
 #~ msgstr "luokan ominaisuudet"
