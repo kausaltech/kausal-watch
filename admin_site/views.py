@@ -46,11 +46,10 @@ class LoginView(RedirectView):
         logout(request)
 
         client = Client.objects.for_request(request).first()
-        if client is None or client.name.lower() == 'helsinki':
-            # Fallback to Tunnistamo for now
+        if client is not None and client.name.lower() != 'helsinki':
             url = reverse('social:begin', kwargs=dict(backend='tunnistamo'))
         else:
-            url = reverse('social:begin', kwargs=dict(backend='azure_ad'))
+            url = reverse('social:begin', kwargs=dict(backend='tunnistamo'))
 
         redirect_to = self.request.GET.get(REDIRECT_FIELD_NAME)
         lang = self.request.GET.get(LANGUAGE_FIELD_NAME)

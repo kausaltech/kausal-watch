@@ -17,7 +17,7 @@ class AzureADAuth(AzureADTenantOAuth2):
     @property
     def tenant_id(self):
         if self.client is None or not self.client.azure_ad_tenant_id:
-            tenant_id = 'common'
+            tenant_id = 'organizations'
         else:
             tenant_id = self.client.azure_ad_tenant_id
         return tenant_id
