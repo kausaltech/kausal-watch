@@ -24,10 +24,10 @@ class CreatePlanWithDefaultsForm(forms.Form):
                     'Use lowercase letters and dashes.')
     )
     plan_primary_language = forms.ChoiceField(
-        label='Primary language', choices=get_supported_languages
+        label=_('Primary language'), choices=get_supported_languages
     )
     plan_organization = forms.ModelChoiceField(
-        label='Main organization',
+        label=_('Main organization'),
         queryset=Organization.get_root_nodes()
     )
     plan_short_name = forms.CharField(

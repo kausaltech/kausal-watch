@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 22:53+0300\n"
-"PO-Revision-Date: 2022-09-19 22:54+0300\n"
+"POT-Creation-Date: 2022-09-19 23:01+0300\n"
+"PO-Revision-Date: 2022-09-19 23:02+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -375,6 +375,14 @@ msgstr "Toimenpideohjelman tunniste"
 #: actions/forms.py
 msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
 msgstr "Yksikäsitteinen tunniste, jolla toimenpideohjelma yksilöidään teknisesti. Tästä muodostetaan testisivuston osoite: https://&lt;plan-identifier&gt;.test.kausal.tech. Käytä pieniä kirjaimia ja yhdysmerkkejä."
+
+#: actions/forms.py
+msgid "Primary language"
+msgstr "Ensisijainen kieli"
+
+#: actions/forms.py
+msgid "Main organization"
+msgstr "Pääorganisaatio"
 
 #: actions/forms.py
 msgid "Short name of plan"

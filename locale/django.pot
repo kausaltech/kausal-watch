@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 22:53+0300\n"
+"POT-Creation-Date: 2022-09-19 23:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -375,6 +375,14 @@ msgstr ""
 
 #: actions/forms.py
 msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgstr ""
+
+#: actions/forms.py
+msgid "Primary language"
+msgstr ""
+
+#: actions/forms.py
+msgid "Main organization"
 msgstr ""
 
 #: actions/forms.py
