@@ -35,17 +35,17 @@ class CreatePlanWithDefaultsForm(forms.Form):
         help_text=_('A shorter version of the plan name')
     )
     plan_other_languages = forms.MultipleChoiceField(
-        label='Other languages', choices=(get_supported_languages),
+        label=_('Other languages'), choices=(get_supported_languages),
         required=False
     )
     domain = forms.CharField(
-        label='Domain name',
+        label=_('Domain name'),
         max_length=100,
         required=False,
         help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known')
     )
     base_path = forms.CharField(
-        label='Base path',
+        label=_('Base path'),
         max_length=50,
         required=False,
         help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain')

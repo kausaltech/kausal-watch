@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 22:41+0300\n"
+"POT-Creation-Date: 2022-09-19 22:53+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -386,7 +386,19 @@ msgid "A shorter version of the plan name"
 msgstr ""
 
 #: actions/forms.py
+msgid "Other languages"
+msgstr ""
+
+#: actions/forms.py
+msgid "Domain name"
+msgstr ""
+
+#: actions/forms.py
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgstr ""
+
+#: actions/forms.py
+msgid "Base path"
 msgstr ""
 
 #: actions/forms.py

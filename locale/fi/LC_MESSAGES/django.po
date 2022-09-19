@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 22:41+0300\n"
-"PO-Revision-Date: 2022-09-19 22:42+0300\n"
+"POT-Creation-Date: 2022-09-19 22:53+0300\n"
+"PO-Revision-Date: 2022-09-19 22:54+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -385,8 +385,20 @@ msgid "A shorter version of the plan name"
 msgstr "Lyhyt versio toimenpideohjelman nimestä"
 
 #: actions/forms.py
+msgid "Other languages"
+msgstr "Muut kielet"
+
+#: actions/forms.py
+msgid "Domain name"
+msgstr "Domain-nimi"
+
+#: actions/forms.py
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
 msgstr "Toimenpideohjelman julkinen koko domain-nimi, esim. climate.cityname.gov. Jätä tyhjäksi, jos ei vielä tiedossa."
+
+#: actions/forms.py
+msgid "Base path"
+msgstr "Peruspolku"
 
 #: actions/forms.py
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
