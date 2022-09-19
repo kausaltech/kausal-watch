@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -8,6 +8,8 @@ from .models.plan import Plan
 
 
 def create_plan_with_defaults(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden()
     if request.method == 'POST':
         form = CreatePlanWithDefaultsForm(request.POST)
         if form.is_valid():
