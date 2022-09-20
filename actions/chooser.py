@@ -1,3 +1,5 @@
+from typing import Literal
+
 from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
 from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
@@ -10,6 +12,8 @@ from .models import Action, Category, CategoryType, Plan, AttributeType
 
 
 class CategoryChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
     def get_unfiltered_object_list(self):
         plan = self.request.user.get_active_admin_plan()
         objects = Category.objects.filter(type__plan=plan).distinct()
@@ -149,8 +153,20 @@ class AttributeTypeChooserMixin(ModelChooserMixin):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
+        scope = self.request.GET.get('scope', None)
         plan = self.request.get_active_admin_plan()
-        return AttributeType.objects.for_categories(plan)
+        cat_qs = AttributeType.objects.for_categories(plan)
+        act_qs = AttributeType.objects.for_actions(plan)
+        if scope:
+            if scope == 'category':
+                qs = cat_qs
+            elif scope == 'action':
+                qs = act_qs
+            else:
+                raise Exception("Unknown scope")
+        else:
+            qs = cat_qs | act_qs
+        return qs.order_by('name')
 
     def get_object_list(self, search_term=None, **kwargs):
         objs = self.get_unfiltered_object_list()
@@ -180,6 +196,18 @@ class AttributeTypeChooser(AdminChooser):
     choose_another_text = _('Choose another attribute')
     model = AttributeType
     choose_modal_url_name = 'attribute_type_chooser:choose'
+    scope: Literal['action', 'category'] | None
+
+    def __init__(self, /, scope: Literal['action', 'category'] | None = None, **kwargs):
+        self.scope = scope
+        super().__init__(**kwargs)
+
+    def get_choose_modal_url(self):
+        ret = super().get_choose_modal_url()
+        assert ret is not None
+        if self.scope is not None:
+            ret += '?scope=%s' % self.scope
+        return ret
 
 
 @hooks.register('register_admin_viewset')

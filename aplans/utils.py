@@ -74,6 +74,16 @@ def camelcase_to_underscore(name):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
+def underscore_to_camelcase(value: str) -> str:
+    output = ""
+    for word in value.split("_"):
+        if not word:
+            output += "_"
+            continue
+        output += word.capitalize()
+    return output
+
+
 def public_fields(
     model: Type[models.Model],
     add_fields: Iterable[str] = None,
