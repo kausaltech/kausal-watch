@@ -201,6 +201,34 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
         return created_objs
 
 
+class IndicatorGoalListSerializer(serializers.ListSerializer):
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        seen_dates = set()
+        for sample in data:
+            date = sample['date']
+            if date in seen_dates:
+                raise ValidationError("Duplicate date values")
+            if 'value' not in sample or sample['value'] is None:
+                raise ValidationError("Value is required")
+            seen_dates.add(date)
+        return data
+
+    def create(self, validated_data):
+        indicator = self.context['indicator']
+        created_objs = []
+
+        with transaction.atomic():
+            indicator.goals.all().delete()
+
+            for data in validated_data:
+                obj = IndicatorGoal(indicator=indicator, **data)
+                obj.save()
+                created_objs.append(obj)
+
+        return created_objs
+
+
 class IndicatorDataPointMixin:
     def validate_date(self, date):
         indicator = self.context['indicator']
@@ -251,6 +279,7 @@ class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMix
 
     class Meta:
         model = IndicatorGoal
+        list_serializer_class = IndicatorGoalListSerializer
         fields = ['date', 'value']
 
 
@@ -322,7 +351,6 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         indicator = Indicator.objects.get(pk=pk)
         serializer = IndicatorGoalSerializer(data=request.data, many=True, context={'indicator': indicator})
         if serializer.is_valid():
-            IndicatorGoal.objects.filter(indicator=indicator).delete()
             serializer.create(serializer.validated_data)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

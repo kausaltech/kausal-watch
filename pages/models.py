@@ -12,7 +12,7 @@ from grapple.models import (
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel, FieldRowPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
@@ -20,7 +20,8 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
 from actions.blocks import (
-    ActionHighlightsBlock, ActionListBlock, CategoryListBlock, CategoryTreeMapBlock, RelatedPlanListBlock
+    ActionHighlightsBlock, ActionListBlock, ActionListFilterBlock, CategoryListBlock, CategoryTreeMapBlock, RelatedPlanListBlock,
+    ActionAsideContentBlock, ActionMainContentBlock
 )
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
@@ -299,7 +300,41 @@ class FixedSlugPage(AplansPage):
 
 
 class ActionListPage(FixedSlugPage):
+    primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
+    main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
+    advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
+
+    details_main_top = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True)
+    details_main_bottom = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True)
+    details_aside = StreamField(block_types=ActionAsideContentBlock(), null=True, blank=True)
+
+    card_icon_category_type = models.ForeignKey(
+        CategoryType, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
     force_slug = 'actions'
+
+    content_panels = FixedSlugPage.content_panels + [
+        MultiFieldPanel([
+            StreamFieldPanel('primary_filters'),
+            StreamFieldPanel('main_filters', heading=_("Main filters")),
+            StreamFieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
+        ], heading=_("Action list filters"), classname="collapsible collapsed"),
+        MultiFieldPanel([
+            StreamFieldPanel('details_main_top', heading=_("Main column (top part on mobile)")),
+            StreamFieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
+            StreamFieldPanel('details_aside', heading=_("Side column")),
+        ], heading=_("Action details page"), classname="collapsible collapsed"),
+    ]
+
+    graphql_fields = FixedSlugPage.graphql_fields + [
+        GraphQLStreamfield('primary_filters'),
+        GraphQLStreamfield('main_filters'),
+        GraphQLStreamfield('advanced_filters'),
+        GraphQLStreamfield('details_main_top'),
+        GraphQLStreamfield('details_main_bottom'),
+        GraphQLStreamfield('details_main_aside'),
+    ]
 
 
 class IndicatorListPage(FixedSlugPage):

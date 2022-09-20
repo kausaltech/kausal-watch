@@ -166,9 +166,9 @@ INSTALLED_APPS += [
     'content',
     'people',
     'notifications',
-    'pages',
     'feedback',
     'orgs',
+    'pages',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,22 @@
+{% extends "wagtailadmin/base.html" %}
+{% load i18n %}
+{% block titletag %}{{ title }}{% endblock %}
+
+{% block extra_css %}
+    {{ block.super }}
+    <style>
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% translate "Create a new plan" as title %}
+    {% include "wagtailadmin/shared/header.html" with title=title icon="plus-inverse" %}
+    <div class="nice-padding">
+      <p>{% translate "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier." %}</p>
+      <form action="." method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="button" type="submit">{% translate "Create" %}</button>
+      </form>
+    </div>
+{% endblock %}

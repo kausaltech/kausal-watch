@@ -965,7 +965,11 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         # This sucks, but I don't think Treebeard provides an easier way of doing this
         if left_sibling is None:
             if parent is None:
-                Organization.add_root(instance=instance)
+                first_root = Organization.get_first_root_node()
+                if first_root is None:
+                    Organization.add_root(instance=instance)
+                else:
+                    first_root.add_sibling('left', instance=instance)
             else:
                 right_sibling = parent.get_first_child()
                 if right_sibling is None:

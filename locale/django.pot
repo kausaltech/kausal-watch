@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-08-31 14:49+0300\n"
+"POT-Creation-Date: 2022-09-20 12:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -116,7 +116,7 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: actions/action_admin.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr ""
 
@@ -144,7 +144,7 @@ msgstr ""
 msgid "Show all"
 msgstr ""
 
-#: actions/admin.py
+#: actions/admin.py actions/blocks.py
 msgid "Merged actions"
 msgstr ""
 
@@ -160,7 +160,8 @@ msgstr ""
 msgid "Impact"
 msgstr ""
 
-#: actions/admin.py actions/attribute_type_admin.py pages/models.py
+#: actions/admin.py actions/attribute_type_admin.py actions/blocks.py
+#: pages/models.py
 msgid "Category type"
 msgstr ""
 
@@ -243,7 +244,45 @@ msgid "Table"
 msgstr ""
 
 #: actions/blocks.py
-msgid "Tree map"
+msgid "Value attribute"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Dropdown"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Buttons"
+msgstr ""
+
+#: actions/blocks.py
+#, python-format
+msgid "Filter: %(filter_label)s"
+msgstr ""
+
+#: actions/blocks.py
+msgid "responsible party"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
+msgid "implementation phase"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
+msgid "schedule"
+msgstr ""
+
+#: actions/blocks.py
+#, python-format
+msgid "Content block: %(label)s"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr ""
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Category"
 msgstr ""
 
 #: actions/category_admin.py
@@ -292,6 +331,14 @@ msgstr ""
 
 #: actions/chooser.py
 msgid "Choose another action"
+msgstr ""
+
+#: actions/chooser.py
+msgid "Choose an attribute"
+msgstr ""
+
+#: actions/chooser.py
+msgid "Choose another attribute"
 msgstr ""
 
 #: actions/defaults.py
@@ -352,6 +399,98 @@ msgstr ""
 msgid "contact persons"
 msgstr ""
 
+#: actions/forms.py
+msgid "Plan name"
+msgstr ""
+
+#: actions/forms.py
+msgid "The official plan name in full form"
+msgstr ""
+
+#: actions/forms.py
+msgid "Plan identifier"
+msgstr ""
+
+#: actions/forms.py
+msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgstr ""
+
+#: actions/forms.py
+msgid "Primary language"
+msgstr ""
+
+#: actions/forms.py
+msgid "Main organization"
+msgstr ""
+
+#: actions/forms.py
+msgid "Short name of plan"
+msgstr ""
+
+#: actions/forms.py
+msgid "A shorter version of the plan name"
+msgstr ""
+
+#: actions/forms.py
+msgid "Other languages"
+msgstr ""
+
+#: actions/forms.py
+msgid "Domain name"
+msgstr ""
+
+#: actions/forms.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgstr ""
+
+#: actions/forms.py
+msgid "Base path"
+msgstr ""
+
+#: actions/forms.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
+msgstr ""
+
+#: actions/forms.py
+msgid "Name of client"
+msgstr ""
+
+#: actions/forms.py
+msgid "Name of the customer administering the plan"
+msgstr ""
+
+#: actions/forms.py
+msgid "Azure AD tenant id"
+msgstr ""
+
+#: actions/forms.py
+msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
+msgstr ""
+
+#: actions/forms.py
+msgid "Client subdomain for admin UI"
+msgstr ""
+
+#: actions/forms.py
+msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
+msgstr ""
+
+#: actions/forms.py
+msgid "Identifier already in use"
+msgstr ""
+
+#: actions/forms.py
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
+msgstr ""
+
+#: actions/forms.py
+msgid "Plan name already in use"
+msgstr ""
+
+#: actions/forms.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr ""
+
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
@@ -407,10 +546,6 @@ msgid "internal notes"
 msgstr ""
 
 #: actions/models/action.py
-msgid "implementation phase"
-msgstr ""
-
-#: actions/models/action.py
 msgid "override status manually"
 msgstr ""
 
@@ -440,10 +575,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "The completion percentage for this action"
-msgstr ""
-
-#: actions/models/action.py
-msgid "schedule"
 msgstr ""
 
 #: actions/models/action.py
@@ -730,6 +861,10 @@ msgstr ""
 msgid "Numeric"
 msgstr ""
 
+#: actions/models/attributes.py actions/models/category.py
+msgid "help text"
+msgstr ""
+
 #: actions/models/attributes.py
 msgid "Format"
 msgstr ""
@@ -771,7 +906,7 @@ msgid "Single"
 msgstr ""
 
 #: actions/models/category.py
-msgid "short description"
+msgid "lead paragraph"
 msgstr ""
 
 #: actions/models/category.py
@@ -1083,7 +1218,7 @@ msgstr ""
 msgid "plan domains"
 msgstr ""
 
-#: actions/models/plan.py indicators/models.py
+#: actions/models/plan.py
 msgid "scenario"
 msgstr ""
 
@@ -1125,6 +1260,18 @@ msgstr ""
 
 #: actions/templates/actions/chooser_results.html
 msgid "Plan"
+msgstr ""
+
+#: actions/templates/create_plan/plan_form.html
+msgid "Create a new plan"
+msgstr ""
+
+#: actions/templates/create_plan/plan_form.html
+msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
+msgstr ""
+
+#: actions/templates/create_plan/plan_form.html
+msgid "Create"
 msgstr ""
 
 #: actions/templates/site_summary/actions.html
@@ -1181,6 +1328,10 @@ msgstr ""
 #: actions/wagtail_admin.py
 msgctxt "hyphenated"
 msgid "Plan features"
+msgstr ""
+
+#: actions/wagtail_hooks.py
+msgid "Create plan"
 msgstr ""
 
 #: admin_site/admin.py
@@ -1541,6 +1692,10 @@ msgid "in active plan"
 msgstr ""
 
 #: indicators/admin.py
+msgid "not in active plan"
+msgstr ""
+
+#: indicators/admin.py
 msgid "all"
 msgstr ""
 
@@ -1704,10 +1859,6 @@ msgstr ""
 
 #: indicators/models.py
 msgid "month"
-msgstr ""
-
-#: indicators/models.py
-msgid "week"
 msgstr ""
 
 #: indicators/models.py
@@ -1958,14 +2109,6 @@ msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Indicator dimensions"
-msgstr ""
-
-#: indicators/wagtail_admin.py templates/aplans_admin/own_indicators_panel.html
-msgid "Edit data"
-msgstr ""
-
-#: indicators/wagtail_admin.py
-msgid "Edit indicator data"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -2299,10 +2442,6 @@ msgstr ""
 msgid "Small image"
 msgstr ""
 
-#: pages/blocks.py pages/models.py
-msgid "Category"
-msgstr ""
-
 #: pages/blocks.py
 msgid "Links"
 msgstr ""
@@ -2392,6 +2531,10 @@ msgid "Questions & Answers"
 msgstr ""
 
 #: pages/models.py
+msgid "Category tree map"
+msgstr ""
+
+#: pages/models.py
 msgid "Content page"
 msgstr ""
 
@@ -2413,6 +2556,34 @@ msgstr ""
 
 #: pages/models.py
 msgid "lead content"
+msgstr ""
+
+#: pages/models.py
+msgid "Main filters"
+msgstr ""
+
+#: pages/models.py
+msgid "Advanced filters (hidden by default)"
+msgstr ""
+
+#: pages/models.py
+msgid "Action list filters"
+msgstr ""
+
+#: pages/models.py
+msgid "Main column (top part on mobile)"
+msgstr ""
+
+#: pages/models.py
+msgid "Main column (bottom part on mobile)"
+msgstr ""
+
+#: pages/models.py
+msgid "Side column"
+msgstr ""
+
+#: pages/models.py
+msgid "Action details page"
 msgstr ""
 
 #: pages/models.py
@@ -2597,6 +2768,10 @@ msgstr ""
 
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Edit this indicator"
+msgstr ""
+
+#: templates/aplans_admin/own_indicators_panel.html
+msgid "Edit data"
 msgstr ""
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
