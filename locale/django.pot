@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 23:01+0300\n"
+"POT-Creation-Date: 2022-09-20 12:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -144,7 +144,7 @@ msgstr ""
 msgid "Show all"
 msgstr ""
 
-#: actions/admin.py
+#: actions/admin.py actions/blocks.py
 msgid "Merged actions"
 msgstr ""
 
@@ -245,6 +245,44 @@ msgstr ""
 
 #: actions/blocks.py
 msgid "Value attribute"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Dropdown"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Buttons"
+msgstr ""
+
+#: actions/blocks.py
+#, python-format
+msgid "Filter: %(filter_label)s"
+msgstr ""
+
+#: actions/blocks.py
+msgid "responsible party"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
+msgid "implementation phase"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
+msgid "schedule"
+msgstr ""
+
+#: actions/blocks.py
+#, python-format
+msgid "Content block: %(label)s"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr ""
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Category"
 msgstr ""
 
 #: actions/category_admin.py
@@ -508,10 +546,6 @@ msgid "internal notes"
 msgstr ""
 
 #: actions/models/action.py
-msgid "implementation phase"
-msgstr ""
-
-#: actions/models/action.py
 msgid "override status manually"
 msgstr ""
 
@@ -541,10 +575,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "The completion percentage for this action"
-msgstr ""
-
-#: actions/models/action.py
-msgid "schedule"
 msgstr ""
 
 #: actions/models/action.py
@@ -2412,10 +2442,6 @@ msgstr ""
 msgid "Small image"
 msgstr ""
 
-#: pages/blocks.py pages/models.py
-msgid "Category"
-msgstr ""
-
 #: pages/blocks.py
 msgid "Links"
 msgstr ""
@@ -2530,6 +2556,34 @@ msgstr ""
 
 #: pages/models.py
 msgid "lead content"
+msgstr ""
+
+#: pages/models.py
+msgid "Main filters"
+msgstr ""
+
+#: pages/models.py
+msgid "Advanced filters (hidden by default)"
+msgstr ""
+
+#: pages/models.py
+msgid "Action list filters"
+msgstr ""
+
+#: pages/models.py
+msgid "Main column (top part on mobile)"
+msgstr ""
+
+#: pages/models.py
+msgid "Main column (bottom part on mobile)"
+msgstr ""
+
+#: pages/models.py
+msgid "Side column"
+msgstr ""
+
+#: pages/models.py
+msgid "Action details page"
 msgstr ""
 
 #: pages/models.py

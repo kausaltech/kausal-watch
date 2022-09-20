@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-19 23:01+0300\n"
+"POT-Creation-Date: 2022-09-20 12:22+0300\n"
 "PO-Revision-Date: 2022-09-19 23:02+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
@@ -143,7 +143,7 @@ msgstr "Näytä muokattavat"
 msgid "Show all"
 msgstr "Näytä kaikki"
 
-#: actions/admin.py
+#: actions/admin.py actions/blocks.py
 msgid "Merged actions"
 msgstr "Yhdistetyt toimenpiteet"
 
@@ -245,6 +245,43 @@ msgstr "Taulukko"
 #: actions/blocks.py
 msgid "Value attribute"
 msgstr "Arvo-ominaisuus"
+
+#: actions/blocks.py
+msgid "Dropdown"
+msgstr "Alasvetovalikko"
+
+#: actions/blocks.py
+msgid "Buttons"
+msgstr "Nappulat"
+
+#: actions/blocks.py
+#, python-format
+msgid "Filter: %(filter_label)s"
+msgstr "Suodatin: %(filter_label)s"
+
+#: actions/blocks.py
+msgid "responsible party"
+msgstr "vastuutaho"
+
+#: actions/blocks.py actions/models/action.py
+msgid "implementation phase"
+msgstr "toteutusvaihe"
+
+#: actions/blocks.py actions/models/action.py
+msgid "schedule"
+msgstr "aikajänne"
+
+#: actions/blocks.py
+msgid "Content block: %(label)s"
+msgstr "Sisältölohko: %(label)s"
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr "Ominaisuus"
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Category"
+msgstr "Luokka"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -507,10 +544,6 @@ msgid "internal notes"
 msgstr "sisäiset muistiinpanot"
 
 #: actions/models/action.py
-msgid "implementation phase"
-msgstr "toteutusvaihe"
-
-#: actions/models/action.py
 msgid "override status manually"
 msgstr "määritä toimenpiteen tila käsin"
 
@@ -541,10 +574,6 @@ msgstr "toteutumisaste"
 #: actions/models/action.py
 msgid "The completion percentage for this action"
 msgstr "Toimenpiteen toteutumisaste prosenteissa"
-
-#: actions/models/action.py
-msgid "schedule"
-msgstr "aikajänne"
 
 #: actions/models/action.py
 msgid "continuous action"
@@ -831,10 +860,8 @@ msgid "Numeric"
 msgstr "Numero"
 
 #: actions/models/attributes.py actions/models/category.py
-#, fuzzy
-#| msgid "Alt text"
 msgid "help text"
-msgstr "Alt-teksti"
+msgstr "ohjeteksti"
 
 #: actions/models/attributes.py
 msgid "Format"
@@ -877,10 +904,8 @@ msgid "Single"
 msgstr "Yksi"
 
 #: actions/models/category.py
-#, fuzzy
-#| msgid "Lead paragraph"
 msgid "lead paragraph"
-msgstr "Ingressi"
+msgstr "ingressi"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
@@ -983,10 +1008,8 @@ msgid "Parent must be of same type"
 msgstr "Yläluokan on oltava samaa tyyppiä"
 
 #: actions/models/category.py
-#, fuzzy
-#| msgid "categories"
 msgid "Subcategories"
-msgstr "luokat"
+msgstr "Alaluokat"
 
 #: actions/models/category.py
 msgid "Either SVG or image must be set"
@@ -1357,7 +1380,7 @@ msgstr ""
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
 #, python-format
 msgid " By %(filter_title)s "
-msgstr ""
+msgstr "%(filter_title)s"
 
 #: admin_site/views.py
 msgid "You have been successfully logged out."
@@ -2468,10 +2491,6 @@ msgstr "Iso kuva"
 msgid "Small image"
 msgstr "Pieni kuva"
 
-#: pages/blocks.py pages/models.py
-msgid "Category"
-msgstr "Luokka"
-
 #: pages/blocks.py
 msgid "Links"
 msgstr "Linkit"
@@ -2561,10 +2580,8 @@ msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
 
 #: pages/models.py
-#, fuzzy
-#| msgid "Category type"
 msgid "Category tree map"
-msgstr "Luokan tyyppi"
+msgstr "Luokkien puuvisualisaatio"
 
 #: pages/models.py
 msgid "Content page"
@@ -2589,6 +2606,34 @@ msgstr "Luokkasivut"
 #: pages/models.py
 msgid "lead content"
 msgstr "johdanto"
+
+#: pages/models.py
+msgid "Main filters"
+msgstr "Pääsuotimet"
+
+#: pages/models.py
+msgid "Advanced filters (hidden by default)"
+msgstr "Erikoissuotimet (piilotettu oletuksena)"
+
+#: pages/models.py
+msgid "Action list filters"
+msgstr "Toimenpideluettelon suotimet"
+
+#: pages/models.py
+msgid "Main column (top part on mobile)"
+msgstr "Pääpalsta (yläosa mobiililla)"
+
+#: pages/models.py
+msgid "Main column (bottom part on mobile)"
+msgstr "Pääpalsta (alaosa mobiililla)"
+
+#: pages/models.py
+msgid "Side column"
+msgstr "Sivupalsta"
+
+#: pages/models.py
+msgid "Action details page"
+msgstr "Toimenpiteen sivu"
 
 #: pages/models.py
 msgid "external plan link"
