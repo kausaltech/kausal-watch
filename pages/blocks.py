@@ -132,3 +132,19 @@ class ActionCategoryFilterCardsBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLStreamfield('cards')
     ]
+
+
+@register_streamfield_block
+class AccessibilityStatementComplianceStatusBlock(blocks.StaticBlock):
+    pass
+
+
+@register_streamfield_block
+class AccessibilityStatementPreparationInformationBlock(blocks.StaticBlock):
+    pass
+
+
+@register_streamfield_block
+class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
+    publisher_name = blocks.CharBlock()
+    email = blocks.CharBlock()

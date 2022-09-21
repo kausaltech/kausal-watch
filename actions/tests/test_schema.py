@@ -183,6 +183,9 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             footer {
               __typename
             }
+            additionalLinks {
+              __typename
+            }
           }
         }
         ''',
@@ -257,6 +260,12 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
                 {
                     '__typename': 'IndicatorListPage',
                 },
+                {
+                    '__typename': 'PrivacyPolicyPage',
+                },
+                {
+                    '__typename': 'AccessibilityStatementPage',
+                },
             ],
             'domain': {
                 '__typename': 'PlanDomain',
@@ -267,6 +276,9 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             },
             'footer': {
                 '__typename': 'Footer',
+            },
+            'additionalLinks': {
+                '__typename': 'AdditionalLinks',
             },
         }
     }

@@ -30,7 +30,11 @@ from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
 from aplans.utils import OrderedModel
-from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock
+from .blocks import (
+    AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
+    AccessibilityStatementPreparationInformationBlock, CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock,
+    ActionCategoryFilterCardsBlock,
+)
 
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -361,6 +365,34 @@ class IndicatorListPage(FixedSlugPage):
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
+
+
+class PrivacyPolicyPage(FixedSlugPage):
+    force_slug = 'privacy'
+
+    body = StreamField([
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
+    ], null=True, blank=True)
+
+
+class AccessibilityStatementPage(FixedSlugPage):
+    force_slug = 'accessibility'
+
+    body = StreamField([
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('compliance_status', AccessibilityStatementComplianceStatusBlock()),
+        ('preparation', AccessibilityStatementPreparationInformationBlock()),
+        ('contact_information', AccessibilityStatementContactInformationBlock()),
+    ], null=True, blank=True)
+
+    content_panels = FixedSlugPage.content_panels + [
+        StreamFieldPanel('body'),
+    ]
+
+    graphql_fields = FixedSlugPage.graphql_fields + [
+        GraphQLStreamfield('body'),
+    ]
 
 
 class PlanLink(OrderedModel):

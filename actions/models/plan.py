@@ -334,7 +334,9 @@ class Plan(ClusterableModel):
 
     def create_default_pages(self):
         """Create plan root page as well as subpages that should be always there and return plan root page."""
-        from pages.models import ActionListPage, IndicatorListPage, PlanRootPage
+        from pages.models import (
+            AccessibilityStatementPage, ActionListPage, IndicatorListPage, PlanRootPage, PrivacyPolicyPage
+        )
 
         locale = Locale.objects.get(language_code=self.primary_language)
         root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
@@ -355,6 +357,16 @@ class Plan(ClusterableModel):
             if not indicator_list_pages.exists():
                 root_page.add_child(instance=IndicatorListPage(
                     title=_("Indicators"), locale=locale, show_in_menus=True, show_in_footer=True
+                ))
+            privacy_policy_pages = root_page.get_children().type(PrivacyPolicyPage)
+            if not privacy_policy_pages.exists():
+                root_page.add_child(instance=PrivacyPolicyPage(
+                    title=_("Privacy"), locale=locale, show_in_additional_links=True
+                ))
+            accessibility_statement_pages = root_page.get_children().type(AccessibilityStatementPage)
+            if not accessibility_statement_pages.exists():
+                root_page.add_child(instance=AccessibilityStatementPage(
+                    title=_("Accessibility"), locale=locale, show_in_additional_links=True
                 ))
 
         return root_page
