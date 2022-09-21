@@ -309,6 +309,10 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_page
     ('mainMenu', 'show_in_menus', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
     ('footer', 'show_in_footer', False, ['page1_in_menu', 'page2_in_menu']),
     ('footer', 'show_in_footer', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
+    ('additionalLinks', 'show_in_additional_links', False, ['page1_in_menu', 'page2_in_menu']),
+    ('additionalLinks', 'show_in_additional_links', True, [
+        'subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu'
+    ]),
 ])
 def test_menu(graphql_client_query_data, menu_field, menu_key, with_descendants, expected_pages, plan_with_pages):
     plan = plan_with_pages
@@ -316,6 +320,7 @@ def test_menu(graphql_client_query_data, menu_field, menu_key, with_descendants,
     for page in plan.root_page.get_children().specific():
         page.show_in_menus = False
         page.show_in_footer = False
+        page.show_in_additional_links = False
         page.save()
     pages = add_menu_test_pages(plan.root_page, menu_key)
     data = graphql_client_query_data(

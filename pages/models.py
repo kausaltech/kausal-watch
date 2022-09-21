@@ -40,6 +40,8 @@ class AplansPage(Page):
     i18n = models.JSONField(blank=True, null=True)
     show_in_footer = models.BooleanField(default=False, verbose_name=_('show in footer'),
                                          help_text=_('Should the page be shown in the footer?'),)
+    show_in_additional_links = models.BooleanField(default=False, verbose_name=_('show in additional links'),
+                                                   help_text=_('Should the page be shown in the additional links?'),)
 
     content_panels = [
         FieldPanel('title', classname="full title"),
@@ -49,6 +51,7 @@ class AplansPage(Page):
         FieldPanel('seo_title'),
         FieldPanel('show_in_menus'),
         FieldPanel('show_in_footer'),
+        FieldPanel('show_in_additional_links'),
         FieldPanel('search_description'),
     ]
 
@@ -68,6 +71,7 @@ class AplansPage(Page):
     graphql_fields = [
         GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
+        GraphQLBoolean('show_in_additional_links'),
     ]
 
     class Meta:
