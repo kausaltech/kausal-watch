@@ -12,7 +12,7 @@ from grapple.models import (
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel, FieldRowPanel
+from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
@@ -20,8 +20,9 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
 from actions.blocks import (
-    ActionHighlightsBlock, ActionListBlock, ActionListFilterBlock, CategoryListBlock, CategoryTreeMapBlock, RelatedPlanListBlock,
-    ActionAsideContentBlock, ActionMainContentBlock
+    ActionHighlightsBlock, ActionListBlock, ActionListFilterBlock, CategoryListBlock, CategoryTreeMapBlock,
+    RelatedPlanListBlock, ActionAsideContentBlock, ActionMainContentBlock, get_default_action_content_blocks,
+    get_default_action_filter_blocks
 )
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
