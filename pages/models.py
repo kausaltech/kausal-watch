@@ -335,6 +335,20 @@ class ActionListPage(FixedSlugPage):
         GraphQLStreamfield('details_main_aside'),
     ]
 
+    def set_default_content_blocks(self):
+        plan: Plan = self.get_site().plan
+        blks = get_default_action_content_blocks(plan)
+        print('%s <-- %s' % (self, plan))
+        for key, val in blks.items():
+            assert self._meta.get_field(key)
+            setattr(self, key, val)
+
+            blks = get_default_action_filter_blocks(plan)
+            for key, val in blks.items():
+                assert self._meta.get_field(key)
+                setattr(self, key, val)
+            self.save()
+
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
