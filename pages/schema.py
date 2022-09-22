@@ -120,6 +120,28 @@ class FooterNode(MenuNodeMixin, graphene.ObjectType):
         return [PageMenuItemNode(page=page) for page in pages]
 
 
+class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
+    class Meta:
+        name = 'AdditionalLinks'
+
+    def resolve_items(parent, info, with_descendants):
+        if not parent:
+            return []
+        if with_descendants:
+            pages = parent.get_descendants(inclusive=False)
+        else:
+            pages = parent.get_children()
+        pages = pages.live().public()
+        # AplansPage is abstract and thus has no manager, so we need to find additional links pages for each subclass of
+        # AplansPage individually. Gather IDs first and then make a separate query for additional_links_pages because
+        # the latter gives us the correct order of the pages.
+        additional_links_page_ids = [page.id
+                                     for Model in AplansPage.get_subclasses()
+                                     for page in Model.objects.filter(show_in_additional_links=True)]
+        pages = pages.filter(id__in=additional_links_page_ids).specific()
+        return [PageMenuItemNode(page=page) for page in pages]
+
+
 class Query:
     plan_page = graphene.Field(PageInterface, plan=graphene.ID(required=True), path=graphene.String(required=True))
 

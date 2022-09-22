@@ -75,6 +75,7 @@ class PlanNode(DjangoNode):
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
+    additional_links = pages_schema.AdditionalLinksNode.create_plan_menu_field()
 
     # FIXME: Legacy attributes, remove later
     hide_action_identifiers = graphene.Boolean()

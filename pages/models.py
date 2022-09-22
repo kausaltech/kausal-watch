@@ -12,7 +12,7 @@ from grapple.models import (
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel, FieldRowPanel
+from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
@@ -20,8 +20,9 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
 from actions.blocks import (
-    ActionHighlightsBlock, ActionListBlock, ActionListFilterBlock, CategoryListBlock, CategoryTreeMapBlock, RelatedPlanListBlock,
-    ActionAsideContentBlock, ActionMainContentBlock
+    ActionHighlightsBlock, ActionListBlock, ActionListFilterBlock, CategoryListBlock, CategoryTreeMapBlock,
+    RelatedPlanListBlock, ActionAsideContentBlock, ActionMainContentBlock, get_default_action_content_blocks,
+    get_default_action_filter_blocks
 )
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
@@ -29,7 +30,11 @@ from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
 from aplans.utils import OrderedModel
-from .blocks import CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock
+from .blocks import (
+    AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
+    AccessibilityStatementPreparationInformationBlock, CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock,
+    ActionCategoryFilterCardsBlock,
+)
 
 
 PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
@@ -39,6 +44,8 @@ class AplansPage(Page):
     i18n = models.JSONField(blank=True, null=True)
     show_in_footer = models.BooleanField(default=False, verbose_name=_('show in footer'),
                                          help_text=_('Should the page be shown in the footer?'),)
+    show_in_additional_links = models.BooleanField(default=False, verbose_name=_('show in additional links'),
+                                                   help_text=_('Should the page be shown in the additional links?'),)
 
     content_panels = [
         FieldPanel('title', classname="full title"),
@@ -48,6 +55,7 @@ class AplansPage(Page):
         FieldPanel('seo_title'),
         FieldPanel('show_in_menus'),
         FieldPanel('show_in_footer'),
+        FieldPanel('show_in_additional_links'),
         FieldPanel('search_description'),
     ]
 
@@ -68,6 +76,7 @@ class AplansPage(Page):
     graphql_fields = [
         GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
+        GraphQLBoolean('show_in_additional_links'),
     ]
 
     class Meta:
@@ -336,6 +345,20 @@ class ActionListPage(FixedSlugPage):
         GraphQLStreamfield('details_main_aside'),
     ]
 
+    def set_default_content_blocks(self):
+        plan: Plan = self.get_site().plan
+        blks = get_default_action_content_blocks(plan)
+        print('%s <-- %s' % (self, plan))
+        for key, val in blks.items():
+            assert self._meta.get_field(key)
+            setattr(self, key, val)
+
+            blks = get_default_action_filter_blocks(plan)
+            for key, val in blks.items():
+                assert self._meta.get_field(key)
+                setattr(self, key, val)
+            self.save()
+
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
@@ -343,6 +366,34 @@ class IndicatorListPage(FixedSlugPage):
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
+
+
+class PrivacyPolicyPage(FixedSlugPage):
+    force_slug = 'privacy'
+
+    body = StreamField([
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
+    ], null=True, blank=True)
+
+
+class AccessibilityStatementPage(FixedSlugPage):
+    force_slug = 'accessibility'
+
+    body = StreamField([
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('compliance_status', AccessibilityStatementComplianceStatusBlock()),
+        ('preparation', AccessibilityStatementPreparationInformationBlock()),
+        ('contact_information', AccessibilityStatementContactInformationBlock()),
+    ], null=True, blank=True)
+
+    content_panels = FixedSlugPage.content_panels + [
+        StreamFieldPanel('body'),
+    ]
+
+    graphql_fields = FixedSlugPage.graphql_fields + [
+        GraphQLStreamfield('body'),
+    ]
 
 
 class PlanLink(OrderedModel):
