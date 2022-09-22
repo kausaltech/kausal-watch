@@ -38,11 +38,15 @@ class PlanFeatures(models.Model):
         null=True, default=True, verbose_name=_('Enable site search'),
         help_text=_("Enable site-wide search functionality")
     )
+    enable_indicator_comparison = models.BooleanField(
+        null=True, default=True, verbose_name=_('Enable indicator comparison'),
+        help_text=_("Set to enable comparing indicators between organizations")
+    )
 
     public_fields = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
-        'has_action_primary_orgs', 'enable_search',
+        'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison'
     ]
 
     class Meta:
