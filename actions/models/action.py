@@ -517,6 +517,11 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
 
 class ActionResponsibleParty(OrderedModel):
+    class Role(models.TextChoices):
+        PRIMARY = 'primary', _('Primary responsible party')
+        COLLABORATOR = 'collaborator', _('Collaborator')
+        __empty__ = _('Unspecified')
+
     action = ParentalKey(
         Action, on_delete=models.CASCADE, related_name='responsible_parties',
         verbose_name=_('action')
@@ -527,9 +532,16 @@ class ActionResponsibleParty(OrderedModel):
         # WTF? Commented out for now.
         # limit_choices_to=Q(dissolution_date=None),
     )
+    role = models.CharField(max_length=40, choices=Role.choices, blank=True, null=True, verbose_name=_('role'))
+    specifier = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('specifier'),
+        help_text=_('The responsibility domain for the organization'),
+    )
 
     public_fields = [
-        'id', 'action', 'organization', 'order',
+        'id', 'action', 'organization', 'role', 'specifier', 'order',
     ]
 
     class Meta:

@@ -1367,6 +1367,8 @@ def test_action_responsible_party_node(graphql_client_query_data):
                 __typename
                 id
               }
+              role
+              specifier
               order
             }
           }
@@ -1387,6 +1389,8 @@ def test_action_responsible_party_node(graphql_client_query_data):
                    '__typename': 'Organization',
                    'id': str(plan.organization.id),
                 },
+                'role': action_responsible_party.role.upper(),
+                'specifier': action_responsible_party.specifier,
                 'order': action_responsible_party.order,
             }]
         }

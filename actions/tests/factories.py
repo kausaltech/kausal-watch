@@ -310,6 +310,8 @@ class ActionResponsiblePartyFactory(DjangoModelFactory):
 
     action = SubFactory(ActionFactory)
     organization = SubFactory(OrganizationFactory)
+    role = actions.models.ActionResponsibleParty.Role.PRIMARY
+    specifier = "foo"
 
 
 # FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
