@@ -50,8 +50,6 @@ class SiteGeneralContentAdmin(ModelAdmin):
         FieldPanel('site_description'),
         FieldPanel('owner_url'),
         FieldPanel('owner_name'),
-        FieldPanel('accessibility_responsible_body'),
-        FieldPanel('accessibility_contact_email'),
         FieldPanel('official_name_description'),
         FieldPanel('copyright_text'),
         FieldPanel('creative_commons_license'),
