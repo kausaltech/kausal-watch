@@ -35,11 +35,11 @@ class PlanFeatures(models.Model):
         help_text=_("Set if actions have a clear primary organisation (such as multi-city plans)")
     )
     enable_search = models.BooleanField(
-        null=True, default=True, verbose_name=_('Enable site search'),
+        default=True, verbose_name=_('Enable site search'),
         help_text=_("Enable site-wide search functionality")
     )
     enable_indicator_comparison = models.BooleanField(
-        null=True, default=True, verbose_name=_('Enable indicator comparison'),
+        default=True, verbose_name=_('Enable indicator comparison'),
         help_text=_("Set to enable comparing indicators between organizations")
     )
 
