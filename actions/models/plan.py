@@ -361,12 +361,27 @@ class Plan(ClusterableModel):
             privacy_policy_pages = root_page.get_children().type(PrivacyPolicyPage)
             if not privacy_policy_pages.exists():
                 root_page.add_child(instance=PrivacyPolicyPage(
-                    title=_("Privacy"), locale=locale, show_in_additional_links=True
+                    title=_("Privacy"), locale=locale, show_in_additional_links=False
                 ))
             accessibility_statement_pages = root_page.get_children().type(AccessibilityStatementPage)
             if not accessibility_statement_pages.exists():
+                publisher_name = self.general_content.accessibility_responsible_body
+                email = self.general_content.accessibility_contact_email
+                if publisher_name or email:
+                    show_in_additional_links = True
+                    body = [
+                        ('compliance_status', None),
+                        ('preparation', None),
+                        ('contact_information', {'publisher_name': publisher_name, 'email': email}),
+                    ]
+                else:
+                    show_in_additional_links = False
+                    body = None
                 root_page.add_child(instance=AccessibilityStatementPage(
-                    title=_("Accessibility"), locale=locale, show_in_additional_links=True
+                    title=_("Accessibility"),
+                    locale=locale,
+                    show_in_additional_links=show_in_additional_links,
+                    body=body,
                 ))
 
         return root_page

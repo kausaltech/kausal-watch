@@ -272,6 +272,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('enable_search'),
+        FieldPanel('enable_indicator_comparison'),
     ]
 
     def get_queryset(self, request):
