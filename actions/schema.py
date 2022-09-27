@@ -338,30 +338,33 @@ class ResolveShortDescriptionFromLeadParagraphShim:
 
 @register_django_node
 class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
-    attribute_types = graphene.List(AttributeTypeNode)
+    attribute_types = graphene.List(AttributeTypeNode, required=True)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
     categories = graphene.List(
-        'actions.schema.CategoryNode', only_root=graphene.Boolean(default_value=False)
+        'actions.schema.CategoryNode', only_root=graphene.Boolean(default_value=False), required=True
     )
 
     class Meta:
         model = CategoryType
         fields = public_fields(CategoryType, remove_fields=['select_widget'])
 
-    def resolve_attribute_types(self, info):
-        return self.attribute_types.order_by('pk')
+    @staticmethod
+    def resolve_attribute_types(root: CategoryType, info):
+        return root.attribute_types.order_by('pk')
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='select_widget',
     )
-    def resolve_selection_type(self: CategoryType, info):
-        return self.select_widget
+    def resolve_selection_type(root: CategoryType, info):
+        return root.select_widget
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(self: CategoryType, info, only_root: bool):
-        qs = self.categories.all()
+    def resolve_categories(root: CategoryType, info, only_root: bool):
+        qs = root.categories.all()
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
@@ -555,11 +558,13 @@ class ActionNode(AttributesMixin, DjangoNode):
         model = Action
         fields = Action.public_fields
 
-    def resolve_next_action(self, info):
-        return self.get_next_action()
+    @staticmethod
+    def resolve_next_action(root: Action, info):
+        return root.get_next_action()
 
-    def resolve_previous_action(self, info):
-        return self.get_previous_action()
+    @staticmethod
+    def resolve_previous_action(root: Action, info):
+        return root.get_previous_action()
 
     @gql_optimizer.resolver_hints(
         model_field='name',

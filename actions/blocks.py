@@ -140,6 +140,7 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
         ('dropdown', _('Dropdown')),
         ('buttons', _('Buttons')),
     ])
+    show_all_label = blocks.CharBlock(required=False)
     category_type = CategoryTypeChooserBlock(required=True)
 
     graphql_fields = [
@@ -162,6 +163,11 @@ class ResponsiblePartyFilterBlock(FilterBlock):
 
 
 @register_streamfield_block
+class PrimaryOrganizationFilterBlock(FilterBlock):
+    filter_label = _("primary organization")
+
+
+@register_streamfield_block
 class ActionImplementationPhaseFilterBlock(FilterBlock):
     filter_label = _("implementation phase")
 
@@ -174,6 +180,7 @@ class ActionScheduleFilterBlock(FilterBlock):
 @register_streamfield_block
 class ActionListFilterBlock(blocks.StreamBlock):
     responsible_party = ResponsiblePartyFilterBlock()
+    primary_org = PrimaryOrganizationFilterBlock()
     implementation_phase = ActionImplementationPhaseFilterBlock()
     schedule = ActionScheduleFilterBlock()
     attribute = ActionAttributeTypeFilterBlock()

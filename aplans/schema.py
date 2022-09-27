@@ -13,6 +13,7 @@ from . import graphql_gis  # noqa
 from aplans.utils import public_fields
 from content.models import SiteGeneralContent
 from actions import schema as actions_schema
+from actions.models import Plan
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
 from orgs import schema as orgs_schema
@@ -74,7 +75,7 @@ class Query(
         self, info, plan, with_ancestors, for_responsible_parties, for_contact_persons,
         **kwargs
     ):
-        plan_obj = get_plan_from_context(info, plan)
+        plan_obj: Plan | None = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
@@ -102,7 +103,7 @@ class Query(
             qs = qs.annotate(action_count=Count(
                 'responsible_actions__action', distinct=True, filter=annotate_filter
             ))
-        if 'contactPersonCount' in selections:
+        if 'contactPersonCount' in selections and plan_obj.features.public_contact_persons:
             if plan_obj is not None:
                 annotate_filter = Q(people__contact_for_actions__plan=plan_obj)
             else:

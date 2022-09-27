@@ -15,7 +15,7 @@ class PlanFeatures(models.Model):
         help_text=_('Should the public website contain a link to the admin login?'),
     )
     public_contact_persons = models.BooleanField(
-        default=True, verbose_name=_('Contact persons private'),
+        default=True, verbose_name=_('Contact persons public'),
         help_text=_('Set if the contact persons should be visible in the public UI')
     )
     has_action_identifiers = models.BooleanField(
