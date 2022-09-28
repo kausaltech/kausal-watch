@@ -222,6 +222,20 @@ class PlanNode(DjangoNode):
     def resolve_image(root: Plan, info):
         return root.image
 
+    @gql_optimizer.resolver_hints(
+        select_related=('primary_action_classification',),
+        only=('primary_action_classification',)
+    )
+    def resolve_primary_action_classification(root: Plan, info):
+        return root.primary_action_classification
+
+    @gql_optimizer.resolver_hints(
+        select_related=('secondary_action_classification',),
+        only=('secondary_action_classification',)
+    )
+    def resolve_secondary_action_classification(root: Plan, info):
+        return root.secondary_action_classification
+
     class Meta:
         model = Plan
         fields = public_fields(Plan)
