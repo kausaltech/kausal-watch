@@ -325,7 +325,7 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
                     'expecting a list of dicts mapping "organization" to int and "role" to str or None'
                 )
             if val['organization'] not in available_orgs:
-                raise exceptions.ValidationError('%d not available for plan' % val)
+                raise exceptions.ValidationError('%d not available for plan' % val['organization'])
             if val['role'] not in ActionResponsibleParty.Role.values:
                 raise exceptions.ValidationError(f"{val['role']} is not a valid role")
             if org_id in seen_orgs:
