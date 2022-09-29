@@ -1,6 +1,6 @@
 from __future__ import annotations
 import typing
-from typing import Optional
+from typing import Literal, Optional, TypedDict
 import logging
 from datetime import date
 
@@ -88,6 +88,13 @@ class ActionIdentifierSearchField(ActionIdentifierSearchMixin, index.SearchField
 
 class ActionIdentifierAutocompleteField(ActionIdentifierSearchMixin, index.AutocompleteField):
     pass
+
+
+class ResponsiblePartyDict(TypedDict):
+    organization: Organization
+    # Allowed roles in ActionResponsibleParty.Role.values
+    # https://stackoverflow.com/a/67292548/14595546
+    role: Literal['primary', 'collaborator', None]
 
 
 @reversion.register()
@@ -441,14 +448,18 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
 
-    def set_responsible_parties(self, organization_ids):
+    def set_responsible_parties(self, data: list[ResponsiblePartyDict]):
         existing_orgs = set((p.organization for p in self.responsible_parties.all()))
-        new_orgs = set(Organization.objects.filter(pk__in=organization_ids))
+        new_orgs = set(d['organization'] for d in data)
         ActionResponsibleParty.objects.filter(
             action=self, organization__in=(existing_orgs - new_orgs)
         ).delete()
-        for org in new_orgs - existing_orgs:
-            ActionResponsibleParty.objects.create(organization=org, action=self)
+        for d in data:
+            ActionResponsibleParty.objects.update_or_create(
+                action=self,
+                organization=d['organization'],
+                defaults={'role': d['role']},
+            )
 
     def set_contact_persons(self, person_ids):
         existing_persons = set((p.person for p in self.contact_persons.all()))
