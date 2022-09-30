@@ -737,7 +737,7 @@ CELERY_BEAT_SCHEDULE = {
         },
     } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()},
     'update-index': {
-        'task': 'aplans.tasks.update_index',
+        'task': 'actions.tasks.update_index',
         'schedule': crontab(hour=3, minute=0),
     },
 }
