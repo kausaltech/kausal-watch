@@ -55,11 +55,13 @@ def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, 
 class PlanQuerySet(models.QuerySet['Plan']):
     def for_hostname(self, hostname):
         hostname = hostname.lower()
+        plan_domains = PlanDomain.objects.filter(hostname=hostname)
+        lookup = Q(id__in=plan_domains.values_list('plan'))
         # Get plan identifier from hostname for development and testing
         identifier, _ = get_plan_identifier_from_wildcard_domain(hostname)
         if identifier:
-            return self.filter(identifier=identifier)
-        return self.filter(domains__hostname=hostname)
+            lookup |= Q(identifier=identifier)
+        return self.filter(lookup)
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
