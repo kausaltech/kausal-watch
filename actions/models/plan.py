@@ -489,11 +489,12 @@ class Plan(ClusterableModel):
                 obj.save()
 
         if client_name:
-            from admin_site.models import Client, AdminHostname
+            from admin_site.models import Client, ClientPlan, AdminHostname
 
             client = Client.objects.filter(name=client_name).first()
             if client is None:
                 client = Client.objects.create(name=client_name)
+                ClientPlan.objects.create(plan=plan, client=client)
             if azure_ad_tenant_id:
                 client.azure_ad_tenant_id = azure_ad_tenant_id
                 client.save()
