@@ -318,7 +318,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             start_value = ind.values.first()
 
             try:
-                last_goal = ind.goals.filter(plan=self.plan).latest()
+                last_goal = ind.goals.latest()
             except ind.goals.model.DoesNotExist:
                 continue
 
@@ -334,7 +334,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
             # Figure out if the action is late or not by comparing
             # the latest measured value to the closest goal
-            closest_goal = ind.goals.filter(plan=self.plan, date__lte=latest_value.date).last()
+            closest_goal = ind.goals.filter(date__lte=latest_value.date).last()
             if closest_goal is None:
                 continue
 
