@@ -92,7 +92,9 @@ class CommonCategoryType(CategoryTypeBase):
         if plan.category_types.filter(common=self).exists():
             raise Exception(f"Instantiation of common category type '{self}' for plan '{plan}' exists already")
         translated_fields = get_i18n_field(CategoryType).fields
-        other_languages = [lang for lang in get_available_languages() if lang != plan.primary_language]
+        other_languages = [lang.replace('-', '_')
+                           for lang in get_available_languages()
+                           if lang != plan.primary_language]
         # Inherit fields from CategoryTypeBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the
         # primary language of the the active plan, and the same for other translated fields.
         # TODO: Something like this should be put in modeltrans to implement changing the per-instance default
@@ -266,7 +268,9 @@ class CommonCategory(CategoryBase, ClusterableModel):
             raise Exception(f"Instantiation of common category '{self}' for category type '{category_type}' exists "
                             "already")
         translated_fields = get_i18n_field(Category).fields
-        other_languages = [lang for lang in get_available_languages() if lang != category_type.plan.primary_language]
+        other_languages = [lang.replace('-', '_')
+                           for lang in get_available_languages()
+                           if lang != category_type.plan.primary_language]
         # Inherit fields from CategoryBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the primary
         # language of the the active plan, and the same for other translated fields.
         # TODO: Duplicated in CommonCategoryType.instantiate_for_plan()
