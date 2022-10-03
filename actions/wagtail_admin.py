@@ -151,6 +151,7 @@ class PlanAdmin(AplansModelAdmin):
             Plan, self.panels, request, instance
         )
         if request.user.is_superuser:
+            panels.append(FieldPanel('theme_identifier'))
             panels.append(InlinePanel('domains', panels=[
                 FieldPanel('hostname'),
                 FieldPanel('base_path'),
