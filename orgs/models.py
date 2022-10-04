@@ -6,7 +6,7 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -109,6 +109,26 @@ class OrganizationQuerySet(MP_NodeQuerySet):
         filters = [Q(path__startswith=org.path) for org in admin_orgs]
         qs = functools.reduce(lambda x, y: x | y, filters)
         return self.filter(qs)
+
+    def annotate_action_count(self, plan: Plan | None = None):
+        if plan is not None:
+            annotate_filter = Q(responsible_actions__action__plan=plan)
+        else:
+            annotate_filter = None
+        qs = self.annotate(action_count=Count(
+            'responsible_actions__action', distinct=True, filter=annotate_filter
+        ))
+        return qs
+
+    def annotate_contact_person_count(self, plan: Plan | None = None):
+        if plan is not None:
+            annotate_filter = Q(people__contact_for_actions__plan=plan)
+        else:
+            annotate_filter = None
+        qs = self.annotate(contact_person_count=Count(
+            'people', distinct=True, filter=annotate_filter
+        ))
+        return qs
 
 
 class OrganizationManager(gis_models.Manager):
@@ -274,6 +294,32 @@ class Organization(index.Indexed, Node, gis_models.Model):
             parent_path = ' | '.join([get_org_path_str(org) for org in parents])
             name += ' (%s)' % parent_path
         return name
+
+    def print_tree(self):
+        from rich.tree import Tree
+        from rich import print
+
+        def get_label(org: Organization):
+            return '%s ([green]%d actions; [blue]%d persons)' % (
+                org.name, org.action_count, org.contact_person_count
+            )
+
+        def add_children(org: Organization, tree: Tree):
+            children: list[Organization] = list(
+                org.get_children().annotate_action_count()  # type: ignore
+                .annotate_contact_person_count().order_by('name')
+            )
+            if not children:
+                return
+            for child in children:
+                child_tree = tree.add(get_label(child))
+                add_children(child, child_tree)
+
+        root_org = Organization.objects.filter(id=self.id)\
+            .annotate_action_count().annotate_contact_person_count().first()
+        root_tree = Tree(get_label(root_org))
+        add_children(root_org, root_tree)
+        print(root_tree)
 
     def __str__(self):
         if self.name is None:
