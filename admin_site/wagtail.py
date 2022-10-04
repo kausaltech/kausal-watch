@@ -77,7 +77,7 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
     user = request.user
     plan = user.get_active_admin_plan()
 
-    languages_by_code = {x[0]: x[1] for x in settings.LANGUAGES}
+    languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
     if include_all_languages:
         # Omit main language because it's stored in the model field without a modeltrans language suffix
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
