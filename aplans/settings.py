@@ -377,8 +377,8 @@ LANGUAGES = (
     ('de', _('German')),
     ('da', _('Danish')),
 )
-MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
-MODELTRANS_FALLBACK = {'default': ()}  # use language in default_language_field instead of a global fallback
+MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
+MODELTRANS_FALLBACK = {'default': (), 'en-au': ('en',)}  # use language in default_language_field instead of a global fallback
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 WAGTAILSIMPLETRANSLATION_SYNC_PAGE_TREE = True
 
