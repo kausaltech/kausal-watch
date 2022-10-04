@@ -15,11 +15,15 @@ from wagtail.core.rich_text import RichText
 
 from actions.action_admin import ActionAdmin
 from actions.models import (
-    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
-    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
-    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
-    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario, CommonCategory, CommonCategoryType
+    Action, ActionContactPerson, ActionImpact,
+    ActionImplementationPhase, ActionLink, ActionResponsibleParty,
+    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask,
+    Category, CategoryLevel, AttributeCategoryChoice, AttributeChoice,
+    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText,
+    AttributeType, AttributeTypeChoiceOption, CategoryType,
+    ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
+    PlanDomain, PlanFeatures, Scenario, CommonCategory,
+    CommonCategoryType
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -262,6 +266,8 @@ class AttributeInterface(graphene.Interface):
             return AttributeChoiceWithTextNode
         elif isinstance(instance, AttributeNumericValue):
             return AttributeNumericValueNode
+        elif isinstance(instance, AttributeCategoryChoice):
+            return AttributeCategoryChoiceNode
 
 
 @register_django_node
@@ -312,6 +318,14 @@ class AttributeRichTextNode(DjangoNode):
         interfaces = (AttributeInterface,)
         # We expose `value` instead of `text`
         fields = public_fields(AttributeRichText, remove_fields=['text'])
+
+
+@register_django_node
+class AttributeCategoryChoiceNode(DjangoNode):
+    class Meta:
+        model = AttributeCategoryChoice
+        interfaces = (AttributeInterface,)
+        fields = public_fields(AttributeCategoryChoice)
 
 
 @register_django_node
@@ -407,7 +421,8 @@ class AttributesMixin:
             self.rich_text_attributes.filter(query),
             self.choice_attributes.filter(query),
             self.choice_with_text_attributes.filter(query),
-            self.numeric_value_attributes.filter(query)
+            self.numeric_value_attributes.filter(query),
+            self.category_choice_attributes.filter(query)
         )
         return sorted(attributes, key=lambda a: a.type.order)
 

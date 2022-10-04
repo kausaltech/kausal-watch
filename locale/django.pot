@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-20 12:22+0300\n"
+"POT-Creation-Date: 2022-10-04 22:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -190,6 +190,10 @@ msgid "action"
 msgstr ""
 
 #: actions/api.py
+msgid "Organization occurs multiple times as responsible party"
+msgstr ""
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr ""
 
@@ -265,6 +269,10 @@ msgid "responsible party"
 msgstr ""
 
 #: actions/blocks.py actions/models/action.py
+msgid "primary organization"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
 msgid "implementation phase"
 msgstr ""
 
@@ -281,7 +289,8 @@ msgstr ""
 msgid "Attribute"
 msgstr ""
 
-#: actions/blocks.py pages/blocks.py pages/models.py
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
 msgid "Category"
 msgstr ""
 
@@ -497,10 +506,6 @@ msgid "plan"
 msgstr ""
 
 #: actions/models/action.py
-msgid "primary organization"
-msgstr ""
-
-#: actions/models/action.py
 msgid "official name"
 msgstr ""
 
@@ -650,9 +655,33 @@ msgstr ""
 msgid "Active tasks"
 msgstr ""
 
+#: actions/models/action.py
+msgid "Primary responsible party"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Collaborator"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Unspecified"
+msgstr ""
+
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
 msgid "organization"
+msgstr ""
+
+#: actions/models/action.py
+msgid "role"
+msgstr ""
+
+#: actions/models/action.py
+msgid "specifier"
+msgstr ""
+
+#: actions/models/action.py
+msgid "The responsibility domain for the organization"
 msgstr ""
 
 #: actions/models/action.py
@@ -874,6 +903,14 @@ msgid "Unit (only if format is numeric)"
 msgstr ""
 
 #: actions/models/attributes.py
+msgid "Category type (if format is category)"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgstr ""
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr ""
 
@@ -1034,7 +1071,7 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Contact persons private"
+msgid "Contact persons public"
 msgstr ""
 
 #: actions/models/features.py
@@ -1079,6 +1116,14 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Enable site-wide search functionality"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable indicator comparison"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable comparing indicators between organizations"
 msgstr ""
 
 #: actions/models/features.py
@@ -1184,6 +1229,14 @@ msgstr ""
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Privacy"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Accessibility"
 msgstr ""
 
 #: actions/models/plan.py
@@ -1569,18 +1622,6 @@ msgstr ""
 
 #: content/models.py
 msgid "Link to GitHub repository for UI"
-msgstr ""
-
-#: content/models.py
-msgid "Body responsible for site accessibility"
-msgstr ""
-
-#: content/models.py
-msgid "Set if different from the owner of the site"
-msgstr ""
-
-#: content/models.py
-msgid "Accessibility contact email"
 msgstr ""
 
 #: content/models.py
@@ -2452,6 +2493,14 @@ msgstr ""
 
 #: pages/models.py
 msgid "Should the page be shown in the footer?"
+msgstr ""
+
+#: pages/models.py
+msgid "show in additional links"
+msgstr ""
+
+#: pages/models.py
+msgid "Should the page be shown in the additional links?"
 msgstr ""
 
 #: pages/models.py

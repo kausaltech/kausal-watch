@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-20 12:22+0300\n"
-"PO-Revision-Date: 2022-09-19 23:02+0300\n"
+"POT-Creation-Date: 2022-10-04 22:32+0300\n"
+"PO-Revision-Date: 2022-10-04 23:57+0300\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -189,6 +189,10 @@ msgid "action"
 msgstr "toimenpide"
 
 #: actions/api.py
+msgid "Organization occurs multiple times as responsible party"
+msgstr ""
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr "Tunniste pitää asettaa"
 
@@ -264,6 +268,10 @@ msgid "responsible party"
 msgstr "vastuutaho"
 
 #: actions/blocks.py actions/models/action.py
+msgid "primary organization"
+msgstr "pääorganisaatio"
+
+#: actions/blocks.py actions/models/action.py
 msgid "implementation phase"
 msgstr "toteutusvaihe"
 
@@ -272,6 +280,7 @@ msgid "schedule"
 msgstr "aikajänne"
 
 #: actions/blocks.py
+#, python-format
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
 
@@ -279,7 +288,8 @@ msgstr "Sisältölohko: %(label)s"
 msgid "Attribute"
 msgstr "Ominaisuus"
 
-#: actions/blocks.py pages/blocks.py pages/models.py
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
 msgid "Category"
 msgstr "Luokka"
 
@@ -495,10 +505,6 @@ msgid "plan"
 msgstr "toimenpideohjelma"
 
 #: actions/models/action.py
-msgid "primary organization"
-msgstr "pääorganisaatio"
-
-#: actions/models/action.py
 msgid "official name"
 msgstr "virallinen nimi"
 
@@ -648,10 +654,40 @@ msgstr "Yhteyshenkilöt nimetty"
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
 
+#: actions/models/action.py
+#, fuzzy
+#| msgid "responsible party"
+msgid "Primary responsible party"
+msgstr "vastuutaho"
+
+#: actions/models/action.py
+msgid "Collaborator"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Unspecified"
+msgstr ""
+
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
 msgid "organization"
 msgstr "organisaatio"
+
+#: actions/models/action.py
+msgid "role"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "identifier"
+msgid "specifier"
+msgstr "tunniste"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "responsible organizations"
+msgid "The responsibility domain for the organization"
+msgstr "vastuuorganisaatiot"
 
 #: actions/models/action.py
 msgid "action responsible party"
@@ -872,6 +908,14 @@ msgid "Unit (only if format is numeric)"
 msgstr "Yksikkö (ainoastaan jos muoto on numeerinen)"
 
 #: actions/models/attributes.py
+msgid "Category type (if format is category)"
+msgstr "Luokan tyyppi (jos muoto on luokka)"
+
+#: actions/models/attributes.py
+msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgstr "Jos muoto on \"luokka\", valitse minkä luokkatyypin luokkia voi valita ominaisuuden arvoiksi"
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr "ominaisuustyyppi"
 
@@ -1032,8 +1076,10 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: actions/models/features.py
-msgid "Contact persons private"
-msgstr "Yhteyshenkilöt salaisia"
+#, fuzzy
+#| msgid "Contact persons"
+msgid "Contact persons public"
+msgstr "Yhteyshenkilöt"
 
 #: actions/models/features.py
 msgid "Set if the contact persons should be visible in the public UI"
@@ -1078,6 +1124,18 @@ msgstr "Hakutoiminnallisuudet käytössä"
 #: actions/models/features.py
 msgid "Enable site-wide search functionality"
 msgstr "Ota sivuston kattava hakutoiminnallisuus käyttöön"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "usable for indicator categorization"
+msgid "Enable indicator comparison"
+msgstr "käytetään mittareiden luokitukseen"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "usable for indicator categorization"
+msgid "Set to enable comparing indicators between organizations"
+msgstr "käytetään mittareiden luokitukseen"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1183,6 +1241,16 @@ msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
+
+#: actions/models/plan.py
+msgid "Privacy"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Accessibility contact email"
+msgid "Accessibility"
+msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
 
 #: actions/models/plan.py
 msgid "general plan admin"
@@ -1574,18 +1642,6 @@ msgstr "Linkki rajapintaprojektin GitHubiin"
 #: content/models.py
 msgid "Link to GitHub repository for UI"
 msgstr "Linkki käyttöliittymäprojektin GitHubiin"
-
-#: content/models.py
-msgid "Body responsible for site accessibility"
-msgstr "Sivuston saavutettavuudesta vastaa"
-
-#: content/models.py
-msgid "Set if different from the owner of the site"
-msgstr "Aseta jos eri kuin sivuston omistajaorganisaatio"
-
-#: content/models.py
-msgid "Accessibility contact email"
-msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
 
 #: content/models.py
 msgid "Term to use for 'action'"
@@ -2504,6 +2560,18 @@ msgid "Should the page be shown in the footer?"
 msgstr "Näytetäänkö sivu footerissa?"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Show admin link"
+msgid "show in additional links"
+msgstr "Näytä ylläpidon linkki"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Should the page be shown in the footer?"
+msgid "Should the page be shown in the additional links?"
+msgstr "Näytetäänkö sivu footerissa?"
+
+#: pages/models.py
 msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
 
@@ -2887,6 +2955,15 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "Contact persons private"
+#~ msgstr "Yhteyshenkilöt salaisia"
+
+#~ msgid "Body responsible for site accessibility"
+#~ msgstr "Sivuston saavutettavuudesta vastaa"
+
+#~ msgid "Set if different from the owner of the site"
+#~ msgstr "Aseta jos eri kuin sivuston omistajaorganisaatio"
 
 #~ msgid "short description"
 #~ msgstr "lyhyt kuvaus"

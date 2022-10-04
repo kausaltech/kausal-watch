@@ -162,6 +162,26 @@ class CategoryFactory(DjangoModelFactory):
     help_text = "bar"
 
 
+class AttributeCategoryChoiceFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeCategoryChoice'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.CATEGORY_CHOICE)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+
+    @post_generation
+    def categories(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for category in extracted:
+                self.categories.add(category)
+
+
 class AttributeRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.AttributeRichText'
