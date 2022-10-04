@@ -625,8 +625,11 @@ if not locals().get('SECRET_KEY', ''):
 
 
 if DEBUG:
-    from aplans.watchfiles_reloader import replace_reloader
-    replace_reloader()
+    try:
+        from aplans.watchfiles_reloader import replace_reloader
+        replace_reloader()
+    except ImportError:
+        pass
 
     from rich.traceback import install
     install()
