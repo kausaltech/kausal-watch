@@ -1,6 +1,7 @@
 import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from modeltrans.fields import TranslationField
 
 
 @reversion.register()
@@ -42,10 +43,16 @@ class SiteGeneralContent(models.Model):
         max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION
     )
 
+    i18n = TranslationField(
+        fields=[
+            'site_title', 'site_description', 'official_name_description', 'copyright_text',
+            'creative_commons_license', 'owner_name', 'owner_url'
+        ],
+        default_language_field='plan__primary_language')
+
     public_fields = [
-        'id', 'site_title', 'site_description', 'owner_url', 'owner_name',
-        'official_name_description', 'copyright_text', 'creative_commons_license',
-        'github_api_repository', 'github_ui_repository', 'action_term',
+        'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
+        'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
     ]
 
     class Meta:
