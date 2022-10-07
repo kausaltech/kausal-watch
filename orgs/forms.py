@@ -29,8 +29,8 @@ class NodeForm(WagtailAdminModelForm):
 
     def clean_parent(self):
         parent = self.cleaned_data['parent']
-        if parent is not None and parent == self.instance:
-            raise ValidationError(_("A node cannot be its own parent."), code='invalid_parent')
+        if parent is not None and parent == self.instance or parent in self.instance.get_descendants():
+            raise ValidationError(_("A node cannot be moved under itself in the hierarchy."), code='invalid_parent')
         return parent
 
     def save(self, commit=True, *args, **kwargs):
