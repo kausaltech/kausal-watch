@@ -124,6 +124,10 @@ class AttributeTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category attribute type {i}")
     help_text = "foo"
     format = AttributeType.AttributeFormat.RICH_TEXT
+    unit = None
+    attribute_category_type = None
+    show_choice_names = True
+    has_zero_option = False
 
 
 class AttributeTypeChoiceOptionFactory(DjangoModelFactory):

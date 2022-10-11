@@ -68,10 +68,20 @@ class AttributeType(ClusterableModel, OrderedModel):
         verbose_name=_('Category type (if format is category)'),
         help_text=_('If the format is "Category", choose which category type the attribute values can be chosen from'),
     )
+    show_choice_names = models.BooleanField(
+        default=True, verbose_name=_('show choice names'),
+        help_text=_('If the format is "ordered choice", determines whether the choice names are displayed'),
+    )
+    has_zero_option = models.BooleanField(
+        default=False, verbose_name=_('has zero option'),
+        help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
+                    'bullets instead of one'),
+    )
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     public_fields = [
-        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'choice_options'
+        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
+        'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()

@@ -167,7 +167,9 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         CondensedInlinePanel('choice_options', panels=[
             FieldPanel('name'),
             FieldPanel('identifier'),
-        ])
+        ]),
+        FieldPanel('show_choice_names'),
+        FieldPanel('has_zero_option'),
     ]
 
     index_view_class = AttributeTypeIndexView

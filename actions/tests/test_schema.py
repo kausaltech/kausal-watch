@@ -454,6 +454,11 @@ def test_attribute_type_node(
                 name
                 helpText
                 format
+                unit {
+                  __typename
+                }
+                showChoiceNames
+                hasZeroOption
                 choiceOptions {
                   __typename
                 }
@@ -472,12 +477,18 @@ def test_attribute_type_node(
                     'name': attribute_type__rich_text.name,
                     'helpText': attribute_type__rich_text.help_text,
                     'format': 'RICH_TEXT',
+                    'unit': None,
+                    'showChoiceNames': attribute_type__rich_text.show_choice_names,
+                    'hasZeroOption': attribute_type__rich_text.has_zero_option,
                     'choiceOptions': [],
                 }, {
                     'identifier': attribute_type__ordered_choice.identifier,
                     'name': attribute_type__ordered_choice.name,
                     'helpText': attribute_type__ordered_choice.help_text,
                     'format': 'ORDERED_CHOICE',
+                    'unit': attribute_type__ordered_choice.unit,
+                    'showChoiceNames': attribute_type__ordered_choice.show_choice_names,
+                    'hasZeroOption': attribute_type__ordered_choice.has_zero_option,
                     'choiceOptions': [{
                         '__typename': 'AttributeTypeChoiceOption',
                     }],
