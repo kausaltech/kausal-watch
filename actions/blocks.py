@@ -128,8 +128,10 @@ class RelatedPlanListBlock(blocks.StaticBlock):
 @register_streamfield_block
 class ActionAttributeTypeFilterBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
+    show_all_label = blocks.CharBlock(required=False)
 
     graphql_fields = [
+        GraphQLString('show_all_label'),
         GraphQLForeignKey('attribute_type', AttributeType)
     ]
 
@@ -145,6 +147,7 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
 
     graphql_fields = [
         GraphQLString('style'),
+        GraphQLString('show_all_label'),
         GraphQLForeignKey('category_type', CategoryType)
     ]
 

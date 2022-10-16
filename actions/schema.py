@@ -1,3 +1,4 @@
+import typing
 from urllib.parse import urlparse
 from typing import Optional
 
@@ -18,7 +19,7 @@ from actions.models import (
     Action, ActionContactPerson, ActionImpact,
     ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask,
-    Category, CategoryLevel, AttributeCategoryChoice, AttributeChoice,
+    Category, CategoryLevel, AttributeCategoryChoice, AttributeChoice as AttributeChoiceModel,
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText,
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
@@ -28,7 +29,7 @@ from actions.models import (
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
-    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, set_active_plan
+    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, register_graphene_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
@@ -245,64 +246,61 @@ class PlanNode(DjangoNode):
         fields = public_fields(Plan)
 
 
+AttributeObject = typing.Union[
+    AttributeCategoryChoice, AttributeChoiceModel, AttributeChoiceWithText,
+    AttributeRichText, AttributeNumericValue,
+]
+
+
 class AttributeInterface(graphene.Interface):
     id = graphene.ID(required=True)
+    type_ = graphene.Field('actions.schema.AttributeTypeNode', name='type', required=True)
     key = graphene.String(required=True)
     key_identifier = graphene.String(required=True)
 
-    def resolve_key(self, info):
-        return self.type.name
+    @staticmethod
+    def resolve_key(root: AttributeObject, info):
+        return root.type.name
 
-    def resolve_key_identifier(self, info):
-        return self.type.identifier
+    @staticmethod
+    def resolve_key_identifier(root: AttributeObject, info):
+        return root.type.identifier
+
+    @staticmethod
+    def resolve_type_(root: AttributeObject, info) -> AttributeType:
+        return root.type
 
     @classmethod
     def resolve_type(cls, instance, info):
         if isinstance(instance, AttributeRichText):
             return AttributeRichTextNode
-        elif isinstance(instance, AttributeChoice):
-            return AttributeChoiceNode
-        elif isinstance(instance, AttributeChoiceWithText):
-            return AttributeChoiceWithTextNode
+        elif isinstance(instance, (AttributeChoiceModel, AttributeChoiceWithText)):
+            return AttributeChoice
         elif isinstance(instance, AttributeNumericValue):
             return AttributeNumericValueNode
         elif isinstance(instance, AttributeCategoryChoice):
             return AttributeCategoryChoiceNode
 
 
-@register_django_node
-class AttributeChoiceWithTextNode(DjangoNode):
-    choice = graphene.String(required=False)
-    choice_identifier = graphene.String(required=False)
+@register_graphene_node
+class AttributeChoice(graphene.ObjectType):
+    id = graphene.ID(required=True)
+    choice = graphene.Field(
+        'actions.schema.AttributeTypeChoiceOptionNode', required=False
+    )
     text = graphene.String(required=False)
 
-    def resolve_choice(self, info):
-        return self.choice.name
-
-    def resolve_choice_identifier(self, info):
-        return self.choice.identifier
+    def resolve_id(self, info):
+        if isinstance(self, AttributeChoiceModel):
+            prefix = 'C'
+        else:
+            prefix = 'CT'
+        return f'{prefix}{self.id}'
 
     def resolve_text(self, info):
-        return self.text
+        return getattr(self, 'text', None)
 
     class Meta:
-        model = AttributeChoiceWithText
-        interfaces = (AttributeInterface,)
-
-
-@register_django_node
-class AttributeChoiceNode(DjangoNode):
-    value = graphene.String(required=True)
-    value_identifier = graphene.String(required=True)
-
-    def resolve_value(self, info):
-        return self.choice.name
-
-    def resolve_value_identifier(self, info):
-        return self.choice.identifier
-
-    class Meta:
-        model = AttributeChoice
         interfaces = (AttributeInterface,)
 
 
@@ -310,8 +308,9 @@ class AttributeChoiceNode(DjangoNode):
 class AttributeRichTextNode(DjangoNode):
     value = graphene.String(required=True)
 
-    def resolve_value(self, info):
-        return self.text
+    @staticmethod
+    def resolve_value(root: AttributeRichText, info):
+        return root.text
 
     class Meta:
         model = AttributeRichText
