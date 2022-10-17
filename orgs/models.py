@@ -87,16 +87,28 @@ class OrganizationQuerySet(MP_NodeQuerySet):
     def editable_by_user(self, user: User):
         if user.is_superuser:
             return self
-        person = user.get_corresponding_person()
-        if not person:
-            return self.none()
+        # person = user.get_corresponding_person()
+        # if not person:
+        #     return self.none()
+        #
+        # metadata_admin_orgs = person.metadata_adminable_organizations.only('path')
+        # filters = [Q(path__startswith=org.path) for org in metadata_admin_orgs]
+        # if not filters:
+        #     return self.none()
+        # qs = functools.reduce(lambda x, y: x | y, filters)
+        # return self.filter(qs)
 
-        metadata_admin_orgs = person.metadata_adminable_organizations.only('path')
-        filters = [Q(path__startswith=org.path) for org in metadata_admin_orgs]
-        if not filters:
+        # For now, for general plan admins, we allow editing all organizations related to the plan
+        # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the commented-out code
+        # above
+        adminable_plans = user.get_adminable_plans()
+        if not adminable_plans:
             return self.none()
-        qs = functools.reduce(lambda x, y: x | y, filters)
-        return self.filter(qs)
+        q = Q()
+        for plan in adminable_plans:
+            related_orgs = plan.get_related_organizations()
+            q |= Q(pk__in=related_orgs)
+        return self.filter(q)
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         person = user.get_corresponding_person()
@@ -271,6 +283,14 @@ class Organization(index.Indexed, Node, gis_models.Model):
             intersection = ancestors & person.metadata_adminable_organizations.all()
             if intersection.exists():
                 return True
+
+        # For now, for general plan admins, we allow editing all organizations related to the plan
+        # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the code above
+        for plan in user.get_adminable_plans():
+            related_orgs = plan.get_related_organizations()
+            if related_orgs.filter(pk=self.pk).exists():
+                return True
+
         return False
 
     def user_can_change_related_to_plan(self, user, plan):

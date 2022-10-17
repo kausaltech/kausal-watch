@@ -238,6 +238,7 @@ PLAN_ADMIN_PERMS = (
     (Dimension, ALL_PERMS),
     (DimensionCategory, ALL_PERMS),
     (IndicatorDimension, ALL_PERMS),
+    (Organization, ALL_PERMS),
 
     (Person, ALL_PERMS),  # also delete perm for plan admin
 
