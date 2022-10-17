@@ -331,11 +331,10 @@ def test_attribute_choice_node(
                 }
                 choice {
                   __typename
+                  id
+                  identifier
+                  name
                 }
-                key
-                keyIdentifier
-                value
-                valueIdentifier
               }
             }
           }
@@ -346,17 +345,16 @@ def test_attribute_choice_node(
     expected = {
         'planCategories': [{
             'attributes': [{
-                'id': str(attribute_choice.id),
+                'id': 'C' + str(attribute_choice.id),
                 'type': {
                     '__typename': 'AttributeType',
                 },
                 'choice': {
                     '__typename': 'AttributeTypeChoiceOption',
+                    'id': str(attribute_type_choice_option.id),
+                    'identifier': attribute_type_choice_option.identifier,
+                    'name': attribute_type_choice_option.name,
                 },
-                'key': attribute_type__ordered_choice.name,
-                'keyIdentifier': attribute_type__ordered_choice.identifier,
-                'value': attribute_type_choice_option.name,
-                'valueIdentifier': attribute_type_choice_option.identifier,
             }]
         }]
     }
