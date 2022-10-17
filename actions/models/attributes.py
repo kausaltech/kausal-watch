@@ -175,7 +175,17 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     public_fields = ['id', 'identifier', 'name']
 
     class Meta:
-        unique_together = (('type', 'identifier'), ('type', 'order'),)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['type', 'identifier'],
+                name='unique_identifier_per_type',
+            ),
+            models.UniqueConstraint(
+                fields=['type', 'order'],
+                name='unique_order_per_type',
+                deferrable=models.Deferrable.DEFERRED,
+            ),
+        ]
         ordering = ('type', 'order')
         verbose_name = _('attribute choice option')
         verbose_name_plural = _('attribute choice options')
