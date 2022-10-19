@@ -178,7 +178,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         verbose_name=_('decision-making level')
     )
     categories = models.ManyToManyField(
-        'Category', blank=True, verbose_name=_('categories')
+        'Category', blank=True, verbose_name=_('categories'), related_name='actions',
     )
     indicators = models.ManyToManyField(
         'indicators.Indicator', blank=True, verbose_name=_('indicators'),

@@ -6,6 +6,7 @@ from django.utils.functional import cached_property, lazy
 from django.utils.translation import gettext_lazy as _
 from wagtail.core import blocks
 
+import graphene
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLString
 
@@ -124,6 +125,9 @@ class CategoryTreeMapBlock(blocks.StructBlock):
 class RelatedPlanListBlock(blocks.StaticBlock):
     pass
 
+#
+# Action List Filter blocks
+#
 
 @register_streamfield_block
 class ActionAttributeTypeFilterBlock(blocks.StructBlock):
@@ -132,7 +136,7 @@ class ActionAttributeTypeFilterBlock(blocks.StructBlock):
 
     graphql_fields = [
         GraphQLString('show_all_label'),
-        GraphQLForeignKey('attribute_type', AttributeType)
+        GraphQLForeignKey('attribute_type', AttributeType, required=True)
     ]
 
 
@@ -189,6 +193,33 @@ class ActionListFilterBlock(blocks.StreamBlock):
     attribute = ActionAttributeTypeFilterBlock()
     category = CategoryTypeFilterBlock()
 
+    graphql_types = [
+        ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
+        ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock
+    ]
+
+#
+# Action Details / Content blocks
+#
+
+
+@register_streamfield_block
+class ActionContentAttributeTypeBlock(blocks.StructBlock):
+    attribute_type = ActionAttributeTypeChooserBlock(required=True)
+
+    graphql_fields = [
+        GraphQLForeignKey('attribute_type', AttributeType, required=True)
+    ]
+
+
+@register_streamfield_block
+class ActionContentCategoryTypeBlock(blocks.StructBlock):
+    category_type = CategoryTypeChooserBlock(required=True)
+
+    graphql_fields = [
+        GraphQLForeignKey('category_type', CategoryType, required=True)
+    ]
+
 
 class ActionListContentBlock(blocks.StaticBlock):
     block_label: str
@@ -241,19 +272,28 @@ def generate_stream_block(
     name: str, all_blocks: dict[str, Type[blocks.Block]], fields: list[str | Tuple[str, blocks.Block]],
 ):
     field_blocks = {}
+    graphql_types = list()
     for field in fields:
         if isinstance(field, tuple):
             field_name, block = field
             field_blocks[field_name] = block
         else:
-            field_blocks[field] = all_blocks[field]()
+            field_name = field
+            block = all_blocks[field]()
 
-    block = type(name, (blocks.StreamBlock,), {
+        block_cls = type(block)
+        if block_cls not in graphql_types:
+            graphql_types.append(block_cls)
+        field_blocks[field_name] = block
+
+    block_class = type(name, (blocks.StreamBlock,), {
         '__module__': __name__,
         **field_blocks,
+        'graphql_types': graphql_types
     })
 
-    return register_streamfield_block(block)
+    register_streamfield_block(block_class)
+    return block_class
 
 
 action_attribute_blocks = generate_blocks_for_fields(Action, [
@@ -278,8 +318,8 @@ ActionMainContentBlock = generate_stream_block(
         'lead_paragraph',
         'description',
         'official_name',
-        ('attribute', ActionAttributeTypeChooserBlock(required=True, label=_('Attribute'))),
-        ('categories', CategoryTypeChooserBlock(required=True, label=_('Category'))),
+        ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
+        ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
         'links',
         'tasks',
         'merged_actions',
@@ -295,15 +335,15 @@ ActionAsideContentBlock = generate_stream_block(
         'schedule',
         'contact_persons',
         'responsible_parties',
-        ('attribute', ActionAttributeTypeChooserBlock(required=True, label=_('Attribute'))),
-        ('categories', CategoryTypeChooserBlock(required=True, label=_('Category'))),
+        ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
+        ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
     ],
 )
 
 
 def get_default_action_content_blocks(plan: Plan):
     action_ats: AttributeTypeQuerySet = AttributeType.objects.for_actions(plan)
-    action_cts = CategoryType.objects.filter(plan=plan, usable_for_actions=True)
+    action_cts = plan.category_types.filter(categories__actions__isnull=False, usable_for_actions=True).distinct()
 
     main_blocks_top = [
         {'type': 'lead_paragraph', 'value': None},
@@ -311,13 +351,13 @@ def get_default_action_content_blocks(plan: Plan):
         {'type': 'official_name', 'value': None},
         {'type': 'links', 'value': None},
         {'type': 'merged_actions', 'value': None},
-        *[{'type': 'attribute', 'value': atype.id} for atype in action_ats],
+        *[{'type': 'attribute', 'value': dict(attribute_type=atype.id)} for atype in action_ats],
         {'type': 'tasks', 'value': None},
     ]
     aside_blocks = [
         {'type': 'schedule', 'value': None},
-        {'type': 'responsible_party', 'value': None},
-        *[{'type': 'categories', 'value': ct.id} for ct in action_cts],
+        {'type': 'responsible_parties', 'value': None},
+        *[{'type': 'categories', 'value': dict(category_type=ct.id)} for ct in action_cts],
         {'type': 'contact_persons', 'value': None},
     ]
     main_blocks_bottom = [
@@ -338,7 +378,7 @@ def get_default_action_content_blocks(plan: Plan):
 
 
 def get_default_action_filter_blocks(plan: Plan):
-    filter_blocks = [
+    filter_blocks: list[dict] = [
         {'type': 'responsible_party', 'value': None},
         {'type': 'implementation_phase', 'value': None},
         {'type': 'schedule', 'value': None},

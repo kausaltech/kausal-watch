@@ -254,7 +254,7 @@ class Plan(ClusterableModel):
         return all_related.distinct()
 
     @property
-    def root_page(self):
+    def root_page(self) -> Page | None:
         if self.site_id is None:
             return None
         return self.site.root_page

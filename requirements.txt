@@ -447,7 +447,7 @@ wagtail-generic-chooser==0.3.1
     # via
     #   -r requirements.in
     #   wagtailsvg
-wagtail-grapple==0.14.1
+wagtail-grapple==0.17.1
     # via -r requirements.in
 wagtail-headless-preview==0.2.1
     # via wagtail-grapple

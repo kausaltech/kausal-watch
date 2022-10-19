@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+import graphene
 from grapple.models import (
     GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
     GraphQLString, GraphQLField
@@ -307,6 +308,19 @@ class FixedSlugPage(AplansPage):
     ]
 
 
+def streamfield_node_getter(field_name):
+    def get_node() -> GraphQLField:
+        from grapple.registry import registry
+
+        field = ActionListPage._meta.get_field(field_name)
+        assert isinstance(field, StreamField)
+        node = registry.streamfield_blocks[type(field.stream_block)]
+        field_type = graphene.List(graphene.NonNull(node))
+        return GraphQLField(field_name, field_type, required=False)  # type: ignore
+
+    return get_node
+
+
 class ActionListPage(FixedSlugPage):
     primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
@@ -336,27 +350,28 @@ class ActionListPage(FixedSlugPage):
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
-        GraphQLStreamfield('primary_filters'),
-        GraphQLStreamfield('main_filters'),
-        GraphQLStreamfield('advanced_filters'),
-        GraphQLStreamfield('details_main_top'),
-        GraphQLStreamfield('details_main_bottom'),
-        GraphQLStreamfield('details_main_aside'),
+        streamfield_node_getter('primary_filters'),
+        streamfield_node_getter('main_filters'),
+        streamfield_node_getter('advanced_filters'),
+        streamfield_node_getter('details_main_top'),
+        streamfield_node_getter('details_main_bottom'),
+        streamfield_node_getter('details_aside'),
     ]
 
     def set_default_content_blocks(self):
         plan: Plan = self.get_site().plan
+
         blks = get_default_action_content_blocks(plan)
-        print('%s <-- %s' % (self, plan))
         for key, val in blks.items():
             assert self._meta.get_field(key)
             setattr(self, key, val)
 
-            blks = get_default_action_filter_blocks(plan)
-            for key, val in blks.items():
-                assert self._meta.get_field(key)
-                setattr(self, key, val)
-            self.save()
+        blks = get_default_action_filter_blocks(plan)
+        for key, val in blks.items():
+            assert self._meta.get_field(key)
+            setattr(self, key, val)
+
+        self.save()
 
 
 class IndicatorListPage(FixedSlugPage):
