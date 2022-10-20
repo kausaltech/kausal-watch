@@ -163,9 +163,12 @@ class PersonPermissionHelper(PermissionHelper):
 
         return False
 
-    def user_can_edit_obj(self, user, obj: Person):
+    def user_can_edit_obj(self, user: 'User', obj: Person):
         if not super().user_can_edit_obj(user, obj):
             return False
+        # Users can always edit themselves
+        if obj.user == user:
+            return True
         return self._user_can_edit_or_delete(user, obj)
 
     def user_can_delete_obj(self, user, obj: Person):
@@ -297,17 +300,6 @@ class PersonAdmin(AplansModelAdmin):
             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
         ),
         FieldPanel('image', widget=AvatarWidget),
-        # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of the
-        # default value.
-        # TODO: No way to specify `primary_contact`.
-        # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
-        # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
-        # ordering because the order as displayed in the person admin view is not what we want -- the order we want
-        # should rather be the one as specified in the action edit view.
-        FieldPanel(
-            'contact_for_actions_unordered',
-            widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
-        ),
     ]
 
     def get_edit_handler(self, instance, request):
@@ -321,6 +313,17 @@ class PersonAdmin(AplansModelAdmin):
             basic_panels.append(FieldPanel(
                 'organization_plan_admin_orgs',
                 widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+            ))
+            # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of the
+            # default value.
+            # TODO: No way to specify `primary_contact`.
+            # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
+            # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
+            # ordering because the order as displayed in the person admin view is not what we want -- the order we want
+            # should rather be the one as specified in the action edit view.
+            basic_panels.append(FieldPanel(
+                'contact_for_actions_unordered',
+                widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
             ))
         else:
             form_class = PersonForm
