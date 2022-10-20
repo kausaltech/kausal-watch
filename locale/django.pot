@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-04 22:32+0300\n"
+"POT-Creation-Date: 2022-10-20 14:04+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -911,6 +911,22 @@ msgid "If the format is \"Category\", choose which category type the attribute v
 msgstr ""
 
 #: actions/models/attributes.py
+msgid "show choice names"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the choice names are displayed"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "has zero option"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
+msgstr ""
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr ""
 
@@ -1684,6 +1700,10 @@ msgstr ""
 msgid "User feedbacks"
 msgstr ""
 
+#: images/image_formats.py
+msgid "Full width (zoomable)"
+msgstr ""
+
 #: images/models.py
 msgid "Image byline or credits"
 msgstr ""
@@ -2380,7 +2400,7 @@ msgid "Organizations"
 msgstr ""
 
 #: orgs/forms.py
-msgid "A node cannot be its own parent."
+msgid "A node cannot be moved under itself in the hierarchy."
 msgstr ""
 
 #: orgs/models.py
