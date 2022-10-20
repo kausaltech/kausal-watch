@@ -313,7 +313,7 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
         plan: Plan = s.plan
         if not isinstance(data, list):
             raise exceptions.ValidationError('expecting a list')
-        available_orgs = {x for x in plan.get_related_organizations().values_list('id', flat=True)}
+        available_orgs = {x for x in Organization.objects.available_for_plan(plan).values_list('id', flat=True)}
         seen_orgs = set()
         for val in data:
             org_id = val.get('organization', None)
@@ -605,7 +605,7 @@ class ActionSerializer(
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
                 field_kwargs['allow_null'] = False
-                field_kwargs['queryset'] = self.plan.get_related_organizations()
+                field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
         elif field_name == 'related_actions':
@@ -1055,7 +1055,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             plan = Plan.objects.get(identifier=plan_identifier)
         except Plan.DoesNotExist:
             raise exceptions.NotFound(detail="Plan not found")
-        return plan.get_related_organizations()
+        return Organization.objects.available_for_plan(plan)
 
 
 class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):

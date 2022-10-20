@@ -17,7 +17,7 @@ class OrganizationAutocomplete(autocomplete.Select2QuerySetView):
 
         user = self.request.user
         plan = user.get_active_admin_plan()
-        qs = plan.get_related_organizations().filter(dissolution_date=None)
+        qs = Organization.objects.available_for_plan(plan).filter(dissolution_date=None)
 
         responsible = self.forwarded.get('responsible_for_actions')
         if responsible:

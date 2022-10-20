@@ -37,6 +37,21 @@ def test_organization_user_can_edit_metadata_admin_suborg(person):
     assert not organization.user_can_edit(person.user)
 
 
+def test_organization_queryset_available_for_plan(plan):
+    assert plan.organization
+    plan_org = plan.organization
+    org = OrganizationFactory()
+    # Creating a new root org might've changed the path of plan_org
+    plan_org.refresh_from_db()
+    sub_org1 = OrganizationFactory(parent=plan.organization)
+    sub_org2 = OrganizationFactory(parent=org)
+    result = list(Organization.objects.available_for_plan(plan))
+    assert result == [plan.organization, sub_org1]
+    plan.related_organizations.add(org)
+    result = set(Organization.objects.available_for_plan(plan))
+    assert result == set([plan_org, sub_org1, org, sub_org2])
+
+
 def test_organization_queryset_editable_by_user_related_plan_general_plan_admin_false(person):
     # plan = PlanFactory()
     # organization = OrganizationFactory()

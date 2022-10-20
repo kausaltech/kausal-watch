@@ -244,15 +244,6 @@ class Plan(ClusterableModel):
             raise ValidationError({'secondary_action_classification': _(
                 'Primary and secondary classification cannot be the same')})
 
-    def get_related_organizations(self) -> models.QuerySet[Organization]:
-        all_related = self.related_organizations.all()
-        for org in self.related_organizations.all():
-            all_related |= org.get_descendants()
-        if self.organization:
-            all_related |= Organization.objects.filter(id=self.organization.id)
-            all_related |= self.organization.get_descendants()
-        return all_related.distinct()
-
     @property
     def root_page(self) -> Page | None:
         if self.site_id is None:

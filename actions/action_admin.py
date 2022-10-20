@@ -287,7 +287,8 @@ class ActionCreateView(AplansCreateView):
         if plan.features.has_action_primary_orgs:
             person = self.request.user.get_corresponding_person()
             if person is not None:
-                default_org = plan.get_related_organizations().filter(id=person.organization_id).first()
+                available_orgs = Organization.objects.available_for_plan(plan)
+                default_org = available_orgs.filter(id=person.organization_id).first()
                 instance.primary_org = default_org
 
         return instance
@@ -402,7 +403,7 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
         )
         ct_filters = self.create_cat_filters(plan)
 
-        org_choices = [(str(org.id), str(org)) for org in plan.get_related_organizations()]
+        org_choices = [(str(org.id), str(org)) for org in Organization.objects.available_for_plan(plan)]
         org_filter = ChoiceFilter(
             name='organization',
             label=gettext('Organization'),

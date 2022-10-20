@@ -10,7 +10,7 @@ from django.db.models import F
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.translation import get_language, gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register
@@ -25,7 +25,7 @@ from aplans.utils import naturaltime
 
 from .admin import IsContactPersonFilter
 from .models import Person
-from orgs.models import OrganizationPlanAdmin
+from orgs.models import Organization, OrganizationPlanAdmin
 
 if typing.TYPE_CHECKING:
     from users.models import User
@@ -70,7 +70,7 @@ class PersonFormForGeneralAdmin(PersonForm):
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
         self.fields['organization_plan_admin_orgs'].queryset = (
-            self.plan.get_related_organizations().filter(dissolution_date=None)
+            Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
         )
         if self.instance.pk is not None:
             self.fields['organization_plan_admin_orgs'].initial = (
@@ -157,8 +157,8 @@ class PersonPermissionHelper(PermissionHelper):
 
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            related_orgs = plan.get_related_organizations().filter(dissolution_date=None)
-            if person.organization in related_orgs:
+            available_orgs = Organization.objects.available_for_plan(plan).filter(dissolution_date=None)
+            if person.organization in available_orgs:
                 return True
 
         return False

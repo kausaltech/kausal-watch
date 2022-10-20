@@ -106,9 +106,18 @@ class OrganizationQuerySet(MP_NodeQuerySet):
             return self.none()
         q = Q()
         for plan in adminable_plans:
-            related_orgs = plan.get_related_organizations()
-            q |= Q(pk__in=related_orgs)
+            available_orgs = Organization.objects.available_for_plan(plan)
+            q |= Q(pk__in=available_orgs)
         return self.filter(q)
+
+    def available_for_plan(self, plan):
+        all_related = plan.related_organizations.all()
+        for org in plan.related_organizations.all():
+            all_related |= org.get_descendants()
+        if plan.organization:
+            all_related |= Organization.objects.filter(id=plan.organization.id)
+            all_related |= plan.organization.get_descendants()
+        return self.filter(id__in=all_related)
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         person = user.get_corresponding_person()
@@ -153,6 +162,9 @@ class OrganizationManager(gis_models.Manager):
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         return self.get_queryset().user_is_plan_admin_for(user, plan)
+
+    def available_for_plan(self, plan):
+        return self.get_queryset().available_for_plan(plan)
 
 
 class Organization(index.Indexed, Node, gis_models.Model):
@@ -287,8 +299,8 @@ class Organization(index.Indexed, Node, gis_models.Model):
         # For now, for general plan admins, we allow editing all organizations related to the plan
         # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the code above
         for plan in user.get_adminable_plans():
-            related_orgs = plan.get_related_organizations()
-            if related_orgs.filter(pk=self.pk).exists():
+            available_orgs = Organization.objects.available_for_plan(plan)
+            if available_orgs.filter(pk=self.pk).exists():
                 return True
 
         return False
