@@ -498,7 +498,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         return len(active_tasks)
     active_task_count.short_description = _('Active tasks')
 
-    def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None):
+    def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None) -> str:
         if plan is None:
             plan = self.plan
         return '%s/actions/%s' % (plan.get_view_url(client_url=client_url), self.identifier)

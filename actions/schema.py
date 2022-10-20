@@ -607,13 +607,13 @@ class ActionTaskNode(DjangoNode):
 class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
-    name = graphene.String(hyphenated=graphene.Boolean())
+    name = graphene.String(hyphenated=graphene.Boolean(), required=True)
     categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID(), required=True)
     contact_persons = graphene.List(graphene.NonNull('actions.schema.ActionContactPersonNode'))
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
-    view_url = graphene.String(client_url=graphene.String(required=False))
+    view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
 
