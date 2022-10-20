@@ -5,15 +5,18 @@ from django.conf import settings
 from django.db import transaction
 
 import django_filters as filters
-from actions.models import Plan
-from aplans.utils import register_view_helper
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from sentry_sdk import capture_exception, push_scope
 
-from .models import ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, RelatedIndicator, Unit
+from .models import (
+    ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Quantity, RelatedIndicator, Unit
+)
+from actions.api import plan_router
+from actions.models import Plan
+from aplans.utils import register_view_helper
 from orgs.models import Organization
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
@@ -26,10 +29,26 @@ def register_view(klass, *args, **kwargs):
     return register_view_helper(all_views, klass, *args, **kwargs)
 
 
+class QuantitySerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='name_i18n')
+
+    class Meta:
+        model = Quantity
+        fields = ('id', 'name')
+
+
+@register_view
+class QuantityViewSet(viewsets.ModelViewSet):
+    queryset = Quantity.objects.all()
+    serializer_class = QuantitySerializer
+
+
 class UnitSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='name_i18n')
+
     class Meta:
         model = Unit
-        fields = ('name', 'verbose_name')
+        fields = ('id', 'name', 'verbose_name')
 
 
 @register_view
@@ -57,82 +76,10 @@ class RelatedEffectIndicatorSerializer(serializers.ModelSerializer):
 
 
 class IndicatorSerializer(serializers.ModelSerializer):
-    unit = serializers.CharField(source='unit.name')
-    related_effects = RelatedEffectIndicatorSerializer(many=True, required=False)
-    related_causes = RelatedCausalIndicatorSerializer(many=True, required=False)
-    levels = IndicatorLevelSerializer(many=True, required=False)
-    organization = serializers.PrimaryKeyRelatedField(
-        many=False, required=True, queryset=Organization.objects.filter(plans__isnull=False).distinct()
-    )
-
-    def validate(self, data):
-        data = super().validate(data)
-        org = data['organization']
-        levels = data.get('levels', None)
-        if levels:
-            for level in levels:
-                if level['plan'].organization != org:
-                    raise ValidationError('Attempting to set indicator level for wrong plan')
-
-        related_causes = data.get('related_causes', None)
-        if related_causes:
-            for ri in related_causes:
-                if ri['causal_indicator'].organization != org:
-                    raise ValidationError('Related indicators must have the same organization')
-        related_effects = data.get('related_effects', None)
-        if related_effects:
-            for ri in related_effects:
-                if ri['effect_indicator'].organization != org:
-                    raise ValidationError('Related indicators must have the same organization')
-
-        if Indicator.objects.filter(organization=org, name=data['name']).exists():
-            raise ValidationError('Indicator with the same name already exists for organization')
-
-        return data
-
-    def validate_levels(self, levels):
-        return levels
-
-    def validate_organization(self, val):
-        user = self.context['request'].user
-        admin_orgs = user.get_adminable_organizations()
-        if not user.is_superuser and val not in admin_orgs:
-            raise ValidationError('No permission for organisation %s' % val.name)
-        return val
-
-    def validate_unit(self, val):
-        try:
-            unit = Unit.objects.get(name=val)
-        except Unit.DoesNotExist:
-            raise ValidationError('Unit does not exist')
-        return unit
-
-    def create(self, validated_data):
-        unit = validated_data.pop('unit')['name']
-        levels = validated_data.pop('levels', None)
-        related_causes = validated_data.pop('related_causes', None)
-        related_effects = validated_data.pop('related_effects', None)
-
-        with transaction.atomic():
-            obj = Indicator.objects.create(unit=unit, **validated_data)
-            if levels:
-                level_objs = [IndicatorLevel(indicator=obj, plan=x['plan'], level=x['level']) for x in levels]
-                IndicatorLevel.objects.bulk_create(level_objs)
-            if related_causes:
-                ri_objs = [RelatedIndicator(effect_indicator=obj, **ri) for ri in related_causes]
-                RelatedIndicator.objects.bulk_create(ri_objs)
-            if related_effects:
-                ri_objs = [RelatedIndicator(causal_indicator=obj, **ri) for ri in related_effects]
-                RelatedIndicator.objects.bulk_create(ri_objs)
-
-        return obj
-
     class Meta:
         model = Indicator
         fields = (
-            'id', 'name', 'unit', 'levels', 'plans', 'description', 'categories',
-            'time_resolution', 'actions', 'related_effects', 'related_causes', 'updated_at',
-            'organization',
+            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization'
         )
 
 
@@ -140,9 +87,6 @@ class IndicatorFilter(filters.FilterSet):
     plans = filters.ModelMultipleChoiceFilter(
         field_name='plans__identifier', to_field_name='identifier',
         queryset=Plan.objects
-    )
-    organization = filters.ModelChoiceFilter(
-        queryset=Organization.objects.filter(indicators__isnull=False).distinct()
     )
 
     class Meta:
@@ -298,13 +242,18 @@ class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
         return user.can_modify_indicator(obj)
 
 
-@register_view
 class IndicatorViewSet(viewsets.ModelViewSet):
-    queryset = Indicator.objects.all().select_related('unit')
     serializer_class = IndicatorSerializer
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
     filterset_class = IndicatorFilter
+
+    def get_queryset(self):
+        plan_pk = self.kwargs.get('plan_pk')
+        if not plan_pk:
+            return Indicator.objects.none()
+        plan = Plan.objects.get(pk=plan_pk)
+        return Indicator.objects.available_for_plan(plan)
 
     def get_permissions(self):
         if self.action == 'update_values':
@@ -347,7 +296,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         return Response(resp)
 
     @goals.mapping.post
-    def update_goals(self, request, pk=None):
+    def update_goals(self, request, plan_pk, pk):
         indicator = Indicator.objects.get(pk=pk)
         serializer = IndicatorGoalSerializer(data=request.data, many=True, context={'indicator': indicator})
         if serializer.is_valid():
@@ -357,7 +306,7 @@ class IndicatorViewSet(viewsets.ModelViewSet):
         return Response({})
 
     @values.mapping.post
-    def update_values(self, request, pk=None):
+    def update_values(self, request, plan_pk, pk):
         indicator = Indicator.objects.prefetch_related(
             'dimensions', 'dimensions__dimension', 'dimensions__dimension__categories'
         ).get(pk=pk)
@@ -368,6 +317,9 @@ class IndicatorViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({})
+
+
+plan_router.register('indicators', IndicatorViewSet, basename='indicator')
 
 
 class ActionIndicatorSerializer(serializers.ModelSerializer):
