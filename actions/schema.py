@@ -436,7 +436,7 @@ class AttributesMixin:
         prefetch_related=(
             'rich_text_attributes', 'rich_text_attributes__type',
             'choice_attributes', 'choice_attributes__type', 'choice_attributes__choice',
-            'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice'
+            'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice',
             'numeric_value_attributes', 'numeric_value_attributes__type',
             'category_choice_attributes', 'category_choice_attributes__type'
         )
