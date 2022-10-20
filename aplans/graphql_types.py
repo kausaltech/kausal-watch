@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import functools
+import typing
 import graphene
 import re
 
@@ -13,6 +16,9 @@ from modeltrans.translator import get_i18n_field
 
 from actions.models import Plan
 from aplans.types import WatchAPIRequest
+
+if typing.TYPE_CHECKING:
+    from aplans.graphql_types import GQLInfo
 
 graphene_registry = []
 
@@ -80,7 +86,7 @@ def set_active_plan(info, plan):
     info.context._graphql_active_plan = plan
 
 
-def get_plan_from_context(info, plan_identifier=None):
+def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> Plan | None:
     if plan_identifier is None:
         plan = getattr(info.context, '_graphql_active_plan', None)
         if not plan:

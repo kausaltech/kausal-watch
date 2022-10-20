@@ -432,16 +432,31 @@ def get_translated_category_page(info, **kwargs):
 class AttributesMixin:
     attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False), required=True)
 
+    @gql_optimizer.resolver_hints(
+        prefetch_related=(
+            'rich_text_attributes', 'rich_text_attributes__type',
+            'choice_attributes', 'choice_attributes__type', 'choice_attributes__choice',
+            'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice'
+            'numeric_value_attributes', 'numeric_value_attributes__type',
+            'category_choice_attributes', 'category_choice_attributes__type'
+        )
+    )
     def resolve_attributes(self, info, id=None):
         query = Q()
         if id is not None:
             query = Q(type__identifier=id)
+        def filter_attrs(qs):
+            if not query:
+                return qs.all()
+            else:
+                return qs.filter(query)
+
         attributes = chain(
-            self.rich_text_attributes.filter(query),
-            self.choice_attributes.filter(query),
-            self.choice_with_text_attributes.filter(query),
-            self.numeric_value_attributes.filter(query),
-            self.category_choice_attributes.filter(query)
+            filter_attrs(self.rich_text_attributes),
+            filter_attrs(self.choice_attributes),
+            filter_attrs(self.choice_with_text_attributes),
+            filter_attrs(self.numeric_value_attributes),
+            filter_attrs(self.category_choice_attributes)
         )
         return sorted(attributes, key=lambda a: a.type.order)
 
@@ -593,7 +608,7 @@ class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean())
-    categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID())
+    categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID(), required=True)
     contact_persons = graphene.List(graphene.NonNull('actions.schema.ActionContactPersonNode'))
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
@@ -654,8 +669,8 @@ class ActionNode(AttributesMixin, DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(self, info, category_type=None):
-        qs = self.categories.all()
+    def resolve_categories(root: Action, info: GQLInfo, category_type=None):
+        qs = root.categories.all()
         if category_type is not None:
             qs = qs.filter(type__identifier=category_type)
         return qs
@@ -735,8 +750,8 @@ class Query:
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
 
     plan_actions = graphene.List(
-        ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
-        category=graphene.ID(), order_by=graphene.String()
+        graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
     )
     plan_categories = graphene.List(
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
@@ -794,12 +809,6 @@ class Query:
             qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
-
-    def resolve_categories(self, info, category_type):
-        qs = self.categories
-        if type is not None:
-            qs = qs.filter(type__identifier=type)
-        return qs
 
     def resolve_plan_categories(self, info, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
