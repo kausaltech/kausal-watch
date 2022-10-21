@@ -82,6 +82,15 @@ class IndicatorSerializer(serializers.ModelSerializer):
             'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization'
         )
 
+    def create(self, validated_data: dict):
+        instance = super().create(validated_data)
+        assert not instance.levels.exists()
+        plan = self.context['request'].user.get_active_admin_plan()
+        level = 'strategic'
+        assert level in [v for v, _ in Indicator.LEVELS]
+        instance.levels.create(plan=plan, level=level)
+        return instance
+
 
 class IndicatorFilter(filters.FilterSet):
     plans = filters.ModelMultipleChoiceFilter(
