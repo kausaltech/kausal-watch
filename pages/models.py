@@ -321,7 +321,24 @@ def streamfield_node_getter(field_name):
     return get_node
 
 
+# Adapted from graphene.types.enum.EnumMeta.from_enum() because the original doesn't let us change the name. So the type
+# created for ActionListPage.View would be called "View" instead of the more reasonable "ActionListPageView".
+def graphql_type_from_enum(enum, name=None):
+    meta_dict = {
+        "enum": enum,
+        "name": name,
+        "description": None,
+        "deprecation_reason": None,
+    }
+    meta_class = type("Meta", (object,), meta_dict)
+    return type(meta_class.enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})
+
+
 class ActionListPage(FixedSlugPage):
+    class View(models.TextChoices):
+        CARDS = 'cards', _('cards')
+        DASHBOARD = 'dashboard', _('dashboard')
+
     primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
@@ -332,6 +349,9 @@ class ActionListPage(FixedSlugPage):
 
     card_icon_category_type = models.ForeignKey(
         CategoryType, on_delete=models.SET_NULL, null=True, blank=True
+    )
+    default_view = models.CharField(
+        max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view')
     )
 
     force_slug = 'actions'
@@ -350,6 +370,10 @@ class ActionListPage(FixedSlugPage):
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
+        # Graphene / grapple don't allow us to easily add default_view here. If we added
+        # GraphQLField('default_view', graphene.Enum.from_enum(View), required=True),
+        # then the type would be called `View`, not `ActionListPageView`, as the automatically generated type is.
+        GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
         streamfield_node_getter('primary_filters'),
         streamfield_node_getter('main_filters'),
         streamfield_node_getter('advanced_filters'),
