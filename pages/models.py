@@ -235,9 +235,7 @@ class CategoryPage(AplansPage):
         ('action_list', ActionListBlock(label=_('Action list')))
     ], null=True, blank=True)
 
-    # Omit title field -- should be edited in CategoryAdmin
-    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
-    content_panels = inherited_content_panels + [
+    content_panels = AplansPage.content_panels + [
         FieldPanel('category', widget=CategoryChooser),
         StreamFieldPanel('body'),
     ]
