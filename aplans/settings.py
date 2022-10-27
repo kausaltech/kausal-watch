@@ -370,13 +370,19 @@ GRAPHENE = {
 # Since we send the language code of a plan to the client, let's make sure we use the upper-case format everywhere in
 # the backend already so we don't end up with different formats.
 LANGUAGES = (
-    ('fi', _('Finnish')),
-    ('en', _('English')),
-    ('en-AU', _('Australian English')),
-    ('sv', _('Swedish')),
-    ('de', _('German')),
     ('da', _('Danish')),
+    ('de', _('German')),
+    ('de-CH', _('German (Switzerland)')),
+    ('en', _('English')),
+    ('en-AU', _('English (Australia)')),
+    ('fi', _('Finnish')),
+    ('sv', _('Swedish')),
 )
+# For languages that Django has no translations for, we need to manually specify what the language is called in that
+# language. We use this for displaying the list of available languages in the user settings.
+LOCAL_LANGUAGE_NAMES = {
+    'de-CH': "Deutsch (Schweiz)",
+}
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
 MODELTRANS_FALLBACK = {'default': (), 'en-au': ('en',)}  # use language in default_language_field instead of a global fallback
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
