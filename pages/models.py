@@ -82,6 +82,10 @@ class AplansPage(Page):
     class Meta:
         abstract = True
 
+    @property
+    def preview_modes(self):
+        return []
+
     @classmethod
     def get_subclasses(cls):
         """Get implementations of this abstract base class"""
