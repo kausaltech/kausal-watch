@@ -338,8 +338,8 @@ def graphql_type_from_enum(enum, name=None):
 
 class ActionListPage(FixedSlugPage):
     class View(models.TextChoices):
-        CARDS = 'cards', _('cards')
-        DASHBOARD = 'dashboard', _('dashboard')
+        CARDS = 'cards', _('Cards')
+        DASHBOARD = 'dashboard', _('Dashboard')
 
     primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
@@ -353,12 +353,14 @@ class ActionListPage(FixedSlugPage):
         CategoryType, on_delete=models.SET_NULL, null=True, blank=True
     )
     default_view = models.CharField(
-        max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view')
+        max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view'),
+        help_text=_("Tab of the action list page that should be visible by default")
     )
 
     force_slug = 'actions'
 
     content_panels = FixedSlugPage.content_panels + [
+        FieldPanel('default_view'),
         MultiFieldPanel([
             StreamFieldPanel('primary_filters'),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
