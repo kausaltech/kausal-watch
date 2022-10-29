@@ -283,15 +283,12 @@ class FixedSlugPage(AplansPage):
         kwargs['slug'] = self.__class__.force_slug
         super().__init__(*args, **kwargs)
 
-    remove_page_listing_more_button = True
+    restrict_more_button_permissions_very_much = True
     remove_page_action_menu_items_except_publish = True
 
     lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
 
-    # Omit the title from the editable fields
-    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
-    content_panels = inherited_content_panels + [
-        FieldPanel('title'),
+    content_panels = AplansPage.content_panels + [
         FieldPanel('lead_content'),
     ]
     settings_panels = [
