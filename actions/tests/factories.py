@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import make_aware
 from factory import LazyAttribute, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
+from wagtail.core.models.i18n import Locale
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
@@ -35,6 +36,9 @@ class PlanFactory(ModelFactory[Plan]):
     @classmethod
     def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
         from actions.models.plan import set_default_page_creation
+
+        for language in kwargs.get('other_languages', []):
+            Locale.objects.get_or_create(language_code=language)
 
         with set_default_page_creation(create_default_pages):
             manager = cls._get_manager(model_class)
