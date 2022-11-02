@@ -373,7 +373,8 @@ LANGUAGES = (
     ('da', _('Danish')),
     ('de', _('German')),
     ('de-CH', _('German (Switzerland)')),
-    ('en', _('English')),
+    ('en', _('English (United States)')),
+    ('en-GB', _('English (United Kingdom)')),
     ('en-AU', _('English (Australia)')),
     ('fi', _('Finnish')),
     ('sv', _('Swedish')),
@@ -384,7 +385,13 @@ LOCAL_LANGUAGE_NAMES = {
     'de-CH': "Deutsch (Schweiz)",
 }
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
-MODELTRANS_FALLBACK = {'default': (), 'en-au': ('en',)}  # use language in default_language_field instead of a global fallback
+MODELTRANS_FALLBACK = {
+    'default': (),
+    'en-au': ('en',),
+    'en-gb': ('en',),
+    'de-ch': ('de',),
+}  # use language in default_language_field instead of a global fallback
+
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 WAGTAILSIMPLETRANSLATION_SYNC_PAGE_TREE = True
 
