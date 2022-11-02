@@ -89,7 +89,7 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
             if field.language != lang_code:
                 continue
             fields.append(FieldPanel(field.name))
-        tabs.append(ObjectList(fields, heading=languages_by_code[lang_code]))
+        tabs.append(ObjectList(fields, heading=languages_by_code[lang_code.lower()]))
     return tabs
 
 
