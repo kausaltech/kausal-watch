@@ -233,7 +233,6 @@ class ActionOfficialNameBlock(blocks.StructBlock):
     )
 
     graphql_fields = [
-        GraphQLForeignKey('category_type', CategoryType, required=True),
         GraphQLString('field_label'),
         GraphQLString('caption'),
     ]
