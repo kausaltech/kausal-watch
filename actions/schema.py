@@ -167,9 +167,6 @@ class PlanNode(DjangoNode):
                 return None
         return self.domains.filter(plan=self, hostname=hostname)
 
-    @gql_optimizer.resolver_hints(
-        model_field='domains',
-    )
     def resolve_view_url(self: Plan, info, client_url: Optional[str] = None):
         if client_url:
             try:
@@ -210,8 +207,9 @@ class PlanNode(DjangoNode):
     def resolve_action_attribute_types(self, info):
         return self.action_attribute_types.order_by('pk')
 
-    def resolve_primary_orgs(self, info):
-        qs = self.actions.all().values('primary_org')
+    @staticmethod
+    def resolve_primary_orgs(root: Plan, info):
+        qs = Action.objects.filter(plan=root).values_list('primary_org').distinct()
         return Organization.objects.filter(id__in=qs)
 
     @gql_optimizer.resolver_hints(

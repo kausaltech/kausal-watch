@@ -35,7 +35,9 @@ class OrganizationNode(DjangoNode):
     )
     parent = graphene.Field(lambda: OrganizationNode, required=False)
     logo = graphene.Field('images.schema.ImageNode', parent_fallback=graphene.Boolean(default_value=False), required=False)
-    plans_with_action_responsibilities = graphene.List('actions.schema.PlanNode')
+    plans_with_action_responsibilities = graphene.List(
+        graphene.NonNull('actions.schema.PlanNode'), except_plan=graphene.ID(required=False), required=True
+    )
 
     @staticmethod
     def resolve_ancestors(parent, info):
@@ -81,9 +83,17 @@ class OrganizationNode(DjangoNode):
                 org = org.get_parent()
         return None
 
-    def resolve_plans_with_action_responsibilities(root, info):
-        qs: PlanQuerySet = Plan.objects.filter(id__in=root.responsible_for_actions.values_list('plan'))
-        return qs.live()
+    @staticmethod
+    def resolve_plans_with_action_responsibilities(
+        root: Organization, info: GQLInfo, except_plan: str | None = None
+    ):
+        qs: PlanQuerySet = Plan.objects.filter(
+            id__in=root.responsible_for_actions.values_list('plan')
+        )
+        qs = qs.live()
+        if except_plan:
+            qs = qs.exclude(identifier=except_plan)
+        return qs
 
     class Meta:
         model = Organization
