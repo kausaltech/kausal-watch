@@ -31,6 +31,10 @@ class CategoryTypeBase(models.Model):
 
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
+    hide_category_identifiers = models.BooleanField(
+        default=False, verbose_name=_('hide category identifiers'),
+        help_text=_("Set if the categories do not have meaningful identifiers")
+    )
     lead_paragraph = models.TextField(verbose_name=_('lead paragraph'), null=True, blank=True)
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
     usable_for_actions = models.BooleanField(
@@ -52,7 +56,8 @@ class CategoryTypeBase(models.Model):
     select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
 
     public_fields = [
-        'name', 'identifier', 'lead_paragraph', 'help_text', 'usable_for_indicators', 'usable_for_actions',
+        'name', 'identifier', 'lead_paragraph', 'help_text', 'hide_category_identifiers',
+        'usable_for_indicators', 'usable_for_actions',
         'editable_for_actions', 'editable_for_indicators',
     ]
 
@@ -134,10 +139,6 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     """
 
     plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
-    hide_category_identifiers = models.BooleanField(
-        default=False, verbose_name=_('hide category identifiers'),
-        help_text=_("Set if the categories do not have meaningful identifiers")
-    )
     common = models.ForeignKey(
         CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
         verbose_name=_('common category type'), related_name='category_type_instances'
