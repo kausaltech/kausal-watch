@@ -221,6 +221,31 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
     ]
 
 
+@register_streamfield_block
+class ActionOfficialNameBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(
+        required=False,
+        help_text=_("What label should be used in the public UI for the official name"),
+        default='',
+    )
+    caption = blocks.CharBlock(
+        required=False, help_text=_("Description to show after the field content"), default='',
+    )
+
+    graphql_fields = [
+        GraphQLForeignKey('category_type', CategoryType, required=True),
+        GraphQLString('field_label'),
+        GraphQLString('caption'),
+    ]
+
+    def bulk_to_python(self, values):
+        # Workaround for migration from StaticBlock to StructBlock
+        li = list(values)
+        if len(li) == 1 and li[0] is None:
+            values = [{}]
+        return super().bulk_to_python(values)
+
+
 class ActionListContentBlock(blocks.StaticBlock):
     block_label: str
 
@@ -299,7 +324,6 @@ def generate_stream_block(
 action_attribute_blocks = generate_blocks_for_fields(Action, [
     'lead_paragraph',
     'description',
-    'official_name',
     'schedule',
     'links',
     'tasks',
@@ -317,9 +341,9 @@ ActionMainContentBlock = generate_stream_block(
     fields=[
         'lead_paragraph',
         'description',
-        'official_name',
-        ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
-        ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
+        ('official_name', ActionOfficialNameBlock(label=_('official name'))),
+        ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
+        ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
         'links',
         'tasks',
         'merged_actions',
