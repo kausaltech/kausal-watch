@@ -28,7 +28,7 @@ cachetools==5.2.0
     # via django-helusers
 celery==5.2.7
     # via -r requirements.in
-certifi==2022.6.15
+certifi==2022.9.24
     # via
     #   elasticsearch
     #   requests
@@ -57,9 +57,9 @@ coreapi==2.3.3
     # via -r requirements.in
 coreschema==0.0.4
     # via coreapi
-coverage[toml]==6.4.4
+coverage[toml]==6.5.0
     # via pytest-cov
-cryptography==37.0.4
+cryptography==38.0.3
     # via
     #   -r requirements.in
     #   social-auth-core
@@ -76,7 +76,7 @@ deprecation==2.1.0
     # via django-helusers
 diff-match-patch==20200713
     # via django-import-export
-django==3.2.15
+django==3.2.16
     # via
     #   -r requirements.in
     #   django-admin-numeric-filter
@@ -108,7 +108,7 @@ django==3.2.15
     #   wagtailfontawesome
 django-admin-numeric-filter==0.1.6
     # via -r requirements.in
-django-admin-ordering==0.15.0
+django-admin-ordering==0.16.1
     # via -r requirements.in
 django-anymail[mailgun,sendgrid]==8.6
     # via -r requirements.in
@@ -118,13 +118,13 @@ django-autocomplete-light==3.9.4
     # via
     #   -r requirements.in
     #   dal-admin-filters
-django-ckeditor==6.5.0
+django-ckeditor==6.5.1
     # via -r requirements.in
 django-cors-headers==3.13.0
     # via -r requirements.in
 django-environ==0.9.0
     # via -r requirements.in
-django-extensions==3.2.0
+django-extensions==3.2.1
     # via -r requirements.in
 django-filter==22.1
     # via
@@ -134,7 +134,7 @@ django-helusers==0.7.1
     # via -r requirements.in
 django-image-cropping==1.7
     # via -r requirements.in
-django-import-export==2.8.0
+django-import-export==3.0.1
     # via -r requirements.in
 django-js-asset==2.0.0
     # via
@@ -152,13 +152,13 @@ django-permissionedforms==0.1
     # via wagtail
 django-redis==5.2.0
     # via -r requirements.in
-django-reversion @ https://github.com/kausaltech/django-reversion/archive/7b67c9df.zip
+django-reversion==5.0.3
     # via -r requirements.in
 django-taggit==3.0.0
     # via wagtail
 django-treebeard==4.5.1
     # via wagtail
-djangorestframework==3.13.1
+djangorestframework==3.14.0
     # via
     #   -r requirements.in
     #   drf-nested-routers
@@ -168,13 +168,13 @@ draftjs-exporter==2.1.7
     # via wagtail
 drf-nested-routers==0.93.4
     # via -r requirements.in
-drf-spectacular==0.23.1
+drf-spectacular==0.24.2
     # via -r requirements.in
 easy-thumbnails==2.8.3
     # via -r requirements.in
 ecdsa==0.18.0
     # via python-jose
-elasticsearch==7.17.6
+elasticsearch==7.17.7
     # via
     #   -r requirements.in
     #   elasticsearch-dsl
@@ -182,14 +182,16 @@ elasticsearch-dsl==7.4.0
     # via -r requirements.in
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.0.0
+    # via pytest
 factory-boy==3.2.1
     # via
     #   -r requirements.in
     #   pytest-factoryboy
     #   wagtail-factories
-faker==14.2.0
+faker==15.1.3
     # via factory-boy
-graphene==3.1
+graphene==3.1.1
     # via graphene-django
 graphene-django @ https://github.com/graphql-python/graphene-django/archive/2aeb86ba3bed7dc821cc8508e1dca8297aa7dea4.zip
     # via
@@ -197,7 +199,7 @@ graphene-django @ https://github.com/graphql-python/graphene-django/archive/2aeb
     #   wagtail-grapple
 graphene-django-optimizer @ https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip
     # via -r requirements.in
-graphql-core==3.2.1
+graphql-core==3.2.3
     # via
     #   -r requirements.in
     #   graphene
@@ -210,9 +212,9 @@ graphql-relay==3.2.0
     #   graphene-django
 html5lib==1.1
     # via wagtail
-humanize==4.3.0
+humanize==4.4.0
     # via -r requirements.in
-idna==3.3
+idna==3.4
     # via requests
 inflection==0.5.1
     # via
@@ -226,7 +228,7 @@ jinja2==3.1.2
     # via
     #   -r requirements.in
     #   coreschema
-jsonschema==4.15.0
+jsonschema==4.17.0
     # via drf-spectacular
 kombu==5.2.4
     # via celery
@@ -244,25 +246,27 @@ markupsafe==2.1.1
     # via jinja2
 milksnake==0.1.5
     # via rustface
-oauthlib==3.2.0
+oauthlib==3.2.2
     # via
     #   requests-oauthlib
     #   social-auth-core
 odfpy==1.4.1
     # via tablib
 openpyxl==3.0.10
-    # via tablib
+    # via
+    #   tablib
+    #   wagtail
 packaging==21.3
     # via
     #   deprecation
     #   pytest
     #   redis
-pillow==9.2.0
+pillow==9.3.0
     # via
     #   -r requirements.in
     #   easy-thumbnails
     #   wagtail
-plotly==5.10.0
+plotly==5.11.0
     # via -r requirements.in
 pluggy==1.0.0
     # via pytest
@@ -272,10 +276,8 @@ promise==2.3
     # via graphene-django
 prompt-toolkit==3.0.31
     # via click-repl
-psycopg2-binary==2.9.3
+psycopg2-binary==2.9.5
     # via -r requirements.in
-py==1.11.0
-    # via pytest
 pyasn1==0.4.8
     # via
     #   python-jose
@@ -288,18 +290,18 @@ pygments==2.13.0
     #   rich
 pygments-graphql==1.0.0
     # via -r requirements.in
-pyjwt==2.4.0
+pyjwt==2.6.0
     # via social-auth-core
 pyparsing==3.0.9
     # via packaging
-pyrsistent==0.18.1
+pyrsistent==0.19.2
     # via jsonschema
-pytest==7.1.3
+pytest==7.2.0
     # via
     #   pytest-cov
     #   pytest-django
     #   pytest-factoryboy
-pytest-cov==3.0.0
+pytest-cov==4.0.0
     # via -r requirements.in
 pytest-django==4.5.2
     # via -r requirements.in
@@ -315,7 +317,7 @@ python-jose==3.3.0
     #   django-helusers
 python3-openid==3.2.0
     # via social-auth-core
-pytz==2022.2.1
+pytz==2022.6
     # via
     #   celery
     #   django
@@ -340,13 +342,13 @@ requests==2.28.1
     #   wagtail-generic-chooser
 requests-oauthlib==1.3.1
     # via social-auth-core
-rich==12.5.1
+rich==12.6.0
     # via -r requirements.in
 rsa==4.9
     # via python-jose
 rustface==0.1.0
     # via -r requirements.in
-sentry-sdk==1.9.8
+sentry-sdk==1.10.1
     # via -r requirements.in
 six==1.16.0
     # via
@@ -364,25 +366,23 @@ social-auth-core==4.3.0
     # via social-auth-app-django
 soupsieve==2.3.2.post1
     # via beautifulsoup4
-sqlparse==0.4.2
+sqlparse==0.4.3
     # via django
 tablib[html,ods,xls,xlsx,yaml]==3.2.1
-    # via
-    #   django-import-export
-    #   wagtail
-telepath==0.2
+    # via django-import-export
+telepath==0.3
     # via wagtail
-tenacity==8.0.1
+tenacity==8.1.0
     # via plotly
 text-unidecode==1.3
     # via graphene-django
-tinycss2==1.1.1
+tinycss2==1.2.1
     # via -r requirements.in
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.3.0
+typing-extensions==4.4.0
     # via
     #   pytest-factoryboy
     #   wagtail-localize
@@ -401,7 +401,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-wagtail==4.0.1
+wagtail==4.1
     # via
     #   -r requirements.in
     #   wagtail-autocomplete
@@ -424,11 +424,11 @@ wagtail-generic-chooser==0.4.0
     # via
     #   -r requirements.in
     #   wagtailsvg
-wagtail-grapple @ https://github.com/kausaltech/wagtail-grapple/archive/d899abc82047a1c22f0df8d19a8232b173ba17b0.zip
+wagtail-grapple @ https://github.com/kausaltech/wagtail-grapple/archive/be8e27bee0d7eae6a943ca360d8b4211bfded4c4.zip
     # via -r requirements.in
-wagtail-headless-preview==0.3.0
+wagtail-headless-preview==0.4.0
     # via wagtail-grapple
-wagtail-localize @ https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
+wagtail-localize==1.3.1
     # via -r requirements.in
 wagtail-orderable==1.1.0
     # via -r requirements.in
@@ -436,7 +436,7 @@ wagtailfontawesome==1.2.1
     # via -r requirements.in
 wagtailgeowidget==6.2.0
     # via -r requirements.in
-wagtailsvg==0.0.33
+wagtailsvg==0.0.35
     # via -r requirements.in
 wcwidth==0.2.5
     # via prompt-toolkit
@@ -450,7 +450,5 @@ wrapt==1.14.1
     # via deprecated
 xlrd==2.0.1
     # via tablib
-xlsxwriter==3.0.3
-    # via wagtail
 xlwt==1.3.0
     # via tablib

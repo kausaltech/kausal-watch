@@ -32,7 +32,7 @@ Jinja2
 django-parler
 django-anymail[mailgun]
 django-anymail[sendgrid]
-https://github.com/kausaltech/django-reversion/archive/7b67c9df.zip
+django-reversion
 pytest-django
 pytest-cov
 factory-boy
@@ -40,11 +40,12 @@ wagtail-factories
 pytest-factoryboy
 libvoikko
 https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
-wagtail>3.0
+wagtail>=4.1
 wagtail-autocomplete
 wagtailfontawesome
 wagtail-generic-chooser
-https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
+wagtail-localize
+#https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
 rustface
 django-npm
 django-autocomplete-light
@@ -52,7 +53,7 @@ coreapi
 pyyaml
 django_redis
 uritemplate
-https://github.com/kausaltech/wagtail-grapple/archive/d899abc82047a1c22f0df8d19a8232b173ba17b0.zip
+https://github.com/kausaltech/wagtail-grapple/archive/be8e27bee0d7eae6a943ca360d8b4211bfded4c4.zip
 tinycss2
 wagtail-admin-list-controls
 humanize
