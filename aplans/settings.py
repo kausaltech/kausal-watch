@@ -356,6 +356,7 @@ GRAPHENE = {
     'MIDDLEWARE': [
         'aplans.graphene_views.APITokenMiddleware',
     ],
+    'DJANGO_CHOICE_FIELD_ENUM_V2_NAMING': True,
 }
 
 # Internationalization
