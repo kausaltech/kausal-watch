@@ -7,7 +7,15 @@ DB_ENDPOINT=${DB_ENDPOINT:-db:5432}
 if [ "$1" = 'uwsgi' -o "$1" = 'celery' -o "$1" = 'runserver' ]; then
     /wait-for-it.sh $DB_ENDPOINT
     cd /code
-    python manage.py migrate --no-input
+    if [ "$1" = 'celery' ]; then
+        # If we're in a celery container, wait for the app container
+        # to start first so that migrations are run.
+        if ! /wait-for-it.sh -t 5 app:8000 ; then
+            echo "App container didn't start, but we don't care"
+        fi
+    else
+        python manage.py migrate --no-input
+    fi
     if [ -d '/docker-entrypoint.d' ]; then
         for scr in /docker-entrypoint.d/*.sh ; do
             echo "Running $scr"

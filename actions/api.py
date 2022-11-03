@@ -30,7 +30,7 @@ from people.models import Person
 from users.models import User
 
 from .models import (
-    Action, ActionDecisionLevel, ActionImpact, ActionSchedule, ActionStatus,
+    Action, ActionDecisionLevel, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus,
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, Plan,
     Scenario
 )
@@ -303,19 +303,35 @@ class ActionResponsiblePartySerializer(serializers.Serializer):
     parent: ActionSerializer
 
     def to_representation(self, value):
-        return [v.organization_id for v in value.all()]
+        return [{
+            'organization': v.organization_id,
+            'role': v.role,
+        } for v in value.all()]
 
     def to_internal_value(self, data):
         s = self.parent
         plan: Plan = s.plan
         if not isinstance(data, list):
             raise exceptions.ValidationError('expecting a list')
-        available_orgs = {x for x in plan.get_related_organizations().values_list('id', flat=True)}
+        available_orgs = {x for x in Organization.objects.available_for_plan(plan).values_list('id', flat=True)}
+        seen_orgs = set()
         for val in data:
-            if not isinstance(val, int):
-                raise exceptions.ValidationError('expecting a list of ints')
-            if val not in available_orgs:
-                raise exceptions.ValidationError('%d not available for plan' % val)
+            org_id = val.get('organization', None)
+            role = val.get('role', None)
+            if not (isinstance(val, dict)
+                    and isinstance(org_id, int)
+                    and (role is None or isinstance(role, str))):
+                raise exceptions.ValidationError(
+                    'expecting a list of dicts mapping "organization" to int and "role" to str or None'
+                )
+            if val['organization'] not in available_orgs:
+                raise exceptions.ValidationError('%d not available for plan' % val['organization'])
+            if val['role'] not in ActionResponsibleParty.Role.values:
+                raise exceptions.ValidationError(f"{val['role']} is not a valid role")
+            if org_id in seen_orgs:
+                raise exceptions.ValidationError(_("Organization occurs multiple times as responsible party"))
+            seen_orgs.add(org_id)
+            val['organization'] = Organization.objects.get(id=org_id)
         return data
 
     def update(self, instance: Action, validated_data):
@@ -589,7 +605,7 @@ class ActionSerializer(
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
                 field_kwargs['allow_null'] = False
-                field_kwargs['queryset'] = self.plan.get_related_organizations()
+                field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
         elif field_name == 'related_actions':
@@ -1039,7 +1055,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             plan = Plan.objects.get(identifier=plan_identifier)
         except Plan.DoesNotExist:
             raise exceptions.NotFound(detail="Plan not found")
-        return plan.get_related_organizations()
+        return Organization.objects.available_for_plan(plan)
 
 
 class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):

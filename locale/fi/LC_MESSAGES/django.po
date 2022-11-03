@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-20 12:22+0300\n"
-"PO-Revision-Date: 2022-09-19 23:02+0300\n"
+"POT-Creation-Date: 2022-11-03 12:42+0200\n"
+"PO-Revision-Date: 2022-11-03 12:45+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -189,6 +189,10 @@ msgid "action"
 msgstr "toimenpide"
 
 #: actions/api.py
+msgid "Organization occurs multiple times as responsible party"
+msgstr ""
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr "Tunniste pitää asettaa"
 
@@ -234,7 +238,7 @@ msgstr "Otsikko"
 msgid "Lead"
 msgstr "Johdanto"
 
-#: actions/blocks.py
+#: actions/blocks.py pages/models.py
 msgid "Cards"
 msgstr "Kortit"
 
@@ -264,6 +268,10 @@ msgid "responsible party"
 msgstr "vastuutaho"
 
 #: actions/blocks.py actions/models/action.py
+msgid "primary organization"
+msgstr "pääorganisaatio"
+
+#: actions/blocks.py actions/models/action.py
 msgid "implementation phase"
 msgstr "toteutusvaihe"
 
@@ -272,14 +280,28 @@ msgid "schedule"
 msgstr "aikajänne"
 
 #: actions/blocks.py
+msgid "What label should be used in the public UI for the official name"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Description to show after the field content"
+msgstr ""
+
+#: actions/blocks.py
+#, python-format
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
+
+#: actions/blocks.py actions/models/action.py
+msgid "official name"
+msgstr "virallinen nimi"
 
 #: actions/blocks.py
 msgid "Attribute"
 msgstr "Ominaisuus"
 
-#: actions/blocks.py pages/blocks.py pages/models.py
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
 msgid "Category"
 msgstr "Luokka"
 
@@ -495,14 +517,6 @@ msgid "plan"
 msgstr "toimenpideohjelma"
 
 #: actions/models/action.py
-msgid "primary organization"
-msgstr "pääorganisaatio"
-
-#: actions/models/action.py
-msgid "official name"
-msgstr "virallinen nimi"
-
-#: actions/models/action.py
 msgid "The name as approved by an official party"
 msgstr "Virallisen tahon hyväksymä nimi"
 
@@ -648,10 +662,40 @@ msgstr "Yhteyshenkilöt nimetty"
 msgid "Active tasks"
 msgstr "Aktiivisia tehtäviä"
 
+#: actions/models/action.py
+#, fuzzy
+#| msgid "responsible party"
+msgid "Primary responsible party"
+msgstr "vastuutaho"
+
+#: actions/models/action.py
+msgid "Collaborator"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Unspecified"
+msgstr ""
+
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
 msgid "organization"
 msgstr "organisaatio"
+
+#: actions/models/action.py
+msgid "role"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "identifier"
+msgid "specifier"
+msgstr "tunniste"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "responsible organizations"
+msgid "The responsibility domain for the organization"
+msgstr "vastuuorganisaatiot"
 
 #: actions/models/action.py
 msgid "action responsible party"
@@ -872,6 +916,30 @@ msgid "Unit (only if format is numeric)"
 msgstr "Yksikkö (ainoastaan jos muoto on numeerinen)"
 
 #: actions/models/attributes.py
+msgid "Category type (if format is category)"
+msgstr "Luokan tyyppi (jos muoto on luokka)"
+
+#: actions/models/attributes.py
+msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgstr "Jos muoto on \"luokka\", valitse minkä luokkatyypin luokkia voi valita ominaisuuden arvoiksi"
+
+#: actions/models/attributes.py
+msgid "show choice names"
+msgstr "näytä valintavaihtoehtojen otsikot"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the choice names are displayed"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "has zero option"
+msgstr "ensimmäinen vaihtoehto on nolla"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
+msgstr ""
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr "ominaisuustyyppi"
 
@@ -896,12 +964,20 @@ msgid "Text"
 msgstr "Teksti"
 
 #: actions/models/category.py
+msgid "Single"
+msgstr "Yksi"
+
+#: actions/models/category.py
 msgid "Multiple"
 msgstr "Monta"
 
 #: actions/models/category.py
-msgid "Single"
-msgstr "Yksi"
+msgid "hide category identifiers"
+msgstr "piilota kategorioiden tunnisteet"
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Aseta jos kategorioilla ei ole tunnisteita"
 
 #: actions/models/category.py
 msgid "lead paragraph"
@@ -924,6 +1000,15 @@ msgid "editable for indicators"
 msgstr "muokattavissa mittareille"
 
 #: actions/models/category.py
+msgid "single or multiple selection"
+msgstr "yksi- vai moniarvoinen kategoria"
+
+#: actions/models/category.py
+#, python-brace-format
+msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
+msgstr "Valitse \"{choice_multiple}\" jos useampi kuin yksi kategoria voidaan valita kerralla, muuten valitse oletusarvo \"{choice_single}\"."
+
+#: actions/models/category.py
 msgid "has a collection"
 msgstr "kategorialla on kokoelma"
 
@@ -938,14 +1023,6 @@ msgstr "yleisen luokan tyyppi"
 #: actions/models/category.py
 msgid "common category types"
 msgstr "yhteisten luokkien tyypit"
-
-#: actions/models/category.py
-msgid "hide category identifiers"
-msgstr "piilota kategorioiden tunnisteet"
-
-#: actions/models/category.py
-msgid "Set if the categories do not have meaningful identifiers"
-msgstr "Aseta jos kategorioilla ei ole tunnisteita"
 
 #: actions/models/category.py
 msgid "synchronize with pages"
@@ -1032,8 +1109,10 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: actions/models/features.py
-msgid "Contact persons private"
-msgstr "Yhteyshenkilöt salaisia"
+#, fuzzy
+#| msgid "Contact persons"
+msgid "Contact persons public"
+msgstr "Yhteyshenkilöt"
 
 #: actions/models/features.py
 msgid "Set if the contact persons should be visible in the public UI"
@@ -1078,6 +1157,18 @@ msgstr "Hakutoiminnallisuudet käytössä"
 #: actions/models/features.py
 msgid "Enable site-wide search functionality"
 msgstr "Ota sivuston kattava hakutoiminnallisuus käyttöön"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "usable for indicator categorization"
+msgid "Enable indicator comparison"
+msgstr "käytetään mittareiden luokitukseen"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "usable for indicator categorization"
+msgid "Set to enable comparing indicators between organizations"
+msgstr "käytetään mittareiden luokitukseen"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1183,6 +1274,16 @@ msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Mittarit"
+
+#: actions/models/plan.py
+msgid "Privacy"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Accessibility contact email"
+msgid "Accessibility"
+msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
 
 #: actions/models/plan.py
 msgid "general plan admin"
@@ -1471,28 +1572,36 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr ""
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr "suomi"
-
-#: aplans/settings.py
-msgid "English"
-msgstr "englanti"
-
-#: aplans/settings.py
-msgid "Australian English"
-msgstr "Englanti (Australia)"
-
-#: aplans/settings.py
-msgid "Swedish"
-msgstr "ruotsi"
+msgid "Danish"
+msgstr "tanska"
 
 #: aplans/settings.py
 msgid "German"
 msgstr "saksa"
 
 #: aplans/settings.py
-msgid "Danish"
-msgstr "tanska"
+msgid "German (Switzerland)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United States)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United Kingdom)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (Australia)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr "suomi"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "ruotsi"
 
 #: aplans/utils.py
 msgid "order"
@@ -1576,18 +1685,6 @@ msgid "Link to GitHub repository for UI"
 msgstr "Linkki käyttöliittymäprojektin GitHubiin"
 
 #: content/models.py
-msgid "Body responsible for site accessibility"
-msgstr "Sivuston saavutettavuudesta vastaa"
-
-#: content/models.py
-msgid "Set if different from the owner of the site"
-msgstr "Aseta jos eri kuin sivuston omistajaorganisaatio"
-
-#: content/models.py
-msgid "Accessibility contact email"
-msgstr "Sähköpostiosoite saavutettavuuspalautteelle"
-
-#: content/models.py
 msgid "Term to use for 'action'"
 msgstr "Nimi, jolla kutsutaan toimenpiteitä"
 
@@ -1646,6 +1743,10 @@ msgstr "käyttäjien palautteet"
 #: feedback/wagtail_admin.py
 msgid "User feedbacks"
 msgstr "Käyttäjien palautteet"
+
+#: images/image_formats.py
+msgid "Full width (zoomable)"
+msgstr "Täysi leveys (suurennettava)"
 
 #: images/models.py
 msgid "Image byline or credits"
@@ -2388,7 +2489,7 @@ msgid "Organizations"
 msgstr "Organisaatiot"
 
 #: orgs/forms.py
-msgid "A node cannot be its own parent."
+msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
 
 #: orgs/models.py
@@ -2504,6 +2605,18 @@ msgid "Should the page be shown in the footer?"
 msgstr "Näytetäänkö sivu footerissa?"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Show admin link"
+msgid "show in additional links"
+msgstr "Näytä ylläpidon linkki"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Should the page be shown in the footer?"
+msgid "Should the page be shown in the additional links?"
+msgstr "Näytetäänkö sivu footerissa?"
+
+#: pages/models.py
 msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
 
@@ -2606,6 +2719,20 @@ msgstr "Luokkasivut"
 #: pages/models.py
 msgid "lead content"
 msgstr "johdanto"
+
+#: pages/models.py
+msgid "Dashboard"
+msgstr ""
+
+#: pages/models.py
+msgid "default view"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if the contact persons should be visible in the public UI"
+msgid "Tab of the action list page that should be visible by default"
+msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: pages/models.py
 msgid "Main filters"
@@ -2887,6 +3014,21 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "English"
+#~ msgstr "englanti"
+
+#~ msgid "Australian English"
+#~ msgstr "Englanti (Australia)"
+
+#~ msgid "Contact persons private"
+#~ msgstr "Yhteyshenkilöt salaisia"
+
+#~ msgid "Body responsible for site accessibility"
+#~ msgstr "Sivuston saavutettavuudesta vastaa"
+
+#~ msgid "Set if different from the owner of the site"
+#~ msgstr "Aseta jos eri kuin sivuston omistajaorganisaatio"
 
 #~ msgid "short description"
 #~ msgstr "lyhyt kuvaus"

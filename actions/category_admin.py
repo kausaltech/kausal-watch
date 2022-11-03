@@ -374,6 +374,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('identifier'),
+        FieldPanel('hide_category_identifiers'),
         FieldPanel('lead_paragraph'),
         FieldPanel('help_text'),
         FieldPanel('primary_language'),

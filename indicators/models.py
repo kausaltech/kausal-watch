@@ -276,7 +276,9 @@ class FrameworkIndicator(models.Model):
 
 
 class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
-    pass
+    def available_for_plan(self, plan):
+        related_orgs = Organization.objects.available_for_plan(plan)
+        return self.filter(organization__in=related_orgs)
 
 
 class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel):

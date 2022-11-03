@@ -29,8 +29,8 @@ class NodeForm(WagtailAdminModelForm):
 
     def clean_parent(self):
         parent = self.cleaned_data['parent']
-        if parent is not None and parent == self.instance:
-            raise ValidationError(_("A node cannot be its own parent."), code='invalid_parent')
+        if parent is not None and parent == self.instance or parent in self.instance.get_descendants():
+            raise ValidationError(_("A node cannot be moved under itself in the hierarchy."), code='invalid_parent')
         return parent
 
     def save(self, commit=True, *args, **kwargs):
@@ -51,9 +51,9 @@ class NodeForm(WagtailAdminModelForm):
                 if parent is None:
                     # Make instance another root
                     previous_root = instance.get_root()
-                    instance.move(previous_root, pos='sorted-sibling')
+                    instance.move(previous_root, pos='last-sibling')
                 else:
-                    instance.move(parent, pos='sorted-child')
+                    instance.move(parent, pos='last-child')
                 # Need to reload instance after move.
                 # Note that instance.refresh_from_db() won't cut it because get_parent() will then still return the old
                 # parent if we don't call it with `update=True`.

@@ -82,7 +82,7 @@ class ActionGraphGenerator(GraphGenerator):
             url = reverse('action-detail', kwargs={'plan_pk': obj.plan.pk, 'pk': obj.pk})
             obj_type = 'action'
         elif isinstance(obj, Indicator):
-            url = reverse('indicator-detail', kwargs={'pk': obj.pk})
+            url = reverse('indicator-detail', kwargs={'plan_pk': self.plan.pk, 'pk': obj.pk})
             obj_type = 'indicator'
             d['indicator_level'] = self.get_indicator_level(obj)
             d['time_resolution'] = obj.time_resolution

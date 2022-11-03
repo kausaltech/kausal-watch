@@ -331,11 +331,10 @@ def test_attribute_choice_node(
                 }
                 choice {
                   __typename
+                  id
+                  identifier
+                  name
                 }
-                key
-                keyIdentifier
-                value
-                valueIdentifier
               }
             }
           }
@@ -346,17 +345,16 @@ def test_attribute_choice_node(
     expected = {
         'planCategories': [{
             'attributes': [{
-                'id': str(attribute_choice.id),
+                'id': 'C' + str(attribute_choice.id),
                 'type': {
                     '__typename': 'AttributeType',
                 },
                 'choice': {
                     '__typename': 'AttributeTypeChoiceOption',
+                    'id': str(attribute_type_choice_option.id),
+                    'identifier': attribute_type_choice_option.identifier,
+                    'name': attribute_type_choice_option.name,
                 },
-                'key': attribute_type__ordered_choice.name,
-                'keyIdentifier': attribute_type__ordered_choice.identifier,
-                'value': attribute_type_choice_option.name,
-                'valueIdentifier': attribute_type_choice_option.identifier,
             }]
         }]
     }
@@ -454,6 +452,11 @@ def test_attribute_type_node(
                 name
                 helpText
                 format
+                unit {
+                  __typename
+                }
+                showChoiceNames
+                hasZeroOption
                 choiceOptions {
                   __typename
                 }
@@ -472,12 +475,18 @@ def test_attribute_type_node(
                     'name': attribute_type__rich_text.name,
                     'helpText': attribute_type__rich_text.help_text,
                     'format': 'RICH_TEXT',
+                    'unit': None,
+                    'showChoiceNames': attribute_type__rich_text.show_choice_names,
+                    'hasZeroOption': attribute_type__rich_text.has_zero_option,
                     'choiceOptions': [],
                 }, {
                     'identifier': attribute_type__ordered_choice.identifier,
                     'name': attribute_type__ordered_choice.name,
                     'helpText': attribute_type__ordered_choice.help_text,
                     'format': 'ORDERED_CHOICE',
+                    'unit': attribute_type__ordered_choice.unit,
+                    'showChoiceNames': attribute_type__ordered_choice.show_choice_names,
+                    'hasZeroOption': attribute_type__ordered_choice.has_zero_option,
                     'choiceOptions': [{
                         '__typename': 'AttributeTypeChoiceOption',
                     }],

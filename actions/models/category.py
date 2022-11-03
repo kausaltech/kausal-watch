@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _, override
+from django.utils.text import format_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -26,11 +27,15 @@ from .attributes import ModelWithAttributes
 
 class CategoryTypeBase(models.Model):
     class SelectWidget(models.TextChoices):
-        MULTIPLE = 'multiple', _('Multiple')
         SINGLE = 'single', _('Single')
+        MULTIPLE = 'multiple', _('Multiple')
 
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
+    hide_category_identifiers = models.BooleanField(
+        default=False, verbose_name=_('hide category identifiers'),
+        help_text=_("Set if the categories do not have meaningful identifiers")
+    )
     lead_paragraph = models.TextField(verbose_name=_('lead paragraph'), null=True, blank=True)
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
     usable_for_actions = models.BooleanField(
@@ -49,10 +54,24 @@ class CategoryTypeBase(models.Model):
         default=False,
         verbose_name=_('editable for indicators'),
     )
-    select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
+    select_widget = models.CharField(
+        max_length=30,
+        choices=SelectWidget.choices,
+        default=SelectWidget.SINGLE,
+        verbose_name=_('single or multiple selection'),
+        help_text=(
+            format_lazy(
+                _('Choose "{choice_multiple}" only if more than one category can be selected at a time, '
+                  'otherwise choose "{choice_single}" which is the default.'),
+                choice_multiple=SelectWidget.MULTIPLE.label,
+                choice_single=SelectWidget.SINGLE.label
+            )
+        )
+    )
 
     public_fields = [
-        'name', 'identifier', 'lead_paragraph', 'help_text', 'usable_for_indicators', 'usable_for_actions',
+        'name', 'identifier', 'lead_paragraph', 'help_text', 'hide_category_identifiers',
+        'usable_for_indicators', 'usable_for_actions',
         'editable_for_actions', 'editable_for_indicators',
     ]
 
@@ -92,7 +111,9 @@ class CommonCategoryType(CategoryTypeBase):
         if plan.category_types.filter(common=self).exists():
             raise Exception(f"Instantiation of common category type '{self}' for plan '{plan}' exists already")
         translated_fields = get_i18n_field(CategoryType).fields
-        other_languages = [lang for lang in get_available_languages() if lang != plan.primary_language]
+        other_languages = [lang.replace('-', '_')
+                           for lang in get_available_languages()
+                           if lang != plan.primary_language]
         # Inherit fields from CategoryTypeBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the
         # primary language of the the active plan, and the same for other translated fields.
         # TODO: Something like this should be put in modeltrans to implement changing the per-instance default
@@ -132,10 +153,6 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     """
 
     plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
-    hide_category_identifiers = models.BooleanField(
-        default=False, verbose_name=_('hide category identifiers'),
-        help_text=_("Set if the categories do not have meaningful identifiers")
-    )
     common = models.ForeignKey(
         CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
         verbose_name=_('common category type'), related_name='category_type_instances'
@@ -179,7 +196,8 @@ class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
         for root_page in self.plan.root_page.get_translations(inclusive=True):
             with override(root_page.locale.language_code):
                 try:
-                    ct_page = root_page.get_children().type(CategoryTypePage).get()
+                    ct_pages = self.category_type_pages.all()  # pages for this category type in any language
+                    ct_page = root_page.get_children().type(CategoryTypePage).get(id__in=ct_pages)
                 except Page.DoesNotExist:
                     ct_page = CategoryTypePage(
                         category_type=self, title=self.name_i18n, show_in_menus=True, show_in_footer=True
@@ -266,7 +284,9 @@ class CommonCategory(CategoryBase, ClusterableModel):
             raise Exception(f"Instantiation of common category '{self}' for category type '{category_type}' exists "
                             "already")
         translated_fields = get_i18n_field(Category).fields
-        other_languages = [lang for lang in get_available_languages() if lang != category_type.plan.primary_language]
+        other_languages = [lang.replace('-', '_')
+                           for lang in get_available_languages()
+                           if lang != category_type.plan.primary_language]
         # Inherit fields from CategoryBase, but instead of `name` we want `name_<lang>`, where `<lang>` is the primary
         # language of the the active plan, and the same for other translated fields.
         # TODO: Duplicated in CommonCategoryType.instantiate_for_plan()

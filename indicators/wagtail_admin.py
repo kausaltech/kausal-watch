@@ -19,6 +19,7 @@ from admin_site.wagtail import (
 )
 from aplans.extensions import modeladmin_register
 from aplans.types import WatchAdminRequest
+from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
 
@@ -398,7 +399,7 @@ class IndicatorAdmin(AplansModelAdmin):
         qs = super().get_queryset(request)
         plan = request.user.get_active_admin_plan()
         if request.user.is_superuser:
-            qs = qs.filter(organization__in=plan.get_related_organizations())
+            qs = qs.filter(organization__in=Organization.objects.available_for_plan(plan))
         else:
             qs = qs.filter(organization=plan.organization)
         return qs.select_related('unit', 'quantity')

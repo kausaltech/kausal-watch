@@ -38,6 +38,9 @@ class AzureADAuth(AzureADTenantOAuth2):
 
     def get_user_details(self, response):
         details = super().get_user_details(response)
+        # check `verified_primary_email` and enumerate through
+        # `verified_secondary_email` to find possible matches
+        # for `Person.email`
         if self.client and self.client.use_id_token_email_field:
             details['email'] = response.get('email') or details.get('email')
         details['uuid'] = response.get('oid')

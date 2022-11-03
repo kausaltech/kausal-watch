@@ -289,6 +289,7 @@ class User(AbstractUser):
         return self.is_general_admin_for_plan(category_type.plan)
 
     def can_modify_organization(self, organization=None):
+        # TBD: How does this method differ from Organization.user_can_edit()? Does it make sense to have both?
         if self.is_superuser:
             return True
         person = self.get_corresponding_person()
@@ -298,7 +299,9 @@ class User(AbstractUser):
             # FIXME: Make sure we don't allow plan admins to modify organizations unrelated to them
             return OrganizationMetadataAdmin.objects.filter(person=person).exists()
         else:
-            return organization.organization_metadata_admins.filter(person=person).exists()
+            # For now we ignore OrganizationMetadataAdmin and let plan admins modify organizations
+            # return organization.organization_metadata_admins.filter(person=person).exists()
+            return organization.user_can_edit(self)
 
     def can_create_organization(self):
         if self.is_superuser:

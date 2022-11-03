@@ -480,6 +480,53 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
     assert data == expected
 
 
+def test_attribute_category_choices_are_resolved_correctly(
+    graphql_client_query_data, plan_with_pages, category_factory, category_page, category_type_factory, attribute_type_factory,
+    attribute_category_choice_factory
+):
+    category_type_host = category_page.category.type
+    category_host = category_page.category
+    category_type_for_attribute = category_type_factory()
+    categories = [category_factory(type=category_type_for_attribute) for c in range(0, 5)]
+    at0 = attribute_type_factory(scope=category_type_host)
+    acc0 = attribute_category_choice_factory(type=at0, content_object=category_host, categories=categories)
+
+    query = '''
+        query($plan: ID!, $path: String!) {
+          planPage(plan: $plan, path: $path) {
+            ... on CategoryPage {
+              category {
+                attributes {
+                  ... on AttributeCategoryChoice {
+                    keyIdentifier
+                    categories {
+                      id
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        '''
+    query_variables = {
+        'plan': plan_with_pages.identifier,
+        'path': category_page.url_path,
+    }
+    expected = {
+        'planPage': {
+            'category': {
+                'attributes': [{
+                    'keyIdentifier': at0.identifier,
+                    'categories': [{'id': str(c.id)} for c in acc0.categories.all()]
+                }],
+            }
+        }
+    }
+    data = graphql_client_query_data(query, variables=query_variables)
+    assert data == expected
+
+
 def test_attribute_order_as_in_attribute_type(
     graphql_client_query_data, plan_with_pages, category, category_page, category_type, attribute_type_factory,
     attribute_rich_text_factory

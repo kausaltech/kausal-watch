@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils.timezone import make_aware
 from factory import LazyAttribute, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
+from wagtail.core.models.i18n import Locale
 from wagtail.core.rich_text import RichText
 from wagtail_factories import StructBlockFactory
 
@@ -35,6 +36,9 @@ class PlanFactory(ModelFactory[Plan]):
     @classmethod
     def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
         from actions.models.plan import set_default_page_creation
+
+        for language in kwargs.get('other_languages', []):
+            Locale.objects.get_or_create(language_code=language)
 
         with set_default_page_creation(create_default_pages):
             manager = cls._get_manager(model_class)
@@ -124,6 +128,10 @@ class AttributeTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Category attribute type {i}")
     help_text = "foo"
     format = AttributeType.AttributeFormat.RICH_TEXT
+    unit = None
+    attribute_category_type = None
+    show_choice_names = True
+    has_zero_option = False
 
 
 class AttributeTypeChoiceOptionFactory(DjangoModelFactory):
@@ -160,6 +168,26 @@ class CategoryFactory(DjangoModelFactory):
     common = SubFactory(CommonCategoryFactory)
     lead_paragraph = "foo"
     help_text = "bar"
+
+
+class AttributeCategoryChoiceFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeCategoryChoice'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.CATEGORY_CHOICE)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+
+    @post_generation
+    def categories(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for category in extracted:
+                self.categories.add(category)
 
 
 class AttributeRichTextFactory(DjangoModelFactory):

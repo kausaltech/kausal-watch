@@ -6,7 +6,7 @@ from wagtail.contrib.modeladmin.views import EditView
 
 from .models import SiteGeneralContent
 from actions.wagtail_admin import ActivePlanPermissionHelper
-from admin_site.wagtail import SuccessUrlEditPageMixin
+from admin_site.wagtail import SuccessUrlEditPageMixin, insert_model_translation_panels
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
@@ -50,8 +50,6 @@ class SiteGeneralContentAdmin(ModelAdmin):
         FieldPanel('site_description'),
         FieldPanel('owner_url'),
         FieldPanel('owner_name'),
-        FieldPanel('accessibility_responsible_body'),
-        FieldPanel('accessibility_contact_email'),
         FieldPanel('official_name_description'),
         FieldPanel('copyright_text'),
         FieldPanel('creative_commons_license'),
@@ -68,3 +66,9 @@ class SiteGeneralContentAdmin(ModelAdmin):
 
     def get_menu_item(self, order=None):
         return SiteGeneralContentMenuItem(self, order or self.get_menu_order())
+
+    def get_edit_handler(self, instance, request):
+        self.panels = insert_model_translation_panels(
+            SiteGeneralContent, self.panels, request, instance.plan
+        )
+        return super().get_edit_handler(instance, request)

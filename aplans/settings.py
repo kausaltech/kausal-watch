@@ -370,15 +370,28 @@ GRAPHENE = {
 # Since we send the language code of a plan to the client, let's make sure we use the upper-case format everywhere in
 # the backend already so we don't end up with different formats.
 LANGUAGES = (
-    ('fi', _('Finnish')),
-    ('en', _('English')),
-    ('en-AU', _('Australian English')),
-    ('sv', _('Swedish')),
-    ('de', _('German')),
     ('da', _('Danish')),
+    ('de', _('German')),
+    ('de-CH', _('German (Switzerland)')),
+    ('en', _('English (United States)')),
+    ('en-GB', _('English (United Kingdom)')),
+    ('en-AU', _('English (Australia)')),
+    ('fi', _('Finnish')),
+    ('sv', _('Swedish')),
 )
-MODELTRANS_AVAILABLE_LANGUAGES = [x[0] for x in LANGUAGES]
-MODELTRANS_FALLBACK = {'default': ()}  # use language in default_language_field instead of a global fallback
+# For languages that Django has no translations for, we need to manually specify what the language is called in that
+# language. We use this for displaying the list of available languages in the user settings.
+LOCAL_LANGUAGE_NAMES = {
+    'de-CH': "Deutsch (Schweiz)",
+}
+MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
+MODELTRANS_FALLBACK = {
+    'default': (),
+    'en-au': ('en',),
+    'en-gb': ('en',),
+    'de-ch': ('de',),
+}  # use language in default_language_field instead of a global fallback
+
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES
 WAGTAILSIMPLETRANSLATION_SYNC_PAGE_TREE = True
 
@@ -523,6 +536,7 @@ IMAGE_CROPPING_JQUERY_URL = None
 THUMBNAIL_HIGH_RESOLUTION = True
 
 WAGTAIL_SLIM_SIDEBAR = False
+WAGTAIL_WORKFLOW_ENABLED = False
 
 GRAPPLE = {
     'APPS': ['pages', 'documents', 'images'],
@@ -592,8 +606,11 @@ if not locals().get('SECRET_KEY', ''):
 
 if DEBUG:
     if len(sys.argv) > 1 and 'runserver' in sys.argv[1]:
-        from aplans.watchfiles_reloader import replace_reloader
-        replace_reloader()
+        try:
+            from aplans.watchfiles_reloader import replace_reloader
+            replace_reloader()
+        except ImportError:
+            pass
 
     from rich.traceback import install
     install()
@@ -704,7 +721,7 @@ CELERY_BEAT_SCHEDULE = {
         },
     } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()},
     'update-index': {
-        'task': 'aplans.tasks.update_index',
+        'task': 'actions.tasks.update_index',
         'schedule': crontab(hour=3, minute=0),
     },
 }

@@ -1,3 +1,4 @@
+from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
@@ -162,10 +163,13 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('help_text'),
         FieldPanel('format'),
         FieldPanel('unit'),
+        FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
         CondensedInlinePanel('choice_options', panels=[
             FieldPanel('name'),
             FieldPanel('identifier'),
-        ])
+        ]),
+        FieldPanel('show_choice_names'),
+        FieldPanel('has_zero_option'),
     ]
 
     index_view_class = AttributeTypeIndexView
@@ -244,6 +248,26 @@ def get_attribute_fields(attribute_types, obj, with_initial=False):
             )
             form_field_name = f'attribute_type_{attribute_type.identifier}'
             result.append((attribute_type, {form_field_name: (field, 'choice')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.CATEGORY_CHOICE:
+            initial_categories = None
+            qs = Category.objects.filter(type=attribute_type.attribute_category_type)
+            if with_initial:
+                c = (attribute_type.category_choice_attributes
+                     .filter(content_type=content_type, object_id=obj.id)
+                     .first())
+                if c:
+                    initial_categories = c.categories.all()
+            field = forms.ModelMultipleChoiceField(
+                qs, label=attribute_type.name, initial=initial_categories, required=False,
+                widget=autocomplete.ModelSelect2Multiple(
+                    url='category-autocomplete',
+                    forward=(
+                        dal_forward.Const(attribute_type.attribute_category_type.id, 'type'),
+                    )
+                )
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'categories')}))
         elif attribute_type.format == AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
             initial_choice = None
             initial_text = None

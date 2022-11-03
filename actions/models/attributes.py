@@ -42,6 +42,7 @@ class AttributeType(ClusterableModel, OrderedModel):
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')
         RICH_TEXT = 'rich_text', _('Rich text')
         NUMERIC = 'numeric', _('Numeric')
+        CATEGORY_CHOICE = 'category_choice', _('Category')
 
     # Model to whose instances attributes of this type can be attached
     # TODO: Enforce Action or Category
@@ -62,11 +63,25 @@ class AttributeType(ClusterableModel, OrderedModel):
         Unit, blank=True, null=True, on_delete=models.PROTECT, related_name='+',
         verbose_name=_('Unit (only if format is numeric)'),
     )
-
+    attribute_category_type = models.ForeignKey(
+        'actions.CategoryType', blank=True, null=True, on_delete=models.CASCADE, related_name='+',
+        verbose_name=_('Category type (if format is category)'),
+        help_text=_('If the format is "Category", choose which category type the attribute values can be chosen from'),
+    )
+    show_choice_names = models.BooleanField(
+        default=True, verbose_name=_('show choice names'),
+        help_text=_('If the format is "ordered choice", determines whether the choice names are displayed'),
+    )
+    has_zero_option = models.BooleanField(
+        default=False, verbose_name=_('has zero option'),
+        help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
+                    'bullets instead of one'),
+    )
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     public_fields = [
-        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'choice_options'
+        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
+        'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
@@ -98,6 +113,14 @@ class AttributeType(ClusterableModel, OrderedModel):
                 existing.delete()
             if val is not None:
                 AttributeChoice.objects.create(type=self, content_object=obj, choice=val)
+        elif self.format == self.AttributeFormat.CATEGORY_CHOICE:
+            category_val = vals.get('categories')
+            existing = self.category_choice_attributes.filter(content_type=content_type, object_id=obj.id)
+            if existing:
+                existing.delete()
+            if category_val is not None:
+                acc = AttributeCategoryChoice.objects.create(type=self, content_object=obj)
+                acc.categories.set(category_val)
         elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
             choice_val = vals.get('choice')
             text_val = vals.get('text')
@@ -152,13 +175,43 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     public_fields = ['id', 'identifier', 'name']
 
     class Meta:
-        unique_together = (('type', 'identifier'), ('type', 'order'),)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['type', 'identifier'],
+                name='unique_identifier_per_type',
+            ),
+            models.UniqueConstraint(
+                fields=['type', 'order'],
+                name='unique_order_per_type',
+                deferrable=models.Deferrable.DEFERRED,
+            ),
+        ]
         ordering = ('type', 'order')
         verbose_name = _('attribute choice option')
         verbose_name_plural = _('attribute choice options')
 
     def __str__(self):
         return self.name
+
+
+class AttributeCategoryChoice(models.Model):
+    type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
+
+    categories = models.ManyToManyField(
+        'actions.Category', related_name='+'
+    )
+
+    public_fields = ['id', 'categories']
+
+    class Meta:
+        unique_together = ('type', 'content_type', 'object_id')
+
+    def __str__(self):
+        categories = ", ".join([str(c) for c in self.categories.all()])
+        return f'[{categories}] ({self.type}) for {self.content_object} ({self.content_type})'
 
 
 class AttributeChoice(models.Model):
@@ -258,6 +311,7 @@ class ModelWithAttributes(models.Model):
     choice_with_text_attributes = GenericRelation(to='actions.AttributeChoiceWithText')
     rich_text_attributes = GenericRelation(to='actions.AttributeRichText')
     numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
+    category_choice_attributes = GenericRelation(to='actions.AttributeCategoryChoice')
 
     def set_choice_attribute(self, type, choice_option_id):
         if isinstance(type, str):

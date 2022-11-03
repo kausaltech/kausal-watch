@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-09-13 16:02+0200\n"
+"POT-Creation-Date: 2022-10-06 08:39+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,7 +23,7 @@ msgstr "Es gibt bereits eine Maßnahme mit dieser Kennung."
 
 #: actions/action_admin.py actions/admin.py
 msgid "Contact person"
-msgstr "Kontaktperson"
+msgstr "Ansprechpartner"
 
 #: actions/action_admin.py indicators/wagtail_admin.py
 #: people/templates/people/chooser_results.html
@@ -36,7 +36,7 @@ msgstr "Eigene Maßnahmen"
 
 #: actions/action_admin.py
 msgid "Show only actions with me as a contact person"
-msgstr "Zeige nur Maßnahmen mit mir als Kontaktperson"
+msgstr "Zeige nur Maßnahmen mit mir als Ansprechpartner"
 
 #: actions/action_admin.py
 msgid "Show only actions I can modify"
@@ -117,11 +117,11 @@ msgstr "Fortschritt"
 
 #: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
 msgid "Contact persons"
-msgstr "Kontaktpersonen"
+msgstr "Ansprechpartner"
 
 #: actions/action_admin.py actions/api.py
 msgid "Responsible parties"
-msgstr "Zuständige"
+msgstr "Zuständige Stellen"
 
 #: actions/action_admin.py
 msgid "Tasks"
@@ -143,7 +143,7 @@ msgstr "Zeige veränderbare"
 msgid "Show all"
 msgstr "Zeige alle"
 
-#: actions/admin.py
+#: actions/admin.py actions/blocks.py
 msgid "Merged actions"
 msgstr "Zusammengeführte Maßnahmen"
 
@@ -159,7 +159,8 @@ msgstr "Zeige auch zusammengeführte Maßnahmen"
 msgid "Impact"
 msgstr "Auswinkungen"
 
-#: actions/admin.py actions/attribute_type_admin.py pages/models.py
+#: actions/admin.py actions/attribute_type_admin.py actions/blocks.py
+#: pages/models.py
 msgid "Category type"
 msgstr "Kategorietyp"
 
@@ -169,7 +170,7 @@ msgstr "Wähle einen Kategorietyp"
 
 #: actions/admin.py
 msgid "Responsible organizations"
-msgstr "Verantwortliche Organisationen"
+msgstr "Zuständige Organisationen"
 
 #: actions/admin.py
 msgid "Completion"
@@ -186,6 +187,10 @@ msgstr "Zeitplan und Entscheidungsebene"
 #: actions/admin.py actions/models/action.py indicators/models.py
 msgid "action"
 msgstr "Maßnahme"
+
+#: actions/api.py
+msgid "Organization occurs multiple times as responsible party"
+msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
 
 #: actions/api.py
 msgid "Identifier must be set"
@@ -242,8 +247,48 @@ msgid "Table"
 msgstr "Tabelle"
 
 #: actions/blocks.py
-msgid "Tree map"
-msgstr "Baumkarte"
+msgid "Value attribute"
+msgstr "Wertattribut"
+
+#: actions/blocks.py
+msgid "Dropdown"
+msgstr "Dropdown"
+
+#: actions/blocks.py
+msgid "Buttons"
+msgstr "Schaltflächen"
+
+#: actions/blocks.py
+msgid "Filter: %(filter_label)s"
+msgstr " Filter: %(filter_label)s "
+
+#: actions/blocks.py
+msgid "responsible party"
+msgstr "Zuständige Stelle"
+
+#: actions/blocks.py actions/models/action.py
+msgid "primary organization"
+msgstr "Hauptorganisation"
+
+#: actions/blocks.py actions/models/action.py
+msgid "implementation phase"
+msgstr "Umsetzungsphase"
+
+#: actions/blocks.py actions/models/action.py
+msgid "schedule"
+msgstr "Zeitplan"
+
+#: actions/blocks.py
+msgid "Content block: %(label)s"
+msgstr "Inhaltsblock: %(label)s"
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr "Attribut"
+
+#: actions/blocks.py pages/blocks.py pages/models.py
+msgid "Category"
+msgstr "Kategorie"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -292,6 +337,14 @@ msgstr "Wähle eine Maßnahme"
 #: actions/chooser.py
 msgid "Choose another action"
 msgstr "Wähle eine andere Maßnahme"
+
+#: actions/chooser.py
+msgid "Choose an attribute"
+msgstr "Wähle ein Attribut"
+
+#: actions/chooser.py
+msgid "Choose another attribute"
+msgstr "Wähle ein anderes Attribut"
 
 #: actions/defaults.py
 msgid "On time"
@@ -349,16 +402,104 @@ msgstr "Andere Indikatoren"
 
 #: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
-msgstr "Kontaktpersonen"
+msgstr "Ansprechpartner"
+
+#: actions/forms.py
+msgid "Plan name"
+msgstr "Name des Plans"
+
+#: actions/forms.py
+msgid "The official plan name in full form"
+msgstr "Der offizielle Name des Plans in vollständiger Form"
+
+#: actions/forms.py
+msgid "Plan identifier"
+msgstr "Kennung des Plans"
+
+#: actions/forms.py
+msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgstr "Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: https://&lt;plan-kennung&gt;.test.kausal.tech. Benutzen Sie Kleinbuchstaben und Bindestriche."
+
+#: actions/forms.py
+msgid "Primary language"
+msgstr "Hauptsprache"
+
+#: actions/forms.py
+msgid "Main organization"
+msgstr "Hauptorganisation"
+
+#: actions/forms.py
+msgid "Short name of plan"
+msgstr "Kurzname des Plans"
+
+#: actions/forms.py
+msgid "A shorter version of the plan name"
+msgstr "Eine kürzere Version des Plannamens"
+
+#: actions/forms.py
+msgid "Other languages"
+msgstr "Andere Sprachen"
+
+#: actions/forms.py
+msgid "Domain name"
+msgstr "Domänenname"
+
+#: actions/forms.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgstr "Der vollständig qualifizierte Domänenname, z. B. klima.stadtname.gov. Leerlassen wenn noch unbekannt."
+
+#: actions/forms.py
+msgid "Base path"
+msgstr "Basispfad"
+
+#: actions/forms.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
+msgstr "Füllen Sie dies für eine Website mit mehreren Plänen aus, wenn sich der Plan nicht im Stammverzeichnis der Domäne befindet."
+
+#: actions/forms.py
+msgid "Name of client"
+msgstr "Name des Kunden"
+
+#: actions/forms.py
+msgid "Name of the customer administering the plan"
+msgstr "Name des Kunden, der den Plan verwaltet"
+
+#: actions/forms.py
+msgid "Azure AD tenant id"
+msgstr "Azure AD Mandanten-ID"
+
+#: actions/forms.py
+msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
+msgstr "Meistens der Hostname, also alles nach dem @-Zeichen in E-Mail-Adressen von Mitarbeitern"
+
+#: actions/forms.py
+msgid "Client subdomain for admin UI"
+msgstr "Kunden-Subdomain für Admin-UI"
+
+#: actions/forms.py
+msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
+msgstr "Ein Kurzname in Kleinbuchstaben, der Teil der Admin-UI-Adresse wird - zum Beispiel \"sunnydale\" in sunnydale.watch.kausal.tech"
+
+#: actions/forms.py
+msgid "Identifier already in use"
+msgstr "Kennung wird bereits verwendet"
+
+#: actions/forms.py
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
+msgstr "Verwenden Sie für Kennungen nur Kleinbuchstaben ohne Umlaute mit Bindestrichen, um Wörter zu trennen"
+
+#: actions/forms.py
+msgid "Plan name already in use"
+msgstr "Planname wird bereits verwendet"
+
+#: actions/forms.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr "Eine zusätzliche Sprache des Plans darf nicht gleich sein wie seine Hauptsprache"
 
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
 msgstr "Plan"
-
-#: actions/models/action.py
-msgid "primary organization"
-msgstr "Hauptorganisation"
 
 #: actions/models/action.py
 msgid "official name"
@@ -406,10 +547,6 @@ msgid "internal notes"
 msgstr "interne Notizen"
 
 #: actions/models/action.py
-msgid "implementation phase"
-msgstr "Umsetzungsphase"
-
-#: actions/models/action.py
 msgid "override status manually"
 msgstr "überschreibe Status manuell"
 
@@ -419,7 +556,7 @@ msgstr "Setzen, wenn Sie verhindern wollen, dass der Maßnahmenstatus automatisc
 
 #: actions/models/action.py
 msgid "specifier for status"
-msgstr "Bezeichner für Status"
+msgstr "Erläuterung für Status"
 
 #: actions/models/action.py
 msgid "Describe the reason why this action has has this status"
@@ -440,10 +577,6 @@ msgstr "Fertigstellung"
 #: actions/models/action.py
 msgid "The completion percentage for this action"
 msgstr "Der Fertigstellungsprozentsatz dieser Maßnahme"
-
-#: actions/models/action.py
-msgid "schedule"
-msgstr "Zeitplan"
 
 #: actions/models/action.py
 msgid "continuous action"
@@ -512,16 +645,40 @@ msgstr "Andere Maßnahme ist mit dieser zusammengeführt"
 
 #: actions/models/action.py
 msgid "Has contact persons"
-msgstr "Hat Kontaktpersonen"
+msgstr "Hat Ansprechpartner"
 
 #: actions/models/action.py
 msgid "Active tasks"
 msgstr "Aktive Aufgaben"
 
+#: actions/models/action.py
+msgid "Primary responsible party"
+msgstr "Hauptverantwortliche Stelle"
+
+#: actions/models/action.py
+msgid "Collaborator"
+msgstr "Mitwirkende Stelle"
+
+#: actions/models/action.py
+msgid "Unspecified"
+msgstr "Unspezifiziert"
+
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py
 msgid "organization"
 msgstr "Organisation"
+
+#: actions/models/action.py
+msgid "role"
+msgstr "Rolle"
+
+#: actions/models/action.py
+msgid "specifier"
+msgstr "Erläuterung"
+
+#: actions/models/action.py
+msgid "The responsibility domain for the organization"
+msgstr "Der Zuständigkeitsbereich für die Organisation"
 
 #: actions/models/action.py
 msgid "action responsible party"
@@ -538,19 +695,19 @@ msgstr "Person"
 
 #: actions/models/action.py
 msgid "primary contact person"
-msgstr "Hauptkontaktperson"
+msgstr "Hauptansprechpartner"
 
 #: actions/models/action.py
 msgid "Is this person the primary contact person for the action?"
-msgstr "Ist diese Person die Hauptkontaktperson für die Maßnahme?"
+msgstr "Ist diese Person der Hauptansprechpartner für die Maßnahme?"
 
 #: actions/models/action.py
 msgid "action contact person"
-msgstr "Maßnahmenkontaktperson"
+msgstr "Maßnahmenansprechpartner"
 
 #: actions/models/action.py
 msgid "action contact persons"
-msgstr "Maßnahmenkontaktpersonen"
+msgstr "Maßnahmenansprechpartner"
 
 #: actions/models/action.py
 msgid "action schedule"
@@ -811,7 +968,7 @@ msgstr "Gemeinsame Kategorietypen"
 
 #: actions/models/category.py
 msgid "hide category identifiers"
-msgstr "verstecke Kategoriekennungen"
+msgstr "verberge Kategoriekennungen"
 
 #: actions/models/category.py
 msgid "Set if the categories do not have meaningful identifiers"
@@ -902,12 +1059,12 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: actions/models/features.py
-msgid "Contact persons private"
-msgstr "Kontaktpersonen privat"
+msgid "Contact persons public"
+msgstr "Ansprechpartner öffentlich"
 
 #: actions/models/features.py
 msgid "Set if the contact persons should be visible in the public UI"
-msgstr "Setzen, wenn die Kontaktpersonen in der öffentlichen Oberfläche sichtbar sein sollen"
+msgstr "Setzen, wenn die Ansprechpartner in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: actions/models/features.py
 msgid "Has action identifiers"
@@ -948,6 +1105,14 @@ msgstr "Seitensuche aktivieren"
 #: actions/models/features.py
 msgid "Enable site-wide search functionality"
 msgstr "Aktiviere seitenweite Suchfunktionalität"
+
+#: actions/models/features.py
+msgid "Enable indicator comparison"
+msgstr "Indikatorenvergleich ermöglichen"
+
+#: actions/models/features.py
+msgid "Set to enable comparing indicators between organizations"
+msgstr "Setzen, um den Vergleich von Indikatoren zwischen Organisationen zu ermöglichen"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1035,7 +1200,7 @@ msgstr "Pläne"
 
 #: actions/models/plan.py
 msgid "Primary language must not be selected"
-msgstr "Hautsprache darf nicht ausgewählt sein"
+msgstr "Hauptsprache darf nicht ausgewählt sein"
 
 #: actions/models/plan.py
 msgid "Category type must belong to plan"
@@ -1053,6 +1218,14 @@ msgstr ""
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
 msgstr "Indikatoren"
+
+#: actions/models/plan.py
+msgid "Privacy"
+msgstr "Datenschutz"
+
+#: actions/models/plan.py
+msgid "Accessibility"
+msgstr "Barrierefreiheit"
 
 #: actions/models/plan.py
 msgid "general plan admin"
@@ -1130,6 +1303,18 @@ msgstr "Überwachungsqualitätspunkte"
 msgid "Plan"
 msgstr "Plan"
 
+#: actions/templates/create_plan/plan_form.html
+msgid "Create a new plan"
+msgstr "Einen neuen Plan erstellen"
+
+#: actions/templates/create_plan/plan_form.html
+msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
+msgstr "Dieses Formular ist für Superadministratoren gedacht, um einen völlig neuen Aktionsplan zu erstellen. Wenn Sie sich bei einem der technischen Felder weiter unten unsicher sind, können Sie es leer lassen. Bitte versuchen Sie, bestehende Konventionen für die Plankennung zu befolgen."
+
+#: actions/templates/create_plan/plan_form.html
+msgid "Create"
+msgstr "Erstellen"
+
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -1185,6 +1370,10 @@ msgstr "Plan"
 msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Plan-Features"
+
+#: actions/wagtail_hooks.py
+msgid "Create plan"
+msgstr "Plan erstellen"
 
 #: admin_site/admin.py
 #, python-format
@@ -1422,18 +1611,6 @@ msgstr "Link zum Github-Repository für API"
 #: content/models.py
 msgid "Link to GitHub repository for UI"
 msgstr "Link zum Github-Repository für UI"
-
-#: content/models.py
-msgid "Body responsible for site accessibility"
-msgstr "Für Barrierefreiheit zuständige Stelle"
-
-#: content/models.py
-msgid "Set if different from the owner of the site"
-msgstr "Setzen, wenn anders als Seiteninhaber"
-
-#: content/models.py
-msgid "Accessibility contact email"
-msgstr "E-Mail-Adresse des Barrierefreiheitsansprechpartners"
 
 #: content/models.py
 msgid "Term to use for 'action'"
@@ -1714,10 +1891,6 @@ msgid "month"
 msgstr "Monat"
 
 #: indicators/models.py
-msgid "week"
-msgstr "Woche"
-
-#: indicators/models.py
 msgid "day"
 msgstr "Tag"
 
@@ -1950,14 +2123,6 @@ msgstr "Änderungen konnten nicht gespeichert werden"
 #: indicators/templates/indicators/edit_values.html
 msgid "Changes were saved"
 msgstr "Änderungen gespeichert"
-
-#: indicators/templates/indicators/set_indicator_level_in_active_plan.html
-msgid "Yes"
-msgstr ""
-
-#: indicators/templates/indicators/set_indicator_level_in_active_plan.html
-msgid "No"
-msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Choose a quantity"
@@ -2306,10 +2471,6 @@ msgstr "Großes Bild"
 msgid "Small image"
 msgstr "Kleines Bild"
 
-#: pages/blocks.py pages/models.py
-msgid "Category"
-msgstr "Kategorie"
-
 #: pages/blocks.py
 msgid "Links"
 msgstr "Links"
@@ -2321,6 +2482,14 @@ msgstr "zeige in Fußleiste"
 #: pages/models.py
 msgid "Should the page be shown in the footer?"
 msgstr "Soll die Seite in der Fußleiste angezeigt werden?"
+
+#: pages/models.py
+msgid "show in additional links"
+msgstr "Zeige in zusätzlichen Links"
+
+#: pages/models.py
+msgid "Should the page be shown in the additional links?"
+msgstr "Soll die Seite in den zusätzlichen Links angezeigt werden?"
 
 #: pages/models.py
 msgid "Common page configuration"
@@ -2399,6 +2568,10 @@ msgid "Questions & Answers"
 msgstr "Fragen & Antworten"
 
 #: pages/models.py
+msgid "Category tree map"
+msgstr "Kategorie-Baumkarte"
+
+#: pages/models.py
 msgid "Content page"
 msgstr "Inhaltseite"
 
@@ -2423,6 +2596,34 @@ msgid "lead content"
 msgstr "Leitinhalt"
 
 #: pages/models.py
+msgid "Main filters"
+msgstr "Hauptfilter"
+
+#: pages/models.py
+msgid "Advanced filters (hidden by default)"
+msgstr "Fortgeschrittene Filter (standardmäßig ausgeblendet)"
+
+#: pages/models.py
+msgid "Action list filters"
+msgstr "Maßnahmenlistenfilter"
+
+#: pages/models.py
+msgid "Main column (top part on mobile)"
+msgstr "Hauptspalte (oberer Teil auf Mobilgeräten)"
+
+#: pages/models.py
+msgid "Main column (bottom part on mobile)"
+msgstr "Hauptspalte (unterer Teil auf Mobilgeräten)"
+
+#: pages/models.py
+msgid "Side column"
+msgstr "Seitenspalte"
+
+#: pages/models.py
+msgid "Action details page"
+msgstr "Maßnahmendetailseite"
+
+#: pages/models.py
 msgid "external plan link"
 msgstr "externer Plan-Link"
 
@@ -2436,7 +2637,7 @@ msgstr "Mehr"
 
 #: people/admin.py
 msgid "Is contact person"
-msgstr "Ist Kontaktperson"
+msgstr "Ist Ansprechpartner"
 
 #: people/admin.py
 msgid "For an action"
@@ -2448,11 +2649,11 @@ msgstr "Für einen Indikator"
 
 #: people/admin.py
 msgid "Not a contact person"
-msgstr "Keine Kontaktperson"
+msgstr "Kein Ansprechpartner"
 
 #: people/admin.py people/models.py people/wagtail_admin.py
 msgid "contact for actions"
-msgstr "Kontakt für Maßnahmen"
+msgstr "Ansprechpartner für Maßnahmen"
 
 #: people/apps.py people/wagtail_admin.py
 msgid "People"
@@ -2541,7 +2742,7 @@ msgstr "letzte Anmeldung"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"
-msgstr "Kontakt für Indikatoren"
+msgstr "Ansprechpartner für Indikatoren"
 
 #: templates/aplans_admin/index.html
 msgid "Select action plan"
@@ -2675,6 +2876,24 @@ msgstr "Ausloggen"
 msgid "Users"
 msgstr "Benutzer"
 
+#~ msgid "Tree map"
+#~ msgstr "Baumkarte"
+
+#~ msgid "Contact persons private"
+#~ msgstr "Ansprechpartner privat"
+
+#~ msgid "Body responsible for site accessibility"
+#~ msgstr "Für Barrierefreiheit zuständige Stelle"
+
+#~ msgid "Set if different from the owner of the site"
+#~ msgstr "Setzen, wenn anders als Seiteninhaber"
+
+#~ msgid "Accessibility contact email"
+#~ msgstr "E-Mail-Adresse des Barrierefreiheitsansprechpartners"
+
+#~ msgid "week"
+#~ msgstr "Woche"
+
 #~ msgid "short description"
 #~ msgstr "Kurzbeschreibung"
 
@@ -2692,6 +2911,3 @@ msgstr "Benutzer"
 
 #~ msgid "related action"
 #~ msgstr "verbundene Maßnahme"
-
-#~ msgid "Accessibility contact name"
-#~ msgstr "Name des Barrierefreiheitsansprechpartners"

@@ -5,7 +5,6 @@ from wagtail.core.models import Locale
 
 from actions.models import Action
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
-from orgs.tests.factories import OrganizationFactory
 from pages.models import CategoryPage, CategoryTypePage
 
 pytestmark = pytest.mark.django_db
@@ -13,21 +12,6 @@ pytestmark = pytest.mark.django_db
 
 def test_plan_can_be_saved(plan):
     pass
-
-
-def test_plan_get_related_organizations(plan):
-    assert plan.organization
-    plan_org = plan.organization
-    org = OrganizationFactory()
-    # Creating a new root org might've changed the path of plan_org
-    plan_org.refresh_from_db()
-    sub_org1 = OrganizationFactory(parent=plan.organization)
-    sub_org2 = OrganizationFactory(parent=org)
-    result = list(plan.get_related_organizations())
-    assert result == [plan.organization, sub_org1]
-    plan.related_organizations.add(org)
-    result = set(plan.get_related_organizations())
-    assert result == set([plan_org, sub_org1, org, sub_org2])
 
 
 def test_action_query_set_modifiable_by_not_modifiable(action, user):
@@ -98,8 +82,8 @@ def test_category_type_synchronize_pages_translated(plan_with_pages):
     category = CategoryFactory(type__synchronize_with_pages=True, type__plan=plan_with_pages)
     plan = plan_with_pages
     language = plan.other_languages[0]
-    locale = Locale.objects.create(language_code=language)
-    translated_root_page = plan.root_page.copy_for_translation(locale)
+    locale = Locale.objects.get(language_code__iexact=language)
+    translated_root_page = plan.root_page.get_translation(locale)
     category.type.synchronize_pages()
     ct_page = category.type.category_type_pages.child_of(translated_root_page).get()
     assert ct_page.title == category.type.name
@@ -136,27 +120,31 @@ def test_category_type_creating_category_creates_page(plan_with_pages):
 
 def test_category_move_to_new_parent_changes_page_hierarchy(plan_with_pages):
     category_type = CategoryTypeFactory(synchronize_with_pages=True, plan=plan_with_pages)
-    ct_page = category_type.category_type_pages.get()
-    cat1 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
-    cat2 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
-    assert cat1.category_pages.get().get_parent().specific == ct_page
-    assert cat2.category_pages.get().get_parent().specific == ct_page
+    locale = Locale.objects.get(language_code=plan_with_pages.primary_language)
+    ct_page = category_type.category_type_pages.filter(locale=locale).get()
+    cat1 = CategoryFactory(type=category_type)
+    cat2 = CategoryFactory(type=category_type)
+    assert cat1.category_pages.filter(locale=locale).get().get_parent().specific == ct_page
+    assert cat2.category_pages.filter(locale=locale).get().get_parent().specific == ct_page
     cat2.parent = cat1
     cat2.save()
-    assert cat1.category_pages.get().get_parent().specific == ct_page
-    assert cat2.category_pages.get().get_parent().specific == cat1.category_pages.get()
+    assert cat1.category_pages.filter(locale=locale).get().get_parent().specific == ct_page
+    assert (cat2.category_pages.filter(locale=locale).get().get_parent().specific ==
+            cat1.category_pages.filter(locale=locale).get())
 
 
 def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
     category_type = CategoryTypeFactory(synchronize_with_pages=True, plan=plan_with_pages)
-    ct_page = category_type.category_type_pages.get()
-    cat1 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
-    cat2 = CategoryFactory(type__synchronize_with_pages=True, type=category_type)
+    locale = Locale.objects.get(language_code=plan_with_pages.primary_language)
+    cat1 = CategoryFactory(type=category_type)
+    cat2 = CategoryFactory(type=category_type)
     assert cat1.order < cat2.order
-    assert cat1.category_pages.get().get_next_sibling().specific == cat2.category_pages.get()
+    assert (cat1.category_pages.filter(locale=locale).get().get_next_sibling().specific ==
+            cat2.category_pages.filter(locale=locale).get())
     cat1.order = cat2.order + 1
     cat1.save()
-    assert cat2.category_pages.get().get_next_sibling().specific == cat1.category_pages.get()
+    assert (cat2.category_pages.filter(locale=locale).get().get_next_sibling().specific ==
+            cat1.category_pages.filter(locale=locale).get())
 
 
 def test_plan_action_staleness_returns_default(plan):

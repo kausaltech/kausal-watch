@@ -1,6 +1,7 @@
 import reversion
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from modeltrans.fields import TranslationField
 
 
 @reversion.register()
@@ -38,23 +39,20 @@ class SiteGeneralContent(models.Model):
     )
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
-    accessibility_responsible_body = models.CharField(
-        max_length=200, blank=True, null=True,
-        verbose_name=_('Body responsible for site accessibility'),
-        help_text=_('Set if different from the owner of the site')
-    )
-    accessibility_contact_email = models.EmailField(
-        blank=True, null=True, verbose_name=_('Accessibility contact email')
-    )
     action_term = models.CharField(
         max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION
     )
 
+    i18n = TranslationField(
+        fields=[
+            'site_title', 'site_description', 'official_name_description', 'copyright_text',
+            'creative_commons_license', 'owner_name', 'owner_url'
+        ],
+        default_language_field='plan__primary_language')
+
     public_fields = [
-        'id', 'site_title', 'site_description', 'owner_url', 'owner_name',
-        'official_name_description', 'copyright_text', 'creative_commons_license',
-        'github_api_repository', 'github_ui_repository',
-        'accessibility_responsible_body', 'accessibility_contact_email', 'action_term',
+        'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
+        'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
     ]
 
     class Meta:

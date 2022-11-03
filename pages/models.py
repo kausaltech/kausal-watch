@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
+import graphene
 from grapple.models import (
     GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
     GraphQLString, GraphQLField
@@ -81,6 +82,10 @@ class AplansPage(Page):
 
     class Meta:
         abstract = True
+
+    @property
+    def preview_modes(self):
+        return []
 
     @classmethod
     def get_subclasses(cls):
@@ -235,9 +240,7 @@ class CategoryPage(AplansPage):
         ('action_list', ActionListBlock(label=_('Action list')))
     ], null=True, blank=True)
 
-    # Omit title field -- should be edited in CategoryAdmin
-    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
-    content_panels = inherited_content_panels + [
+    content_panels = AplansPage.content_panels + [
         FieldPanel('category', widget=CategoryChooser),
         StreamFieldPanel('body'),
     ]
@@ -270,7 +273,8 @@ class FixedSlugPage(AplansPage):
     """
     Page with fixed slug
 
-    Define `force_slug` in the body of subclasses.
+    Define `force_slug` in the body of subclasses. You may also want to set is_creatable to False there to allow only
+    programmatic creation.
 
     Since the slug is fixed, there can be at most one child page of the respective type.
     """
@@ -281,15 +285,12 @@ class FixedSlugPage(AplansPage):
         kwargs['slug'] = self.__class__.force_slug
         super().__init__(*args, **kwargs)
 
-    remove_page_listing_more_button = True
+    restrict_more_button_permissions_very_much = True
     remove_page_action_menu_items_except_publish = True
 
     lead_content = RichTextField(blank=True, verbose_name=_('lead content'))
 
-    # Omit the title from the editable fields
-    inherited_content_panels = [p for p in AplansPage.content_panels if p.field_name != 'title']
-    content_panels = inherited_content_panels + [
-        FieldPanel('title'),
+    content_panels = AplansPage.content_panels + [
         FieldPanel('lead_content'),
     ]
     settings_panels = [
@@ -299,16 +300,42 @@ class FixedSlugPage(AplansPage):
         ),
     ]
 
-    # Only let this be created programmatically
-    parent_page_types = []
-    subpage_types = []
-
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLString('lead_content'),
     ]
 
 
+def streamfield_node_getter(field_name):
+    def get_node() -> GraphQLField:
+        from grapple.registry import registry
+
+        field = ActionListPage._meta.get_field(field_name)
+        assert isinstance(field, StreamField)
+        node = registry.streamfield_blocks[type(field.stream_block)]
+        field_type = graphene.List(graphene.NonNull(node))
+        return GraphQLField(field_name, field_type, required=False)  # type: ignore
+
+    return get_node
+
+
+# Adapted from graphene.types.enum.EnumMeta.from_enum() because the original doesn't let us change the name. So the type
+# created for ActionListPage.View would be called "View" instead of the more reasonable "ActionListPageView".
+def graphql_type_from_enum(enum, name=None):
+    meta_dict = {
+        "enum": enum,
+        "name": name,
+        "description": None,
+        "deprecation_reason": None,
+    }
+    meta_class = type("Meta", (object,), meta_dict)
+    return type(meta_class.enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})
+
+
 class ActionListPage(FixedSlugPage):
+    class View(models.TextChoices):
+        CARDS = 'cards', _('Cards')
+        DASHBOARD = 'dashboard', _('Dashboard')
+
     primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
     advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
@@ -320,10 +347,18 @@ class ActionListPage(FixedSlugPage):
     card_icon_category_type = models.ForeignKey(
         CategoryType, on_delete=models.SET_NULL, null=True, blank=True
     )
+    default_view = models.CharField(
+        max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view'),
+        help_text=_("Tab of the action list page that should be visible by default")
+    )
 
     force_slug = 'actions'
+    is_creatable = False  # Only let this be created programmatically
+
+    parent_page_type = [PlanRootPage]
 
     content_panels = FixedSlugPage.content_panels + [
+        FieldPanel('default_view'),
         MultiFieldPanel([
             StreamFieldPanel('primary_filters'),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
@@ -337,39 +372,50 @@ class ActionListPage(FixedSlugPage):
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
-        GraphQLStreamfield('primary_filters'),
-        GraphQLStreamfield('main_filters'),
-        GraphQLStreamfield('advanced_filters'),
-        GraphQLStreamfield('details_main_top'),
-        GraphQLStreamfield('details_main_bottom'),
-        GraphQLStreamfield('details_main_aside'),
+        # Graphene / grapple don't allow us to easily add default_view here. If we added
+        # GraphQLField('default_view', graphene.Enum.from_enum(View), required=True),
+        # then the type would be called `View`, not `ActionListPageView`, as the automatically generated type is.
+        GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
+        streamfield_node_getter('primary_filters'),
+        streamfield_node_getter('main_filters'),
+        streamfield_node_getter('advanced_filters'),
+        streamfield_node_getter('details_main_top'),
+        streamfield_node_getter('details_main_bottom'),
+        streamfield_node_getter('details_aside'),
     ]
 
     def set_default_content_blocks(self):
         plan: Plan = self.get_site().plan
+
         blks = get_default_action_content_blocks(plan)
-        print('%s <-- %s' % (self, plan))
         for key, val in blks.items():
             assert self._meta.get_field(key)
             setattr(self, key, val)
 
-            blks = get_default_action_filter_blocks(plan)
-            for key, val in blks.items():
-                assert self._meta.get_field(key)
-                setattr(self, key, val)
-            self.save()
+        blks = get_default_action_filter_blocks(plan)
+        for key, val in blks.items():
+            assert self._meta.get_field(key)
+            setattr(self, key, val)
+
+        self.save()
 
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
 
 class PrivacyPolicyPage(FixedSlugPage):
     force_slug = 'privacy'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
@@ -379,6 +425,8 @@ class PrivacyPolicyPage(FixedSlugPage):
 
 class AccessibilityStatementPage(FixedSlugPage):
     force_slug = 'accessibility'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),

@@ -22,6 +22,8 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from wagtail.core.models import Collection, Page, Site
 from wagtail.core.models.i18n import Locale
+# In future versions of wagtail_localize, this will be in wagtail_localize.operations
+from wagtail_localize.views.submit_translations import TranslationCreator
 
 import reversion
 
@@ -55,11 +57,13 @@ def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, 
 class PlanQuerySet(models.QuerySet['Plan']):
     def for_hostname(self, hostname):
         hostname = hostname.lower()
+        plan_domains = PlanDomain.objects.filter(hostname=hostname)
+        lookup = Q(id__in=plan_domains.values_list('plan'))
         # Get plan identifier from hostname for development and testing
         identifier, _ = get_plan_identifier_from_wildcard_domain(hostname)
         if identifier:
-            return self.filter(identifier=identifier)
-        return self.filter(domains__hostname=hostname)
+            lookup |= Q(identifier=identifier)
+        return self.filter(lookup)
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
@@ -242,17 +246,8 @@ class Plan(ClusterableModel):
             raise ValidationError({'secondary_action_classification': _(
                 'Primary and secondary classification cannot be the same')})
 
-    def get_related_organizations(self) -> models.QuerySet[Organization]:
-        all_related = self.related_organizations.all()
-        for org in self.related_organizations.all():
-            all_related |= org.get_descendants()
-        if self.organization:
-            all_related |= Organization.objects.filter(id=self.organization.id)
-            all_related |= self.organization.get_descendants()
-        return all_related.distinct()
-
     @property
-    def root_page(self):
+    def root_page(self) -> Page | None:
         if self.site_id is None:
             return None
         return self.site.root_page
@@ -333,58 +328,55 @@ class Plan(ClusterableModel):
         super().save(update_fields=['cache_invalidated_at'])
 
     def create_default_pages(self):
-        """Create plan root page as well as subpages that should be always there and return plan root page."""
+        """For each language of the plan, create plan root page as well as subpages that should be always there.
+
+        Return root page in primary language."""
         from pages.models import (
             AccessibilityStatementPage, ActionListPage, IndicatorListPage, PlanRootPage, PrivacyPolicyPage
         )
+        primary_locale = Locale.objects.get(language_code=self.primary_language)
+        other_locales = [Locale.objects.get(language_code=language) for language in self.other_languages]
+        translation_creator = TranslationCreator(user=None, target_locales=other_locales)
 
-        locale = Locale.objects.get(language_code=self.primary_language)
-        root_pages = Page.get_first_root_node().get_children().type(PlanRootPage)
-        try:
-            root_page = root_pages.get(slug=self.identifier)
-        except Page.DoesNotExist:
-            root_page = Page.get_first_root_node().add_child(
-                instance=PlanRootPage(title=self.name, slug=self.identifier, url_path='', locale=locale)
+        # Create root page in primary language
+        if self.site:
+            primary_root_page = self.site.root_page.specific
+        else:
+            primary_root_page = PlanRootPage(
+                title=self.name, slug=self.identifier, url_path='', locale=primary_locale
             )
+            Page.get_first_root_node().add_child(instance=primary_root_page)
 
-        with translation.override(self.primary_language):
-            action_list_pages = root_page.get_children().type(ActionListPage)
-            if not action_list_pages.exists():
-                root_page.add_child(instance=ActionListPage(
-                    title=_("Actions"), locale=locale, show_in_menus=True, show_in_footer=True,
-                ))
-            indicator_list_pages = root_page.get_children().type(IndicatorListPage)
-            if not indicator_list_pages.exists():
-                root_page.add_child(instance=IndicatorListPage(
-                    title=_("Indicators"), locale=locale, show_in_menus=True, show_in_footer=True
-                ))
-            privacy_policy_pages = root_page.get_children().type(PrivacyPolicyPage)
-            if not privacy_policy_pages.exists():
-                root_page.add_child(instance=PrivacyPolicyPage(
-                    title=_("Privacy"), locale=locale, show_in_additional_links=False
-                ))
-            accessibility_statement_pages = root_page.get_children().type(AccessibilityStatementPage)
-            if not accessibility_statement_pages.exists():
-                publisher_name = self.general_content.accessibility_responsible_body
-                email = self.general_content.accessibility_contact_email
-                if publisher_name or email:
-                    show_in_additional_links = True
-                    body = [
-                        ('compliance_status', None),
-                        ('preparation', None),
-                        ('contact_information', {'publisher_name': publisher_name, 'email': email}),
-                    ]
-                else:
-                    show_in_additional_links = False
-                    body = None
-                root_page.add_child(instance=AccessibilityStatementPage(
-                    title=_("Accessibility"),
-                    locale=locale,
-                    show_in_additional_links=show_in_additional_links,
-                    body=body,
-                ))
+        # Create translations of root page
+        translation_creator.create_translations(primary_root_page)
 
-        return root_page
+        # Create subpages of root page
+        def _dummy_function_so_makemessages_finds_strings():
+            # This is never called
+            _("Actions")
+            _("Indicators")
+            _("Privacy")
+            _("Accessibility")
+        subpages = [
+            (ActionListPage, "Actions", {'show_in_menus': True, 'show_in_footer': True}),
+            (IndicatorListPage, "Indicators", {'show_in_menus': True, 'show_in_footer': True}),
+            (PrivacyPolicyPage, "Privacy", {'show_in_additional_links': False}),
+            (AccessibilityStatementPage, "Accessibility", {'show_in_additional_links': False}),
+        ]
+
+        for PageModel, title_en, kwargs in subpages:
+            # Create page in primary language first
+            try:
+                primary_subpage = primary_root_page.get_children().type(PageModel).get().specific
+            except Page.DoesNotExist:
+                with translation.override(self.primary_language):
+                    primary_subpage = PageModel(title=_(title_en), locale=primary_locale, **kwargs)
+                    primary_root_page.add_child(instance=primary_subpage)
+
+            # Create translations
+            translation_creator.create_translations(primary_subpage)
+
+        return primary_root_page
 
     def is_live(self):
         return self.published_at is not None and self.archived_at is None
@@ -502,11 +494,12 @@ class Plan(ClusterableModel):
                 obj.save()
 
         if client_name:
-            from admin_site.models import Client, AdminHostname
+            from admin_site.models import Client, ClientPlan, AdminHostname
 
             client = Client.objects.filter(name=client_name).first()
             if client is None:
                 client = Client.objects.create(name=client_name)
+                ClientPlan.objects.create(plan=plan, client=client)
             if azure_ad_tenant_id:
                 client.azure_ad_tenant_id = azure_ad_tenant_id
                 client.save()

@@ -25,11 +25,11 @@ def collect_fields(node, fragments):
 
     if node.get('selection_set'):
         for leaf in node['selection_set']['selections']:
-            if leaf['kind'] == 'Field':
+            if leaf['kind'].lower() == 'field':
                 field.update({
                     leaf['name']['value']: collect_fields(leaf, fragments)
                 })
-            elif leaf['kind'] == 'FragmentSpread':
+            elif leaf['kind'].replace('_', '').lower() == 'fragmentspread':
                 field.update(collect_fields(fragments[leaf['name']['value']],
                                             fragments))
 

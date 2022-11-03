@@ -6,7 +6,7 @@ from typing import Optional
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.template.loader import render_to_string
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -87,16 +87,37 @@ class OrganizationQuerySet(MP_NodeQuerySet):
     def editable_by_user(self, user: User):
         if user.is_superuser:
             return self
-        person = user.get_corresponding_person()
-        if not person:
-            return self.none()
+        # person = user.get_corresponding_person()
+        # if not person:
+        #     return self.none()
+        #
+        # metadata_admin_orgs = person.metadata_adminable_organizations.only('path')
+        # filters = [Q(path__startswith=org.path) for org in metadata_admin_orgs]
+        # if not filters:
+        #     return self.none()
+        # qs = functools.reduce(lambda x, y: x | y, filters)
+        # return self.filter(qs)
 
-        metadata_admin_orgs = person.metadata_adminable_organizations.only('path')
-        filters = [Q(path__startswith=org.path) for org in metadata_admin_orgs]
-        if not filters:
+        # For now, for general plan admins, we allow editing all organizations related to the plan
+        # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the commented-out code
+        # above
+        adminable_plans = user.get_adminable_plans()
+        if not adminable_plans:
             return self.none()
-        qs = functools.reduce(lambda x, y: x | y, filters)
-        return self.filter(qs)
+        q = Q()
+        for plan in adminable_plans:
+            available_orgs = Organization.objects.available_for_plan(plan)
+            q |= Q(pk__in=available_orgs)
+        return self.filter(q)
+
+    def available_for_plan(self, plan):
+        all_related = plan.related_organizations.all()
+        for org in plan.related_organizations.all():
+            all_related |= org.get_descendants()
+        if plan.organization:
+            all_related |= Organization.objects.filter(id=plan.organization.id)
+            all_related |= plan.organization.get_descendants()
+        return self.filter(id__in=all_related)
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         person = user.get_corresponding_person()
@@ -110,6 +131,26 @@ class OrganizationQuerySet(MP_NodeQuerySet):
         qs = functools.reduce(lambda x, y: x | y, filters)
         return self.filter(qs)
 
+    def annotate_action_count(self, plan: Plan | None = None):
+        if plan is not None:
+            annotate_filter = Q(responsible_actions__action__plan=plan)
+        else:
+            annotate_filter = None
+        qs = self.annotate(action_count=Count(
+            'responsible_actions__action', distinct=True, filter=annotate_filter
+        ))
+        return qs
+
+    def annotate_contact_person_count(self, plan: Plan | None = None):
+        if plan is not None:
+            annotate_filter = Q(people__contact_for_actions__plan=plan)
+        else:
+            annotate_filter = None
+        qs = self.annotate(contact_person_count=Count(
+            'people', distinct=True, filter=annotate_filter
+        ))
+        return qs
+
 
 class OrganizationManager(gis_models.Manager):
     """Duplicate MP_NodeManager but use OrganizationQuerySet instead of MP_NodeQuerySet."""
@@ -121,6 +162,9 @@ class OrganizationManager(gis_models.Manager):
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         return self.get_queryset().user_is_plan_admin_for(user, plan)
+
+    def available_for_plan(self, plan):
+        return self.get_queryset().available_for_plan(plan)
 
 
 class Organization(index.Indexed, Node, gis_models.Model):
@@ -251,6 +295,14 @@ class Organization(index.Indexed, Node, gis_models.Model):
             intersection = ancestors & person.metadata_adminable_organizations.all()
             if intersection.exists():
                 return True
+
+        # For now, for general plan admins, we allow editing all organizations related to the plan
+        # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the code above
+        for plan in user.get_adminable_plans():
+            available_orgs = Organization.objects.available_for_plan(plan)
+            if available_orgs.filter(pk=self.pk).exists():
+                return True
+
         return False
 
     def user_can_change_related_to_plan(self, user, plan):
@@ -274,6 +326,32 @@ class Organization(index.Indexed, Node, gis_models.Model):
             parent_path = ' | '.join([get_org_path_str(org) for org in parents])
             name += ' (%s)' % parent_path
         return name
+
+    def print_tree(self):
+        from rich.tree import Tree
+        from rich import print
+
+        def get_label(org: Organization):
+            return '%s ([green]%d actions; [blue]%d persons)' % (
+                org.name, org.action_count, org.contact_person_count
+            )
+
+        def add_children(org: Organization, tree: Tree):
+            children: list[Organization] = list(
+                org.get_children().annotate_action_count()  # type: ignore
+                .annotate_contact_person_count().order_by('name')
+            )
+            if not children:
+                return
+            for child in children:
+                child_tree = tree.add(get_label(child))
+                add_children(child, child_tree)
+
+        root_org = Organization.objects.filter(id=self.id)\
+            .annotate_action_count().annotate_contact_person_count().first()
+        root_tree = Tree(get_label(root_org))
+        add_children(root_org, root_tree)
+        print(root_tree)
 
     def __str__(self):
         if self.name is None:

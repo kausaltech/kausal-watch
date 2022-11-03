@@ -1,3 +1,4 @@
+import typing
 from urllib.parse import urlparse
 from typing import Optional
 
@@ -15,20 +16,24 @@ from wagtail.core.rich_text import RichText
 
 from actions.action_admin import ActionAdmin
 from actions.models import (
-    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionResponsibleParty,
-    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask, Category, CategoryLevel, AttributeChoice,
-    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeType, AttributeTypeChoiceOption,
-    CategoryType, ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures,
-    Scenario, CommonCategory, CommonCategoryType
+    Action, ActionContactPerson, ActionImpact,
+    ActionImplementationPhase, ActionLink, ActionResponsibleParty,
+    ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask,
+    Category, CategoryLevel, AttributeCategoryChoice, AttributeChoice as AttributeChoiceModel,
+    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText,
+    AttributeType, AttributeTypeChoiceOption, CategoryType,
+    ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
+    PlanDomain, PlanFeatures, Scenario, CommonCategory,
+    CommonCategoryType
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
-    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, set_active_plan
+    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, register_graphene_node, set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
-from pages.models import AplansPage, CategoryPage
+from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
 
 
@@ -46,12 +51,20 @@ class PlanFeaturesNode(DjangoNode):
         fields = public_fields(PlanFeatures)
 
 
+def get_action_list_page_node():
+    from grapple.registry import registry
+    from pages.models import ActionListPage
+
+    return registry.pages[ActionListPage]
+
+
 class PlanNode(DjangoNode):
     id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String(required=True)
     primary_language = graphene.String(required=True)
     pages = graphene.List(PageInterface)
+    action_list_page = graphene.Field(get_action_list_page_node)
     category_type = graphene.Field('actions.schema.CategoryTypeNode', id=graphene.ID(required=True))
     category_types = graphene.List(
         'actions.schema.CategoryTypeNode',
@@ -62,7 +75,9 @@ class PlanNode(DjangoNode):
         'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True,
         only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False)
     )
-    action_attribute_types = graphene.List('actions.schema.AttributeTypeNode')
+    action_attribute_types = graphene.List(
+        graphene.NonNull('actions.schema.AttributeTypeNode', required=True), required=True
+    )
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
     image = graphene.Field('images.schema.ImageNode', required=False)
 
@@ -83,6 +98,7 @@ class PlanNode(DjangoNode):
     hide_action_lead_paragraph = graphene.Boolean()
 
     features = graphene.Field(PlanFeaturesNode, required=True)
+    general_content = graphene.Field('aplans.schema.SiteGeneralContentNode', required=True)
     all_related_plans = graphene.List('actions.schema.PlanNode', required=True)
 
     def resolve_last_action_identifier(self: Plan, info):
@@ -115,12 +131,19 @@ class PlanNode(DjangoNode):
         request = info.context
         return request.build_absolute_uri('/').rstrip('/')
 
-    def resolve_pages(self, info):
-        if not self.site_id:
+    @staticmethod
+    def resolve_pages(root: Plan, info: GQLInfo):
+        root_page: Page | None = root.root_page
+        if not root_page:
             return
-        if not self.site.root_page:
+        return root_page.get_descendants(inclusive=True).live().public().type(AplansPage).specific()
+
+    @staticmethod
+    def resolve_action_list_page(root: Plan, info: GQLInfo):
+        root_page: Page | None = root.root_page
+        if not root_page:
             return
-        return self.site.root_page.get_descendants(inclusive=True).live().public().type(AplansPage).specific()
+        return root_page.get_descendants().live().public().type(ActionListPage).first().specific
 
     @gql_optimizer.resolver_hints(
         model_field='domains',
@@ -144,9 +167,6 @@ class PlanNode(DjangoNode):
                 return None
         return self.domains.filter(plan=self, hostname=hostname)
 
-    @gql_optimizer.resolver_hints(
-        model_field='domains',
-    )
     def resolve_view_url(self: Plan, info, client_url: Optional[str] = None):
         if client_url:
             try:
@@ -187,8 +207,9 @@ class PlanNode(DjangoNode):
     def resolve_action_attribute_types(self, info):
         return self.action_attribute_types.order_by('pk')
 
-    def resolve_primary_orgs(self, info):
-        qs = self.actions.all().values('primary_org')
+    @staticmethod
+    def resolve_primary_orgs(root: Plan, info):
+        qs = Action.objects.filter(plan=root).values_list('primary_org').distinct()
         return Organization.objects.filter(id__in=qs)
 
     @gql_optimizer.resolver_hints(
@@ -222,67 +243,80 @@ class PlanNode(DjangoNode):
     def resolve_image(root: Plan, info):
         return root.image
 
+    @gql_optimizer.resolver_hints(
+        select_related=('primary_action_classification',),
+        only=('primary_action_classification',)
+    )
+    def resolve_primary_action_classification(root: Plan, info):
+        return root.primary_action_classification
+
+    @gql_optimizer.resolver_hints(
+        select_related=('secondary_action_classification',),
+        only=('secondary_action_classification',)
+    )
+    def resolve_secondary_action_classification(root: Plan, info):
+        return root.secondary_action_classification
+
     class Meta:
         model = Plan
         fields = public_fields(Plan)
 
 
+AttributeObject = typing.Union[
+    AttributeCategoryChoice, AttributeChoiceModel, AttributeChoiceWithText,
+    AttributeRichText, AttributeNumericValue,
+]
+
+
 class AttributeInterface(graphene.Interface):
     id = graphene.ID(required=True)
+    type_ = graphene.Field('actions.schema.AttributeTypeNode', name='type', required=True)
     key = graphene.String(required=True)
     key_identifier = graphene.String(required=True)
 
-    def resolve_key(self, info):
-        return self.type.name
+    @staticmethod
+    def resolve_key(root: AttributeObject, info):
+        return root.type.name
 
-    def resolve_key_identifier(self, info):
-        return self.type.identifier
+    @staticmethod
+    def resolve_key_identifier(root: AttributeObject, info):
+        return root.type.identifier
+
+    @staticmethod
+    def resolve_type_(root: AttributeObject, info) -> AttributeType:
+        return root.type
 
     @classmethod
     def resolve_type(cls, instance, info):
         if isinstance(instance, AttributeRichText):
             return AttributeRichTextNode
-        elif isinstance(instance, AttributeChoice):
-            return AttributeChoiceNode
-        elif isinstance(instance, AttributeChoiceWithText):
-            return AttributeChoiceWithTextNode
+        elif isinstance(instance, (AttributeChoiceModel, AttributeChoiceWithText)):
+            return AttributeChoice
         elif isinstance(instance, AttributeNumericValue):
             return AttributeNumericValueNode
+        elif isinstance(instance, AttributeCategoryChoice):
+            return AttributeCategoryChoiceNode
 
 
-@register_django_node
-class AttributeChoiceWithTextNode(DjangoNode):
-    choice = graphene.String(required=False)
-    choice_identifier = graphene.String(required=False)
+@register_graphene_node
+class AttributeChoice(graphene.ObjectType):
+    id = graphene.ID(required=True)
+    choice = graphene.Field(
+        'actions.schema.AttributeTypeChoiceOptionNode', required=False
+    )
     text = graphene.String(required=False)
 
-    def resolve_choice(self, info):
-        return self.choice.name
-
-    def resolve_choice_identifier(self, info):
-        return self.choice.identifier
+    def resolve_id(self, info):
+        if isinstance(self, AttributeChoiceModel):
+            prefix = 'C'
+        else:
+            prefix = 'CT'
+        return f'{prefix}{self.id}'
 
     def resolve_text(self, info):
-        return self.text
+        return getattr(self, 'text', None)
 
     class Meta:
-        model = AttributeChoiceWithText
-        interfaces = (AttributeInterface,)
-
-
-@register_django_node
-class AttributeChoiceNode(DjangoNode):
-    value = graphene.String(required=True)
-    value_identifier = graphene.String(required=True)
-
-    def resolve_value(self, info):
-        return self.choice.name
-
-    def resolve_value_identifier(self, info):
-        return self.choice.identifier
-
-    class Meta:
-        model = AttributeChoice
         interfaces = (AttributeInterface,)
 
 
@@ -290,14 +324,23 @@ class AttributeChoiceNode(DjangoNode):
 class AttributeRichTextNode(DjangoNode):
     value = graphene.String(required=True)
 
-    def resolve_value(self, info):
-        return self.text
+    @staticmethod
+    def resolve_value(root: AttributeRichText, info):
+        return root.text
 
     class Meta:
         model = AttributeRichText
         interfaces = (AttributeInterface,)
         # We expose `value` instead of `text`
         fields = public_fields(AttributeRichText, remove_fields=['text'])
+
+
+@register_django_node
+class AttributeCategoryChoiceNode(DjangoNode):
+    class Meta:
+        model = AttributeCategoryChoice
+        interfaces = (AttributeInterface,)
+        fields = public_fields(AttributeCategoryChoice)
 
 
 @register_django_node
@@ -338,30 +381,35 @@ class ResolveShortDescriptionFromLeadParagraphShim:
 
 @register_django_node
 class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
-    attribute_types = graphene.List(AttributeTypeNode)
+    attribute_types = graphene.List(graphene.NonNull(AttributeTypeNode), required=True)
     selection_type = convert_django_field_with_choices(CategoryType._meta.get_field('select_widget'))
     categories = graphene.List(
-        'actions.schema.CategoryNode', only_root=graphene.Boolean(default_value=False)
+        graphene.NonNull('actions.schema.CategoryNode'),
+        only_root=graphene.Boolean(default_value=False),
+        required=True
     )
 
     class Meta:
         model = CategoryType
         fields = public_fields(CategoryType, remove_fields=['select_widget'])
 
-    def resolve_attribute_types(self, info):
-        return self.attribute_types.order_by('pk')
+    @staticmethod
+    def resolve_attribute_types(root: CategoryType, info):
+        return root.attribute_types.order_by('pk')
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='select_widget',
     )
-    def resolve_selection_type(self: CategoryType, info):
-        return self.select_widget
+    def resolve_selection_type(root: CategoryType, info):
+        return root.select_widget
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(self: CategoryType, info, only_root: bool):
-        qs = self.categories.all()
+    def resolve_categories(root: CategoryType, info, only_root: bool):
+        qs = root.categories.all()
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
@@ -380,17 +428,33 @@ def get_translated_category_page(info, **kwargs):
 
 
 class AttributesMixin:
-    attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
+    attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False), required=True)
 
+    @gql_optimizer.resolver_hints(
+        prefetch_related=(
+            'rich_text_attributes', 'rich_text_attributes__type',
+            'choice_attributes', 'choice_attributes__type', 'choice_attributes__choice',
+            'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice',
+            'numeric_value_attributes', 'numeric_value_attributes__type',
+            'category_choice_attributes', 'category_choice_attributes__type'
+        )
+    )
     def resolve_attributes(self, info, id=None):
         query = Q()
         if id is not None:
             query = Q(type__identifier=id)
+        def filter_attrs(qs):
+            if not query:
+                return qs.all()
+            else:
+                return qs.filter(query)
+
         attributes = chain(
-            self.rich_text_attributes.filter(query),
-            self.choice_attributes.filter(query),
-            self.choice_with_text_attributes.filter(query),
-            self.numeric_value_attributes.filter(query)
+            filter_attrs(self.rich_text_attributes),
+            filter_attrs(self.choice_attributes),
+            filter_attrs(self.choice_with_text_attributes),
+            filter_attrs(self.numeric_value_attributes),
+            filter_attrs(self.category_choice_attributes)
         )
         return sorted(attributes, key=lambda a: a.type.order)
 
@@ -398,9 +462,9 @@ class AttributesMixin:
 @register_django_node
 class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin, DjangoNode):
     image = graphene.Field('images.schema.ImageNode')
-    attributes = graphene.List(AttributeInterface, id=graphene.ID(required=False))
+    attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False))
     level = graphene.Field(CategoryLevelNode)
-    actions = graphene.List('actions.schema.ActionNode')
+    actions = graphene.List(graphene.NonNull('actions.schema.ActionNode'))
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
@@ -541,13 +605,13 @@ class ActionTaskNode(DjangoNode):
 class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
-    name = graphene.String(hyphenated=graphene.Boolean())
-    categories = graphene.List(CategoryNode, category_type=graphene.ID())
-    contact_persons = graphene.List('actions.schema.ActionContactPersonNode')
+    name = graphene.String(hyphenated=graphene.Boolean(), required=True)
+    categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID(), required=True)
+    contact_persons = graphene.List(graphene.NonNull('actions.schema.ActionContactPersonNode'))
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
-    view_url = graphene.String(client_url=graphene.String(required=False))
+    view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
 
@@ -555,11 +619,13 @@ class ActionNode(AttributesMixin, DjangoNode):
         model = Action
         fields = Action.public_fields
 
-    def resolve_next_action(self, info):
-        return self.get_next_action()
+    @staticmethod
+    def resolve_next_action(root: Action, info):
+        return root.get_next_action()
 
-    def resolve_previous_action(self, info):
-        return self.get_previous_action()
+    @staticmethod
+    def resolve_previous_action(root: Action, info):
+        return root.get_previous_action()
 
     @gql_optimizer.resolver_hints(
         model_field='name',
@@ -601,8 +667,8 @@ class ActionNode(AttributesMixin, DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(self, info, category_type=None):
-        qs = self.categories.all()
+    def resolve_categories(root: Action, info: GQLInfo, category_type=None):
+        qs = root.categories.all()
         if category_type is not None:
             qs = qs.filter(type__identifier=category_type)
         return qs
@@ -682,8 +748,8 @@ class Query:
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
 
     plan_actions = graphene.List(
-        ActionNode, plan=graphene.ID(required=True), first=graphene.Int(),
-        category=graphene.ID(), order_by=graphene.String()
+        graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
     )
     plan_categories = graphene.List(
         CategoryNode, plan=graphene.ID(required=True), category_type=graphene.ID()
@@ -741,12 +807,6 @@ class Query:
             qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
-
-    def resolve_categories(self, info, category_type):
-        qs = self.categories
-        if type is not None:
-            qs = qs.filter(type__identifier=type)
-        return qs
 
     def resolve_plan_categories(self, info, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)

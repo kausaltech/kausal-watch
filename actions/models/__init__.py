@@ -5,7 +5,7 @@ from .action import (
     ActionStatusUpdate, ImpactGroupAction
 )
 from .attributes import (
-    AttributeType, AttributeTypeChoiceOption, AttributeChoice, AttributeChoiceWithText, AttributeRichText,
+    AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText, AttributeRichText,
     AttributeNumericValue
 )
 from .category import (
@@ -15,7 +15,7 @@ from .features import PlanFeatures
 
 
 __all__ = [
-    'Action', 'AttributeType', 'AttributeChoice', 'AttributeChoiceWithText', 'AttributeRichText',
+    'Action', 'AttributeType', 'AttributeCategoryChoice', 'AttributeChoice', 'AttributeChoiceWithText', 'AttributeRichText',
     'AttributeNumericValue', 'ActionContactPerson',
     'ActionDecisionLevel', 'ActionImpact',
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
