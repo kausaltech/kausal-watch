@@ -678,6 +678,10 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
         }
     }
 
+    import warnings
+    from wagtail.utils.deprecation import RemovedInWagtail50Warning
+    warnings.filterwarnings('ignore', category=RemovedInWagtail50Warning)
+
 
 if SENTRY_DSN:
     import sentry_sdk
