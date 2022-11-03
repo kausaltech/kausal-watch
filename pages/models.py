@@ -272,7 +272,8 @@ class FixedSlugPage(AplansPage):
     """
     Page with fixed slug
 
-    Define `force_slug` in the body of subclasses.
+    Define `force_slug` in the body of subclasses. You may also want to set is_creatable to False there to allow only
+    programmatic creation.
 
     Since the slug is fixed, there can be at most one child page of the respective type.
     """
@@ -297,10 +298,6 @@ class FixedSlugPage(AplansPage):
             _('Common page configuration')
         ),
     ]
-
-    # Only let this be created programmatically
-    parent_page_types = []
-    subpage_types = []
 
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLString('lead_content'),
@@ -355,6 +352,9 @@ class ActionListPage(FixedSlugPage):
     )
 
     force_slug = 'actions'
+    is_creatable = False  # Only let this be created programmatically
+
+    parent_page_type = [PlanRootPage]
 
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
@@ -401,14 +401,20 @@ class ActionListPage(FixedSlugPage):
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
 
 class PrivacyPolicyPage(FixedSlugPage):
     force_slug = 'privacy'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
@@ -418,6 +424,8 @@ class PrivacyPolicyPage(FixedSlugPage):
 
 class AccessibilityStatementPage(FixedSlugPage):
     force_slug = 'accessibility'
+    is_creatable = False  # Only let this be created programmatically
+    parent_page_type = [PlanRootPage]
 
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
