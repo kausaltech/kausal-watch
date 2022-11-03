@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-20 14:04+0300\n"
-"PO-Revision-Date: 2022-10-04 23:57+0300\n"
+"POT-Creation-Date: 2022-11-03 12:42+0200\n"
+"PO-Revision-Date: 2022-11-03 12:45+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -238,7 +238,7 @@ msgstr "Otsikko"
 msgid "Lead"
 msgstr "Johdanto"
 
-#: actions/blocks.py
+#: actions/blocks.py pages/models.py
 msgid "Cards"
 msgstr "Kortit"
 
@@ -280,9 +280,21 @@ msgid "schedule"
 msgstr "aikajänne"
 
 #: actions/blocks.py
+msgid "What label should be used in the public UI for the official name"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Description to show after the field content"
+msgstr ""
+
+#: actions/blocks.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
+
+#: actions/blocks.py actions/models/action.py
+msgid "official name"
+msgstr "virallinen nimi"
 
 #: actions/blocks.py
 msgid "Attribute"
@@ -503,10 +515,6 @@ msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
 msgstr "toimenpideohjelma"
-
-#: actions/models/action.py
-msgid "official name"
-msgstr "virallinen nimi"
 
 #: actions/models/action.py
 msgid "The name as approved by an official party"
@@ -956,12 +964,20 @@ msgid "Text"
 msgstr "Teksti"
 
 #: actions/models/category.py
+msgid "Single"
+msgstr "Yksi"
+
+#: actions/models/category.py
 msgid "Multiple"
 msgstr "Monta"
 
 #: actions/models/category.py
-msgid "Single"
-msgstr "Yksi"
+msgid "hide category identifiers"
+msgstr "piilota kategorioiden tunnisteet"
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Aseta jos kategorioilla ei ole tunnisteita"
 
 #: actions/models/category.py
 msgid "lead paragraph"
@@ -984,6 +1000,15 @@ msgid "editable for indicators"
 msgstr "muokattavissa mittareille"
 
 #: actions/models/category.py
+msgid "single or multiple selection"
+msgstr "yksi- vai moniarvoinen kategoria"
+
+#: actions/models/category.py
+#, python-brace-format
+msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
+msgstr "Valitse \"{choice_multiple}\" jos useampi kuin yksi kategoria voidaan valita kerralla, muuten valitse oletusarvo \"{choice_single}\"."
+
+#: actions/models/category.py
 msgid "has a collection"
 msgstr "kategorialla on kokoelma"
 
@@ -998,14 +1023,6 @@ msgstr "yleisen luokan tyyppi"
 #: actions/models/category.py
 msgid "common category types"
 msgstr "yhteisten luokkien tyypit"
-
-#: actions/models/category.py
-msgid "hide category identifiers"
-msgstr "piilota kategorioiden tunnisteet"
-
-#: actions/models/category.py
-msgid "Set if the categories do not have meaningful identifiers"
-msgstr "Aseta jos kategorioilla ei ole tunnisteita"
 
 #: actions/models/category.py
 msgid "synchronize with pages"
@@ -1555,28 +1572,36 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr ""
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr "suomi"
-
-#: aplans/settings.py
-msgid "English"
-msgstr "englanti"
-
-#: aplans/settings.py
-msgid "Australian English"
-msgstr "Englanti (Australia)"
-
-#: aplans/settings.py
-msgid "Swedish"
-msgstr "ruotsi"
+msgid "Danish"
+msgstr "tanska"
 
 #: aplans/settings.py
 msgid "German"
 msgstr "saksa"
 
 #: aplans/settings.py
-msgid "Danish"
-msgstr "tanska"
+msgid "German (Switzerland)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United States)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United Kingdom)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (Australia)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr "suomi"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "ruotsi"
 
 #: aplans/utils.py
 msgid "order"
@@ -2696,6 +2721,20 @@ msgid "lead content"
 msgstr "johdanto"
 
 #: pages/models.py
+msgid "Dashboard"
+msgstr ""
+
+#: pages/models.py
+msgid "default view"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if the contact persons should be visible in the public UI"
+msgid "Tab of the action list page that should be visible by default"
+msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
+
+#: pages/models.py
 msgid "Main filters"
 msgstr "Pääsuotimet"
 
@@ -2975,6 +3014,12 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "English"
+#~ msgstr "englanti"
+
+#~ msgid "Australian English"
+#~ msgstr "Englanti (Australia)"
 
 #~ msgid "Contact persons private"
 #~ msgstr "Yhteyshenkilöt salaisia"

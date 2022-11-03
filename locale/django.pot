@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-20 14:04+0300\n"
+"POT-Creation-Date: 2022-11-03 12:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -239,7 +239,7 @@ msgstr ""
 msgid "Lead"
 msgstr ""
 
-#: actions/blocks.py
+#: actions/blocks.py pages/models.py
 msgid "Cards"
 msgstr ""
 
@@ -281,8 +281,20 @@ msgid "schedule"
 msgstr ""
 
 #: actions/blocks.py
+msgid "What label should be used in the public UI for the official name"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Description to show after the field content"
+msgstr ""
+
+#: actions/blocks.py
 #, python-format
 msgid "Content block: %(label)s"
+msgstr ""
+
+#: actions/blocks.py actions/models/action.py
+msgid "official name"
 msgstr ""
 
 #: actions/blocks.py
@@ -503,10 +515,6 @@ msgstr ""
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
-msgstr ""
-
-#: actions/models/action.py
-msgid "official name"
 msgstr ""
 
 #: actions/models/action.py
@@ -951,11 +959,19 @@ msgid "Text"
 msgstr ""
 
 #: actions/models/category.py
+msgid "Single"
+msgstr ""
+
+#: actions/models/category.py
 msgid "Multiple"
 msgstr ""
 
 #: actions/models/category.py
-msgid "Single"
+msgid "hide category identifiers"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
 msgstr ""
 
 #: actions/models/category.py
@@ -979,6 +995,15 @@ msgid "editable for indicators"
 msgstr ""
 
 #: actions/models/category.py
+msgid "single or multiple selection"
+msgstr ""
+
+#: actions/models/category.py
+#, python-brace-format
+msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
+msgstr ""
+
+#: actions/models/category.py
 msgid "has a collection"
 msgstr ""
 
@@ -992,14 +1017,6 @@ msgstr ""
 
 #: actions/models/category.py
 msgid "common category types"
-msgstr ""
-
-#: actions/models/category.py
-msgid "hide category identifiers"
-msgstr ""
-
-#: actions/models/category.py
-msgid "Set if the categories do not have meaningful identifiers"
 msgstr ""
 
 #: actions/models/category.py
@@ -1536,19 +1553,7 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr ""
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr ""
-
-#: aplans/settings.py
-msgid "English"
-msgstr ""
-
-#: aplans/settings.py
-msgid "Australian English"
-msgstr ""
-
-#: aplans/settings.py
-msgid "Swedish"
+msgid "Danish"
 msgstr ""
 
 #: aplans/settings.py
@@ -1556,7 +1561,27 @@ msgid "German"
 msgstr ""
 
 #: aplans/settings.py
-msgid "Danish"
+msgid "German (Switzerland)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United States)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (United Kingdom)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "English (Australia)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Swedish"
 msgstr ""
 
 #: aplans/utils.py
@@ -2625,6 +2650,18 @@ msgstr ""
 
 #: pages/models.py
 msgid "lead content"
+msgstr ""
+
+#: pages/models.py
+msgid "Dashboard"
+msgstr ""
+
+#: pages/models.py
+msgid "default view"
+msgstr ""
+
+#: pages/models.py
+msgid "Tab of the action list page that should be visible by default"
 msgstr ""
 
 #: pages/models.py

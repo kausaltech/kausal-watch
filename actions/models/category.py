@@ -7,6 +7,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _, override
+from django.utils.text import format_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -26,8 +27,8 @@ from .attributes import ModelWithAttributes
 
 class CategoryTypeBase(models.Model):
     class SelectWidget(models.TextChoices):
-        MULTIPLE = 'multiple', _('Multiple')
         SINGLE = 'single', _('Single')
+        MULTIPLE = 'multiple', _('Multiple')
 
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField()
@@ -53,7 +54,20 @@ class CategoryTypeBase(models.Model):
         default=False,
         verbose_name=_('editable for indicators'),
     )
-    select_widget = models.CharField(max_length=30, choices=SelectWidget.choices)
+    select_widget = models.CharField(
+        max_length=30,
+        choices=SelectWidget.choices,
+        default=SelectWidget.SINGLE,
+        verbose_name=_('single or multiple selection'),
+        help_text=(
+            format_lazy(
+                _('Choose "{choice_multiple}" only if more than one category can be selected at a time, '
+                  'otherwise choose "{choice_single}" which is the default.'),
+                choice_multiple=SelectWidget.MULTIPLE.label,
+                choice_single=SelectWidget.SINGLE.label
+            )
+        )
+    )
 
     public_fields = [
         'name', 'identifier', 'lead_paragraph', 'help_text', 'hide_category_identifiers',
