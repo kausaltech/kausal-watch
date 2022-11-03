@@ -47,7 +47,7 @@ class LoginView(RedirectView):
 
         client = Client.objects.for_request(request).first()
         if client is not None and client.name.lower() != 'helsinki':
-            url = reverse('social:begin', kwargs=dict(backend='tunnistamo'))
+            url = reverse('social:begin', kwargs=dict(backend='azure_ad'))
         else:
             url = reverse('social:begin', kwargs=dict(backend='tunnistamo'))
 
