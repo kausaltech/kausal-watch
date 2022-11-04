@@ -469,12 +469,15 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
     icon_svg_url = graphene.String()
     category_page = graphene.Field(grapple_registry.pages[CategoryPage])
 
-    def resolve_image(self, info):
-        if self.image:
-            return self.image
-        if self.common:
-            return self.common.image
-        return None
+    @staticmethod
+    def _resolve_field_with_fallback_to_common(root: Category, field_name):
+        value = getattr(root, field_name)
+        if value or root.common is None:
+            return value
+        return getattr(root.common, field_name)
+
+    def resolve_image(root: Category, info):
+        return CategoryNode._resolve_field_with_fallback_to_common(root, 'image')
 
     def resolve_level(self, info):
         depth = 0
@@ -531,6 +534,12 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         if icon and icon.svg:
             return info.context.build_absolute_uri(icon.svg.file.url)
         return None
+
+    def resolve_help_text(root: Category, info):
+        return CategoryNode._resolve_field_with_fallback_to_common(root, 'help_text')
+
+    def resolve_lead_paragraph(root: Category, info):
+        return CategoryNode._resolve_field_with_fallback_to_common(root, 'lead_paragraph')
 
     class Meta:
         model = Category

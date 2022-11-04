@@ -265,7 +265,10 @@ class CommonCategory(CategoryBase, ClusterableModel):
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
-    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='type__primary_language')
+    i18n = TranslationField(
+        fields=('name', 'lead_paragraph', 'help_text'),
+        default_language_field='type__primary_language'
+    )
 
     public_fields = CategoryBase.public_fields + [
         'type', 'category_instances'
@@ -333,7 +336,10 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         verbose_name=_('parent category')
     )
 
-    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='type__plan__primary_language')
+    i18n = TranslationField(
+        fields=('name', 'lead_paragraph', 'help_text'),
+        default_language_field='type__plan__primary_language'
+    )
 
     public_fields = CategoryBase.public_fields + [
         'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
