@@ -210,6 +210,10 @@ class CategoryTypePage(StaticPage):
         related_name='category_type_pages',
     )
 
+    class Meta:
+        verbose_name = _('Category type page')
+        verbose_name_plural = _('Category type pages')
+
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
@@ -383,17 +387,29 @@ class ActionListPage(FixedSlugPage):
 
         self.save()
 
+    class Meta:
+        verbose_name = _('Action list page')
+        verbose_name_plural = _('Action list pages')
+
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
 
+    class Meta:
+        verbose_name = _('Indicator list page')
+        verbose_name_plural = _('Indicator list pages')
+
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
+
+    class Meta:
+        verbose_name = _('Impact group page')
+        verbose_name_plural = _('Impact group pages')
 
 
 class PrivacyPolicyPage(FixedSlugPage):
@@ -405,6 +421,10 @@ class PrivacyPolicyPage(FixedSlugPage):
         ('text', blocks.RichTextBlock(label=_('Text'))),
         # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
     ], null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Privacy policy page')
+        verbose_name_plural = _('Privacy policy pages')
 
 
 class AccessibilityStatementPage(FixedSlugPage):
@@ -426,6 +446,10 @@ class AccessibilityStatementPage(FixedSlugPage):
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLStreamfield('body'),
     ]
+
+    class Meta:
+        verbose_name = _('Accessibility statement page')
+        verbose_name_plural = _('Accessibility statement pages')
 
 
 class PlanLink(OrderedModel):
