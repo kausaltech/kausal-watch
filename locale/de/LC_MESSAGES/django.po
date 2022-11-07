@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-10-06 08:39+0200\n"
+"POT-Creation-Date: 2022-11-07 14:22+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -238,7 +238,7 @@ msgstr "Überschrift"
 msgid "Lead"
 msgstr "Leittext"
 
-#: actions/blocks.py
+#: actions/blocks.py pages/models.py
 msgid "Cards"
 msgstr "Karten"
 
@@ -259,6 +259,7 @@ msgid "Buttons"
 msgstr "Schaltflächen"
 
 #: actions/blocks.py
+#, python-format
 msgid "Filter: %(filter_label)s"
 msgstr " Filter: %(filter_label)s "
 
@@ -279,14 +280,28 @@ msgid "schedule"
 msgstr "Zeitplan"
 
 #: actions/blocks.py
+msgid "What label should be used in the public UI for the official name"
+msgstr "Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den offiziellen Namen verwendet werden?"
+
+#: actions/blocks.py
+msgid "Description to show after the field content"
+msgstr "Beschreibung, die nach dem Feldinhalt angezeigt werden soll"
+
+#: actions/blocks.py
+#, python-format
 msgid "Content block: %(label)s"
 msgstr "Inhaltsblock: %(label)s"
+
+#: actions/blocks.py actions/models/action.py
+msgid "official name"
+msgstr "Offizieller Name"
 
 #: actions/blocks.py
 msgid "Attribute"
 msgstr "Attribut"
 
-#: actions/blocks.py pages/blocks.py pages/models.py
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
 msgid "Category"
 msgstr "Kategorie"
 
@@ -500,10 +515,6 @@ msgstr "Eine zusätzliche Sprache des Plans darf nicht gleich sein wie seine Hau
 #: indicators/models.py notifications/models.py orgs/models.py pages/models.py
 msgid "plan"
 msgstr "Plan"
-
-#: actions/models/action.py
-msgid "official name"
-msgstr "Offizieller Name"
 
 #: actions/models/action.py
 msgid "The name as approved by an official party"
@@ -899,6 +910,30 @@ msgid "Unit (only if format is numeric)"
 msgstr ""
 
 #: actions/models/attributes.py
+msgid "Category type (if format is category)"
+msgstr "Kategorietype (falls Format Kategorie ist)"
+
+#: actions/models/attributes.py
+msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgstr "Falls das Format \"Kategorie\" ist, wähle aus welchem Kategorietyp die Attributwerte gewählt werden können"
+
+#: actions/models/attributes.py
+msgid "show choice names"
+msgstr "zeige Auswahlnamen"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the choice names are displayed"
+msgstr "Legt, falls das Format \"Geordnete Auswahl\" ist, fest, ob die Auswahlnamen angezeigt werden"
+
+#: actions/models/attributes.py
+msgid "has zero option"
+msgstr "hat Option für Null"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
+msgstr "Legt, falls das Format \"Geordnete Auswahl\" ist, fest, ob die erste Option mit null Kugeln statt einer angezeigt wird"
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr "Attributtyp"
 
@@ -923,12 +958,20 @@ msgid "Text"
 msgstr "Text"
 
 #: actions/models/category.py
+msgid "Single"
+msgstr "Einfach"
+
+#: actions/models/category.py
 msgid "Multiple"
 msgstr "Mehrfach"
 
 #: actions/models/category.py
-msgid "Single"
-msgstr "Einfach"
+msgid "hide category identifiers"
+msgstr "verberge Kategoriekennungen"
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Setzen, wenn die Kategorien keine sinnvollen Kennungen haben"
 
 #: actions/models/category.py
 msgid "lead paragraph"
@@ -951,6 +994,15 @@ msgid "editable for indicators"
 msgstr "veränderbar für Indikatoren"
 
 #: actions/models/category.py
+msgid "single or multiple selection"
+msgstr "Einzel- oder Mehrfachauswahl"
+
+#: actions/models/category.py
+#, python-brace-format
+msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
+msgstr "Wähle \"{choice_multiple}\" nur wenn mehr als eine Kategorie auf einmal gewählt werden kann, sonst wähle \"{choice_single}\", was auch Standard ist."
+
+#: actions/models/category.py
 msgid "has a collection"
 msgstr "hat eine Sammlung"
 
@@ -965,14 +1017,6 @@ msgstr "Gemeinsamer Kategorietyp"
 #: actions/models/category.py
 msgid "common category types"
 msgstr "Gemeinsame Kategorietypen"
-
-#: actions/models/category.py
-msgid "hide category identifiers"
-msgstr "verberge Kategoriekennungen"
-
-#: actions/models/category.py
-msgid "Set if the categories do not have meaningful identifiers"
-msgstr "Setzen, wenn die Kategorien keine sinnvollen Kennungen haben"
 
 #: actions/models/category.py
 msgid "synchronize with pages"
@@ -1508,28 +1552,36 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr ""
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr "Finnisch"
-
-#: aplans/settings.py
-msgid "English"
-msgstr "Englisch"
-
-#: aplans/settings.py
-msgid "Australian English"
-msgstr ""
-
-#: aplans/settings.py
-msgid "Swedish"
-msgstr "Schwedisch"
+msgid "Danish"
+msgstr "Dänisch"
 
 #: aplans/settings.py
 msgid "German"
 msgstr "Deutsch"
 
 #: aplans/settings.py
-msgid "Danish"
-msgstr "Dänisch"
+msgid "German (Switzerland)"
+msgstr "Deutsch (Schweiz)"
+
+#: aplans/settings.py
+msgid "English (United States)"
+msgstr "English (Vereinigte Staaten)"
+
+#: aplans/settings.py
+msgid "English (United Kingdom)"
+msgstr "Englisch (Vereinigtes Königreich)"
+
+#: aplans/settings.py
+msgid "English (Australia)"
+msgstr "Englisch (Australien)"
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr "Finnisch"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "Schwedisch"
 
 #: aplans/utils.py
 msgid "order"
@@ -1671,6 +1723,10 @@ msgstr "Benutzer-Feedbacks"
 #: feedback/wagtail_admin.py
 msgid "User feedbacks"
 msgstr "Benutzer-Feedbacks"
+
+#: images/image_formats.py
+msgid "Full width (zoomable)"
+msgstr "Volle Breite (zoombar)"
 
 #: images/models.py
 msgid "Image byline or credits"
@@ -2368,8 +2424,8 @@ msgid "Organizations"
 msgstr "Organisationen"
 
 #: orgs/forms.py
-msgid "A node cannot be its own parent."
-msgstr "Ein Knoten kann nicht sein eiger Elternknoten sein."
+msgid "A node cannot be moved under itself in the hierarchy."
+msgstr "Ein Knoten kann in der Hierarchie nicht unter sich selbst verschoben werden."
 
 #: orgs/models.py
 msgid "Parent"
@@ -2496,18 +2552,6 @@ msgid "Common page configuration"
 msgstr "Allgemeine Seitenkonfiguration"
 
 #: pages/models.py
-msgid "hero content"
-msgstr "Hero-Block-Inhalt"
-
-#: pages/models.py
-msgid "Short description for what actions are"
-msgstr "Kurzbeschreibung, was Maßnahmen sind"
-
-#: pages/models.py
-msgid "Short description for what indicators are"
-msgstr "Kurzbeschreibung, was Indikatoren sind"
-
-#: pages/models.py
 msgid "Front page hero block"
 msgstr "Hero-Block auf Titelseite"
 
@@ -2580,6 +2624,14 @@ msgid "Content pages"
 msgstr "Inhaltseiten"
 
 #: pages/models.py
+msgid "Category type page"
+msgstr "Kategorietypenseite"
+
+#: pages/models.py
+msgid "Category type pages"
+msgstr "Kategorietypenseiten"
+
+#: pages/models.py
 msgid "Action list"
 msgstr "Maßnahmenliste"
 
@@ -2594,6 +2646,18 @@ msgstr "Ktaegorieseiten"
 #: pages/models.py
 msgid "lead content"
 msgstr "Leitinhalt"
+
+#: pages/models.py
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: pages/models.py
+msgid "default view"
+msgstr "Standardansicht"
+
+#: pages/models.py
+msgid "Tab of the action list page that should be visible by default"
+msgstr "Standardmäßig sichtbare Registerkarte der Aktionslistenseite"
 
 #: pages/models.py
 msgid "Main filters"
@@ -2622,6 +2686,46 @@ msgstr "Seitenspalte"
 #: pages/models.py
 msgid "Action details page"
 msgstr "Maßnahmendetailseite"
+
+#: pages/models.py
+msgid "Action list page"
+msgstr "Maßnahmenlistenseite"
+
+#: pages/models.py
+msgid "Action list pages"
+msgstr "Maßnahmenlistenseiten"
+
+#: pages/models.py
+msgid "Indicator list page"
+msgstr "Indikatorlistenseite"
+
+#: pages/models.py
+msgid "Indicator list pages"
+msgstr "Indikatorlistenseiten"
+
+#: pages/models.py
+msgid "Impact group page"
+msgstr "Auswirkungsgruppenseite"
+
+#: pages/models.py
+msgid "Impact group pages"
+msgstr "Auswirkungsgruppenseiten"
+
+#: pages/models.py
+msgid "Privacy policy page"
+msgstr "Datenschutzerklärungsseite"
+
+#: pages/models.py
+msgid "Privacy policy pages"
+msgstr "Datenschutzerklärungsseiten"
+
+#: pages/models.py
+msgid "Accessibility statement page"
+msgstr "Barrierefreiheitsseite"
+
+#: pages/models.py
+msgid "Accessibility statement pages"
+msgstr "Barrierefreiheitsseiten"
 
 #: pages/models.py
 msgid "external plan link"
@@ -2875,6 +2979,18 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "English"
+#~ msgstr "Englisch"
+
+#~ msgid "hero content"
+#~ msgstr "Hero-Block-Inhalt"
+
+#~ msgid "Short description for what actions are"
+#~ msgstr "Kurzbeschreibung, was Maßnahmen sind"
+
+#~ msgid "Short description for what indicators are"
+#~ msgstr "Kurzbeschreibung, was Indikatoren sind"
 
 #~ msgid "Tree map"
 #~ msgstr "Baumkarte"
