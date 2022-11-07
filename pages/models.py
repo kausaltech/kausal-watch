@@ -117,14 +117,6 @@ class AplansPage(Page):
 
 
 class PlanRootPage(AplansPage):
-    hero_content = RichTextField(blank=True, verbose_name=_('hero content'))
-    action_short_description = RichTextField(
-        blank=True, verbose_name=_('Short description for what actions are')
-    )
-    indicator_short_description = RichTextField(
-        blank=True, verbose_name=_('Short description for what indicators are')
-    )
-
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
@@ -137,24 +129,17 @@ class PlanRootPage(AplansPage):
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
     ])
 
-    content_panels = AplansPage.content_panels + [
-        FieldPanel('hero_content'),
-        FieldPanel('action_short_description'),
-        FieldPanel('indicator_short_description'),
+    content_panels = [
         StreamFieldPanel('body'),
     ]
 
     parent_page_types = []
 
     graphql_fields = AplansPage.graphql_fields + [
-        GraphQLString('action_short_description'),
-        GraphQLString('indicator_short_description'),
-        GraphQLString('hero_content'),
         GraphQLStreamfield('body'),
     ]
 
     search_fields = AplansPage.search_fields + [
-        index.SearchField('hero_content'),
         index.SearchField('body'),
     ]
 

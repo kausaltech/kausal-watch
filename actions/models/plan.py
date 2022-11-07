@@ -286,8 +286,13 @@ class Plan(ClusterableModel):
             self.site = site
             update_fields.append('site')
         else:
-            # FIXME: Update Site and PlanRootPage attributes
-            pass
+            self.site.name = self.name
+            for language_code in (self.primary_language, *self.other_languages):
+                with translation.override(language_code):
+                    root_page = self.get_translated_root_page()
+                    root_page.title = self.name_i18n
+                    root_page.draft_title = self.name_i18n
+                    root_page.save()
 
         group_name = '%s admins' % self.name
         if self.admin_group is None:
