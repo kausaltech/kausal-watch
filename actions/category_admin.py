@@ -163,11 +163,13 @@ class CategoryEditHandler(AplansTabbedInterface):
         )
         form_class = super().get_form_class()
         if self.instance and self.instance.common:
-            form_class.base_fields['identifier'].disabled = True
-            form_class.base_fields['identifier'].required = False
-            # TODO: Hide "parent" field instead of disabling?
-            form_class.base_fields['parent'].disabled = True
-            form_class.base_fields['parent'].required = False
+            if 'identifier' in form_class.base_fields:
+                form_class.base_fields['identifier'].disabled = True
+                form_class.base_fields['identifier'].required = False
+            if 'parent' in form_class.base_fields:
+                # TODO: Hide "parent" field instead of disabling?
+                form_class.base_fields['parent'].disabled = True
+                form_class.base_fields['parent'].required = False
         return form_class
 
 
