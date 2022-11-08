@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-07 14:22+0200\n"
+"POT-Creation-Date: 2022-11-08 15:29+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -251,12 +251,33 @@ msgid "Value attribute"
 msgstr "Wertattribut"
 
 #: actions/blocks.py
+msgid "Attribute type"
+msgstr "Attributtyp"
+
+#: actions/blocks.py
+msgid "Label for 'show all'"
+msgstr "Beschriftung für 'Alles anzeigen'"
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr "Attribut"
+
+#: actions/blocks.py
 msgid "Dropdown"
 msgstr "Dropdown"
 
 #: actions/blocks.py
 msgid "Buttons"
 msgstr "Schaltflächen"
+
+#: actions/blocks.py
+msgid "Style"
+msgstr "Stil"
+
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
+msgid "Category"
+msgstr "Kategorie"
 
 #: actions/blocks.py
 #, python-format
@@ -295,15 +316,6 @@ msgstr "Inhaltsblock: %(label)s"
 #: actions/blocks.py actions/models/action.py
 msgid "official name"
 msgstr "Offizieller Name"
-
-#: actions/blocks.py
-msgid "Attribute"
-msgstr "Attribut"
-
-#: actions/blocks.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
-msgstr "Kategorie"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -2658,6 +2670,10 @@ msgstr "Standardansicht"
 #: pages/models.py
 msgid "Tab of the action list page that should be visible by default"
 msgstr "Standardmäßig sichtbare Registerkarte der Aktionslistenseite"
+
+#: pages/models.py
+msgid "Primary filters"
+msgstr "Primäre Filter"
 
 #: pages/models.py
 msgid "Main filters"
