@@ -131,13 +131,16 @@ class RelatedPlanListBlock(blocks.StaticBlock):
 
 @register_streamfield_block
 class ActionAttributeTypeFilterBlock(blocks.StructBlock):
-    attribute_type = ActionAttributeTypeChooserBlock(required=True)
-    show_all_label = blocks.CharBlock(required=False)
+    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
+    show_all_label = blocks.CharBlock(required=False, label=_("Label for 'show all'"))
 
     graphql_fields = [
         GraphQLString('show_all_label'),
         GraphQLForeignKey('attribute_type', AttributeType, required=True)
     ]
+
+    class Meta:
+        label = _("Attribute")
 
 
 @register_streamfield_block
@@ -145,9 +148,9 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
     style = blocks.ChoiceBlock(choices=[
         ('dropdown', _('Dropdown')),
         ('buttons', _('Buttons')),
-    ])
-    show_all_label = blocks.CharBlock(required=False)
-    category_type = CategoryTypeChooserBlock(required=True)
+    ], label=_("Style"))
+    show_all_label = blocks.CharBlock(required=False, label=_("Label for 'show all'"))
+    category_type = CategoryTypeChooserBlock(required=True, label=_("Category type"))
 
     graphql_fields = [
         GraphQLString('style'),
@@ -155,33 +158,39 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
         GraphQLForeignKey('category_type', CategoryType)
     ]
 
+    class Meta:
+        label = _("Category")
+
 
 class FilterBlock(blocks.StaticBlock):
-    filter_label: str
     graphql_fields = []
 
     def get_admin_text(self):
-        return _("Filter: %(filter_label)s") % dict(filter_label=self.filter_label)
+        return _("Filter: %(filter_label)s") % dict(filter_label=self.meta.label)
 
 
 @register_streamfield_block
 class ResponsiblePartyFilterBlock(FilterBlock):
-    filter_label = _("responsible party")
+    class Meta:
+        label = _("responsible party")
 
 
 @register_streamfield_block
 class PrimaryOrganizationFilterBlock(FilterBlock):
-    filter_label = _("primary organization")
+    class Meta:
+        label = _("primary organization")
 
 
 @register_streamfield_block
 class ActionImplementationPhaseFilterBlock(FilterBlock):
-    filter_label = _("implementation phase")
+    class Meta:
+        label = _("implementation phase")
 
 
 @register_streamfield_block
 class ActionScheduleFilterBlock(FilterBlock):
-    filter_label = _("schedule")
+    class Meta:
+        label = _("schedule")
 
 
 @register_streamfield_block

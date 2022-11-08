@@ -348,7 +348,7 @@ class ActionListPage(FixedSlugPage):
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
         MultiFieldPanel([
-            StreamFieldPanel('primary_filters'),
+            StreamFieldPanel('primary_filters', heading=_("Primary filters")),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
             StreamFieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
         ], heading=_("Action list filters"), classname="collapsible collapsed"),
