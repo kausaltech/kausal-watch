@@ -538,8 +538,13 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
     def resolve_help_text(root: Category, info):
         return CategoryNode._resolve_field_with_fallback_to_common(root, 'help_text')
 
+    @gql_optimizer.resolver_hints(
+        model_field='lead_paragraph',
+        select_related=('type__plan'),
+        only=('lead_paragraph', 'i18n', 'type__plan__primary_language'),
+    )
     def resolve_lead_paragraph(root: Category, info):
-        return CategoryNode._resolve_field_with_fallback_to_common(root, 'lead_paragraph')
+        return CategoryNode._resolve_field_with_fallback_to_common(root, 'lead_paragraph_i18n')
 
     class Meta:
         model = Category
