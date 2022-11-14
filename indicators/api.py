@@ -79,7 +79,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indicator
         fields = (
-            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization'
+            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at'
         )
 
     def create(self, validated_data: dict):
