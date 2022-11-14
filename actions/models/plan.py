@@ -257,15 +257,16 @@ class Plan(ClusterableModel):
             return None
         return self.site.root_page
 
-    def get_translated_root_page(self):
-        """Return root page in activated language, fall back to default language."""
+    def get_translated_root_page(self, fallback=True):
+        """Return root page in activated language, fall back to default language by default."""
         root = self.root_page
         language = translation.get_language()
         try:
             locale = Locale.objects.get(language_code__iexact=language)
             root = root.get_translation(locale)
         except (Locale.DoesNotExist, Page.DoesNotExist):
-            pass
+            if not fallback:
+                raise
         return root
 
     def save(self, *args, **kwargs):
@@ -284,15 +285,26 @@ class Plan(ClusterableModel):
                 self.root_collection.name = self.name
                 self.root_collection.save(update_fields=['name'])
 
-        if self.site is None and not _skip_default_page_creation:
-            root_page = self.create_default_pages()
-            site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
-            site.save()
-            self.site = site
-            update_fields.append('site')
-        else:
-            # FIXME: Update Site and PlanRootPage attributes
-            pass
+        if not _skip_default_page_creation:
+            if self.site is None:
+                root_page = self.create_default_pages()
+                site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
+                site.save()
+                self.site = site
+                update_fields.append('site')
+            else:
+                self.site.name = self.name
+                self.site.save()
+                for language_code in (self.primary_language, *self.other_languages):
+                    with translation.override(language_code):
+                        try:
+                            root_page = self.get_translated_root_page()
+                        except (Locale.DoesNotExist, Page.DoesNotExist):
+                            pass
+                        else:
+                            root_page.title = self.name_i18n
+                            root_page.draft_title = self.name_i18n
+                            root_page.save()
 
         group_name = '%s admins' % self.name
         if self.admin_group is None:

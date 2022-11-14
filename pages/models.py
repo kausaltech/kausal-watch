@@ -118,14 +118,6 @@ class AplansPage(Page):
 
 
 class PlanRootPage(AplansPage):
-    hero_content = RichTextField(blank=True, verbose_name=_('hero content'))
-    action_short_description = RichTextField(
-        blank=True, verbose_name=_('Short description for what actions are')
-    )
-    indicator_short_description = RichTextField(
-        blank=True, verbose_name=_('Short description for what indicators are')
-    )
-
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
         ('category_list', CategoryListBlock(label=_('Category list'))),
@@ -138,24 +130,17 @@ class PlanRootPage(AplansPage):
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
     ])
 
-    content_panels = AplansPage.content_panels + [
-        FieldPanel('hero_content'),
-        FieldPanel('action_short_description'),
-        FieldPanel('indicator_short_description'),
+    content_panels = [
         StreamFieldPanel('body'),
     ]
 
     parent_page_types = []
 
     graphql_fields = AplansPage.graphql_fields + [
-        GraphQLString('action_short_description'),
-        GraphQLString('indicator_short_description'),
-        GraphQLString('hero_content'),
         GraphQLStreamfield('body'),
     ]
 
     search_fields = AplansPage.search_fields + [
-        index.SearchField('hero_content'),
         index.SearchField('body'),
     ]
 
@@ -225,6 +210,10 @@ class CategoryTypePage(StaticPage):
         CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
         related_name='category_type_pages',
     )
+
+    class Meta:
+        verbose_name = _('Category type page')
+        verbose_name_plural = _('Category type pages')
 
 
 class CategoryPage(AplansPage):
@@ -360,7 +349,7 @@ class ActionListPage(FixedSlugPage):
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
         MultiFieldPanel([
-            StreamFieldPanel('primary_filters'),
+            StreamFieldPanel('primary_filters', heading=_("Primary filters")),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
             StreamFieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
         ], heading=_("Action list filters"), classname="collapsible collapsed"),
@@ -399,17 +388,29 @@ class ActionListPage(FixedSlugPage):
 
         self.save()
 
+    class Meta:
+        verbose_name = _('Action list page')
+        verbose_name_plural = _('Action list pages')
+
 
 class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
 
+    class Meta:
+        verbose_name = _('Indicator list page')
+        verbose_name_plural = _('Indicator list pages')
+
 
 class ImpactGroupPage(FixedSlugPage):
     force_slug = 'impact-groups'
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
+
+    class Meta:
+        verbose_name = _('Impact group page')
+        verbose_name_plural = _('Impact group pages')
 
 
 class PrivacyPolicyPage(FixedSlugPage):
@@ -421,6 +422,10 @@ class PrivacyPolicyPage(FixedSlugPage):
         ('text', blocks.RichTextBlock(label=_('Text'))),
         # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
     ], null=True, blank=True)
+
+    class Meta:
+        verbose_name = _('Privacy policy page')
+        verbose_name_plural = _('Privacy policy pages')
 
 
 class AccessibilityStatementPage(FixedSlugPage):
@@ -442,6 +447,10 @@ class AccessibilityStatementPage(FixedSlugPage):
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLStreamfield('body'),
     ]
+
+    class Meta:
+        verbose_name = _('Accessibility statement page')
+        verbose_name_plural = _('Accessibility statement pages')
 
 
 class PlanLink(OrderedModel):
