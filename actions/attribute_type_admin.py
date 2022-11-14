@@ -4,12 +4,14 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList
+from wagtail.admin.edit_handlers import FieldPanel, ObjectList, InlinePanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
+
+from aplans.types import WatchAdminRequest
 
 from .models import Action, AttributeRichText, AttributeType, Category
 from actions.chooser import CategoryTypeChooser
@@ -164,10 +166,10 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('format'),
         FieldPanel('unit'),
         FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
-        CondensedInlinePanel('choice_options', panels=[
+        InlinePanel('choice_options', panels=[
             FieldPanel('name'),
             FieldPanel('identifier'),
-        ]),
+        ], heading=_('Choices')),
         FieldPanel('show_choice_names'),
         FieldPanel('has_zero_option'),
     ]
@@ -178,11 +180,11 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     delete_view_class = AttributeTypeDeleteView
     button_helper_class = AttributeTypeAdminButtonHelper
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self, instance: AttributeType | None, request: WatchAdminRequest | None):
         basic_panels = list(self.basic_panels)
         # user = request.user
         # plan = user.get_active_admin_plan()
-        if instance.object_content_type_id is None:
+        if instance is None or instance.object_content_type_id is None:
             content_type_id = request.GET['content_type']
         else:
             content_type_id = instance.object_content_type_id

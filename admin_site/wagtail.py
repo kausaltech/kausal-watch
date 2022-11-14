@@ -5,7 +5,7 @@ from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.db import transaction
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Model
 from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
@@ -92,6 +92,11 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
 
 
 class PlanRelatedPermissionHelper(PermissionHelper):
+    check_admin_plan = True
+
+    def disable_admin_plan_check(self):
+        self.check_admin_plan = False
+
     def get_plans(self, obj):
         if isinstance(obj, PlanRelatedModel):
             return obj.get_plans()
@@ -99,6 +104,9 @@ class PlanRelatedPermissionHelper(PermissionHelper):
             raise NotImplementedError('implement in subclass')
 
     def _obj_matches_active_plan(self, user, obj):
+        if not self.check_admin_plan:
+            return True
+
         obj_plans = self.get_plans(obj)
         active_plan = user.get_active_admin_plan()
         for obj_plan in obj_plans:
@@ -182,29 +190,33 @@ class AplansButtonHelper(ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
-    def get_form_class(self, request=None):
-        return super().get_form_class()
-
-    def on_request_bound(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        if not user.is_general_admin_for_plan(plan):
+    def get_bound_panel(self, instance=None, request: WatchAdminRequest | None = None, form=None, prefix="panel"):
+        if request is not None:
+            plan = request.get_active_admin_plan()
+            user = request.user
+            is_admin = user.is_general_admin_for_plan(plan)
+        else:
+            is_admin = False
+        if not is_admin:
             for child in list(self.children):
                 if isinstance(child, AdminOnlyPanel):
                     self.children.remove(child)
 
-        super().on_request_bound()
+        return super().get_bound_panel(instance, request, form, prefix)
+
+    def get_form_class(self, request=None, instance=None):
+        return super().get_form_class()
 
 
 class FormClassMixin:
     request: WatchAdminRequest
+    instance: Model
     model_admin: ModelAdmin
 
     def get_form_class(self):
         handler = self.get_edit_handler()
         if isinstance(handler, AplansTabbedInterface):
-            return handler.get_form_class(self.request)
+            return handler.get_form_class(self.request, getattr(self, 'instance', None))
         else:
             return handler.get_form_class()
 
@@ -213,7 +225,7 @@ class FormClassMixin:
             edit_handler = self.model_admin.get_edit_handler()
         except TypeError:
             edit_handler = self.model_admin.get_edit_handler(
-                instance=self.instance, request=self.request,
+                instance=getattr(self, 'instance', None), request=self.request,
             )
         return edit_handler.bind_to_model(self.model_admin.model)
 

@@ -26,6 +26,7 @@ from actions.models import (
     PlanDomain, PlanFeatures, Scenario, CommonCategory,
     CommonCategoryType
 )
+from admin_site.wagtail import PlanRelatedPermissionHelper
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
@@ -72,8 +73,9 @@ class PlanNode(DjangoNode):
         usable_for_actions=graphene.Boolean()
     )
     actions = graphene.List(
-        'actions.schema.ActionNode', identifier=graphene.ID(), id=graphene.ID(), required=True,
-        only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False)
+        graphene.NonNull('actions.schema.ActionNode'), identifier=graphene.ID(), id=graphene.ID(),
+        only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False),
+        first=graphene.Int(required=False), required=True,
     )
     action_attribute_types = graphene.List(
         graphene.NonNull('actions.schema.AttributeTypeNode', required=True), required=True
@@ -187,7 +189,7 @@ class PlanNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(
-        self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None
+        self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None, first: int | None = None
     ):
         user = info.context.user
         qs = self.actions.filter(plan=self)
@@ -202,6 +204,10 @@ class PlanNode(DjangoNode):
                 qs = qs.user_has_staff_role_for(user, plan=self)
         if responsible_organization:
             qs = qs.filter(responsible_organizations=responsible_organization)
+
+        if first is not None and first > 0:
+            qs = qs[0:first]
+
         return qs
 
     def resolve_action_attribute_types(self, info):
@@ -550,6 +556,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
 class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode):
     icon_image = graphene.Field('images.schema.ImageNode')
     icon_svg_url = graphene.String()
+    category_instances = graphene.List(graphene.NonNull(CategoryNode), required=True)
 
     def resolve_icon_image(root, info):
         icon = root.get_icon(get_language())
@@ -562,6 +569,10 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
         if icon and icon.svg:
             return info.context.build_absolute_uri(icon.svg.file.url)
         return None
+
+    @staticmethod
+    def resolve_category_instances(root: CommonCategory, info: GQLInfo):
+        return root.category_instances.filter(type__plan=Plan.objects.available_for_request(info.context))
 
     class Meta:
         model = CommonCategory
@@ -610,6 +621,14 @@ class ActionTaskNode(DjangoNode):
         return RichText(comment)
 
 
+class AdminButton(graphene.ObjectType):
+    url = graphene.String(required=True)
+    label = graphene.String(required=True)
+    classname = graphene.String(required=True)
+    title = graphene.String(required=False)
+    target = graphene.String(required=False)
+
+
 @register_django_node
 class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
@@ -623,10 +642,25 @@ class ActionNode(AttributesMixin, DjangoNode):
     view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
+    admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
 
     class Meta:
         model = Action
         fields = Action.public_fields
+
+    def resolve_admin_buttons(root: Action, info: GQLInfo):
+        from actions.action_admin import ActionAdmin
+
+        if not info.context.user.is_staff:
+            return []
+        adm = ActionAdmin()
+        index_view = adm.index_view_class(adm)
+        helper_class = adm.get_button_helper_class()
+        helper = helper_class(index_view, info.context)
+        if isinstance(helper.permission_helper, PlanRelatedPermissionHelper):
+            helper.permission_helper.disable_admin_plan_check()
+        buttons = helper.get_buttons_for_obj(root)
+        return buttons
 
     @staticmethod
     def resolve_next_action(root: Action, info):

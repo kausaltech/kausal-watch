@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing
+
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -23,6 +25,9 @@ from aplans.utils import (
     validate_css_color, get_supported_languages
 )
 from .attributes import ModelWithAttributes
+
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 
 class CategoryTypeBase(models.Model):
@@ -265,6 +270,9 @@ class CommonCategory(CategoryBase, ClusterableModel):
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
+
+    category_instances: RelatedManager[Category]
+
     i18n = TranslationField(
         fields=('name', 'lead_paragraph', 'help_text'),
         default_language_field='type__primary_language'

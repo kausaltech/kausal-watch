@@ -26,6 +26,7 @@ from wagtail.core.models.i18n import Locale
 from wagtail_localize.operations import TranslationCreator
 
 import reversion
+from aplans.types import WatchRequest
 
 from aplans.utils import (
     ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color, get_default_language,
@@ -67,6 +68,10 @@ class PlanQuerySet(models.QuerySet['Plan']):
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
+
+    def available_for_request(self, request: WatchRequest):
+        # FIXME later: support for logged-in users
+        return self.live()
 
     def user_has_staff_role_for(self, user: User):
         if not user.is_authenticated or not user.is_staff:

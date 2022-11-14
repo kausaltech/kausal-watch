@@ -146,10 +146,10 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
 
 class CategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None):
+    def get_form_class(self, request=None, instance: Category | None = None):
         # TODO: Refactor duplicated code (action_admin.py)
-        if self.instance is not None:
-            attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
+        if instance is not None:
+            attribute_fields_list = get_category_attribute_fields(instance.type, instance, with_initial=True)
             attribute_fields = {form_field_name: field
                                 for _, fields in attribute_fields_list
                                 for form_field_name, (field, _) in fields.items()}
@@ -162,7 +162,7 @@ class CategoryEditHandler(AplansTabbedInterface):
             attribute_fields
         )
         form_class = super().get_form_class()
-        if self.instance and self.instance.common:
+        if instance and instance.common:
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
             # TODO: Hide "parent" field instead of disabling?
@@ -478,9 +478,9 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
 
 
 class CommonCategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None):
+    def get_form_class(self, request=None, instance: CommonCategory | None = None):
         form_class = super().get_form_class()
-        if self.instance.pk:
+        if instance and instance.pk:
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
         return form_class
