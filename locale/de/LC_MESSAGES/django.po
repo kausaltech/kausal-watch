@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-08 15:29+0200\n"
+"POT-Creation-Date: 2022-11-15 15:31+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -316,6 +316,26 @@ msgstr "Inhaltsblock: %(label)s"
 #: actions/blocks.py actions/models/action.py
 msgid "official name"
 msgstr "Offizieller Name"
+
+#: actions/blocks.py
+msgid "Full width"
+msgstr "Volle Breite"
+
+#: actions/blocks.py
+msgid "Grid"
+msgstr "Gitter"
+
+#: actions/blocks.py
+msgid "Help text"
+msgstr "Hilfetext"
+
+#: actions/blocks.py
+msgid "Blocks"
+msgstr "Blocks"
+
+#: actions/blocks.py
+msgid "Section"
+msgstr "Abschnitt"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -1803,6 +1823,14 @@ msgstr "[nichts]"
 #: indicators/admin.py
 msgid "has goals"
 msgstr "hat Ziele"
+
+#: indicators/api.py
+msgid "Latest value"
+msgstr "Neuester Wert"
+
+#: indicators/api.py
+msgid "Date of latest value"
+msgstr "Datum des neuesten Werts"
 
 #: indicators/blocks.py
 msgid "Indicator"
