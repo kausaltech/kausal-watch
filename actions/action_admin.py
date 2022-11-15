@@ -524,6 +524,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ],
             heading=_('External links')
         ),
+    ]
+    basic_related_panels_general_admin = [
         FieldPanel(
             'related_actions',
             widget=autocomplete.ModelSelect2Multiple(
@@ -677,6 +679,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         for panel in self.basic_related_panels:
             panels.append(panel)
+
+        if is_general_admin:
+            panels += self.basic_related_panels_general_admin
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
