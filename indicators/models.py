@@ -527,6 +527,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             v.normalized_values = nvals
             v.save(update_fields=['normalized_values'])
 
+    @property
+    def latest_value_value(self):
+        if self.latest_value is None:
+            return None
+        return self.latest_value.value
+
+    @property
+    def latest_value_date(self):
+        if self.latest_value is None:
+            return None
+        return self.latest_value.date
+
     def __str__(self):
         return self.name
 

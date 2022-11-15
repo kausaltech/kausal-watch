@@ -1,15 +1,13 @@
-from datetime import datetime
-
 import pytz
 from django.conf import settings
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 
 import django_filters as filters
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from sentry_sdk import capture_exception, push_scope
 
 from .models import (
     ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Quantity, RelatedIndicator, Unit
@@ -17,7 +15,6 @@ from .models import (
 from actions.api import plan_router
 from actions.models import Plan
 from aplans.utils import register_view_helper
-from orgs.models import Organization
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
@@ -76,10 +73,14 @@ class RelatedEffectIndicatorSerializer(serializers.ModelSerializer):
 
 
 class IndicatorSerializer(serializers.ModelSerializer):
+    latest_value = serializers.FloatField(read_only=True, source='latest_value_value', label=_("Latest value"))
+    latest_value_date = serializers.DateField(read_only=True, label=_("Date of latest value"))
+
     class Meta:
         model = Indicator
         fields = (
-            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at'
+            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
+            'latest_value', 'latest_value_date'
         )
 
     def create(self, validated_data: dict):
