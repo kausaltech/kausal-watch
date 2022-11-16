@@ -1,7 +1,6 @@
 import pytz
 from django.conf import settings
 from django.db import transaction
-from django.utils.translation import gettext_lazy as _
 
 import django_filters as filters
 from rest_framework import permissions, serializers, status, viewsets
@@ -70,27 +69,6 @@ class RelatedEffectIndicatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelatedIndicator
         fields = ('effect_indicator', 'effect_type', 'confidence_level')
-
-
-class IndicatorSerializer(serializers.ModelSerializer):
-    latest_value = serializers.FloatField(read_only=True, source='latest_value_value', label=_("Latest value"))
-    latest_value_date = serializers.DateField(read_only=True, label=_("Date of latest value"))
-
-    class Meta:
-        model = Indicator
-        fields = (
-            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
-            'latest_value', 'latest_value_date'
-        )
-
-    def create(self, validated_data: dict):
-        instance = super().create(validated_data)
-        assert not instance.levels.exists()
-        plan = self.context['request'].user.get_active_admin_plan()
-        level = 'strategic'
-        assert level in [v for v, _ in Indicator.LEVELS]
-        instance.levels.create(plan=plan, level=level)
-        return instance
 
 
 class IndicatorFilter(filters.FilterSet):
@@ -224,6 +202,26 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
         model = IndicatorValue
         fields = ['date', 'value', 'categories']
         list_serializer_class = IndicatorValueListSerializer
+
+
+class IndicatorSerializer(serializers.ModelSerializer):
+    latest_value = IndicatorValueSerializer(required=False)
+
+    class Meta:
+        model = Indicator
+        fields = (
+            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
+            'latest_value',
+        )
+
+    def create(self, validated_data: dict):
+        instance = super().create(validated_data)
+        assert not instance.levels.exists()
+        plan = self.context['request'].user.get_active_admin_plan()
+        level = 'strategic'
+        assert level in [v for v, _ in Indicator.LEVELS]
+        instance.levels.create(plan=plan, level=level)
+        return instance
 
 
 class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
