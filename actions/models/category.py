@@ -239,7 +239,7 @@ class CategoryBase(OrderedModel):
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
     lead_paragraph = models.TextField(
-        max_length=200, blank=True, verbose_name=_('lead paragraph')
+        max_length=300, blank=True, verbose_name=_('lead paragraph')
     )
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
