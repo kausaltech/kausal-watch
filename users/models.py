@@ -159,6 +159,9 @@ class User(AbstractUser):
         return self._get_admin_orgs()
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:
+        if hasattr(self, '_active_admin_plan'):
+            return self._active_admin_plan
+
         if adminable_plans is None:
             plans = self.get_adminable_plans()
         else:
@@ -166,12 +169,14 @@ class User(AbstractUser):
         if len(plans) == 0:
             return None
         if len(plans) == 1:
-            return plans[0]
+            self._active_admin_plan = plans[0]
+            return self._active_admin_plan
 
         selected_plan = self.selected_admin_plan
         if selected_plan is not None:
             for plan in plans:
                 if plan == selected_plan:
+                    self._active_admin_plan = plan
                     return plan
 
         # If the plan is not set in session, select the
@@ -180,10 +185,15 @@ class User(AbstractUser):
 
         self.selected_admin_plan = plan
         self.save(update_fields=['selected_admin_plan'])
+        self._active_admin_plan = plan
         return plan
 
     def get_adminable_plans(self) -> models.QuerySet[Plan]:
         from actions.models import Plan
+
+        # Cache adminable plans for each request
+        if hasattr(self, '_adminable_plans'):
+            return self._adminable_plans
 
         is_action_contact = self.is_contact_person_for_action()
         is_indicator_contact = self.is_contact_person_for_indicator()
@@ -192,22 +202,19 @@ class User(AbstractUser):
         is_indicator_org_admin = self.is_organization_admin_for_indicator()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
                 and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
-            return Plan.objects.none()
+            self._adminable_plans = Plan.objects.none()
+            return self._adminable_plans
 
-        # Cache adminable plans for each request
-        if hasattr(self, '_adminable_plans'):
-            plans = self._adminable_plans
+        if self.is_superuser:
+            plans = Plan.objects.all()
         else:
-            if self.is_superuser:
-                plans = Plan.objects.all()
-            else:
-                q = Q(actions__in=self._contact_for_actions)
-                q |= Q(indicators__in=self._contact_for_indicators)
-                q |= Q(id__in=self._general_admin_for_plans)
-                q |= Q(actions__in=self._org_admin_for_actions)
-                q |= Q(indicators__in=self._org_admin_for_indicators)
-                plans = Plan.objects.filter(q).distinct()
-            self._adminable_plans = plans
+            q = Q(actions__in=self._contact_for_actions)
+            q |= Q(indicators__in=self._contact_for_indicators)
+            q |= Q(id__in=self._general_admin_for_plans)
+            q |= Q(actions__in=self._org_admin_for_actions)
+            q |= Q(indicators__in=self._org_admin_for_indicators)
+            plans = Plan.objects.filter(q).distinct()
+        self._adminable_plans = plans
         return plans
 
     def get_adminable_plans_mark_selected(self) -> models.QuerySet[Plan]:
