@@ -1,9 +1,11 @@
+from contextlib import contextmanager
 from typing import List
 from urllib.parse import urljoin
 
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.forms.widgets import Select
@@ -11,6 +13,8 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from django.utils.decorators import method_decorator
+
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
@@ -19,7 +23,7 @@ from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
-from wagtail.contrib.modeladmin.views import CreateView, EditView
+from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
 
 from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
 from condensedinlinepanel.edit_handlers import \
@@ -122,6 +126,31 @@ class PlanRelatedPermissionHelper(PermissionHelper):
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
+
+
+class PlanContextPermissionHelper(PermissionHelper):
+    plan: Plan | None
+
+    def __init__(self, model, inspect_view_enabled=False):
+        self.plan = None
+        super().__init__(model, inspect_view_enabled)
+
+    def prefetch_cache(self):
+        """Prefetch plan-related content for permission checking."""
+        pass
+
+    def clean_cache(self):
+        pass
+
+    @contextmanager
+    def activate_plan_context(self, plan: Plan):
+        self.plan = plan
+        self.prefetch_cache()
+        try:
+            yield
+        finally:
+            self.clean_cache()
+            self.plan = None
 
 
 class AdminOnlyPanel(ObjectList):
@@ -401,9 +430,26 @@ class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
         return ret
 
 
+class AplansIndexView(IndexView):
+    @method_decorator(login_required)
+    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+        """Set the plan context for permission helper before dispatching request."""
+
+        if isinstance(self.permission_helper, PlanContextPermissionHelper):
+            with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
+                ret = super().dispatch(request, *args, **kwargs)
+                # We trigger render here, because the plan context is needed
+                # still in the render stage.
+                ret = ret.render()
+            return ret
+        else:
+            return super().dispatch(request, *args, **kwargs)
+
+
 class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
+    index_view_class = AplansIndexView
     button_helper_class = AplansButtonHelper
 
     def __init__(self, *args, **kwargs):

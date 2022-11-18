@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import functools
 import typing
-from typing import Optional
+from typing import Iterable, Optional, Sequence
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
@@ -110,7 +110,7 @@ class OrganizationQuerySet(MP_NodeQuerySet):
             q |= Q(pk__in=available_orgs)
         return self.filter(q)
 
-    def available_for_plan(self, plan):
+    def available_for_plan(self, plan: Plan):
         all_related = plan.related_organizations.all()
         for org in plan.related_organizations.all():
             all_related |= org.get_descendants()
@@ -163,7 +163,7 @@ class OrganizationManager(gis_models.Manager):
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         return self.get_queryset().user_is_plan_admin_for(user, plan)
 
-    def available_for_plan(self, plan):
+    def available_for_plan(self, plan: Plan):
         return self.get_queryset().available_for_plan(plan)
 
 
@@ -308,12 +308,22 @@ class Organization(index.Indexed, Node, gis_models.Model):
     def user_can_change_related_to_plan(self, user, plan):
         return user.is_general_admin_for_plan(plan)
 
-    def get_fully_qualified_name(self):
+    @classmethod
+    def make_orgs_by_path(cls, orgs: Iterable[Organization]):
+        return {org.path: org for org in orgs}
+
+    def get_fully_qualified_name(self, orgs_by_path: dict[str, Organization] | None = None):
         parents = []
-        org = self.get_parent()
-        while org is not None:
+        org_map = orgs_by_path
+        if org_map is None and self.depth > 1:
+            org_map = {org.path: org for org in self.get_ancestors()}  # type: ignore
+
+        org = self
+        while org.depth > 1:
+            parent_path = self._get_basepath(org.path, org.depth - 1)
+            org = org_map[parent_path]
             parents.append(org)
-            org = org.get_parent()
+
         name = self.name
         if self.internal_abbreviation:
             name = f'{self.internal_abbreviation} - {name}'

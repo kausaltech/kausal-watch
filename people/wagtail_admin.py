@@ -12,13 +12,12 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.contrib.modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView, InitializeFormWithPlanMixin,
-    InitializeFormWithUserMixin, get_translation_tabs
+    AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
+    InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
+    get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
@@ -29,6 +28,7 @@ from orgs.models import Organization, OrganizationPlanAdmin
 
 if typing.TYPE_CHECKING:
     from users.models import User
+    from actions.models import Plan
 
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, A
     pass
 
 
-class PersonIndexView(IndexView):
+class PersonIndexView(AplansIndexView):
     def get_ordering(self, request, queryset):
         ret = super().get_ordering(request, queryset)
         out = []
@@ -147,21 +147,34 @@ class PersonIndexView(IndexView):
         return out
 
 
-class PersonPermissionHelper(PermissionHelper):
-    def _user_can_edit_or_delete(self, user, person):
+class PersonPermissionHelper(PlanContextPermissionHelper):
+    _org_map: dict[int, Organization] | None
+
+    def __init__(self, model, inspect_view_enabled=False):
+        self._org_map = None
+        super().__init__(model, inspect_view_enabled)
+
+    def prefetch_cache(self):
+        if self.plan is None:
+            return
+        org_qs = Organization.objects.available_for_plan(self.plan)
+        self._org_map = {org.id: org for org in org_qs}
+
+    def clean_cache(self):
+        self._org_map = None
+
+    def _user_can_edit_or_delete(self, user: 'User', person: Person):
         if user.is_superuser:
             return True
+
         # The creating user has edit rights until the created user first logs in
-        if person.created_by == user and not person.user.last_login:
+        if person.created_by_id == user.id and person.user and not person.user.last_login:
             return True
 
-        plan = user.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
-            available_orgs = Organization.objects.available_for_plan(plan).filter(dissolution_date=None)
-            if person.organization in available_orgs:
-                return True
-
-        return False
+        if self.plan is not None and user.is_general_admin_for_plan(self.plan):
+            return person.organization_id in self._org_map
+        else:
+            return False
 
     def user_can_edit_obj(self, user: 'User', obj: Person):
         if not super().user_can_edit_obj(user, obj):
@@ -195,9 +208,14 @@ class PersonAdmin(AplansModelAdmin):
     search_fields = ('first_name', 'last_name', 'title')
     list_filter = (IsContactPersonFilter,)
 
-    def get_queryset(self, request):
+    permission_helper: PersonPermissionHelper
+
+    def get_permission_helper_class(self):
+        return super().get_permission_helper_class()
+
+    def get_queryset(self, request: WatchAdminRequest):
         plan = request.user.get_active_admin_plan()
-        qs = super().get_queryset(request).available_for_plan(plan)
+        qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
         return qs
 
     def get_empty_value_display(self, field=None):
@@ -206,7 +224,17 @@ class PersonAdmin(AplansModelAdmin):
         return super().get_empty_value_display(field)
 
     def get_list_display(self, request: WatchAdminRequest):
+        # get_list_display() gets called a lot, so we cache the results
+        if hasattr(request, '_person_list_display'):
+            return request._person_list_display
+
         plan = request.get_active_admin_plan()
+
+        # We use a cached and path-indexed version of all organizations to reduce
+        # SQL queries.
+        all_orgs = list(Organization.objects.available_for_plan(plan))
+        orgs_by_path = Organization.make_orgs_by_path(all_orgs)
+        orgs_by_id = {org.id: org for org in all_orgs}
 
         def edit_url(obj):
             if self.permission_helper.user_can_edit_obj(request.user, obj):
@@ -244,7 +272,16 @@ class PersonAdmin(AplansModelAdmin):
         last_name.short_description = _('last name')
         last_name.admin_order_field = 'last_name'
 
-        fields = [avatar, first_name, last_name, 'title', 'organization']
+        def organization(obj: Person) -> str:
+            org_id = obj.organization_id
+            if org_id in orgs_by_id:
+                org = orgs_by_id[org_id]
+            else:
+                org = obj.organization
+            return org.get_fully_qualified_name(orgs_by_path=orgs_by_path)
+        organization.short_description = _('organization')
+
+        fields = [avatar, first_name, last_name, 'title', organization]
 
         def last_logged_in(obj):
             user = obj.user
@@ -259,18 +296,17 @@ class PersonAdmin(AplansModelAdmin):
         last_logged_in.admin_order_field = 'user__last_login'
         last_logged_in._name = 'last_logged_in'
 
-        def is_plan_admin(obj: Person):
-            user: User = obj.user
-            if user is None:
-                return False
-            return user.is_general_admin_for_plan(plan)
-        is_plan_admin.short_description = _('is plan admin')
-        is_plan_admin._name = 'is_plan_admin'
-        is_plan_admin.boolean = True
-
         user = request.user
         if user.is_general_admin_for_plan(plan):
+            plan_admins = set(plan.general_admins.values_list('id', flat=True))
+
+            def is_plan_admin(obj: Person):
+                return obj.id in plan_admins
+            is_plan_admin.short_description = _('is plan admin')
+            is_plan_admin._name = 'is_plan_admin'
+            is_plan_admin.boolean = True
             fields.append(is_plan_admin)
+
             fields.append(last_logged_in)
             fields.append('participated_in_training')
 
@@ -288,6 +324,7 @@ class PersonAdmin(AplansModelAdmin):
         elif contact_person_filter == 'indicator':
             fields.append(contact_for_indicators)
 
+        request._person_list_display = fields
         return fields
 
     basic_panels = [
