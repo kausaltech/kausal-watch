@@ -204,6 +204,36 @@ class PlanRelatedModel(PlanDefaultsModel):
         return self.filter_by_plan(plans[0], qs)
 
 
+class InstancesEditableByMixin(models.Model):
+    """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes."""
+    class EditableBy(models.TextChoices):
+        NOT_EDITABLE = 'not_editable', _('Not editable')
+        PLAN_ADMINS = 'plan_admins', _('Plan admins')
+        CONTACT_PERSONS = 'contact_persons', _('Contact persons')
+
+    instances_editable_by = models.CharField(
+        max_length=50,
+        choices=EditableBy.choices,
+        blank=True,
+        verbose_name=_('Edit rights'),
+    )
+
+    def are_instances_editable_by(self, user, instance_plan):
+        if user.is_superuser:
+            return True
+
+        if self.instances_editable_by == self.EditableBy.NOT_EDITABLE:
+            return False
+        elif self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
+            return user.is_general_admin_for_plan(instance_plan)
+        elif self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
+            return user.is_contact_person_in_plan(instance_plan)
+        return True
+
+    class Meta:
+        abstract = True
+
+
 class ChoiceArrayField(ArrayField):
     """
     A field that allows us to store an array of choices.

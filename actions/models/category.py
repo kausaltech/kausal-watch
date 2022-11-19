@@ -19,7 +19,7 @@ from wagtailsvg.models import Svg
 import reversion
 
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
+    IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color, get_supported_languages
 )
 from .attributes import ModelWithAttributes
@@ -145,7 +145,7 @@ class CommonCategoryType(CategoryTypeBase):
 
 
 @reversion.register()
-class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
+class CategoryType(InstancesEditableByMixin, CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     """Type of the categories.
 
     Is used to group categories together. One action plan can have several

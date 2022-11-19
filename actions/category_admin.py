@@ -73,6 +73,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
             FieldPanel('name_plural',)
         ]),
         FieldPanel('synchronize_with_pages'),
+        FieldPanel('instances_editable_by'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -204,13 +205,22 @@ class CategoryTypeQueryParameterMixin:
 
 
 class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
+    def check_action_permitted(self, user):
+        category_type_param = self.request.GET.get('category_type')
+        if category_type_param:
+            category_type = CategoryType.objects.get(pk=int(category_type_param))
+            plan = category_type.plan
+            if not category_type.are_instances_editable_by(user, plan):
+                return False
+        return super().check_action_permitted(user)
+
     def get_instance(self):
         """Create a category instance and set its category type to the one given in the GET or POST data."""
         instance = super().get_instance()
-        category_type = self.request.GET.get('category_type')
-        if category_type and not instance.pk:
+        category_type_param = self.request.GET.get('category_type')
+        if category_type_param and not instance.pk:
             assert not hasattr(instance, 'type')
-            instance.type = CategoryType.objects.get(pk=int(category_type))
+            instance.type = CategoryType.objects.get(pk=int(category_type_param))
             if not instance.identifier and instance.type.hide_category_identifiers:
                 instance.generate_identifier()
         return instance
@@ -270,6 +280,16 @@ class CategoryAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
+class CategoryPermissionHelper(PermissionHelper):
+    # Does not handle instance creation because we'd need the category type for that, for which we need the request. We
+    # check these permissions in CategoryCreateView.
+    def user_can_edit_obj(self, user, obj):
+        return obj.type.are_instances_editable_by(user, obj.type.plan) and super().user_can_edit_obj(user, obj)
+
+    def user_can_delete_obj(self, user, obj):
+        return obj.type.are_instances_editable_by(user, obj.type.plan) and super().user_can_delete_obj(user, obj)
+
+
 @modeladmin_register
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
@@ -293,6 +313,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     # Do we need to create a view for inspect_view?
     delete_view_class = CategoryDeleteView
     button_helper_class = CategoryAdminButtonHelper
+    permission_helper_class = CategoryPermissionHelper
 
     def get_menu_item(self, order=None):
         return CategoryAdminMenuItem(self, order or self.get_menu_order())

@@ -11,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey
 from wagtail.core.fields import RichTextField
 
-from aplans.utils import IdentifierField, OrderedModel
+from aplans.utils import IdentifierField, InstancesEditableByMixin, OrderedModel
 from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
@@ -36,7 +36,7 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
 
 
 @reversion.register()
-class AttributeType(ClusterableModel, OrderedModel):
+class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')

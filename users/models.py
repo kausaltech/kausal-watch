@@ -93,6 +93,51 @@ class User(AbstractUser):
         else:
             return indicator.pk in indicators
 
+    def is_contact_person_for_action_in_plan(self, plan, action=None):
+        if not hasattr(self, '_contact_for_plan_actions'):
+            self._contact_for_plan_actions = {}
+
+        if plan.id in self._contact_for_plan_actions:
+            plan_actions = self._contact_for_plan_actions[plan.id]
+            if action is None:
+                return bool(plan_actions)
+            return action.id in plan_actions
+
+        plan_actions = set()
+        self._contact_for_plan_actions[plan.id] = plan_actions
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        plan_actions.update({act.id for act in person.contact_for_actions.filter(plan=plan)})
+        if action is None:
+            return bool(plan_actions)
+        return action.id in plan_actions
+
+    def is_contact_person_for_indicator_in_plan(self, plan, indicator=None):
+        if not hasattr(self, '_contact_for_plan_indicators'):
+            self._contact_for_plan_indicators = {}
+
+        if plan.id in self._contact_for_plan_indicators:
+            plan_indicators = self._contact_for_plan_indicators[plan.id]
+            if indicator is None:
+                return bool(plan_indicators)
+            return indicator.id in plan_indicators
+
+        plan_indicators = set()
+        self._contact_for_plan_indicators[plan.id] = plan_indicators
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        plan_indicators.update({act.id for act in person.contact_for_indicators.filter(levels__plan=plan)})
+        if indicator is None:
+            return bool(plan_indicators)
+        return indicator.id in plan_indicators
+
+    def is_contact_person_in_plan(self, plan):
+        return self.is_contact_person_for_action_in_plan(plan) or self.is_contact_person_for_indicator_in_plan(plan)
+
     def is_general_admin_for_plan(self, plan=None):
         if self.is_superuser:
             return True

@@ -202,7 +202,8 @@ class ActionAdminForm(WagtailAdminModelForm):
             obj.set_categories(cat_type, field_data)
 
         # TODO: Refactor duplicated code (category_admin.py)
-        for attribute_type, fields in get_action_attribute_fields(plan, obj):
+        user = self._user
+        for attribute_type, fields in get_action_attribute_fields(plan, obj, user):
             vals = {}
             for form_field_name, (field, model_field_name) in fields.items():
                 val = self.cleaned_data.get(form_field_name)
@@ -225,7 +226,7 @@ class ActionEditHandler(AplansTabbedInterface):
 
         # TODO: Refactor duplicated code (category_admin.py)
         if self.instance is not None:
-            attribute_fields_list = get_action_attribute_fields(plan, self.instance, with_initial=True)
+            attribute_fields_list = get_action_attribute_fields(plan, self.instance, user, with_initial=True)
             attribute_fields = {form_field_name: field
                                 for _, fields in attribute_fields_list
                                 for form_field_name, (field, _) in fields.items()}
@@ -235,7 +236,7 @@ class ActionEditHandler(AplansTabbedInterface):
         self.base_form_class = type(
             'ActionAdminForm',
             (ActionAdminForm,),
-            {**cat_fields, **attribute_fields}
+            {**cat_fields, **attribute_fields, '_user': user}
         )
 
         form_class = super().get_form_class()
@@ -462,22 +463,23 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
         return plan.general_content.get_action_term_display_plural()
 
 
-def get_action_attribute_fields(plan, action, **kwargs):
+def get_action_attribute_fields(plan, action, user, **kwargs):
     action_ct = ContentType.objects.get_for_model(Action)
     plan_ct = ContentType.objects.get_for_model(plan)
-    attribute_types = AttributeType.objects.filter(
+    attribute_types = (at for at in AttributeType.objects.filter(
         object_content_type=action_ct,
         scope_content_type=plan_ct,
         scope_id=plan.id,
-    )
+    ) if at.are_instances_editable_by(user, plan))
     return get_attribute_fields(attribute_types, action, **kwargs)
 
 
 class AttributeFieldPanel(FieldPanel):
     def on_form_bound(self):
         super().on_form_bound()
-        plan = self.request.user.get_active_admin_plan()
-        attribute_fields_list = get_action_attribute_fields(plan, self.instance, with_initial=True)
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        attribute_fields_list = get_action_attribute_fields(plan, self.instance, user, with_initial=True)
         attribute_fields = {form_field_name: field
                             for _, fields in attribute_fields_list
                             for form_field_name, (field, _) in fields.items()}
@@ -657,7 +659,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         # TODO: Refactor duplicated code (category_admin.py)
         if instance:
-            attribute_fields = get_action_attribute_fields(plan, instance, with_initial=True)
+            attribute_fields = get_action_attribute_fields(plan, instance, request.user, with_initial=True)
         else:
             attribute_fields = []
 

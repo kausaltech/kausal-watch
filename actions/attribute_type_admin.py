@@ -170,6 +170,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         ]),
         FieldPanel('show_choice_names'),
         FieldPanel('has_zero_option'),
+        FieldPanel('instances_editable_by'),
     ]
 
     index_view_class = AttributeTypeIndexView
