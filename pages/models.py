@@ -27,6 +27,7 @@ from actions.blocks import (
 )
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
+from aplans.extensions import get_body_blocks
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
@@ -178,6 +179,7 @@ class StaticPage(AplansPage):
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
+        *get_body_blocks('StaticPage')
     ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
