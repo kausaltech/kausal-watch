@@ -9,6 +9,7 @@ from import_export.fields import Field
 from admin_site.admin import AplansExportMixin, AplansModelAdmin
 
 from .models import Person
+from actions.models import ActionContactPerson, Plan
 
 
 class PersonResource(resources.ModelResource):
@@ -36,11 +37,22 @@ class IsContactPersonFilter(admin.SimpleListFilter):
     parameter_name = 'contact_person'
 
     def lookups(self, request, model_admin):
-        return (
-            ('action', _('For an action')),
+        plan = request.user.get_active_admin_plan()
+        related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
+        # If there are related plans that have action contact persons, show a filter for each of these plans
+        related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
+        filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
+        if filter_plans.exists():
+            action_filters = [(f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n})
+                              for plan in filter_plans]
+        else:
+            action_filters = [('action', _('For an action'))]
+        choices = [
+            *action_filters,
             ('indicator', _('For an indicator')),
-            ('none', _('Not a contact person'))
-        )
+            ('none', _('Not a contact person')),
+        ]
+        return choices
 
     def queryset(self, request, queryset):
         plan = request.user.get_active_admin_plan()
@@ -54,6 +66,9 @@ class IsContactPersonFilter(admin.SimpleListFilter):
             return queryset
         if self.value() == 'action':
             queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
+        elif self.value().startswith('action_in_plan__'):
+            plan_pk = int(self.value()[16:])
+            queryset = queryset.filter(contact_for_actions__plan=plan_pk)
         elif self.value() == 'indicator':
             queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
         else:
