@@ -289,7 +289,6 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
-    add_to_settings_menu = True
 
     panels = [
         CategoryOfSameTypePanel('parent'),
@@ -508,7 +507,6 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
-    add_to_settings_menu = True
 
     panels = [
         FieldPanel('name'),

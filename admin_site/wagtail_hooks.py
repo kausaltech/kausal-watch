@@ -168,7 +168,7 @@ def register_report_menu():
         _('Reports'),
         report_menu,
         classnames='icon icon-folder-open-inverse',
-        order=100
+        order=130
     )
 
 

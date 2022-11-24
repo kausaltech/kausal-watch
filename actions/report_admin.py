@@ -84,7 +84,7 @@ class ReportAdminButtonHelper(ButtonHelper):
 class ReportTypeAdmin(AplansModelAdmin):
     model = ReportType
     menu_label = _('Report types')
-    menu_order = 1
+    menu_order = 1200
     add_to_settings_menu = True
 
     panels = [
@@ -143,7 +143,6 @@ class ReportAdminMenuItem(ModelAdminMenuItem):
 class ReportAdmin(AplansModelAdmin):
     model = Report
     menu_label = _('Reports')
-    menu_order = 1
     list_filter = (ReportTypeFilter,)
 
     panels = [
