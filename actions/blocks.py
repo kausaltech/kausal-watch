@@ -478,3 +478,31 @@ ActionAsideContentBlock = generate_stream_block(
         ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
     ],
 )
+
+
+# FIXME: Use namespaces (packages) to avoid class names like this
+@register_streamfield_block
+class ActionRichTextAttributeTypeReportTypeFieldBlock(blocks.StructBlock):
+    # attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
+    name = blocks.CharBlock(heading=_('Name'))
+    identifier = blocks.CharBlock(heading=_('Identifier'))  # to be combined with report identifier
+
+    # graphql_fields = []  # TODO
+
+    class Meta:
+        label = _("Text attribute")
+
+
+@register_streamfield_block
+class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
+    class Meta:
+        label = _("implementation phase")
+
+
+@register_streamfield_block
+class ReportFieldBlock(blocks.StreamBlock):
+    # TODO: action status
+    implementation_phase = ActionImplementationPhaseReportFieldBlock()
+    text_attribute = ActionRichTextAttributeTypeReportTypeFieldBlock()
+
+    # graphql_types = []  # TODO

@@ -12,6 +12,7 @@ from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
 from .features import PlanFeatures
+from .report import Report, ReportType
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'CommonCategory', 'CommonCategoryIcon',
     'CommonCategoryType', 'ImpactGroup', 'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
     'Scenario', 'PlanFeatures',
+    'Report', 'ReportType',
 ]

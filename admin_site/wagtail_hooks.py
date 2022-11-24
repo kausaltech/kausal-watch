@@ -19,6 +19,7 @@ from .models import Client
 from actions.models import CommonCategoryType
 
 
+# FIXME: Refactor duplicated code for categories, common categories, attribute types and reports
 class CategoryMenuItem(MenuItem):
     def __init__(self, category_type, **kwargs):
         self.category_type = category_type
@@ -129,6 +130,45 @@ def register_attribute_type_menu():
         attribute_type_menu,
         classnames='icon icon-tag',
         order=120,
+    )
+
+
+class ReportMenuItem(MenuItem):
+    def __init__(self, report_type, **kwargs):
+        self.report_type = report_type
+        self.base_url = reverse('actions_report_modeladmin_index')
+        url = f'{self.base_url}?report_type={report_type.id}'
+        label = report_type.name
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        report_type = request.GET.get('report_type')
+        return request.path.startswith(self.base_url) and report_type == str(self.report_type.pk)
+
+
+class ReportMenu(Menu):
+    def menu_items_for_request(self, request):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        items = []
+        if user.is_general_admin_for_plan(plan):
+            for report_type in plan.report_types.all():
+                item = ReportMenuItem(report_type)
+                items.append(item)
+        return items
+
+
+report_menu = ReportMenu(None)
+
+
+@hooks.register('register_admin_menu_item')
+def register_report_menu():
+    return SubmenuMenuItem(
+        _('Reports'),
+        report_menu,
+        classnames='icon icon-folder-open-inverse',
+        order=100
     )
 
 
