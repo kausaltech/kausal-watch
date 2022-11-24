@@ -357,7 +357,7 @@ class ActionContactPersonSerializer(serializers.Serializer):
         instance.set_contact_persons(validated_data)
 
 
-class AttributeChoiceSerializer(serializers.Serializer):
+class ChoiceAttributesSerializer(serializers.Serializer):
     def to_representation(self, value):
         return {v.type.identifier: v.choice_id for v in value.all()}
 
@@ -370,7 +370,7 @@ class AttributeChoiceSerializer(serializers.Serializer):
             instance.set_choice_attribute(attribute_type_identifier, choice_id)
 
 
-class AttributeChoiceWithTextSerializer(serializers.Serializer):
+class ChoiceWithTextAttributesSerializer(serializers.Serializer):
     def to_representation(self, value):
         return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in value.all()}
 
@@ -383,7 +383,7 @@ class AttributeChoiceWithTextSerializer(serializers.Serializer):
             instance.set_choice_with_text_attribute(attribute_type_identifier, item.get('choice'), item.get('text'))
 
 
-class AttributeNumericValueSerializer(serializers.Serializer):
+class NumericValueAttributesSerializer(serializers.Serializer):
     def to_representation(self, value):
         return {v.type.identifier: v.value for v in value.all()}
 
@@ -396,7 +396,7 @@ class AttributeNumericValueSerializer(serializers.Serializer):
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
 
 
-class AttributeRichTextSerializer(serializers.Serializer):
+class RichTextAttributesSerializer(serializers.Serializer):
     def to_representation(self, value):
         return {v.type.identifier: v.text for v in value.all()}
 
@@ -411,10 +411,10 @@ class AttributeRichTextSerializer(serializers.Serializer):
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetaclass):
-    choice_attributes = AttributeChoiceSerializer(required=False)
-    choice_with_text_attributes = AttributeChoiceWithTextSerializer(required=False)
-    numeric_value_attributes = AttributeNumericValueSerializer(required=False)
-    rich_text_attributes = AttributeRichTextSerializer(required=False)
+    choice_attributes = ChoiceAttributesSerializer(required=False)
+    choice_with_text_attributes = ChoiceWithTextAttributesSerializer(required=False)
+    numeric_value_attributes = NumericValueAttributesSerializer(required=False)
+    rich_text_attributes = RichTextAttributesSerializer(required=False)
 
     _attribute_fields = [
         'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'rich_text_attributes',
