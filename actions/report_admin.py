@@ -38,6 +38,7 @@ class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
         if report_type and not instance.pk:
             assert not hasattr(instance, 'type')
             instance.type = ReportType.objects.get(pk=int(report_type))
+            instance.fields = instance.type.fields
         return instance
 
 
@@ -150,6 +151,7 @@ class ReportAdmin(AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('start_date'),
         FieldPanel('end_date'),
+        StreamFieldPanel('fields', heading=_('fields')),
         FieldPanel('is_complete'),
         FieldPanel('is_public'),
     ]

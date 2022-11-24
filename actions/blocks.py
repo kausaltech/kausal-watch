@@ -1,7 +1,6 @@
 from typing import Tuple, Type
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.functional import cached_property, lazy
 from django.utils.translation import gettext_lazy as _
@@ -483,27 +482,16 @@ ActionAsideContentBlock = generate_stream_block(
 
 # FIXME: Use namespaces (packages) to avoid class names like this
 @register_streamfield_block
-class ActionTextAttributeTypeReportTypeFieldBlock(blocks.StructBlock):
+class ActionTextAttributeTypeReportFieldBlock(blocks.StructBlock):
     # attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
     name = blocks.CharBlock(heading=_('Name'))
     identifier = blocks.CharBlock(heading=_('Identifier'))  # to be combined with report identifier
 
     # graphql_fields = []  # TODO
+    attribute_type_format = AttributeType.AttributeFormat.TEXT
 
     class Meta:
         label = _("Text attribute")
-
-    def create_attribute_type(self, report, value):
-        identifier = f"{report.identifier}__{value['identifier']}"
-        return AttributeType.objects.create(
-            object_content_type=ContentType.objects.get_for_model(Action),
-            scope_content_type=ContentType.objects.get_for_model(Plan),
-            scope_id=report.type.plan.pk,
-            identifier=identifier,
-            name=value['name'],
-            format=AttributeType.AttributeFormat.TEXT,
-            report=report,
-        )
 
 
 @register_streamfield_block
@@ -516,6 +504,6 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 class ReportFieldBlock(blocks.StreamBlock):
     # TODO: action status
     implementation_phase = ActionImplementationPhaseReportFieldBlock()
-    text_attribute = ActionTextAttributeTypeReportTypeFieldBlock()
+    text_attribute = ActionTextAttributeTypeReportFieldBlock()
 
     # graphql_types = []  # TODO
