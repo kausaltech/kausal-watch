@@ -24,7 +24,7 @@ class ReportType(models.Model, PlanRelatedModel):
 
 @reversion.register()
 class Report(models.Model):
-    type = models.ForeignKey(ReportType, on_delete=models.CASCADE, related_name='reports')
+    type = models.ForeignKey(ReportType, on_delete=models.PROTECT, related_name='reports')
     # fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField()  # needed to create identifiers for new attribute types
