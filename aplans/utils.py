@@ -329,3 +329,11 @@ class ModificationTracking(models.Model):
 
     def handle_admin_save(self, context=None):
         self.update_modification_metadata(context.get('user'), context.get('operation'))
+
+
+def append_query_parameter(request, url, parameter):
+    value = request.GET.get(parameter)
+    if value:
+        assert '?' not in url
+        return f'{url}?{parameter}={value}'
+    return url

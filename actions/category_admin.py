@@ -21,14 +21,7 @@ from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
     AplansTabbedInterface, get_translation_tabs
 )
-
-
-def _append_query_parameter(request, url, parameter):
-    value = request.GET.get(parameter)
-    if value:
-        assert '?' not in url
-        return f'{url}?{parameter}={value}'
-    return url
+from aplans.utils import append_query_parameter
 
 
 class CategoryTypeDeleteView(DeleteView):
@@ -189,19 +182,19 @@ class CategoryTypeEditHandler(AplansTabbedInterface):
 class CategoryTypeQueryParameterMixin:
     @property
     def index_url(self):
-        return _append_query_parameter(self.request, super().index_url, 'category_type')
+        return append_query_parameter(self.request, super().index_url, 'category_type')
 
     @property
     def create_url(self):
-        return _append_query_parameter(self.request, super().create_url, 'category_type')
+        return append_query_parameter(self.request, super().create_url, 'category_type')
 
     @property
     def edit_url(self):
-        return _append_query_parameter(self.request, super().edit_url, 'category_type')
+        return append_query_parameter(self.request, super().edit_url, 'category_type')
 
     @property
     def delete_url(self):
-        return _append_query_parameter(self.request, super().delete_url, 'category_type')
+        return append_query_parameter(self.request, super().delete_url, 'category_type')
 
 
 class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
@@ -244,23 +237,23 @@ class CategoryAdminButtonHelper(ButtonHelper):
         """
         if 'category_type' in self.request.GET:
             data = super().add_button(*args, **kwargs)
-            data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+            data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
             return data
         return None
 
     def inspect_button(self, *args, **kwargs):
         data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def edit_button(self, *args, **kwargs):
         data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def delete_button(self, *args, **kwargs):
         data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
 
@@ -428,19 +421,19 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 class CommonCategoryTypeQueryParameterMixin:
     @property
     def index_url(self):
-        return _append_query_parameter(self.request, super().index_url, 'common_category_type')
+        return append_query_parameter(self.request, super().index_url, 'common_category_type')
 
     @property
     def create_url(self):
-        return _append_query_parameter(self.request, super().create_url, 'common_category_type')
+        return append_query_parameter(self.request, super().create_url, 'common_category_type')
 
     @property
     def edit_url(self):
-        return _append_query_parameter(self.request, super().edit_url, 'common_category_type')
+        return append_query_parameter(self.request, super().edit_url, 'common_category_type')
 
     @property
     def delete_url(self):
-        return _append_query_parameter(self.request, super().delete_url, 'common_category_type')
+        return append_query_parameter(self.request, super().delete_url, 'common_category_type')
 
 
 class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCreateView):
@@ -473,23 +466,23 @@ class CommonCategoryAdminButtonHelper(ButtonHelper):
         """
         if 'common_category_type' in self.request.GET:
             data = super().add_button(*args, **kwargs)
-            data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+            data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
             return data
         return None
 
     def inspect_button(self, *args, **kwargs):
         data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
     def edit_button(self, *args, **kwargs):
         data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
     def delete_button(self, *args, **kwargs):
         data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
 
