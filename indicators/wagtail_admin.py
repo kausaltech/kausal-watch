@@ -1,4 +1,4 @@
-from dal import autocomplete
+from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
@@ -357,6 +357,24 @@ class IndicatorAdmin(AplansModelAdmin):
             )
             basic_panels.insert(
                 2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
+            )
+
+        # Until there is a reliable way to prevent the user from editing categories of a non-editable category type
+        # while another category type is editable, we will show the edit widget only when all of the category types
+        # marked as usable for indicators are also marked as editable for indicators.
+        ctypes = plan.category_types
+        usable_ctypes = ctypes.filter(usable_for_indicators=True)
+        if usable_ctypes and set(usable_ctypes) == set(ctypes.filter(editable_for_indicators=True)):
+            basic_panels.append(
+                FieldPanel(
+                    'categories',
+                    widget=autocomplete.ModelSelect2Multiple(
+                        url='category-autocomplete',
+                        forward=(
+                            dal_forward.Const('indicator', 'target_type'),
+                        )
+                    )
+                )
             )
 
         tabs = [

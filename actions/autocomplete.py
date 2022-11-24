@@ -45,14 +45,26 @@ class CategoryAutocomplete(autocomplete.Select2QuerySetView):
 
         plan = self.request.get_active_admin_plan()
         ct_id = self.forwarded.get('type', None)
-        if not ct_id:
-            return Category.objects.none()
-        ct = plan.category_types.get(id=ct_id)
-        qs = ct.categories.all()
-        if self.q:
-            qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q))
+        target_type = self.forwarded.get('target_type', None)
 
-        return qs
+        if ct_id is None and target_type is None:
+            return Category.objects.none()
+
+        category_types = plan.category_types.all()
+        if target_type in ('indicator', 'action'):
+            for restriction in ('usable', 'editable'):
+                category_types = category_types.filter(**{f'{restriction}_for_{target_type}s': True})
+        if ct_id:
+            category_types = category_types.filter(id=ct_id)
+
+        categories = Category.objects.filter(type__in=category_types)
+        if self.q:
+            q = self.q.strip()
+            categories = categories.filter(
+                Q(identifier__istartswith=q) |
+                Q(name__icontains=q)
+            )
+        return categories
 
 
 class CommonCategoryTypeAutocomplete(autocomplete.Select2QuerySetView):
