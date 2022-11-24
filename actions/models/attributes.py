@@ -134,6 +134,19 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
                     choice=choice_val,
                     text=text_val,
                 )
+        elif self.format == self.AttributeFormat.TEXT:
+            val = vals.get('text')
+            try:
+                obj = self.text_attributes.get(content_type=content_type, object_id=obj.id)
+            except self.text_attributes.model.DoesNotExist:
+                if val:
+                    obj = AttributeText.objects.create(type=self, content_object=obj, text=val)
+            else:
+                if not val:
+                    obj.delete()
+                else:
+                    obj.text = val
+                    obj.save()
         elif self.format == self.AttributeFormat.RICH_TEXT:
             val = vals.get('text')
             try:
@@ -255,6 +268,30 @@ class AttributeChoiceWithText(models.Model):
 
     def __str__(self):
         return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.content_object)
+
+
+class AttributeText(models.Model):
+    type = ParentalKey(
+        AttributeType,
+        on_delete=models.CASCADE,
+        related_name='text_attributes',
+    )
+
+    # `content_object` must fit `type`
+    # TODO: Enforce this
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
+
+    text = models.TextField(verbose_name=_('Text'))
+
+    public_fields = ['id', 'type', 'text']
+
+    class Meta:
+        unique_together = ('type', 'content_type', 'object_id')
+
+    def __str__(self):
+        return '%s for %s' % (self.type, self.content_object)
 
 
 class AttributeRichText(models.Model):

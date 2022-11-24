@@ -11,7 +11,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .models import Action, AttributeRichText, AttributeType, Category
+from .models import Action, AttributeRichText, AttributeText, AttributeType, Category
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
@@ -291,6 +291,20 @@ def get_attribute_fields(attribute_types, obj, with_initial=False):
             text_form_field_name = f'attribute_type_{attribute_type.identifier}_text'
             result.append((attribute_type, {choice_form_field_name: (choice_field, 'choice'),
                                             text_form_field_name: (text_field, 'text')}))
+        elif attribute_type.format == AttributeType.AttributeFormat.TEXT:
+            initial_text = None
+            if with_initial:
+                val_obj = (attribute_type.text_attributes
+                           .filter(content_type=content_type, object_id=obj.id)
+                           .first())
+                if val_obj is not None:
+                    initial_text = val_obj.text
+
+            field = AttributeText._meta.get_field('text').formfield(
+                initial=initial_text, required=False
+            )
+            form_field_name = f'attribute_type_{attribute_type.identifier}'
+            result.append((attribute_type, {form_field_name: (field, 'text')}))
         elif attribute_type.format == AttributeType.AttributeFormat.RICH_TEXT:
             initial_text = None
             if with_initial:

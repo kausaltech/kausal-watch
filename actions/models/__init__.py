@@ -5,8 +5,8 @@ from .action import (
     ActionStatusUpdate, ImpactGroupAction
 )
 from .attributes import (
-    AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText, AttributeRichText,
-    AttributeNumericValue
+    AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText,
+    AttributeRichText, AttributeText, AttributeNumericValue
 )
 from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
@@ -16,8 +16,8 @@ from .report import Report, ReportType
 
 
 __all__ = [
-    'Action', 'AttributeType', 'AttributeCategoryChoice', 'AttributeChoice', 'AttributeChoiceWithText', 'AttributeRichText',
-    'AttributeNumericValue', 'ActionContactPerson',
+    'Action', 'AttributeType', 'AttributeCategoryChoice', 'AttributeChoice', 'AttributeChoiceWithText',
+    'AttributeRichText', 'AttributeText', 'AttributeNumericValue', 'ActionContactPerson',
     'ActionDecisionLevel', 'ActionImpact',
     'ActionImplementationPhase', 'ActionLink', 'ActionResponsibleParty',
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
