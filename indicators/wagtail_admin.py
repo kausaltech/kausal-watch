@@ -368,6 +368,7 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.append(
                 FieldPanel(
                     'categories',
+                    heading=_('Categories'),
                     widget=autocomplete.ModelSelect2Multiple(
                         url='category-autocomplete',
                         forward=(
