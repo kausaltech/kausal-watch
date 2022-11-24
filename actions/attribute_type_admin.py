@@ -171,6 +171,8 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('show_choice_names'),
         FieldPanel('has_zero_option'),
         FieldPanel('instances_editable_by'),
+        # FIXME: Only show reports from the active plan
+        FieldPanel('report'),
     ]
 
     index_view_class = AttributeTypeIndexView

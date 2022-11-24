@@ -13,6 +13,11 @@ class ReportType(models.Model, PlanRelatedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
+    def create_attribute_types(self, report):
+        for field in self.fields:
+            if hasattr(field.block, 'create_attribute_type'):
+                field.block.create_attribute_type(report, field.value)
+
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
 
@@ -41,6 +46,13 @@ class Report(models.Model):
                 name='unique_identifier_per_report_type',
             ),
         ]
+
+    def save(self, *args, **kwargs):
+        # FIXME: When changing identifier, update identifiers of this report's attribute types
+        is_new_instance = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new_instance:
+            self.type.create_attribute_types(self)
 
     def __str__(self):
         return self.name

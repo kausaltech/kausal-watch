@@ -40,6 +40,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')
+        TEXT = 'text', _('Text')
         RICH_TEXT = 'rich_text', _('Rich text')
         NUMERIC = 'numeric', _('Numeric')
         CATEGORY_CHOICE = 'category_choice', _('Category')
@@ -76,6 +77,10 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         default=False, verbose_name=_('has zero option'),
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
+    )
+    report = models.ForeignKey(
+        'actions.Report', blank=True, null=True, on_delete=models.PROTECT,
+        related_name='attribute_types', verbose_name=_('Report'),
     )
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
