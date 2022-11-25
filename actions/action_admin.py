@@ -43,7 +43,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .attribute_type_admin import get_attribute_fields
-from .models import Action, ActionTask, AttributeRichText, AttributeType, CategoryType
+from .models import Action, ActionTask, AttributeType, CategoryType
 
 logger = logging.getLogger(__name__)
 
@@ -463,15 +463,36 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
         return plan.general_content.get_action_term_display_plural()
 
 
-def get_action_attribute_fields(plan, action, user, **kwargs):
+def get_action_attribute_fields(plan, action, user, only_with_report=False, only_without_report=False, **kwargs):
     action_ct = ContentType.objects.get_for_model(Action)
     plan_ct = ContentType.objects.get_for_model(plan)
-    attribute_types = (at for at in AttributeType.objects.filter(
+    attribute_types = AttributeType.objects.filter(
         object_content_type=action_ct,
         scope_content_type=plan_ct,
         scope_id=plan.id,
-    ) if at.are_instances_editable_by(user, plan))
+    )
+    if only_with_report:
+        attribute_types = attribute_types.filter(report__isnull=False)
+    if only_without_report:
+        attribute_types = attribute_types.filter(report__isnull=True)
+    attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, plan))
     return get_attribute_fields(attribute_types, action, **kwargs)
+
+
+def get_action_attribute_panels(plan, action, user, **kwargs):
+    if action:
+        attribute_fields = get_action_attribute_fields(plan, action, user, **kwargs)
+    else:
+        attribute_fields = []
+    panels = []
+    for attribute_type, fields in attribute_fields:
+        for form_field_name, (field, model_field_name) in fields.items():
+            if len(fields) > 1:
+                heading = f'{attribute_type.name} ({model_field_name})'
+            else:
+                heading = attribute_type.name
+            panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+    return panels
 
 
 class AttributeFieldPanel(FieldPanel):
@@ -549,7 +570,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('start_date'),
         FieldPanel('end_date'),
     ]
-    internal_panels = [
+    reporting_panels = [
         FieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
     ]
 
@@ -658,18 +679,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 panels.remove(panel)
 
         # TODO: Refactor duplicated code (category_admin.py)
-        if instance:
-            attribute_fields = get_action_attribute_fields(plan, instance, request.user, with_initial=True)
-        else:
-            attribute_fields = []
-
-        for attribute_type, fields in attribute_fields:
-            for form_field_name, (field, model_field_name) in fields.items():
-                if len(fields) > 1:
-                    heading = f'{attribute_type.name} ({model_field_name})'
-                else:
-                    heading = attribute_type.name
-                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+        panels += get_action_attribute_panels(plan, instance, request.user, with_initial=True, only_without_report=True)
 
         if is_general_admin:
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
@@ -729,18 +739,25 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ], heading=_('Tasks')),
         ]
 
-        internal_panels = list(self.internal_panels)
+        reporting_panels = get_action_attribute_panels(
+            plan,
+            instance,
+            request.user,
+            with_initial=True,
+            only_with_report=True,
+        )
+        reporting_panels += list(self.reporting_panels)
 
         if is_general_admin:
-            internal_panels.append(
+            reporting_panels.append(
                 FieldPanel('internal_admin_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5)))
             )
             if plan.action_impacts.exists():
-                internal_panels.append(PlanFilteredFieldPanel('impact'))
+                reporting_panels.append(PlanFilteredFieldPanel('impact'))
             if plan.action_schedules.exists():
-                internal_panels.append(PlanFilteredFieldPanel('schedule'))
+                reporting_panels.append(PlanFilteredFieldPanel('schedule'))
 
-        all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
+        all_tabs.append(ObjectList(reporting_panels, heading=_('Reporting')))
 
         i18n_tabs = get_translation_tabs(instance, request)
         all_tabs += i18n_tabs
