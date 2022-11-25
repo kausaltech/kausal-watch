@@ -422,6 +422,21 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
 
 
+class TextAttributesSerializer(serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.TEXT
+
+    def to_representation(self, value):
+        return {v.type.identifier: v.text for v in value.all()}
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert instance.pk is not None
+        for attribute_type_identifier, value in validated_data.items():
+            instance.set_text_attribute(attribute_type_identifier, value)
+
+
 class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_format = AttributeType.AttributeFormat.RICH_TEXT
 
@@ -442,10 +457,12 @@ class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetacla
     choice_attributes = ChoiceAttributesSerializer(required=False)
     choice_with_text_attributes = ChoiceWithTextAttributesSerializer(required=False)
     numeric_value_attributes = NumericValueAttributesSerializer(required=False)
+    text_attributes = TextAttributesSerializer(required=False)
     rich_text_attributes = RichTextAttributesSerializer(required=False)
 
     _attribute_fields = [
-        'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'rich_text_attributes',
+        'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'text_attributes',
+        'rich_text_attributes',
     ]
 
     def get_field_names(self, declared_fields, info):

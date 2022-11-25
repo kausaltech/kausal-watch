@@ -351,6 +351,7 @@ class ModelWithAttributes(models.Model):
     """
     choice_attributes = GenericRelation(to='actions.AttributeChoice')
     choice_with_text_attributes = GenericRelation(to='actions.AttributeChoiceWithText')
+    text_attributes = GenericRelation(to='actions.AttributeText')
     rich_text_attributes = GenericRelation(to='actions.AttributeRichText')
     numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
     category_choice_attributes = GenericRelation(to='actions.AttributeCategoryChoice')
@@ -403,6 +404,21 @@ class ModelWithAttributes(models.Model):
                 existing_attribute.delete()
             else:
                 existing_attribute.value = value
+                existing_attribute.save()
+
+    def set_text_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.text_attributes.get(type=type)
+        except self.text_attributes.model.DoesNotExist:
+            if value is not None:
+                self.text_attributes.create(type=type, text=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.text = value
                 existing_attribute.save()
 
     def set_rich_text_attribute(self, type, value):
