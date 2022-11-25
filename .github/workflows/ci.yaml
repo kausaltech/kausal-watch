@@ -28,7 +28,7 @@ jobs:
       - name: Start Postgres and Redis
         run: docker-compose up -d db redis
       - name: Run pytest unit tests
-        run: docker-compose run --rm --entrypoint '' app pytest
+        run: docker-compose run --rm --entrypoint '' app python run_tests.py
       - name: Stop Postgres and Redis
         run: docker-compose down
       - name: Log into Docker registry
