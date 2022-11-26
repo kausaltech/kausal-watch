@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import rest_framework.fields
 import typing
 from typing import Optional
 
@@ -14,6 +15,7 @@ from drf_spectacular.types import OpenApiTypes  # noqa
 from rest_framework_nested import routers
 
 from actions.models.action import ActionImplementationPhase
+from actions.models.attributes import AttributeType
 from actions.models.plan import PlanQuerySet
 from aplans.api_router import router
 from aplans.model_images import (
@@ -357,7 +359,27 @@ class ActionContactPersonSerializer(serializers.Serializer):
         instance.set_contact_persons(validated_data)
 
 
-class ChoiceAttributesSerializer(serializers.Serializer):
+class AttributesSerializerMixin:
+    # In the serializer, set `attribute_format` to a value from `AttributeType.AttributeFormat`
+    def get_fields(self):
+        fields = super().get_fields()
+        request = self.context.get('request')
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+            plan = user.get_active_admin_plan()
+            attribute_types = plan.action_attribute_types.filter(format=self.attribute_format)
+            for attribute_type in attribute_types:
+                instances_editable = attribute_type.are_instances_editable_by(user, plan)
+                fields[attribute_type.identifier] = rest_framework.fields.FloatField(
+                    label=attribute_type.name,
+                    read_only=not instances_editable,
+                )
+        return fields
+
+
+class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.ORDERED_CHOICE
+
     def to_representation(self, value):
         return {v.type.identifier: v.choice_id for v in value.all()}
 
@@ -370,7 +392,9 @@ class ChoiceAttributesSerializer(serializers.Serializer):
             instance.set_choice_attribute(attribute_type_identifier, choice_id)
 
 
-class ChoiceWithTextAttributesSerializer(serializers.Serializer):
+class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
+
     def to_representation(self, value):
         return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in value.all()}
 
@@ -383,7 +407,9 @@ class ChoiceWithTextAttributesSerializer(serializers.Serializer):
             instance.set_choice_with_text_attribute(attribute_type_identifier, item.get('choice'), item.get('text'))
 
 
-class NumericValueAttributesSerializer(serializers.Serializer):
+class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.NUMERIC
+
     def to_representation(self, value):
         return {v.type.identifier: v.value for v in value.all()}
 
@@ -396,7 +422,9 @@ class NumericValueAttributesSerializer(serializers.Serializer):
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
 
 
-class RichTextAttributesSerializer(serializers.Serializer):
+class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.RICH_TEXT
+
     def to_representation(self, value):
         return {v.type.identifier: v.text for v in value.all()}
 
