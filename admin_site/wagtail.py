@@ -325,8 +325,25 @@ class PlanRelatedViewMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
+class ActivatePermissionHelperPlanContextMixin:
+    @method_decorator(login_required)
+    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+        """Set the plan context for permission helper before dispatching request."""
+
+        if isinstance(self.permission_helper, PlanContextPermissionHelper):
+            with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
+                ret = super().dispatch(request, *args, **kwargs)
+                # We trigger render here, because the plan context is needed
+                # still in the render stage.
+                if hasattr(ret, 'render'):
+                    ret = ret.render()
+            return ret
+        else:
+            return super().dispatch(request, *args, **kwargs)
+
+
 class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                     PlanRelatedViewMixin, EditView):
+                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)
@@ -430,20 +447,8 @@ class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
         return ret
 
 
-class AplansIndexView(IndexView):
-    @method_decorator(login_required)
-    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
-        """Set the plan context for permission helper before dispatching request."""
-
-        if isinstance(self.permission_helper, PlanContextPermissionHelper):
-            with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
-                ret = super().dispatch(request, *args, **kwargs)
-                # We trigger render here, because the plan context is needed
-                # still in the render stage.
-                ret = ret.render()
-            return ret
-        else:
-            return super().dispatch(request, *args, **kwargs)
+class AplansIndexView(ActivatePermissionHelperPlanContextMixin, IndexView):
+    pass
 
 
 class AplansModelAdmin(ModelAdmin):
