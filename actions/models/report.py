@@ -17,6 +17,10 @@ class ReportType(models.Model, PlanRelatedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
+    class Meta:
+        verbose_name = _('report type')
+        verbose_name_plural = _('report types')
+
     def create_attribute_types(self, report):
         # Create an attribute type for each block in `fields` that has `attribute_type_format` set
         for field in self.fields:
@@ -57,6 +61,8 @@ class Report(models.Model):
     )
 
     class Meta:
+        verbose_name = _('report')
+        verbose_name_plural = _('reports')
         constraints = [
             models.UniqueConstraint(
                 fields=['type', 'identifier'],

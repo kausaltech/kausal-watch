@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-29 10:09+0200\n"
+"POT-Creation-Date: 2022-11-29 19:44+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -94,8 +94,9 @@ msgstr "Externe links"
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
 
-#: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: orgs/models.py people/templates/people/chooser_results.html
+#: actions/action_admin.py actions/blocks.py
+#: actions/templates/actions/chooser_results.html orgs/models.py
+#: people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -129,8 +130,8 @@ msgid "Tasks"
 msgstr "Aufgaben"
 
 #: actions/action_admin.py
-msgid "Internal information"
-msgstr "Interne Informationen"
+msgid "Reporting"
+msgstr "Berichterstattung"
 
 #: actions/admin.py
 msgid "Non-modifiable actions"
@@ -338,6 +339,14 @@ msgstr "Blocks"
 msgid "Section"
 msgstr "Abschnitt"
 
+#: actions/blocks.py templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr "Kennung"
+
+#: actions/blocks.py
+msgid "Text attribute"
+msgstr "Textattribut"
+
 #: actions/category_admin.py
 msgid "Category types"
 msgstr "Kategorietypen"
@@ -427,8 +436,8 @@ msgid "identifier"
 msgstr "Kennung"
 
 #: actions/export.py actions/models/action.py actions/models/attributes.py
-#: actions/models/category.py actions/models/plan.py indicators/models.py
-#: orgs/models.py
+#: actions/models/category.py actions/models/plan.py actions/models/report.py
+#: indicators/models.py orgs/models.py
 msgid "name"
 msgstr "Name"
 
@@ -654,7 +663,7 @@ msgstr "Zuständige Organisationen"
 msgid "updated at"
 msgstr "aktualisiert am"
 
-#: actions/models/action.py
+#: actions/models/action.py actions/models/report.py
 msgid "start date"
 msgstr "Beginndatum"
 
@@ -662,7 +671,7 @@ msgstr "Beginndatum"
 msgid "The date when implementation of this action starts"
 msgstr "Das Datum, an dem die Umsetzung dieser Maßnahme beginnt"
 
-#: actions/models/action.py
+#: actions/models/action.py actions/models/report.py
 msgid "end date"
 msgstr "Enddatum"
 
@@ -922,6 +931,10 @@ msgstr "Geordnete Auswahl"
 msgid "Optional choice with optional text"
 msgstr "Optionale Auswahl mit optionalem Text"
 
+#: actions/models/attributes.py pages/models.py
+msgid "Text"
+msgstr "Text"
+
 #: actions/models/attributes.py
 msgid "Rich text"
 msgstr "Rich-Text"
@@ -967,6 +980,10 @@ msgid "If the format is \"ordered choice\", determines whether the first option 
 msgstr "Legt, falls das Format \"Geordnete Auswahl\" ist, fest, ob die erste Option mit null Kugeln statt einer angezeigt wird"
 
 #: actions/models/attributes.py
+msgid "Report"
+msgstr "Bericht"
+
+#: actions/models/attributes.py
 msgid "attribute type"
 msgstr "Attributtyp"
 
@@ -985,10 +1002,6 @@ msgstr "Attribut-Wahlmöglichkeit"
 #: actions/models/attributes.py
 msgid "attribute choice options"
 msgstr "Attribut-Wahlmöglichkeiten"
-
-#: actions/models/attributes.py pages/models.py
-msgid "Text"
-msgstr "Text"
 
 #: actions/models/category.py
 msgid "Single"
@@ -1395,6 +1408,54 @@ msgstr "Überwachungsqualitätspunkt"
 #: actions/models/plan.py
 msgid "monitoring quality points"
 msgstr "Überwachungsqualitätspunkte"
+
+#: actions/models/report.py
+msgid "report type"
+msgstr "Berichtstyp"
+
+#: actions/models/report.py
+msgid "report types"
+msgstr "Berichtstypen"
+
+#: actions/models/report.py
+msgid "complete"
+msgstr "fertiggestellt"
+
+#: actions/models/report.py
+msgid "Set if report cannot be changed anymore"
+msgstr "Setzen, wenn Bericht nicht mehr geändert werden kann"
+
+#: actions/models/report.py
+msgid "is public"
+msgstr "ist öffentlich"
+
+#: actions/models/report.py
+msgid "Set if report can be shown to the public"
+msgstr "Setzen, wenn Bericht öffentlich angezeigt werden kann"
+
+#: actions/models/report.py
+msgid "report"
+msgstr "Bericht"
+
+#: actions/models/report.py
+msgid "reports"
+msgstr "Berichte"
+
+#: actions/report_admin.py
+msgid "Report types"
+msgstr "Berichtstypen"
+
+#: actions/report_admin.py
+msgid "fields"
+msgstr "Felder"
+
+#: actions/report_admin.py
+msgid "Report type"
+msgstr "Berichtstyp"
+
+#: actions/report_admin.py admin_site/wagtail_hooks.py
+msgid "Reports"
+msgstr "Berichte"
 
 #: actions/templates/actions/chooser_results.html
 msgid "Plan"
@@ -2799,6 +2860,7 @@ msgid "Is contact person"
 msgstr "Ist Ansprechpartner"
 
 #: people/admin.py
+#, python-format
 msgid "For an action in %(plan)s"
 msgstr "Für eine Maßnahme in %(plan)s"
 
@@ -2932,10 +2994,6 @@ msgid "Unknown content"
 msgstr "Unbekannter Inhalt"
 
 #: templates/aplans_admin/own_actions_panel.html
-msgid "Identifier"
-msgstr "Kennung"
-
-#: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Last modified"
 msgstr "Zuletzt verändert"
@@ -3039,6 +3097,9 @@ msgstr "Ausloggen"
 msgid "Users"
 msgstr "Benutzer"
 
+#~ msgid "Internal information"
+#~ msgstr "Interne Informationen"
+
 #~ msgid "Choose a document"
 #~ msgstr "Ein Dokument wählen"
 
@@ -3080,9 +3141,6 @@ msgstr "Benutzer"
 
 #~ msgid "Body responsible for site accessibility"
 #~ msgstr "Für Barrierefreiheit zuständige Stelle"
-
-#~ msgid "Set if different from the owner of the site"
-#~ msgstr "Setzen, wenn anders als Seiteninhaber"
 
 #~ msgid "Accessibility contact email"
 #~ msgstr "E-Mail-Adresse des Barrierefreiheitsansprechpartners"
