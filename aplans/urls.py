@@ -26,7 +26,9 @@ from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_url
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
-from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete
+from actions.autocomplete import (
+    ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete, ReportAutocomplete,
+)
 from orgs.autocomplete import OrganizationAutocomplete
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
 from people.autocomplete import PersonAutocomplete
@@ -73,6 +75,7 @@ urlpatterns = [
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
     re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
+    re_path(r'^report-autocomplete/$', ReportAutocomplete.as_view(), name='report-autocomplete'),
     re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
     re_path(r'^common-indicator-autocomplete/$', CommonIndicatorAutocomplete.as_view(), name='common-indicator-autocomplete'),
     re_path(

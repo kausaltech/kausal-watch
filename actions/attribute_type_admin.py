@@ -11,7 +11,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .models import Action, AttributeRichText, AttributeText, AttributeType, Category
+from .models import Action, AttributeRichText, AttributeText, AttributeType, Category, Report
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
@@ -171,8 +171,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('show_choice_names'),
         FieldPanel('has_zero_option'),
         FieldPanel('instances_editable_by'),
-        # FIXME: Only show reports from the active plan
-        FieldPanel('report'),
     ]
 
     index_view_class = AttributeTypeIndexView
@@ -183,8 +181,8 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self, instance, request):
         basic_panels = list(self.basic_panels)
-        # user = request.user
-        # plan = user.get_active_admin_plan()
+        user = request.user
+        plan = user.get_active_admin_plan()
         if instance.object_content_type_id is None:
             content_type_id = request.GET['content_type']
         else:
@@ -199,6 +197,10 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             basic_panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_("Category type")))
         else:
             raise Exception(f"Invalid content type {content_type.app_label}.{content_type.model}")
+
+        # Add report panel iff there are reports in this plan
+        if Report.objects.filter(type__plan=plan).exists():
+            basic_panels.append(FieldPanel('report', widget=autocomplete.ModelSelect2(url='report-autocomplete')))
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
