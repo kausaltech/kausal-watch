@@ -187,7 +187,9 @@ class PlanAdmin(AplansModelAdmin):
                     widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
                 ),
                 FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
-                FieldPanel('action_days_until_considered_stale')
+                FieldPanel('settings_action_update_target_interval'),
+                FieldPanel('settings_action_update_acceptable_interval'),
+                FieldPanel('action_days_until_considered_stale'),
             ], heading=_('Action classifications')),
         ]
 

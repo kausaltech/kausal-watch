@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-15 15:31+0200\n"
+"POT-Creation-Date: 2022-11-29 10:09+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -115,7 +115,8 @@ msgstr "Grunddaten"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Ansprechpartner"
 
@@ -707,7 +708,7 @@ msgid "Unspecified"
 msgstr "Unspezifiziert"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py
+#: people/models.py people/wagtail_admin.py
 msgid "organization"
 msgstr "Organisation"
 
@@ -1198,6 +1199,10 @@ msgstr "Plan-Feature"
 msgid "plan features"
 msgstr "Plan-Features"
 
+#: actions/models/plan.py
+msgid "If you leave this blank the application will use the default value"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr "Kurzname"
@@ -1259,7 +1264,7 @@ msgid "A secondary action classification"
 msgstr "Eine sekundäre Maßnahmenklassifizierung"
 
 #: actions/models/plan.py
-msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
+msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
 msgstr ""
 
 #: actions/models/plan.py
@@ -1267,7 +1272,29 @@ msgid "Days until actions considered stale"
 msgstr "Tage bis Maßnahmen als veraltet gelten"
 
 #: actions/models/plan.py
-msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+#, fuzzy
+#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+msgid "Actions not updated since this many days are considered stale."
+msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
+
+#: actions/models/plan.py
+msgid "Target interval in days to update actions"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+msgid "A desirable time interval in days within which actions should be updated in the optimal case."
+msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
+
+#: actions/models/plan.py
+msgid "Acceptable interval in days to update actions"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+msgid "A maximum time interval in days within which actions should always be updated."
 msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
 
 #: actions/models/plan.py indicators/models.py
@@ -1620,6 +1647,24 @@ msgid "order"
 msgstr "Sortierung"
 
 #: aplans/utils.py
+#, fuzzy
+#| msgid "None available"
+msgid "Not editable"
+msgstr "Keine verfügbar"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "plan admins"
+msgid "Plan admins"
+msgstr "Plan-Admins"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "Edit data"
+msgid "Edit rights"
+msgstr "Daten bearbeiten"
+
+#: aplans/utils.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ist keine CSS-Forge (z. B. \"#112233\", \"red\" oder \"rgb(0, 255, 127)\")"
@@ -1724,26 +1769,6 @@ msgstr "Dokument"
 msgid "documents"
 msgstr "Dokumente"
 
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Choose a document"
-msgstr "Ein Dokument wählen"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload from computer"
-msgstr "Vom Computer hochladen"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Search the service"
-msgstr "Den Dienst durchsuchen"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Uploading…"
-msgstr "Wird hochgeladen…"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload"
-msgstr "Hochladen"
-
 #: feedback/models.py
 msgid "user feedback"
 msgstr "Benutzer-Feedback"
@@ -1823,14 +1848,6 @@ msgstr "[nichts]"
 #: indicators/admin.py
 msgid "has goals"
 msgstr "hat Ziele"
-
-#: indicators/api.py
-msgid "Latest value"
-msgstr "Neuester Wert"
-
-#: indicators/api.py
-msgid "Date of latest value"
-msgstr "Datum des neuesten Werts"
 
 #: indicators/blocks.py
 msgid "Indicator"
@@ -2788,6 +2805,12 @@ msgid "Is contact person"
 msgstr "Ist Ansprechpartner"
 
 #: people/admin.py
+#, fuzzy, python-format
+#| msgid "For an action"
+msgid "For an action in %(plan)s"
+msgstr "Für eine Maßnahme"
+
+#: people/admin.py
 msgid "For an action"
 msgstr "Für eine Maßnahme"
 
@@ -3023,6 +3046,27 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "Choose a document"
+#~ msgstr "Ein Dokument wählen"
+
+#~ msgid "Upload from computer"
+#~ msgstr "Vom Computer hochladen"
+
+#~ msgid "Search the service"
+#~ msgstr "Den Dienst durchsuchen"
+
+#~ msgid "Uploading…"
+#~ msgstr "Wird hochgeladen…"
+
+#~ msgid "Upload"
+#~ msgstr "Hochladen"
+
+#~ msgid "Latest value"
+#~ msgstr "Neuester Wert"
+
+#~ msgid "Date of latest value"
+#~ msgstr "Datum des neuesten Werts"
 
 #~ msgid "English"
 #~ msgstr "Englisch"

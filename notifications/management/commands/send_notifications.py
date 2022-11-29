@@ -310,7 +310,7 @@ class NotificationEngine:
         # one active task with DLs within 365 days
         N_DAYS = 365
         TASK_COUNT = 1
-        # Also when the action has not been updated in 90 days
+        # Also when the action has not been updated in the desired number of days
         LAST_UPDATED_DAYS = self.plan.get_action_days_until_considered_stale()
 
         active_tasks = action.tasks.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))

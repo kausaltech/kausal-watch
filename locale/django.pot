@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-03 12:42+0200\n"
+"POT-Creation-Date: 2022-11-29 10:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -116,7 +116,8 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr ""
 
@@ -252,11 +253,32 @@ msgid "Value attribute"
 msgstr ""
 
 #: actions/blocks.py
+msgid "Attribute type"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Label for 'show all'"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr ""
+
+#: actions/blocks.py
 msgid "Dropdown"
 msgstr ""
 
 #: actions/blocks.py
 msgid "Buttons"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Style"
+msgstr ""
+
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
+msgid "Category"
 msgstr ""
 
 #: actions/blocks.py
@@ -298,12 +320,23 @@ msgid "official name"
 msgstr ""
 
 #: actions/blocks.py
-msgid "Attribute"
+msgid "Full width"
 msgstr ""
 
-#: actions/blocks.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
+#: actions/blocks.py
+msgid "Grid"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Help text"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Blocks"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Section"
 msgstr ""
 
 #: actions/category_admin.py
@@ -676,7 +709,7 @@ msgid "Unspecified"
 msgstr ""
 
 #: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py
+#: people/models.py people/wagtail_admin.py
 msgid "organization"
 msgstr ""
 
@@ -1167,6 +1200,10 @@ msgstr ""
 msgid "plan features"
 msgstr ""
 
+#: actions/models/plan.py
+msgid "If you leave this blank the application will use the default value"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr ""
@@ -1228,7 +1265,7 @@ msgid "A secondary action classification"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
+msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
 msgstr ""
 
 #: actions/models/plan.py
@@ -1236,7 +1273,23 @@ msgid "Days until actions considered stale"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
+msgid "Actions not updated since this many days are considered stale."
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Target interval in days to update actions"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A desirable time interval in days within which actions should be updated in the optimal case."
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Acceptable interval in days to update actions"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A maximum time interval in days within which actions should always be updated."
 msgstr ""
 
 #: actions/models/plan.py indicators/models.py
@@ -1589,6 +1642,18 @@ msgid "order"
 msgstr ""
 
 #: aplans/utils.py
+msgid "Not editable"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Plan admins"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Edit rights"
+msgstr ""
+
+#: aplans/utils.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr ""
@@ -1691,26 +1756,6 @@ msgstr ""
 
 #: documents/models.py
 msgid "documents"
-msgstr ""
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Choose a document"
-msgstr ""
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload from computer"
-msgstr ""
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Search the service"
-msgstr ""
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Uploading…"
-msgstr ""
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload"
 msgstr ""
 
 #: feedback/models.py
@@ -2553,18 +2598,6 @@ msgid "Common page configuration"
 msgstr ""
 
 #: pages/models.py
-msgid "hero content"
-msgstr ""
-
-#: pages/models.py
-msgid "Short description for what actions are"
-msgstr ""
-
-#: pages/models.py
-msgid "Short description for what indicators are"
-msgstr ""
-
-#: pages/models.py
 msgid "Front page hero block"
 msgstr ""
 
@@ -2637,6 +2670,14 @@ msgid "Content pages"
 msgstr ""
 
 #: pages/models.py
+msgid "Category type page"
+msgstr ""
+
+#: pages/models.py
+msgid "Category type pages"
+msgstr ""
+
+#: pages/models.py
 msgid "Action list"
 msgstr ""
 
@@ -2662,6 +2703,10 @@ msgstr ""
 
 #: pages/models.py
 msgid "Tab of the action list page that should be visible by default"
+msgstr ""
+
+#: pages/models.py
+msgid "Primary filters"
 msgstr ""
 
 #: pages/models.py
@@ -2693,6 +2738,46 @@ msgid "Action details page"
 msgstr ""
 
 #: pages/models.py
+msgid "Action list page"
+msgstr ""
+
+#: pages/models.py
+msgid "Action list pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Indicator list page"
+msgstr ""
+
+#: pages/models.py
+msgid "Indicator list pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Impact group page"
+msgstr ""
+
+#: pages/models.py
+msgid "Impact group pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Privacy policy page"
+msgstr ""
+
+#: pages/models.py
+msgid "Privacy policy pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Accessibility statement page"
+msgstr ""
+
+#: pages/models.py
+msgid "Accessibility statement pages"
+msgstr ""
+
+#: pages/models.py
 msgid "external plan link"
 msgstr ""
 
@@ -2706,6 +2791,11 @@ msgstr ""
 
 #: people/admin.py
 msgid "Is contact person"
+msgstr ""
+
+#: people/admin.py
+#, python-format
+msgid "For an action in %(plan)s"
 msgstr ""
 
 #: people/admin.py

@@ -101,6 +101,9 @@ class PlanNode(DjangoNode):
     general_content = graphene.Field('aplans.schema.SiteGeneralContentNode', required=True)
     all_related_plans = graphene.List('actions.schema.PlanNode', required=True)
 
+    action_update_target_interval = graphene.Int()
+    action_update_acceptable_interval = graphene.Int()
+
     def resolve_last_action_identifier(self: Plan, info):
         return self.get_last_action_identifier()
 
@@ -256,6 +259,12 @@ class PlanNode(DjangoNode):
     )
     def resolve_secondary_action_classification(root: Plan, info):
         return root.secondary_action_classification
+
+    def resolve_action_update_target_interval(root: Plan, info):
+        return root.action_update_target_interval
+
+    def resolve_action_update_acceptable_interval(root: Plan, info):
+        return root.action_update_acceptable_interval
 
     class Meta:
         model = Plan

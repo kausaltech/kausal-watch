@@ -12,10 +12,11 @@ from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator, RegexValidator, MaxValueValidator
+from django.core.validators import URLValidator, RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
@@ -88,6 +89,25 @@ def set_default_page_creation(enabled: bool):
     _skip_default_page_creation = False
 
 
+def help_text_with_default_disclaimer(help_text, default_value=None):
+    """Lazily formats a help text with the default value injected
+       for clarity if one is available.
+    """
+    disclaimer = _('If you leave this blank the application will use the default value')
+    if default_value:
+        return format_lazy(
+            '{help_text} {disclaimer} {default_value}.',
+            help_text=help_text,
+            disclaimer=disclaimer,
+            default_value=default_value,
+        )
+    return format_lazy(
+        '{help_text} {disclaimer}.',
+        help_text=help_text,
+        disclaimer=disclaimer,
+    )
+
+
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
@@ -97,6 +117,8 @@ class Plan(ClusterableModel):
     Most information in this service is linked to a Plan.
     """
     DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 180
+    DEFAULT_ACTION_UPDATE_TARGET_INTERVAL = 30
+    DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL = 60
     MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 730
 
     name = models.CharField(max_length=100, verbose_name=_('name'))
@@ -179,9 +201,28 @@ class Plan(ClusterableModel):
     action_days_until_considered_stale = models.PositiveIntegerField(
         null=True, blank=True, validators=[MaxValueValidator(MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE)],
         verbose_name=_('Days until actions considered stale'),
-        help_text=_(
-            'Actions not updated since this many days are considered stale. '
-            'If you leave this blank a default value will be used.'))
+        help_text=help_text_with_default_disclaimer(
+            _('Actions not updated since this many days are considered stale.'),
+            DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+        )
+    )
+
+    settings_action_update_target_interval = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_('Target interval in days to update actions'),
+        help_text=help_text_with_default_disclaimer(
+            _('A desirable time interval in days within which actions should be updated in the optimal case.'),
+            DEFAULT_ACTION_UPDATE_TARGET_INTERVAL
+        )
+    )
+    settings_action_update_acceptable_interval = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(730), MinValueValidator(1)],
+        verbose_name=_('Acceptable interval in days to update actions'),
+        help_text=help_text_with_default_disclaimer(
+            _('A maximum time interval in days within which actions should always be updated.'),
+            DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
+        )
+    )
 
     features: PlanFeatures
     actions: RelatedManager[Action]
@@ -544,6 +585,16 @@ class Plan(ClusterableModel):
     def get_action_days_until_considered_stale(self):
         days = self.action_days_until_considered_stale
         return days if days is not None else self.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+
+    @property
+    def action_update_target_interval(self):
+        days = self.settings_action_update_target_interval
+        return days if days is not None else self.DEFAULT_ACTION_UPDATE_TARGET_INTERVAL
+
+    @property
+    def action_update_acceptable_interval(self):
+        days = self.settings_action_update_acceptable_interval
+        return days if days is not None else self.DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
 
 
 # ParentalManyToManyField  won't help, so we need the through model:

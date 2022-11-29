@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-03 12:42+0200\n"
-"PO-Revision-Date: 2022-11-03 12:45+0200\n"
+"POT-Creation-Date: 2022-11-29 10:09+0200\n"
+"PO-Revision-Date: 2022-11-29 10:13+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -115,7 +115,8 @@ msgstr "Perustiedot"
 msgid "Progress"
 msgstr "Eteneminen"
 
-#: actions/action_admin.py actions/api.py indicators/wagtail_admin.py
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
@@ -251,12 +252,35 @@ msgid "Value attribute"
 msgstr "Arvo-ominaisuus"
 
 #: actions/blocks.py
+#, fuzzy
+#| msgid "attribute type"
+msgid "Attribute type"
+msgstr "ominaisuustyyppi"
+
+#: actions/blocks.py
+msgid "Label for 'show all'"
+msgstr ""
+
+#: actions/blocks.py
+msgid "Attribute"
+msgstr "Ominaisuus"
+
+#: actions/blocks.py
 msgid "Dropdown"
 msgstr "Alasvetovalikko"
 
 #: actions/blocks.py
 msgid "Buttons"
 msgstr "Nappulat"
+
+#: actions/blocks.py
+msgid "Style"
+msgstr ""
+
+#: actions/blocks.py actions/models/attributes.py pages/blocks.py
+#: pages/models.py
+msgid "Category"
+msgstr "Luokka"
 
 #: actions/blocks.py
 #, python-format
@@ -297,13 +321,30 @@ msgid "official name"
 msgstr "virallinen nimi"
 
 #: actions/blocks.py
-msgid "Attribute"
-msgstr "Ominaisuus"
+#, fuzzy
+#| msgid "Full width (zoomable)"
+msgid "Full width"
+msgstr "Täysi leveys (suurennettava)"
 
-#: actions/blocks.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
-msgstr "Luokka"
+#: actions/blocks.py
+msgid "Grid"
+msgstr ""
+
+#: actions/blocks.py
+#, fuzzy
+#| msgid "help text"
+msgid "Help text"
+msgstr "ohjeteksti"
+
+#: actions/blocks.py
+msgid "Blocks"
+msgstr ""
+
+#: actions/blocks.py
+#, fuzzy
+#| msgid "action"
+msgid "Section"
+msgstr "toimenpide"
 
 #: actions/category_admin.py
 msgid "Category types"
@@ -677,7 +718,7 @@ msgid "Unspecified"
 msgstr ""
 
 #: actions/models/action.py indicators/models.py orgs/models.py
-#: people/models.py
+#: people/models.py people/wagtail_admin.py
 msgid "organization"
 msgstr "organisaatio"
 
@@ -1178,6 +1219,10 @@ msgstr "toimenpiteen ominaisuus"
 msgid "plan features"
 msgstr "toimenpiteen ominaisuudet"
 
+#: actions/models/plan.py
+msgid "If you leave this blank the application will use the default value"
+msgstr "Jos jätät tämän tyhjäksi, käytetään oletusarvoa"
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr "lyhenne"
@@ -1239,16 +1284,32 @@ msgid "A secondary action classification"
 msgstr "Toimenpiteiden toissijainen luokittelu"
 
 #: actions/models/plan.py
-msgid "Leave empty unless specifically required. Actionfilters based on this category are displayed more prominently than filters of other categories."
-msgstr "Jätä tyhjäksi ellei erikseen toivottu. Sivustolla korostetaan toimenpiteiden luokittelua tällä kategorialla "
+msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
+msgstr "Jätä tyhjäksi ellei erikseen toivottu. Sivustolla korostetaan toimenpiteiden luokittelua tällä kategorialla."
 
 #: actions/models/plan.py
 msgid "Days until actions considered stale"
-msgstr "Kuinka monen päivän jälkeen toimenpiteen tila on vanhentunut "
+msgstr "Toimenpiteen vanhentuminen päivissä "
 
 #: actions/models/plan.py
-msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
-msgstr "Toimenpiteitä, jotka ovat olleet päivittämättä näin monta päivää, pidetään vanhentuneina. Jos jätät tämän tyhjäksi, käytössä on oletusarvo."
+msgid "Actions not updated since this many days are considered stale."
+msgstr "Toimenpiteitä, jotka ovat olleet päivittämättä näin monta päivää, pidetään vanhentuneina."
+
+#: actions/models/plan.py
+msgid "Target interval in days to update actions"
+msgstr "Tavoiteaika päivissä toimenpiteiden päivittämiselle"
+
+#: actions/models/plan.py
+msgid "A desirable time interval in days within which actions should be updated in the optimal case."
+msgstr "Tavoiteltu aikaväli päivissä, jonka välein toimenpiteitä haluttaisiin päivitettävän."
+
+#: actions/models/plan.py
+msgid "Acceptable interval in days to update actions"
+msgstr "Hyväksyttävä aikaväli päivissä toimenpiteiden päivittämiselle"
+
+#: actions/models/plan.py
+msgid "A maximum time interval in days within which actions should always be updated."
+msgstr "Maksimiaikaväli päivissä, jonka välein toimenpiteitä pitäisi päivittää."
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -1608,6 +1669,24 @@ msgid "order"
 msgstr "järjestys"
 
 #: aplans/utils.py
+#, fuzzy
+#| msgid "None available"
+msgid "Not editable"
+msgstr "Ei löydy"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "plan admins"
+msgid "Plan admins"
+msgstr "toimenpideohjelman ylläpitäjät"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "Editing"
+msgid "Edit rights"
+msgstr "Muokkaa"
+
+#: aplans/utils.py
 #, python-format
 msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
 msgstr "%(color)s ei ole oikeassa muodossa (esim. \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
@@ -1711,26 +1790,6 @@ msgstr "asiakirja"
 #: documents/models.py
 msgid "documents"
 msgstr "asiakirjat"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Choose a document"
-msgstr "Valitse asiakirja"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload from computer"
-msgstr "Lataa tietokoneelta"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Search the service"
-msgstr "Hae palvelusta"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Uploading…"
-msgstr "Lähetetään…"
-
-#: documents/templates/wagtaildocs/chooser/chooser.html
-msgid "Upload"
-msgstr "Lähetä"
 
 #: feedback/models.py
 msgid "user feedback"
@@ -2621,18 +2680,6 @@ msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
 
 #: pages/models.py
-msgid "hero content"
-msgstr "heron kuvaus"
-
-#: pages/models.py
-msgid "Short description for what actions are"
-msgstr "Lyhyt kuvaus mitä toimenpiteet ovat"
-
-#: pages/models.py
-msgid "Short description for what indicators are"
-msgstr "Lyhyt kuvaus mitä mittarit ovat"
-
-#: pages/models.py
 msgid "Front page hero block"
 msgstr "Etusivun nosto"
 
@@ -2705,6 +2752,18 @@ msgid "Content pages"
 msgstr "Sisältösivut"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Category type"
+msgid "Category type page"
+msgstr "Luokan tyyppi"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Category types"
+msgid "Category type pages"
+msgstr "Luokkien tyypit"
+
+#: pages/models.py
 msgid "Action list"
 msgstr "Toimenpideluettelo"
 
@@ -2735,6 +2794,12 @@ msgid "Tab of the action list page that should be visible by default"
 msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Main filters"
+msgid "Primary filters"
+msgstr "Pääsuotimet"
+
+#: pages/models.py
 msgid "Main filters"
 msgstr "Pääsuotimet"
 
@@ -2763,6 +2828,62 @@ msgid "Action details page"
 msgstr "Toimenpiteen sivu"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Action list"
+msgid "Action list page"
+msgstr "Toimenpideluettelo"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Action list"
+msgid "Action list pages"
+msgstr "Toimenpideluettelo"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Indicator data"
+msgid "Indicator list page"
+msgstr "Mittarin data"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "indicator estimates"
+msgid "Indicator list pages"
+msgstr "mittarin arviot"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "impact group"
+msgid "Impact group page"
+msgstr "vaikuttavuusryhmä"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "impact groups"
+msgid "Impact group pages"
+msgstr "vaikuttavuusryhmät"
+
+#: pages/models.py
+msgid "Privacy policy page"
+msgstr ""
+
+#: pages/models.py
+msgid "Privacy policy pages"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "URL to accessibility statement"
+msgid "Accessibility statement page"
+msgstr "Linkki saavutettavuusselosteeseen"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "URL to accessibility statement"
+msgid "Accessibility statement pages"
+msgstr "Linkki saavutettavuusselosteeseen"
+
+#: pages/models.py
 msgid "external plan link"
 msgstr "Ulkopuolinen linkki"
 
@@ -2777,6 +2898,12 @@ msgstr "Lisää"
 #: people/admin.py
 msgid "Is contact person"
 msgstr "On yhteyshenkilö"
+
+#: people/admin.py
+#, fuzzy, python-format
+#| msgid "For an action"
+msgid "For an action in %(plan)s"
+msgstr "Toimenpiteelle"
 
 #: people/admin.py
 msgid "For an action"
@@ -3015,6 +3142,30 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#~ msgid "Choose a document"
+#~ msgstr "Valitse asiakirja"
+
+#~ msgid "Upload from computer"
+#~ msgstr "Lataa tietokoneelta"
+
+#~ msgid "Search the service"
+#~ msgstr "Hae palvelusta"
+
+#~ msgid "Uploading…"
+#~ msgstr "Lähetetään…"
+
+#~ msgid "Upload"
+#~ msgstr "Lähetä"
+
+#~ msgid "hero content"
+#~ msgstr "heron kuvaus"
+
+#~ msgid "Short description for what actions are"
+#~ msgstr "Lyhyt kuvaus mitä toimenpiteet ovat"
+
+#~ msgid "Short description for what indicators are"
+#~ msgstr "Lyhyt kuvaus mitä mittarit ovat"
+
 #~ msgid "English"
 #~ msgstr "englanti"
 
@@ -3163,9 +3314,6 @@ msgstr "Käyttäjät"
 #~ msgid "internal priority comment"
 #~ msgstr "sisäisen prioriteetin kommentti"
 
-#~ msgid "Editing"
-#~ msgstr "Muokkaa"
-
 #~ msgid "parent page"
 #~ msgstr "yläsivu"
 
@@ -3262,6 +3410,3 @@ msgstr "Käyttäjät"
 
 #~ msgid "indicator estimate"
 #~ msgstr "mittarin arvio"
-
-#~ msgid "indicator estimates"
-#~ msgstr "mittarin arviot"
