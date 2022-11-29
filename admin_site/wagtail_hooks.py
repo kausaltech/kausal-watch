@@ -167,7 +167,7 @@ def register_report_menu():
     return SubmenuMenuItem(
         _('Reports'),
         report_menu,
-        classnames='icon icon-folder-open-inverse',
+        classnames='icon icon-doc-full',
         order=130
     )
 

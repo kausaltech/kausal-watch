@@ -84,6 +84,7 @@ class ReportAdminButtonHelper(ButtonHelper):
 class ReportTypeAdmin(AplansModelAdmin):
     model = ReportType
     menu_label = _('Report types')
+    menu_icon = 'doc-full'
     menu_order = 1200
     add_to_settings_menu = True
 
