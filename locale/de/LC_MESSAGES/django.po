@@ -167,7 +167,7 @@ msgstr "Kategorietyp"
 
 #: actions/admin.py
 msgid "Common category type"
-msgstr "Wähle einen Kategorietyp"
+msgstr "Gemeinsamer Kategorietyp"
 
 #: actions/admin.py
 msgid "Responsible organizations"
@@ -352,7 +352,7 @@ msgstr "Es gibt bereits eine Kategorie mit dieser Kennung."
 
 #: actions/category_admin.py
 msgid "Icons"
-msgstr ""
+msgstr "Symbole"
 
 #: actions/category_admin.py
 msgid "Common category types"
@@ -940,7 +940,7 @@ msgstr "Format"
 
 #: actions/models/attributes.py
 msgid "Unit (only if format is numeric)"
-msgstr ""
+msgstr "Einheit (nur bei numerischem Format)"
 
 #: actions/models/attributes.py
 msgid "Category type (if format is category)"
@@ -976,7 +976,7 @@ msgstr "Attributtypen"
 
 #: actions/models/attributes.py
 msgid "Unit must only be used for numeric attribute types"
-msgstr ""
+msgstr "Einheit darf nur für numerische Attributtypen verwendet werden"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1057,7 +1057,7 @@ msgstr "mit Seiten synchronisieren"
 
 #: actions/models/category.py
 msgid "Set if categories of this type should be synchronized with pages"
-msgstr ""
+msgstr "Setzen, wenn Kategorien dieses Typs mit Seiten synchronisiert werden sollen"
 
 #: actions/models/category.py
 msgid "category type"
@@ -1117,7 +1117,7 @@ msgstr "Unterkategorien"
 
 #: actions/models/category.py
 msgid "Either SVG or image must be set"
-msgstr ""
+msgstr "Entweder SVG oder Bild muss gesetzt sein"
 
 #: actions/models/features.py
 msgid "Allow images for actions"
@@ -1201,7 +1201,7 @@ msgstr "Plan-Features"
 
 #: actions/models/plan.py
 msgid "If you leave this blank the application will use the default value"
-msgstr ""
+msgstr "Wenn Sie dies leer lassen, verwendet die Anwendung den Standardwert"
 
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
@@ -1265,37 +1265,31 @@ msgstr "Eine sekundäre Maßnahmenklassifizierung"
 
 #: actions/models/plan.py
 msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
-msgstr ""
+msgstr "Leer lassen, sofern nicht ausdrücklich erforderlich. Maßnahmenfilter, die auf dieser Kategorie basieren, werden prominenter angezeigt als Filter anderer Kategorien."
 
 #: actions/models/plan.py
 msgid "Days until actions considered stale"
 msgstr "Tage bis Maßnahmen als veraltet gelten"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
 msgid "Actions not updated since this many days are considered stale."
-msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
+msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet."
 
 #: actions/models/plan.py
 msgid "Target interval in days to update actions"
-msgstr ""
+msgstr "Zielintervall in Tagen zum Aktualisieren von Maßnahmen"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
 msgid "A desirable time interval in days within which actions should be updated in the optimal case."
-msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
+msgstr "Gewünschtes Zeitintervall in Tagen, innerhalb dessen Maßnahmen im Optimalfall aktualisiert werden sollen."
 
 #: actions/models/plan.py
 msgid "Acceptable interval in days to update actions"
-msgstr ""
+msgstr "Akzeptables Intervall in Tagen zum Aktualisieren von Maßnahmen"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "Actions not updated since this many days are considered stale. If you leave this blank a default value will be used."
 msgid "A maximum time interval in days within which actions should always be updated."
-msgstr "Maßnahmen, die seit dieser Anzahl an Tagen nicht aktualisiert wurden, gelten als veraltet. Wenn Sie dies leer lassen, wird ein Standardwert verwendet."
+msgstr "Maximales Zeitintervall in Tagen, innerhalb dessen Maßnahmen immer aktualisiert werden sollen."
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
@@ -1307,15 +1301,15 @@ msgstr "Hauptsprache darf nicht ausgewählt sein"
 
 #: actions/models/plan.py
 msgid "Category type must belong to plan"
-msgstr ""
+msgstr "Kategorietype muss zum Plan gehören"
 
 #: actions/models/plan.py
 msgid "You must create and choose a primary category type for classifying actions"
-msgstr ""
+msgstr "Sie müssen einen primären Kategorietyp zum Klassifizieren von Maßnahmen erstellen und auswählen"
 
 #: actions/models/plan.py
 msgid "Primary and secondary classification cannot be the same"
-msgstr ""
+msgstr "Primäre und sekundäre Klassifizierung können nicht identisch sein"
 
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
@@ -1412,7 +1406,7 @@ msgstr "Einen neuen Plan erstellen"
 
 #: actions/templates/create_plan/plan_form.html
 msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
-msgstr "Dieses Formular ist für Superadministratoren gedacht, um einen völlig neuen Aktionsplan zu erstellen. Wenn Sie sich bei einem der technischen Felder weiter unten unsicher sind, können Sie es leer lassen. Bitte versuchen Sie, bestehende Konventionen für die Plankennung zu befolgen."
+msgstr "Dieses Formular ist für Superadministratoren gedacht, um einen völlig neuen Maßnahmenplan zu erstellen. Wenn Sie sich bei einem der technischen Felder weiter unten unsicher sind, können Sie es leer lassen. Bitte versuchen Sie, bestehende Konventionen für die Plankennung zu befolgen."
 
 #: actions/templates/create_plan/plan_form.html
 msgid "Create"
@@ -1543,12 +1537,12 @@ msgstr "Bearbeiten"
 #: admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
-msgstr ""
+msgstr "Fehler beim Löschen von Elementen. Versuchen Sie zuerst, alle verwendeten %(name)s zu löschen."
 
 #: admin_site/wagtail.py
 #, python-format
 msgid "In use: \"%(instance)s\"."
-msgstr ""
+msgstr "In Verwendung: \"%(instance)s\"."
 
 #: admin_site/wagtail.py
 #, python-format
@@ -1558,7 +1552,7 @@ msgstr "%s konnte wegen Fehlern nicht erstellt werden."
 #: admin_site/wagtail.py
 #, python-brace-format
 msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgstr ""
+msgstr "Der gemeinsame Kategorietyp „{removed_cct}“ konnte nicht aus dem Plan entfernt werden, da Kategorien mit dem entsprechenden Kategorietyp vorhanden sind."
 
 #: admin_site/wagtail.py
 #, python-format
@@ -1604,11 +1598,11 @@ msgstr "Bild"
 
 #: aplans/model_images.py people/models.py
 msgid "image cropping"
-msgstr "Bild Zuschnitt"
+msgstr "Bildzuschnitt"
 
 #: aplans/rest_api.py
 msgid "Cannot delete instance because other objects reference it."
-msgstr ""
+msgstr "Instanz kann nicht gelöscht werden, da andere Objekte darauf verweisen."
 
 #: aplans/settings.py
 msgid "Danish"
@@ -1647,22 +1641,16 @@ msgid "order"
 msgstr "Sortierung"
 
 #: aplans/utils.py
-#, fuzzy
-#| msgid "None available"
 msgid "Not editable"
-msgstr "Keine verfügbar"
+msgstr "Nicht editierbar"
 
 #: aplans/utils.py
-#, fuzzy
-#| msgid "plan admins"
 msgid "Plan admins"
 msgstr "Plan-Admins"
 
 #: aplans/utils.py
-#, fuzzy
-#| msgid "Edit data"
 msgid "Edit rights"
-msgstr "Daten bearbeiten"
+msgstr "Bearbeitungsrechte"
 
 #: aplans/utils.py
 #, python-format
@@ -2317,37 +2305,37 @@ msgstr "Benachrichtigungen"
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "action_not_updated"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Maßnahmendetails im Maßnahmenplan. Auf der Maßnahmenplan-Überwachungsseite können Sie sehen, was bereits getan wurde, um die Maßnahmen voranzutreiben, und was für die Zukunft geplant ist. Es ist bereits sechs Monate her, dass Sie zuletzt eine Maßnahme aktualisiert haben. Bitte aktualisieren Sie die Maßnahme mit den neuesten Informationen. Sie können der Maßnahme gleichzeitig eine anstehende Aufgabe hinzufügen."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "not_enough_tasks"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Maßnahmendetails im Maßnahmenplan. Auf der Maßnahmenplan-Überwachungsseite können Sie sehen, was bereits getan wurde, um die Maßnahmen voranzutreiben, und was für die Zukunft geplant ist. Das bedeutet, dass es wünschenswert wäre, für jede Maßnahme mindestens eine anstehende Aufgabe innerhalb des nächsten Jahres zu haben. Bitte fügen Sie Aufgaben für die Maßnahme hinzu, die zeigen, was die nächsten geplanten Schritte für die Maßnahme sind."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_due_soon"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Maßnahme im Maßnahmenplan. Es gibt eine Maßnahme im Maßnahmenplan, deren Frist näher rückt. Bitte denken Sie daran, die Aufgabe als erledigt zu markieren, sobald sie abgeschlossen ist. Nach Ablauf der Frist wird die Maßnahme als verspätet markiert. Sie können die Aufgabendetails über den Link unten bearbeiten."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_late"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Aufgabeninformationen Ihrer Maßnahme im Maßnahmenplan. Es gibt eine Maßnahme, deren Frist abgelaufen ist. Die Maßnahme wird als verspätet angezeigt, bis Sie sie als erledigt markieren und Details eingeben."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "updated_indicator_values_due_soon"
 msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values is approaching. Please go and update the indicator with the latest values."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Indikatordetails im Maßnahmenplan. Die Frist für die Aktualisierung der Indikatorwerte rückt näher. Bitte aktualisieren Sie den Indikator mit den neuesten Werten."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "updated_indicator_values_late"
 msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
-msgstr ""
+msgstr "Dies ist eine automatische Erinnerung an die Aktualisierung der Indikatordetails im Maßnahmenplan. Die Frist für die Aktualisierung der Indikatorwerte ist abgelaufen. Bitte aktualisieren Sie den Indikator mit den neuesten Werten."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "motivation"
 msgid "Thank you for keeping the action plan updated. Up-to-date information about the actions is essential for us to achieve our goals."
-msgstr ""
+msgstr "Vielen Dank, dass Sie den Maßnahmenplan auf dem neuesten Stand halten. Aktuelle Informationen über die Maßnahmen sind für uns unerlässlich, um unsere Ziele zu erreichen."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "outro"
@@ -2358,6 +2346,12 @@ msgid ""
 "\n"
 "Kind regards, the action plan administrators."
 msgstr ""
+"Wenn Sie Schwierigkeiten bei der Verwendung der Maßnahmenplan-Beobachtungsplattform haben, senden Sie bitte eine E-Mail an die Administratoren des Maßnahmenplans.\n"
+"\n"
+"Vielen Dank, dass Sie sich an der Umsetzung des Maßnahmenplans beteiligen!\n"
+"\n"
+"Mit freundlichen Grüßen,\n"
+"die Maßnahmenplan-Administratoren"
 
 #: notifications/models.py
 msgid "Task is late"
@@ -2518,7 +2512,7 @@ msgstr "Kurzname"
 
 #: orgs/models.py
 msgid "A simplified short version of name for the general public"
-msgstr ""
+msgstr "Eine vereinfachte Kurzversion des Namens für die breite Öffentlichkeit"
 
 #: orgs/models.py
 msgid "Internal abbreviation"
@@ -2714,7 +2708,7 @@ msgstr "Standardansicht"
 
 #: pages/models.py
 msgid "Tab of the action list page that should be visible by default"
-msgstr "Standardmäßig sichtbare Registerkarte der Aktionslistenseite"
+msgstr "Standardmäßig sichtbare Registerkarte der Maßnahmenlistenseite"
 
 #: pages/models.py
 msgid "Primary filters"
@@ -2805,10 +2799,8 @@ msgid "Is contact person"
 msgstr "Ist Ansprechpartner"
 
 #: people/admin.py
-#, fuzzy, python-format
-#| msgid "For an action"
 msgid "For an action in %(plan)s"
-msgstr "Für eine Maßnahme"
+msgstr "Für eine Maßnahme in %(plan)s"
 
 #: people/admin.py
 msgid "For an action"
@@ -2925,11 +2917,11 @@ msgstr "Maßnahmenpläne"
 
 #: templates/aplans_admin/index.html
 msgid "Recent actions"
-msgstr "Letzte Aktionen"
+msgstr "Letzte Maßnahmen"
 
 #: templates/aplans_admin/index.html
 msgid "My actions"
-msgstr "Meine Aktionen"
+msgstr "Meine Maßnahmen"
 
 #: templates/aplans_admin/index.html
 msgid "None available"
