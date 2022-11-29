@@ -193,10 +193,11 @@ class Plan(ClusterableModel):
         'actions.CategoryType', blank=True, null=True, on_delete=models.SET_NULL,
         related_name='plans_with_secondary_classification',
         verbose_name=_('A secondary action classification'),
-        help_text=(_('Leave empty unless specifically required. Action'
-                     'filters based on this category are displayed '
-                     'more prominently than filters of other '
-                     'categories.')))
+        help_text=(_(
+            'Leave empty unless specifically required. Action filters based on this category are displayed '
+            'more prominently than filters of other categories.'
+        ))
+    )
 
     action_days_until_considered_stale = models.PositiveIntegerField(
         null=True, blank=True, validators=[MaxValueValidator(MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE)],
