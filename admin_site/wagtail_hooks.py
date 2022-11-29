@@ -152,7 +152,9 @@ class ReportMenu(Menu):
         user = request.user
         plan = user.get_active_admin_plan()
         items = []
-        if user.is_general_admin_for_plan(plan):
+        # TODO: Enable for general admins when ready
+        # if user.is_general_admin_for_plan(plan):
+        if user.is_superuser:
             for report_type in plan.report_types.all():
                 item = ReportMenuItem(report_type)
                 items.append(item)
