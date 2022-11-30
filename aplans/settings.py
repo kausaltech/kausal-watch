@@ -478,6 +478,10 @@ CKEDITOR_CONFIGS = {
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
+WAGTAILEMBEDS_FINDERS = [
+    {'class': 'wagtail.embeds.finders.oembed'},
+    {'class': 'aplans.wagtail_embed_finders.ArcGISFinder'}
+]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_ENABLE_UPDATE_CHECK = False
 WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = True
