@@ -38,6 +38,7 @@ register(actions_factories.ActionStatusFactory)
 register(actions_factories.CategoryFactory)
 register(actions_factories.CategoryListBlockFactory)
 register(actions_factories.CategoryTypeFactory)
+register(actions_factories.CommonCategoryTypeFactory)
 register(actions_factories.AttributeRichTextFactory)
 register(actions_factories.AttributeCategoryChoiceFactory)
 register(actions_factories.AttributeTypeFactory)
@@ -85,6 +86,15 @@ register(users_factories.UserFactory)
 register(users_factories.UserFactory, 'superuser', is_superuser=True)
 register(wagtail_factories.blocks.ImageChooserBlockFactory)
 register(wagtail_factories.factories.CollectionFactory)
+
+
+@pytest.fixture
+def plan_with_pages(plan):
+    from actions.models.plan import set_default_page_creation
+
+    with set_default_page_creation(True):
+        plan.save()
+    return plan
 
 
 @pytest.fixture
