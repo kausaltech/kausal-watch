@@ -388,16 +388,13 @@ class ActionListPage(FixedSlugPage):
 
         self.save()
 
-    # def _has_struct_block_with_value(self, blocks, key, value):
-    #     return any(child.value.get(key) == value for child in blocks if child.value)
-
-    def references_attribute_type(self, attribute_type, field_name):
+    def contains_attribute_type(self, attribute_type, field_name):
         field = getattr(self, field_name)
-        return field.stream_block.references_attribute_type(attribute_type, field)
+        return field.stream_block.contains_attribute_type(attribute_type, field)
 
-    def references_category_type(self, category_type, field_name):
+    def contains_category_type(self, category_type, field_name):
         field = getattr(self, field_name)
-        return field.stream_block.references_category_type(category_type, field)
+        return field.stream_block.contains_category_type(category_type, field)
 
     def insert_attribute_type(self, attribute_type, field_name):
         field = getattr(self, field_name)
@@ -406,6 +403,14 @@ class ActionListPage(FixedSlugPage):
     def insert_category_type(self, category_type, field_name):
         field = getattr(self, field_name)
         return field.stream_block.insert_category_type(category_type, field)
+
+    def remove_attribute_type(self, attribute_type, field_name):
+        field = getattr(self, field_name)
+        return field.stream_block.remove_attribute_type(attribute_type, field)
+
+    def remove_category_type(self, category_type, field_name):
+        field = getattr(self, field_name)
+        return field.stream_block.remove_category_type(category_type, field)
 
     class Meta:
         verbose_name = _('Action list page')

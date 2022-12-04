@@ -61,10 +61,12 @@ def generate_blocks_for_fields(model: Type[models.Model], fields: list[str | Tup
 
 def generate_stream_block(
     name: str, all_blocks: dict[str, Type[blocks.Block]], fields: list[str | Tuple[str, blocks.Block]],
-    extra_attrs=None
+    mixins=None, extra_args=None
 ):
-    if extra_attrs is None:
-        extra_attrs = {}
+    if mixins is None:
+        mixins = ()
+    if extra_args is None:
+        extra_args = {}
     field_blocks = {}
     graphql_types = list()
     for field in fields:
@@ -80,10 +82,10 @@ def generate_stream_block(
             graphql_types.append(block_cls)
         field_blocks[field_name] = block
 
-    block_class = type(name, (blocks.StreamBlock,), {
+    block_class = type(name, (*mixins, blocks.StreamBlock), {
         '__module__': __name__,
         **field_blocks,
-        **extra_attrs,
+        **extra_args,
         'graphql_types': graphql_types
     })
 
@@ -342,8 +344,44 @@ class ActionScheduleFilterBlock(FilterBlock):
         label = _("schedule")
 
 
+class ActionListPageBlockPresenceMixin:
+    def contains_attribute_type(self, attribute_type, blocks):
+        container_blocks = (child for child in blocks if child.block_type == self.attribute_type_container_block)
+        return any(child.value.get('attribute_type') == attribute_type for child in container_blocks)
+
+    def contains_category_type(self, category_type, blocks):
+        container_blocks = (child for child in blocks if child.block_type == self.category_type_container_block)
+        return any(child.value.get('category_type') == category_type for child in container_blocks)
+
+    def insert_attribute_type(self, attribute_type, blocks):
+        block_name = self.attribute_type_container_block
+        blocks.append((block_name, {'attribute_type': attribute_type}))
+
+    def insert_category_type(self, category_type, blocks):
+        block_name = self.category_type_container_block
+        blocks.append((block_name, {'category_type': category_type}))
+
+    def remove_attribute_type(self, attribute_type, blocks):
+        for i, block in enumerate(blocks):
+            if (block.block_type == self.attribute_type_container_block
+                    and block.value['attribute_type'] == attribute_type):
+                break
+        else:
+            raise ValueError(f"Attribute type {attribute_type} is not referenced in blocks")
+        blocks.pop(i)
+
+    def remove_category_type(self, category_type, blocks):
+        for i, block in enumerate(blocks):
+            if (block.block_type == self.category_type_container_block
+                    and block.value['category_type'] == category_type):
+                break
+        else:
+            raise ValueError(f"Category type {category_type} is not referenced in blocks")
+        blocks.pop(i)
+
+
 @register_streamfield_block
-class ActionListFilterBlock(blocks.StreamBlock):
+class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock):
     responsible_party = ResponsiblePartyFilterBlock()
     primary_org = PrimaryOrganizationFilterBlock()
     implementation_phase = ActionImplementationPhaseFilterBlock()
@@ -351,22 +389,13 @@ class ActionListFilterBlock(blocks.StreamBlock):
     attribute = ActionAttributeTypeFilterBlock()
     category = CategoryTypeFilterBlock()
 
+    attribute_type_container_block = 'attribute'
+    category_type_container_block = 'category'
+
     graphql_types = [
         ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
         ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock
     ]
-
-    def references_attribute_type(self, attribute_type, blocks):
-        return any(child.value.get('attribute_type') == attribute_type for child in blocks if child.value)
-
-    def references_category_type(self, attribute_type, blocks):
-        return any(child.value.get('category_type') == attribute_type for child in blocks if child.value)
-
-    def insert_attribute_type(self, attribute_type, blocks):
-        blocks.append(('attribute', {'attribute_type': attribute_type}))
-
-    def insert_category_type(self, category_type, blocks):
-        blocks.append(('category', {'category_type': category_type}))
 
 #
 # Action Details / Content blocks
@@ -474,22 +503,6 @@ class ActionContentSectionBlock(blocks.StructBlock):
     ]
 
 
-def _block_references_attribute_type(self, attribute_type, blocks):
-    return any(child.value.get('attribute_type') == attribute_type for child in blocks if child.value)
-
-
-def _block_references_category_type(self, category_type, blocks):
-    return any(child.value.get('category_type') == category_type for child in blocks if child.value)
-
-
-def _insert_attribute_type_block(self, attribute_type, blocks):
-    blocks.append(('attribute', {'attribute_type': attribute_type}))
-
-
-def _insert_category_type_block(self, category_type, blocks):
-    blocks.append(('categories', {'category_type': category_type}))
-
-
 ActionMainContentBlock = generate_stream_block(
     'ActionMainContentBlock',
     action_attribute_blocks,
@@ -497,12 +510,11 @@ ActionMainContentBlock = generate_stream_block(
         ('section', ActionContentSectionBlock(required=True, label=_('Section'))),
         *action_content_fields,
     ],
-    extra_attrs={
-        'references_attribute_type': _block_references_attribute_type,
-        'references_category_type': _block_references_category_type,
-        'insert_attribute_type': _insert_attribute_type_block,
-        'insert_category_type': _insert_category_type_block,
-    }
+    mixins=(ActionListPageBlockPresenceMixin,),
+    extra_args={
+        'attribute_type_container_block': 'attribute',
+        'category_type_container_block': 'categories',
+    },
 )
 
 ActionAsideContentBlock = generate_stream_block(
@@ -515,12 +527,11 @@ ActionAsideContentBlock = generate_stream_block(
         ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
         ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
     ],
-    extra_attrs={
-        'references_attribute_type': _block_references_attribute_type,
-        'references_category_type': _block_references_category_type,
-        'insert_attribute_type': _insert_attribute_type_block,
-        'insert_category_type': _insert_category_type_block,
-    }
+    mixins=(ActionListPageBlockPresenceMixin,),
+    extra_args={
+        'attribute_type_container_block': 'attribute',
+        'category_type_container_block': 'categories',
+    },
 )
 
 
