@@ -61,7 +61,10 @@ def generate_blocks_for_fields(model: Type[models.Model], fields: list[str | Tup
 
 def generate_stream_block(
     name: str, all_blocks: dict[str, Type[blocks.Block]], fields: list[str | Tuple[str, blocks.Block]],
+    extra_attrs=None
 ):
+    if extra_attrs is None:
+        extra_attrs = {}
     field_blocks = {}
     graphql_types = list()
     for field in fields:
@@ -80,6 +83,7 @@ def generate_stream_block(
     block_class = type(name, (blocks.StreamBlock,), {
         '__module__': __name__,
         **field_blocks,
+        **extra_attrs,
         'graphql_types': graphql_types
     })
 
@@ -352,6 +356,18 @@ class ActionListFilterBlock(blocks.StreamBlock):
         ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock
     ]
 
+    def references_attribute_type(self, attribute_type, blocks):
+        return any(child.value.get('attribute_type') == attribute_type for child in blocks if child.value)
+
+    def references_category_type(self, attribute_type, blocks):
+        return any(child.value.get('category_type') == attribute_type for child in blocks if child.value)
+
+    def insert_attribute_type(self, attribute_type, blocks):
+        blocks.append(('attribute', {'attribute_type': attribute_type}))
+
+    def insert_category_type(self, category_type, blocks):
+        blocks.append(('category', {'category_type': category_type}))
+
 #
 # Action Details / Content blocks
 #
@@ -458,6 +474,22 @@ class ActionContentSectionBlock(blocks.StructBlock):
     ]
 
 
+def _block_references_attribute_type(self, attribute_type, blocks):
+    return any(child.value.get('attribute_type') == attribute_type for child in blocks if child.value)
+
+
+def _block_references_category_type(self, category_type, blocks):
+    return any(child.value.get('category_type') == category_type for child in blocks if child.value)
+
+
+def _insert_attribute_type_block(self, attribute_type, blocks):
+    blocks.append(('attribute', {'attribute_type': attribute_type}))
+
+
+def _insert_category_type_block(self, category_type, blocks):
+    blocks.append(('categories', {'category_type': category_type}))
+
+
 ActionMainContentBlock = generate_stream_block(
     'ActionMainContentBlock',
     action_attribute_blocks,
@@ -465,6 +497,12 @@ ActionMainContentBlock = generate_stream_block(
         ('section', ActionContentSectionBlock(required=True, label=_('Section'))),
         *action_content_fields,
     ],
+    extra_attrs={
+        'references_attribute_type': _block_references_attribute_type,
+        'references_category_type': _block_references_category_type,
+        'insert_attribute_type': _insert_attribute_type_block,
+        'insert_category_type': _insert_category_type_block,
+    }
 )
 
 ActionAsideContentBlock = generate_stream_block(
@@ -477,6 +515,12 @@ ActionAsideContentBlock = generate_stream_block(
         ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
         ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
     ],
+    extra_attrs={
+        'references_attribute_type': _block_references_attribute_type,
+        'references_category_type': _block_references_category_type,
+        'insert_attribute_type': _insert_attribute_type_block,
+        'insert_category_type': _insert_category_type_block,
+    }
 )
 
 
