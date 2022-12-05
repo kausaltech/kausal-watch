@@ -14,8 +14,10 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from .models import Action, AttributeRichText, AttributeText, AttributeType, Category, Report
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
-    AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel
+    AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface,
+    CondensedInlinePanel, InitializeFormWithPlanMixin
 )
+from pages.models import ActionListPage
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -66,7 +68,7 @@ class AttributeTypeIndexView(IndexView):
     page_title = _("Attributes")
 
 
-class AttributeTypeCreateView(ContentTypeQueryParameterMixin, AplansCreateView):
+class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansCreateView):
     def get_object_content_type(self):
         object_ct_id = self.request.GET.get('content_type')
         if not object_ct_id:
@@ -103,7 +105,7 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, AplansCreateView):
         return instance
 
 
-class AttributeTypeEditView(ContentTypeQueryParameterMixin, AplansEditView):
+class AttributeTypeEditView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansEditView):
     pass
 
 
@@ -148,6 +150,72 @@ class AttributeTypeAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
+class AttributeTypeForm(AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
+
+
+class ActionAttributeTypeForm(AttributeTypeForm):
+    # Choice names are field names in ActionListPage
+    ACTION_LIST_FILTER_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('primary_filters', _('in primary filters')),
+        ('main_filters', _('in main filters')),
+        ('advanced_filters',  _('in advanced filters')),
+    ]
+    ACTION_DETAIL_CONTENT_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('details_main_top', _('in main column (top)')),
+        ('details_main_bottom', _('in main column (bottom)')),
+        ('details_aside',  _('in side column')),
+    ]
+
+    action_list_filter_section = forms.ChoiceField(choices=ACTION_LIST_FILTER_SECTION_CHOICES, required=False)
+    action_detail_content_section = forms.ChoiceField(choices=ACTION_DETAIL_CONTENT_SECTION_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+            for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+                if action_list_page.contains_attribute_type(self.instance, field_name):
+                    self.fields['action_list_filter_section'].initial = field_name
+                    break
+            for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+                if action_list_page.contains_attribute_type(self.instance, field_name):
+                    self.fields['action_detail_content_section'].initial = field_name
+                    break
+
+    def save(self, commit=True):
+        instance = super().save(commit)
+        action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+        action_list_filter_section = self.cleaned_data.get('action_list_filter_section')
+        for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+            if action_list_filter_section == field_name:
+                if not action_list_page.contains_attribute_type(instance, field_name):
+                    action_list_page.insert_attribute_type(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_attribute_type(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_detail_content_section = self.cleaned_data.get('action_detail_content_section')
+        for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+            if action_detail_content_section == field_name:
+                if not action_list_page.contains_attribute_type(instance, field_name):
+                    action_list_page.insert_attribute_type(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_attribute_type(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_list_page.save()
+        return instance
+
+
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
@@ -189,10 +257,13 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             content_type_id = instance.object_content_type_id
         content_type = ContentType.objects.get(pk=content_type_id)
 
+        base_form_class = AttributeTypeForm  # For action attribute types, we use a special subclass
         if (content_type.app_label, content_type.model) == ('actions', 'action'):
             # This attribute types has scope 'plan' and we automatically set the scope in AttributeTypeCreateView, so we
             # don't add a panel for choosing a plan.
-            pass
+            base_form_class = ActionAttributeTypeForm
+            basic_panels.append(FieldPanel('action_list_filter_section'))
+            basic_panels.append(FieldPanel('action_detail_content_section'))
         elif (content_type.app_label, content_type.model) == ('actions', 'category'):
             basic_panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_("Category type")))
         else:
@@ -204,8 +275,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
-        handler = AplansTabbedInterface(tabs)
-        # handler.base_form_class = ModelForm
+        handler = AplansTabbedInterface(tabs, base_form_class=base_form_class)
         return handler
 
     def get_menu_item(self, order=None):
