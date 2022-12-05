@@ -87,7 +87,6 @@ class StaticPageFactory(PageFactory):
     # # body__2__qa_section__heading = "QA section heading"
     # # body__2__qa_section__questions__0 = None
     body = [
-        ('heading', "Heading"),
         ('paragraph', RichText("<p>Paragraph</p>")),
         ('qa_section', {
             'heading': "QA section heading",

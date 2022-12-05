@@ -174,7 +174,6 @@ class StaticPage(AplansPage):
         help_text=_('Lead paragraph right under the heading'),
     )
     body = StreamField([
-        ('heading', blocks.CharBlock(classname='full title', label=_('Heading'))),
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('category_list', CategoryListBlock(label=_('Category list'))),
