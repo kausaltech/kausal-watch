@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-06 15:08+0200\n"
+"POT-Creation-Date: 2022-12-06 15:29+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -679,13 +679,13 @@ msgstr "Enddatum"
 msgid "The date when implementation of this action ends"
 msgstr "Das Datum, an dem die Umsetzung dieser Maßnahme endet"
 
-#: actions/models/action.py
+#: actions/models/action.py actions/models/plan.py
 msgid "superseded by"
 msgstr "ersetzt durch"
 
 #: actions/models/action.py
 msgid "Set if this action is superseded by another action"
-msgstr "Setzen, wenn diese Maßnahme durch eine anderen Maßnahme ersetzt ist"
+msgstr "Setzen, wenn diese Maßnahme durch eine anderen Maßnahme ersetzt worden ist"
 
 #: actions/models/action.py
 msgctxt "partitive"
@@ -1311,6 +1311,10 @@ msgstr "Akzeptables Intervall in Tagen zum Aktualisieren von Maßnahmen"
 #: actions/models/plan.py
 msgid "A maximum time interval in days within which actions should always be updated."
 msgstr "Maximales Zeitintervall in Tagen, innerhalb dessen Maßnahmen immer aktualisiert werden sollen."
+
+#: actions/models/plan.py
+msgid "Set if this plan is superseded by another plan"
+msgstr "Setzen, wenn dieser Plan durch einen anderen Plan ersetzt worden ist"
 
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
