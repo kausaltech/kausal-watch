@@ -92,7 +92,7 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer)
             add_fields=['url'],
             remove_fields=[
                 'static_pages', 'general_content', 'blog_posts', 'indicator_levels',
-                'monitoring_quality_points', 'action_impacts',
+                'monitoring_quality_points', 'action_impacts', 'superseded_plans',
             ]
         )
         filterset_fields = {
@@ -724,7 +724,7 @@ class ActionSerializer(
                 'impact',
                 'status_updates', 'monitoring_quality_points', 'image',
                 'tasks', 'links', 'related_indicators', 'indicators',
-                'impact_groups', 'merged_actions',
+                'impact_groups', 'merged_actions', 'superseded_actions',
             ]
         )
         read_only_fields = ['plan']
