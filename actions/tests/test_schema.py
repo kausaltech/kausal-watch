@@ -285,6 +285,78 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
     assert data == expected
 
 
+def test_plan_node_superseded_by(graphql_client_query_data):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededPlans {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan2.identifier}
+    )
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan2.identifier,
+            'supersededBy': {
+                '__typename': 'Plan',
+                'id': plan1.identifier,
+            },
+            'supersededPlans': [],
+        }
+    }
+    assert data == expected
+
+
+def test_plan_node_superseded_plans(graphql_client_query_data):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededPlans {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan1.identifier}
+    )
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan1.identifier,
+            'supersededBy': None,
+            'supersededPlans': [{
+                '__typename': 'Plan',
+                'id': plan2.identifier,
+            }],
+        }
+    }
+    assert data == expected
+
+
 def test_plan_actions_responsible_organization(graphql_client_query_data):
     plan = PlanFactory()
     ActionFactory(plan=plan)  # org is not responsible

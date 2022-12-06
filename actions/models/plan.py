@@ -225,6 +225,11 @@ class Plan(ClusterableModel):
         )
     )
 
+    superseded_by = models.ForeignKey(
+        'self', verbose_name=_('superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan')
+    )
+
     features: PlanFeatures
     actions: RelatedManager[Action]
     action_statuses: RelatedManager[ActionStatus]
@@ -251,7 +256,7 @@ class Plan(ClusterableModel):
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
-        'primary_action_classification', 'secondary_action_classification'
+        'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
