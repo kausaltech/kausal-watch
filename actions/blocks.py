@@ -303,7 +303,7 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
     style = blocks.ChoiceBlock(choices=[
         ('dropdown', _('Dropdown')),
         ('buttons', _('Buttons')),
-    ], label=_("Style"))
+    ], label=_("Style"), default='dropdown')
     show_all_label = blocks.CharBlock(required=False, label=_("Label for 'show all'"))
     category_type = CategoryTypeChooserBlock(required=True, label=_("Category type"))
 
