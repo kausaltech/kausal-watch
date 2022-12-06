@@ -22,7 +22,7 @@ from admin_site.wagtail import (
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
-from actions.chooser import CategoryTypeChooser
+from actions.chooser import CategoryTypeChooser, PlanChooser
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
@@ -106,6 +106,7 @@ class PlanAdmin(AplansModelAdmin):
             ]
         ),
         ImageChooserPanel('image'),
+        FieldPanel('superseded_by', widget=PlanChooser),
     ]
 
     action_status_panels = [
