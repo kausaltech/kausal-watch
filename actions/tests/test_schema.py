@@ -1184,6 +1184,51 @@ def test_action_node_merged(graphql_client_query_data):
     assert data == expected
 
 
+def test_action_node_superseded(graphql_client_query_data):
+    plan = PlanFactory()
+    action1 = ActionFactory(plan=plan)
+    action2 = ActionFactory(plan=plan, superseded_by=action1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededActions {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            '__typename': 'Action',
+            'id': str(action1.id),
+            'supersededBy': None,
+            'supersededActions': [{
+                '__typename': 'Action',
+                'id': str(action2.id),
+            }],
+        }, {
+            '__typename': 'Action',
+            'id': str(action2.id),
+            'supersededBy': {
+                '__typename': 'Action',
+                'id': str(action1.id),
+            },
+            'supersededActions': [],
+        }]
+    }
+    assert data == expected
+
+
 def test_action_node_next_previous(graphql_client_query_data):
     plan = PlanFactory()
     action1 = ActionFactory(plan=plan)

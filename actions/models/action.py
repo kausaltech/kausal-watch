@@ -216,6 +216,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         blank=True,
         null=True,
     )
+    superseded_by = models.ForeignKey(
+        'self', verbose_name=_('superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='superseded_actions', help_text=_('Set if this action is superseded by another action')
+    )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
@@ -250,7 +254,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
-        'primary_org', 'order',
+        'primary_org', 'order', 'superseded_by', 'superseded_actions',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
