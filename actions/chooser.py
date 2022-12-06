@@ -149,6 +149,58 @@ def register_action_chooser_viewset():
     return ActionChooserViewSet('action_chooser', url_prefix='action-chooser')
 
 
+class PlanChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        return Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
+
+    def get_object_list(self, search_term=None, **kwargs):
+        objs = self.get_unfiltered_object_list()
+
+        if search_term:
+            search_backend = get_search_backend()
+            objs = search_backend.autocomplete(search_term, objs)
+
+        return objs
+
+    def get_row_data(self, item):
+        return {
+            'choose_url': self.get_chosen_url(item),
+            'name': self.get_object_string(item),
+        }
+
+    def get_results_template(self):
+        return 'actions/chooser_results.html'
+
+    def user_can_create(self, user):
+        # Don't let users create plans in the chooser
+        return False
+
+
+class PlanChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = PlanChooserMixin
+
+    icon = 'fa-cubes'
+    model = Plan
+    page_title = _("Choose a plan")
+    per_page = 30
+    fields = ['identifier', 'name']
+
+
+class PlanChooser(AdminChooser):
+    choose_one_text = _('Choose a plan')
+    choose_another_text = _('Choose another plan')
+    model = Plan
+    choose_modal_url_name = 'plan_chooser:choose'
+
+
+@hooks.register('register_admin_viewset')
+def register_plan_chooser_viewset():
+    return PlanChooserViewSet('plan_chooser', url_prefix='plan-chooser')
+
+
 class AttributeTypeChooserMixin(ModelChooserMixin):
     request: WatchAdminRequest
 
