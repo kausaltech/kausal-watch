@@ -388,29 +388,17 @@ class ActionListPage(FixedSlugPage):
 
         self.save()
 
-    def contains_attribute_type(self, attribute_type, field_name):
+    def contains_model_instance_block(self, instance, field_name):
         field = getattr(self, field_name)
-        return field.stream_block.contains_attribute_type(attribute_type, field)
+        return field.stream_block.contains_model_instance(instance, field)
 
-    def contains_category_type(self, category_type, field_name):
+    def insert_model_instance_block(self, instance, field_name):
         field = getattr(self, field_name)
-        return field.stream_block.contains_category_type(category_type, field)
+        return field.stream_block.insert_model_instance(instance, field)
 
-    def insert_attribute_type(self, attribute_type, field_name):
+    def remove_model_instance_block(self, instance, field_name):
         field = getattr(self, field_name)
-        return field.stream_block.insert_attribute_type(attribute_type, field)
-
-    def insert_category_type(self, category_type, field_name):
-        field = getattr(self, field_name)
-        return field.stream_block.insert_category_type(category_type, field)
-
-    def remove_attribute_type(self, attribute_type, field_name):
-        field = getattr(self, field_name)
-        return field.stream_block.remove_attribute_type(attribute_type, field)
-
-    def remove_category_type(self, category_type, field_name):
-        field = getattr(self, field_name)
-        return field.stream_block.remove_category_type(category_type, field)
+        return field.stream_block.remove_model_instance(instance, field)
 
     class Meta:
         verbose_name = _('Action list page')

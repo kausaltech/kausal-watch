@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from typing import List
 from urllib.parse import urljoin
 
+from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
@@ -37,6 +38,7 @@ from wagtailautocomplete.edit_handlers import \
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel, PlanDefaultsModel
 from actions.models import Plan
+from pages.models import ActionListPage
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:
@@ -570,3 +572,63 @@ class InitializeFormWithUserMixin:
         kwargs = super().get_form_kwargs()
         kwargs.update({'user': self.request.user})
         return kwargs
+
+
+class ActionListPageBlockFormMixin(forms.Form):
+    # Choice names are field names in ActionListPage
+    ACTION_LIST_FILTER_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('primary_filters', _('in primary filters')),
+        ('main_filters', _('in main filters')),
+        ('advanced_filters',  _('in advanced filters')),
+    ]
+    ACTION_DETAIL_CONTENT_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('details_main_top', _('in main column (top)')),
+        ('details_main_bottom', _('in main column (bottom)')),
+        ('details_aside',  _('in side column')),
+    ]
+
+    action_list_filter_section = forms.ChoiceField(choices=ACTION_LIST_FILTER_SECTION_CHOICES, required=False)
+    action_detail_content_section = forms.ChoiceField(choices=ACTION_DETAIL_CONTENT_SECTION_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+            for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+                if action_list_page.contains_model_instance_block(self.instance, field_name):
+                    self.fields['action_list_filter_section'].initial = field_name
+                    break
+            for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+                if action_list_page.contains_model_instance_block(self.instance, field_name):
+                    self.fields['action_detail_content_section'].initial = field_name
+                    break
+
+    def save(self, commit=True):
+        instance = super().save(commit)
+        action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+        action_list_filter_section = self.cleaned_data.get('action_list_filter_section')
+        for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+            if action_list_filter_section == field_name:
+                if not action_list_page.contains_model_instance_block(instance, field_name):
+                    action_list_page.insert_model_instance_block(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_model_instance_block(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_detail_content_section = self.cleaned_data.get('action_detail_content_section')
+        for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+            if action_detail_content_section == field_name:
+                if not action_list_page.contains_model_instance_block(instance, field_name):
+                    action_list_page.insert_model_instance_block(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_model_instance_block(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_list_page.save()
+        return instance

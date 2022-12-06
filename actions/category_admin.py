@@ -18,10 +18,19 @@ from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
 from .attribute_type_admin import get_attribute_fields
 from .models import AttributeType, Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
-    AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
-    AplansTabbedInterface, get_translation_tabs
+    ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
+    CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
+    get_translation_tabs
 )
 from aplans.utils import append_query_parameter
+
+
+class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+    pass
+
+
+class CategoryTypeEditView(InitializeFormWithPlanMixin, AplansEditView):
+    pass
 
 
 class CategoryTypeDeleteView(DeleteView):
@@ -42,6 +51,8 @@ class CategoryTypeAdmin(AplansModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     add_to_settings_menu = True
+    create_view_class = CategoryTypeCreateView
+    edit_view_class = CategoryTypeEditView
     delete_view_class = CategoryTypeDeleteView
 
     panels = [
@@ -67,6 +78,8 @@ class CategoryTypeAdmin(AplansModelAdmin):
         ]),
         FieldPanel('synchronize_with_pages'),
         FieldPanel('instances_editable_by'),
+        FieldPanel('action_list_filter_section'),
+        FieldPanel('action_detail_content_section'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -89,7 +102,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return CategoryTypeEditHandler(tabs)
+        return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
 
 
 def get_category_attribute_fields(category_type, category, **kwargs):
@@ -165,6 +178,12 @@ class CategoryEditHandler(AplansTabbedInterface):
                 form_class.base_fields['parent'].disabled = True
                 form_class.base_fields['parent'].required = False
         return form_class
+
+
+class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):

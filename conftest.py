@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-import typing
 from typing import Protocol, Type
 import json
 import pytest
+import typing
 import wagtail_factories
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
+from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
 from pytest_django.asserts import assertRedirects
 from rest_framework.authtoken.models import Token
-from django.urls import reverse
 
 from actions.tests import factories as actions_factories
 # from admin_site.tests import factories as admin_site_factories
@@ -42,6 +44,13 @@ register(actions_factories.CommonCategoryTypeFactory)
 register(actions_factories.AttributeRichTextFactory)
 register(actions_factories.AttributeCategoryChoiceFactory)
 register(actions_factories.AttributeTypeFactory)
+register(
+    actions_factories.AttributeTypeFactory,
+    'action_attribute_type',
+    name=Sequence(lambda i: f"Action attribute type {i}"),
+    object_content_type=LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action')),
+    scope=SubFactory(actions_factories.ActionFactory),
+)
 register(actions_factories.AttributeTypeChoiceOptionFactory)
 register(actions_factories.ImpactGroupFactory)
 register(actions_factories.PlanFactory)

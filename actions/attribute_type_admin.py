@@ -14,10 +14,9 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from .models import Action, AttributeRichText, AttributeText, AttributeType, Category, Report
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
-    AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin, AplansTabbedInterface,
-    CondensedInlinePanel, InitializeFormWithPlanMixin
+    ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
+    AplansTabbedInterface, CondensedInlinePanel, InitializeFormWithPlanMixin
 )
-from pages.models import ActionListPage
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -156,64 +155,8 @@ class AttributeTypeForm(AplansAdminModelForm):
         super().__init__(*args, **kwargs)
 
 
-class ActionAttributeTypeForm(AttributeTypeForm):
-    # Choice names are field names in ActionListPage
-    ACTION_LIST_FILTER_SECTION_CHOICES = [
-        ('', _('[not included]')),
-        ('primary_filters', _('in primary filters')),
-        ('main_filters', _('in main filters')),
-        ('advanced_filters',  _('in advanced filters')),
-    ]
-    ACTION_DETAIL_CONTENT_SECTION_CHOICES = [
-        ('', _('[not included]')),
-        ('details_main_top', _('in main column (top)')),
-        ('details_main_bottom', _('in main column (bottom)')),
-        ('details_aside',  _('in side column')),
-    ]
-
-    action_list_filter_section = forms.ChoiceField(choices=ACTION_LIST_FILTER_SECTION_CHOICES, required=False)
-    action_detail_content_section = forms.ChoiceField(choices=ACTION_DETAIL_CONTENT_SECTION_CHOICES, required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance.pk is not None:
-            action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
-            for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
-                if action_list_page.contains_attribute_type(self.instance, field_name):
-                    self.fields['action_list_filter_section'].initial = field_name
-                    break
-            for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
-                if action_list_page.contains_attribute_type(self.instance, field_name):
-                    self.fields['action_detail_content_section'].initial = field_name
-                    break
-
-    def save(self, commit=True):
-        instance = super().save(commit)
-        action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
-        action_list_filter_section = self.cleaned_data.get('action_list_filter_section')
-        for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
-            if action_list_filter_section == field_name:
-                if not action_list_page.contains_attribute_type(instance, field_name):
-                    action_list_page.insert_attribute_type(instance, field_name)
-            else:
-                try:
-                    action_list_page.remove_attribute_type(instance, field_name)
-                except ValueError:
-                    # Don't care if instance wasn't there in the first place
-                    pass
-        action_detail_content_section = self.cleaned_data.get('action_detail_content_section')
-        for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
-            if action_detail_content_section == field_name:
-                if not action_list_page.contains_attribute_type(instance, field_name):
-                    action_list_page.insert_attribute_type(instance, field_name)
-            else:
-                try:
-                    action_list_page.remove_attribute_type(instance, field_name)
-                except ValueError:
-                    # Don't care if instance wasn't there in the first place
-                    pass
-        action_list_page.save()
-        return instance
+class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
+    pass
 
 
 @modeladmin_register
