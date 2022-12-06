@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-11-29 19:44+0200\n"
+"POT-Creation-Date: 2022-12-06 15:08+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -232,7 +232,7 @@ msgstr "Allgemein"
 msgid "Filter on category"
 msgstr "Filtere nach Kategorie"
 
-#: actions/blocks.py pages/blocks.py pages/models.py
+#: actions/blocks.py pages/blocks.py
 msgid "Heading"
 msgstr "Überschrift"
 
@@ -678,6 +678,14 @@ msgstr "Enddatum"
 #: actions/models/action.py
 msgid "The date when implementation of this action ends"
 msgstr "Das Datum, an dem die Umsetzung dieser Maßnahme endet"
+
+#: actions/models/action.py
+msgid "superseded by"
+msgstr "ersetzt durch"
+
+#: actions/models/action.py
+msgid "Set if this action is superseded by another action"
+msgstr "Setzen, wenn diese Maßnahme durch eine anderen Maßnahme ersetzt ist"
 
 #: actions/models/action.py
 msgctxt "partitive"
@@ -1624,6 +1632,34 @@ msgstr "Füge %(related_verbose_name)s hinzu"
 #, python-format
 msgid "New %(related_verbose_name)s"
 msgstr "Neue %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
+msgid "[not included]"
+msgstr "[nicht enthalten]"
+
+#: admin_site/wagtail.py
+msgid "in primary filters"
+msgstr "in primären Filtern"
+
+#: admin_site/wagtail.py
+msgid "in main filters"
+msgstr "in Hauptfiltern"
+
+#: admin_site/wagtail.py
+msgid "in advanced filters"
+msgstr "in fortgeschrittenen Filtern"
+
+#: admin_site/wagtail.py
+msgid "in main column (top)"
+msgstr "in Hauptspalte (oberer Teil)"
+
+#: admin_site/wagtail.py
+msgid "in main column (bottom)"
+msgstr "in Hauptspalte (unterer Teil)"
+
+#: admin_site/wagtail.py
+msgid "in side column"
+msgstr "in Seitenspalte"
 
 #: admin_site/wagtail_hooks.py
 msgid "Choose plan"
@@ -2658,6 +2694,14 @@ msgstr "Zeige in zusätzlichen Links"
 #: pages/models.py
 msgid "Should the page be shown in the additional links?"
 msgstr "Soll die Seite in den zusätzlichen Links angezeigt werden?"
+
+#: pages/models.py
+msgid "children use secondary navigation"
+msgstr "Unterseiten nutzen sekundäre Navigation"
+
+#: pages/models.py
+msgid "Should subpages of this page use secondary navigation?"
+msgstr "Sollen Unterseiten dieser Seite sekundäre Navigation verwenden?"
 
 #: pages/models.py
 msgid "Common page configuration"
