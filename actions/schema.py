@@ -219,7 +219,7 @@ class PlanNode(DjangoNode):
         select_related=('features',)
     )
     def resolve_hide_action_identifiers(self: Plan, info):
-        return not self.features.has_action_identifiers
+        return not self.features.show_action_identifiers
 
     @gql_optimizer.resolver_hints(
         select_related=('features',)

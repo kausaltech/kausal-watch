@@ -22,6 +22,10 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Has action identifiers'),
         help_text=_("Set if the plan uses meaningful action identifiers")
     )
+    show_action_identifiers = models.BooleanField(
+        default=True, verbose_name=_('Show action identifiers'),
+        help_text=_("Set if action identifiers should be visible in the public UI")
+    )
     has_action_official_name = models.BooleanField(
         default=False, verbose_name=_('Has action official name field'),
         help_text=_("Set if the plan uses the official name field")

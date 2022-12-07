@@ -270,6 +270,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('show_admin_link'),
         FieldPanel('public_contact_persons'),
         FieldPanel('has_action_identifiers'),
+        FieldPanel('show_action_identifiers'),
         FieldPanel('has_action_official_name'),
         FieldPanel('has_action_lead_paragraph'),
         FieldPanel('has_action_primary_orgs'),
