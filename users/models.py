@@ -239,27 +239,27 @@ class User(AbstractUser):
         if hasattr(self, '_adminable_plans'):
             return self._adminable_plans
 
-        is_action_contact = self.is_contact_person_for_action()
-        is_indicator_contact = self.is_contact_person_for_indicator()
-        is_general_admin = self.is_general_admin_for_plan()
-        is_org_admin = self.is_organization_admin_for_action()
-        is_indicator_org_admin = self.is_organization_admin_for_indicator()
-        if not self.is_superuser and not is_action_contact and not is_general_admin \
-                and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
-            self._adminable_plans = Plan.objects.none()
-            return self._adminable_plans
+        adminables = set((
+            self.is_general_admin_for_plan(),
+            self.is_organization_admin_for_action(),
+            self.is_contact_person_for_action(),
+            self.is_organization_admin_for_indicator(),
+            self.is_contact_person_for_indicator()
+        ))
 
         if self.is_superuser:
-            plans = Plan.objects.all()
+            self._adminable_plans = Plan.objects.all()
+        elif adminables == {False}:
+            self._adminable_plans = Plan.objects.none()
         else:
-            q = Q(actions__in=self._contact_for_actions)
-            q |= Q(indicators__in=self._contact_for_indicators)
-            q |= Q(id__in=self._general_admin_for_plans)
+            q = Q(id__in=self._general_admin_for_plans)
             q |= Q(actions__in=self._org_admin_for_actions)
+            q |= Q(actions__in=self._contact_for_actions)
             q |= Q(indicators__in=self._org_admin_for_indicators)
-            plans = Plan.objects.filter(q).distinct()
-        self._adminable_plans = plans
-        return plans
+            q |= Q(indicators__in=self._contact_for_indicators)
+            self._adminable_plans = Plan.objects.filter(q).distinct()
+
+        return self._adminable_plans
 
     def get_adminable_plans_mark_selected(self) -> models.QuerySet[Plan]:
         plans = self.get_adminable_plans()
