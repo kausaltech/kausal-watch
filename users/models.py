@@ -1,6 +1,5 @@
 from __future__ import annotations
 import typing
-import uuid
 
 from django.apps import apps
 from django.db import models
