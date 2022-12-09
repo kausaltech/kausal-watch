@@ -559,7 +559,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             )
         ),
         FieldPanel('merged_with', widget=ActionChooser),
-        FieldPanel('superseded_by', widget=ActionChooser),
     ]
 
     progress_panels = [
@@ -695,6 +694,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         if is_general_admin:
             panels += self.basic_related_panels_general_admin
+
+            if plan.superseded_by:
+                panels.append(FieldPanel('superseded_by', widget=ActionChooser))
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
