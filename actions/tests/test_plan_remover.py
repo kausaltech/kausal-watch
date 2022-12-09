@@ -5,13 +5,11 @@ pytestmark = pytest.mark.django_db
 #  NOP  actions.models.plan.Plan -> actions.models.plan.Plan
 #  NOP  actions.models.plan.Plan -> actions.models.category.CommonCategoryType
 
-#  CAS! actions.models.plan.Plan -> wagtail.core.models.sites.Site
 
-#  CAS  actions.models.plan.Plan -> actions.models.category.CategoryType
-#  CAS? actions.models.plan.Plan -> django.contrib.auth.models.Group
-#  CAS? actions.models.plan.Plan -> images.models.AplansImage
-#  CAS? actions.models.plan.Plan -> orgs.models.Organization
-#  CAS? actions.models.plan.Plan -> wagtail.core.models.collections.Collection
+#  CAS? actions.models.plan.Plan -> orgs.models.Organization (left intact for now)!
+#  CAS? actions.models.plan.Plan -> wagtail.core.models.collections.Collection (left intact for now, del)
+#  CAS? actions.models.plan.Plan -> images.models.AplansImage ?? (check not in use...)
+
 
 #  CAS! actions.models.action.Action                    -> actions.models.plan.Plan
 #  CAS! actions.models.action.ActionDecisionLevel       -> actions.models.plan.Plan
@@ -21,9 +19,6 @@ pytestmark = pytest.mark.django_db
 #  CAS! actions.models.action.ActionStatus              -> actions.models.plan.Plan
 #  CAS! actions.models.category.CategoryType            -> actions.models.plan.Plan
 #  CAS! actions.models.features.PlanFeatures            -> actions.models.plan.Plan
-
-# +CAS? actions.models.plan.GeneralPlanAdmin            -> actions.models.plan.Plan
-# +CAS? admin.site.models.ClientPlan                    -> actions.models.plan.Plan
 
 #  CAS! actions.models.plan.ImpactGroup                 -> actions.models.plan.Plan
 #  CAS! actions.models.plan.MonitoringQualityPoint      -> actions.models.plan.Plan
@@ -36,9 +31,15 @@ pytestmark = pytest.mark.django_db
 #  CAS! notifications.models.BaseTemplate               -> actions.models.plan.Plan
 #  CAS! orgs.models.OrganizationPlanAdmin               -> actions.models.plan.Plan
 #  CAS! pages.models.PlanLink                           -> actions.models.plan.Plan
-#  OK   users.models.User                               -> actions.models.plan.Plan
+
 #  CAS! feedback.models.UserFeedback                    -> actions.models.plan.Plan backup!
 
+#  CAS! actions.models.plan.Plan -> wagtail.core.models.sites.Site OK
+#  OK   users.models.User                               -> actions.models.plan.Plan
+#  CAS  actions.models.plan.Plan -> actions.models.category.CategoryType OK
+# +CAS? actions.models.plan.GeneralPlanAdmin            -> actions.models.plan.Plan OK
+# +CAS? admin.site.models.ClientPlan                    -> actions.models.plan.Plan OK
+#! CAS? actions.models.plan.Plan -> django.contrib.auth.models.Group ! (delete OK)
 
 @pytest.fixture
 def plan_with_actions_factory(plan_factory, action_factory):
