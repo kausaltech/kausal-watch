@@ -10,7 +10,7 @@ from people.models import Person
 def persons_not_related_to_other_plans(plan):
     persons_to_delete = []
     persons_to_leave = []
-    for person in Person.objects.exclude(user__is_superuser=True).distinct():
+    for person in Person.objects.available_for_plan(plan).exclude(user__is_superuser=True).distinct():
         adminable_plans = person.user.get_adminable_plans()
         if adminable_plans.count() == 1 and plan in adminable_plans:
             persons_to_delete.append(person)
