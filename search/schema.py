@@ -30,12 +30,23 @@ class SearchHitObject(graphene.Union):
 class SearchHit(graphene.ObjectType):
     id = graphene.ID()
     title = graphene.String()
-    url = graphene.String()
+    url = graphene.String(client_url=graphene.String(required=False))
     relevance = graphene.Float()
     highlight = graphene.String()
     plan = graphene.Field('actions.schema.PlanNode')
     object = graphene.Field(SearchHitObject, required=False)
     page = graphene.Field('grapple.types.pages.PageInterface', required=False)
+
+    def resolve_url(root, info, client_url=None):
+        object = root.get('object')
+        page = root.get('page')
+        plan = root['plan']
+        if object is not None:
+            return object.get_view_url(plan=plan, client_url=client_url)
+        elif page is not None:
+            parts = page.get_url_parts(request=info.context)
+            return '%s%s' % (plan.get_view_url(client_url=client_url), parts[2])
+        return None
 
 
 class SearchResults(graphene.ObjectType):
@@ -49,7 +60,6 @@ class SearchResults(graphene.ObjectType):
                 hit = dict(
                     id='act-%d' % obj.id,
                     title=str(obj),
-                    url=obj.get_view_url(),
                     plan=obj.plan,
                     object=obj
                 )
@@ -57,7 +67,6 @@ class SearchResults(graphene.ObjectType):
                 hit = dict(
                     id='ind-%d' % obj.id,
                     title=str(obj),
-                    url=obj.get_view_url(),
                     plan=obj.plans.first(),
                     object=obj,
                 )
@@ -65,7 +74,6 @@ class SearchResults(graphene.ObjectType):
                 hit = dict(
                     id='page-%d' % obj.id,
                     title=obj.title,
-                    url=obj.get_full_url(),
                     plan=obj.plan,
                     page=obj,
                 )

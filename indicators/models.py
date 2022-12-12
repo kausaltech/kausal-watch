@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import typing
+from typing import Optional
 import reversion
 from dateutil.relativedelta import relativedelta
 
@@ -28,6 +29,7 @@ from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
+    from .plan import Plan
 
 
 User = get_user_model()
@@ -469,15 +471,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             'view_url': self.get_view_url(plan),
         }
 
-    def get_view_url(self, plan=None):
+    def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None) -> str:
         if plan is None:
             plan = self.plans.first()
-        if plan is None or not plan.site_url:
-            return None
-        if plan.site_url.startswith('http'):
-            return '{}/indicators/{}'.format(plan.site_url, self.id)
-        else:
-            return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
+        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url), self.id)
 
     def clean(self):
         if self.updated_values_due_at:
