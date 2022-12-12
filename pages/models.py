@@ -221,6 +221,10 @@ class CategoryTypePage(StaticPage):
         verbose_name = _('Category type page')
         verbose_name_plural = _('Category type pages')
 
+    @property
+    def remove_sort_menu_order_button(self):
+        return self.category_type.synchronize_with_pages
+
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
