@@ -53,7 +53,7 @@ def resolve_parent(self: 'Page', info, **kwargs):
     parent = self.get_parent()
     if parent is None or parent.depth == 1:
         return None
-    return parent
+    return parent.specific
 
 
 def resolve_siblings(self, info, **kwargs):
