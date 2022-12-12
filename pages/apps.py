@@ -1,6 +1,7 @@
 import typing
 from django.apps import AppConfig
 from django.conf import settings
+from wagtailorderable.signal import post_reorder
 
 if typing.TYPE_CHECKING:
     from wagtail.core.models import Page
@@ -79,9 +80,21 @@ def patch_grapple_url_resolvers():
     PageInterface.resolve_ancestors = resolve_ancestors
 
 
+def post_reorder_categories(sender, **kwargs):
+    qs = kwargs['queryset']
+    assert len(set(cat.type_id for cat in qs)) == 1
+    category_type = qs.first().type
+    if category_type.synchronize_with_pages:
+        category_type.synchronize_pages()
+
+
 class PagesConfig(AppConfig):
     name = 'pages'
 
     def ready(self):
+        from actions.category_admin import CategoryAdmin
         patch_wagtail_page_hierarchy()
         patch_grapple_url_resolvers()
+        post_reorder.connect(
+            post_reorder_categories, sender=CategoryAdmin, dispatch_uid='reorder_category_pages'
+        )
