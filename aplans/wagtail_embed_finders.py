@@ -2,11 +2,15 @@ import re
 from wagtail.embeds.finders.base import EmbedFinder
 
 
-class ArcGISFinder(EmbedFinder):
-    ACCEPTABLE_URL_RE = re.compile(r'^https://([^/@:?.]+.)?arcgis.com/.*')
+class GenericFinder(EmbedFinder):
 
     def __init__(self, **options):
-        pass
+        self.provider = options['provider']
+        self.domain_whitelist = options['domain_whitelist']
+        self.title = options['title']
+        self.acceptable_url_re = re.compile(
+            f'^https://([^/@:?.]+.)?({"|".join(self.domain_whitelist)})/.*'
+        )
 
     def accept(self, url):
         """
@@ -14,7 +18,7 @@ class ArcGISFinder(EmbedFinder):
 
         This should not have any side effects (no requests to external servers)
         """
-        return self.ACCEPTABLE_URL_RE.match(url)
+        return self.acceptable_url_re.match(url)
 
     def find_embed(self, url, max_width=None):
         """
@@ -24,9 +28,9 @@ class ArcGISFinder(EmbedFinder):
         This is the part that may make requests to external APIs.
         """
         return {
-            'title': "Map",
+            'title': self.title,
             # 'author_name': "Author name",
-            'provider_name': "ArcGIS",
+            'provider_name': self.provider,
             'type': 'rich',
             # 'thumbnail_url': "URL to thumbnail image",
             'width': None,

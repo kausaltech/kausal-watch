@@ -479,8 +479,21 @@ CKEDITOR_CONFIGS = {
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
 WAGTAILEMBEDS_FINDERS = [
-    {'class': 'wagtail.embeds.finders.oembed'},
-    {'class': 'aplans.wagtail_embed_finders.ArcGISFinder'}
+    {
+        'class': 'wagtail.embeds.finders.oembed'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'ArcGIS',
+        'domain_whitelist': ('arcgis.com', ),
+        'title': 'Map'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'Sharepoint',
+        'domain_whitelist': ('sharepoint.com', ),
+        'title': 'Document'
+    }
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_ENABLE_UPDATE_CHECK = False
