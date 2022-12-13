@@ -34,8 +34,8 @@ from indicators.blocks import (
 from aplans.utils import OrderedModel
 from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
-    AccessibilityStatementPreparationInformationBlock, CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock,
-    ActionCategoryFilterCardsBlock,
+    AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
+    FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock,
 )
 
 
@@ -460,6 +460,7 @@ class AccessibilityStatementPage(FixedSlugPage):
         ('compliance_status', AccessibilityStatementComplianceStatusBlock()),
         ('preparation', AccessibilityStatementPreparationInformationBlock()),
         ('contact_information', AccessibilityStatementContactInformationBlock()),
+        ('contact_form', AccessibilityStatementContactFormBlock()),
     ], null=True, blank=True)
 
     content_panels = FixedSlugPage.content_panels + [

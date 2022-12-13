@@ -152,3 +152,8 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
         help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]."')
     )
     email = blocks.CharBlock(label=_('Email address'))
+
+
+@register_streamfield_block
+class AccessibilityStatementContactFormBlock(blocks.StaticBlock):
+    pass
