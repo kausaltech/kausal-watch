@@ -104,6 +104,17 @@ class PlanNode(DjangoNode):
     action_update_target_interval = graphene.Int()
     action_update_acceptable_interval = graphene.Int()
 
+    superseding_plans = graphene.List(
+        graphene.NonNull('actions.schema.PlanNode'),
+        recursive=graphene.Boolean(default_value=False),
+        required=True,
+    )
+    superseded_plans = graphene.List(
+        graphene.NonNull('actions.schema.PlanNode'),
+        recursive=graphene.Boolean(default_value=False),
+        required=True,
+    )
+
     def resolve_last_action_identifier(self: Plan, info):
         return self.get_last_action_identifier()
 
@@ -265,6 +276,12 @@ class PlanNode(DjangoNode):
 
     def resolve_action_update_acceptable_interval(root: Plan, info):
         return root.action_update_acceptable_interval
+
+    def resolve_superseding_plans(root: Plan, info, recursive=False):
+        return root.get_superseding_plans(recursive)
+
+    def resolve_superseded_plans(root: Plan, info, recursive=False):
+        return root.get_superseded_plans(recursive)
 
     class Meta:
         model = Plan

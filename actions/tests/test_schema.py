@@ -321,12 +321,50 @@ def test_plan_node_superseded_by(graphql_client_query_data):
     assert data == expected
 
 
-def test_plan_node_superseded_plans(graphql_client_query_data):
+@pytest.mark.parametrize('recursive', [False, True])
+def test_plan_node_superseding_plans(graphql_client_query_data, recursive):
     plan1 = PlanFactory()
     plan2 = PlanFactory(superseded_by=plan1)
+    plan3 = PlanFactory(superseded_by=plan2)
     data = graphql_client_query_data(
         '''
-        query($plan: ID!) {
+        query($plan: ID!, $recursive: Boolean!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersedingPlans(recursive: $recursive) {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan3.identifier, 'recursive': recursive}
+    )
+    expected_superseding_plans = [plan2]
+    if recursive:
+        expected_superseding_plans.append(plan1)
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan3.identifier,
+            'supersedingPlans': [{
+                '__typename': 'Plan',
+                'id': plan.identifier,
+            } for plan in expected_superseding_plans],
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.parametrize('recursive', [False, True])
+def test_plan_node_superseded_plans(graphql_client_query_data, recursive):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    plan3 = PlanFactory(superseded_by=plan2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $recursive: Boolean!) {
           plan(id: $plan) {
             __typename
             id
@@ -334,15 +372,18 @@ def test_plan_node_superseded_plans(graphql_client_query_data):
               __typename
               id
             }
-            supersededPlans {
+            supersededPlans(recursive: $recursive) {
               __typename
               id
             }
           }
         }
         ''',
-        variables={'plan': plan1.identifier}
+        variables={'plan': plan1.identifier, 'recursive': recursive}
     )
+    expected_superseded_plans = [plan2]
+    if recursive:
+        expected_superseded_plans.append(plan3)
     expected = {
         'plan': {
             '__typename': 'Plan',
@@ -350,8 +391,8 @@ def test_plan_node_superseded_plans(graphql_client_query_data):
             'supersededBy': None,
             'supersededPlans': [{
                 '__typename': 'Plan',
-                'id': plan2.identifier,
-            }],
+                'id': plan.identifier,
+            } for plan in expected_superseded_plans],
         }
     }
     assert data == expected

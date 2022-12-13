@@ -588,6 +588,23 @@ class Plan(ClusterableModel):
 
         return qs
 
+    def get_superseded_plans(self, recursive=False):
+        result = self.superseded_plans.all()
+        if recursive:
+            # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
+            for child in list(result):
+                result |= child.get_superseded_plans(recursive=True)
+        return result
+
+    def get_superseding_plans(self, recursive=False):
+        if self.superseded_by is None:
+            return []
+        result = [self.superseded_by]
+        if recursive:
+            # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
+            result += self.superseded_by.get_superseding_plans(recursive=True)
+        return result
+
     def get_action_days_until_considered_stale(self):
         days = self.action_days_until_considered_stale
         return days if days is not None else self.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
