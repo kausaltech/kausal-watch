@@ -13,6 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import importlib
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -39,7 +41,12 @@ from users.views import change_admin_plan
 from .graphene_views import SentryGraphQLView
 from .api_router import router as api_router
 
-for view in actions_api_views + indicators_api_views + insight_api_views:
+extensions_api_views = []
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    from kausal_watch_extensions.api import all_views
+    extensions_api_views = all_views
+
+for view in actions_api_views + indicators_api_views + insight_api_views + extensions_api_views:
     api_router.register(view['name'], view['class'], basename=view.get('basename'))
 
 api_urls = []
