@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-06 15:29+0200\n"
+"POT-Creation-Date: 2022-12-14 11:28+0200\n"
 "PO-Revision-Date: 2022-08-10 15:43+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -394,6 +394,14 @@ msgstr "Wähle eine Maßnahme"
 #: actions/chooser.py
 msgid "Choose another action"
 msgstr "Wähle eine andere Maßnahme"
+
+#: actions/chooser.py
+msgid "Choose a plan"
+msgstr "Wähle einen Plan"
+
+#: actions/chooser.py
+msgid "Choose another plan"
+msgstr "Wähle einen anderen Plan"
 
 #: actions/chooser.py
 msgid "Choose an attribute"
@@ -1171,6 +1179,14 @@ msgstr "Hat Maßnahmenkennungen"
 #: actions/models/features.py
 msgid "Set if the plan uses meaningful action identifiers"
 msgstr "Setzen, wenn der Plan sinnvolle Maßnahmenkennungen verwendet"
+
+#: actions/models/features.py
+msgid "Show action identifiers"
+msgstr "Zeige Maßnahmenkennungen"
+
+#: actions/models/features.py
+msgid "Set if action identifiers should be visible in the public UI"
+msgstr "Setzen, wenn die Maßnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: actions/models/features.py
 msgid "Has action official name field"
@@ -2682,6 +2698,22 @@ msgstr "Kleines Bild"
 #: pages/blocks.py
 msgid "Links"
 msgstr "Links"
+
+#: pages/blocks.py
+msgid "Publisher name"
+msgstr "Name des Herausgebers"
+
+#: pages/blocks.py
+msgid "Maintenance responsibility paragraph"
+msgstr "Absatz über Wartungsverantwortung"
+
+#: pages/blocks.py
+msgid "If this is set, it will be displayed instead of \"This service is published by [publisher].\""
+msgstr "Wenn dies gesetzt ist, wird es statt \"Dieser Dienst wird von [Herausgeber] bereitgestellt\" angezeigt."
+
+#: pages/blocks.py
+msgid "Email address"
+msgstr "E-Mail-Adresse"
 
 #: pages/models.py
 msgid "show in footer"
