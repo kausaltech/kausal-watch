@@ -84,7 +84,11 @@ urlpatterns = [
     re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
     re_path(r'^report-autocomplete/$', ReportAutocomplete.as_view(), name='report-autocomplete'),
     re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
-    re_path(r'^common-indicator-autocomplete/$', CommonIndicatorAutocomplete.as_view(), name='common-indicator-autocomplete'),
+    re_path(
+        r'^common-indicator-autocomplete/$',
+        CommonIndicatorAutocomplete.as_view(),
+        name='common-indicator-autocomplete'
+    ),
     re_path(
         r'^commoncategorytype-autocomplete/$',
         CommonCategoryTypeAutocomplete.as_view(),
