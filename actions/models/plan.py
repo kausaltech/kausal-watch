@@ -124,6 +124,10 @@ class Plan(ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     short_name = models.CharField(max_length=50, verbose_name=_('short name'), null=True, blank=True)
+    version_name = models.CharField(
+        max_length=100, blank=True, verbose_name=_('version name'),
+        help_text=_('If this plan has multiple versions, name of this version'),
+    )
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
@@ -249,7 +253,7 @@ class Plan(ClusterableModel):
     )
 
     public_fields = [
-        'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
+        'id', 'name', 'short_name', 'version_name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
