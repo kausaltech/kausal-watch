@@ -372,8 +372,8 @@ class NotificationEngine:
             self.generate_action_notifications(action)
 
         base_template = self.plan.notification_base_template
-        from_address = base_template.from_address or 'noreply@ilmastovahti.fi'
-        from_name = base_template.from_name or 'Helsingin ilmastovahti'
+        from_address = base_template.from_address or 'noreply@kausal.tech'
+        from_name = base_template.from_name or 'Kausal'
         email_from = '%s <%s>' % (from_name, from_address)
         reply_to = [base_template.reply_to] if base_template.reply_to else None
 
