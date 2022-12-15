@@ -9,6 +9,7 @@ from markupsafe import Markup
 from sentry_sdk import capture_exception
 
 from actions.models import Plan, ActionTask, Action, ActionContactPerson
+from feedback.models import UserFeedback
 from indicators.models import Indicator, IndicatorContactPerson
 from people.models import Person
 from notifications.models import NotificationType
@@ -181,6 +182,19 @@ class ActionNotUpdatedNotification(Notification):
             self._queue_notification(person)
 
 
+class UserFeedbackReceivedNotification(Notification):
+    def __init__(self, plan: Plan, user_feedback: UserFeedback):
+        super().__init__(NotificationType.USER_FEEDBACK_RECEIVED, plan, user_feedback)
+
+    def get_context(self):
+        return {'user_feedback': self.obj}
+
+    def generate_notifications(self):
+        for person in self.obj._notification_recipients:
+            if self.notification_last_sent(person) is None:
+                self._queue_notification(person)
+
+
 class NotificationEngine:
     def __init__(
         self, plan: Plan, force_to=None, limit=None, only_type=None, noop=False, only_email=None,
@@ -253,6 +267,18 @@ class NotificationEngine:
         for person in admin_people:
             persons_by_id[person.id] = person
         self.persons_by_id = persons_by_id
+
+        for person in self.plan.general_admins.all():
+            if person.id not in persons_by_id:
+                persons_by_id[person.id] = person
+                person._notifications = {}
+
+        self.user_feedbacks_by_id = {}
+        for user_feedback in self.plan.user_feedbacks.all():
+            user_feedback._notification_recipients = [
+                persons_by_id[person.id] for person in self.plan.general_admins.all()
+            ]
+            self.user_feedbacks_by_id[user_feedback.id] = user_feedback
 
     def ensure_action_notification_recipient(self, action):
         if action._notification_recipients:
@@ -328,6 +354,10 @@ class NotificationEngine:
             notif = ActionNotUpdatedNotification(self.plan, action)
             notif.generate_notifications()
 
+    def generate_user_feedback_notifications(self, user_feedback: UserFeedback):
+        notification = UserFeedbackReceivedNotification(self.plan, user_feedback)
+        notification.generate_notifications()
+
     def render(self, template, context, language_code=None):
         if not language_code:
             language_code = self.plan.primary_language
@@ -370,6 +400,9 @@ class NotificationEngine:
             if action._ignore or not action.is_active():
                 continue
             self.generate_action_notifications(action)
+
+        for user_feedback in self.user_feedbacks_by_id.values():
+            self.generate_user_feedback_notifications(user_feedback)
 
         base_template = self.plan.notification_base_template
         from_address = base_template.from_address or 'noreply@kausal.tech'

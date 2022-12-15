@@ -29,6 +29,7 @@ class NotificationType(Enum):
     NOT_ENOUGH_TASKS = _("Action doesn't have enough in-progress tasks")
     UPDATED_INDICATOR_VALUES_LATE = _("Updated indicator values are late")
     UPDATED_INDICATOR_VALUES_DUE_SOON = _("Updated indicator values are due soon")
+    USER_FEEDBACK_RECEIVED = _("User feedback received")
 
     @property
     def identifier(self):

@@ -7,6 +7,7 @@ from actions.tests.factories import (
     ActionContactFactory, ActionFactory, ActionTaskFactory, PlanFactory, ActionResponsiblePartyFactory
 )
 from admin_site.tests.factories import ClientPlanFactory
+from feedback.tests.factories import UserFeedbackFactory
 from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory, IndicatorLevelFactory
 from orgs.tests.factories import OrganizationPlanAdminFactory
 from notifications.models import NotificationType
@@ -136,3 +137,16 @@ def test_action_notification_bubbles_to_org_admin_main_organization():
     engine.generate_notifications()
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to[0] == org_plan_admin.person.user.email
+
+
+def test_user_feedback_received(plan, plan_admin_person):
+    NotificationTemplateFactory(base__plan=plan,
+                                type=NotificationType.USER_FEEDBACK_RECEIVED.identifier)
+    ClientPlanFactory(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.USER_FEEDBACK_RECEIVED.identifier)
+    assert len(mail.outbox) == 0
+    engine.generate_notifications()
+    assert len(mail.outbox) == 0
+    UserFeedbackFactory(plan=plan)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
