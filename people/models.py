@@ -302,22 +302,29 @@ class Person(index.Indexed, ClusterableModel):
             for ind in indicators:
                 plans.update(ind.plans.all())
 
+        client = None
         if plans:
             clients = Client.objects.filter(plans__plan__in=plans).distinct()
-            if len(clients) != 1:
-                raise Exception('Invalid number of clients found for %s [Person-%d]: %d' % (
-                    self.email, self.id, len(clients))
-                )
-            client = clients[0]
-        else:
+            if len(clients) == 1:
+                client = clients[0]
+            else:
+                logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
+                    self.email, self.id, len(clients)
+                ))
+        if not client:
             # Match based on email domain
             email_domain = self.email.split('@')[1]
             clients = Client.objects.filter(email_domains__domain=email_domain.lower())
-            if len(clients) != 1:
-                raise Exception('Unable to find client for email %s [Person-%d]' % (
-                    self.email, self.id)
-                )
-            client = clients[0]
+            if len(clients) == 1:
+                client = clients[0]
+            else:
+                logger.warning('Unable to find client for email %s [Person-%d]' % (
+                    self.email, self.id
+                ))
+        if not client:
+            raise Exception('Unable to find client for email %s [Person-%d]' % (
+                self.email, self.id
+            ))
 
         return client
 
