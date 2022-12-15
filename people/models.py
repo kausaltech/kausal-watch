@@ -24,6 +24,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.search import index
+from wagtail.images.models import SourceImageIOError
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
@@ -330,13 +331,21 @@ class Person(index.Indexed, ClusterableModel):
         )
 
         logo = client.logo
-        if logo is None:
+        rendition = None
+        if logo is not None:
+            try:
+                rendition = logo.get_rendition('max-200x50')
+            except (FileNotFoundError, SourceImageIOError) as e:
+                # We ignore the error so that the query will not fail, but report it to
+                # Sentry anyway.
+                capture_exception(e)
+                rendition = None
+        if rendition is None:
             out['logo_url'] = None
             out['logo_height'] = None
             out['logo_width'] = None
             out['logo_alt'] = None
         else:
-            rendition = logo.get_rendition('max-200x50')
             out['logo_url'] = admin_url + rendition.url
             out['logo_height'] = rendition.height
             out['logo_width'] = rendition.width
