@@ -305,7 +305,7 @@ class NotificationEngine:
             return
         notif.generate_notifications(indicator._notification_recipients)
 
-    def make_action_notifications(self, action: Action):
+    def generate_action_notifications(self, action: Action):
         # Generate a notification if action doesn't have at least
         # one active task with DLs within 365 days
         N_DAYS = 365
@@ -369,7 +369,7 @@ class NotificationEngine:
         for action in self.actions_by_id.values():
             if action._ignore or not action.is_active():
                 continue
-            self.make_action_notifications(action)
+            self.generate_action_notifications(action)
 
         base_template = self.plan.notification_base_template
         from_address = base_template.from_address or 'noreply@ilmastovahti.fi'
@@ -444,7 +444,7 @@ class Command(BaseCommand):
         parser.add_argument('--force-to', type=str, help='Rewrite the To field and send all emails to this address')
         parser.add_argument('--limit', type=int, help='Do not send more than this many emails')
         parser.add_argument('--only-type', type=str, choices=type_choices, help='Send only notifications of this type')
-        parser.add_argument('--only-email', type=str, help='Send only the notifications that go this email')
+        parser.add_argument('--only-email', type=str, help='Send only the notifications that go to this email')
         parser.add_argument('--ignore-actions', type=str, help='Comma-separated list of action identifiers to ignore')
         parser.add_argument(
             '--ignore-indicators', type=str, help='Comma-separated list of indicator identifiers to ignore'
