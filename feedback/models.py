@@ -13,12 +13,16 @@ class UserFeedback(models.Model):
 
     url = models.URLField()
     created_at = models.DateTimeField(auto_now_add=True)
+    is_processed = models.BooleanField(default=False)
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='user_feedbacks')
 
     class Meta:
         verbose_name = _('user feedback')
         verbose_name_plural = _('user feedbacks')
+
+    def user_can_change_is_processed(self, user):
+        return user.is_general_admin_for_plan(self.plan)
 
     def __str__(self):
         sender = self.name or self.email
