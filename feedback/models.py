@@ -21,4 +21,5 @@ class UserFeedback(models.Model):
         verbose_name_plural = _('user feedbacks')
 
     def __str__(self):
-        return str(self.created_at)
+        sender = self.name or self.email
+        return f'{sender} ({self.created_at})'
