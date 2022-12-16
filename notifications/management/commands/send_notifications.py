@@ -51,10 +51,11 @@ class Notification:
         now = timezone.now()
         self.obj.sent_notifications.create(sent_at=now, person=person, type=self._get_type())
 
-    def notification_last_sent(self, person: Person) -> typing.Optional[int]:
-        last_notification = self.obj.sent_notifications.filter(
-            person=person, type=self._get_type()
-        ).order_by('-sent_at').first()
+    def notification_last_sent(self, person: Person = None) -> typing.Optional[int]:
+        notifications = self.obj.sent_notifications.filter(type=self._get_type())
+        if person:
+            notifications = notifications.filter(person=person)
+        last_notification = notifications.order_by('-sent_at').first()
         if not last_notification:
             return None
         else:
@@ -190,8 +191,9 @@ class UserFeedbackReceivedNotification(Notification):
         return {'user_feedback': self.obj}
 
     def generate_notifications(self):
-        for person in self.obj._notification_recipients:
-            if self.notification_last_sent(person) is None:
+        # Send user feedback received notifications only if they haven't been sent yet to anybody
+        if self.notification_last_sent() is None:
+            for person in self.obj._notification_recipients:
                 self._queue_notification(person)
 
 
