@@ -33,7 +33,7 @@ class InvalidStateException(Exception):
 class Notification:
     type: NotificationType
     plan: Plan
-    obj: typing.Union[Action, ActionTask, Indicator]
+    obj: typing.Union[Action, ActionTask, Indicator, UserFeedback]
 
     def __init__(self, type: NotificationType, plan: Plan, obj):
         self.type = type
