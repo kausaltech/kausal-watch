@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.core import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString, GraphQLInt
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType, AttributeTypeQuerySet
@@ -306,6 +306,11 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
     ], label=_("Style"), default='dropdown')
     show_all_label = blocks.CharBlock(required=False, label=_("Label for 'show all'"))
     category_type = CategoryTypeChooserBlock(required=True, label=_("Category type"))
+    depth = blocks.IntegerBlock(
+        required=False,
+        help_text=_("How many levels of category hierarchy to show"),
+        min_value=1
+    )
 
     model_instance_container_blocks = {
         CategoryType: 'category_type',
@@ -314,6 +319,7 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('style'),
         GraphQLString('show_all_label'),
+        GraphQLInt('depth'),
         GraphQLForeignKey('category_type', CategoryType)
     ]
 

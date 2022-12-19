@@ -1,7 +1,7 @@
 import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import URLValidator
+from django.core.validators import URLValidator, MinValueValidator
 from django.db import models
 from django.utils import translation
 from django.utils.text import slugify
@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 import graphene
 from grapple.models import (
     GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
-    GraphQLString, GraphQLField
+    GraphQLInt, GraphQLString, GraphQLField
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
@@ -350,6 +350,12 @@ class ActionListPage(FixedSlugPage):
         max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view'),
         help_text=_("Tab of the action list page that should be visible by default")
     )
+    heading_hierarchy_depth = models.IntegerField(
+        verbose_name=_('Subheading hierarchy depth'),
+        help_text=_('Depth of category hierarchy to present as subheadings starting from the root.'),
+        validators=(MinValueValidator(1),),
+        default=1
+    )
 
     force_slug = 'actions'
     is_creatable = False  # Only let this be created programmatically
@@ -358,6 +364,7 @@ class ActionListPage(FixedSlugPage):
 
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
+        FieldPanel('heading_hierarchy_depth'),
         MultiFieldPanel([
             StreamFieldPanel('primary_filters', heading=_("Primary filters")),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
@@ -375,6 +382,7 @@ class ActionListPage(FixedSlugPage):
         # GraphQLField('default_view', graphene.Enum.from_enum(View), required=True),
         # then the type would be called `View`, not `ActionListPageView`, as the automatically generated type is.
         GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
+        GraphQLInt(field_name='heading_hierarchy_depth', required=True),
         streamfield_node_getter('primary_filters'),
         streamfield_node_getter('main_filters'),
         streamfield_node_getter('advanced_filters'),
