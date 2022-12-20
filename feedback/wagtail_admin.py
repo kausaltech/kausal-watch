@@ -35,11 +35,9 @@ class UserFeedbackURLHelper(AdminURLHelper):
 class UserFeedbackButtonHelper(ButtonHelper):
     mark_as_processed_button_classnames = []
 
-    def set_processed_button(self, pk, classnames_add=None, classnames_exclude=None):
-        if classnames_add is None:
-            classnames_add = []
-        if classnames_exclude is None:
-            classnames_exclude = []
+    def set_processed_button(self, pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
         classnames = self.mark_as_processed_button_classnames + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
@@ -49,11 +47,9 @@ class UserFeedbackButtonHelper(ButtonHelper):
             'title': _("Mark this user feedback as processed"),
         }
 
-    def set_unprocessed_button(self, pk, classnames_add=None, classnames_exclude=None):
-        if classnames_add is None:
-            classnames_add = []
-        if classnames_exclude is None:
-            classnames_exclude = []
+    def set_unprocessed_button(self, pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
         classnames = self.mark_as_processed_button_classnames + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
