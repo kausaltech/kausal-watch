@@ -240,6 +240,7 @@ class ActionListBlock(blocks.StructBlock):
 @register_streamfield_block
 class CategoryListBlock(blocks.StructBlock):
     category_type = CategoryTypeChooserBlock(label=_('Category type'), required=False)
+    category = CategoryChooserBlock(label=_('Category'), required=False)
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
     style = blocks.ChoiceBlock(choices=[
@@ -249,6 +250,7 @@ class CategoryListBlock(blocks.StructBlock):
 
     graphql_fields = [
         GraphQLForeignKey('category_type', CategoryType),
+        GraphQLForeignKey('category', Category),
         GraphQLString('heading'),
         GraphQLString('lead'),
         GraphQLString('style'),
