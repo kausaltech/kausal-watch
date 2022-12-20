@@ -440,6 +440,12 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
+class ActionContactFormBlock(blocks.StaticBlock):
+    class Meta:
+        label = _("contact form")
+
+
+@register_streamfield_block
 class ActionOfficialNameBlock(blocks.StructBlock):
     field_label = blocks.CharBlock(
         required=False,
@@ -495,6 +501,7 @@ action_content_fields = [
     'merged_actions',
     'related_actions',
     'related_indicators',
+    ('contact_form', ActionContactFormBlock(required=True, label=_('Contact form'))),
 ]
 
 action_content_extra_args = {
