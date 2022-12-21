@@ -639,6 +639,14 @@ class GeneralPlanAdmin(OrderedModel):
         verbose_name = _('general plan admin')
         verbose_name_plural = _('general plan admins')
 
+    def save(self, *args, **kwargs):
+        from notifications.models import GeneralPlanAdminNotificationPreferences
+        result = super().save(*args, **kwargs)
+        GeneralPlanAdminNotificationPreferences.objects.get_or_create(
+            general_plan_admin=self,
+        )
+        return result
+
     def __str__(self):
         return str(self.person)
 

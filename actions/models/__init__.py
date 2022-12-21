@@ -1,4 +1,3 @@
-from .plan import Plan, PlanDomain, Scenario, ImpactGroup, MonitoringQualityPoint
 from .action import (
     Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
@@ -12,6 +11,7 @@ from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
 from .features import PlanFeatures
+from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario
 from .report import Report, ReportType
 
 
@@ -23,7 +23,7 @@ __all__ = [
     'ActionSchedule', 'ActionStatus', 'ActionStatusUpdate', 'ActionTask',
     'AttributeType', 'AttributeTypeChoiceOption',
     'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'CommonCategory', 'CommonCategoryIcon',
-    'CommonCategoryType', 'ImpactGroup', 'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan', 'PlanDomain',
-    'Scenario', 'PlanFeatures',
+    'CommonCategoryType', 'GeneralPlanAdmin', 'ImpactGroup', 'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan',
+    'PlanDomain', 'PlanFeatures', 'Scenario',
     'Report', 'ReportType',
 ]

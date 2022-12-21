@@ -10,7 +10,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.core.fields import RichTextField
 
-from actions.models import Plan
+from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan
 from people.models import Person
 from aplans.utils import PlanRelatedModel
 
@@ -206,3 +206,24 @@ class ContentBlock(models.Model):
             parts.append(self.template.get_type_display())
         parts.append(self.get_identifier_display())
         return ': '.join(parts)
+
+
+class GeneralPlanAdminNotificationPreferences(models.Model):
+    general_plan_admin = models.OneToOneField(
+        GeneralPlanAdmin, related_name='notification_preferences', on_delete=models.CASCADE,
+    )
+    receive_feedback_notifications = models.BooleanField(
+        verbose_name=_("receive feedback notifications"), default=True
+    )
+
+
+class ActionContactPersonNotificationPreferences(models.Model):
+    action_contact_person = models.OneToOneField(
+        ActionContactPerson, related_name='notification_preferences', on_delete=models.CASCADE,
+    )
+    receive_general_action_notifications = models.BooleanField(
+        verbose_name=_("receive general action notifications"), default=True
+    )
+    receive_action_feedback_notifications = models.BooleanField(
+        verbose_name=_("receive action feedback notifications"), default=True
+    )
