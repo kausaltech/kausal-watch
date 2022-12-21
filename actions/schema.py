@@ -29,7 +29,13 @@ from actions.models import (
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
-    DjangoNode, GQLInfo, get_plan_from_context, order_queryset, register_django_node, register_graphene_node, set_active_plan
+    DjangoNode,
+    GQLInfo,
+    get_plan_from_context,
+    order_queryset,
+    register_django_node,
+    register_graphene_node,
+    set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
@@ -471,6 +477,7 @@ class AttributesMixin:
         query = Q()
         if id is not None:
             query = Q(type__identifier=id)
+
         def filter_attrs(qs):
             if not query:
                 return qs.all()
@@ -840,7 +847,13 @@ class Query:
         qs = Action.objects.filter(plan=plan_obj)
         if category is not None:
             # FIXME: This is sucky, maybe convert Category to a proper tree model?
-            f = Q(id=category) | Q(parent=category) | Q(parent__parent=category) | Q(parent__parent__parent=category) | Q(parent__parent__parent__parent=category)
+            f = (
+                Q(id=category) |
+                Q(parent=category) |
+                Q(parent__parent=category) |
+                Q(parent__parent__parent=category) |
+                Q(parent__parent__parent__parent=category)
+            )
             descendant_cats = Category.objects.filter(f)
             qs = qs.filter(categories__in=descendant_cats).distinct()
 
