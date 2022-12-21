@@ -83,6 +83,8 @@ class PlanNode(DjangoNode):
 
     primary_orgs = graphene.List('orgs.schema.OrganizationNode', required=True)
 
+    published_at = graphene.DateTime()
+
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     admin_url = graphene.String(required=False)
