@@ -78,8 +78,8 @@ class UserFeedbackAdmin(ModelAdmin):
     menu_icon = 'mail'
     menu_label = _('User feedbacks')
     permission_helper_class = UserFeedbackPermissionHelper
-    list_display = ['created_at', 'name', 'comment', 'is_processed']
-    list_filter = ['created_at', 'is_processed']
+    list_display = ['created_at', 'type', 'action', 'name', 'comment', 'is_processed']
+    list_filter = ['created_at', 'type', 'is_processed']
     inspect_view_enabled = True
     button_helper_class = UserFeedbackButtonHelper
     url_helper_class = UserFeedbackURLHelper

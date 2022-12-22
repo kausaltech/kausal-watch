@@ -12,7 +12,7 @@ class UserFeedbackForm(forms.ModelForm):
 
     class Meta:
         model = UserFeedback
-        fields = ('plan', 'name', 'email', 'comment', 'url')
+        fields = ('plan', 'type', 'action', 'name', 'email', 'comment', 'url')
 
 
 class UserFeedbackNode(DjangoObjectType):
