@@ -166,10 +166,14 @@ class IndicatorDataPointMixin:
         indicator = self.context['indicator']
         if indicator.time_resolution == 'year':
             if date.day != 31 or date.month != 12:
-                raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date, date.year))
+                raise ValidationError(
+                    "Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date, date.year)
+                )
         elif indicator.time_resolution == 'month':
             if date.day != 1:
-                raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month))
+                raise ValidationError(
+                    "Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month)
+                )
         return date
 
 
