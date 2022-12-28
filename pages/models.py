@@ -112,7 +112,7 @@ class AplansPage(Page):
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(locale__language_code__iexact=lang)
+        qs = qs.filter(locale__language_code__istartswith=lang)
         return qs
 
     def get_url_parts(self, request=None):
