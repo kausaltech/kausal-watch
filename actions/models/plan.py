@@ -17,7 +17,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
 from django.utils.text import format_lazy
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -182,7 +182,7 @@ class Plan(ClusterableModel):
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
     related_plans = models.ManyToManyField('self', blank=True)
     parent = models.ForeignKey(
-        'self', verbose_name=_('parent'), blank=True, null=True, related_name='children',
+        'self', verbose_name=pgettext_lazy('plan', 'parent'), blank=True, null=True, related_name='children',
         on_delete=models.SET_NULL
     )
     common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
@@ -230,7 +230,7 @@ class Plan(ClusterableModel):
     )
 
     superseded_by = models.ForeignKey(
-        'self', verbose_name=_('superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        'self', verbose_name=pgettext_lazy('plan', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan')
     )
 
@@ -739,7 +739,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
     identifier = IdentifierField()
     parent = models.ForeignKey(
         'self', on_delete=models.SET_NULL, related_name='children', null=True, blank=True,
-        verbose_name=_('parent')
+        verbose_name=pgettext_lazy('impact group', 'parent')
     )
     weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
     color = models.CharField(

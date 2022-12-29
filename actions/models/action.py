@@ -217,7 +217,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         null=True,
     )
     superseded_by = models.ForeignKey(
-        'self', verbose_name=_('superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        'self', verbose_name=pgettext_lazy('action', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_actions', help_text=_('Set if this action is superseded by another action')
     )
 
