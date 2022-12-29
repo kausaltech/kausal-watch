@@ -621,13 +621,16 @@ class ActionSerializer(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        initial_data = getattr(self, 'initial_data', None)
         must_generate_identifiers = not self.plan.features.has_action_identifiers
-        identifier_missing = initial_data is not None and not initial_data.get('identifier')
-        if must_generate_identifiers and identifier_missing:
-            # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so to
-            # avoid an error when we omit an identifier, we need to do it here
-            self.initial_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
+        if must_generate_identifiers:
+            actions_data = getattr(self, 'initial_data', [])
+            if not isinstance(actions_data, list):
+                actions_data = [actions_data]
+            for action_data in actions_data:
+                if not action_data.get('identifier'):
+                    # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so
+                    # to avoid an error when we omit an identifier, we need to do it here
+                    action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def get_fields(self):
         fields = super().get_fields()
