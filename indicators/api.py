@@ -209,7 +209,7 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
 
 
 class IndicatorSerializer(serializers.ModelSerializer):
-    latest_value = IndicatorValueSerializer(required=False)
+    latest_value = IndicatorValueSerializer(read_only=True, required=False)
 
     class Meta:
         model = Indicator
