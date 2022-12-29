@@ -1,7 +1,7 @@
 from dal import autocomplete
 from django.db.models import Q
 
-from actions.models import Action, Category, CommonCategoryType, Report
+from actions.models import Action, Category, CommonCategoryType, Plan, Report
 from aplans.types import WatchAdminRequest
 
 
@@ -10,7 +10,8 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, result: Action):
         related_plans = self.forwarded.get('related_plans', False)
-        if related_plans:
+        plan_id = self.forwarded.get('plan', None)
+        if related_plans or plan_id is not None:
             plan = result.plan
             plan_name = plan.short_name or plan.name
             return '%s: %s' % (plan_name, str(result))
@@ -20,7 +21,11 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
         if not self.request.user.is_authenticated:
             return Action.objects.none()
 
-        plan = self.request.get_active_admin_plan()
+        plan_id = self.forwarded.get('plan', None)
+        if plan_id is None:
+            plan = self.request.get_active_admin_plan()
+        else:
+            plan = Plan.objects.get(id=plan_id)
         related_plans = self.forwarded.get('related_plans', False)
         if related_plans:
             plans = plan.get_all_related_plans(inclusive=True)

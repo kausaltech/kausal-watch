@@ -696,7 +696,12 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             panels += self.basic_related_panels_general_admin
 
             if plan.superseded_by:
-                panels.append(FieldPanel('superseded_by', widget=ActionChooser))
+                panels.append(FieldPanel('superseded_by', widget=autocomplete.ModelSelect2(
+                    url='action-autocomplete',
+                    forward=(
+                        dal_forward.Const(plan.superseded_by.id, 'plan'),
+                    )
+                )))
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
