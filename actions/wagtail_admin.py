@@ -51,28 +51,6 @@ class PlanEditHandler(TabbedInterface):
             )
 
 
-class PlanCreateView(AplansCreateView):
-    def get_instance(self):
-        instance: Plan = super().get_instance()
-        if self.request.method == 'POST':
-            return instance
-
-        STATUSES = [
-            ('not_started', gettext('not started'), False),
-            ('in_progress', gettext('in progress'), False),
-            ('late', gettext('late'), False),
-            ('completed', gettext('completed'), True),
-        ]
-        instance.action_statuses = [ActionStatus(
-            plan=instance,
-            identifier=identifier,
-            name=name.capitalize(),
-            is_completed=is_completed
-        ) for identifier, name, is_completed in STATUSES]
-
-        return instance
-
-
 class PlanForm(AplansAdminModelForm):
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
@@ -83,7 +61,6 @@ class PlanForm(AplansAdminModelForm):
 
 class PlanAdmin(AplansModelAdmin):
     model = Plan
-    create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
     menu_label = pgettext_lazy('hyphenated', 'Plans')
     menu_order = 500
