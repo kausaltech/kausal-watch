@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-12-30 08:39+0200\n"
-"PO-Revision-Date: 2022-12-30 09:03+0200\n"
+"PO-Revision-Date: 2023-01-03 18:52+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -815,7 +815,7 @@ msgstr "toimenpiteen tilat"
 
 #: actions/models/action.py
 msgid "action implementation phase"
-msgstr "toimenpiteen toteutusvaihee"
+msgstr "toimenpiteen toteutusvaihe"
 
 #: actions/models/action.py
 msgid "action implementation phases"
