@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import functools
 import typing
-from typing import Iterable, Optional, Sequence
+import uuid
+from typing import Iterable, Optional
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
@@ -173,6 +174,7 @@ class Organization(index.Indexed, Node, gis_models.Model):
         verbose_name = _("organization")
         verbose_name_plural = _("organizations")
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     classification = models.ForeignKey(OrganizationClass,
                                        on_delete=models.PROTECT,
                                        blank=True,
@@ -239,7 +241,7 @@ class Organization(index.Indexed, Node, gis_models.Model):
 
     objects = OrganizationManager()
 
-    public_fields = ['id', 'name', 'abbreviation', 'internal_abbreviation', 'parent']
+    public_fields = ['id', 'uuid', 'name', 'abbreviation', 'internal_abbreviation', 'parent']
 
     search_fields = [
         index.AutocompleteField('name', partial_match=True),

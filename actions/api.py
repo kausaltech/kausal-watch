@@ -5,6 +5,7 @@ import rest_framework.fields
 import typing
 from typing import Optional
 
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
@@ -502,12 +503,22 @@ class PrevSiblingField(serializers.Field):
         # value is the left sibling of the original instance
         if value is None:
             return None
-        return value.id
+        try:
+            value._meta.get_field('uuid')
+            return value.uuid
+        except FieldDoesNotExist:
+            return value.id
 
     def to_internal_value(self, data):
         # FIXME: No validation (e.g., permission checking)
         model = self.parent.Meta.model
-        return model.objects.get(id=data)
+        # We use a UUID as the value for this field if the model has a field called uuid. Otherwise we use the
+        # related model instance itself.
+        try:
+            model._meta.get_field('uuid')
+            return data
+        except FieldDoesNotExist:
+            return model.objects.get(id=data)
 
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
@@ -521,8 +532,12 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
         return fields
 
     def create(self, validated_data: dict):
-        left_sibling = validated_data.pop('left_sibling', None)
+        left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().create(validated_data)
+        if left_sibling_uuid is None:
+            left_sibling = None
+        else:
+            left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
         self._update_tree_position(instance, left_sibling)
         return instance
 
@@ -530,8 +545,12 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
         # FIXME: Since left_sibling has allow_null=True, we should distinguish whether left_sibling is None because it
         # is not in validated_data or because validated_data['left_sibling'] is None. Sending a PUT request and omitting
         # left_sibling might inadvertently move the node.
-        left_sibling = validated_data.pop('left_sibling', None)
+        left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().update(instance, validated_data)
+        if left_sibling_uuid is None:
+            left_sibling = None
+        else:
+            left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
         self._update_tree_position(instance, left_sibling)
         return instance
 
@@ -615,6 +634,7 @@ class ActionSerializer(
     NonTreebeardModelWithTreePositionSerializerMixin,
     PlanRelatedModelSerializer,
 ):
+    uuid = serializers.UUIDField(required=False)
     categories = ActionCategoriesSerializer(required=False)
     responsible_parties = ActionResponsiblePartySerializer(required=False, label=_('Responsible parties'))
     contact_persons = ActionContactPersonSerializer(required=False, label=_('Contact persons'))
@@ -678,7 +698,7 @@ class ActionSerializer(
         return value
 
     def run_validation(self, data: dict):
-        if self.parent:
+        if self.parent and self.instance is not None:
             assert isinstance(self.instance, models.query.QuerySet)
             self._instance = self.instance.get(id=data['id'])
         else:
@@ -876,6 +896,8 @@ class CategorySerializer(
     NonTreebeardModelWithTreePositionSerializerMixin,
     serializers.ModelSerializer,
 ):
+    uuid = serializers.UUIDField(required=False)
+
     def __init__(self, *args, **kwargs):
         # TODO: Refactor duplicated code from aplans.rest_api.PlanRelatedModelSerializer
         self.category_type = kwargs.pop('category_type', None)
@@ -893,6 +915,14 @@ class CategorySerializer(
                 self.category_type = CategoryType.objects.first()
         super().__init__(*args, **kwargs)
 
+    def run_validation(self, data: dict):
+        if self.parent and self.instance is not None:
+            assert isinstance(self.instance, models.query.QuerySet)
+            self._instance = self.instance.get(id=data['id'])
+        else:
+            self._instance = self.instance
+        return super().run_validation(data)
+
     def create(self, validated_data: dict):
         validated_data['type'] = self.category_type
         validated_data['order_on_create'] = validated_data.get('order')
@@ -909,8 +939,8 @@ class CategorySerializer(
             raise serializers.ValidationError(_("Identifier must be set"))
 
         qs = Category.objects.filter(type=self.category_type, identifier=value)
-        if self.instance is not None:
-            qs = qs.exclude(pk=self.instance.pk)
+        if self._instance is not None:
+            qs = qs.exclude(pk=self._instance.pk)
         if qs.exists():
             raise serializers.ValidationError(_("Identifier already exists"))
 
@@ -998,12 +1028,22 @@ class TreebeardParentField(serializers.Field):
         # value is the parent of the original instance
         if value is None:
             return None
-        return value.id
+        try:
+            value._meta.get_field('uuid')
+            return value.uuid
+        except FieldDoesNotExist:
+            return value.id
 
     def to_internal_value(self, data):
         # FIXME: No validation (e.g., permission checking)
         model = self.parent.Meta.model
-        return model.objects.get(id=data)
+        # We use a UUID as the value for this field if the model has a field called uuid. Otherwise we use the
+        # related model instance itself.
+        try:
+            model._meta.get_field('uuid')
+            return data
+        except FieldDoesNotExist:
+            return model.objects.get(id=data)
 
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
@@ -1066,8 +1106,11 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
 
 
 class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
+
     class Meta:
         model = Organization
+        list_serializer_class = BulkListSerializer
         fields = public_fields(Organization)
 
     def create(self, validated_data):
@@ -1080,12 +1123,20 @@ class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSer
 
 
 @register_view
-class OrganizationViewSet(viewsets.ModelViewSet):
+class OrganizationViewSet(BulkModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     filterset_fields = {
         'name': ('exact', 'in'),
     }
+
+    # This view set is not registered with a "bulk router" (see BulkRouter or NestedBulkRouter), so we need to define
+    # patch and put ourselves
+    def patch(self, request, *args, **kwargs):
+        return self.partial_bulk_update(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.bulk_update(request, *args, **kwargs)
 
     def get_permissions(self):
         if self.action == 'list':

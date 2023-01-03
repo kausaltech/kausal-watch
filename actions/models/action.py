@@ -2,8 +2,9 @@ from __future__ import annotations
 import typing
 from typing import Literal, Optional, TypedDict
 import logging
-from datetime import date
+import uuid
 
+from datetime import date
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -101,6 +102,7 @@ class ResponsiblePartyDict(TypedDict):
 class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     plan: Plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
@@ -249,7 +251,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
     # Used by GraphQL + REST API code
     public_fields = [
-        'id', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
+        'id', 'uuid', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
         'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',

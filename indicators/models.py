@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import datetime
-import typing
-from typing import Optional
 import reversion
-from dateutil.relativedelta import relativedelta
+import typing
+import uuid
 
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
@@ -20,6 +20,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
+from typing import Optional
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -297,6 +298,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         ('operational', _('operational')),
     )
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     common = models.ForeignKey(
         CommonIndicator, null=True, blank=True, related_name='indicators',
         on_delete=models.PROTECT, verbose_name=_('common indicator')
@@ -375,7 +377,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     ]
 
     public_fields = [
-        'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
+        'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
         'related_causes', 'related_effects', 'dimensions',

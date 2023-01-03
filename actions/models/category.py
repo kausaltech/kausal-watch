@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import reversion
+import uuid
+
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -15,8 +18,6 @@ from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
 from wagtail.core.models import Page, Collection
 from wagtailsvg.models import Svg
-
-import reversion
 
 from aplans.utils import (
     IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, generate_identifier,
@@ -236,6 +237,7 @@ class CategoryLevel(OrderedModel):
 
 
 class CategoryBase(OrderedModel):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
     lead_paragraph = models.TextField(
@@ -252,7 +254,7 @@ class CategoryBase(OrderedModel):
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
 
     public_fields = [
-        'id', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text',
+        'id', 'uuid', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text',
     ]
 
     class Meta:

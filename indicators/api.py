@@ -209,12 +209,13 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
 
 
 class IndicatorSerializer(serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
     latest_value = IndicatorValueSerializer(read_only=True, required=False)
 
     class Meta:
         model = Indicator
         fields = (
-            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
+            'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
             'latest_value',
         )
 
