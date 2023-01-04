@@ -894,12 +894,26 @@ category_type_router = NestedBulkRouter(plan_router, 'category-types', lookup='c
 all_routers.append(category_type_router)
 
 
+class NonTreebeardParentUUIDField(serializers.Field):
+    def get_attribute(self, instance):
+        return instance.parent
+
+    def to_representation(self, value):
+        if value is None:
+            return None
+        return value.uuid
+
+    def to_internal_value(self, data):
+        return data
+
+
 class CategorySerializer(
     ModelWithAttributesSerializerMixin,
     NonTreebeardModelWithTreePositionSerializerMixin,
     BulkSerializerValidationInstanceMixin,
     serializers.ModelSerializer,
 ):
+    parent = NonTreebeardParentUUIDField(allow_null=True, required=False)
     uuid = serializers.UUIDField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -922,10 +936,14 @@ class CategorySerializer(
     def create(self, validated_data: dict):
         validated_data['type'] = self.category_type
         validated_data['order_on_create'] = validated_data.get('order')
+        if validated_data['parent']:
+            validated_data['parent'] = Category.objects.get(uuid=validated_data['parent'])
         instance = super().create(validated_data)
         return instance
 
     def update(self, instance, validated_data):
+        if validated_data['parent']:
+            validated_data['parent'] = Category.objects.get(uuid=validated_data['parent'])
         instance = super().update(instance, validated_data)
         # We might want to do some stuff with related objects here
         return instance
