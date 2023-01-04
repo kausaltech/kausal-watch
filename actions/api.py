@@ -61,6 +61,16 @@ class NestedBulkRouter(routers.NestedDefaultRouter, BulkRouter):
     pass
 
 
+class BulkSerializerValidationInstanceMixin:
+    def run_validation(self, data: dict):
+        if self.parent and self.instance is not None:
+            assert isinstance(self.instance, models.query.QuerySet)
+            self._instance = self.instance.get(id=data['id'])
+        else:
+            self._instance = self.instance
+        return super().run_validation(data)
+
+
 class ActionImpactSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActionImpact
@@ -632,6 +642,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
 class ActionSerializer(
     ModelWithAttributesSerializerMixin,
     NonTreebeardModelWithTreePositionSerializerMixin,
+    BulkSerializerValidationInstanceMixin,
     PlanRelatedModelSerializer,
 ):
     uuid = serializers.UUIDField(required=False)
@@ -696,14 +707,6 @@ class ActionSerializer(
             raise serializers.ValidationError(_('Identifier already exists'))
 
         return value
-
-    def run_validation(self, data: dict):
-        if self.parent and self.instance is not None:
-            assert isinstance(self.instance, models.query.QuerySet)
-            self._instance = self.instance.get(id=data['id'])
-        else:
-            self._instance = self.instance
-        return super().run_validation(data)
 
     def create(self, validated_data: dict):
         validated_data['plan'] = self.plan
@@ -894,6 +897,7 @@ all_routers.append(category_type_router)
 class CategorySerializer(
     ModelWithAttributesSerializerMixin,
     NonTreebeardModelWithTreePositionSerializerMixin,
+    BulkSerializerValidationInstanceMixin,
     serializers.ModelSerializer,
 ):
     uuid = serializers.UUIDField(required=False)
@@ -914,14 +918,6 @@ class CategorySerializer(
                 # Probably used for schema generation
                 self.category_type = CategoryType.objects.first()
         super().__init__(*args, **kwargs)
-
-    def run_validation(self, data: dict):
-        if self.parent and self.instance is not None:
-            assert isinstance(self.instance, models.query.QuerySet)
-            self._instance = self.instance.get(id=data['id'])
-        else:
-            self._instance = self.instance
-        return super().run_validation(data)
 
     def create(self, validated_data: dict):
         validated_data['type'] = self.category_type
@@ -1056,15 +1052,32 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         fields += ['parent', 'left_sibling']
         return fields
 
+    def _get_instance_from_uuid(self, uuid):
+        if uuid is None:
+            return None
+        return self.Meta.model.objects.get(uuid=uuid)
+
     def validate(self, data):
-        left_sibling = data['left_sibling']
-        if left_sibling is not None and left_sibling.parent != data['parent']:
-            raise exceptions.ValidationError("Instance and left sibling have different parents")
+        # Map UUID to UUID
+        if data['left_sibling']:
+            parents = {data['uuid']: data['parent'] for data in self.initial_data}
+            if data['left_sibling'] in parents:
+                left_sibling_parent_uuid = parents[data['left_sibling']]
+            else:
+                left_sibling = self._get_instance_from_uuid(data['left_sibling'])
+                if left_sibling.parent is None:
+                    left_sibling_parent_uuid = None
+                else:
+                    left_sibling_parent_uuid = left_sibling.parent.uuid
+            if left_sibling_parent_uuid != data['parent']:
+                raise exceptions.ValidationError("Instance and left sibling have different parents")
         return data
 
     def create(self, validated_data):
-        parent = validated_data.pop('parent', None)
-        left_sibling = validated_data.pop('left_sibling', None)
+        parent_uuid = validated_data.pop('parent', None)
+        parent = self._get_instance_from_uuid(parent_uuid)
+        left_sibling_uuid = validated_data.pop('left_sibling', None)
+        left_sibling = self._get_instance_from_uuid(left_sibling_uuid)
         instance = Organization(**validated_data)
         # This sucks, but I don't think Treebeard provides an easier way of doing this
         if left_sibling is None:
@@ -1088,8 +1101,13 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         # FIXME: Since left_sibling has allow_null=True, we should distinguish whether left_sibling is None because it
         # is not in validated_data or because validated_data['left_sibling'] is None. Similarly for parent. Sending a
         # PUT request and omitting one of these fields might inadvertently move the node.
-        parent = validated_data.pop('parent', None)
-        left_sibling = validated_data.pop('left_sibling', None)
+        parent_uuid = validated_data.pop('parent', None)
+        parent = self._get_instance_from_uuid(parent_uuid)
+        left_sibling_uuid = validated_data.pop('left_sibling', None)
+        left_sibling = self._get_instance_from_uuid(left_sibling_uuid)
+        # If this is called from BulkListSerializer, then `instance` might be in some weird state and if we don't
+        # re-fetch it we'll get weird integrity errors.
+        instance = instance._meta.model.objects.get(pk=instance.pk)
         super().update(instance, validated_data)
         if left_sibling is None:
             if parent is None:

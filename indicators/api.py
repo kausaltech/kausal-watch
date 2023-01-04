@@ -13,6 +13,7 @@ from .models import (
 )
 from actions.api import plan_router
 from actions.models import Plan
+from aplans.rest_api import BulkListSerializer, BulkModelViewSet
 from aplans.utils import register_view_helper
 
 LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
@@ -214,6 +215,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Indicator
+        list_serializer_class = BulkListSerializer
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
             'latest_value',
@@ -255,7 +257,7 @@ class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
         return user.can_modify_indicator(obj)
 
 
-class IndicatorViewSet(viewsets.ModelViewSet):
+class IndicatorViewSet(BulkModelViewSet):
     serializer_class = IndicatorSerializer
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 
