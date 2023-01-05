@@ -753,6 +753,10 @@ NOTIFICATIONS_CRONTAB = {
     'helsinki-kierto': {'hour': 7, 'minute': 40},
     'lahti-ilmasto': {'hour': 8, 'minute': 10},
     'viitasaari-ilmasto': {'hour': 8, 'minute': 40},
+    'akaa-ilmasto':  {'hour': 8, 'minute': 55},
+    'valkeakoski-ilmasto': {'hour': 9, 'minute': 10},
+    'palkane-ilmasto': {'hour': 9, 'minute': 25},
+    'urjala-ilmasto': {'hour': 9, 'minute': 40},
 }
 CELERY_BEAT_SCHEDULE = {
     'update-action-status': {
