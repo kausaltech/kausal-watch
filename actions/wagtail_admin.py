@@ -16,6 +16,7 @@ from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
     ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
+    CondensedPanelSingleSelect,
     insert_model_translation_panels
 )
 from notifications.models import NotificationSettings
@@ -88,7 +89,7 @@ class PlanAdmin(AplansModelAdmin):
     ]
 
     action_status_panels = [
-        FieldPanel('identifier'),
+        FieldPanel('identifier', widget=CondensedPanelSingleSelect),
         FieldPanel('name'),
         FieldPanel('is_completed'),
     ]

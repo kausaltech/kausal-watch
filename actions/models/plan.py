@@ -531,7 +531,7 @@ class Plan(ClusterableModel):
         client_identifier: str = None, client_name: str = None, azure_ad_tenant_id: str = None
     ) -> Plan:
         from ..defaults import (
-            DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
+            DEFAULT_ACTION_IMPLEMENTATION_PHASES
         )
         plan = Plan(
             identifier=identifier,
@@ -559,10 +559,9 @@ class Plan(ClusterableModel):
         with translation.override(plan.primary_language):
             from actions.models import ActionStatus, ActionImplementationPhase
 
-            for st in DEFAULT_ACTION_STATUSES:
+            for st in ActionStatus.Identifier.defaults():
                 obj = ActionStatus(
-                    plan=plan, identifier=st['identifier'], name=st['name'],
-                    is_completed=st.get('is_completed', False)
+                    plan=plan, identifier=st.value, name=st.label
                 )
                 obj.save()
 

@@ -32,6 +32,7 @@ from users.models import User
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
 from ..attributes import AttributeType
+from ..defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES
 from ..monitoring_quality import determine_monitoring_quality
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
@@ -779,12 +780,30 @@ class ActionSchedule(models.Model, PlanRelatedModel):
 @reversion.register()
 class ActionStatus(models.Model, PlanRelatedModel):
     """The current status for the action ("on time", "late", "completed", etc.)."""
+
+    class Identifier(models.TextChoices):
+        ON_TIME = 'on_time', _('On time'),
+        LATE = 'late', _('Late'),
+        CANCELLED = 'cancelled', _('Cancelled')
+        POSTPONED = 'postponed', _('Postponed'),
+        OUT_OF_SCOPE = 'out_of_scope', _('Out of scope')
+
+        @classmethod
+        def defaults(cls):
+            return (
+                cls.ON_TIME,
+                cls.LATE,
+                cls.CANCELLED,
+            )
+
     plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='action_statuses',
         verbose_name=_('plan')
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
-    identifier = IdentifierField(max_length=20)
+    identifier = models.CharField(
+        max_length=20, choices=Identifier.choices, default=None, verbose_name=_('state')
+    )
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
@@ -792,6 +811,20 @@ class ActionStatus(models.Model, PlanRelatedModel):
     public_fields = [
         'id', 'plan', 'name', 'identifier', 'is_completed'
     ]
+
+    @staticmethod
+    def get_or_create_default(identifier, plan):
+        existing = ActionStatus.objects.filter(plan=plan, identifier=identifier)
+        if existing:
+            return existing.first()
+        if identifier not in ActionStatus.Identifier.values:
+            raise ValueError(
+                f'ActionImplementationPhase identifier "{identifier}" '
+                'not in plan and not one of the predefined default phases.'
+            )
+        with translation.override(plan.primary_language):
+            name = ActionStatus.Identifier[identifier.upper()].label
+            return ActionStatus.objects.create(plan=plan, identifier=identifier, name=name)
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -822,7 +855,6 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
         unique_together = (('plan', 'identifier'),)
         verbose_name = _('action implementation phase')
         verbose_name_plural = _('action implementation phases')
-
 
     @staticmethod
     def validate_ordering(plan):
