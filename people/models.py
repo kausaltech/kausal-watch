@@ -383,6 +383,12 @@ class Person(index.Indexed, ClusterableModel):
         user.save()
         return user
 
+    def delete_and_deactivate_corresponding_user(self, acting_admin_user):
+        target_user = getattr(self, 'user', None)
+        if target_user:
+            target_user.deactivate(acting_admin_user)
+        self.delete()
+
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
 

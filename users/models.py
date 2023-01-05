@@ -2,9 +2,11 @@ from __future__ import annotations
 import typing
 
 from django.apps import apps
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from users.managers import UserManager
 from orgs.models import Organization, OrganizationMetadataAdmin
@@ -25,6 +27,15 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     selected_admin_plan = models.ForeignKey(
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    deactivated_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    deactivated_by = models.ForeignKey(
+        'self',
+        on_delete=models.PROTECT,
+        null=True
     )
 
     _corresponding_person: Person
@@ -364,3 +375,16 @@ class User(AbstractUser):
             return True
         # FIXME: Make sure we don't allow plan admins to delete organizations unrelated to them
         return self.is_general_admin_for_plan()
+
+    def can_deactivate_user(self, user):
+        if self.is_superuser:
+            return True
+        return False
+
+    def deactivate(self, admin_user):
+        if not admin_user.can_deactivate_user(self):
+            raise PermissionDenied
+        self.is_active = False
+        self.deactivated_by = admin_user
+        self.deactivated_at = timezone.now()
+        self.save()

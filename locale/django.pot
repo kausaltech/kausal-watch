@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-30 08:39+0200\n"
+"POT-Creation-Date: 2023-01-05 17:01+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -822,15 +822,15 @@ msgstr ""
 msgid "action implementation phases"
 msgstr ""
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "not started"
 msgstr ""
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "in progress"
 msgstr ""
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "completed"
 msgstr ""
 
@@ -1549,10 +1549,6 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 msgstr[1] ""
-
-#: actions/wagtail_admin.py
-msgid "late"
-msgstr ""
 
 #: actions/wagtail_admin.py
 msgctxt "hyphenated"
@@ -3203,6 +3199,10 @@ msgstr ""
 
 #: people/wagtail_admin.py
 msgid "plan admin organizations"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Deactivate"
 msgstr ""
 
 #: people/wagtail_admin.py

@@ -13,6 +13,8 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.helpers import ButtonHelper
+from wagtail.contrib.modeladmin.views import DeleteView
 
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
@@ -28,7 +30,6 @@ from orgs.models import Organization, OrganizationPlanAdmin
 
 if typing.TYPE_CHECKING:
     from users.models import User
-    from actions.models import Plan
 
 
 logger = logging.getLogger(__name__)
@@ -195,11 +196,25 @@ class PersonPermissionHelper(PlanContextPermissionHelper):
         return True
 
 
+class PersonButtonHelper(ButtonHelper):
+    def delete_button(self, *args, **kwargs):
+        button = super().delete_button(*args, **kwargs)
+        button['label'] = _('Deactivate')
+        return button
+
+
+class PersonDeleteView(DeleteView):
+    def delete_instance(self):
+        acting_admin_user = self.request.user
+        self.instance.delete_and_deactivate_corresponding_user(acting_admin_user)
+
+
 class PersonAdmin(AplansModelAdmin):
     model = Person
     create_view_class = PersonCreateView
     edit_view_class = PersonEditView
     index_view_class = PersonIndexView
+    delete_view_class = PersonDeleteView
     permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
@@ -207,6 +222,7 @@ class PersonAdmin(AplansModelAdmin):
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title')
     list_filter = (IsContactPersonFilter,)
+    button_helper_class = PersonButtonHelper
 
     permission_helper: PersonPermissionHelper
 
@@ -351,8 +367,8 @@ class PersonAdmin(AplansModelAdmin):
                 'organization_plan_admin_orgs',
                 widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
             ))
-            # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of the
-            # default value.
+            # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of
+            # the default value.
             # TODO: No way to specify `primary_contact`.
             # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
             # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-30 08:39+0200\n"
-"PO-Revision-Date: 2023-01-03 18:52+0200\n"
+"POT-Creation-Date: 2023-01-05 17:01+0200\n"
+"PO-Revision-Date: 2023-01-05 17:08+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -821,15 +821,15 @@ msgstr "toimenpiteen toteutusvaihe"
 msgid "action implementation phases"
 msgstr "toimenpiteen toteutusvaiheet"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "not started"
 msgstr "ei käynnistynyt"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "in progress"
 msgstr "käynnissä"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "completed"
 msgstr "valmis"
 
@@ -1554,10 +1554,6 @@ msgstr[1] ""
 "\n"
 "        <span>%(total)s</span> toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
-
-#: actions/wagtail_admin.py
-msgid "late"
-msgstr "myöhässä"
 
 #: actions/wagtail_admin.py
 msgctxt "hyphenated"
@@ -3256,6 +3252,10 @@ msgid "plan admin organizations"
 msgstr "ylläpitäjät organisaatiolle"
 
 #: people/wagtail_admin.py
+msgid "Deactivate"
+msgstr "Poista käytöstä"
+
+#: people/wagtail_admin.py
 msgid "last login"
 msgstr "kirjautunut viimeksi"
 
@@ -3390,6 +3390,9 @@ msgstr "Kirjaudu ulos"
 #: users/apps.py
 msgid "Users"
 msgstr "Käyttäjät"
+
+#~ msgid "late"
+#~ msgstr "myöhässä"
 
 #~ msgid "Internal information"
 #~ msgstr "Sisäiset tiedot"
