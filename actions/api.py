@@ -599,21 +599,29 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
         Order descendants of `node` (including `node`) consecutively starting at `next_order` and put
         `instance_to_move` (followed by its descendants) after `predecessor` in the ordering.
 
+        This does not save the instances but instead only sets the fields in the respective element in the dict
+        `self._cached_instances`. This dict can be prepared using `self._cache_descendants()`. It can then be used to
+        bulk-update the instances.
+
         Return an order value that can be used for the next node.
         """
+        # Make sure that `node` and `instance_to_move` are taken from the cache, otherwise we'll lose the updates
+        assert node is self._cached_instances[node.id]
+        assert instance_to_move is self._cached_instances[instance_to_move.id]
+
         instance_to_move_id = getattr(instance_to_move, 'id', None)
         predecessor_id = getattr(predecessor, 'id', None)
 
         node.order = next_order
         next_order += 1
-        node.save()
 
         if node.id == predecessor_id:
             # Put instance_to_move after node (it is either a child or a sibling)
             next_order = self._reorder_descendants(instance_to_move, next_order, instance_to_move, predecessor)
 
         if hasattr(node, 'children'):
-            for child in node.children.exclude(id=instance_to_move_id):
+            for child_id in node.children.exclude(id=instance_to_move_id).values_list('id', flat=True):
+                child = self._cached_instances[child_id]
                 next_order = self._reorder_descendants(child, next_order, instance_to_move, predecessor)
         return next_order
 
@@ -630,13 +638,30 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
         else:
             predecessor = left_sibling
 
+        # Use instance cache for bulk update
+        self._cached_instances = {}
+        for node in instance.get_siblings():
+            self._cache_descendants(node)
+        instance = self._cached_instances[instance.id]
+
         order = 0
         if left_sibling is None and parent is None:
             # instance gets order 0
             order = self._reorder_descendants(instance, order, instance, predecessor)
 
-        for root in instance.get_siblings().exclude(id=instance.id):
-            order = self._reorder_descendants(root, order, instance, predecessor)
+        for node_id in instance.get_siblings().exclude(id=instance.id).values_list('id', flat=True):
+            node = self._cached_instances[node_id]
+            order = self._reorder_descendants(node, order, instance, predecessor)
+
+        self.Meta.model.objects.bulk_update(self._cached_instances.values(), ['order'])
+
+    def _cache_descendants(self, node):
+        """Add instance `node` and all its descendants to the dict `self._cached_instances`."""
+        assert node.id not in self._cached_instances
+        self._cached_instances[node.id] = node
+        if hasattr(node, 'children'):
+            for child in node.children.all():
+                self._cache_descendants(child)
 
 
 class ActionSerializer(
