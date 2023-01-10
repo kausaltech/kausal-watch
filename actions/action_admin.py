@@ -3,13 +3,10 @@ import logging
 from datetime import timedelta
 
 from django import forms
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.utils import timezone
-from django.utils.translation import (
-    get_language, gettext, gettext_lazy as _
-)
+from django.utils.translation import gettext, gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
 )
@@ -42,8 +39,7 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .attribute_type_admin import get_attribute_fields
-from .models import Action, ActionTask, AttributeType, CategoryType
+from .models import Action, ActionTask, CategoryType
 
 logger = logging.getLogger(__name__)
 
@@ -201,14 +197,10 @@ class ActionAdminForm(WagtailAdminModelForm):
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data)
 
-        # TODO: Refactor duplicated code (category_admin.py)
         user = self._user
-        for attribute_type, fields in get_action_attribute_fields(plan, obj, user):
-            vals = {}
-            for form_field_name, (field, model_field_name) in fields.items():
-                val = self.cleaned_data.get(form_field_name)
-                vals[model_field_name] = val
-            attribute_type.set_value(obj, vals)
+        attribute_types = obj.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
 
 
@@ -224,12 +216,11 @@ class ActionEditHandler(AplansTabbedInterface):
         else:
             cat_fields = {}
 
-        # TODO: Refactor duplicated code (category_admin.py)
         if self.instance is not None:
-            attribute_fields_list = get_action_attribute_fields(plan, self.instance, user, with_initial=True)
-            attribute_fields = {form_field_name: field
-                                for _, fields in attribute_fields_list
-                                for form_field_name, (field, _) in fields.items()}
+            attribute_types = self.instance.get_editable_attribute_types(user)
+            attribute_fields = {field.name: field.django_field
+                                for attribute_type in attribute_types
+                                for field in attribute_type.get_form_fields(self.instance)}
         else:
             attribute_fields = {}
 
@@ -463,50 +454,6 @@ class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
         return plan.general_content.get_action_term_display_plural()
 
 
-def get_action_attribute_fields(plan, action, user, only_with_report=False, only_without_report=False, **kwargs):
-    action_ct = ContentType.objects.get_for_model(Action)
-    plan_ct = ContentType.objects.get_for_model(plan)
-    attribute_types = AttributeType.objects.filter(
-        object_content_type=action_ct,
-        scope_content_type=plan_ct,
-        scope_id=plan.id,
-    )
-    if only_with_report:
-        attribute_types = attribute_types.filter(report__isnull=False)
-    if only_without_report:
-        attribute_types = attribute_types.filter(report__isnull=True)
-    attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, plan))
-    return get_attribute_fields(attribute_types, action, **kwargs)
-
-
-def get_action_attribute_panels(plan, action, user, **kwargs):
-    if action:
-        attribute_fields = get_action_attribute_fields(plan, action, user, **kwargs)
-    else:
-        attribute_fields = []
-    panels = []
-    for attribute_type, fields in attribute_fields:
-        for form_field_name, (field, model_field_name) in fields.items():
-            if len(fields) > 1:
-                heading = f'{attribute_type.name} ({model_field_name})'
-            else:
-                heading = attribute_type.name
-            panels.append(AttributeFieldPanel(form_field_name, heading=heading))
-    return panels
-
-
-class AttributeFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-        attribute_fields_list = get_action_attribute_fields(plan, self.instance, user, with_initial=True)
-        attribute_fields = {form_field_name: field
-                            for _, fields in attribute_fields_list
-                            for form_field_name, (field, _) in fields.items()}
-        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
-
-
 class ActionMenuItem(SafeLabelModelAdminMenuItem):
     def get_label_from_context(self, context, request):
         # Ignore context; the label is going to be the configured term for "Action"
@@ -662,6 +609,8 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     def get_edit_handler(self, instance: Action, request: WatchAdminRequest):
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
+        attribute_panels = instance.get_attribute_panels(request.user)
+        main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
 
         all_tabs = []
 
@@ -678,8 +627,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             elif field_name == 'primary_org' and not plan.features.has_action_primary_orgs:
                 panels.remove(panel)
 
-        # TODO: Refactor duplicated code (category_admin.py)
-        panels += get_action_attribute_panels(plan, instance, request.user, with_initial=True, only_without_report=True)
+        panels += main_attribute_panels
 
         if is_general_admin:
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
@@ -747,13 +695,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             ], heading=_('Tasks')),
         ]
 
-        reporting_panels = get_action_attribute_panels(
-            plan,
-            instance,
-            request.user,
-            with_initial=True,
-            only_with_report=True,
-        )
+        reporting_panels = reporting_attribute_panels
         reporting_panels += list(self.reporting_panels)
 
         if is_general_admin:
@@ -767,7 +709,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         all_tabs.append(ObjectList(reporting_panels, heading=_('Reporting')))
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
         return ActionEditHandler(all_tabs)

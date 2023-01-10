@@ -71,9 +71,14 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     return out
 
 
-def get_translation_tabs(instance, request, include_all_languages: bool = False, default_language=None):
+def get_translation_tabs(
+        instance, request, include_all_languages: bool = False, default_language=None, extra_panels=None
+):
     if default_language is None:
         default_language = settings.LANGUAGE_CODE
+    # extra_panels maps a language code to a list of panels that should be put on the tab of that language
+    if extra_panels is None:
+        extra_panels = {}
 
     i18n_field = get_i18n_field(type(instance))
     if not i18n_field:
@@ -90,12 +95,13 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
     else:
         languages = plan.other_languages
     for lang_code in languages:
-        fields = []
+        panels = []
         for field in i18n_field.get_translated_fields():
             if field.language != lang_code:
                 continue
-            fields.append(FieldPanel(field.name))
-        tabs.append(ObjectList(fields, heading=languages_by_code[lang_code.lower()]))
+            panels.append(FieldPanel(field.name))
+        panels += extra_panels.get(lang_code, [])
+        tabs.append(ObjectList(panels, heading=languages_by_code[lang_code.lower()]))
     return tabs
 
 

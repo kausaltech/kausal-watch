@@ -9,9 +9,12 @@ from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey
+from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
-from aplans.utils import IdentifierField, InstancesEditableByMixin, OrderedModel
+from aplans.utils import (
+    ChoiceArrayField, IdentifierField, InstancesEditableByMixin, OrderedModel, get_supported_languages
+)
 from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
@@ -84,6 +87,20 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     )
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages())
+    other_languages = ChoiceArrayField(
+        models.CharField(max_length=8, choices=get_supported_languages()),
+        default=list, null=True, blank=True
+    )
+
+    i18n = TranslationField(
+        fields=('name', 'help_text'),
+        # FIXME: This unfortunately duplicates the primary language of the plan of `scope` because we have no way of
+        # easily accessing it with modeltrans. It should be kept in sync with the language of the plan of `scope`, but
+        # it isn't at the moment because we hopefully will never change the primary language of a plan.
+        default_language_field='primary_language',
+    )
+
     public_fields = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
         'choice_options',
@@ -99,87 +116,23 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     def clean(self):
         if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
             raise ValidationError({'unit': _('Unit must only be used for numeric attribute types')})
+        if not self.primary_language and self.other_languages:
+            raise ValidationError(_('If no primary language is set, there must not be other languages'))
 
-    def set_value(self, obj, vals):
-        # TODO: Remove equivalent from category.py
-        content_type = ContentType.objects.get_for_model(obj)
-        assert content_type.app_label == 'actions'
-        if content_type.model == 'action':
-            assert self.scope == obj.plan
-        elif content_type.model == 'category':
-            assert self.scope == obj.type
-        else:
-            raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model}")
-
-        if self.format == self.AttributeFormat.ORDERED_CHOICE:
-            val = vals.get('choice')
-            existing = self.choice_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if val is not None:
-                AttributeChoice.objects.create(type=self, content_object=obj, choice=val)
-        elif self.format == self.AttributeFormat.CATEGORY_CHOICE:
-            category_val = vals.get('categories')
-            existing = self.category_choice_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if category_val is not None:
-                acc = AttributeCategoryChoice.objects.create(type=self, content_object=obj)
-                acc.categories.set(category_val)
-        elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
-            choice_val = vals.get('choice')
-            text_val = vals.get('text')
-            existing = self.choice_with_text_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if choice_val is not None or text_val:
-                AttributeChoiceWithText.objects.create(
-                    type=self,
-                    content_object=obj,
-                    choice=choice_val,
-                    text=text_val,
-                )
-        elif self.format == self.AttributeFormat.TEXT:
-            val = vals.get('text')
-            try:
-                obj = self.text_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.text_attributes.model.DoesNotExist:
-                if val:
-                    obj = AttributeText.objects.create(type=self, content_object=obj, text=val)
+    def save(self, *args, **kwargs):
+        if not self.primary_language:
+            assert not self.other_languages
+            scope_app_label = self.scope_content_type.app_label
+            scope_model = self.scope_content_type.model
+            if scope_app_label == 'actions' and scope_model == 'plan':
+                plan = self.scope
+            elif scope_app_label == 'actions' and scope_model == 'categorytype':
+                plan = self.scope.plan
             else:
-                if not val:
-                    obj.delete()
-                else:
-                    obj.text = val
-                    obj.save()
-        elif self.format == self.AttributeFormat.RICH_TEXT:
-            val = vals.get('text')
-            try:
-                obj = self.rich_text_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.rich_text_attributes.model.DoesNotExist:
-                if val:
-                    obj = AttributeRichText.objects.create(type=self, content_object=obj, text=val)
-            else:
-                if not val:
-                    obj.delete()
-                else:
-                    obj.text = val
-                    obj.save()
-        elif self.format == self.AttributeFormat.NUMERIC:
-            val = vals.get('value')
-            try:
-                obj = self.numeric_value_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.numeric_value_attributes.model.DoesNotExist:
-                if val is not None:
-                    obj = AttributeNumericValue.objects.create(type=self, content_object=obj, value=val)
-            else:
-                if val is None:
-                    obj.delete()
-                else:
-                    obj.value = val
-                    obj.save()
-        else:
-            raise Exception(f"Unsupported attribute type format: {self.format}")
+                raise Exception(f"Unexpected AttributeType scope content type {scope_app_label}:{scope_model}")
+            self.primary_language = plan.primary_language
+            self.other_languages = plan.other_languages
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name
@@ -189,6 +142,11 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+
+    i18n = TranslationField(
+        fields=('name',),
+        default_language_field='type__primary_language',
+    )
 
     public_fields = ['id', 'identifier', 'name']
 
@@ -268,6 +226,11 @@ class AttributeChoiceWithText(models.Model):
     )
     text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
 
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
+
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
@@ -289,6 +252,11 @@ class AttributeText(models.Model):
     content_object = GenericForeignKey()
 
     text = models.TextField(verbose_name=_('Text'))
+
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
 
     public_fields = ['id', 'type', 'text']
 
@@ -313,6 +281,11 @@ class AttributeRichText(models.Model):
     content_object = GenericForeignKey()
 
     text = RichTextField(verbose_name=_('Text'))
+
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
 
     public_fields = ['id', 'type', 'text']
 

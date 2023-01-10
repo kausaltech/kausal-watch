@@ -3,9 +3,10 @@ from __future__ import annotations
 import reversion
 import uuid
 
-from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import translation
@@ -19,11 +20,12 @@ from modeltrans.utils import get_available_languages
 from wagtail.core.models import Page, Collection
 from wagtailsvg.models import Svg
 
+from ..attributes import AttributeType
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from aplans.utils import (
     IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color, get_supported_languages
 )
-from .attributes import ModelWithAttributes
 
 
 class CategoryTypeBase(models.Model):
@@ -474,6 +476,34 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
 
     def get_attribute_type_by_identifier(self, identifier):
         return self.type.attribute_types.get(identifier=identifier)
+
+    def get_editable_attribute_types(self, user):
+        category_ct = ContentType.objects.get_for_model(Category)
+        category_type_ct = ContentType.objects.get_for_model(self.type)
+        attribute_types = AttributeTypeModel.objects.filter(
+            object_content_type=category_ct,
+            scope_content_type=category_type_ct,
+            scope_id=self.type.id,
+        )
+        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.type.plan))
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in attribute_types]
+
+    def get_attribute_panels(self, user):
+        # Return a triple `(main_panels, i18n_panels)`, where `main_panels` is a list of panels to be put on the main
+        # tab, and `i18n_panels` is a dict mapping a non-primary language to a list of panels to be put on the tab for
+        # that language.
+        main_panels = []
+        i18n_panels = {}
+        attribute_types = self.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            fields = attribute_type.get_form_fields(self)
+            for field in fields:
+                if field.language:
+                    i18n_panels.setdefault(field.language, []).append(field.get_panel())
+                else:
+                    main_panels.append(field.get_panel())
+        return (main_panels, i18n_panels)
 
     def get_siblings(self):
         return Category.objects.filter(type=self.type, parent=self.parent)

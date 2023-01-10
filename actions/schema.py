@@ -384,7 +384,7 @@ class AttributeChoice(graphene.ObjectType):
         return f'{prefix}{self.id}'
 
     def resolve_text(self, info):
-        return getattr(self, 'text', None)
+        return getattr(self, 'text_i18n', None)
 
     class Meta:
         interfaces = (AttributeInterface,)
@@ -396,7 +396,7 @@ class AttributeRichTextNode(DjangoNode):
 
     @staticmethod
     def resolve_value(root: AttributeRichText, info):
-        return root.text
+        return root.text_i18n
 
     class Meta:
         model = AttributeRichText

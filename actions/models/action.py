@@ -6,6 +6,7 @@ import uuid
 
 from datetime import date
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import models
@@ -30,8 +31,9 @@ from orgs.models import Organization
 from users.models import User
 from people.models import Person
 
-from .attributes import ModelWithAttributes
+from ..attributes import AttributeType
 from ..monitoring_quality import determine_monitoring_quality
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
     from .plan import Plan
@@ -519,6 +521,41 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
+
+    def get_editable_attribute_types(self, user, only_with_report=False, only_without_report=False):
+        action_ct = ContentType.objects.get_for_model(Action)
+        plan_ct = ContentType.objects.get_for_model(self.plan)
+        attribute_types = AttributeTypeModel.objects.filter(
+            object_content_type=action_ct,
+            scope_content_type=plan_ct,
+            scope_id=self.plan.id,
+        )
+        if only_with_report:
+            attribute_types = attribute_types.filter(report__isnull=False)
+        if only_without_report:
+            attribute_types = attribute_types.filter(report__isnull=True)
+        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.plan))
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in attribute_types]
+
+    def get_attribute_panels(self, user):
+        # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be
+        # put on the main tab, `reporting_panels` is a list of panels to be put on the reporting tab, and `i18n_panels`
+        # is a dict mapping a non-primary language to a list of panels to be put on the tab for that language.
+        main_panels = []
+        reporting_panels = []
+        i18n_panels = {}
+        for panels, kwargs in [(main_panels, {'only_without_report': True}),
+                               (reporting_panels, {'only_with_report': True})]:
+            attribute_types = self.get_editable_attribute_types(user, **kwargs)
+            for attribute_type in attribute_types:
+                fields = attribute_type.get_form_fields(self)
+                for field in fields:
+                    if field.language:
+                        i18n_panels.setdefault(field.language, []).append(field.get_panel())
+                    else:
+                        panels.append(field.get_panel())
+        return (main_panels, reporting_panels, i18n_panels)
 
     def get_siblings(self):
         return Action.objects.filter(plan=self.plan)

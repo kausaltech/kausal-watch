@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
@@ -15,8 +14,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
 from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
-from .attribute_type_admin import get_attribute_fields
-from .models import AttributeType, Category, CategoryType, CommonCategory, CommonCategoryType
+from .models import Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
     CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
@@ -105,27 +103,6 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
 
 
-def get_category_attribute_fields(category_type, category, **kwargs):
-    category_ct = ContentType.objects.get_for_model(Category)
-    category_type_ct = ContentType.objects.get_for_model(category_type)
-    attribute_types = AttributeType.objects.filter(
-        object_content_type=category_ct,
-        scope_content_type=category_type_ct,
-        scope_id=category_type.id,
-    )
-    return get_attribute_fields(attribute_types, category, **kwargs)
-
-
-class AttributeFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
-        attribute_fields = {form_field_name: field
-                            for _, fields in attribute_fields_list
-                            for form_field_name, (field, _) in fields.items()}
-        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
-
-
 class CategoryAdminForm(WagtailAdminModelForm):
     def clean_identifier(self):
         # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
@@ -140,33 +117,28 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
     def save(self, commit=True):
         obj = super().save(commit)
-
-        # Update categories
-        # TODO: Refactor duplicated code (action_admin.py)
-        for attribute_type, fields in get_category_attribute_fields(obj.type, obj):
-            vals = {}
-            for form_field_name, (field, model_field_name) in fields.items():
-                val = self.cleaned_data.get(form_field_name)
-                vals[model_field_name] = val
-            attribute_type.set_value(obj, vals)
+        user = self._user
+        attribute_types = obj.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
 
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None):
-        # TODO: Refactor duplicated code (action_admin.py)
+        user = request.user
         if self.instance is not None:
-            attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
-            attribute_fields = {form_field_name: field
-                                for _, fields in attribute_fields_list
-                                for form_field_name, (field, _) in fields.items()}
+            attribute_types = self.instance.get_editable_attribute_types(user)
+            attribute_fields = {field.name: field.django_field
+                                for attribute_type in attribute_types
+                                for field in attribute_type.get_form_fields(self.instance)}
         else:
             attribute_fields = {}
 
         self.base_form_class = type(
             'CategoryAdminForm',
             (CategoryAdminForm,),
-            attribute_fields
+            {**attribute_fields, '_user': user}
         )
         form_class = super().get_form_class()
         if self.instance and self.instance.common:
@@ -345,19 +317,8 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     panels.remove(p)
                     break
 
-        # TODO: Refactor duplicated code (action_admin.py)
-        if instance:
-            attribute_fields = get_category_attribute_fields(instance.type, instance, with_initial=True)
-        else:
-            attribute_fields = []
-
-        for attribute_type, fields in attribute_fields:
-            for form_field_name, (field, model_field_name) in fields.items():
-                if len(fields) > 1:
-                    heading = f'{attribute_type.name} ({model_field_name})'
-                else:
-                    heading = attribute_type.name
-                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+        main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(request.user)
+        panels += main_attribute_panels
 
         if request.user.is_superuser:
             # Didn't use CondensedInlinePanel for the following because there is a bug:
@@ -371,7 +332,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         tabs += i18n_tabs
 
         return CategoryEditHandler(tabs)
