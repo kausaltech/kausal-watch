@@ -29,7 +29,12 @@ from wagtail_localize.views.submit_translations import TranslationCreator
 import reversion
 
 from aplans.utils import (
-    ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color, get_default_language,
+    ChoiceArrayField,
+    IdentifierField,
+    OrderedModel,
+    PlanRelatedModel,
+    validate_css_color,
+    get_default_language,
     get_supported_languages
 )
 from orgs.models import Organization
