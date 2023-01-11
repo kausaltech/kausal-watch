@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-05 17:01+0200\n"
-"PO-Revision-Date: 2023-01-05 17:08+0200\n"
+"POT-Creation-Date: 2023-01-12 09:06+0200\n"
+"PO-Revision-Date: 2023-01-12 11:48+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1382,6 +1382,10 @@ msgstr "Toimenpiteiden pääluokitteluun on valittava luokan tyyppi"
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 
+#: actions/models/plan.py
+msgid "The site is not public at this time."
+msgstr "Sivusto ei ole julkinen tällä hetkellä."
+
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
@@ -1394,6 +1398,18 @@ msgstr "Tietosuoja"
 #: actions/models/plan.py feedback/models.py
 msgid "Accessibility"
 msgstr "Saavutettavuus"
+
+#: actions/models/plan.py
+msgid "Published"
+msgstr "Julkaistu"
+
+#: actions/models/plan.py
+msgid "Unpublished"
+msgstr "Ei julkaistu"
+
+#: actions/models/plan.py
+msgid "Scheduled"
+msgstr "Julkaisu ajastettu"
 
 #: actions/models/plan.py
 msgid "general plan admin"
@@ -1414,6 +1430,14 @@ msgstr "peruspolku"
 #: actions/models/plan.py
 msgid "Base path must begin with a '/' and not end with '/'"
 msgstr "Peruspolun täytyy alkaa '/'-merkillä ja loppua johonkin muuhun merkkiin"
+
+#: actions/models/plan.py
+msgid "Immediate override of publishing status"
+msgstr "Välitön sivuston julkaisun määritys"
+
+#: actions/models/plan.py
+msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
+msgstr "Aseta ainoastaan jos haluat varmasti ohittaa toimenpideohjelmaan asetetun julkaisuajan. Huomaa, että tämä muuttaa heti toimenpideohjelman julkaistuksi tai ei-julkaistuksi tässä osoitteessa!"
 
 #: actions/models/plan.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"

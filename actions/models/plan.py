@@ -17,7 +17,7 @@ from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
 from django.utils.text import format_lazy
-from django.utils.translation import gettext_lazy as _, pgettext_lazy
+from django.utils.translation import gettext_lazy as _, pgettext_lazy, gettext
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -629,6 +629,16 @@ class Plan(ClusterableModel):
         return days if days is not None else self.DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
 
 
+class PublicationStatus(models.TextChoices):
+    PUBLISHED = 'published', _('Published')
+    UNPUBLISHED = 'unpublished', _('Unpublished')
+    SCHEDULED = 'scheduled', _('Scheduled')
+
+    @staticmethod
+    def manual_status_choices():
+        return [(c.value, c.label) for c in PublicationStatus if c != PublicationStatus.SCHEDULED]
+
+
 # ParentalManyToManyField  won't help, so we need the through model:
 # https://stackoverflow.com/questions/49522577/how-to-choose-a-wagtail-image-across-a-parentalmanytomanyfield
 # Unfortunately the reverse accessors then point to instances of the through model, not the actual target.
@@ -682,6 +692,41 @@ class PlanDomain(models.Model):
     )
     google_site_verification_tag = models.CharField(max_length=50, null=True, blank=True)
     matomo_analytics_url = models.CharField(max_length=100, null=True, blank=True)
+
+    # This field is intentionally left out from wagtail admin for now, because the majority of domains are production
+    # domains and changing their publication status is dangerous without having confirmations in the form.
+    publication_status_override = models.CharField(
+        max_length=20,
+        choices=PublicationStatus.manual_status_choices(),
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name=_('Immediate override of publishing status'),
+        help_text=_(
+            'Only set this if you are sure you want to override the publication time set in the plan. '
+            'Be aware that this will immediately change the publication status of the plan at this domain!'
+        )
+    )
+
+    @property
+    def status(self) -> PublicationStatus:
+        if self.publication_status_override is not None:
+            return self.publication_status_override
+        published_at = self.plan.published_at
+        if published_at is None:
+            return PublicationStatus.UNPUBLISHED
+        now = timezone.now()
+        if published_at <= now:
+            return PublicationStatus.PUBLISHED
+        if published_at > now:
+            return PublicationStatus.SCHEDULED
+        return PublicationStatus.UNPUBLISHED
+
+    @property
+    def status_message(self) -> str:
+        if self.status != PublicationStatus.PUBLISHED:
+            with translation.override(self.plan.primary_language):
+                return gettext('The site is not public at this time.')
 
     def validate_hostname(self):
         dn = self.hostname

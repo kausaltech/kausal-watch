@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from typing import Optional
 
 import graphene
+from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 import graphene_django_optimizer as gql_optimizer
 from django.db.models import Q, Prefetch
@@ -23,7 +24,7 @@ from actions.models import (
     AttributeChoiceWithText, AttributeNumericValue, AttributeRichText,
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
-    PlanDomain, PlanFeatures, Scenario, CommonCategory,
+    PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
     CommonCategoryType
 )
 from orgs.models import Organization
@@ -43,12 +44,24 @@ from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
 
 
+PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
+
+
 class PlanDomainNode(DjangoNode):
+    status = PublicationStatusNode(source='status')
+    status_message = graphene.String(required=False, source='status_message')
+
     class Meta:
         model = PlanDomain
-        fields = [
-            'id', 'hostname', 'base_path', 'google_site_verification_tag', 'matomo_analytics_url',
-        ]
+        fields = (
+            'id',
+            'hostname',
+            'base_path',
+            'google_site_verification_tag',
+            'matomo_analytics_url',
+            'status',
+            'status_message'
+        )
 
 
 class PlanFeaturesNode(DjangoNode):
@@ -64,11 +77,59 @@ def get_action_list_page_node():
     return registry.pages[ActionListPage]
 
 
+class PlanInterface(graphene.Interface):
+    primary_language = graphene.String(required=True)
+    published_at = graphene.DateTime()
+    domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
+    domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
+
+    @gql_optimizer.resolver_hints(
+        model_field='domains',
+    )
+    def resolve_domain(self, info, hostname=None):
+        context_hostname = getattr(info.context, '_plan_hostname', None)
+        if not hostname:
+            hostname = context_hostname
+            if not hostname:
+                return None
+        return self.domains.filter(plan=self, hostname=hostname).first()
+
+    @gql_optimizer.resolver_hints(
+        model_field='domains',
+    )
+    def resolve_domains(self, info, hostname=None):
+        context_hostname = getattr(info.context, '_plan_hostname', None)
+        if not hostname:
+            hostname = context_hostname
+            if not hostname:
+                return None
+        return self.domains.filter(plan=self, hostname=hostname)
+
+    @classmethod
+    def resolve_type(cls, instance, info):
+        context_hostname = getattr(info.context, '_plan_hostname', None)
+        if context_hostname is None:
+            return RestrictedPlanNode
+        domain = instance.domains.filter(plan=instance, hostname=context_hostname)
+        # Having no domains means that this domain match is for a non-production site,
+        # hence the full plan schema must be used.
+        if not domain or domain.first().status == PublicationStatus.PUBLISHED:
+            return PlanNode
+        return RestrictedPlanNode
+
+
+@register_graphene_node
+class RestrictedPlanNode(DjangoObjectType):
+    class Meta:
+        interfaces = (PlanInterface,)
+        model = Plan
+        fields = ('primary_language', 'published_at', 'domain', 'domains')
+
+
 class PlanNode(DjangoNode):
     id = graphene.ID(source='identifier', required=True)
     last_action_identifier = graphene.ID()
     serve_file_base_url = graphene.String(required=True)
-    primary_language = graphene.String(required=True)
     pages = graphene.List(PageInterface)
     action_list_page = graphene.Field(get_action_list_page_node)
     category_type = graphene.Field('actions.schema.CategoryTypeNode', id=graphene.ID(required=True))
@@ -89,10 +150,6 @@ class PlanNode(DjangoNode):
 
     primary_orgs = graphene.List('orgs.schema.OrganizationNode', required=True)
 
-    published_at = graphene.DateTime()
-
-    domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
-    domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
     admin_url = graphene.String(required=False)
     view_url = graphene.String(client_url=graphene.String(required=False))
 
@@ -166,28 +223,6 @@ class PlanNode(DjangoNode):
         if not root_page:
             return
         return root_page.get_descendants().live().public().type(ActionListPage).first().specific
-
-    @gql_optimizer.resolver_hints(
-        model_field='domains',
-    )
-    def resolve_domain(self, info, hostname=None):
-        context_hostname = getattr(info.context, '_plan_hostname', None)
-        if not hostname:
-            hostname = context_hostname
-            if not hostname:
-                return None
-        return self.domains.filter(plan=self, hostname=hostname).first()
-
-    @gql_optimizer.resolver_hints(
-        model_field='domains',
-    )
-    def resolve_domains(self, info, hostname=None):
-        context_hostname = getattr(info.context, '_plan_hostname', None)
-        if not hostname:
-            hostname = context_hostname
-            if not hostname:
-                return None
-        return self.domains.filter(plan=self, hostname=hostname)
 
     def resolve_view_url(self: Plan, info, client_url: Optional[str] = None):
         if client_url:
@@ -293,6 +328,7 @@ class PlanNode(DjangoNode):
 
     class Meta:
         model = Plan
+        interfaces = (PlanInterface,)
         fields = public_fields(Plan)
 
 
@@ -791,7 +827,7 @@ class ActionLinkNode(DjangoNode):
 
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
-    plans_for_hostname = graphene.List(PlanNode, hostname=graphene.String())
+    plans_for_hostname = graphene.List(PlanInterface, hostname=graphene.String())
     my_plans = graphene.List(PlanNode)
 
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())

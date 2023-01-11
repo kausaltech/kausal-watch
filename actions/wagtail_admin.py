@@ -1,7 +1,6 @@
 from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
-from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from wagtail.admin.edit_handlers import (
@@ -15,7 +14,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
+    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )

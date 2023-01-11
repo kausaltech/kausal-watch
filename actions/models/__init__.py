@@ -11,7 +11,7 @@ from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
 from .features import PlanFeatures
-from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario
+from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario, PublicationStatus
 from .report import Report, ReportType
 
 
@@ -24,6 +24,6 @@ __all__ = [
     'AttributeType', 'AttributeTypeChoiceOption',
     'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'CommonCategory', 'CommonCategoryIcon',
     'CommonCategoryType', 'GeneralPlanAdmin', 'ImpactGroup', 'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan',
-    'PlanDomain', 'PlanFeatures', 'Scenario',
+    'PlanDomain', 'PublicationStatus', 'PlanFeatures', 'Scenario',
     'Report', 'ReportType',
 ]
