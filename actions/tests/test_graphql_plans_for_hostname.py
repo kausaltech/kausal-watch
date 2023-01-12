@@ -103,3 +103,23 @@ def test_get_correct_domain_by_hostname(graphql_client_query_data,
         assert message is not None
     else:
         assert message is None
+
+
+DUMMY_DOMAIN = 'dummy.io'
+
+
+@pytest.fixture
+def use_dummy_plan_hostname(settings):
+    settings.HOSTNAME_PLAN_DOMAINS = [DUMMY_DOMAIN]
+
+
+def test_plans_for_hostname_without_domains(graphql_client_query_data,
+                                            use_dummy_plan_hostname,
+                                            plan):
+    data = graphql_client_query_data(
+        GET_PLANS_BY_HOSTNAME_QUERY,
+        variables={'hostname': f'{plan.identifier}.{DUMMY_DOMAIN}'}
+    )
+    planData = data['plansForHostname'][0]
+    assert len(planData['domains']) == 0
+    assert planData['identifier'] == plan.identifier
