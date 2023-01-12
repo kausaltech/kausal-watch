@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-30 08:39+0200\n"
-"PO-Revision-Date: 2022-12-30 08:36+0200\n"
+"POT-Creation-Date: 2023-01-12 22:20+0200\n"
+"PO-Revision-Date: 2023-01-12 22:23+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -825,15 +825,15 @@ msgstr "Maßnahmenumsetzungsphase"
 msgid "action implementation phases"
 msgstr "Maßnahmenumsetzungsphasen"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "not started"
 msgstr "nicht begonnen"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "in progress"
 msgstr "im Gange"
 
-#: actions/models/action.py actions/wagtail_admin.py
+#: actions/models/action.py
 msgid "completed"
 msgstr "fertiggestellt"
 
@@ -1402,6 +1402,24 @@ msgid "Accessibility"
 msgstr "Barrierefreiheit"
 
 #: actions/models/plan.py
+#, fuzzy
+#| msgid "published at"
+msgid "Published"
+msgstr "veröffentlicht am"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "published at"
+msgid "Unpublished"
+msgstr "veröffentlicht am"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "schedule"
+msgid "Scheduled"
+msgstr "Zeitplan"
+
+#: actions/models/plan.py
 msgid "general plan admin"
 msgstr "Allgemeiner Plan-Admin"
 
@@ -1420,6 +1438,18 @@ msgstr "Basispfad"
 #: actions/models/plan.py
 msgid "Base path must begin with a '/' and not end with '/'"
 msgstr "Basispfad muss mit einem `/` beginnen und darf nicht mit `/` enden"
+
+#: actions/models/plan.py
+msgid "Immediate override of publishing status"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "The site is not public at this time."
+msgstr "Die Seite ist derzeit nicht öffentlich."
 
 #: actions/models/plan.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"
@@ -1554,10 +1584,6 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 msgstr[1] ""
-
-#: actions/wagtail_admin.py
-msgid "late"
-msgstr "verspätet"
 
 #: actions/wagtail_admin.py
 msgctxt "hyphenated"
@@ -3235,6 +3261,10 @@ msgid "plan admin organizations"
 msgstr "Plan-Admin-Organisationen"
 
 #: people/wagtail_admin.py
+msgid "Deactivate"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "last login"
 msgstr "letzte Anmeldung"
 
@@ -3369,6 +3399,9 @@ msgstr "Ausloggen"
 #: users/apps.py
 msgid "Users"
 msgstr "Benutzer"
+
+#~ msgid "late"
+#~ msgstr "verspätet"
 
 #~ msgid "Internal information"
 #~ msgstr "Interne Informationen"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-12 09:06+0200\n"
+"POT-Creation-Date: 2023-01-12 22:20+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1383,10 +1383,6 @@ msgstr ""
 msgid "Primary and secondary classification cannot be the same"
 msgstr ""
 
-#: actions/models/plan.py
-msgid "The site is not public at this time."
-msgstr ""
-
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
@@ -1438,6 +1434,10 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "The site is not public at this time."
 msgstr ""
 
 #: actions/models/plan.py
