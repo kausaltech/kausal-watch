@@ -49,7 +49,7 @@ register(
     'action_attribute_type',
     name=Sequence(lambda i: f"Action attribute type {i}"),
     object_content_type=LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action')),
-    scope=SubFactory(actions_factories.ActionFactory),
+    scope=SubFactory(actions_factories.PlanFactory),
 )
 register(actions_factories.AttributeTypeChoiceOptionFactory)
 register(actions_factories.ImpactGroupFactory)
