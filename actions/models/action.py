@@ -823,6 +823,37 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
         verbose_name = _('action implementation phase')
         verbose_name_plural = _('action implementation phases')
 
+
+    @staticmethod
+    def validate_ordering(plan):
+        existing = ActionImplementationPhase.objects.filter(plan=plan)
+        first_phase = existing.first()
+        last_phase = existing.last()
+        min_order = first_phase.order
+        max_order = last_phase.order
+        orders = [(p.identifier, p.order) for p in existing]
+        #enforced_orders = [(
+
+    @staticmethod
+    def get_or_create_default(identifier, plan):
+        existing = ActionImplementationPhase.objects.filter(plan=plan, identifier=identifier)
+        if existing:
+            return existing.first()
+        phase = None
+        with translation.override(plan.primary_language):
+            name = next((phase['name']
+                         for phase in DEFAULT_ACTION_IMPLEMENTATION_PHASES
+                         if phase['identifier'] == identifier),
+                        None)
+            if name is None:
+                raise ValueError(
+                    f'ActionImplementationPhase identifier "{identifier}" '
+                    'not in plan and not one of the predefined default phases.'
+                )
+            phase = ActionImplementationPhase.objects.create(plan=plan, identifier=identifier, name=name)
+            plan.action_implementation_phases
+        return phase
+
     def __str__(self):
         return self.name
 

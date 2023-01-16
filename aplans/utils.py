@@ -163,6 +163,27 @@ class OrderedModel(models.Model):
 
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
 
+    def normalize_order(self, add_gap_for_insertion=-1):
+        """
+        Method used to ensure that every sibling has a unique order value.
+        Optionally leave a gap in the order values where the order value
+        "add_gap_for_insertion" would be to support inserting a model
+        in between. Use add_gap_for_insertion=1 to add the gap in the
+        beginning.
+        """
+        if not hasattr(self, 'filter_siblings'):
+            return
+        qs = self.__class__.objects.all()
+        qs = self.filter_siblings(qs)
+
+        range_upper_limit = qs.count() + 1
+        if add_gap_for_insertion > 0:
+            range_upper_limit += 1
+        order_values = (o for o in range(1, qs.count() + 1) if o != add_gap_for_insertion)
+        for obj in qs:
+            obj.order = next(order_values)
+            obj.save()
+
     def save(self, *args, **kwargs):
         if self.pk is None:
             if getattr(self, 'order_on_create', None) is not None:

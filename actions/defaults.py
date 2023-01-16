@@ -24,8 +24,10 @@ DEFAULT_ACTION_IMPLEMENTATION_PHASES = [
     }, {
         'identifier': 'implementation',
         'name': _("Implementation"),
+        'required': True,
     }, {
         'identifier': 'completed',
         'name': _("Completed"),
+        'required': True,
     }
 ]
