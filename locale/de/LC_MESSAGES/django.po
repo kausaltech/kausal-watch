@@ -760,7 +760,7 @@ msgstr "ersetzt durch"
 #: actions/models/action.py
 msgid "Set if this action is superseded by another action"
 msgstr ""
-"Setzen, wenn diese Maßnahme durch eine anderen Maßnahme ersetzt worden ist"
+"Setzen, wenn diese Maßnahme durch eine andere Maßnahme ersetzt worden ist"
 
 #: actions/models/action.py
 msgctxt "partitive"
@@ -1696,11 +1696,11 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 "\n"
-"         <span> %(total)s </span> Aktion <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
+"         <span> %(total)s </span> Maßnahme <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
 "    "
 msgstr[1] ""
 "\n"
-"         <span> %(total)s </span> Aktionen <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
+"         <span> %(total)s </span> Maßnahmen <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
 "    "
 
 #: actions/wagtail_admin.py
