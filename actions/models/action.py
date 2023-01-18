@@ -1,7 +1,9 @@
 from __future__ import annotations
+from functools import cmp_to_key
+import typing
+from typing import Literal, Optional, TypedDict
 import logging
 import reversion
-import typing
 import uuid
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -18,7 +20,6 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from reversion.models import Version
-from typing import Literal, Optional, TypedDict
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -31,9 +32,9 @@ from people.models import Person
 from users.models import User
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
-from ..attributes import AttributeType
-from ..defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES
+from ..defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_IMPLEMENTATION_PHASE_IDENTIFIERS
 from ..monitoring_quality import determine_monitoring_quality
+from ..attributes import AttributeType
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
@@ -864,7 +865,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
         min_order = first_phase.order
         max_order = last_phase.order
         orders = [(p.identifier, p.order) for p in existing]
-        #enforced_orders = [(
+        # enforced_orders = [(
 
     @staticmethod
     def get_or_create_default(identifier, plan):
@@ -888,6 +889,28 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
 
     def __str__(self):
         return self.name
+
+    def _compare(lid, rid):
+        identifiers = DEFAULT_ACTION_IMPLEMENTATION_PHASE_IDENTIFIERS
+        last_identifier = identifiers[-1]
+        if lid == last_identifier:
+            return 1
+        if rid == last_identifier:
+            return -1
+        first_identifier = identifiers[0]
+        if lid == first_identifier:
+            return -1
+        if rid == first_identifier:
+            return 1
+        if lid not in identifiers:
+            return 0
+        if rid not in identifiers:
+            return 0
+        return identifiers.index(lid) - identifiers.index(rid)
+
+    @classmethod
+    def sorted_according_to_defaults(cls, identifiers):
+        return sorted(identifiers, key=cmp_to_key(cls._compare))
 
 
 class ActionDecisionLevel(models.Model, PlanRelatedModel):

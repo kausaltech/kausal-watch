@@ -4,9 +4,11 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.core.models import Locale
 
-from actions.models import Action
+from actions.models import Action, ActionImplementationPhase
+from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASE_IDENTIFIERS
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
 from pages.models import CategoryPage, CategoryTypePage
+import uuid
 
 pytestmark = pytest.mark.django_db
 
@@ -199,3 +201,49 @@ def test_plan_should_trigger_daily_notifications_due(plan):
     plan.daily_notifications_triggered_at = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
     now = plan.daily_notifications_triggered_at + timedelta(days=1)
     assert plan.should_trigger_daily_notifications(now)
+
+
+@pytest.fixture
+def phase_identifier_groups():
+    def _generate_phase_identifier():
+        return str(uuid.uuid4())
+
+    groups = []
+
+    # Sort should handle the default set as expected
+    defaults = DEFAULT_ACTION_IMPLEMENTATION_PHASE_IDENTIFIERS
+    reversed_defaults = list(reversed(defaults))
+    groups.append((reversed_defaults, defaults))
+
+    # Sort should be stable
+    unknown_ids = [_generate_phase_identifier() for _ in range(0, 10)]
+    groups.append((unknown_ids, unknown_ids))
+
+    # A mix of defaults and unknowns should work and be stable
+    # (defaults in the end)
+    mix = unknown_ids + defaults
+    result = [defaults[0]] + unknown_ids + defaults[1:]
+    groups.append((mix, result))
+
+    # A mix of defaults and unknowns should work and be stable
+    # (defaults in the beginning)
+    mix = defaults + unknown_ids
+    result = defaults[0:-1] + unknown_ids + [defaults[-1]]
+    groups.append((mix, result))
+
+    # A mix of defaults and unknowns should work and be stable
+    # (defaults and unknowns interleaved)
+    unknowns = [_generate_phase_identifier() for _ in range(0, len(defaults)-2)]
+    interleaved = [y for x in zip(unknowns, defaults[1:-1]) for y in x]
+    mix = [defaults[0]] + interleaved + [defaults[-1]]
+    groups.append((mix, mix))
+
+    return groups
+
+
+def test_action_implementation_phase_sort_according_to_defaults(phase_identifier_groups):
+    for before, after in phase_identifier_groups:
+        assert len(set(before)) == len(before)
+        assert len(after) == len(before)
+        result = ActionImplementationPhase.sorted_according_to_defaults(before)
+        assert result == after
