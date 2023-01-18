@@ -19,30 +19,38 @@ MAPPINGS = {
 }
 
 
+def _create_phase(plan, identifier):
+    created, replacing_phase = ActionImplementationPhase.get_or_create_default(identifier, plan)
+    if created:
+        plan.action_implementation_phases.add(replacing_phase)
+        plan.save()
+    return replacing_phase
+
+
 def _map_unallowed_action_statuses(apps, schema_editor):
     allowed_identifiers = list(i.value for i in ActionStatus.Identifier)
     # print('allowed', list(allowed_identifiers))
     debug = []
+    # TODO. if no 'completed', add it as last for all plans
     for action_status in ActionStatus.objects.exclude(identifier__in=allowed_identifiers):
         plan = Plan.objects.get(pk=action_status.plan.pk)
         with translation.override(plan.primary_language):
-            replacing_phase = None
+            replacing_phase_identifier = None
             replacing_status = None
             mapping_type, identifier = MAPPINGS.get(action_status.identifier, (None, None))
             if mapping_type == 'phase':
-                replacing_phase = ActionImplementationPhase.get_or_create_default(identifier, plan)
-                plan.action_implementation_phases.add(replacing_phase)
-                plan.save()
+                replacing_phase_identifier = identifier
             elif mapping_type == 'status':
-                replacing_status = ActionStatus.get_or_create_default(identifier, plan)
-                plan.action_statuses.add(replacing_status)
-                plan.save()
+                created, replacing_status = ActionStatus.get_or_create_default(identifier, plan)
+                if created:
+                    plan.action_statuses.add(replacing_status)
+                    plan.save()
             for action in Action.objects.filter(status=action_status):
                 old_status = action.status.identifier if action.status else None
                 old_phase = action.implementation_phase.identifier if action.implementation_phase else None
-                if replacing_phase and action.implementation_phase is None:
+                if replacing_phase_identifier and action.implementation_phase is None:
                     action.status = None
-                    action.implementation_phase = replacing_phase
+                    action.implementation_phase = _create_phase(plan, replacing_phase_identifier)
                 elif replacing_status:
                     action.status = replacing_status
                 else:
@@ -60,9 +68,7 @@ def _map_unallowed_action_statuses(apps, schema_editor):
                                 .filter(status__identifier__in=('late', 'on_time')):
         plan = action.plan
         with translation.override(plan.primary_language):
-            replacing_phase = ActionImplementationPhase.get_or_create_default('implementation', plan)
-            plan.action_implementation_phases.add(replacing_phase)
-            plan.save()
+            replacing_phase = _create_phase(plan, 'implementation')
             action.implementation_phase = replacing_phase
             action.save()
             phase_id = action.implementation_phase.identifier if action.implementation_phase else "[none]"

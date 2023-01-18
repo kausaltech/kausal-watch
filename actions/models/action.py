@@ -817,7 +817,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
     def get_or_create_default(identifier, plan):
         existing = ActionStatus.objects.filter(plan=plan, identifier=identifier)
         if existing:
-            return existing.first()
+            return False, existing.first()
         if identifier not in ActionStatus.Identifier.values:
             raise ValueError(
                 f'ActionImplementationPhase identifier "{identifier}" '
@@ -825,7 +825,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
             )
         with translation.override(plan.primary_language):
             name = ActionStatus.Identifier[identifier.upper()].label
-            return ActionStatus.objects.create(plan=plan, identifier=identifier, name=name)
+            return True, ActionStatus.objects.create(plan=plan, identifier=identifier, name=name)
 
     class Meta:
         unique_together = (('plan', 'identifier'),)
@@ -857,21 +857,41 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
         verbose_name = _('action implementation phase')
         verbose_name_plural = _('action implementation phases')
 
-    @staticmethod
-    def validate_ordering(plan):
-        existing = ActionImplementationPhase.objects.filter(plan=plan)
-        first_phase = existing.first()
-        last_phase = existing.last()
-        min_order = first_phase.order
-        max_order = last_phase.order
-        orders = [(p.identifier, p.order) for p in existing]
-        # enforced_orders = [(
+    @classmethod
+    def validate_ordering(cls, plan, existing_phases):
+        phases = list(existing_phases)
+        existing_identifiers = set(p.identifier for p in phases)
+        defaults = [
+            p for p in DEFAULT_ACTION_IMPLEMENTATION_PHASE_IDENTIFIERS
+            if p in existing_identifiers
+        ]
+        default_orders = dict((p, i) for i, p in enumerate(defaults))
+        for i in range(0, len(phases)):
+            phase = phases[i]
+            corresponding_order = default_orders.get(phase.identifier)
+            if corresponding_order is None:
+                continue
+            phases_which_must_follow_this = set(defaults[corresponding_order+1:])
+            for identifier in phases_which_must_follow_this:
+                if identifier not in (p.identifier for p in existing_phases[i+1:]):
+                    raise ValidationError(f'Phase {identifier} cannot preceed {phase.identifier}')
+        return True
+
+    @classmethod
+    def _validate(cls, plan):
+        obligatory_identifiers = set((p['identifier'] for p in DEFAULT_ACTION_IMPLEMENTATION_PHASES if p['required']))
+        existing = cls.objects.filter(plan=plan)
+        existing_identifiers = set(p.identifier for p in existing)
+        if not obligatory_identifiers.issubset(existing_identifiers):
+            raise ValidationError(f'The plan {plan.identifier} is missing obligatory implementation phases.')
+        cls.validate_ordering(plan, existing)
+        return True
 
     @staticmethod
     def get_or_create_default(identifier, plan):
         existing = ActionImplementationPhase.objects.filter(plan=plan, identifier=identifier)
         if existing:
-            return existing.first()
+            return False, existing.first()
         phase = None
         with translation.override(plan.primary_language):
             name = next((phase['name']
@@ -885,7 +905,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
                 )
             phase = ActionImplementationPhase.objects.create(plan=plan, identifier=identifier, name=name)
             plan.action_implementation_phases
-        return phase
+        return True, phase
 
     def __str__(self):
         return self.name
