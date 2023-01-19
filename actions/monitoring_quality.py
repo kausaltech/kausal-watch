@@ -17,7 +17,7 @@ def determine_basic_info(action):
 
 
 def determine_future_task(action):
-    now = timezone.now()
+    now = action.plan.now_in_local_timezone()
     year_from_now = now + timedelta(days=365)
     if not action.tasks.active().filter(due_at__lte=year_from_now).exists():
         return False

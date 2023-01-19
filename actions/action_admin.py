@@ -553,9 +553,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     '''
 
     def updated_at_delta(self, obj):
-        now = timezone.now()
         if not obj.updated_at:
             return None
+        now = obj.plan.now_in_local_timezone()
         delta = now - obj.updated_at
         return naturaltime(delta)
     updated_at_delta.short_description = _('Last updated')

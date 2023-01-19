@@ -1,8 +1,5 @@
-import pytz
-from django.conf import settings
-from django.db import transaction
-
 import django_filters as filters
+from django.db import transaction
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -15,8 +12,6 @@ from actions.api import plan_router
 from actions.models import Plan
 from aplans.rest_api import BulkListSerializer, BulkModelViewSet
 from aplans.utils import register_view_helper
-
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 all_views = []

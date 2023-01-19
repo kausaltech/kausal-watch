@@ -15,13 +15,10 @@ from django.utils.translation import get_language, gettext_lazy as _
 import logging
 import humanize
 import libvoikko
-import pytz
 from tinycss2.color3 import parse_color
 
 
 logger = logging.getLogger(__name__)
-
-LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
 try:
     voikko_fi = libvoikko.Voikko(language='fi')

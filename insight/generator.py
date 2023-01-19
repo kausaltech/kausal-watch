@@ -1,12 +1,8 @@
-import pytz
-from django.conf import settings
-from django.urls import reverse
 from django.db.models import Q
+from django.urls import reverse
+
 from actions.models import Action
 from indicators.models import Indicator, RelatedIndicator, ActionIndicator
-
-
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 class GraphGenerator:

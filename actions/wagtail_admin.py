@@ -76,6 +76,8 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('accessibility_statement_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
+        FieldPanel('country'),
+        FieldPanel('timezone'),
         CondensedInlinePanel(
             'general_admins_ordered',
             panels=[

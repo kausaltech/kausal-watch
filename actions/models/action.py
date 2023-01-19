@@ -1,10 +1,8 @@
 from __future__ import annotations
-import typing
-from typing import Literal, Optional, TypedDict
 import logging
+import reversion
+import typing
 import uuid
-
-from datetime import date
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -18,11 +16,10 @@ from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from typing import Literal, Optional, TypedDict
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
-
-import reversion
 
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
@@ -369,7 +366,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
         return dict(completion=int(n_completed * 100 / len(tasks)))
 
-    def _determine_status(self, tasks, indicator_status):
+    def _determine_status(self, tasks, indicator_status, today=None):
+        if today is None:
+            today = self.plan.now_in_local_timezone().date()
+
         statuses = self.plan.action_statuses.all()
         if not statuses:
             return None
@@ -386,8 +386,6 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
         if indicator_status is not None and indicator_status.get('is_late'):
             return by_id['late']
-
-        today = date.today()
 
         def is_late(task):
             if task.due_at is None or task.completed_at is not None:
@@ -808,11 +806,13 @@ class ActionTask(models.Model):
         return self.name
 
     def clean(self):
+        today = self.action.plan.now_in_local_timezone().date()
+
         if self.state != ActionTask.COMPLETED and self.completed_at is not None:
             raise ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if self.state == ActionTask.COMPLETED and self.completed_at is None:
             raise ValidationError({'completed_at': _('Completed tasks must have a completion date')})
-        if self.completed_at is not None and self.completed_at > date.today():
+        if self.completed_at is not None and self.completed_at > today:
             raise ValidationError({'completed_at': _("Date can't be in the future")})
 
     def get_notification_context(self, plan=None):
@@ -881,19 +881,15 @@ class ActionStatusUpdate(models.Model):
         verbose_name=_('action')
     )
     title = models.CharField(max_length=200, verbose_name=_('title'))
-    date = models.DateField(verbose_name=_('date'), default=date.today)
+    date = models.DateField(verbose_name=_('date'), blank=True)
     author = models.ForeignKey(
         'people.Person', on_delete=models.SET_NULL, related_name='status_updates',
         null=True, blank=True, verbose_name=_('author')
     )
     content = models.TextField(verbose_name=_('content'))
 
-    created_at = models.DateField(
-        verbose_name=_('created at'), editable=False, auto_now_add=True
-    )
-    modified_at = models.DateField(
-        verbose_name=_('created at'), editable=False, auto_now=True
-    )
+    created_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
+    modified_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
     created_by = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'), editable=False,
@@ -907,6 +903,17 @@ class ActionStatusUpdate(models.Model):
         verbose_name = _('action status update')
         verbose_name_plural = _('action status updates')
         ordering = ('-date',)
+
+    def save(self, *args, **kwargs):
+        now = self.action.plan.now_in_local_timezone()
+        if self.pk is None:
+            if self.date is None:
+                self.date = now.date()
+            if self.created_at is None:
+                self.created_at = now.date()
+        if self.modified_at is None:
+            self.modified_at = now.date()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)

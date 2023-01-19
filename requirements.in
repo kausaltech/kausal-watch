@@ -65,3 +65,5 @@ celery
 drf-spectacular
 wagtailgeowidget
 wagtailsvg
+django-countries
+tzdata

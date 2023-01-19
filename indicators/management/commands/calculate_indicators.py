@@ -2,7 +2,6 @@ from datetime import timedelta
 import logging
 
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 from indicators.models import Indicator, IndicatorValue
 
 
@@ -13,7 +12,7 @@ class Command(BaseCommand):
     help = 'Recalculates meta-indicator values'
 
     def handle_share_of_updated_indicators(self, indicator, plan):
-        now = timezone.now()
+        now = plan.now_in_local_timezone()
         all_actions = list(plan.actions.all().exclude(status__is_completed=True))
         if not all_actions:
             return
@@ -32,7 +31,7 @@ class Command(BaseCommand):
         indicator.handle_values_update()
 
     def handle_average_days_since_last_update(self, indicator, plan):
-        now = timezone.now()
+        now = plan.now_in_local_timezone()
         all_actions = list(plan.actions.all().exclude(status__is_completed=True))
         updated_actions = 0
         days_since_update = 0

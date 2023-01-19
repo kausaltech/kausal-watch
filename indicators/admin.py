@@ -1,13 +1,8 @@
-import pytz
-from datetime import date
-
-from django import forms
-from django.db.models import Q
-from django.contrib import admin
-from django.conf import settings
-from django.utils.translation import gettext_lazy as _
-from ckeditor.widgets import CKEditorWidget
 from admin_ordering.admin import OrderableAdmin
+from ckeditor.widgets import CKEditorWidget
+from django import forms
+from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 from admin_site.admin import AplansImportExportMixin, AplansModelAdmin
 from actions.perms import ActionRelatedAdminPermMixin
@@ -16,9 +11,6 @@ from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
     IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense
 )
-
-
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 @admin.register(Unit)
@@ -134,7 +126,9 @@ class IndicatorValueAdmin(admin.TabularInline):
         formset = super().get_formset(request, obj, **kwargs)
         form = formset.form
 
-        current_year = date.today().year
+        plan = request.user.get_active_admin_plan()
+        today = plan.now_in_local_timezone().date()
+        current_year = today.year
 
         field = form.base_fields['date']
         if obj is not None and obj.time_resolution == 'year':

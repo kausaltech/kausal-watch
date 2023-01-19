@@ -1,16 +1,17 @@
 from __future__ import annotations
-from contextlib import contextmanager
 
-import typing
-from typing import Optional, Tuple, Type, Union
 import logging
 import re
-from urllib.parse import urlparse
-
+import reversion
+import typing
+import zoneinfo
+from contextlib import contextmanager
+from datetime import datetime, timedelta
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core import management
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models, transaction
@@ -18,15 +19,16 @@ from django.db.models import Q
 from django.utils import timezone, translation
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _, pgettext_lazy, gettext
+from django_countries.fields import CountryField
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from typing import Optional, Tuple, Type, Union
+from urllib.parse import urlparse
 from wagtail.core.models import Collection, Page, Site
 from wagtail.core.models.i18n import Locale
 # In future versions of wagtail_localize, this will be in wagtail_localize.operations
 from wagtail_localize.views.submit_translations import TranslationCreator
-
-import reversion
 
 from aplans.utils import (
     ChoiceArrayField,
@@ -41,14 +43,16 @@ from orgs.models import Organization
 from people.models import Person
 
 if typing.TYPE_CHECKING:
-    from .features import PlanFeatures
+    from django.db.models.manager import RelatedManager
+    from users.models import User
     from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
-    from users.models import User
-    from django.db.models.manager import RelatedManager
+    from .features import PlanFeatures
 
 
 logger = logging.getLogger(__name__)
+
+TIMEZONES = [(x, x) for x in sorted(zoneinfo.available_timezones(), key=str.lower)]
 
 
 def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, str], Tuple[None, None]]:
@@ -238,6 +242,8 @@ class Plan(ClusterableModel):
         'self', verbose_name=pgettext_lazy('plan', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan')
     )
+    timezone = models.CharField(max_length=64, choices=TIMEZONES, default='UTC')
+    country = CountryField(blank=True)
 
     features: PlanFeatures
     actions: RelatedManager[Action]
@@ -628,6 +634,13 @@ class Plan(ClusterableModel):
         days = self.settings_action_update_acceptable_interval
         return days if days is not None else self.DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
 
+    def to_local_timezone(self, dt: datetime):
+        tz = zoneinfo.ZoneInfo(self.timezone)
+        return dt.astimezone(tz)
+
+    def now_in_local_timezone(self):
+        return self.to_local_timezone(timezone.now())
+
 
 class PublicationStatus(models.TextChoices):
     PUBLISHED = 'published', _('Published')
@@ -715,7 +728,7 @@ class PlanDomain(models.Model):
         published_at = self.plan.published_at
         if published_at is None:
             return PublicationStatus.UNPUBLISHED
-        now = timezone.now()
+        now = self.plan.now_in_local_timezone()
         if published_at <= now:
             return PublicationStatus.PUBLISHED
         if published_at > now:
