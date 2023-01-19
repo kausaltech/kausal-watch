@@ -313,10 +313,16 @@ class Person(index.Indexed, ClusterableModel):
                 ))
         if not client:
             # Match based on email domain
-            email_domain = self.email.split('@')[1]
-            clients = Client.objects.filter(email_domains__domain=email_domain.lower())
-            if len(clients) == 1:
-                client = clients[0]
+            # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
+            email_domain = self.email.split('@')[1].lower()
+            labels = email_domain.split('.')
+            while labels:
+                domain = '.'.join(labels)
+                labels.pop(0)
+                clients = Client.objects.filter(email_domains__domain=domain)
+                if len(clients) == 1:
+                    client = clients[0]
+                    break
             else:
                 logger.warning('Unable to find client for email %s [Person-%d]' % (
                     self.email, self.id
