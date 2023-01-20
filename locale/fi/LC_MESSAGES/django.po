@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-01-12 09:06+0200\n"
-"PO-Revision-Date: 2023-01-19 09:11+0200\n"
+"PO-Revision-Date: 2023-02-01 12:33+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1170,7 +1170,7 @@ msgstr "Salli toimenpiteille kuvat"
 
 #: actions/models/features.py
 msgid "Should custom images for individual actions be allowed"
-msgstr "Pitäisikö yksitäisille toimenpiteille pystyä lisäämään kuvia"
+msgstr "Voiko yksittäisille toimenpiteille lisätä kuvia"
 
 #: actions/models/features.py
 msgid "Show admin link"
