@@ -43,7 +43,7 @@ class SiteGeneralContentAdmin(ModelAdmin):
     add_to_settings_menu = True
     menu_icon = 'cogs'
     menu_label = _('Site settings')
-    menu_order = 501
+    menu_order = 503
 
     panels = [
         FieldPanel('site_title'),

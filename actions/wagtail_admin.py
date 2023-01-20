@@ -12,16 +12,17 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
+from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
     ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
+from notifications.models import NotificationSettings
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
-from actions.chooser import CategoryTypeChooser, PlanChooser
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
@@ -283,36 +284,30 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 # modeladmin_register(PlanFeaturesAdmin)
 
 
-class ActivePlanFeaturesPermissionHelper(PermissionHelper):
-    def user_can_list(self, user):
-        return user.is_superuser
+class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        # Implement in subclass
+        raise NotImplementedError()
 
-    def user_can_create(self, user):
-        return False
-
-    def user_can_inspect_obj(self, user, obj):
-        return False
-
-    def user_can_delete_obj(self, user, obj):
-        return False
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj.plan)
-
-
-class ActivePlanFeaturesMenuItem(ModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
         context = super().get_context(request)
         plan = request.user.get_active_admin_plan()
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.features.pk)
+        field = self.get_one_to_one_field(plan)
+        context['url'] = self.model_admin.url_helper.get_action_url('edit', field.pk)
         return context
 
     def is_shown(self, request):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
         # this menu item is about editing a plan features instance, not listing.
         plan = request.user.get_active_admin_plan()
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.features)
+        field = self.get_one_to_one_field(plan)
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+
+
+class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan.features
 
 
 class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
@@ -321,7 +316,7 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
 
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
-    permission_helper_class = ActivePlanFeaturesPermissionHelper
+    permission_helper_class = ActivePlanPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan features')
     add_to_settings_menu = True
 
@@ -331,6 +326,57 @@ class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
 
 
 modeladmin_register(ActivePlanFeaturesAdmin)
+
+
+class NotificationSettingsAdmin(AplansModelAdmin):
+    model = NotificationSettings
+    menu_icon = 'fa-bell'
+    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_order = 502
+
+    panels = [
+        FieldPanel('notifications_enabled'),
+        FieldPanel('send_at_time'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        person = user.get_corresponding_person()
+        if not user.is_superuser and person:
+            qs = qs.filter(plan__general_admins=person).distinct()
+        return qs
+
+    def user_can_create(self):
+        return False
+
+    def get_edit_handler(self, instance, request):
+        panels = list(self.panels)
+        handler = ObjectList(panels)
+        return handler
+
+
+class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan.notification_settings
+
+
+class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, EditView):
+    pass
+
+
+class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
+    edit_view_class = ActivePlanNotificationSettingsEditView
+    permission_helper_class = ActivePlanPermissionHelper
+    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    add_to_settings_menu = True
+
+    def get_menu_item(self, order=None):
+        item = ActivePlanNotificationSettingsMenuItem(self, order or self.get_menu_order())
+        return item
+
+
+modeladmin_register(ActivePlanNotificationSettingsAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete
