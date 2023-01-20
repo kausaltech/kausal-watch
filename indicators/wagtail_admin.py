@@ -3,6 +3,7 @@ from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
+from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail.admin.edit_handlers import (
@@ -108,7 +109,7 @@ class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
     menu_icon = 'fa-arrows-h'
-    menu_label = _('Indicator dimensions')
+    menu_label = pgettext_lazy('hyphenated', 'Indicator dimensions')
     list_display = ('name',)
 
     panels = [

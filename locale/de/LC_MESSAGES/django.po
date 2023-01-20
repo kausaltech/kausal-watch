@@ -12,7 +12,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-16 14:38+0200\n"
+"POT-Creation-Date: 2023-01-20 18:08+0200\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (https://www.transifex.com/kausal-tech/teams/113123/de/)\n"
@@ -1742,6 +1742,11 @@ msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Plan-Features"
 
+#: actions/wagtail_admin.py
+msgctxt "hyphenated"
+msgid "Plan notification settings"
+msgstr "Plan-Benachrichtigungs&shy;einstellungen"
+
 #: actions/wagtail_hooks.py
 msgid "Create plan"
 msgstr "Plan erstellen"
@@ -1975,7 +1980,7 @@ msgstr "aktualisiert von"
 
 #: content/admin.py
 msgid "Site settings"
-msgstr "Seiteneinstellung"
+msgstr "Seiten&shy;einstellungen"
 
 #: content/apps.py
 msgid "According to the action plan"
@@ -2659,8 +2664,9 @@ msgid "Edit this quantity"
 msgstr "Bearbeite diese Größe"
 
 #: indicators/wagtail_admin.py
+msgctxt "hyphenated"
 msgid "Indicator dimensions"
-msgstr "Indikatordimensionen"
+msgstr "Indikator&shy;dimensionen"
 
 #: indicators/wagtail_admin.py
 msgid "Quantities"
@@ -2741,7 +2747,7 @@ msgstr ""
 " Größe, Einheit und Dimensionen nicht bearbeitet werden. Aktuelle Größe: "
 "%(quantity)s; Einheit: %(unit)s; Dimensionen: %(dimensions)s"
 
-#: notifications/apps.py notifications/wagtail_admin.py
+#: notifications/apps.py
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
@@ -2929,6 +2935,31 @@ msgid "User feedback received"
 msgstr "Benutzer-Feedback erhalten"
 
 #: notifications/models.py
+msgid "notifications enabled"
+msgstr "Benachrichtigungen aktiviert"
+
+#: notifications/models.py
+msgid "Should notifications be sent?"
+msgstr "Sollen Benachrichtigungen gesendet werden?"
+
+#: notifications/models.py
+msgid "notification sending time"
+msgstr "Benachrichtungssendezeit"
+
+#: notifications/models.py
+msgid "The local time of day when notifications are sent"
+msgstr "Die lokale Tageszeit, zu der Benachrichtigungen gesendet werden"
+
+#: notifications/models.py
+msgctxt "partitive"
+msgid "notification settings"
+msgstr "Benachrichtigungseinstellungen"
+
+#: notifications/models.py
+msgid "notification settings"
+msgstr "Benachrichtigungseinstellungen"
+
+#: notifications/models.py
 msgid "Email From name"
 msgstr "E-Mail-Absendername"
 
@@ -2959,12 +2990,16 @@ msgstr "Schriftart CSS-Style-URL"
 
 #: notifications/models.py
 msgctxt "partitive"
-msgid "notification settings"
-msgstr "Benachrichtigungseinstellungen"
+msgid "base templates"
+msgstr "Basisvorlagen"
 
 #: notifications/models.py
-msgid "notification settings"
-msgstr "Benachrichtigungseinstellungen"
+msgid "base template"
+msgstr "Basisvorlage"
+
+#: notifications/models.py
+msgid "base templates"
+msgstr "Basisvorlagen"
 
 #: notifications/models.py
 msgid "subject"
@@ -3025,6 +3060,11 @@ msgstr "erhalte allgemeine Maßnahmen-Benachrichtigungen"
 #: notifications/models.py
 msgid "receive action feedback notifications"
 msgstr "erhalte Maßnahmen-Feedback-Benachrichtigungen"
+
+#: notifications/wagtail_admin.py
+msgctxt "hyphenated"
+msgid "Notifications"
+msgstr "Be&shy;nach&shy;rich&shy;ti&shy;gung&shy;en"
 
 #: notifications/wagtail_admin.py
 msgid "Notification types"

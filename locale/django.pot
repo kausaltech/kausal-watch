@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-16 14:38+0200\n"
+"POT-Creation-Date: 2023-01-20 18:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1627,6 +1627,11 @@ msgctxt "hyphenated"
 msgid "Plan features"
 msgstr ""
 
+#: actions/wagtail_admin.py
+msgctxt "hyphenated"
+msgid "Plan notification settings"
+msgstr ""
+
 #: actions/wagtail_hooks.py
 msgid "Create plan"
 msgstr ""
@@ -2503,6 +2508,7 @@ msgid "Edit this quantity"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr ""
 
@@ -2563,7 +2569,7 @@ msgstr ""
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
-#: notifications/apps.py notifications/wagtail_admin.py
+#: notifications/apps.py
 msgid "Notifications"
 msgstr ""
 
@@ -2673,6 +2679,31 @@ msgid "User feedback received"
 msgstr ""
 
 #: notifications/models.py
+msgid "notifications enabled"
+msgstr ""
+
+#: notifications/models.py
+msgid "Should notifications be sent?"
+msgstr ""
+
+#: notifications/models.py
+msgid "notification sending time"
+msgstr ""
+
+#: notifications/models.py
+msgid "The local time of day when notifications are sent"
+msgstr ""
+
+#: notifications/models.py
+msgctxt "partitive"
+msgid "notification settings"
+msgstr ""
+
+#: notifications/models.py
+msgid "notification settings"
+msgstr ""
+
+#: notifications/models.py
 msgid "Email From name"
 msgstr ""
 
@@ -2702,11 +2733,15 @@ msgstr ""
 
 #: notifications/models.py
 msgctxt "partitive"
-msgid "notification settings"
+msgid "base templates"
 msgstr ""
 
 #: notifications/models.py
-msgid "notification settings"
+msgid "base template"
+msgstr ""
+
+#: notifications/models.py
+msgid "base templates"
 msgstr ""
 
 #: notifications/models.py
@@ -2767,6 +2802,11 @@ msgstr ""
 
 #: notifications/models.py
 msgid "receive action feedback notifications"
+msgstr ""
+
+#: notifications/wagtail_admin.py
+msgctxt "hyphenated"
+msgid "Notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py

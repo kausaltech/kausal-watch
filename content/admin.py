@@ -1,12 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
-from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 
 from .models import SiteGeneralContent
 from actions.wagtail_admin import ActivePlanPermissionHelper
-from admin_site.wagtail import SuccessUrlEditPageMixin, insert_model_translation_panels
+from admin_site.wagtail import SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin, insert_model_translation_panels
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
@@ -16,7 +15,7 @@ class SiteGeneralContentPermissionHelper(ActivePlanPermissionHelper):
 
 
 # FIXME: This duplicates most of what actions.wagtail_admin.ActivePlanMenuItem is doing.
-class SiteGeneralContentMenuItem(ModelAdminMenuItem):
+class SiteGeneralContentMenuItem(SafeLabelModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
         context = super().get_context(request)

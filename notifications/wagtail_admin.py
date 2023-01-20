@@ -1,12 +1,13 @@
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import pgettext_lazy
 from wagtail.admin.edit_handlers import (FieldPanel, ObjectList, InlinePanel, RichTextFieldPanel)
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
-from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
+from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.core import hooks
 
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin
 )
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
@@ -23,7 +24,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     create_view_class = AplansCreateView
     edit_view_class = BaseTemplateEditView
     menu_icon = 'fa-bell'
-    menu_label = _('Notifications')
+    menu_label = pgettext_lazy('hyphenated', 'Notifications')
 
     panels = [
         FieldPanel('from_name'),
@@ -79,7 +80,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
         ])
 
 
-class ActivePlanMenuItem(ModelAdminMenuItem):
+class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
     # fixme duplicated in actions, content
     def get_context(self, request):
         context = super().get_context(request)

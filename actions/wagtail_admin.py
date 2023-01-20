@@ -7,7 +7,6 @@ from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 from wagtail.images.edit_handlers import ImageChooserPanel
@@ -284,7 +283,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 # modeladmin_register(PlanFeaturesAdmin)
 
 
-class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
+class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         # Implement in subclass
         raise NotImplementedError()
