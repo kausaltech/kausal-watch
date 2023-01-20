@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import typing
 import datetime
+import factory
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
-from factory import LazyAttribute, SelfAttribute, Sequence, SubFactory, post_generation
+from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.models.i18n import Locale
 from wagtail.core.rich_text import RichText
@@ -12,13 +13,14 @@ from wagtail_factories import StructBlockFactory
 
 from aplans.factories import ModelFactory
 import actions
-from actions.models import AttributeType, Plan
+from actions.models import AttributeType, Plan, PlanFeatures
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 
+@factory.django.mute_signals(post_save)
 class PlanFactory(ModelFactory[Plan]):
     class Meta:
         model = 'actions.Plan'
@@ -32,6 +34,11 @@ class PlanFactory(ModelFactory[Plan]):
     primary_language = 'en'
     other_languages = ['fi']
     published_at = make_aware(datetime.datetime(2021, 1, 1))
+    general_content = RelatedFactory('content.tests.factories.SiteGeneralContentFactory', factory_related_name='plan')
+    features = RelatedFactory('actions.tests.factories.PlanFeaturesFactory', factory_related_name='plan')
+    notification_settings = RelatedFactory(
+        'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan'
+    )
 
     @classmethod
     def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
@@ -44,6 +51,14 @@ class PlanFactory(ModelFactory[Plan]):
             manager = cls._get_manager(model_class)
             obj = manager.create(*args, **kwargs)
         return obj
+
+
+@factory.django.mute_signals(post_save)
+class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
+    class Meta:
+        model = 'actions.PlanFeatures'
+
+    plan = SubFactory(PlanFactory, features=None)
 
 
 class PlanDomainFactory(DjangoModelFactory):

@@ -1,4 +1,5 @@
 import pytest
+from datetime import date, datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.core.models import Locale
@@ -164,3 +165,37 @@ def test_plan_action_staleness_returns_set_value(plan_factory):
     assert plan1.get_action_days_until_considered_stale() == 230
     assert plan2.get_action_days_until_considered_stale() == 231
     assert plan3.get_action_days_until_considered_stale() == 0
+
+
+def test_plan_should_trigger_daily_notifications_disabled(plan):
+    assert not plan.notification_settings.notifications_enabled
+    send_at_time = plan.notification_settings.send_at_time
+    now = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
+    assert not plan.should_trigger_daily_notifications(now)
+
+
+@pytest.mark.parametrize('notification_settings__notifications_enabled', [True])
+def test_plan_should_trigger_daily_notifications_never_triggered(plan):
+    assert plan.notification_settings.notifications_enabled
+    assert not plan.daily_notifications_triggered_at
+    send_at_time = plan.notification_settings.send_at_time
+    now = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
+    assert plan.should_trigger_daily_notifications(now)
+
+
+@pytest.mark.parametrize('notification_settings__notifications_enabled', [True])
+def test_plan_should_trigger_daily_notifications_not_due_yet(plan):
+    assert plan.notification_settings.notifications_enabled
+    send_at_time = plan.notification_settings.send_at_time
+    plan.daily_notifications_triggered_at = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
+    now = plan.daily_notifications_triggered_at + timedelta(hours=23, minutes=59)
+    assert not plan.should_trigger_daily_notifications(now)
+
+
+@pytest.mark.parametrize('notification_settings__notifications_enabled', [True])
+def test_plan_should_trigger_daily_notifications_due(plan):
+    assert plan.notification_settings.notifications_enabled
+    send_at_time = plan.notification_settings.send_at_time
+    plan.daily_notifications_triggered_at = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
+    now = plan.daily_notifications_triggered_at + timedelta(days=1)
+    assert plan.should_trigger_daily_notifications(now)

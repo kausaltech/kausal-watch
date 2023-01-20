@@ -244,6 +244,7 @@ class Plan(ClusterableModel):
     )
     timezone = models.CharField(max_length=64, choices=TIMEZONES, default='UTC')
     country = CountryField(blank=True)
+    daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
     features: PlanFeatures
     actions: RelatedManager[Action]
@@ -382,9 +383,6 @@ class Plan(ClusterableModel):
             if self.contact_person_group.name != group_name:
                 self.contact_person_group.name = group_name
                 self.contact_person_group.save()
-
-        if not PlanFeatures.objects.filter(plan=self).exists():
-            PlanFeatures.objects.create(plan=self)
 
         if update_fields:
             super().save(update_fields=update_fields)
@@ -584,6 +582,9 @@ class Plan(ClusterableModel):
                 if hn_obj is None:
                     AdminHostname.objects.create(client=client, hostname=hostname)
 
+        # Set up notifications
+        management.call_command('initialize_notifications', plan=plan)
+
         return plan
 
     def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
@@ -634,12 +635,28 @@ class Plan(ClusterableModel):
         days = self.settings_action_update_acceptable_interval
         return days if days is not None else self.DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
 
+    @property
+    def tzinfo(self):
+        return zoneinfo.ZoneInfo(self.timezone)
+
     def to_local_timezone(self, dt: datetime):
-        tz = zoneinfo.ZoneInfo(self.timezone)
-        return dt.astimezone(tz)
+        return dt.astimezone(self.tzinfo)
 
     def now_in_local_timezone(self):
         return self.to_local_timezone(timezone.now())
+
+    def should_trigger_daily_notifications(self, now=None):
+        if now is None:
+            now = self.now_in_local_timezone()
+        if not self.notification_settings.notifications_enabled:
+            return False
+        if self.daily_notifications_triggered_at is None:
+            return True
+        sent_at = self.to_local_timezone(self.daily_notifications_triggered_at)
+        send_at_or_after = datetime.combine(sent_at.date(), self.notification_settings.send_at_time, sent_at.tzinfo)
+        if sent_at.time() >= self.notification_settings.send_at_time:
+            send_at_or_after += timedelta(days=1)
+        return now >= send_at_or_after
 
 
 class PublicationStatus(models.TextChoices):

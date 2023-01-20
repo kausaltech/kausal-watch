@@ -1,16 +1,15 @@
+import datetime
 import logging
-from enum import Enum
-
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
+from enum import Enum
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.core.fields import RichTextField
 
-from actions.models import ActionContactPerson, GeneralPlanAdmin, Plan
 from people.models import Person
 from aplans.utils import PlanRelatedModel
 
@@ -45,6 +44,29 @@ def notification_type_choice_builder():
         yield (val.identifier, val.verbose_name)
 
 
+class NotificationSettings(ClusterableModel, PlanRelatedModel):
+    plan = models.OneToOneField(
+        'actions.Plan', on_delete=models.CASCADE, related_name='notification_settings',
+        verbose_name=_('plan'),
+    )
+    notifications_enabled = models.BooleanField(
+        default=False, verbose_name=_('notifications enabled'), help_text=_('Should notifications be sent?'),
+    )
+    send_at_time = models.TimeField(
+        default=datetime.time(9, 0), verbose_name=_('notification sending time'),
+        help_text=_('The local time of day when notifications are sent')
+    )
+
+    verbose_name_partitive = pgettext_lazy('partitive', 'notification settings')
+
+    class Meta:
+        verbose_name = _('notification settings')
+        verbose_name_plural = _('notification settings')
+
+    def __str__(self):
+        return str(self.plan)
+
+
 class SentNotification(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -74,7 +96,7 @@ class IndirectPlanRelatedModel(PlanRelatedModel):
 
 class BaseTemplate(ClusterableModel, PlanRelatedModel):
     plan = models.OneToOneField(
-        Plan, on_delete=models.CASCADE, related_name='notification_base_template',
+        'actions.Plan', on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),
     )
     from_name = models.CharField(verbose_name=_('Email From name'), null=True, blank=True, max_length=200)
@@ -92,11 +114,11 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
 
     objects = BaseTemplateManager()
 
-    verbose_name_partitive = pgettext_lazy('partitive', 'notification settings')
+    verbose_name_partitive = pgettext_lazy('partitive', 'base templates')
 
     class Meta:
-        verbose_name = _('notification settings')
-        verbose_name_plural = _('notification settings')
+        verbose_name = _('base template')
+        verbose_name_plural = _('base templates')
 
     def __str__(self):
         return str(self.plan)
@@ -210,7 +232,7 @@ class ContentBlock(models.Model):
 
 class GeneralPlanAdminNotificationPreferences(models.Model):
     general_plan_admin = models.OneToOneField(
-        GeneralPlanAdmin, related_name='notification_preferences', on_delete=models.CASCADE,
+        'actions.GeneralPlanAdmin', related_name='notification_preferences', on_delete=models.CASCADE,
     )
     receive_feedback_notifications = models.BooleanField(
         verbose_name=_("receive feedback notifications"), default=True
@@ -219,7 +241,7 @@ class GeneralPlanAdminNotificationPreferences(models.Model):
 
 class ActionContactPersonNotificationPreferences(models.Model):
     action_contact_person = models.OneToOneField(
-        ActionContactPerson, related_name='notification_preferences', on_delete=models.CASCADE,
+        'actions.ActionContactPerson', related_name='notification_preferences', on_delete=models.CASCADE,
     )
     receive_general_action_notifications = models.BooleanField(
         verbose_name=_("receive general action notifications"), default=True

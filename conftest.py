@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from typing import Protocol, Type
+import factory
 import json
 import pytest
 import typing
 import wagtail_factories
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save
 from django.urls import reverse
 from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
@@ -15,13 +17,14 @@ from rest_framework.authtoken.models import Token
 
 from actions.tests import factories as actions_factories
 # from admin_site.tests import factories as admin_site_factories
-# from content.tests import factories as content_factories
+from content.tests import factories as content_factories
 from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
+from notifications.tests import factories as notifications_factories
 from orgs.tests import factories as orgs_factories
-from users.tests import factories as users_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
+from users.tests import factories as users_factories
 
 if typing.TYPE_CHECKING:
     from django.db.models import Model
@@ -54,6 +57,7 @@ register(
 register(actions_factories.AttributeTypeChoiceOptionFactory)
 register(actions_factories.ImpactGroupFactory)
 register(actions_factories.PlanFactory)
+register(actions_factories.PlanFeaturesFactory)
 register(actions_factories.PlanDomainFactory)
 # We don't register a fixture for admin_site_factories.ClientFactory (or anything that has a SubFactory on Client)
 # because `client` is already taken by django.test.Client and the following problem appears when we register the
@@ -61,6 +65,7 @@ register(actions_factories.PlanDomainFactory)
 # https://github.com/pytest-dev/pytest-factoryboy/issues/91
 # register(admin_site_factories.ClientFactory, 'admin_site_client')
 # register(admin_site_factories.ClientPlanFactory)
+register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)
 register(indicators_factories.IndicatorFactory)
@@ -68,6 +73,7 @@ register(indicators_factories.IndicatorBlockFactory)
 register(indicators_factories.IndicatorShowcaseBlockFactory)
 register(indicators_factories.QuantityFactory)
 register(indicators_factories.UnitFactory)
+register(notifications_factories.NotificationSettingsFactory)
 register(orgs_factories.OrganizationClassFactory)
 register(orgs_factories.OrganizationFactory)
 register(orgs_factories.OrganizationIdentifierFactory)
@@ -98,6 +104,7 @@ register(wagtail_factories.factories.CollectionFactory)
 
 
 @pytest.fixture
+@factory.django.mute_signals(post_save)
 def plan_with_pages(plan):
     from actions.models.plan import set_default_page_creation
 

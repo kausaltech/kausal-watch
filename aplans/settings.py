@@ -749,15 +749,6 @@ if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
-NOTIFICATIONS_CRONTAB = {
-    'helsinki-kierto': {'hour': 7, 'minute': 40},
-    'lahti-ilmasto': {'hour': 8, 'minute': 10},
-    'viitasaari-ilmasto': {'hour': 8, 'minute': 40},
-    'akaa-ilmasto':  {'hour': 8, 'minute': 55},
-    'valkeakoski-ilmasto': {'hour': 9, 'minute': 10},
-    'palkane-ilmasto': {'hour': 9, 'minute': 25},
-    'urjala-ilmasto': {'hour': 9, 'minute': 40},
-}
 CELERY_BEAT_SCHEDULE = {
     'update-action-status': {
         'task': 'actions.tasks.update_action_status',
@@ -767,13 +758,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'indicators.tasks.calculate_indicators',
         'schedule': crontab(hour=23, minute=0),
     },
-    **{f'send_notifications.{plan}': {
-        'task': 'notifications.tasks.send_notifications',
-        'schedule': crontab(**crontab_args),
-        'kwargs': {
-            'plan': plan,
-        },
-    } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()},
+    'send_daily_notifications': {
+        'task': 'notifications.tasks.send_daily_notifications',
+        'schedule': crontab(minute=0),
+    },
     'update-index': {
         'task': 'actions.tasks.update_index',
         'schedule': crontab(hour=3, minute=0),
