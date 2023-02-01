@@ -2,6 +2,7 @@ from dal import autocomplete
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
 from typing import List, Tuple
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
@@ -154,6 +155,18 @@ class AttributeTypeForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         super().__init__(*args, **kwargs)
+
+    def clean_attribute_category_type(self):
+        format = self.cleaned_data['format']
+        attribute_category_type = self.cleaned_data['attribute_category_type']
+        if format == AttributeType.AttributeFormat.CATEGORY_CHOICE and attribute_category_type is None:
+            raise ValidationError(_("If format is 'Category', a category type must be set "))
+
+    def clean_unit(self):
+        format = self.cleaned_data['format']
+        unit = self.cleaned_data['unit']
+        if format == AttributeType.AttributeFormat.NUMERIC and unit is None:
+            raise ValidationError(_("If format is 'Numeric', a unit must be set "))
 
 
 class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
