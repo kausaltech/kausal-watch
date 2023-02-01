@@ -806,14 +806,15 @@ class ActionTask(models.Model):
         return self.name
 
     def clean(self):
-        today = self.action.plan.now_in_local_timezone().date()
-
         if self.state != ActionTask.COMPLETED and self.completed_at is not None:
             raise ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if self.state == ActionTask.COMPLETED and self.completed_at is None:
             raise ValidationError({'completed_at': _('Completed tasks must have a completion date')})
-        if self.completed_at is not None and self.completed_at > today:
-            raise ValidationError({'completed_at': _("Date can't be in the future")})
+        # TODO: Put this check in, but the following won't work because self.action is None when creating a new
+        # ActionTask as it is a ParentalKey.
+        # today = self.action.plan.now_in_local_timezone().date()
+        # if self.completed_at is not None and self.completed_at > today:
+        #     raise ValidationError({'completed_at': _("Date can't be in the future")})
 
     def get_notification_context(self, plan=None):
         if plan is None:
