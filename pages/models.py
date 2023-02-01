@@ -134,6 +134,7 @@ class PlanRootPage(AplansPage):
         ('related_plans', RelatedPlanListBlock(label=_('Related plans'))),
         ('cards', CardListBlock()),
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
+        ('text', blocks.RichTextBlock(label=_('Text'))),
     ])
 
     content_panels = [
