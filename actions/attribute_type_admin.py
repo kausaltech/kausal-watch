@@ -161,12 +161,14 @@ class AttributeTypeForm(AplansAdminModelForm):
         attribute_category_type = self.cleaned_data['attribute_category_type']
         if format == AttributeType.AttributeFormat.CATEGORY_CHOICE and attribute_category_type is None:
             raise ValidationError(_("If format is 'Category', a category type must be set "))
+        return attribute_category_type
 
     def clean_unit(self):
         format = self.cleaned_data['format']
         unit = self.cleaned_data['unit']
         if format == AttributeType.AttributeFormat.NUMERIC and unit is None:
             raise ValidationError(_("If format is 'Numeric', a unit must be set "))
+        return unit
 
 
 class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
