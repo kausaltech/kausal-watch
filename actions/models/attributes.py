@@ -85,6 +85,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         'actions.Report', blank=True, null=True, on_delete=models.CASCADE,
         related_name='attribute_types', verbose_name=_('Report'),
     )
+    report_field = models.UUIDField(blank=True, null=True)
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     primary_language = models.CharField(max_length=8, choices=get_supported_languages())

@@ -106,3 +106,21 @@ class ReportAutocomplete(autocomplete.Select2QuerySetView):
                 Q(name__icontains=q)
             )
         return reports
+
+
+def get_report_field_choice_list(request):
+    if not request.user.is_authenticated:
+        return []
+    result = []
+    plan = request.get_active_admin_plan()
+    for report_type in plan.report_types.all():
+        for field in report_type.fields:
+            result.append((field.id, field.value['name']))
+    return result
+
+
+class ReportFieldAutocomplete(autocomplete.Select2ListView):
+    request: WatchAdminRequest
+
+    def get_list(self):
+        return get_report_field_choice_list(self.request)

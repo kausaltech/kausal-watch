@@ -30,6 +30,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from actions.autocomplete import (
     ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete, ReportAutocomplete,
+    ReportFieldAutocomplete,
 )
 from orgs.autocomplete import OrganizationAutocomplete
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
@@ -83,6 +84,7 @@ urlpatterns = [
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
     re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
     re_path(r'^report-autocomplete/$', ReportAutocomplete.as_view(), name='report-autocomplete'),
+    re_path(r'^report-field-autocomplete/$', ReportFieldAutocomplete.as_view(), name='report-field-autocomplete'),
     re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
     re_path(
         r'^common-indicator-autocomplete/$',

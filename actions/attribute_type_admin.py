@@ -13,6 +13,7 @@ from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from . import attributes
+from .autocomplete import get_report_field_choice_list
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Report
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
@@ -236,6 +237,12 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
         # Add report panel iff there are reports in this plan
         if Report.objects.filter(type__plan=plan).exists():
             panels.append(FieldPanel('report', widget=autocomplete.ModelSelect2(url='report-autocomplete')))
+            choices = get_report_field_choice_list(request)
+            # If the existing value is no longer a valid choice, add a dummy entry for it
+            if str(instance.report_field) not in (v for v, _ in choices):
+                choices.append((str(instance.report_field), _('[deleted]')))
+            widget = autocomplete.ListSelect2(url='report-field-autocomplete', choices=choices)
+            panels.append(FieldPanel('report_field', widget=widget))
 
         tabs = [ObjectList(panels, heading=_('General'))]
 

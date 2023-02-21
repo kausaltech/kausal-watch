@@ -48,6 +48,7 @@ if typing.TYPE_CHECKING:
     from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
     from .features import PlanFeatures
+    from .report import ReportType
 
 
 logger = logging.getLogger(__name__)
@@ -253,6 +254,7 @@ class Plan(ClusterableModel):
     category_types: RelatedManager[CategoryType]
     domains: RelatedManager[PlanDomain]
     children: RelatedManager[Plan]
+    report_types: RelatedManager[ReportType]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
