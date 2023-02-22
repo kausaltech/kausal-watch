@@ -25,7 +25,7 @@ from actions.models import (
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
     PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
-    CommonCategoryType
+    CommonCategoryType, Report, ReportType
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -841,6 +841,18 @@ class ActionLinkNode(DjangoNode):
     class Meta:
         model = ActionLink
         fields = public_fields(ActionLink)
+
+
+class ReportNode(DjangoNode):
+    class Meta:
+        model = Report
+        fields = public_fields(Report)
+
+
+class ReportTypeNode(DjangoNode):
+    class Meta:
+        model = ReportType
+        fields = public_fields(ReportType)
 
 
 class Query:

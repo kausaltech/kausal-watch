@@ -104,7 +104,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
 
     public_fields = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
-        'choice_options',
+        'choice_options', 'report', 'report_field',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()

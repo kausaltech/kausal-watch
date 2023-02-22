@@ -1,9 +1,8 @@
-from typing import Tuple, Type
-
 from django.apps import apps
 from django.db import models
 from django.utils.functional import cached_property, lazy
 from django.utils.translation import gettext_lazy as _
+from typing import Tuple, Type
 from wagtail.core import blocks
 
 from grapple.helpers import register_streamfield_block
@@ -476,6 +475,21 @@ class ActionListContentBlock(blocks.StaticBlock):
         return _("Content block: %(label)s") % dict(label=self.label)
 
 
+@register_streamfield_block
+class ReportTypeFieldChooserBlock(blocks.CharBlock):
+    # TODO: Write proper chooser block instead of extending CharBlock
+    pass
+
+
+@register_streamfield_block
+class ReportComparisonBlock(blocks.StructBlock):
+    report_field = ReportTypeFieldChooserBlock(label=_('UUID of report type field'), required=True)
+
+    graphql_fields = [
+        GraphQLString('report_field')
+    ]
+
+
 action_attribute_blocks = generate_blocks_for_fields(Action, [
     'lead_paragraph',
     'description',
@@ -502,6 +516,7 @@ action_content_fields = [
     'related_actions',
     'related_indicators',
     ('contact_form', ActionContactFormBlock(required=True, label=_('Contact form'))),
+    ('report_comparison', ReportComparisonBlock()),
 ]
 
 action_content_extra_args = {

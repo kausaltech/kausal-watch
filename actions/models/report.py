@@ -17,6 +17,10 @@ class ReportType(models.Model, PlanRelatedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
+    public_fields = [
+        'plan', 'name',
+    ]
+
     class Meta:
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
@@ -59,6 +63,10 @@ class Report(models.Model):
         default=False, verbose_name=_('is public'),
         help_text=_('Set if report can be shown to the public'),
     )
+
+    public_fields = [
+        'type', 'name', 'identifier', 'start_date', 'end_date',
+    ]
 
     class Meta:
         verbose_name = _('report')
