@@ -4,7 +4,7 @@ from actions.models import AttributeType
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
     ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
-    ActionTaskFactory, AttributeChoiceFactory, AttributeRichTextFactory, AttributeTypeFactory,
+    ActionTaskFactory, AttributeChoiceFactory, AttributeTextFactory, AttributeRichTextFactory, AttributeTypeFactory,
     AttributeTypeChoiceOptionFactory, CategoryFactory, CategoryLevelFactory, CategoryTypeFactory, ImpactGroupFactory,
     ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
@@ -27,6 +27,11 @@ def category_type(plan):
 
 
 @pytest.fixture
+def attribute_type__text(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.TEXT)
+
+
+@pytest.fixture
 def attribute_type__rich_text(category_type):
     return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.RICH_TEXT)
 
@@ -39,6 +44,11 @@ def attribute_type__ordered_choice(category_type):
 @pytest.fixture
 def attribute_type_choice_option(attribute_type__ordered_choice):
     return AttributeTypeChoiceOptionFactory(type=attribute_type__ordered_choice)
+
+
+@pytest.fixture
+def attribute_text(attribute_type__text, category):
+    return AttributeTextFactory(type=attribute_type__text, content_object=category)
 
 
 @pytest.fixture
@@ -468,6 +478,45 @@ def test_attribute_choice_node(
                     'identifier': attribute_type_choice_option.identifier,
                     'name': attribute_type_choice_option.name,
                 },
+            }]
+        }]
+    }
+    assert data == expected
+
+
+def test_attribute_text_node(
+    graphql_client_query_data, plan, attribute_text, attribute_type__text
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            attributes {
+              ... on AttributeText {
+                id
+                type {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'attributes': [{
+                'id': str(attribute_text.id),
+                'type': {
+                    '__typename': 'AttributeType',
+                },
+                'key': attribute_type__text.name,
+                'keyIdentifier': attribute_type__text.identifier,
+                'value': attribute_text.text,
             }]
         }]
     }

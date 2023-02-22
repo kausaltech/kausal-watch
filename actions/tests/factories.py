@@ -205,6 +205,19 @@ class AttributeCategoryChoiceFactory(DjangoModelFactory):
                 self.categories.add(category)
 
 
+class AttributeTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeText'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.TEXT)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    text = Sequence(lambda i: f'AttributeText {i}')
+
+
 class AttributeRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.AttributeRichText'
