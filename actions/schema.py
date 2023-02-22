@@ -21,7 +21,7 @@ from actions.models import (
     ActionImplementationPhase, ActionLink, ActionResponsibleParty,
     ActionSchedule, ActionStatus, ActionStatusUpdate, ActionTask,
     Category, CategoryLevel, AttributeCategoryChoice, AttributeChoice as AttributeChoiceModel,
-    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText,
+    AttributeChoiceWithText, AttributeNumericValue, AttributeText, AttributeRichText,
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
     PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
@@ -334,7 +334,7 @@ class PlanNode(DjangoNode):
 
 AttributeObject = typing.Union[
     AttributeCategoryChoice, AttributeChoiceModel, AttributeChoiceWithText,
-    AttributeRichText, AttributeNumericValue,
+    AttributeText, AttributeRichText, AttributeNumericValue,
 ]
 
 
@@ -358,7 +358,9 @@ class AttributeInterface(graphene.Interface):
 
     @classmethod
     def resolve_type(cls, instance, info):
-        if isinstance(instance, AttributeRichText):
+        if isinstance(instance, AttributeText):
+            return AttributeTextNode
+        elif isinstance(instance, AttributeRichText):
             return AttributeRichTextNode
         elif isinstance(instance, (AttributeChoiceModel, AttributeChoiceWithText)):
             return AttributeChoice
@@ -388,6 +390,21 @@ class AttributeChoice(graphene.ObjectType):
 
     class Meta:
         interfaces = (AttributeInterface,)
+
+
+@register_django_node
+class AttributeTextNode(DjangoNode):
+    value = graphene.String(required=True)
+
+    @staticmethod
+    def resolve_value(root: AttributeText, info):
+        return root.text_i18n
+
+    class Meta:
+        model = AttributeText
+        interfaces = (AttributeInterface,)
+        # We expose `value` instead of `text`
+        fields = public_fields(AttributeText, remove_fields=['text'])
 
 
 @register_django_node
@@ -502,7 +519,7 @@ class AttributesMixin:
 
     @gql_optimizer.resolver_hints(
         prefetch_related=(
-            'rich_text_attributes', 'rich_text_attributes__type',
+            'text_attributes', 'rich_text_attributes', 'rich_text_attributes__type',
             'choice_attributes', 'choice_attributes__type', 'choice_attributes__choice',
             'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice',
             'numeric_value_attributes', 'numeric_value_attributes__type',
@@ -521,6 +538,7 @@ class AttributesMixin:
                 return qs.filter(query)
 
         attributes = chain(
+            filter_attrs(self.text_attributes),
             filter_attrs(self.rich_text_attributes),
             filter_attrs(self.choice_attributes),
             filter_attrs(self.choice_with_text_attributes),
