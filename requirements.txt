@@ -97,6 +97,7 @@ django==3.2.13
     #   django-parler
     #   django-redis
     #   django-reversion
+    #   django-storages
     #   django-taggit
     #   django-treebeard
     #   djangorestframework
@@ -155,6 +156,8 @@ django-parler==2.3
 django-redis==5.2.0
     # via -r requirements.in
 django-reversion==5.0.0
+    # via -r requirements.in
+django-storages==1.13.2
     # via -r requirements.in
 django-taggit==2.1.0
     # via wagtail

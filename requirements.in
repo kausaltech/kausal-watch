@@ -67,3 +67,4 @@ wagtailgeowidget
 wagtailsvg
 django-countries
 tzdata
+django-storages

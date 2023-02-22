@@ -54,6 +54,10 @@ env = environ.FileAwareEnv(
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     LOG_SQL_QUERIES=(bool, False),
+    AWS_S3_ENDPOINT_URL=(str, ''),
+    AWS_STORAGE_BUCKET_NAME=(str, ''),
+    AWS_ACCESS_KEY_ID=(str, ''),
+    AWS_SECRET_ACCESS_KEY=(str, ''),
 )
 
 BASE_DIR = root()
@@ -600,6 +604,13 @@ STATIC_URL = env('STATIC_URL')
 MEDIA_URL = env('MEDIA_URL')
 STATIC_ROOT = env('STATIC_ROOT')
 MEDIA_ROOT = env('MEDIA_ROOT')
+
+AWS_S3_ENDPOINT_URL = env('AWS_S3_ENDPOINT_URL')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+if AWS_S3_ENDPOINT_URL:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
