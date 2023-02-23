@@ -843,12 +843,14 @@ class ActionLinkNode(DjangoNode):
         fields = public_fields(ActionLink)
 
 
+@register_django_node
 class ReportNode(DjangoNode):
     class Meta:
         model = Report
         fields = public_fields(Report)
 
 
+@register_django_node
 class ReportTypeNode(DjangoNode):
     class Meta:
         model = ReportType

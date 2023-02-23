@@ -6,16 +6,14 @@ from typing import Tuple, Type
 from wagtail.core import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString, GraphQLInt
+from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLStreamfield, GraphQLString, GraphQLInt
+from grapple.registry import registry as grapple_registry
 
 from actions.models.action import Action
 from actions.models.attributes import AttributeType, AttributeTypeQuerySet
-from actions.models.category import CategoryType
+from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
 from aplans.utils import underscore_to_camelcase
-
-from .chooser import AttributeTypeChooser, CategoryChooser, CategoryTypeChooser
-from .models import Category
 
 
 def get_field_label(model: Type[models.Model], field_name: str) -> str | None:
@@ -176,6 +174,7 @@ class CategoryChooserBlock(blocks.ChooserBlock):
 
     @cached_property
     def widget(self):
+        from .chooser import CategoryChooser
         return CategoryChooser()
 
     def get_form_state(self, value):
@@ -189,6 +188,7 @@ class CategoryTypeChooserBlock(blocks.ChooserBlock):
 
     @cached_property
     def widget(self):
+        from .chooser import CategoryTypeChooser
         return CategoryTypeChooser()
 
     def get_form_state(self, value):
@@ -202,6 +202,7 @@ class AttributeTypeChooserBlock(blocks.ChooserBlock):
 
     @cached_property
     def widget(self):
+        from .chooser import AttributeTypeChooser
         return AttributeTypeChooser()
 
     def get_form_state(self, value):
@@ -211,6 +212,7 @@ class AttributeTypeChooserBlock(blocks.ChooserBlock):
 class ActionAttributeTypeChooserBlock(AttributeTypeChooserBlock):
     @cached_property
     def widget(self):
+        from .chooser import AttributeTypeChooser
         return AttributeTypeChooser(scope='action')
 
 
@@ -219,6 +221,7 @@ class CategoryAttributeTypeChooserBlock(AttributeTypeChooserBlock):
 
     @cached_property
     def widget(self):
+        from .chooser import AttributeTypeChooser
         return AttributeTypeChooser(scope='category')
 
 
@@ -475,18 +478,50 @@ class ActionListContentBlock(blocks.StaticBlock):
         return _("Content block: %(label)s") % dict(label=self.label)
 
 
+class ReportTypeChooserBlock(blocks.ChooserBlock):
+    @cached_property
+    def target_model(self):
+        from actions.models.report import ReportType
+        return ReportType
+
+    @cached_property
+    def widget(self):
+        from .chooser import ReportTypeChooser
+        return ReportTypeChooser()
+
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
+
+
+
+
 @register_streamfield_block
 class ReportTypeFieldChooserBlock(blocks.CharBlock):
     # TODO: Write proper chooser block instead of extending CharBlock
+    # Idea: Override CharBlock.__init__(), plug in widget to call of CharField.__init__(), set it to autocomplete widget. However, there are some issues with that regarding serialization to JSON.
     pass
 
 
 @register_streamfield_block
 class ReportComparisonBlock(blocks.StructBlock):
-    report_field = ReportTypeFieldChooserBlock(label=_('UUID of report type field'), required=True)
+    report_type = ReportTypeChooserBlock(label=_('Report type'), required=True)
+    report_field = ReportTypeFieldChooserBlock(label=_('UUID of report field'), required=True)
+
+    def reports_to_compare(self, values):
+        num_compare = 2  # TODO: Make this configurable in block
+        report_type = values['report_type']
+        reports = report_type.reports.order_by('-start_date')[:num_compare]
+        return reports
 
     graphql_fields = [
-        GraphQLString('report_field')
+        GraphQLForeignKey('report_type', 'actions.ReportType'),
+        GraphQLString('report_field'),
+        # For some reason GraphQLForeignKey strips the is_list argument, so we need to use GraphQLField directly here
+        GraphQLField(
+            'reports_to_compare',
+            lambda: grapple_registry.models.get(apps.get_model('actions', 'Report')),
+            is_list=True,
+        ),
     ]
 
 

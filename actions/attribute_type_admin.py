@@ -241,7 +241,8 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             # If the existing value is no longer a valid choice, add a dummy entry for it
             if str(instance.report_field) not in (v for v, _ in choices):
                 choices.append((str(instance.report_field), _('[deleted]')))
-            widget = autocomplete.ListSelect2(url='report-field-autocomplete', choices=choices)
+            # TODO: Filter choices by the chosen report (`forward` argument?)
+            widget = autocomplete.ListSelect2(url='report-type-field-autocomplete', choices=choices)
             panels.append(FieldPanel('report_field', widget=widget))
 
         tabs = [ObjectList(panels, heading=_('General'))]

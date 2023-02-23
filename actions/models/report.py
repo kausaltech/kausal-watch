@@ -18,7 +18,7 @@ class ReportType(models.Model, PlanRelatedModel):
     fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
     public_fields = [
-        'plan', 'name',
+        'id', 'plan', 'name', 'reports',
     ]
 
     class Meta:

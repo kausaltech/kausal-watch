@@ -275,6 +275,7 @@ class Plan(ClusterableModel):
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
+        'report_types',
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
