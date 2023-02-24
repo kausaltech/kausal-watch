@@ -151,7 +151,6 @@ class ReportAdmin(AplansModelAdmin):
         FieldPanel('identifier'),
         FieldPanel('start_date'),
         FieldPanel('end_date'),
-        StreamFieldPanel('fields', heading=_('fields')),
         FieldPanel('is_complete'),
         FieldPanel('is_public'),
     ]
