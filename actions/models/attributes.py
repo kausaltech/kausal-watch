@@ -136,6 +136,8 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
+        if self.report:
+            return f'{self.name_i18n} ({self.report})'
         return self.name
 
 

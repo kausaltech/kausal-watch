@@ -35,7 +35,7 @@ class FormField:
         if self.label:
             heading = self.label
         else:
-            heading = self.attribute_type.instance.name_i18n
+            heading = str(self.attribute_type.instance)
         if self.language:
             heading += f' ({self.language})'
         return AttributeFieldPanel(self.name, heading=heading)
