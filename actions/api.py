@@ -381,9 +381,10 @@ class AttributesSerializerMixin:
             attribute_types = plan.action_attribute_types.filter(format=self.attribute_format)
             for attribute_type in attribute_types:
                 instances_editable = attribute_type.are_instances_editable_by(user, plan)
+                report_completed = attribute_type.report and attribute_type.report.is_complete
                 fields[attribute_type.identifier] = rest_framework.fields.FloatField(
                     label=attribute_type.name,
-                    read_only=not instances_editable,
+                    read_only=not instances_editable or report_completed,
                 )
         return fields
 
@@ -433,7 +434,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
             instance.set_numeric_value_attribute(attribute_type_identifier, value)
 
 
-class TextAttributesSerializer(serializers.Serializer):
+class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_format = AttributeType.AttributeFormat.TEXT
 
     def to_representation(self, value):
