@@ -232,6 +232,15 @@ class IndicatorNode(DjangoNode):
             return None
         return obj.level
 
+    @gql_optimizer.resolver_hints(
+        model_field=('description', 'i18n'),
+    )
+    def resolve_description(self: Indicator, info):
+        description = self.description_i18n
+        if description is None:
+            return None
+        return RichText(description)
+
 
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
