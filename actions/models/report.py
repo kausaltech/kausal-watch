@@ -86,4 +86,4 @@ class Report(models.Model):
             self.type.create_attribute_types(self)
 
     def __str__(self):
-        return self.name
+        return f'{self.type.name}: {self.name}'
