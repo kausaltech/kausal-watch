@@ -1,16 +1,17 @@
-from typing import Optional
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
 from graphql.error import GraphQLError
+from wagtail.core.rich_text import RichText
 
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
 from actions.schema import ScenarioNode
 from indicators.models import (
-    ActionIndicator, CommonIndicator, CommonIndicatorNormalizator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
-    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator, RelatedIndicator, Unit
+    ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
+    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator,
+    RelatedIndicator, Unit
 )
 
 
