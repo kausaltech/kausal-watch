@@ -60,7 +60,7 @@ class Report(models.Model):
         help_text=_('Set if report cannot be changed anymore'),
     )
     is_public = models.BooleanField(
-        default=False, verbose_name=_('is public'),
+        default=False, verbose_name=_('public'),
         help_text=_('Set if report can be shown to the public'),
     )
 

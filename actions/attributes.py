@@ -115,6 +115,8 @@ class OrderedChoice(AttributeType):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
+        if self.instance.report and self.instance.report.is_complete:
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -154,6 +156,8 @@ class CategoryChoice(AttributeType):
                 )
             ),
         )
+        if self.instance.report and self.instance.report.is_complete:
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -194,6 +198,8 @@ class OptionalChoiceWithText(AttributeType):
         choice_field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
+        if self.instance.report and self.instance.report.is_complete:
+            choice_field.disabled = True
         fields.append(FormField(
             attribute_type=self,
             django_field=choice_field,
@@ -210,6 +216,8 @@ class OptionalChoiceWithText(AttributeType):
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
                 initial=initial_text, required=False, help_text=self.instance.help_text_i18n
             )
+            if self.instance.report and self.instance.report.is_complete:
+                text_field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
@@ -255,6 +263,8 @@ class TextAttributeTypeMixin:
             field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
                 initial=initial_text, required=False, help_text=self.instance.help_text_i18n
             )
+            if self.instance.report and self.instance.report.is_complete:
+                field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
@@ -307,6 +317,8 @@ class Numeric(AttributeType):
         if attribute:
             initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
+        if self.instance.report and self.instance.report.is_complete:
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):

@@ -144,6 +144,7 @@ class ReportAdminMenuItem(ModelAdminMenuItem):
 class ReportAdmin(AplansModelAdmin):
     model = Report
     menu_label = _('Reports')
+    list_display= ('name', 'is_complete', 'is_public')
     list_filter = (ReportTypeFilter,)
 
     panels = [
