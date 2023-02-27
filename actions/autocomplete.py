@@ -137,7 +137,9 @@ def get_report_field_choice_list(request):
     plan = request.get_active_admin_plan()
     for report_type in plan.report_types.all():
         for field in report_type.fields:
-            result.append((field.id, field.value['name']))
+            name = getattr(field.value, 'name', None)
+            if name:
+                result.append((field.id, name))
     return result
 
 
