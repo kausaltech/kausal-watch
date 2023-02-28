@@ -40,6 +40,7 @@ class ReportType(models.Model, PlanRelatedModel):
                     name=name,
                     format=attribute_type_format,
                     report=report,
+                    report_field=field.id,
                 )
 
     def __str__(self):
