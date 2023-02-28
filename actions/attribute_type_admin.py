@@ -201,7 +201,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
     choice_option_panels = [
         FieldPanel('name'),
-        FieldPanel('identifier'),
     ]
 
     index_view_class = AttributeTypeIndexView
@@ -217,7 +216,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
         panels = [
             FieldPanel('name'),
-            FieldPanel('identifier'),
             FieldPanel('help_text'),
             FieldPanel('format'),
             FieldPanel('unit'),

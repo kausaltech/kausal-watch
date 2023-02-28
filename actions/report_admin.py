@@ -149,7 +149,6 @@ class ReportAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        FieldPanel('identifier'),
         FieldPanel('start_date'),
         FieldPanel('end_date'),
         FieldPanel('is_complete'),

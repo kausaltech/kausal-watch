@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 
 import reversion
+from autoslug.fields import AutoSlugField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -12,9 +13,7 @@ from modelcluster.models import ClusterableModel, ParentalKey
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
-from aplans.utils import (
-    ChoiceArrayField, IdentifierField, InstancesEditableByMixin, OrderedModel, get_supported_languages
-)
+from aplans.utils import ChoiceArrayField, InstancesEditableByMixin, OrderedModel, get_supported_languages
 from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
@@ -59,8 +58,12 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     scope_id = models.PositiveIntegerField()
     scope = GenericForeignKey('scope_content_type', 'scope_id')
 
-    identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    identifier = AutoSlugField(
+        always_update=True,
+        populate_from='name_for_identifier',
+        unique_with=('object_content_type', 'scope_content_type', 'scope_id'),
+    )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
     unit = models.ForeignKey(
@@ -135,6 +138,12 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
             self.other_languages = plan.other_languages
         super().save(*args, **kwargs)
 
+    @property
+    def name_for_identifier(self):
+        if self.report:
+            return f'{self.report.name}: {self.name}'
+        return self.name
+
     def __str__(self):
         if self.report:
             return f'{self.name_i18n} ({self.report})'
@@ -143,8 +152,12 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
 
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
-    identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    identifier = AutoSlugField(
+        always_update=True,
+        populate_from='name',
+        unique_with='type',
+    )
 
     i18n = TranslationField(
         fields=('name',),
