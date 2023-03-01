@@ -13,7 +13,7 @@ from feedback.models import UserFeedback
 class SetUserFeedbackProcessedView(WMABaseView):
     user_feedback_pk = None
     set_processed = True
-    template_name = 'feedback/set_user_feedback_processed.html'
+    template_name = 'aplans/confirmation.html'
 
     def __init__(self, model_admin, user_feedback_pk, set_processed=True):
         self.user_feedback_pk = unquote(user_feedback_pk)
