@@ -97,7 +97,7 @@ class ResponsiblePartyDict(TypedDict):
     role: Literal['primary', 'collaborator', None]
 
 
-@reversion.register()
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
 class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 

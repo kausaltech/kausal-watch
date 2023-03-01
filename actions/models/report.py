@@ -48,7 +48,6 @@ class ReportType(models.Model, PlanRelatedModel):
 @reversion.register()
 class Report(models.Model):
     type = models.ForeignKey(ReportType, on_delete=models.PROTECT, related_name='reports')
-    # fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
         always_update=True,
