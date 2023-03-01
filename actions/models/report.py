@@ -1,8 +1,10 @@
 import reversion
 from autoslug.fields import AutoSlugField
+from contextlib import contextmanager
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
+from reversion.models import Version
 from wagtail.core.fields import StreamField
 
 from actions.blocks import ReportFieldBlock
@@ -82,3 +84,38 @@ class Report(models.Model):
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
+
+
+class ActionSnapshot(models.Model):
+    report = models.ForeignKey('actions.Report', on_delete=models.CASCADE, related_name='action_snapshots')
+    action_version = models.ForeignKey(Version, on_delete=models.CASCADE, related_name='action_snapshots')
+
+    class Meta:
+        verbose_name = _('action snapshot')
+        verbose_name_plural = _('action snapshots')
+
+    def __init__(self, *args, action=None, **kwargs):
+        if 'action_version' not in kwargs and action is not None:
+            kwargs['action_version'] = Version.objects.get_for_object(action).first()
+        super().__init__(*args, **kwargs)
+
+    class _RollbackRevision(Exception):
+        pass
+
+    @contextmanager
+    def inspect(self):
+        """
+        Use like this to temporarily revert the action to this snapshot:
+        with snapshot.inspect() as action:
+            pass  # action is reverted here and will be rolled back afterwards
+        """
+        try:
+            with transaction.atomic():
+                self.action_version.revision.revert(delete=True)
+                yield Action.objects.get(pk=self.action_version.object.pk)
+                raise ActionSnapshot._RollbackRevision()
+        except ActionSnapshot._RollbackRevision:
+            pass
+
+    def __str__(self):
+        return f'{self.action_version} @ {self.report}'
