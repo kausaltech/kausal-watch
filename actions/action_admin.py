@@ -3,8 +3,10 @@ import logging
 from datetime import timedelta
 
 from django import forms
+from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.urls import re_path
 from django.utils import timezone
 from django.utils.translation import gettext, gettext_lazy as _
 from wagtail.admin.edit_handlers import (
@@ -12,6 +14,7 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
+from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from admin_list_controls.actions import SubmitForm, TogglePanel
@@ -40,6 +43,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .models import Action, ActionTask, CategoryType
+from .views import SnapshotActionView
 
 logger = logging.getLogger(__name__)
 
@@ -461,6 +465,31 @@ class ActionMenuItem(SafeLabelModelAdminMenuItem):
         return plan.general_content.get_action_term_display_plural()
 
 
+class ActionButtonHelper(ButtonHelper):
+    snapshot_button_classnames = []
+
+    def snapshot_button(self, action_pk, report, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.snapshot_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('snapshot_action', quote(action_pk), quote(report.pk)),
+            'label': _("Snapshot for report %s") % str(report),
+            'classname': cn,
+            'title': _("Snapshot this action for report %s") % str(report),
+        }
+
+    def get_buttons_for_obj(self, obj, *args, **kwargs):
+        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
+        # For each report type, display one button for the latest report of that type
+        for report_type in obj.plan.report_types.all():
+            latest_report = report_type.reports.last()
+            buttons.append(self.snapshot_button(obj.pk, latest_report, **kwargs))
+        return buttons
+
+
+
 @modeladmin_register
 class ActionAdmin(OrderableMixin, AplansModelAdmin):
     model = Action
@@ -472,6 +501,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     list_display_add_buttons = 'name_link'
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
+    button_helper_class = ActionButtonHelper
     index_order_field = 'order'
 
     ordering = ['order']
@@ -725,3 +755,26 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_menu_item(self, order=None):
         return ActionMenuItem(self, order or self.get_menu_order())
+
+    def snapshot_action_view(self, request, action_pk, report_pk):
+        return SnapshotActionView.as_view(
+            model_admin=self,
+            action_pk=action_pk,
+            report_pk=report_pk,
+        )(request)
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        snapshot_action_url = re_path(
+            # self.url_helper.get_action_url_pattern('snapshot_action'),
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+                self.opts.app_label,
+                self.opts.model_name,
+                'snapshot_action',
+            ),
+            self.snapshot_action_view,
+            name=self.url_helper.get_action_url_name('snapshot_action')
+        )
+        return urls + (
+            snapshot_action_url,
+        )
