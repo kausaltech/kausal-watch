@@ -116,6 +116,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
         verbose_name = _('attribute type')
         verbose_name_plural = _('attribute types')
+        ordering = ('scope_content_type', 'scope_id', 'order',)
 
     def clean(self):
         if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
