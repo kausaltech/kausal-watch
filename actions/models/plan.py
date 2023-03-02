@@ -586,7 +586,7 @@ class Plan(ClusterableModel):
                     AdminHostname.objects.create(client=client, hostname=hostname)
 
         # Set up notifications
-        management.call_command('initialize_notifications', plan=plan)
+        management.call_command('initialize_notifications', plan=plan.identifier)
 
         return plan
 
