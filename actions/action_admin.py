@@ -43,7 +43,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .models import Action, ActionTask, CategoryType
-from .views import SnapshotActionView
+from reports.views import SnapshotActionView
 
 logger = logging.getLogger(__name__)
 

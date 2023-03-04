@@ -25,7 +25,7 @@ from actions.models import (
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
     PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
-    CommonCategoryType, Report, ReportType
+    CommonCategoryType
 )
 from orgs.models import Organization
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -41,6 +41,7 @@ from aplans.graphql_types import (
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
+from reports.models import Report, ReportType
 from search.backends import get_search_backend
 
 

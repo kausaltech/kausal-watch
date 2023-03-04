@@ -136,7 +136,7 @@ def register_attribute_type_menu():
 class ReportMenuItem(MenuItem):
     def __init__(self, report_type, **kwargs):
         self.report_type = report_type
-        self.base_url = reverse('actions_report_modeladmin_index')
+        self.base_url = reverse('reports_report_modeladmin_index')
         url = f'{self.base_url}?report_type={report_type.id}'
         label = report_type.name
         super().__init__(label, url, **kwargs)

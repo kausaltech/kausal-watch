@@ -1,10 +1,8 @@
-from dal import autocomplete
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
-from typing import List, Tuple
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
@@ -12,9 +10,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from . import attributes
-from .autocomplete import get_report_field_choice_list
-from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Report
+from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,

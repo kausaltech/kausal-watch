@@ -85,7 +85,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
                     'bullets instead of one'),
     )
     report = models.ForeignKey(
-        'actions.Report', blank=True, null=True, on_delete=models.CASCADE,
+        'reports.Report', blank=True, null=True, on_delete=models.CASCADE,
         related_name='attribute_types', verbose_name=_('Report'),
     )
     report_field = models.UUIDField(blank=True, null=True)

@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 from reversion.models import Version
 from wagtail.core.fields import StreamField
 
-from actions.blocks import ReportFieldBlock
+from .blocks import ReportFieldBlock
 from actions.models.action import Action
 from actions.models.plan import Plan
 from actions.models.attributes import AttributeType
@@ -87,7 +87,7 @@ class Report(models.Model):
 
 
 class ActionSnapshot(models.Model):
-    report = models.ForeignKey('actions.Report', on_delete=models.CASCADE, related_name='action_snapshots')
+    report = models.ForeignKey('reports.Report', on_delete=models.CASCADE, related_name='action_snapshots')
     action_version = models.ForeignKey(Version, on_delete=models.CASCADE, related_name='action_snapshots')
 
     class Meta:
