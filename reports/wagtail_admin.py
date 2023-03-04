@@ -1,4 +1,10 @@
+import xlsxwriter
+from io import BytesIO
 from django.contrib import admin
+from django.contrib.admin.utils import quote
+from django.http import HttpResponse
+from django.urls import re_path
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, StreamFieldPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
@@ -52,6 +58,8 @@ class ReportDeleteView(ReportTypeQueryParameterMixin, DeleteView):
 
 class ReportAdminButtonHelper(ButtonHelper):
     # TODO: duplicated as AttributeTypeAdminButtonHelper
+    download_report_button_classnames = ['icon', 'icon-fa-download']
+
     def add_button(self, *args, **kwargs):
         """
         Only show "add" button if the request contains a report type.
@@ -78,6 +86,23 @@ class ReportAdminButtonHelper(ButtonHelper):
         data = super().delete_button(*args, **kwargs)
         data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
         return data
+
+    def download_report_button(self, report_pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.download_report_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('download', quote(report_pk)),
+            'label': _("Download XLSX"),
+            'classname': cn,
+            'title': _("Download report as spreadsheet file"),
+        }
+
+    def get_buttons_for_obj(self, obj, *args, **kwargs):
+        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
+        buttons.append(self.download_report_button(obj.pk, **kwargs))
+        return buttons
 
 
 @modeladmin_register
@@ -169,3 +194,28 @@ class ReportAdmin(AplansModelAdmin):
         user = request.user
         plan = user.get_active_admin_plan()
         return qs.filter(type__plan=plan).distinct()
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        download_report_url = re_path(
+            self.url_helper.get_action_url_pattern('download'),
+            self.download_report_view,
+            name=self.url_helper.get_action_url_name('download')
+        )
+        return urls + (
+            download_report_url,
+        )
+
+    def download_report_view(self, request, instance_pk):
+        report = Report.objects.get(pk=instance_pk)
+        output = BytesIO()
+        with xlsxwriter.Workbook(output, {'in_memory': True}) as workbook:
+            worksheet = workbook.add_worksheet()
+            worksheet.write('A1', 'Hello')
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        filename = slugify(report.name, allow_unicode=True) + '.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
