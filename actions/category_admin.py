@@ -40,6 +40,24 @@ class CategoryTypeDeleteView(DeleteView):
         return super().delete_instance()
 
 
+class CategoryTypePermissionHelper(PermissionHelper):
+    def _is_admin_of_active_plan(self, user):
+        active_plan = user.get_active_admin_plan()
+        return user.is_general_admin_for_plan(active_plan)
+
+    def user_can_list(self, user):
+        return self._is_admin_of_active_plan(user)
+
+    def user_can_create(self, user):
+        return self._is_admin_of_active_plan(user)
+
+    def user_can_delete_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
+
+
 @modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
@@ -52,6 +70,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
     create_view_class = CategoryTypeCreateView
     edit_view_class = CategoryTypeEditView
     delete_view_class = CategoryTypeDeleteView
+    permission_helper_class = CategoryTypePermissionHelper
 
     panels = [
         FieldPanel('name'),
