@@ -16,6 +16,7 @@ from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from reversion.models import Version
 from typing import Literal, Optional, TypedDict
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
@@ -25,8 +26,8 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
 from orgs.models import Organization
-from users.models import User
 from people.models import Person
+from users.models import User
 
 from ..attributes import AttributeType
 from ..monitoring_quality import determine_monitoring_quality
@@ -566,6 +567,11 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
                 return previous_sibling
             previous_sibling = sibling
         assert False  # should have returned above at some point
+
+    def is_complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        versions = Version.objects.get_for_object(self)
+        return ActionSnapshot.objects.filter(report=report, action_version__in=versions).exists()
 
 
 class ActionResponsibleParty(OrderedModel):

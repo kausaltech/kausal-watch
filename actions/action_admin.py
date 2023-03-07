@@ -43,7 +43,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .models import Action, ActionTask, CategoryType
-from reports.views import SnapshotActionView
+from reports.views import MarkActionAsCompleteView
 
 logger = logging.getLogger(__name__)
 
@@ -466,18 +466,30 @@ class ActionMenuItem(SafeLabelModelAdminMenuItem):
 
 
 class ActionButtonHelper(ButtonHelper):
-    snapshot_button_classnames = []
+    mark_as_complete_button_classnames = []
 
-    def snapshot_button(self, action_pk, report, **kwargs):
+    def mark_as_complete_button(self, action_pk, report, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
         classnames_exclude = kwargs.get('classnames_exclude', [])
-        classnames = self.snapshot_button_classnames + classnames_add
+        classnames = self.mark_as_complete_button_classnames + classnames_add
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
-            'url': self.url_helper.get_action_url('snapshot_action', quote(action_pk), quote(report.pk)),
-            'label': _("Snapshot for report %s") % str(report),
+            'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
+            'label': _("Mark as complete for report %s") % str(report),
             'classname': cn,
-            'title': _("Snapshot this action for report %s") % str(report),
+            'title': _("Mark this action as complete for the report %s") % str(report),
+        }
+
+    def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.mark_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
+            'label': _("Undo marking as complete for report %s") % str(report),
+            'classname': cn,
+            'title': _("Undo marking this action as complete for the report %s") % str(report),
         }
 
     def get_buttons_for_obj(self, obj, *args, **kwargs):
@@ -485,7 +497,10 @@ class ActionButtonHelper(ButtonHelper):
         # For each report type, display one button for the latest report of that type
         for report_type in obj.plan.report_types.all():
             latest_report = report_type.reports.last()
-            buttons.append(self.snapshot_button(obj.pk, latest_report, **kwargs))
+            if obj.is_complete_for_report(latest_report):
+                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
+            else:
+                buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
 
 
@@ -756,25 +771,45 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     def get_menu_item(self, order=None):
         return ActionMenuItem(self, order or self.get_menu_order())
 
-    def snapshot_action_view(self, request, action_pk, report_pk):
-        return SnapshotActionView.as_view(
+    def mark_action_as_complete_view(self, request, action_pk, report_pk):
+        return MarkActionAsCompleteView.as_view(
             model_admin=self,
             action_pk=action_pk,
             report_pk=report_pk,
+            complete=True,
+        )(request)
+
+    def undo_marking_action_as_complete_view(self, request, action_pk, report_pk):
+        return MarkActionAsCompleteView.as_view(
+            model_admin=self,
+            action_pk=action_pk,
+            report_pk=report_pk,
+            complete=False,
         )(request)
 
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
-        snapshot_action_url = re_path(
-            # self.url_helper.get_action_url_pattern('snapshot_action'),
+        mark_as_complete_url = re_path(
+            # self.url_helper.get_action_url_pattern('mark_action_as_complete'),
             r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
                 self.opts.app_label,
                 self.opts.model_name,
-                'snapshot_action',
+                'mark_action_as_complete',
             ),
-            self.snapshot_action_view,
-            name=self.url_helper.get_action_url_name('snapshot_action')
+            self.mark_action_as_complete_view,
+            name=self.url_helper.get_action_url_name('mark_action_as_complete')
+        )
+        undo_marking_as_complete_url = re_path(
+            # self.url_helper.get_action_url_pattern('undo_marking_action_as_complete'),
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+                self.opts.app_label,
+                self.opts.model_name,
+                'undo_marking_action_as_complete',
+            ),
+            self.undo_marking_action_as_complete_view,
+            name=self.url_helper.get_action_url_name('undo_marking_action_as_complete')
         )
         return urls + (
-            snapshot_action_url,
+            mark_as_complete_url,
+            undo_marking_as_complete_url,
         )
