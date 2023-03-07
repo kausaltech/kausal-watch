@@ -7,11 +7,11 @@ from django.utils.translation import gettext_lazy as _
 from reversion.models import Version
 from wagtail.core.fields import StreamField
 
-from .blocks import ReportFieldBlock
 from actions.models.action import Action
 from actions.models.plan import Plan
 from actions.models.attributes import AttributeType
 from aplans.utils import PlanRelatedModel
+from reports.blocks.action_content import ReportFieldBlock
 
 
 @reversion.register()

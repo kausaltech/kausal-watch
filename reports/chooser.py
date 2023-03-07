@@ -49,5 +49,3 @@ class ReportTypeChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_report_type_chooser_viewset():
     return ReportTypeChooserViewSet('report_type_chooser', url_prefix='report-type-chooser')
-
-
