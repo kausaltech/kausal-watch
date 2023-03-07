@@ -61,7 +61,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
         always_update=True,
-        populate_from='name_for_identifier',
+        populate_from='name',
         unique_with=('object_content_type', 'scope_content_type', 'scope_id'),
     )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
@@ -84,11 +84,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
     )
-    report = models.ForeignKey(
-        'reports.Report', blank=True, null=True, on_delete=models.CASCADE,
-        related_name='attribute_types', verbose_name=_('Report'),
-    )
-    report_field = models.UUIDField(blank=True, null=True)
+    show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     primary_language = models.CharField(max_length=8, choices=get_supported_languages())
@@ -107,7 +103,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
 
     public_fields = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
-        'choice_options', 'report', 'report_field',
+        'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
@@ -139,16 +135,8 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
             self.other_languages = plan.other_languages
         super().save(*args, **kwargs)
 
-    @property
-    def name_for_identifier(self):
-        if self.report:
-            return f'{self.report.name}: {self.name}'
-        return self.name
-
     def __str__(self):
-        if self.report:
-            return f'{self.name_i18n} ({self.report})'
-        return self.name
+        return self.name_i18n
 
 
 @reversion.register()
