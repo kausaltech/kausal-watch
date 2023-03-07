@@ -28,21 +28,6 @@ class ReportType(models.Model, PlanRelatedModel):
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
 
-    def create_attribute_types(self, report):
-        # Create an attribute type for each block in `fields` that has `attribute_type_format` set
-        for field in self.fields:
-            attribute_type_format = getattr(field.block, 'attribute_type_format', None)
-            if attribute_type_format:
-                AttributeType.objects.create(
-                    object_content_type=ContentType.objects.get_for_model(Action),
-                    scope_content_type=ContentType.objects.get_for_model(Plan),
-                    scope_id=report.type.plan.pk,
-                    name=field.value['name'],
-                    format=attribute_type_format,
-                    report=report,
-                    report_field=field.id,
-                )
-
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
 
@@ -75,12 +60,6 @@ class Report(models.Model):
     class Meta:
         verbose_name = _('report')
         verbose_name_plural = _('reports')
-
-    def save(self, *args, **kwargs):
-        is_new_instance = self.pk is None
-        super().save(*args, **kwargs)
-        if is_new_instance:
-            self.type.create_attribute_types(self)
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
