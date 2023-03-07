@@ -1,5 +1,3 @@
-import xlsxwriter
-from io import BytesIO
 from django.contrib import admin
 from django.contrib.admin.utils import quote
 from django.http import HttpResponse
@@ -208,12 +206,9 @@ class ReportAdmin(AplansModelAdmin):
 
     def download_report_view(self, request, instance_pk):
         report = Report.objects.get(pk=instance_pk)
-        output = BytesIO()
-        with xlsxwriter.Workbook(output, {'in_memory': True}) as workbook:
-            worksheet = workbook.add_worksheet()
-            worksheet.write('A1', 'Hello')
+        output = report.to_xlsx()
         response = HttpResponse(
-            output.getvalue(),
+            output,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
         filename = slugify(report.name, allow_unicode=True) + '.xlsx'

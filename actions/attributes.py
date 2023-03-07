@@ -1,9 +1,11 @@
+import xlsxwriter
+import xlsxwriter.format
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from wagtail.admin.edit_handlers import FieldPanel
 
 import actions.models.attributes as models
@@ -95,6 +97,13 @@ class AttributeType:
         """
         # Implement in subclass
         raise NotImplementedError()
+
+    def get_report_export_column_label(self) -> str:
+        return str(self.instance)
+
+    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+        """Add a format for this attribute type to the given workbook."""
+        return None
 
 
 class OrderedChoice(AttributeType):
@@ -334,3 +343,9 @@ class Numeric(AttributeType):
             else:
                 attribute.value = val
                 attribute.save()
+
+    def get_report_export_column_label(self) -> str:
+        return f'{self.instance} [{self.instance.unit}]'
+
+    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+        return workbook.add_format({'num_format': '#,##0.00'})

@@ -288,6 +288,9 @@ class AttributeText(models.Model):
     def __str__(self):
         return '%s for %s' % (self.type, self.content_object)
 
+    def get_xlsx_cell_value(self):
+        return self.text_i18n
+
 
 @reversion.register()
 class AttributeRichText(models.Model):
@@ -318,6 +321,9 @@ class AttributeRichText(models.Model):
     def __str__(self):
         return '%s for %s' % (self.type, self.content_object)
 
+    def get_xlsx_cell_value(self):
+        return self.text_i18n
+
 
 @reversion.register()
 class AttributeNumericValue(models.Model):
@@ -338,6 +344,9 @@ class AttributeNumericValue(models.Model):
 
     def __str__(self):
         return '%s (%s) for %s' % (self.value, self.type, self.content_object)
+
+    def get_xlsx_cell_value(self):
+        return self.value
 
 
 class ModelWithAttributes(models.Model):

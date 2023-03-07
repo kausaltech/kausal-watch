@@ -5,8 +5,8 @@ from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
 from wagtail.core import blocks
 
+from actions.attributes import AttributeType
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
-from actions.models.attributes import AttributeType
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 
 
@@ -36,20 +36,25 @@ class ReportComparisonBlock(blocks.StructBlock):
 @register_streamfield_block
 class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
-    # name = blocks.CharBlock(heading=_('Name'))
-    # identifier = blocks.CharBlock(heading=_('Identifier'))  # to be combined with report identifier
-
-    # graphql_fields = []  # TODO
-    attribute_type_format = AttributeType.AttributeFormat.TEXT
 
     class Meta:
         label = _("Action attribute")
 
-    def get_report_export_column_label(self, value):
-        return value['name']
+    def get_report_export_column_label(self, block_value):
+        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+        return wrapped_type.get_report_export_column_label()
 
     def get_report_export_value_for_action(self, block_value, action):
-        return block_value['name']
+        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+        try:
+            attribute = wrapped_type.get_attributes(action).get()
+        except wrapped_type.ATTRIBUTE_MODEL.DoesNotExist:
+            return None
+        return attribute.get_xlsx_cell_value()
+
+    def add_xlsx_cell_format(self, block_value, workbook):
+        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+        return wrapped_type.add_xlsx_cell_format(workbook)
 
 
 @register_streamfield_block
@@ -62,6 +67,9 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
     def get_report_export_value_for_action(self, block_value, action):
         return str(action.implementation_phase)
+
+    def add_xlsx_cell_format(self, block_value, workbook):
+        return None
 
 
 @register_streamfield_block
