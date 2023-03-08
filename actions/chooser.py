@@ -283,7 +283,7 @@ class AttributeTypeChooserViewSet(ModelChooserViewSet):
     model = AttributeType
     page_title = _("Choose an attribute")
     per_page = 30
-    fields = ['identifier', 'name']
+    fields = ['name']
 
 
 class AttributeTypeChooser(AdminChooser):
