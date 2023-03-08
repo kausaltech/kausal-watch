@@ -89,30 +89,52 @@ class Report(models.Model):
         self._xlsx_cell_format_for_field = {}
         self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
         row = 1
-        for snapshot in self.action_snapshots.all():
-            self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-            row += 1
+        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
+        # also want to include the current state of actions for which there is no snapshot.
+        if self.is_complete:
+            for snapshot in self.action_snapshots.all():
+                self._write_xlsx_snapshot_row(workbook, worksheet, snapshot, row)
+                row += 1
+        else:
+            for action in self.type.plan.actions.all():
+                try:
+                    snapshot = action.get_latest_snapshot(self)
+                except ActionSnapshot.DoesNotExist:
+                    self._write_xlsx_action_row(workbook, worksheet, action, row)
+                else:
+                    self._write_xlsx_snapshot_row(workbook, worksheet, snapshot, row)
+                row += 1
 
-    def _write_xlsx_action_row(
+    def _write_xlsx_snapshot_row(
         self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, snapshot, row
     ):
         revision = snapshot.action_version.revision
         # Excel can't handle timezones
         date_created = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
         with snapshot.inspect() as action:
-            worksheet.write(row, 0, str(action))
-            worksheet.write(row, 1, str(revision.user))
-            worksheet.write(row, 2, date_created, self._xlsx_cell_format_for_date)
-            column = 3
-            for field in self.fields:
-                value = field.block.get_report_export_value_for_action(field.value, action)
-                # Add cell format only once per field and cache added formats
-                cell_format = self._xlsx_cell_format_for_field.get(field.id)
-                if not cell_format:
-                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                    self._xlsx_cell_format_for_field[field.id] = cell_format
-                worksheet.write(row, column, value, cell_format)
-                column += 1
+            # FIXME: Right now, we print the user who made the last change to the action, which may be different from
+            # the user who marked the action as complete.
+            self._write_xlsx_action_row(workbook, worksheet, action, row, date_created, revision.user)
+
+    def _write_xlsx_action_row(
+        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action, row,
+        completed_at=None, completed_by=None
+    ):
+        worksheet.write(row, 0, str(action))
+        if completed_by:
+            worksheet.write(row, 1, str(completed_by))
+        if completed_at:
+            worksheet.write(row, 2, completed_at, self._xlsx_cell_format_for_date)
+        column = 3
+        for field in self.fields:
+            value = field.block.get_report_export_value_for_action(field.value, action)
+            # Add cell format only once per field and cache added formats
+            cell_format = self._xlsx_cell_format_for_field.get(field.id)
+            if not cell_format:
+                cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
+                self._xlsx_cell_format_for_field[field.id] = cell_format
+            worksheet.write(row, column, value, cell_format)
+            column += 1
 
 
 class ActionSnapshot(models.Model):
@@ -122,6 +144,7 @@ class ActionSnapshot(models.Model):
     class Meta:
         verbose_name = _('action snapshot')
         verbose_name_plural = _('action snapshots')
+        get_latest_by = 'action_version__revision__date_created'
 
     def __init__(self, *args, action=None, **kwargs):
         if 'action_version' not in kwargs and action is not None:
