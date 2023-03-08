@@ -1,3 +1,4 @@
+import reversion
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
@@ -64,6 +65,10 @@ class MarkActionAsCompleteView(WMABaseView):
         )
         if snapshots.exists():
             raise ValueError(_("The action is already marked as complete."))
+        with reversion.create_revision():
+            reversion.add_to_revision(self.action)
+            reversion.set_comment(_("Marked action as complete"))
+            reversion.set_user(self.request.user)
         ActionSnapshot.objects.create(
             report=self.report,
             action=self.action,
