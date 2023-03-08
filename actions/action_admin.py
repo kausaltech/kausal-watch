@@ -475,7 +475,7 @@ class ActionButtonHelper(ButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _("Mark as complete for report %s") % str(report),
+            'label': _("Mark as complete for report %s") % report.name,
             'classname': cn,
             'title': _("Mark this action as complete for the report %s") % str(report),
         }
@@ -487,7 +487,7 @@ class ActionButtonHelper(ButtonHelper):
         cn = self.finalise_classname(classnames, classnames_exclude)
         return {
             'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
-            'label': _("Undo marking as complete for report %s") % str(report),
+            'label': _("Undo marking as complete for report %s") % report.name,
             'classname': cn,
             'title': _("Undo marking this action as complete for the report %s") % str(report),
         }
