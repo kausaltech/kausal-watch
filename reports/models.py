@@ -69,11 +69,17 @@ class Report(models.Model):
             worksheet = workbook.add_worksheet()
             self._write_xlsx_header(worksheet)
             self._write_xlsx_action_rows(workbook, worksheet)
+            worksheet.autofit()
+            # Set width of some columns explicitly
+            worksheet.set_column(0, 0, 20)  # Action
+            worksheet.set_column(1, 1, 10)  # Marked as complete by
         return output.getvalue()
 
     def _write_xlsx_header(self, worksheet: xlsxwriter.Workbook.worksheet_class):
         worksheet.write(0, 0, str(_('Action')))
-        column = 1
+        worksheet.write(0, 1, str(_('Marked as complete by')))
+        worksheet.write(0, 2, str(_('Marked as complete at')))
+        column = 3
         for field in self.fields:
             label = field.block.get_report_export_column_label(field.value)
             worksheet.write(0, column, label)
@@ -81,24 +87,32 @@ class Report(models.Model):
 
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
         self._xlsx_cell_format_for_field = {}
+        self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
         row = 1
         for snapshot in self.action_snapshots.all():
-            with snapshot.inspect() as action:
-                self._write_xlsx_action_row(workbook, worksheet, action, row)
+            self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
             row += 1
 
-    def _write_xlsx_action_row(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action, row):
-        worksheet.write(row, 0, str(action))
-        column = 1
-        for field in self.fields:
-            value = field.block.get_report_export_value_for_action(field.value, action)
-            # Add cell format only once per field and cache added formats
-            cell_format = self._xlsx_cell_format_for_field.get(field.id)
-            if not cell_format:
-                cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                self._xlsx_cell_format_for_field[field.id] = cell_format
-            worksheet.write(row, column, value, cell_format)
-            column += 1
+    def _write_xlsx_action_row(
+        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, snapshot, row
+    ):
+        revision = snapshot.action_version.revision
+        # Excel can't handle timezones
+        date_created = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
+        with snapshot.inspect() as action:
+            worksheet.write(row, 0, str(action))
+            worksheet.write(row, 1, str(revision.user))
+            worksheet.write(row, 2, date_created, self._xlsx_cell_format_for_date)
+            column = 3
+            for field in self.fields:
+                value = field.block.get_report_export_value_for_action(field.value, action)
+                # Add cell format only once per field and cache added formats
+                cell_format = self._xlsx_cell_format_for_field.get(field.id)
+                if not cell_format:
+                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
+                    self._xlsx_cell_format_for_field[field.id] = cell_format
+                worksheet.write(row, column, value, cell_format)
+                column += 1
 
 
 class ActionSnapshot(models.Model):
