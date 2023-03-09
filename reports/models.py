@@ -136,10 +136,46 @@ class Report(models.Model):
             worksheet.write(row, column, value, cell_format)
             column += 1
 
+    def mark_as_complete(self, user):
+        """Mark this report as complete, as well as all actions that are not yet complete.
+
+        The snapshots for actions that are marked as complete by this will have `created_explicitly` set to False.
+        """
+        if self.is_complete:
+            raise ValueError(_("The report is already marked as complete."))
+        actions_to_snapshot = []
+        with reversion.create_revision():
+            reversion.set_comment(_("Marked report '%s' as complete") % self)
+            reversion.set_user(user)
+            self.is_complete = True
+            self.save()
+            for action in self.type.plan.actions.all():
+                if not action.is_complete_for_report(self):
+                    reversion.add_to_revision(action)
+                    # Create snapshot for this action after reversion is created to get the resulting version
+                    actions_to_snapshot.append(action)
+        for action in actions_to_snapshot:
+            ActionSnapshot.objects.create(
+                report=self,
+                action=action,
+                created_explicitly=False,
+            )
+
+    def undo_marking_as_complete(self, user):
+        if not self.is_complete:
+            raise ValueError(_("The report is not marked as complete."))
+        with reversion.create_revision():
+            reversion.set_comment(_("Undid marking report '%s' as complete") % self)
+            reversion.set_user(user)
+            self.is_complete = False
+            self.save()
+            self.action_snapshots.filter(created_explicitly=False).delete()
+
 
 class ActionSnapshot(models.Model):
     report = models.ForeignKey('reports.Report', on_delete=models.CASCADE, related_name='action_snapshots')
     action_version = models.ForeignKey(Version, on_delete=models.CASCADE, related_name='action_snapshots')
+    created_explicitly = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = _('action snapshot')

@@ -58,38 +58,12 @@ class MarkActionAsCompleteView(WMABaseView):
             msg = _("Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?")
         return msg % {'action': self.action, 'report': self.report}
 
-    def create_snapshot(self):
-        snapshots = ActionSnapshot.objects.filter(
-            report=self.report,
-            action_version__in=Version.objects.get_for_object(self.action),
-        )
-        if snapshots.exists():
-            raise ValueError(_("The action is already marked as complete."))
-        with reversion.create_revision():
-            reversion.add_to_revision(self.action)
-            reversion.set_comment(_("Marked action as complete"))
-            reversion.set_user(self.request.user)
-        ActionSnapshot.objects.create(
-            report=self.report,
-            action=self.action,
-        )
-
-    def delete_snapshot(self):
-        snapshots = ActionSnapshot.objects.filter(
-            report=self.report,
-            action_version__in=Version.objects.get_for_object(self.action),
-        )
-        num_snapshots = snapshots.count()
-        if num_snapshots != 1:
-            raise ValueError(_("Cannot undo marking action as complete as there are %s snapshots") % num_snapshots)
-        snapshots.delete()
-
     def post(self, request, *args, **kwargs):
         try:
             if self.complete:
-                self.create_snapshot()
+                self.action.mark_as_complete_for_report(self.report, self.request.user)
             else:
-                self.delete_snapshot()
+                self.action.undo_marking_as_complete_for_report(self.report, self.request.user)
         except ValueError as e:
             messages.error(request, str(e))
             return redirect(self.index_url)
@@ -98,4 +72,62 @@ class MarkActionAsCompleteView(WMABaseView):
         else:
             msg = _("Action '%(action)s' is no longer marked as complete for report '%(report)s'.")
         messages.success(request, msg % {'action': self.action, 'report': self.report})
+        return redirect(self.index_url)
+
+
+class MarkReportAsCompleteView(WMABaseView):
+    report_pk = None
+    complete = True
+    template_name = 'aplans/confirmation.html'
+
+    def __init__(self, model_admin, report_pk, complete=True):
+        self.report_pk = unquote(report_pk)
+        self.complete = complete
+        self.report = get_object_or_404(Report, pk=self.report_pk)
+        super().__init__(model_admin)
+
+    def get_page_title(self):
+        if self.complete:
+            return _("Mark report as complete")
+        else:
+            return _("Undo marking report as complete")
+
+    def check_action_permitted(self, user):
+        plan = user.get_active_admin_plan()
+        return user.is_general_admin_for_plan(plan)
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not self.check_action_permitted(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_meta_title(self):
+        if self.complete:
+            msg = _("Confirm marking report %(report)s as complete")
+        else:
+            msg = _("Confirm undoing marking report %(report)s as complete")
+        return msg % {'report': self.report}
+
+    def confirmation_message(self):
+        if self.complete:
+            msg = _("Do you really want to mark the report '%(report)s' as complete?")
+        else:
+            msg = _("Do you really want to undo marking the report '%(report)s' as complete?")
+        return msg % {'report': self.report}
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if self.complete:
+                self.report.mark_as_complete(self.request.user)
+            else:
+                self.report.undo_marking_as_complete(self.request.user)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect(self.index_url)
+        if self.complete:
+            msg = _("Report '%(report)s' has been marked as complete.")
+        else:
+            msg = _("Report '%(report)s' is no longer marked as complete.")
+        messages.success(request, msg % {'report': self.report})
         return redirect(self.index_url)
