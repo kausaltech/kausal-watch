@@ -6,6 +6,7 @@ from grapple.registry import registry as grapple_registry
 from wagtail.core import blocks
 
 from actions.attributes import AttributeType
+from actions.models import ActionImplementationPhase
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 
@@ -52,6 +53,12 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             return None
         return attribute.get_xlsx_cell_value()
 
+    def get_report_export_value_for_action_snapshot(self, block_value, snapshot):
+        attribute = snapshot.get_attribute_for_type(block_value['attribute_type'])
+        if attribute:
+            return attribute.get_xlsx_cell_value()
+        return None
+
     def add_xlsx_cell_format(self, block_value, workbook):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
         return wrapped_type.add_xlsx_cell_format(workbook)
@@ -66,7 +73,15 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
         return str(self.label)
 
     def get_report_export_value_for_action(self, block_value, action):
-        return str(action.implementation_phase)
+        if action.implementation_phase:
+            return str(action.implementation_phase)
+        return None
+
+    def get_report_export_value_for_action_snapshot(self, block_value, snapshot):
+        implementation_phase_id = snapshot.action_version.field_dict['implementation_phase_id']
+        if implementation_phase_id:
+            return str(ActionImplementationPhase.objects.get(id=implementation_phase_id))
+        return None
 
     def add_xlsx_cell_format(self, block_value, workbook):
         return None
@@ -74,7 +89,8 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
 @register_streamfield_block
 class ReportFieldBlock(blocks.StreamBlock):
-    # All blocks mentioned here must implement get_report_export_column_label and get_report_export_value_for_action
+    # All blocks mentioned here must implement get_report_export_column_label, get_report_export_value_for_action and
+    # get_report_export_value_for_action_snapshot
     implementation_phase = ActionImplementationPhaseReportFieldBlock()
     attribute_type = ActionAttributeTypeReportFieldBlock()
     # TODO: action status

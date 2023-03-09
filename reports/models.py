@@ -1,12 +1,13 @@
-import reversion
-import xlsxwriter
 from autoslug.fields import AutoSlugField
 from contextlib import contextmanager
+from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from io import BytesIO
 from reversion.models import Version
 from wagtail.core.fields import StreamField
+import reversion
+import xlsxwriter
 
 from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
@@ -93,7 +94,7 @@ class Report(models.Model):
         # also want to include the current state of actions for which there is no snapshot.
         if self.is_complete:
             for snapshot in self.action_snapshots.all():
-                self._write_xlsx_snapshot_row(workbook, worksheet, snapshot, row)
+                self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
                 row += 1
         else:
             for action in self.type.plan.actions.all():
@@ -102,32 +103,41 @@ class Report(models.Model):
                 except ActionSnapshot.DoesNotExist:
                     self._write_xlsx_action_row(workbook, worksheet, action, row)
                 else:
-                    self._write_xlsx_snapshot_row(workbook, worksheet, snapshot, row)
+                    self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
                 row += 1
 
-    def _write_xlsx_snapshot_row(
-        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, snapshot, row
+    def _write_xlsx_action_row(
+        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action_or_snapshot, row,
     ):
-        revision = snapshot.action_version.revision
-        # Excel can't handle timezones
-        date_created = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
-        with snapshot.inspect() as action:
+        # FIXME: action_or_snapshot can be an Action or ActionSnapshot, but distinguishing the cases is ugly. Improve.
+        if isinstance(action_or_snapshot, ActionSnapshot):
+            # Instead of fucking around with the `name` and `i18n` fields to simulate `name_i18n`, just build a fake
+            # model instance
+            field_dict = action_or_snapshot.action_version.field_dict
+            action_name = str(Action(name=field_dict['name'], plan_id=field_dict['plan_id'], i18n=field_dict['i18n']))
+            # Get creation date and user from the version's revision
+            revision = action_or_snapshot.action_version.revision
+            # Excel can't handle timezones
+            completed_at = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
+            completed_by = revision.user
             # FIXME: Right now, we print the user who made the last change to the action, which may be different from
             # the user who marked the action as complete.
-            self._write_xlsx_action_row(workbook, worksheet, action, row, date_created, revision.user)
-
-    def _write_xlsx_action_row(
-        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action, row,
-        completed_at=None, completed_by=None
-    ):
-        worksheet.write(row, 0, str(action))
+        else:
+            assert isinstance(action_or_snapshot, Action)
+            action_name = str(action_or_snapshot)
+            completed_at = None
+            completed_by = None
+        worksheet.write(row, 0, action_name)
         if completed_by:
             worksheet.write(row, 1, str(completed_by))
         if completed_at:
             worksheet.write(row, 2, completed_at, self._xlsx_cell_format_for_date)
         column = 3
         for field in self.fields:
-            value = field.block.get_report_export_value_for_action(field.value, action)
+            if isinstance(action_or_snapshot, ActionSnapshot):
+                value = field.block.get_report_export_value_for_action_snapshot(field.value, action_or_snapshot)
+            else:
+                value = field.block.get_report_export_value_for_action(field.value, action_or_snapshot)
             # Add cell format only once per field and cache added formats
             cell_format = self._xlsx_cell_format_for_field.get(field.id)
             if not cell_format:
@@ -192,8 +202,7 @@ class ActionSnapshot(models.Model):
 
     @contextmanager
     def inspect(self):
-        """
-        Use like this to temporarily revert the action to this snapshot:
+        """Use like this to temporarily revert the action to this snapshot:
         with snapshot.inspect() as action:
             pass  # action is reverted here and will be rolled back afterwards
         """
@@ -204,6 +213,24 @@ class ActionSnapshot(models.Model):
                 raise ActionSnapshot._RollbackRevision()
         except ActionSnapshot._RollbackRevision:
             pass
+
+    def get_attribute_for_type(self, attribute_type):
+        """Get the first action attribute of the given type in this snapshot.
+
+        Returns None if there is no such attribute.
+
+        Returned model instances have the PK field set, but this does not mean they currently exist in the DB.
+        """
+        pattern = {
+            'type_id': attribute_type.id,
+            'content_type_id': ContentType.objects.get_for_model(Action).id,
+            'object_id': int(self.action_version.object_id),
+        }
+        for version in self.action_version.revision.version_set.all():
+            if all(version.field_dict.get(key) == value for key, value in pattern.items()):
+                model = version.content_type.model_class()
+                return model(**version.field_dict)
+        return None
 
     def __str__(self):
         return f'{self.action_version} @ {self.report}'
