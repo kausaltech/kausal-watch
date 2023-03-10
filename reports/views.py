@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -78,7 +80,7 @@ class MarkActionAsCompleteView(WMABaseView):
 class MarkReportAsCompleteView(WMABaseView):
     report_pk = None
     complete = True
-    template_name = 'aplans/confirmation.html'
+    template_name = 'reports/mark_report_as_complete_confirmation.html'
 
     def __init__(self, model_admin, report_pk, complete=True):
         self.report_pk = unquote(report_pk)
@@ -109,12 +111,19 @@ class MarkReportAsCompleteView(WMABaseView):
             msg = _("Confirm undoing marking report %(report)s as complete")
         return msg % {'report': self.report}
 
-    def confirmation_message(self):
+    def get_context_data(self, **kwargs):
+        context =  super().get_context_data(**kwargs)
         if self.complete:
-            msg = _("Do you really want to mark the report '%(report)s' as complete?")
+            complete_actions = Action.objects.complete_for_report(self.report)
+            context['affected_actions'] = self.report.type.plan.actions.exclude(id__in=complete_actions)
         else:
-            msg = _("Do you really want to undo marking the report '%(report)s' as complete?")
-        return msg % {'report': self.report}
+            action_ids = (
+                ActionSnapshot.objects.filter(report=self.report, created_explicitly=False)
+                .annotate(action_id=Cast('action_version__object_id', output_field=IntegerField()))
+                .values_list('action_id')
+            )
+            context['affected_actions'] = Action.objects.filter(id__in=action_ids)
+        return context
 
     def post(self, request, *args, **kwargs):
         try:

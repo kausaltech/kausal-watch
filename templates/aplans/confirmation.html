@@ -11,7 +11,9 @@
 
     {% block content_main %}
         <div class="nice-padding">
-            <p>{{ view.confirmation_message }}</p>
+            {% block confirmation_message %}
+                <p>{{ view.confirmation_message }}</p>
+            {% endblock %}
             <form action="{{ view.post_url }}" method="POST">
                 {% csrf_token %}
                 <input type="submit" value="{% trans 'Yes' %}" class="button button-primary" />

@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Max, Q
+from django.db.models import IntegerField, Max, Q
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
@@ -72,6 +73,15 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
 
     def active(self):
         return self.unmerged().exclude(status__is_completed=True)
+
+    def complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        action_ids = (
+            ActionSnapshot.objects.filter(report=report)
+            .annotate(action_id=Cast('action_version__object_id', output_field=IntegerField()))
+            .values_list('action_id')
+        )
+        return self.filter(id__in=action_ids)
 
 
 class ActionIdentifierSearchMixin:

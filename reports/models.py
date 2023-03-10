@@ -153,17 +153,15 @@ class Report(models.Model):
         """
         if self.is_complete:
             raise ValueError(_("The report is already marked as complete."))
-        actions_to_snapshot = []
+        actions_to_snapshot = self.type.plan.actions.exclude(id__in=Action.objects.complete_for_report(self))
         with reversion.create_revision():
             reversion.set_comment(_("Marked report '%s' as complete") % self)
             reversion.set_user(user)
             self.is_complete = True
             self.save()
-            for action in self.type.plan.actions.all():
-                if not action.is_complete_for_report(self):
-                    reversion.add_to_revision(action)
-                    # Create snapshot for this action after reversion is created to get the resulting version
-                    actions_to_snapshot.append(action)
+            for action in actions_to_snapshot:
+                # Create snapshot for this action after reversion is created to get the resulting version
+                reversion.add_to_revision(action)
         for action in actions_to_snapshot:
             ActionSnapshot.objects.create(
                 report=self,

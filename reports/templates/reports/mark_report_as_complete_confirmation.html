@@ -1,0 +1,27 @@
+{% extends "aplans/confirmation.html" %}
+{% load i18n %}
+
+{% block confirmation_message %}
+<p>
+  {% if view.complete %}
+    {% blocktranslate with report=view.report %}Do you really want to mark the report <i>{{ report }}<i> as complete?{% endblocktranslate %}
+  {% else %}
+    {% blocktranslate with report=view.report %}Do you really want to undo marking the report <i>{{ report }}</em> as complete?{% endblocktranslate %}
+  {% endif %}
+</p>
+{% if affected_actions %}
+  <p>
+    {% if view.complete %}
+      {% translate "This will mark the following actions as complete:" %}
+    {% else %}
+      {% translate "This will undo marking the following actions as complete:" %}
+    {% endif %}
+  </p>
+  <ul>
+    {% for action in affected_actions %}
+      <li>{{ action }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% endblock %}
