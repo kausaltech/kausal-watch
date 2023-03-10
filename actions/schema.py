@@ -584,7 +584,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return levels[depth]
 
     def resolve_actions(self, info):
-        return self.action_set.all()
+        return self.actions.all()
 
     @gql_optimizer.resolver_hints(
         prefetch_related=get_translated_category_page
