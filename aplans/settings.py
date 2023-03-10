@@ -54,6 +54,7 @@ env = environ.FileAwareEnv(
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     LOG_SQL_QUERIES=(bool, False),
+    LOG_GRAPHQL_QUERIES=(bool, True),
     AWS_S3_ENDPOINT_URL=(str, ''),
     AWS_STORAGE_BUCKET_NAME=(str, ''),
     AWS_ACCESS_KEY_ID=(str, ''),
@@ -720,6 +721,7 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
         },
         'loggers': {
             'django.db': level('DEBUG' if env('LOG_SQL_QUERIES') else 'INFO'),
+            'aplans.graphene_views': level('DEBUG' if env('LOG_GRAPHQL_QUERIES') else 'INFO'),
             'django.template': level('WARNING'),
             'django.utils.autoreload': level('INFO'),
             'django': level('DEBUG'),
