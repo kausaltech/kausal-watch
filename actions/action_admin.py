@@ -497,7 +497,7 @@ class ActionButtonHelper(ButtonHelper):
         # For each report type, display one button for the latest report of that type
         for report_type in obj.plan.report_types.all():
             latest_report = report_type.reports.last()
-            if latest_report:
+            if latest_report and not latest_report.is_complete:
                 if obj.is_complete_for_report(latest_report):
                     buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
                 else:
