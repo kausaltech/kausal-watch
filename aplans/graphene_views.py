@@ -180,7 +180,10 @@ class SentryGraphQLView(GraphQLView):
             syntax = Syntax(query, "graphql")
             console.print(syntax)
             if variables:
-                console.print('Variables:', variables)
+                console.print('# Variables:')
+                console.print(
+                    json.dumps(variables, indent=4, ensure_ascii=False)
+                )
 
         with sentry_sdk.push_scope() as scope:
             scope.set_context('graphql_variables', variables)
