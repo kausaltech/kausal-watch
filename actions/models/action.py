@@ -97,8 +97,25 @@ class ResponsiblePartyDict(TypedDict):
     role: Literal['primary', 'collaborator', None]
 
 
+class DraftableModel(models.Model):
+    class VisibilityState(models.TextChoices):
+        DRAFT = 'draft', _('Draft')
+        PUBLIC = 'public', _('Public')
+
+    visibility = models.CharField(
+        blank=False, null=False,
+        default=VisibilityState.PUBLIC,
+        choices=VisibilityState.choices,
+        max_length=20,
+        verbose_name=_('visibility'),
+    )
+
+    class Meta:
+        abstract = True
+
+
 @reversion.register()
-class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
+class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
