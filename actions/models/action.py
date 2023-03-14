@@ -72,6 +72,13 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def active(self):
         return self.unmerged().exclude(status__is_completed=True)
 
+    def visible_for_user(self, user: Optional[User], plan: Optional[Plan] = None):
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if user is None or not user.is_authenticated:
+            return self.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
+        return self
+
 
 class ActionIdentifierSearchMixin:
     def get_value(self, obj: Action):
@@ -318,11 +325,24 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def is_active(self):
         return not self.is_merged() and (self.status is None or not self.status.is_completed)
 
-    def get_next_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__gt=self.order).unmerged().first()
+    def get_next_action(self, user: User):
+        return (
+            Action.objects
+            .visible_for_user(user)
+            .filter(plan=self.plan_id, order__gt=self.order)
+            .unmerged()
+            .first()
+        )
 
-    def get_previous_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__lt=self.order).unmerged().order_by('-order').first()
+    def get_previous_action(self, user: User):
+        return (
+            Action.objects
+            .visible_for_user(user)
+            .filter(plan=self.plan_id, order__lt=self.order)
+            .unmerged()
+            .order_by('-order')
+            .first()
+        )
 
     def _calculate_status_from_indicators(self):
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
@@ -532,6 +552,8 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         lang = translation.get_language()
         qs = super().get_indexed_objects()
         qs = qs.filter(Q(plan__primary_language__istartswith=lang) | Q(plan__other_languages__icontains=[lang]))
+        # FIXME find out how to use action default manager here
+        qs = qs.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
         return qs
 
     def get_attribute_type_by_identifier(self, identifier):

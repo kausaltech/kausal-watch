@@ -28,6 +28,7 @@ from actions.models import (
     CommonCategoryType, Report, ReportType
 )
 from orgs.models import Organization
+from users.models import User
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import (
     DjangoNode,
@@ -247,7 +248,7 @@ class PlanNode(DjangoNode):
         self: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None
     ):
         user = info.context.user
-        qs = self.actions.filter(plan=self)
+        qs = self.actions.visible_for_user(user).filter(plan=self)
         if identifier:
             qs = qs.filter(identifier=identifier)
         if id:
@@ -584,7 +585,7 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return levels[depth]
 
     def resolve_actions(self, info):
-        return self.actions.all()
+        return self.actions.visible_for_user(info.context.user)
 
     @gql_optimizer.resolver_hints(
         prefetch_related=get_translated_category_page
@@ -704,6 +705,22 @@ class ActionTaskNode(DjangoNode):
         return RichText(comment)
 
 
+def _get_visible_action(root, field_name, user: Optional[User]):
+    action_id = getattr(root, f'{field_name}_id')
+    if action_id is None:
+        return None
+    try:
+        retval = Action.objects.visible_for_user(user).get(id=action_id)
+    except Action.DoesNotExist:
+        return None
+    return retval
+
+
+def _get_visible_actions(root, field_name, user: Optional[User]):
+    actions = getattr(root, field_name)
+    return actions.visible_for_user(user)
+
+
 @register_django_node
 class ActionNode(AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
@@ -723,12 +740,32 @@ class ActionNode(AttributesMixin, DjangoNode):
         fields = Action.public_fields
 
     @staticmethod
+    def resolve_merged_with(root: Action, info):
+        return _get_visible_action(root, 'merged_with', info.context.user)
+
+    @staticmethod
+    def resolve_superseded_by(root: Action, info):
+        return _get_visible_action(root, 'superseded_by', info.context.user)
+
+    @staticmethod
+    def resolve_merged_actions(root: Action, info):
+        return _get_visible_actions(root, 'merged_actions', info.context.user)
+
+    @staticmethod
+    def resolve_superseded_actions(root: Action, info):
+        return _get_visible_actions(root, 'superseded_actions', info.context.user)
+
+    @staticmethod
+    def resolve_related_actions(root: Action, info):
+        return _get_visible_actions(root, 'related_actions', info.context.user)
+
+    @staticmethod
     def resolve_next_action(root: Action, info):
-        return root.get_next_action()
+        return root.get_next_action(info.context.user)
 
     @staticmethod
     def resolve_previous_action(root: Action, info):
-        return root.get_previous_action()
+        return root.get_previous_action(info.context.user)
 
     @gql_optimizer.resolver_hints(
         model_field='name',
@@ -912,7 +949,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        qs = Action.objects.filter(plan=plan_obj)
+        qs = Action.objects.visible_for_user(info.context.user).filter(plan=plan_obj)
         if category is not None:
             # FIXME: This is sucky, maybe convert Category to a proper tree model?
             f = (
@@ -951,7 +988,7 @@ class Query:
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'", [info])
 
-        qs = Action.objects.all()
+        qs = Action.objects.visible_for_user(info.context.user).all()
         if obj_id:
             qs = qs.filter(id=obj_id)
         if identifier:

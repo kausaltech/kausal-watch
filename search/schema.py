@@ -138,7 +138,7 @@ class Query:
             page_filter |= Q(path__startswith=path)
 
         querysets = [
-            Action.objects.filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
+            Action.objects.visible_for_user(None).filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
             Page.objects.filter(page_filter).live().specific(),
         ]
         # FIXME: This doesn't work with exclude yet

@@ -13,6 +13,7 @@ from indicators.models import (
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator,
     RelatedIndicator, Unit
 )
+from actions.models import Action
 
 
 class UnitNode(DjangoNode):
@@ -208,9 +209,16 @@ class IndicatorNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(self, info, plan=None):
-        qs = self.actions.all()
+        qs = self.actions.visible_for_user(info.context.user)
         if plan is not None:
             qs = qs.filter(plan__identifier=plan)
+        return qs
+
+    def resolve_related_actions(self, info, plan=None):
+        actions = Action.objects.visible_for_user(info.context.user)
+        qs = ActionIndicator.objects.filter(action__in=actions).filter(indicator=self)
+        if plan is not None:
+            qs = qs.filter(indicator__plan__identifier=plan)
         return qs
 
     @gql_optimizer.resolver_hints(
