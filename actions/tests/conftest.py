@@ -9,6 +9,8 @@ from .factories import (
     PlanFactory
 )
 
+from .fixtures import actions_with_relations_factory  # noqa
+
 register(ActionFactory)
 register(CategoryFactory)
 register(CategoryTypeFactory)

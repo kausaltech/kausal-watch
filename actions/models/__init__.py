@@ -1,7 +1,7 @@
 from .action import (
     Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
-    ActionStatusUpdate, ImpactGroupAction
+    ActionStatusUpdate, ImpactGroupAction, DraftableModel
 )
 from .attributes import (
     AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText,
@@ -25,5 +25,5 @@ __all__ = [
     'Category', 'CategoryIcon', 'CategoryLevel', 'CategoryType', 'CommonCategory', 'CommonCategoryIcon',
     'CommonCategoryType', 'GeneralPlanAdmin', 'ImpactGroup', 'ImpactGroupAction', 'MonitoringQualityPoint', 'Plan',
     'PlanDomain', 'PublicationStatus', 'PlanFeatures', 'Scenario',
-    'Report', 'ReportType',
+    'Report', 'ReportType', 'DraftableModel'
 ]
