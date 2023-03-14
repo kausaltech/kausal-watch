@@ -106,6 +106,15 @@ class ActionImpactFactory(DjangoModelFactory):
     name = Sequence(lambda i: f"Action impact {i}")
 
 
+class ActionLinkFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionLink'
+
+    action = SubFactory('actions.tests.factories.ActionFactory')
+    url = Sequence(lambda i: f'https://plan{i}.example.com')
+    title = "Action link"
+
+
 class CommonCategoryTypeFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.CommonCategoryType'
