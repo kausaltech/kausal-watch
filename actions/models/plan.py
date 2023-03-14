@@ -290,7 +290,7 @@ class Plan(ClusterableModel):
         return self.name
 
     def get_last_action_identifier(self):
-        return self.actions.visible_by_user(None).order_by('order').values_list('identifier', flat=True).last()
+        return self.actions.order_by('order').values_list('identifier', flat=True).last()
 
     def clean(self):
         if self.primary_language in self.other_languages:
