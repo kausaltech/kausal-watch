@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
     def handle_share_of_updated_indicators(self, indicator, plan):
         now = plan.now_in_local_timezone()
-        all_actions = list(plan.actions.visible_for_user(None).exclude(status__is_completed=True))
+        all_actions = list(plan.actions.all().exclude(status__is_completed=True))
         if not all_actions:
             return
         up_to_date = 0
@@ -32,7 +32,7 @@ class Command(BaseCommand):
 
     def handle_average_days_since_last_update(self, indicator, plan):
         now = plan.now_in_local_timezone()
-        all_actions = list(plan.actions.visible_for_user(None).exclude(status__is_completed=True))
+        all_actions = list(plan.actions.all().exclude(status__is_completed=True))
         updated_actions = 0
         days_since_update = 0
         for action in all_actions:
