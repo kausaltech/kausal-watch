@@ -1395,10 +1395,10 @@ def test_action_node_next_previous(graphql_client_query_data):
     plan = PlanFactory()
     action1 = ActionFactory(plan=plan)
     action2 = ActionFactory(plan=plan)
-    assert action1.get_next_action() == action2
-    assert action2.get_next_action() is None
-    assert action1.get_previous_action() is None
-    assert action2.get_previous_action() == action1
+    assert action1.get_next_action(None) == action2
+    assert action2.get_next_action(None) is None
+    assert action1.get_previous_action(None) is None
+    assert action2.get_previous_action(None) == action1
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
