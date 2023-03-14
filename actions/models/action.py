@@ -269,6 +269,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         ]),
         index.FilterField('plan'),
         index.FilterField('updated_at'),
+        index.FilterField('visibility'),
     ]
     search_auto_update = True
 
