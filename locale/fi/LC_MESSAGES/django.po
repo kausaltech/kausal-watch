@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-01-12 09:06+0200\n"
-"PO-Revision-Date: 2023-02-01 12:33+0200\n"
+"POT-Creation-Date: 2023-03-15 13:59+0200\n"
+"PO-Revision-Date: 2023-03-15 14:14+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -224,10 +224,32 @@ msgstr "Ominaisuudet"
 msgid "Attribute for %s"
 msgstr "Ominaisuus kohteelle %s"
 
+#: actions/attribute_type_admin.py
+#, fuzzy
+#| msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgid "If format is 'Category', a category type must be set "
+msgstr "Jos muoto on \"luokka\", valitse minkä luokkatyypin luokkia voi valita ominaisuuden arvoiksi"
+
+#: actions/attribute_type_admin.py
+msgid "If format is 'Numeric', a unit must be set "
+msgstr ""
+
 #: actions/attribute_type_admin.py feedback/models.py
 #: indicators/wagtail_admin.py people/wagtail_admin.py
 msgid "General"
 msgstr "Yleinen"
+
+#: actions/attributes.py
+#, fuzzy, python-format
+#| msgid "attribute types"
+msgid "%(attribute_type)s (choice)"
+msgstr "ominaisuustyypit"
+
+#: actions/attributes.py
+#, fuzzy, python-format
+#| msgid "attribute types"
+msgid "%(attribute_type)s (text)"
+msgstr "ominaisuustyypit"
 
 #: actions/blocks.py
 msgid "Filter on category"
@@ -324,6 +346,14 @@ msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
 
+#: actions/blocks.py actions/report_admin.py
+msgid "Report type"
+msgstr "Raporttityyppi"
+
+#: actions/blocks.py
+msgid "UUID of report field"
+msgstr ""
+
 #: actions/blocks.py actions/models/action.py
 msgid "official name"
 msgstr "virallinen nimi"
@@ -398,6 +428,18 @@ msgstr "Valitse luokan tyyppi"
 
 #: actions/chooser.py
 msgid "Choose another category type"
+msgstr "Valitse toinen luokan tyyppi"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category type"
+msgid "Choose a report type"
+msgstr "Valitse luokan tyyppi"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "Choose another report type"
 msgstr "Valitse toinen luokan tyyppi"
 
 #: actions/chooser.py
@@ -573,6 +615,18 @@ msgstr "Toimenpideohjelman nimi on jo käytössä"
 #: actions/forms.py
 msgid "A plan's other language cannot be the same as its primary language"
 msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
+
+#: actions/models/action.py
+msgid "Draft"
+msgstr "Luonnos"
+
+#: actions/models/action.py
+msgid "Public"
+msgstr "Julkaistu"
+
+#: actions/models/action.py
+msgid "visibility"
+msgstr "Näkyvyys"
 
 #: actions/models/action.py actions/models/plan.py content/models.py
 #: feedback/models.py indicators/models.py notifications/models.py
@@ -895,10 +949,6 @@ msgid "Completed tasks must have a completion date"
 msgstr "Valmistuneilla tehtävillä pitää olla valmistumispäivämäärä"
 
 #: actions/models/action.py
-msgid "Date can't be in the future"
-msgstr "Päivämäärä ei voi olla tulevaisuudessa"
-
-#: actions/models/action.py
 msgid "action impact class"
 msgstr "toimenpiteen vaikuttavuusluokka"
 
@@ -1026,6 +1076,12 @@ msgstr "ominaisuustyypit"
 #: actions/models/attributes.py
 msgid "Unit must only be used for numeric attribute types"
 msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
+
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "Primary language must not be selected"
+msgid "If no primary language is set, there must not be other languages"
+msgstr "Ensisijainen kieli ei voi olla valittuna"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1382,10 +1438,6 @@ msgstr "Toimenpiteiden pääluokitteluun on valittava luokan tyyppi"
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 
-#: actions/models/plan.py
-msgid "The site is not public at this time."
-msgstr "Sivusto ei ole julkinen tällä hetkellä."
-
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
 msgid "Indicators"
@@ -1438,6 +1490,10 @@ msgstr "Välitön sivuston julkaisun määritys"
 #: actions/models/plan.py
 msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
 msgstr "Aseta ainoastaan jos haluat varmasti ohittaa toimenpideohjelmaan asetetun julkaisuajan. Huomaa, että tämä muuttaa heti toimenpideohjelman julkaistuksi tai ei-julkaistuksi tässä osoitteessa!"
+
+#: actions/models/plan.py
+msgid "The site is not public at this time."
+msgstr "Sivusto ei ole julkinen tällä hetkellä."
 
 #: actions/models/plan.py
 msgid "Hostname must be a fully qualified domain name in lower-case only"
@@ -1513,7 +1569,9 @@ msgid "Set if report cannot be changed anymore"
 msgstr "Aseta jos raporttia ei voi enää muuttaa"
 
 #: actions/models/report.py
-msgid "is public"
+#, fuzzy
+#| msgid "is public"
+msgid "public"
 msgstr "on julkaistu"
 
 #: actions/models/report.py
@@ -1535,10 +1593,6 @@ msgstr "Raporttityypit"
 #: actions/report_admin.py
 msgid "fields"
 msgstr "kentät"
-
-#: actions/report_admin.py
-msgid "Report type"
-msgstr "Raporttityyppi"
 
 #: actions/report_admin.py admin_site/wagtail_hooks.py
 msgid "Reports"
@@ -1617,6 +1671,13 @@ msgstr "Toimenpide&shy;ohjelma"
 msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Ohjelman ominaisuudet"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "notification settings"
+msgctxt "hyphenated"
+msgid "Plan notification settings"
+msgstr "heräteasetukset"
 
 #: actions/wagtail_hooks.py
 msgid "Create plan"
@@ -2494,6 +2555,9 @@ msgid "Edit this quantity"
 msgstr "Muokkaa tätä suuretta"
 
 #: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Indicator dimensions"
+msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr "Mittarin dimensiot"
 
@@ -2554,7 +2618,7 @@ msgstr "Yleiset mittarit"
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
 
-#: notifications/apps.py notifications/wagtail_admin.py
+#: notifications/apps.py
 msgid "Notifications"
 msgstr "Herätteet"
 
@@ -2709,6 +2773,37 @@ msgid "User feedback received"
 msgstr "Palautetta vastaanotettu"
 
 #: notifications/models.py
+#, fuzzy
+#| msgid "notification template"
+msgid "notifications enabled"
+msgstr "herätteen mallinne"
+
+#: notifications/models.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Should notifications be sent?"
+msgstr "heräteasetukset"
+
+#: notifications/models.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "notification sending time"
+msgstr "heräteasetukset"
+
+#: notifications/models.py
+msgid "The local time of day when notifications are sent"
+msgstr ""
+
+#: notifications/models.py
+msgctxt "partitive"
+msgid "notification settings"
+msgstr "heräteasetuksia"
+
+#: notifications/models.py
+msgid "notification settings"
+msgstr "heräteasetukset"
+
+#: notifications/models.py
 msgid "Email From name"
 msgstr "Sähköpostin lähettäjän nimi"
 
@@ -2737,13 +2832,19 @@ msgid "Font CSS style URL"
 msgstr "URL-osoite kirjasimen CSS-tyylitiedostoon"
 
 #: notifications/models.py
+#, fuzzy
+#| msgid "base templates"
 msgctxt "partitive"
-msgid "notification settings"
-msgstr "heräteasetuksia"
+msgid "base templates"
+msgstr "pohjamallinteet"
 
 #: notifications/models.py
-msgid "notification settings"
-msgstr "heräteasetukset"
+msgid "base template"
+msgstr "pohjamallinne"
+
+#: notifications/models.py
+msgid "base templates"
+msgstr "pohjamallinteet"
 
 #: notifications/models.py
 msgid "subject"
@@ -2804,6 +2905,13 @@ msgstr "vastaanota yleisiä herätteitä toimenpiteestä"
 #: notifications/models.py
 msgid "receive action feedback notifications"
 msgstr "vastaanota herätteitä toimenpiteen palautteista"
+
+#: notifications/wagtail_admin.py
+#, fuzzy
+#| msgid "Notifications"
+msgctxt "hyphenated"
+msgid "Notifications"
+msgstr "Herätteet"
 
 #: notifications/wagtail_admin.py
 msgid "Notification types"
@@ -3415,6 +3523,9 @@ msgstr "Kirjaudu ulos"
 msgid "Users"
 msgstr "Käyttäjät"
 
+#~ msgid "Date can't be in the future"
+#~ msgstr "Päivämäärä ei voi olla tulevaisuudessa"
+
 #~ msgid "late"
 #~ msgstr "myöhässä"
 
@@ -3478,12 +3589,6 @@ msgstr "Käyttäjät"
 #~| msgid "common category type"
 #~ msgid "A secondary category type"
 #~ msgstr "yleisen luokan tyyppi"
-
-#~ msgid "base template"
-#~ msgstr "pohjamallinne"
-
-#~ msgid "base templates"
-#~ msgstr "pohjamallinteet"
 
 #~ msgid "Abbreviation"
 #~ msgstr "Lyhenne"
