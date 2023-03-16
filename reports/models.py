@@ -54,7 +54,7 @@ class Report(models.Model):
     )
 
     public_fields = [
-        'type', 'name', 'identifier', 'start_date', 'end_date',
+        'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
     ]
 
     class Meta:

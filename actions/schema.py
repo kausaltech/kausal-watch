@@ -41,7 +41,6 @@ from aplans.graphql_types import (
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
-from reports.models import Report, ReportType
 from search.backends import get_search_backend
 
 
@@ -842,20 +841,6 @@ class ActionLinkNode(DjangoNode):
     class Meta:
         model = ActionLink
         fields = public_fields(ActionLink)
-
-
-@register_django_node
-class ReportNode(DjangoNode):
-    class Meta:
-        model = Report
-        fields = public_fields(Report)
-
-
-@register_django_node
-class ReportTypeNode(DjangoNode):
-    class Meta:
-        model = ReportType
-        fields = public_fields(ReportType)
 
 
 class Query:

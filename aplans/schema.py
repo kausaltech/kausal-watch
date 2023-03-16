@@ -21,6 +21,7 @@ from orgs.models import Organization
 from pages import schema as pages_schema
 from people import schema as people_schema
 from people.models import Person
+from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields

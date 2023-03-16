@@ -6,7 +6,7 @@ from grapple.registry import registry as grapple_registry
 from wagtail.core import blocks
 
 from actions.attributes import AttributeType
-from actions.models import ActionImplementationPhase
+from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 
@@ -40,6 +40,10 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
 
     class Meta:
         label = _("Action attribute")
+
+    graphql_fields = [
+        GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True)
+    ]
 
     def get_report_export_column_label(self, block_value):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
@@ -95,4 +99,6 @@ class ReportFieldBlock(blocks.StreamBlock):
     attribute_type = ActionAttributeTypeReportFieldBlock()
     # TODO: action status
 
-    # graphql_types = []  # TODO
+    graphql_types = [
+        ActionImplementationPhaseReportFieldBlock, ActionAttributeTypeReportFieldBlock,
+    ]
