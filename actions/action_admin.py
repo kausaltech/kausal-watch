@@ -506,7 +506,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
             )
         ),
         FieldPanel('merged_with', widget=ActionChooser),
-        FieldPanel('visibility', widget=forms.RadioSelect()),
+        FieldPanel('visibility'),
     ]
 
     progress_panels = [
