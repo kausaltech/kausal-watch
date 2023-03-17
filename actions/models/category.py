@@ -305,7 +305,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
                 value = getattr(self, f'{field}_{lang}')
                 if value:
                     translated_values[f'{field}_{lang}'] = value
-        inherited_fields = [f.name for f in CategoryBase._meta.fields if f.name not in translated_fields]
+        inherited_fields = [f.name for f in CategoryBase._meta.fields if f.name not in translated_fields + ('uuid',)]
         inherited_values = {field: getattr(self, field) for field in inherited_fields}
         return category_type.categories.create(common=self, **inherited_values, **translated_values)
 
