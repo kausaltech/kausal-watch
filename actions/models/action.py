@@ -396,6 +396,8 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
         # Return average completion
         completion = int((total_completion / total_indicators) * 100)
+        if completion <= 0:
+            return None
         return dict(completion=completion, is_late=is_late)
 
     def _calculate_completion_from_tasks(self, tasks):
