@@ -245,7 +245,7 @@ class Person(index.Indexed, ClusterableModel):
             with self.image.open() as file:  # noqa
                 pass
         except FileNotFoundError:
-            logger.error('Avatar file for %s not found' % self)
+            logger.info('Avatar file for %s not found' % self)
             return None
 
         if size is None:
