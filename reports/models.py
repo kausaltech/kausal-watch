@@ -160,7 +160,7 @@ class Report(models.Model):
             self.is_complete = True
             self.save()
             for action in actions_to_snapshot:
-                # Create snapshot for this action after reversion is created to get the resulting version
+                # Create snapshot for this action after revision is created to get the resulting version
                 reversion.add_to_revision(action)
         for action in actions_to_snapshot:
             ActionSnapshot.objects.create(
