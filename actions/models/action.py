@@ -578,17 +578,21 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             previous_sibling = sibling
         assert False  # should have returned above at some point
 
-    def get_latest_snapshot(self, report=None):
-        """Return the latest snapshot of this action, optionally restricted to those for the given report.
-
-        Raises ActionSnapshot.DoesNotExist if no such snapshot exists.
-        """
+    def get_snapshots(self, report=None):
+        """Return the snapshots of this action, optionally restricted to those for the given report."""
         from reports.models import ActionSnapshot
         versions = Version.objects.get_for_object(self)
         qs = ActionSnapshot.objects.filter(action_version__in=versions)
         if report is not None:
             qs = qs.filter(report=report)
-        return qs.latest()
+        return qs
+
+    def get_latest_snapshot(self, report=None):
+        """Return the latest snapshot of this action, optionally restricted to those for the given report.
+
+        Raises ActionSnapshot.DoesNotExist if no such snapshot exists.
+        """
+        return self.get_snapshots(report).latest()
 
     def is_complete_for_report(self, report):
         from reports.models import ActionSnapshot

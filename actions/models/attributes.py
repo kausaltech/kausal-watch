@@ -193,8 +193,7 @@ class AttributeCategoryChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        categories = ", ".join([str(c) for c in self.categories.all()])
-        return f'[{categories}] ({self.type}) for {self.content_object} ({self.content_type})'
+        return ", ".join([str(c) for c in self.categories.all()])
 
 
 @reversion.register()
@@ -215,7 +214,7 @@ class AttributeChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.type, self.content_object)
+        return str(self.choice)
 
 
 @reversion.register()
@@ -244,7 +243,7 @@ class AttributeChoiceWithText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.content_object)
+        return f'{self.choice}; {self.text}'
 
 
 @reversion.register()
@@ -274,9 +273,6 @@ class AttributeText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s for %s' % (self.type, self.content_object)
-
-    def get_xlsx_cell_value(self):
         return self.text_i18n
 
 
@@ -307,9 +303,6 @@ class AttributeRichText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s for %s' % (self.type, self.content_object)
-
-    def get_xlsx_cell_value(self):
         return self.text_i18n
 
 
@@ -331,10 +324,7 @@ class AttributeNumericValue(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.type, self.content_object)
-
-    def get_xlsx_cell_value(self):
-        return self.value
+        return str(self.value)
 
 
 class ModelWithAttributes(models.Model):

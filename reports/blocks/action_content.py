@@ -3,6 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
+from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
 from actions.attributes import AttributeType
@@ -55,17 +56,23 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             attribute = wrapped_type.get_attributes(action).get()
         except wrapped_type.ATTRIBUTE_MODEL.DoesNotExist:
             return None
-        return attribute.get_xlsx_cell_value()
+        return str(attribute)
 
     def get_report_export_value_for_action_snapshot(self, block_value, snapshot):
         attribute = snapshot.get_attribute_for_type(block_value['attribute_type'])
         if attribute:
-            return attribute.get_xlsx_cell_value()
+            return str(attribute)
         return None
 
     def add_xlsx_cell_format(self, block_value, workbook):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
         return wrapped_type.add_xlsx_cell_format(workbook)
+
+    def get_help_panel(self, block_value, snapshot):
+        attribute_type = block_value['attribute_type']
+        value = str(snapshot.get_attribute_for_type(attribute_type))
+        heading = f'{attribute_type} ({snapshot.report})'
+        return HelpPanel(value, heading=heading)
 
 
 @register_streamfield_block
@@ -89,6 +96,11 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
     def add_xlsx_cell_format(self, block_value, workbook):
         return None
+
+    def get_help_panel(self, block_value, snapshot):
+        value = self.get_report_export_value_for_action_snapshot(block_value, snapshot) or ''
+        heading = f'{self.label} ({snapshot.report})'
+        return HelpPanel(value, heading=heading)
 
 
 @register_streamfield_block

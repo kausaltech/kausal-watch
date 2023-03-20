@@ -225,8 +225,10 @@ class ActionSnapshot(models.Model):
             'object_id': int(self.action_version.object_id),
         }
         for version in self.action_version.revision.version_set.all():
-            if all(version.field_dict.get(key) == value for key, value in pattern.items()):
-                model = version.content_type.model_class()
+            model = version.content_type.model_class()
+            # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
+            if (model.__module__ == 'actions.models.attributes'
+                    and all(version.field_dict.get(key) == value for key, value in pattern.items())):
                 return model(**version.field_dict)
         return None
 

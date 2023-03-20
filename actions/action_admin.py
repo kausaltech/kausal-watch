@@ -742,6 +742,14 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         ]
 
         reporting_panels = reporting_attribute_panels
+        help_panels_for_field = {}
+        for snapshot in instance.get_snapshots():
+            for field in snapshot.report.fields:
+                help_panel = field.block.get_help_panel(field.value, snapshot)
+                if help_panel:
+                    help_panels_for_field.setdefault(field.id, []).append(help_panel)
+        for help_panels in help_panels_for_field.values():
+            reporting_panels += help_panels
         reporting_panels += list(self.reporting_panels)
 
         if is_general_admin:
