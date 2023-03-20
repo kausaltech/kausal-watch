@@ -114,7 +114,7 @@ class Report(models.Model):
             # Instead of fucking around with the `name` and `i18n` fields to simulate `name_i18n`, just build a fake
             # model instance
             field_dict = action_or_snapshot.action_version.field_dict
-            action_name = str(Action(name=field_dict['name'], plan_id=field_dict['plan_id'], i18n=field_dict['i18n']))
+            action_name = str(Action(**{key: field_dict[key] for key in ['identifier', 'name', 'plan_id', 'i18n']}))
             # Get creation date and user from the version's revision
             revision = action_or_snapshot.action_version.revision
             # Excel can't handle timezones
