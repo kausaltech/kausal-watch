@@ -2,7 +2,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.utils.translation import gettext_lazy
 from django import forms
 
-from .models import Client
+from .models import Client, AdminHostname
 
 
 class LoginForm(AuthenticationForm):
@@ -16,7 +16,11 @@ class LoginForm(AuthenticationForm):
         email_attrs = self.fields['username'].widget.attrs
         email_attrs['placeholder'] = gettext_lazy("Enter your email address")
         email_attrs['autofocus'] = True
-        self.client = Client.objects.for_request(request).first() if request is not None else None
+        self.clients = Client.objects.for_request(request) if request is not None else None
+        self.hide_login_form = self.clients.filter(azure_ad_tenant_id__isnull=False).exists()
+
+        admin_hostname = AdminHostname.objects.get_for_request(request)
+        self.header_text = admin_hostname.login_header_text
 
     @property
     def extra_fields(self):

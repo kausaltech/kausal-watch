@@ -10,10 +10,19 @@ class AzureADAuth(AzureADTenantOAuth2):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if self.strategy.request is not None:
-            self.client = Client.objects.for_request(self.strategy.request).first()
-        else:
+
+        request = self.strategy.request
+        if request is None:
             self.client = None
+            return
+
+        client = None
+        if 'client' in request.GET:
+            self.strategy.session_set('kausal_client', request.GET.get('client'))
+        else:
+            client = self.strategy.session_get('kausal_client')
+
+        self.client = Client.objects.for_request(request, client=client).first()
 
     @property
     def tenant_id(self):

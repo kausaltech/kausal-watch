@@ -52,12 +52,15 @@ class LoginView(RedirectView):
 
         redirect_to = self.request.GET.get(REDIRECT_FIELD_NAME)
         lang = self.request.GET.get(LANGUAGE_FIELD_NAME)
+        client = self.request.GET.get('client')
 
         query_params = OrderedDict()
         if redirect_to:
             query_params[REDIRECT_FIELD_NAME] = redirect_to
         if lang:
             query_params[LANGUAGE_FIELD_NAME] = lang
+        if client:
+            query_params['client'] = client
         if query_params:
             url += '?' + urlencode(query_params)
 

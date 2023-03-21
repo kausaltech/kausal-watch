@@ -15,7 +15,7 @@ from wagtail.images.edit_handlers import ImageChooserPanel
 
 from aplans.types import WatchAdminRequest
 
-from .models import Client
+from .models import Client, AdminHostname
 from actions.models import CommonCategoryType
 
 
@@ -256,13 +256,30 @@ class ClientAdmin(ModelAdmin):
         FieldPanel('azure_ad_tenant_id'),
         FieldPanel('login_header_text'),
         FieldPanel('login_button_text'),
-        InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
         InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
         InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
     ]
 
 
 modeladmin_register(ClientAdmin)
+
+
+class AdminHostnameAdmin(ModelAdmin):
+    model = AdminHostname
+    menu_icon = 'fa-bank'
+    menu_order = 501
+    list_display = ('hostname',)
+    search_fields = ('hostname',)
+
+    panels = [
+        FieldPanel('hostname'),
+        FieldPanel('login_header_text'),
+        # Not ideal for choosing clients, but EOL nearing
+        FieldPanel('clients'),
+    ]
+
+
+modeladmin_register(AdminHostnameAdmin)
 
 
 @hooks.register("insert_global_admin_css", order=0)

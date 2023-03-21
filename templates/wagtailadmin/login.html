@@ -26,23 +26,35 @@
 
         {% block above_login %}{% endblock %}
 
-        {% if form.client and form.client.logo %}
-        {% image form.client.logo width-256 %}
+        <h1 style="margin-bottom: 2em; margin-top: 2em; font-size: 2rem;">{% block branding_login %}{% if form.header_text %}{{ form.header_text }}{% else %}{% trans "Sign in to Kausal Watch" %}{% endif %}{% endblock %}</h1>
+
+        {% for client in form.clients %}
+
+
+        <div style="margin-bottom: 5em; display: flex; align-items: flex-end; ">
+          {% if client and client.azure_ad_tenant_id %}
+          <div>
+        <div style="padding-bottom: 2px;">
+        {% if client and client.logo %}
+        {% image client.logo width-128 %}
         {% endif %}
-
-        <h1>{% block branding_login %}{% if form.client and form.client.login_header_text %}{{ form.client.login_header_text }}{% else %}{% trans "Sign in to Kausal Watch" %}{% endif %}{% endblock %}</h1>
-
-        {% if form.client and form.client.azure_ad_tenant_id %}
-        <a href="{% url 'auth_login' %}?next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
-            <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 2em; margin-top: 4em">
-                <span class="icon icon-spinner"></span><em>{% if form.client and form.client.login_button_text %}{{ form.client.login_button_text }}{% else %}{% trans 'Sign in' %}{% endif %}</em>
+        </div>
+        {% if form.clients|length > 1 %}
+        <h2 style="margin-top: 4px; margin-bottom: 4px;">{% if client and client.login_header_text %}{{ client.login_header_text }}{% endif %}</h2>
+        {% endif %}
+        <a href="{% url 'auth_login' %}?client={{ client.id }}&next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
+            <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 0em; margin-top: 0em; min-width: 400px">
+                <span class="icon icon-spinner"></span><em>{% if client and client.login_button_text %}{{ client.login_button_text }}{% else %}{% trans 'Sign in' %}{% endif %}</em>
             </button>
         </a>
-
-        <p><a href="#" id="password-signin-display-button" style="cursor: pointer; text-decoration: none; color: inherit">{% trans "If you have a separate password, click here to sign in" %}</a></p>
+        </div>
         {% endif %}
 
-        <form id="password-signin-form" action="{% url 'wagtailadmin_login' %}" method="post" autocomplete="off" novalidate {% if not form.errors and form.client.azure_ad_tenant_id %} style="display: none; {% endif %}">
+        </div>
+        {% endfor %}
+        {% if form.hide_login_form %}<p><a href="#id_username" id="password-signin-display-button" style="cursor: pointer; text-decoration: none; color: inherit">{% trans "If you have a separate password, click here to sign in" %}</a></p>{% endif %}
+
+        <form id="password-signin-form" action="{% url 'wagtailadmin_login' %}" method="post" autocomplete="off" novalidate {% if not form.errors and form.hide_login_form %} style="display: none; {% endif %}">
             {% block login_form %}
             {% csrf_token %}
 

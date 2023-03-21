@@ -9,11 +9,17 @@ from aplans.utils import OrderedModel
 
 
 class ClientQuerySet(models.QuerySet):
-    def for_request(self, request):
-        hostname = request.get_host()
-        if ':' in hostname:
-            hostname = hostname.split(':')[0]
-        return self.filter(admin_hostnames__hostname=hostname)
+    def for_request(self, request, client=None):
+        admin_hostname = AdminHostname.objects.get_for_request(request)
+        qs = self.filter(admin_hostnames=admin_hostname)
+
+        client_id = client if client is not None else request.GET.get('client')
+        if client_id is None:
+            return qs
+        try:
+            return qs.filter(id=client_id)
+        except ValueError:
+            return qs
 
 
 class Client(ClusterableModel):
@@ -42,12 +48,22 @@ class Client(ClusterableModel):
         return 'https://%s' % hostnames.first()
 
 
+class AdminHostnameQuerySet(models.QuerySet):
+    def get_for_request(self, request):
+        hostname = request.get_host()
+        if ':' in hostname:
+            hostname = hostname.split(':')[0]
+        return self.get(hostname=hostname)
+
+
 class AdminHostname(OrderedModel, ClusterableModel):
     login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200, blank=True, null=True)
     clients = models.ManyToManyField(
         Client, blank=False, related_name='admin_hostnames'
     )
     hostname = HostnameField(unique=True)
+
+    objects = AdminHostnameQuerySet.as_manager()
 
     def __str__(self):
         return self.hostname
