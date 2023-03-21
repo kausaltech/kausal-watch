@@ -43,16 +43,10 @@ class Client(ClusterableModel):
 
 
 class AdminHostname(OrderedModel, ClusterableModel):
-    client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='admin_hostnames'
-    )
     clients = models.ManyToManyField(
-        Client, blank=False
+        Client, blank=False, related_name='admin_hostnames'
     )
     hostname = HostnameField(unique=True)
-
-    class Meta:
-        ordering = ('client', 'order')
 
     def __str__(self):
         return self.hostname
