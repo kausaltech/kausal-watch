@@ -46,6 +46,9 @@ class AdminHostname(OrderedModel, ClusterableModel):
     client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='admin_hostnames'
     )
+    clients = models.ManyToManyField(
+        Client, blank=False
+    )
     hostname = HostnameField(unique=True)
 
     class Meta:
