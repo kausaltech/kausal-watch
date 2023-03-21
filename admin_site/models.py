@@ -43,6 +43,7 @@ class Client(ClusterableModel):
 
 
 class AdminHostname(OrderedModel, ClusterableModel):
+    login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200, blank=True, null=True)
     clients = models.ManyToManyField(
         Client, blank=False, related_name='admin_hostnames'
     )
