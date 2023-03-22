@@ -34,17 +34,15 @@
         <div style="margin-bottom: 5em; display: flex; align-items: flex-end; ">
           {% if client and client.azure_ad_tenant_id %}
           <div>
-        <div style="padding-bottom: 2px;">
+        <div style="padding-bottom: 0.5em;">
         {% if client and client.logo %}
         {% image client.logo width-128 %}
         {% endif %}
         </div>
-        {% if form.clients|length > 1 %}
-        <h2 style="margin-top: 4px; margin-bottom: 4px;">{% if client and client.login_header_text %}{{ client.login_header_text }}{% endif %}</h2>
-        {% endif %}
+        <p style="margin-top: 4px; margin-bottom: 4px; font-size: 120%; font-weight: bold; text-transform: uppercase;">{% if client and client.login_button_text %}{{ client.login_button_text }}{% endif %}</p>
         <a href="{% url 'auth_login' %}?client={{ client.id }}&next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
             <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 0em; margin-top: 0em; min-width: 400px">
-                <span class="icon icon-spinner"></span><em>{% if client and client.login_button_text %}{{ client.login_button_text }}{% else %}{% trans 'Sign in' %}{% endif %}</em>
+                <span class="icon icon-spinner"></span><em>{% trans 'Sign in' %}</em>
             </button>
         </a>
         </div>
