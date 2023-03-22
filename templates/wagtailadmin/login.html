@@ -35,10 +35,18 @@
         {% if form.client and form.client.azure_ad_tenant_id %}
         <a href="{% url 'auth_login' %}?next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
             <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 2em; margin-top: 4em">
-                <span class="icon icon-spinner"></span><em>{% if form.client and form.client.login_button_text %}{{ form.client.login_button_text }}{% else %}{% trans 'Sign in' %}{% endif %}</em>
+                <span class="icon icon-spinner"></span><em>{% if form.client and form.client.login_button_text %}{{ form.client.login_button_text }}{% else %}{% trans 'Sign in with Microsoft' %}{% endif %}</em>
             </button>
         </a>
-
+        {% endif %}
+        {% if form.client and form.client.google_login_enabled %}
+        <a href="{% url 'social:begin' 'google-openidconnect' %}?next={% if request.GET.next %}{{ request.GET.next }}{% else %}{% url 'wagtailadmin_home' %}{% endif %}">
+            <button type="submit" class="button button-longrunning" data-clicked-text="{% trans 'Signing in…' %}" style="margin-bottom: 2em; margin-top: 4em; margin-left: 1em;">
+                <span class="icon icon-spinner"></span><em>{% if form.client and form.client.google_login_button_text %}{{ form.client.google_login_button_text }}{% else %}{% trans 'Sign in with Google' %}{% endif %}</em>
+            </button>
+        </a>
+        {% endif %}
+        {% if form.client and form.client.azure_ad_tenant_id or form.client.google_login_enabled %}
         <p><a href="#" id="password-signin-display-button" style="cursor: pointer; text-decoration: none; color: inherit">{% trans "If you have a separate password, click here to sign in" %}</a></p>
         {% endif %}
 

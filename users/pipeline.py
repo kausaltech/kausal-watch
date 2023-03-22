@@ -1,5 +1,6 @@
 import io
 import logging
+from uuid import uuid4
 
 from sentry_sdk import capture_exception
 from social_core.backends.oauth import OAuthAuth
@@ -63,7 +64,10 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
 
 def create_or_update_user(backend, details, user, *args, **kwargs):
     if user is None:
-        uuid = details.get('uuid') or kwargs.get('uid')
+        if backend.name == 'google-openidconnect':
+            uuid = uuid4()
+        else:
+            uuid = details.get('uuid') or kwargs.get('uid')
         user = User(uuid=uuid)
         msg = 'Created new user'
     else:
@@ -141,6 +145,9 @@ def get_username(details, backend, response, *args, **kwargs):
     generate username from the `new_uuid` using the
     `helusers.utils.uuid_to_username` function.
     """
+
+    if backend.name == 'google-openidconnect':
+        return
 
     user = details.get('user')
     if not user:

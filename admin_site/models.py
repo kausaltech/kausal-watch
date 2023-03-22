@@ -23,6 +23,11 @@ class Client(ClusterableModel):
     login_button_text = models.CharField(verbose_name=_('login button text'), max_length=200)
     use_id_token_email_field = models.BooleanField(verbose_name=_('use email field of ID Token'), default=False)
 
+    google_login_enabled = models.BooleanField(verbose_name=_('Google login enabled'), default=False, null=False)
+    google_login_button_text = models.CharField(
+        verbose_name=_('login button text for google'), max_length=200, null=True, blank=True
+    )
+
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )

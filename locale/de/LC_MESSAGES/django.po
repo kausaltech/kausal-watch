@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-15 13:59+0200\n"
-"PO-Revision-Date: 2023-03-15 14:11+0200\n"
+"POT-Creation-Date: 2023-03-22 15:24+0200\n"
+"PO-Revision-Date: 2023-03-22 15:29+0200\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (https://www.transifex.com/kausal-tech/teams/113123/de/)\n"
 "Language: de\n"
@@ -1720,6 +1720,14 @@ msgstr "Login-Button-Text"
 #: admin_site/models.py
 msgid "use email field of ID Token"
 msgstr "Benutze E-Mail-Feld von ID-Token"
+
+#: admin_site/models.py
+msgid "Google login enabled"
+msgstr "Google-Login aktiviert"
+
+#: admin_site/models.py
+msgid "login button text for google"
+msgstr "Login-Button-Text für Google"
 
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
 #, python-format
@@ -3442,6 +3450,14 @@ msgstr "Zu Kausal Watch anmelden"
 #: templates/wagtailadmin/login.html
 msgid "Signing in…"
 msgstr "Anmeldung läuft…"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Microsoft"
+msgstr "Mit Microsoft anmelden"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Google"
+msgstr "Mit Google anmelden"
 
 #: templates/wagtailadmin/login.html
 msgid "If you have a separate password, click here to sign in"

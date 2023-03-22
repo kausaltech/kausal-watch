@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-15 13:59+0200\n"
+"POT-Creation-Date: 2023-03-22 15:24+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1701,6 +1701,14 @@ msgstr ""
 
 #: admin_site/models.py
 msgid "use email field of ID Token"
+msgstr ""
+
+#: admin_site/models.py
+msgid "Google login enabled"
+msgstr ""
+
+#: admin_site/models.py
+msgid "login button text for google"
 msgstr ""
 
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
@@ -3417,6 +3425,14 @@ msgstr ""
 
 #: templates/wagtailadmin/login.html
 msgid "Signing in…"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Microsoft"
+msgstr ""
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Google"
 msgstr ""
 
 #: templates/wagtailadmin/login.html

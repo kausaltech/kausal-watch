@@ -43,6 +43,8 @@ env = environ.FileAwareEnv(
     OIDC_CLIENT_SECRET=(str, ''),
     AZURE_AD_CLIENT_ID=(str, ''),
     AZURE_AD_CLIENT_SECRET=(str, ''),
+    GOOGLE_CLIENT_ID=(str, ''),
+    GOOGLE_CLIENT_SECRET=(str, ''),
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
@@ -259,6 +261,7 @@ AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
     'django.contrib.auth.backends.ModelBackend',
+    'social_core.backends.google_openidconnect.GoogleOpenIdConnect'
 )
 
 AUTH_USER_MODEL = 'users.User'
@@ -276,6 +279,9 @@ SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
 SOCIAL_AUTH_AZURE_AD_KEY = env.str('AZURE_AD_CLIENT_ID')
 SOCIAL_AUTH_AZURE_AD_SECRET = env.str('AZURE_AD_CLIENT_SECRET')
+
+SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_KEY = env.str('GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_SECRET = env.str('GOOGLE_CLIENT_SECRET')
 
 SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.log_login_attempt',

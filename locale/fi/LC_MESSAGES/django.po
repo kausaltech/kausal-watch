@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-15 13:59+0200\n"
-"PO-Revision-Date: 2023-03-15 14:14+0200\n"
+"POT-Creation-Date: 2023-03-22 15:24+0200\n"
+"PO-Revision-Date: 2023-03-22 15:42+0200\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: LANGUAGE <timo.tuominen@kausal.tech>\n"
 "Language: fi\n"
@@ -1721,6 +1721,14 @@ msgstr "sisäänkirjautumispainikkeen teksti"
 #: admin_site/models.py
 msgid "use email field of ID Token"
 msgstr "käytä ID Tokenin sähköpostiosoitekenttää"
+
+#: admin_site/models.py
+msgid "Google login enabled"
+msgstr "Google-kirjautuminen käytössä"
+
+#: admin_site/models.py
+msgid "login button text for google"
+msgstr "Google-kirjautumispainikkeen teksti"
 
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
 #, python-format
@@ -3494,6 +3502,14 @@ msgstr "Kirjaudu sisään Kausal Watch -palveluun"
 #: templates/wagtailadmin/login.html
 msgid "Signing in…"
 msgstr "Kirjaudutaan sisään…"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Microsoft"
+msgstr "Kirjaudu Microsoft-tunnuksilla"
+
+#: templates/wagtailadmin/login.html
+msgid "Sign in with Google"
+msgstr "Kirjaudu Google-tunnuksilla"
 
 #: templates/wagtailadmin/login.html
 msgid "If you have a separate password, click here to sign in"

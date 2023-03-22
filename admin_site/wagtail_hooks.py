@@ -256,6 +256,8 @@ class ClientAdmin(ModelAdmin):
         FieldPanel('azure_ad_tenant_id'),
         FieldPanel('login_header_text'),
         FieldPanel('login_button_text'),
+        FieldPanel('google_login_enabled'),
+        FieldPanel('google_login_button_text'),
         InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
         InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
         InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
