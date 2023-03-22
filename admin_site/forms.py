@@ -20,7 +20,7 @@ class LoginForm(AuthenticationForm):
         self.hide_login_form = self.clients.filter(azure_ad_tenant_id__isnull=False).exists()
 
         admin_hostname = AdminHostname.objects.get_for_request(request)
-        self.header_text = admin_hostname.login_header_text
+        self.header_text = admin_hostname.login_header_text if admin_hostname is not None else ''
 
     @property
     def extra_fields(self):

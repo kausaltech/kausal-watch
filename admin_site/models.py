@@ -11,6 +11,8 @@ from aplans.utils import OrderedModel
 class ClientQuerySet(models.QuerySet):
     def for_request(self, request, client=None):
         admin_hostname = AdminHostname.objects.get_for_request(request)
+        if admin_hostname is None:
+            return self.none()
         qs = self.filter(admin_hostnames=admin_hostname)
 
         client_id = client if client is not None else request.GET.get('client')
@@ -53,7 +55,10 @@ class AdminHostnameQuerySet(models.QuerySet):
         hostname = request.get_host()
         if ':' in hostname:
             hostname = hostname.split(':')[0]
-        return self.get(hostname=hostname)
+        qs = self.filter(hostname=hostname)
+        if qs:
+            return qs.first()
+        return None
 
 
 class AdminHostname(OrderedModel, ClusterableModel):

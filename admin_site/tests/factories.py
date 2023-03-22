@@ -6,7 +6,7 @@ class AdminHostnameFactory(DjangoModelFactory):
     class Meta:
         model = 'admin_site.AdminHostname'
 
-    client = SubFactory('admin_site.tests.factories.ClientFactory')
+    clients = SubFactory('admin_site.tests.factories.ClientFactory')
     hostname = Sequence(lambda i: f'client{i}.example.org')
 
 
@@ -18,7 +18,6 @@ class ClientFactory(DjangoModelFactory):
     azure_ad_tenant_id = ''
     login_header_text = "Client login header text"
     login_button_text = "Client login button text"
-    admin_hostnames = RelatedFactory(AdminHostnameFactory, factory_related_name='client')
 
 
 class ClientPlanFactory(DjangoModelFactory):
