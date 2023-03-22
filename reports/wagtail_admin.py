@@ -1,4 +1,8 @@
 from django.contrib import admin
+from django.contrib.admin.utils import quote
+from django.http import HttpResponse
+from django.urls import re_path
+from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, StreamFieldPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
@@ -7,6 +11,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
 
 from .models import Report, ReportType
+from .views import MarkReportAsCompleteView
 from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin
 from aplans.utils import append_query_parameter
 
@@ -52,6 +57,10 @@ class ReportDeleteView(ReportTypeQueryParameterMixin, DeleteView):
 
 class ReportAdminButtonHelper(ButtonHelper):
     # TODO: duplicated as AttributeTypeAdminButtonHelper
+    download_report_button_classnames = ['icon', 'icon-fa-download']
+    mark_as_complete_button_classnames = ['icon', 'icon-fa-check']
+    undo_marking_as_complete_button_classnames = ['icon', 'icon-fa-undo']
+
     def add_button(self, *args, **kwargs):
         """
         Only show "add" button if the request contains a report type.
@@ -78,6 +87,51 @@ class ReportAdminButtonHelper(ButtonHelper):
         data = super().delete_button(*args, **kwargs)
         data['url'] = append_query_parameter(self.request, data['url'], 'report_type')
         return data
+
+    def download_report_button(self, report_pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.download_report_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('download', quote(report_pk)),
+            'label': _("Download XLSX"),
+            'classname': cn,
+            'title': _("Download report as spreadsheet file"),
+        }
+
+    def mark_as_complete_button(self, report_pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.mark_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('mark_report_as_complete', quote(report_pk)),
+            'label': _("Mark as complete"),
+            'classname': cn,
+            'title': _("Mark this report as complete"),
+        }
+
+    def undo_marking_as_complete_button(self, report_pk, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.undo_marking_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('undo_marking_report_as_complete', quote(report_pk)),
+            'label': _("Undo marking as complete"),
+            'classname': cn,
+            'title': _("Undo marking this report as complete"),
+        }
+
+    def get_buttons_for_obj(self, obj, *args, **kwargs):
+        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
+        buttons.append(self.download_report_button(obj.pk, **kwargs))
+        if obj.is_complete:
+            buttons.append(self.undo_marking_as_complete_button(obj.pk, **kwargs))
+        else:
+            buttons.append(self.mark_as_complete_button(obj.pk, **kwargs))
+        return buttons
 
 
 @modeladmin_register
@@ -151,7 +205,6 @@ class ReportAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('start_date'),
         FieldPanel('end_date'),
-        FieldPanel('is_complete'),
         FieldPanel('is_public'),
     ]
 
@@ -169,3 +222,51 @@ class ReportAdmin(AplansModelAdmin):
         user = request.user
         plan = user.get_active_admin_plan()
         return qs.filter(type__plan=plan).distinct()
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        download_report_url = re_path(
+            self.url_helper.get_action_url_pattern('download'),
+            self.download_report_view,
+            name=self.url_helper.get_action_url_name('download')
+        )
+        mark_as_complete_url = re_path(
+            self.url_helper.get_action_url_pattern('mark_report_as_complete'),
+            self.mark_report_as_complete_view,
+            name=self.url_helper.get_action_url_name('mark_report_as_complete')
+        )
+        undo_marking_as_complete_url = re_path(
+            self.url_helper.get_action_url_pattern('undo_marking_report_as_complete'),
+            self.undo_marking_report_as_complete_view,
+            name=self.url_helper.get_action_url_name('undo_marking_report_as_complete')
+        )
+        return urls + (
+            download_report_url,
+            mark_as_complete_url,
+            undo_marking_as_complete_url,
+        )
+
+    def download_report_view(self, request, instance_pk):
+        report = Report.objects.get(pk=instance_pk)
+        output = report.to_xlsx()
+        response = HttpResponse(
+            output,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        filename = slugify(report.name, allow_unicode=True) + '.xlsx'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    def mark_report_as_complete_view(self, request, instance_pk):
+        return MarkReportAsCompleteView.as_view(
+            model_admin=self,
+            report_pk=instance_pk,
+            complete=True,
+        )(request)
+
+    def undo_marking_report_as_complete_view(self, request, instance_pk):
+        return MarkReportAsCompleteView.as_view(
+            model_admin=self,
+            report_pk=instance_pk,
+            complete=False,
+        )(request)

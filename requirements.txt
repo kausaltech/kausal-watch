@@ -487,7 +487,9 @@ wrapt==1.14.1
     # via deprecated
 xlrd==2.0.1
     # via tablib
-xlsxwriter==3.0.3
-    # via wagtail
+xlsxwriter==3.0.8
+    # via
+    #   -r requirements.in
+    #   wagtail
 xlwt==1.3.0
     # via tablib

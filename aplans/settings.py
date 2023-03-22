@@ -174,6 +174,7 @@ INSTALLED_APPS += [
     'feedback',
     'orgs',
     'pages',
+    'reports',
 ]
 
 MIDDLEWARE = [

@@ -1,9 +1,11 @@
+import xlsxwriter
+import xlsxwriter.format
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 from wagtail.admin.edit_handlers import FieldPanel
 
 import actions.models.attributes as models
@@ -96,6 +98,13 @@ class AttributeType:
         # Implement in subclass
         raise NotImplementedError()
 
+    def get_report_export_column_label(self) -> str:
+        return str(self.instance)
+
+    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+        """Add a format for this attribute type to the given workbook."""
+        return None
+
 
 class OrderedChoice(AttributeType):
     ATTRIBUTE_MODEL = models.AttributeChoice
@@ -115,8 +124,6 @@ class OrderedChoice(AttributeType):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
-        if self.instance.report and self.instance.report.is_complete:
-            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -156,8 +163,6 @@ class CategoryChoice(AttributeType):
                 )
             ),
         )
-        if self.instance.report and self.instance.report.is_complete:
-            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -198,8 +203,6 @@ class OptionalChoiceWithText(AttributeType):
         choice_field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
-        if self.instance.report and self.instance.report.is_complete:
-            choice_field.disabled = True
         fields.append(FormField(
             attribute_type=self,
             django_field=choice_field,
@@ -216,8 +219,6 @@ class OptionalChoiceWithText(AttributeType):
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
                 initial=initial_text, required=False, help_text=self.instance.help_text_i18n
             )
-            if self.instance.report and self.instance.report.is_complete:
-                text_field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
@@ -263,8 +264,6 @@ class TextAttributeTypeMixin:
             field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
                 initial=initial_text, required=False, help_text=self.instance.help_text_i18n
             )
-            if self.instance.report and self.instance.report.is_complete:
-                field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
@@ -317,8 +316,6 @@ class Numeric(AttributeType):
         if attribute:
             initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
-        if self.instance.report and self.instance.report.is_complete:
-            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -334,3 +331,9 @@ class Numeric(AttributeType):
             else:
                 attribute.value = val
                 attribute.save()
+
+    def get_report_export_column_label(self) -> str:
+        return f'{self.instance} [{self.instance.unit}]'
+
+    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+        return workbook.add_format({'num_format': '#,##0.00'})

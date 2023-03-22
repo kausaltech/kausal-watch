@@ -29,8 +29,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from actions.autocomplete import (
-    ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete, ReportAutocomplete,
-    ReportTypeAutocomplete, ReportTypeFieldAutocomplete,
+    ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
 )
 from orgs.autocomplete import OrganizationAutocomplete
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
@@ -38,6 +37,7 @@ from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
+from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
 from users.views import change_admin_plan
 from .graphene_views import SentryGraphQLView
 from .api_router import router as api_router

@@ -12,7 +12,6 @@ from .category import (
 )
 from .features import PlanFeatures
 from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario, PublicationStatus
-from .report import Report, ReportType
 
 
 __all__ = [

@@ -8,7 +8,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Max, Q
+from django.db.models import IntegerField, Max, Q
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
@@ -16,6 +17,7 @@ from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from reversion.models import Version
 from typing import Literal, Optional, TypedDict
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
@@ -25,8 +27,8 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
 from orgs.models import Organization
-from users.models import User
 from people.models import Person
+from users.models import User
 
 from ..attributes import AttributeType
 from ..monitoring_quality import determine_monitoring_quality
@@ -79,6 +81,15 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
             return self.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
         return self
 
+    def complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        action_ids = (
+            ActionSnapshot.objects.filter(report=report)
+            .annotate(action_id=Cast('action_version__object_id', output_field=IntegerField()))
+            .values_list('action_id')
+        )
+        return self.filter(id__in=action_ids)
+
 
 class ActionIdentifierSearchMixin:
     def get_value(self, obj: Action):
@@ -121,7 +132,7 @@ class DraftableModel(models.Model):
         abstract = True
 
 
-@reversion.register()
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
 class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
@@ -562,7 +573,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
 
-    def get_editable_attribute_types(self, user, only_with_report=False, only_without_report=False):
+    def get_editable_attribute_types(self, user, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(self.plan)
         attribute_types = AttributeTypeModel.objects.filter(
@@ -570,10 +581,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             scope_content_type=plan_ct,
             scope_id=self.plan.id,
         )
-        if only_with_report:
-            attribute_types = attribute_types.filter(report__isnull=False)
-        if only_without_report:
-            attribute_types = attribute_types.filter(report__isnull=True)
+        if only_in_reporting_tab:
+            attribute_types = attribute_types.filter(show_in_reporting_tab=True)
+        if unless_in_reporting_tab:
+            attribute_types = attribute_types.filter(show_in_reporting_tab=False)
         attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
@@ -585,8 +596,8 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         main_panels = []
         reporting_panels = []
         i18n_panels = {}
-        for panels, kwargs in [(main_panels, {'only_without_report': True}),
-                               (reporting_panels, {'only_with_report': True})]:
+        for panels, kwargs in [(main_panels, {'unless_in_reporting_tab': True}),
+                               (reporting_panels, {'only_in_reporting_tab': True})]:
             attribute_types = self.get_editable_attribute_types(user, **kwargs)
             for attribute_type in attribute_types:
                 fields = attribute_type.get_form_fields(self)
@@ -608,6 +619,58 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
                 return previous_sibling
             previous_sibling = sibling
         assert False  # should have returned above at some point
+
+    def get_snapshots(self, report=None):
+        """Return the snapshots of this action, optionally restricted to those for the given report."""
+        from reports.models import ActionSnapshot
+        versions = Version.objects.get_for_object(self)
+        qs = ActionSnapshot.objects.filter(action_version__in=versions)
+        if report is not None:
+            qs = qs.filter(report=report)
+        return qs
+
+    def get_latest_snapshot(self, report=None):
+        """Return the latest snapshot of this action, optionally restricted to those for the given report.
+
+        Raises ActionSnapshot.DoesNotExist if no such snapshot exists.
+        """
+        return self.get_snapshots(report).latest()
+
+    def is_complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        try:
+            self.get_latest_snapshot(report)
+        except ActionSnapshot.DoesNotExist:
+            return False
+        return True
+
+    def mark_as_complete_for_report(self, report, user):
+        from reports.models import ActionSnapshot
+        if self.is_complete_for_report(report):
+            raise ValueError(_("The action is already marked as complete for report %s.") % report)
+        with reversion.create_revision():
+            reversion.add_to_revision(self)
+            reversion.set_comment(_("Marked action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report})
+            reversion.set_user(user)
+        ActionSnapshot.objects.create(
+            report=report,
+            action=self,
+        )
+
+    def undo_marking_as_complete_for_report(self, report, user):
+        from reports.models import ActionSnapshot
+        snapshots = ActionSnapshot.objects.filter(
+            report=report,
+            action_version__in=Version.objects.get_for_object(self),
+        )
+        num_snapshots = snapshots.count()
+        if num_snapshots != 1:
+            raise ValueError(_("Cannot undo marking action as complete as there are %s snapshots") % num_snapshots)
+        with reversion.create_revision():
+            reversion.add_to_revision(self)
+            reversion.set_comment(_("Undid marking action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report})
+            reversion.set_user(user)
+        snapshots.delete()
 
 
 class ActionResponsibleParty(OrderedModel):

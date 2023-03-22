@@ -37,7 +37,7 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
         return self.filter(f)
 
 
-@reversion.register()
+@reversion.register(follow=['choice_options'])
 class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
@@ -61,7 +61,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
         always_update=True,
-        populate_from='name_for_identifier',
+        populate_from='name',
         unique_with=('object_content_type', 'scope_content_type', 'scope_id'),
     )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
@@ -84,11 +84,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
     )
-    report = models.ForeignKey(
-        'actions.Report', blank=True, null=True, on_delete=models.CASCADE,
-        related_name='attribute_types', verbose_name=_('Report'),
-    )
-    report_field = models.UUIDField(blank=True, null=True)
+    show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
     primary_language = models.CharField(max_length=8, choices=get_supported_languages())
@@ -107,7 +103,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
 
     public_fields = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
-        'choice_options', 'report', 'report_field',
+        'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
@@ -139,18 +135,11 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
             self.other_languages = plan.other_languages
         super().save(*args, **kwargs)
 
-    @property
-    def name_for_identifier(self):
-        if self.report:
-            return f'{self.report.name}: {self.name}'
-        return self.name
-
     def __str__(self):
-        if self.report:
-            return f'{self.name_i18n} ({self.report})'
-        return self.name
+        return self.name_i18n
 
 
+@reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
     name = models.CharField(max_length=100, verbose_name=_('name'))
@@ -187,6 +176,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return self.name
 
 
+@reversion.register()
 class AttributeCategoryChoice(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
@@ -203,10 +193,10 @@ class AttributeCategoryChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        categories = ", ".join([str(c) for c in self.categories.all()])
-        return f'[{categories}] ({self.type}) for {self.content_object} ({self.content_type})'
+        return ", ".join([str(c) for c in self.categories.all()])
 
 
+@reversion.register()
 class AttributeChoice(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
 
@@ -224,9 +214,10 @@ class AttributeChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.type, self.content_object)
+        return str(self.choice)
 
 
+@reversion.register()
 class AttributeChoiceWithText(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE,
                        related_name='choice_with_text_attributes')
@@ -252,9 +243,10 @@ class AttributeChoiceWithText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.content_object)
+        return f'{self.choice}; {self.text}'
 
 
+@reversion.register()
 class AttributeText(models.Model):
     type = ParentalKey(
         AttributeType,
@@ -281,9 +273,10 @@ class AttributeText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s for %s' % (self.type, self.content_object)
+        return self.text_i18n
 
 
+@reversion.register()
 class AttributeRichText(models.Model):
     type = ParentalKey(
         AttributeType,
@@ -310,9 +303,10 @@ class AttributeRichText(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s for %s' % (self.type, self.content_object)
+        return self.text_i18n
 
 
+@reversion.register()
 class AttributeNumericValue(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
 
@@ -330,7 +324,7 @@ class AttributeNumericValue(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.type, self.content_object)
+        return str(self.value)
 
 
 class ModelWithAttributes(models.Model):
@@ -345,6 +339,13 @@ class ModelWithAttributes(models.Model):
     rich_text_attributes = GenericRelation(to='actions.AttributeRichText')
     numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
     category_choice_attributes = GenericRelation(to='actions.AttributeCategoryChoice')
+
+    # Register models inheriting from this one using:
+    # @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
+    REVERSION_FOLLOW = [
+        'choice_attributes', 'choice_with_text_attributes', 'text_attributes', 'rich_text_attributes',
+        'numeric_value_attributes', 'category_choice_attributes',
+    ]
 
     def set_choice_attribute(self, type, choice_option_id):
         if isinstance(type, str):

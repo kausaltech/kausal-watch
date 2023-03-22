@@ -48,7 +48,7 @@ if typing.TYPE_CHECKING:
     from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
     from .features import PlanFeatures
-    from .report import ReportType
+    from reports.models import ReportType
 
 
 logger = logging.getLogger(__name__)

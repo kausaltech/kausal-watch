@@ -323,6 +323,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
             return self.get_icon(language=None)
 
 
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
 class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModel):
     """A category for actions and indicators."""
 

@@ -25,7 +25,7 @@ from actions.models import (
     AttributeType, AttributeTypeChoiceOption, CategoryType,
     ImpactGroup, ImpactGroupAction, MonitoringQualityPoint, Plan,
     PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
-    CommonCategoryType, Report, ReportType
+    CommonCategoryType
 )
 from orgs.models import Organization
 from users.models import User
@@ -878,20 +878,6 @@ class ActionLinkNode(DjangoNode):
     class Meta:
         model = ActionLink
         fields = public_fields(ActionLink)
-
-
-@register_django_node
-class ReportNode(DjangoNode):
-    class Meta:
-        model = Report
-        fields = public_fields(Report)
-
-
-@register_django_node
-class ReportTypeNode(DjangoNode):
-    class Meta:
-        model = ReportType
-        fields = public_fields(ReportType)
 
 
 class Query:

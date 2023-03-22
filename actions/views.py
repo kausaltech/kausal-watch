@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 
 from .forms import CreatePlanWithDefaultsForm
 from .models.plan import Plan

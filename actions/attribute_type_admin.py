@@ -1,10 +1,8 @@
-from dal import autocomplete
 from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
-from typing import List, Tuple
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
@@ -12,9 +10,7 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from . import attributes
-from .autocomplete import get_report_field_choice_list
-from .models import Action, AttributeType, AttributeTypeChoiceOption, Category, Report
+from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
@@ -176,27 +172,13 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
     pass
 
 
-class AttributeTypePermissionHelper(PermissionHelper):
-    # Disable editing attribute types belonging to a report because they are generated automatically when creating a report
-    def user_can_edit_obj(self, user, obj):
-        return not obj.report
-
-    def user_can_delete_obj(self, user, obj):
-        return not obj.report
-
-    def user_can_inspect_obj(self, user, obj):
-        return obj.report
-
-
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
-    permission_helper_class = AttributeTypePermissionHelper
-    inspect_view_enabled = True
     menu_icon = 'tag'
     menu_label = _("Attributes")
     menu_order = 1200
-    list_display = ('name', 'format', 'report')
+    list_display = ('name', 'format')
     list_filter = (AttributeTypeFilter,)
 
     choice_option_panels = [
@@ -224,6 +206,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             FieldPanel('show_choice_names'),
             FieldPanel('has_zero_option'),
             FieldPanel('instances_editable_by'),
+            FieldPanel('show_in_reporting_tab'),
         ]
         panels = insert_model_translation_panels(AttributeType, panels, request, instance)
         user = request.user
@@ -245,18 +228,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             panels.insert(0, FieldPanel('scope_id', widget=CategoryTypeChooser, heading=_("Category type")))
         else:
             raise Exception(f"Invalid content type {content_type.app_label}.{content_type.model}")
-
-        # Add report panel iff there are reports in this plan
-        # Actually we decided to hide these panels for now
-        # if Report.objects.filter(type__plan=plan).exists():
-        #     panels.append(FieldPanel('report', widget=autocomplete.ModelSelect2(url='report-autocomplete')))
-        #     choices = get_report_field_choice_list(request)
-        #     # If the existing value is no longer a valid choice, add a dummy entry for it
-        #     if str(instance.report_field) not in (v for v, _ in choices):
-        #         choices.append((str(instance.report_field), _('[deleted]')))
-        #     # TODO: Filter choices by the chosen report (`forward` argument?)
-        #     widget = autocomplete.ListSelect2(url='report-type-field-autocomplete', choices=choices)
-        #     panels.append(FieldPanel('report_field', widget=widget))
 
         tabs = [ObjectList(panels, heading=_('General'))]
 
