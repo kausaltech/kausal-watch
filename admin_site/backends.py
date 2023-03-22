@@ -5,7 +5,6 @@ from .models import Client
 
 class AzureADAuth(AzureADTenantOAuth2):
     name = 'azure_ad'
-    AUTHORIZATION_URL = 'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
     DEFAULT_SCOPE = ['openid', 'profile', 'email', 'User.Read']
 
     def __init__(self, *args, **kwargs):
@@ -22,6 +21,9 @@ class AzureADAuth(AzureADTenantOAuth2):
         else:
             tenant_id = self.client.azure_ad_tenant_id
         return tenant_id
+
+    def jwks_url(self):
+        return 'https://login.microsoftonline.com/common/discovery/keys'
 
     def auth_complete_params(self, state=None):
         ret = super().auth_complete_params(state)
