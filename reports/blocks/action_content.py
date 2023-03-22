@@ -1,3 +1,4 @@
+import graphene
 from django.apps import apps
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
@@ -9,6 +10,7 @@ from wagtail.core import blocks
 from actions.attributes import AttributeType
 from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
+from aplans.graphql_types import register_graphene_node
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 
 
@@ -35,6 +37,10 @@ class ReportComparisonBlock(blocks.StructBlock):
     ]
 
 
+class ReportValueInterface(graphene.Interface):
+    field = graphene.NonNull(lambda: grapple_registry.streamfield_blocks.get(ReportFieldBlock))
+
+
 @register_streamfield_block
 class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
@@ -46,6 +52,14 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True)
     ]
 
+    @register_graphene_node
+    class Value(graphene.ObjectType):
+        class Meta:
+            name = 'ActionAttributeReportValue'
+            interfaces = (ReportValueInterface,)
+
+        attribute = graphene.Field('actions.schema.AttributeInterface')
+
     def get_report_export_column_label(self, block_value):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
         return wrapped_type.get_report_export_column_label()
@@ -56,13 +70,20 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             attribute = wrapped_type.get_attributes(action).get()
         except wrapped_type.ATTRIBUTE_MODEL.DoesNotExist:
             return None
-        return str(attribute)
+        return attribute
 
     def get_report_export_value_for_action_snapshot(self, block_value, snapshot):
-        attribute = snapshot.get_attribute_for_type(block_value['attribute_type'])
-        if attribute:
-            return str(attribute)
-        return None
+        return snapshot.get_attribute_for_type(block_value['attribute_type'])
+
+    def graphql_value_for_action_snapshot(self, field, snapshot):
+        attribute = self.get_report_export_value_for_action_snapshot(field.value, snapshot)
+        # Change the ID of the attribute to include the snapshot, otherwise Apollo would cache the attribute value from
+        # one point in time and use this for all other points in time of the same attribute
+        attribute.id = f'{attribute.id}-snapshot-{snapshot.id}'
+        return self.Value(
+            field=field,
+            attribute=attribute,
+        )
 
     def add_xlsx_cell_format(self, block_value, workbook):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
@@ -80,19 +101,31 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     class Meta:
         label = _("implementation phase")
 
+    @register_graphene_node
+    class Value(graphene.ObjectType):
+        class Meta:
+            name = 'ActionImplementationPhaseReportValue'
+            interfaces = (ReportValueInterface,)
+
+        implementation_phase = graphene.Field('actions.schema.ActionImplementationPhaseNode')
+
     def get_report_export_column_label(self, value):
         return str(self.label)
 
     def get_report_export_value_for_action(self, block_value, action):
-        if action.implementation_phase:
-            return str(action.implementation_phase)
-        return None
+        return action.implementation_phase
 
     def get_report_export_value_for_action_snapshot(self, block_value, snapshot):
         implementation_phase_id = snapshot.action_version.field_dict['implementation_phase_id']
         if implementation_phase_id:
-            return str(ActionImplementationPhase.objects.get(id=implementation_phase_id))
+            return ActionImplementationPhase.objects.get(id=implementation_phase_id)
         return None
+
+    def graphql_value_for_action_snapshot(self, field, snapshot):
+        return self.Value(
+            field=field,
+            implementation_phase=self.get_report_export_value_for_action_snapshot(field.value, snapshot),
+        )
 
     def add_xlsx_cell_format(self, block_value, workbook):
         return None
@@ -100,7 +133,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     def get_help_panel(self, block_value, snapshot):
         value = self.get_report_export_value_for_action_snapshot(block_value, snapshot) or ''
         heading = f'{self.label} ({snapshot.report})'
-        return HelpPanel(value, heading=heading)
+        return HelpPanel(str(value), heading=heading)
 
 
 @register_streamfield_block

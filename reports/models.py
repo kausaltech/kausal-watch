@@ -143,7 +143,7 @@ class Report(models.Model):
             if not cell_format:
                 cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
                 self._xlsx_cell_format_for_field[field.id] = cell_format
-            worksheet.write(row, column, value, cell_format)
+            worksheet.write(row, column, str(value), cell_format)
             column += 1
 
     def mark_as_complete(self, user):
