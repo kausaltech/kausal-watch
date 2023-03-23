@@ -498,7 +498,7 @@ WAGTAILEMBEDS_FINDERS = [
     {
         'class': 'aplans.wagtail_embed_finders.GenericFinder',
         'provider': 'ArcGIS',
-        'domain_whitelist': ('arcgis.com', ),
+        'domain_whitelist': ('arcgis.com', 'maps.arcgis.com',),
         'title': 'Map'
     },
     {
