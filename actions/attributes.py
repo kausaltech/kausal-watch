@@ -98,8 +98,17 @@ class AttributeType:
         # Implement in subclass
         raise NotImplementedError()
 
-    def get_report_export_column_label(self) -> str:
-        return str(self.instance)
+    def xlsx_values(self, attribute) -> List[Any]:
+        """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
+        if not attribute:
+            return [None]
+        assert attribute.type == self.instance
+        return [str(attribute)]
+
+    def xlsx_column_labels(self) -> List[str]:
+        """Return the label for each of this attribute type's columns."""
+        # Override if, e.g., a certain attribute type uses more than one column
+        return [str(self.instance)]
 
     def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
         """Add a format for this attribute type to the given workbook."""
@@ -133,6 +142,12 @@ class OrderedChoice(AttributeType):
         val = cleaned_data.get(self.form_field_name)
         if val is not None:
             self.create_attribute(obj, choice=val)
+
+    def xlsx_values(self, attribute) -> List[Any]:
+        if not attribute:
+            return [None]
+        assert attribute.type == self.instance
+        return [str(attribute.choice)]
 
 
 class CategoryChoice(AttributeType):
@@ -173,6 +188,9 @@ class CategoryChoice(AttributeType):
         if val is not None:
             attribute = self.create_attribute(obj)
             attribute.categories.set(val)
+            # attribute is a ClusterableModel, or at least it probably should be, so we need to call save() to
+            # persist the categories we just set
+            attribute.save()
 
 
 class OptionalChoiceWithText(AttributeType):
@@ -241,6 +259,18 @@ class OptionalChoiceWithText(AttributeType):
         has_text_in_some_language = any(v for v in text_vals.values())
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
+
+    def xlsx_values(self, attribute) -> List[Any]:
+        if not attribute:
+            return [None, None]
+        assert attribute.type == self.instance
+        return [str(attribute.choice), attribute.text_i18n]
+
+    def xlsx_column_labels(self) -> List[str]:
+        return [
+            _('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
+            _('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
+        ]
 
 
 class TextAttributeTypeMixin:
@@ -332,8 +362,15 @@ class Numeric(AttributeType):
                 attribute.value = val
                 attribute.save()
 
-    def get_report_export_column_label(self) -> str:
-        return f'{self.instance} [{self.instance.unit}]'
+    def xlsx_column_labels(self) -> List[str]:
+        return [f'{self.instance} [{self.instance.unit}]']
+
+    def xlsx_values(self, attribute) -> List[Any]:
+        """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
+        if not attribute:
+            return [None]
+        assert attribute.type == self.instance
+        return [attribute.value]
 
     def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
         return workbook.add_format({'num_format': '#,##0.00'})

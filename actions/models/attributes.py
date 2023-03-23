@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from modelcluster.models import ClusterableModel, ParentalKey
+from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToManyField
 from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
@@ -177,15 +177,13 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
 
 
 @reversion.register()
-class AttributeCategoryChoice(models.Model):
+class AttributeCategoryChoice(ClusterableModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    categories = models.ManyToManyField(
-        'actions.Category', related_name='+'
-    )
+    categories = ParentalManyToManyField('actions.Category', related_name='+')
 
     public_fields = ['id', 'categories']
 
@@ -193,7 +191,7 @@ class AttributeCategoryChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return ", ".join([str(c) for c in self.categories.all()])
+        return "; ".join([str(c) for c in self.categories.all()])
 
 
 @reversion.register()

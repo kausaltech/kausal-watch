@@ -4,6 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from io import BytesIO
+from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from wagtail.core.fields import StreamField
 import reversion
@@ -82,9 +83,9 @@ class Report(models.Model):
         worksheet.write(0, 2, str(_('Marked as complete at')))
         column = 3
         for field in self.fields:
-            label = field.block.get_report_export_column_label(field.value)
-            worksheet.write(0, column, label)
-            column += 1
+            for label in field.block.xlsx_column_labels(field.value):
+                worksheet.write(0, column, label)
+                column += 1
 
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
         self._xlsx_cell_format_for_field = {}
@@ -135,16 +136,17 @@ class Report(models.Model):
         column = 3
         for field in self.fields:
             if isinstance(action_or_snapshot, ActionSnapshot):
-                value = field.block.get_report_export_value_for_action_snapshot(field.value, action_or_snapshot)
+                values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
             else:
-                value = field.block.get_report_export_value_for_action(field.value, action_or_snapshot)
-            # Add cell format only once per field and cache added formats
-            cell_format = self._xlsx_cell_format_for_field.get(field.id)
-            if not cell_format:
-                cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                self._xlsx_cell_format_for_field[field.id] = cell_format
-            worksheet.write(row, column, str(value), cell_format)
-            column += 1
+                values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
+            for value in values:
+                # Add cell format only once per field and cache added formats
+                cell_format = self._xlsx_cell_format_for_field.get(field.id)
+                if not cell_format:
+                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
+                    self._xlsx_cell_format_for_field[field.id] = cell_format
+                worksheet.write(row, column, value, cell_format)
+                column += 1
 
     def mark_as_complete(self, user):
         """Mark this report as complete, as well as all actions that are not yet complete.
@@ -229,7 +231,20 @@ class ActionSnapshot(models.Model):
             # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
             if (model.__module__ == 'actions.models.attributes'
                     and all(version.field_dict.get(key) == value for key, value in pattern.items())):
-                return model(**version.field_dict)
+                # Replace PKs by model instances. (We assume they still exist in the DB, otherwise we are fucked.)
+                field_dict = {}
+                for field_name, value in version.field_dict.items():
+                    field = getattr(model, field_name)
+                    if isinstance(field, ParentalManyToManyDescriptor):
+                        # value should be a list of PKs of the related model; transform it to a list of instances
+                        related_model = field.rel.model
+                        value = [related_model.objects.get(pk=pk) for pk in value]
+                    field_dict[field_name] = value
+                # This does not work for model fields that are a ManyToManyDescriptor. In such cases, you may want
+                # to make the model a ClusterableModel and use, e.g., ParentalManyToManyField instead of
+                # ManyToManyField.
+                instance = model(**field_dict)
+                return instance
         return None
 
     def __str__(self):
