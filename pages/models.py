@@ -357,6 +357,11 @@ class ActionListPage(FixedSlugPage):
         validators=(MinValueValidator(1),),
         default=1
     )
+    include_related_plans = models.BooleanField(
+        verbose_name=_('Include related plans'),
+        help_text=_('Enable to make this page include actions from related plans.'),
+        default=False
+    )
 
     force_slug = 'actions'
     is_creatable = False  # Only let this be created programmatically
@@ -366,6 +371,7 @@ class ActionListPage(FixedSlugPage):
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
         FieldPanel('heading_hierarchy_depth'),
+        FieldPanel('include_related_plans'),
         MultiFieldPanel([
             StreamFieldPanel('primary_filters', heading=_("Primary filters")),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
@@ -384,6 +390,7 @@ class ActionListPage(FixedSlugPage):
         # then the type would be called `View`, not `ActionListPageView`, as the automatically generated type is.
         GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
         GraphQLInt(field_name='heading_hierarchy_depth', required=True),
+        GraphQLBoolean('include_related_plans'),
         streamfield_node_getter('primary_filters'),
         streamfield_node_getter('main_filters'),
         streamfield_node_getter('advanced_filters'),
