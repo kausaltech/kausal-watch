@@ -256,7 +256,7 @@ class CategoryBase(OrderedModel):
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
 
     public_fields = [
-        'id', 'uuid', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text',
+        'id', 'uuid', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text', 'order',
     ]
 
     class Meta:
@@ -347,7 +347,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     )
 
     public_fields = CategoryBase.public_fields + [
-        'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
+        'type', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
     ]
 
     class Meta:
