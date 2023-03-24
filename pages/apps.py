@@ -81,10 +81,10 @@ def patch_grapple_url_resolvers():
 
 
 def post_reorder_categories(sender, **kwargs):
+    from actions.models import CategoryType
     qs = kwargs['queryset']
-    assert len(set(cat.type_id for cat in qs)) == 1
-    category_type = qs.first().type
-    if category_type.synchronize_with_pages:
+    type_ids = qs.values_list('type_id')
+    for category_type in CategoryType.objects.filter(id__in=type_ids, synchronize_with_pages=True):
         category_type.synchronize_pages()
 
 
