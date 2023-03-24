@@ -463,6 +463,21 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
             instance.set_rich_text_attribute(attribute_type_identifier, value)
 
 
+class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
+    attribute_format = AttributeType.AttributeFormat.CATEGORY_CHOICE
+
+    def to_representation(self, value):
+        return {v.type.identifier: [cat.id for cat in v.categories.all()] for v in value.all()}
+
+    def to_internal_value(self, data):
+        return data
+
+    def update(self, instance: Action, validated_data):
+        assert instance.pk is not None
+        for attribute_type_identifier, category_ids in validated_data.items():
+            instance.set_category_choice_attribute(attribute_type_identifier, category_ids)
+
+
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetaclass):
     choice_attributes = ChoiceAttributesSerializer(required=False)
@@ -470,10 +485,11 @@ class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetacla
     numeric_value_attributes = NumericValueAttributesSerializer(required=False)
     text_attributes = TextAttributesSerializer(required=False)
     rich_text_attributes = RichTextAttributesSerializer(required=False)
+    category_choice_attributes = CategoryChoiceAttributesSerializer(required=False)
 
     _attribute_fields = [
         'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'text_attributes',
-        'rich_text_attributes',
+        'rich_text_attributes', 'category_choice_attributes',
     ]
 
     def get_field_names(self, declared_fields, info):

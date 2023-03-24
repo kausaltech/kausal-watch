@@ -102,8 +102,8 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     )
 
     public_fields = [
-        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
-        'choice_options',
+        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'attribute_category_type', 'show_choice_names',
+        'has_zero_option', 'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
@@ -424,6 +424,22 @@ class ModelWithAttributes(models.Model):
             else:
                 existing_attribute.text = value
                 existing_attribute.save()
+
+    def set_category_choice_attribute(self, type, category_ids):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.category_choice_attributes.get(type=type)
+        except self.category_choice_attributes.model.DoesNotExist:
+            if category_ids:
+                attribute = self.category_choice_attributes.create(type=type)
+                attribute.categories.set(category_ids)
+        else:
+            if not category_ids:
+                existing_attribute.delete()
+            else:
+                existing_attribute.categories.set(category_ids)
+
 
     class Meta:
         abstract = True
