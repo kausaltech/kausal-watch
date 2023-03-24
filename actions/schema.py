@@ -880,6 +880,25 @@ class ActionLinkNode(DjangoNode):
         fields = public_fields(ActionLink)
 
 
+def plans_actions_queryset(plans, category, first, order_by, user):
+    qs = Action.objects.visible_for_user(user).filter(plan__in=plans)
+    if category is not None:
+        # FIXME: This is sucky, maybe convert Category to a proper tree model?
+        f = (
+            Q(id=category) |
+            Q(parent=category) |
+            Q(parent__parent=category) |
+            Q(parent__parent__parent=category) |
+            Q(parent__parent__parent__parent=category)
+        )
+        descendant_cats = Category.objects.filter(f)
+        qs = qs.filter(categories__in=descendant_cats).distinct()
+    qs = order_queryset(qs, ActionNode, order_by)
+    if first is not None:
+        qs = qs[0:first]
+    return qs
+
+
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
     plans_for_hostname = graphene.List(PlanInterface, hostname=graphene.String())
@@ -888,6 +907,10 @@ class Query:
     action = graphene.Field(ActionNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
 
     plan_actions = graphene.List(
+        graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
+    )
+    related_plan_actions = graphene.List(
         graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
         category=graphene.ID(), order_by=graphene.String(),
     )
@@ -934,24 +957,16 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
+        qs = plans_actions_queryset([plan_obj], category, first, order_by, info.context.user)
+        return gql_optimizer.query(qs, info)
 
-        qs = Action.objects.visible_for_user(info.context.user).filter(plan=plan_obj)
-        if category is not None:
-            # FIXME: This is sucky, maybe convert Category to a proper tree model?
-            f = (
-                Q(id=category) |
-                Q(parent=category) |
-                Q(parent__parent=category) |
-                Q(parent__parent__parent=category) |
-                Q(parent__parent__parent__parent=category)
-            )
-            descendant_cats = Category.objects.filter(f)
-            qs = qs.filter(categories__in=descendant_cats).distinct()
+    def resolve_related_plan_actions(self, info, plan, first=None, category=None, order_by=None, **kwargs):
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
 
-        qs = order_queryset(qs, ActionNode, order_by)
-        if first is not None:
-            qs = qs[0:first]
-
+        plans = plan_obj.get_all_related_plans()
+        qs = plans_actions_queryset(plans, category, first, order_by, info.context.user)
         return gql_optimizer.query(qs, info)
 
     def resolve_plan_categories(self, info, plan, **kwargs):
