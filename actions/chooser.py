@@ -10,14 +10,7 @@ from .models import Action, AttributeType, Category, CategoryType, Plan
 from aplans.types import WatchAdminRequest
 
 
-class CategoryChooserMixin(ModelChooserMixin):
-    request: WatchAdminRequest
-
-    def get_unfiltered_object_list(self):
-        plan = self.request.user.get_active_admin_plan()
-        objects = Category.objects.filter(type__plan=plan).distinct()
-        return objects
-
+class WatchModelChooserBase(ModelChooserMixin):
     def get_object_list(self, search_term=None, **kwargs):
         objs = self.get_unfiltered_object_list()
 
@@ -26,6 +19,15 @@ class CategoryChooserMixin(ModelChooserMixin):
             objs = search_backend.autocomplete(search_term, objs)
 
         return objs
+
+
+class CategoryChooserMixin(WatchModelChooserBase):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.user.get_active_admin_plan()
+        objects = Category.objects.filter(type__plan=plan).distinct()
+        return objects
 
 
 class CategoryChooserViewSet(ModelChooserViewSet):
@@ -50,21 +52,12 @@ def register_category_chooser_viewset():
     return CategoryChooserViewSet('category_chooser', url_prefix='category-chooser')
 
 
-class CategoryTypeChooserMixin(ModelChooserMixin):
+class CategoryTypeChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
         plan = self.request.get_active_admin_plan()
         return CategoryType.objects.filter(plan=plan)
-
-    def get_object_list(self, search_term=None, **kwargs):
-        objs = self.get_unfiltered_object_list()
-
-        if search_term:
-            search_backend = get_search_backend()
-            objs = search_backend.autocomplete(search_term, objs)
-
-        return objs
 
     def user_can_create(self, user):
         # Don't let users create category types in the chooser
@@ -93,7 +86,7 @@ def register_category_type_chooser_viewset():
     return CategoryTypeChooserViewSet('category_type_chooser', url_prefix='category-type-chooser')
 
 
-class ActionChooserMixin(ModelChooserMixin):
+class ActionChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
@@ -101,15 +94,6 @@ class ActionChooserMixin(ModelChooserMixin):
         related_plans = Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
         objects = Action.objects.filter(plan__in=related_plans)
         return objects
-
-    def get_object_list(self, search_term=None, **kwargs):
-        objs = self.get_unfiltered_object_list()
-
-        if search_term:
-            search_backend = get_search_backend()
-            objs = search_backend.autocomplete(search_term, objs)
-
-        return objs
 
     def get_row_data(self, item):
         return {
@@ -148,21 +132,12 @@ def register_action_chooser_viewset():
     return ActionChooserViewSet('action_chooser', url_prefix='action-chooser')
 
 
-class PlanChooserMixin(ModelChooserMixin):
+class PlanChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
         plan = self.request.get_active_admin_plan()
         return Plan.objects.filter(pk=plan.pk) | plan.related_plans.all()
-
-    def get_object_list(self, search_term=None, **kwargs):
-        objs = self.get_unfiltered_object_list()
-
-        if search_term:
-            search_backend = get_search_backend()
-            objs = search_backend.autocomplete(search_term, objs)
-
-        return objs
 
     def get_row_data(self, item):
         return {
@@ -200,7 +175,7 @@ def register_plan_chooser_viewset():
     return PlanChooserViewSet('plan_chooser', url_prefix='plan-chooser')
 
 
-class AttributeTypeChooserMixin(ModelChooserMixin):
+class AttributeTypeChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
@@ -218,15 +193,6 @@ class AttributeTypeChooserMixin(ModelChooserMixin):
         else:
             qs = cat_qs | act_qs
         return qs.order_by('name')
-
-    def get_object_list(self, search_term=None, **kwargs):
-        objs = self.get_unfiltered_object_list()
-
-        if search_term:
-            search_backend = get_search_backend()
-            objs = search_backend.autocomplete(search_term, objs)
-
-        return objs
 
     def user_can_create(self, user):
         return False
