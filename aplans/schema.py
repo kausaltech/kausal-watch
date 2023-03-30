@@ -80,7 +80,7 @@ class Query(
         if plan_obj is None:
             return None
 
-        qs = Organization.objects.all()
+        qs = Organization.objects.available_for_plan(plan_obj)
         if plan is not None:
             query = Q()
             if for_responsible_parties:
