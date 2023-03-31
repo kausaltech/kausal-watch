@@ -82,6 +82,12 @@ class ActionImplementationPhaseFilterBlock(FilterBlock):
 
 
 @register_streamfield_block
+class PlanFilterBlock(FilterBlock):
+    class Meta:
+        label = _("plan")
+
+
+@register_streamfield_block
 class ActionScheduleFilterBlock(FilterBlock):
     class Meta:
         label = _("schedule")
@@ -95,6 +101,7 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
     schedule = ActionScheduleFilterBlock()
     attribute = ActionAttributeTypeFilterBlock()
     category = CategoryTypeFilterBlock()
+    plan = PlanFilterBlock()
 
     model_instance_container_blocks = {
         AttributeType: 'attribute',
@@ -103,5 +110,6 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
 
     graphql_types = [
         ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
-        ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock
+        ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock,
+        PlanFilterBlock
     ]
