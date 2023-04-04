@@ -87,7 +87,7 @@ class IndicatorLevelAdmin(admin.TabularInline):
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
-    fields = ('plan', 'date', 'value', 'scenario')
+    fields = ('date', 'value', 'scenario')
 
     def get_formset(self, request, obj=None, **kwargs):
         plan = request.user.get_active_admin_plan()
@@ -220,7 +220,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
 
         def has_goals(obj):
-            return obj.goals.filter(plan=plan).exists()
+            return obj.goals.exists()
         has_goals.short_description = _('has goals')
         has_goals.boolean = True
 
