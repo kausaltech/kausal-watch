@@ -217,21 +217,8 @@ TEMPLATES = [
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'npm.finders.NpmFinder'
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder'
 ]
-NPM_FILE_PATTERNS = {
-    'ag-grid-community': [
-        'dist/ag-grid-community.js', 'dist/ag-grid-community.noStyle.js',
-        'dist/styles/ag-theme-alpine.css', 'dist/styles/ag-theme-material.css', 'dist/styles/ag-grid.css'
-    ],
-    'moment': [
-        'dist/moment.js', 'dist/locale/*.js'
-    ],
-    '@sentry/browser': [
-        'build/bundle.min.js*'
-    ],
-}
 
 WSGI_APPLICATION = 'aplans.wsgi.application'
 
