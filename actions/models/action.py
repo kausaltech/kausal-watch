@@ -650,7 +650,9 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             raise ValueError(_("The action is already marked as complete for report %s.") % report)
         with reversion.create_revision():
             reversion.add_to_revision(self)
-            reversion.set_comment(_("Marked action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report})
+            reversion.set_comment(
+                _("Marked action '%(action)s' as complete for report '%(report)s'") % {
+                    'action': self, 'report': report})
             reversion.set_user(user)
         ActionSnapshot.objects.create(
             report=report,
@@ -668,7 +670,9 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             raise ValueError(_("Cannot undo marking action as complete as there are %s snapshots") % num_snapshots)
         with reversion.create_revision():
             reversion.add_to_revision(self)
-            reversion.set_comment(_("Undid marking action '%(action)s' as complete for report '%(report)s'") % {'action': self, 'report': report})
+            reversion.set_comment(
+                _("Undid marking action '%(action)s' as complete for report '%(report)s'") % {
+                    'action': self, 'report': report})
             reversion.set_user(user)
         snapshots.delete()
 
