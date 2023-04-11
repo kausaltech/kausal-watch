@@ -157,3 +157,8 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
 @register_streamfield_block
 class AccessibilityStatementContactFormBlock(blocks.StaticBlock):
     pass
+
+
+@register_streamfield_block
+class ActionStatusGraphsBlock(blocks.StaticBlock):
+    pass

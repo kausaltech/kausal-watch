@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-11 20:02+0300\n"
+"POT-Creation-Date: 2023-04-11 22:27+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -187,6 +187,10 @@ msgstr ""
 
 #: actions/action_status_summary.py
 msgid "Postponed"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "Unknown"
 msgstr ""
 
 #: actions/action_status_summary.py
@@ -3035,6 +3039,10 @@ msgstr ""
 
 #: pages/models.py
 msgid "Links to actions in specific category"
+msgstr ""
+
+#: pages/models.py
+msgid "Action status pie charts"
 msgstr ""
 
 #: pages/models.py

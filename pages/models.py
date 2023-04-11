@@ -36,6 +36,7 @@ from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
     AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
     FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock,
+    ActionStatusGraphsBlock
 )
 
 
@@ -135,6 +136,7 @@ class PlanRootPage(AplansPage):
         ('cards', CardListBlock()),
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
         ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('action_status_graphs', ActionStatusGraphsBlock(label=_('Action status pie charts'))),
     ])
 
     content_panels = [
