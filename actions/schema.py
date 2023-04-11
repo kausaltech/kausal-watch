@@ -27,6 +27,10 @@ from actions.models import (
     PlanDomain, PublicationStatus, PlanFeatures, Scenario, CommonCategory,
     CommonCategoryType
 )
+
+from actions.action_status_summary import (
+    ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, Sentiment, Comparison
+)
 from orgs.models import Organization
 from users.models import User
 from aplans.graphql_helpers import UpdateModelInstanceMutation
@@ -180,6 +184,14 @@ class PlanNode(DjangoNode):
         recursive=graphene.Boolean(default_value=False),
         required=True,
     )
+    action_status_summaries = graphene.List('actions.schema.ActionStatusSummaryNode')
+    action_timeliness_classes = graphene.List('actions.schema.ActionTimelinessNode')
+
+    def resolve_action_status_summaries(self: Plan, info):
+        return list(a.get_data({'plan': self}) for a in ActionStatusSummaryIdentifier)
+
+    def resolve_action_timeliness_classes(self: Plan, info):
+        return list(a.get_data({'plan': self}) for a in ActionTimelinessIdentifier)
 
     def resolve_last_action_identifier(self: Plan, info):
         return self.get_last_action_identifier()
@@ -705,6 +717,41 @@ class ActionTaskNode(DjangoNode):
         return RichText(comment)
 
 
+ActionStatusSummaryIdentifierNode = graphene.Enum.from_enum(ActionStatusSummaryIdentifier)
+ActionTimelinessIdentifierNode = graphene.Enum.from_enum(ActionTimelinessIdentifier)
+Sentiment = graphene.Enum.from_enum(Sentiment)
+
+
+@register_graphene_node
+class ActionStatusSummaryNode(graphene.ObjectType):
+    identifier = ActionStatusSummaryIdentifierNode()
+    label = graphene.String()
+    color = graphene.String()
+    is_active = graphene.Boolean()
+    is_completed = graphene.Boolean()
+    sentiment = Sentiment()
+
+    def resolve_label(self, info):
+        # TODO: implement plan-specific labeling
+        return self.default_label
+
+    class Meta:
+        name = 'ActionStatusSummary'
+
+
+@register_graphene_node
+class ActionTimelinessNode(graphene.ObjectType):
+    identifier = ActionTimelinessIdentifierNode()
+    label = graphene.String()
+    color = graphene.String()
+    sentiment = Sentiment()
+    comparison = graphene.Enum.from_enum(Comparison)()
+    days = graphene.Int()
+
+    class Meta:
+        name = 'ActionTimeliness'
+
+
 def _get_visible_action(root, field_name, user: Optional[User]):
     action_id = getattr(root, f'{field_name}_id')
     if action_id is None:
@@ -734,6 +781,8 @@ class ActionNode(AttributesMixin, DjangoNode):
     view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
+    status_summary = ActionStatusSummaryIdentifierNode(required=True)
+    timeliness = ActionTimelinessIdentifierNode(required=True)
 
     class Meta:
         model = Action
@@ -828,6 +877,12 @@ class ActionNode(AttributesMixin, DjangoNode):
             return []
         backend.more_like_this(self)
         return []
+
+    def resolve_status_summary(self: Action, info):
+        return self.get_status_summary()
+
+    def resolve_timeliness(self: Action, info):
+        return self.get_timeliness()
 
 
 class ActionScheduleNode(DjangoNode):

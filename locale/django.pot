@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-23 00:09+0200\n"
+"POT-Creation-Date: 2023-04-11 20:02+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -151,6 +151,52 @@ msgstr ""
 
 #: actions/action_admin.py
 msgid "Reporting"
+msgstr ""
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Completed"
+msgstr ""
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "On time"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "In progress"
+msgstr ""
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Not started"
+msgstr ""
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Late"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "Cancelled"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "Out of scope"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "Merged"
+msgstr ""
+
+#: actions/action_status_summary.py
+msgid "Postponed"
+msgstr ""
+
+#: actions/action_status_summary.py
+#, python-format
+msgid "Under %d days"
+msgstr ""
+
+#: actions/action_status_summary.py
+#, python-format
+msgid "Over %d days"
 msgstr ""
 
 #: actions/admin.py
@@ -389,6 +435,12 @@ msgstr ""
 msgid "implementation phase"
 msgstr ""
 
+#: actions/blocks/filters.py actions/models/action.py actions/models/plan.py
+#: content/models.py feedback/models.py indicators/models.py
+#: notifications/models.py orgs/models.py pages/models.py
+msgid "plan"
+msgstr ""
+
 #: actions/blocks/filters.py actions/models/action.py
 msgid "schedule"
 msgstr ""
@@ -458,19 +510,7 @@ msgid "Choose another attribute"
 msgstr ""
 
 #: actions/defaults.py
-msgid "On time"
-msgstr ""
-
-#: actions/defaults.py
-msgid "Late"
-msgstr ""
-
-#: actions/defaults.py
 msgid "Cancelled or postponed"
-msgstr ""
-
-#: actions/defaults.py
-msgid "Not started"
 msgstr ""
 
 #: actions/defaults.py
@@ -479,10 +519,6 @@ msgstr ""
 
 #: actions/defaults.py
 msgid "Implementation"
-msgstr ""
-
-#: actions/defaults.py
-msgid "Completed"
 msgstr ""
 
 #: actions/export.py aplans/utils.py notifications/models.py
@@ -617,12 +653,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "visibility"
-msgstr ""
-
-#: actions/models/action.py actions/models/plan.py content/models.py
-#: feedback/models.py indicators/models.py notifications/models.py
-#: orgs/models.py pages/models.py
-msgid "plan"
 msgstr ""
 
 #: actions/models/action.py
@@ -3097,6 +3127,14 @@ msgstr ""
 
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
+msgstr ""
+
+#: pages/models.py
+msgid "Include related plans"
+msgstr ""
+
+#: pages/models.py
+msgid "Enable to make this page include actions from related plans."
 msgstr ""
 
 #: pages/models.py

@@ -30,6 +30,7 @@ from orgs.models import Organization
 from people.models import Person
 from users.models import User
 
+from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
 from ..attributes import AttributeType
 from ..monitoring_quality import determine_monitoring_quality
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
@@ -675,6 +676,12 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
                     'action': self, 'report': report})
             reversion.set_user(user)
         snapshots.delete()
+
+    def get_status_summary(self):
+        return ActionStatusSummaryIdentifier.for_action(self)
+
+    def get_timeliness(self):
+        return ActionTimelinessIdentifier.for_action(self)
 
 
 class ActionResponsibleParty(OrderedModel):

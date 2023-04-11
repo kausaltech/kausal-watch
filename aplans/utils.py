@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from enum import Enum
 import random
 import re
 from typing import Iterable, List, Type
@@ -334,3 +335,21 @@ def append_query_parameter(request, url, parameter):
         assert '?' not in url
         return f'{url}?{parameter}={value}'
     return url
+
+
+class ConstantMetadata:
+    identifier: 'MetadataEnum'
+
+    def with_identifier(self, identifier: 'MetadataEnum'):
+        self.identifier = identifier
+        return self
+
+    def with_context(self, context: dict):
+        return self
+
+
+class MetadataEnum(Enum):
+    value: 'ConstantMetadata'
+
+    def get_data(self, context=None):
+        return self.value.with_identifier(self).with_context(context)
