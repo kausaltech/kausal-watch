@@ -14,7 +14,6 @@ from wagtail.admin.edit_handlers import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.images.edit_handlers import ImageChooserPanel
 
 from admin_list_controls.actions import SubmitForm, TogglePanel
@@ -28,7 +27,7 @@ from dal import autocomplete, forward as dal_forward
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
+    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
     PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, SafeLabelModelAdminMenuItem,
     insert_model_translation_panels, get_translation_tabs
@@ -465,7 +464,7 @@ class ActionMenuItem(SafeLabelModelAdminMenuItem):
         return plan.general_content.get_action_term_display_plural()
 
 
-class ActionButtonHelper(ButtonHelper):
+class ActionButtonHelper(AplansButtonHelper):
     mark_as_complete_button_classnames = []
 
     def mark_as_complete_button(self, action_pk, report, **kwargs):
