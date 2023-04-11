@@ -724,12 +724,12 @@ Sentiment = graphene.Enum.from_enum(Sentiment)
 
 @register_graphene_node
 class ActionStatusSummaryNode(graphene.ObjectType):
-    identifier = ActionStatusSummaryIdentifierNode()
-    label = graphene.String()
-    color = graphene.String()
-    is_active = graphene.Boolean()
-    is_completed = graphene.Boolean()
-    sentiment = Sentiment()
+    identifier = ActionStatusSummaryIdentifierNode(required=True)
+    label = graphene.String(required=True)
+    color = graphene.String(required=True)
+    is_active = graphene.Boolean(required=True)
+    is_completed = graphene.Boolean(required=True)
+    sentiment = Sentiment(required=True)
 
     def resolve_label(self, info):
         # TODO: implement plan-specific labeling
@@ -741,12 +741,12 @@ class ActionStatusSummaryNode(graphene.ObjectType):
 
 @register_graphene_node
 class ActionTimelinessNode(graphene.ObjectType):
-    identifier = ActionTimelinessIdentifierNode()
-    label = graphene.String()
-    color = graphene.String()
-    sentiment = Sentiment()
-    comparison = graphene.Enum.from_enum(Comparison)()
-    days = graphene.Int()
+    identifier = ActionTimelinessIdentifierNode(required=True)
+    label = graphene.String(required=True)
+    color = graphene.String(required=True)
+    sentiment = Sentiment(required=True)
+    comparison = graphene.Enum.from_enum(Comparison)(required=True)
+    days = graphene.Int(required=True)
 
     class Meta:
         name = 'ActionTimeliness'
