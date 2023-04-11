@@ -184,8 +184,12 @@ class PlanNode(DjangoNode):
         recursive=graphene.Boolean(default_value=False),
         required=True,
     )
-    action_status_summaries = graphene.List('actions.schema.ActionStatusSummaryNode')
-    action_timeliness_classes = graphene.List('actions.schema.ActionTimelinessNode')
+    action_status_summaries = graphene.List(
+        graphene.NonNull('actions.schema.ActionStatusSummaryNode'), required=True
+    )
+    action_timeliness_classes = graphene.List(
+        graphene.NonNull('actions.schema.ActionTimelinessNode'), required=True
+    )
 
     def resolve_action_status_summaries(self: Plan, info):
         return list(a.get_data({'plan': self}) for a in ActionStatusSummaryIdentifier)
