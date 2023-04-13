@@ -1,6 +1,6 @@
+import datetime
 from enum import Enum
 import typing
-
 
 from aplans.utils import MetadataEnum, ConstantMetadata
 
@@ -57,7 +57,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         color='green050',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.POSITIVE
     )
     NOT_STARTED = ActionStatusSummary(
         default_label=_('Not started'),
@@ -119,9 +119,6 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
     def for_action(cls, action: 'Action'):
         status = action.status.identifier if action.status else None
         phase = action.implementation_phase.identifier if action.implementation_phase else None
-
-        if status is None:
-            return cls.UNDEFINED
         if action.merged_with is not None:
             return cls.MERGED
         # TODO: check phase "completed" property
@@ -129,7 +126,9 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
             return cls.COMPLETED
         # phase: "begun"? "implementation?"
         if phase == 'not_started' and status == 'on_time':
-            return cls.NOT_STARTED
+            return cls.ON_TIME
+        if status is None:
+            return cls.UNDEFINED
         try:
             return next(a for a in cls if a.name.lower() == action.status.identifier)
         except StopIteration:
@@ -210,10 +209,10 @@ class ActionTimelinessIdentifier(MetadataEnum):
     @classmethod
     def for_action(cls, action: 'Action'):
         plan = action.plan
-        age_in_days = (timezone.now() - action.updated_at).days
-        if age_in_days <= cls.OPTIMAL.value.boundary(plan):
+        age = timezone.now() - action.updated_at
+        if age <= datetime.timedelta(days=cls.OPTIMAL.value.boundary(plan)):
             return cls.OPTIMAL
-        if age_in_days <= cls.ACCEPTABLE.value.boundary(plan):
+        if age <= datetime.timedelta(days=cls.ACCEPTABLE.value.boundary(plan)):
             return cls.ACCEPTABLE
         # We do not distinguish between late and stale for now
         return cls.LATE
