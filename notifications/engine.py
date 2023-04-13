@@ -5,16 +5,19 @@ from django.utils import translation
 from logging import getLogger
 from markupsafe import Markup
 from sentry_sdk import capture_exception
+from typing import Dict, Sequence
 
+from .mjml import render_mjml_from_template
+from .notifications import (
+    ActionNotUpdatedNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
+    TaskLateNotification, UpdatedIndicatorValuesDueSoonNotification, UpdatedIndicatorValuesLateNotification,
+    UserFeedbackReceivedNotification,
+)
+from .queue import NotificationQueue
+from .recipients import NotificationRecipient, PersonRecipient
 from actions.models import Plan, ActionTask, Action, ActionContactPerson
 from feedback.models import UserFeedback
 from indicators.models import Indicator, IndicatorContactPerson
-from .mjml import render_mjml_from_template
-from .notifications import (
-    ActionNotUpdatedNotification, NotEnoughTasksNotification, TaskDueSoonNotification, TaskLateNotification,
-    UpdatedIndicatorValuesDueSoonNotification, UpdatedIndicatorValuesLateNotification,
-    UserFeedbackReceivedNotification,
-)
 
 logger = getLogger(__name__)
 
@@ -45,6 +48,12 @@ class NotificationEngine:
         self.ignore_indicators = set(ignore_indicators or [])
         self.dump = dump
 
+    def ignore_action(self, action):
+        return action.identifier in self.ignore_actions
+
+    def ignore_indicator(self, indicator):
+        return indicator.identifier in self.ignore_indicators
+
     def _fetch_data(self):
         active_tasks = ActionTask.objects.filter(action__plan=self.plan)
         active_tasks = active_tasks.exclude(state__in=(ActionTask.CANCELLED, ActionTask.COMPLETED))
@@ -56,82 +65,54 @@ class NotificationEngine:
         actions = self.plan.actions.select_related('status')
         for act in actions:
             act.plan = self.plan  # prevent DB query
-            act._notification_recipients = []  # same, filled in later
-            if act.identifier in self.ignore_actions:
-                act._ignore = True
-            else:
-                act._ignore = False
         self.actions_by_id = {act.id: act for act in actions}
 
         for indicator in indicators:
             indicator.plan = self.plan  # prevent DB query
-            indicator._notification_recipients = []  # same, filled in later
-            if indicator.identifier in self.ignore_indicators:
-                indicator._ignore = True
-            else:
-                indicator._ignore = False
         self.indicators_by_id = {indicator.id: indicator for indicator in indicators}
 
         for task in self.active_tasks:
             task.action = self.actions_by_id[task.action_id]
 
-        persons_by_id = {}
-
         action_contacts = ActionContactPerson.objects.filter(action__in=actions).select_related('person')
         for ac in action_contacts:
-            if ac.person_id not in persons_by_id:
-                persons_by_id[ac.person_id] = ac.person
-                ac.person._notifications = {}
             action = self.actions_by_id[ac.action_id]
-            action._notification_recipients.append(persons_by_id[ac.person_id])
+            recipients = list(self.recipients_for_action.get(ac.action_id, []))
+            recipients.append(PersonRecipient(ac.person))
+            self.recipients_for_action[ac.action_id] = recipients
 
         indicator_contacts = IndicatorContactPerson.objects.filter(indicator__in=indicators).select_related('person')
         for ic in indicator_contacts:
-            if ic.person_id not in persons_by_id:
-                persons_by_id[ic.person_id] = ic.person
-                ic.person._notifications = {}
             indicator = self.indicators_by_id[ic.indicator_id]
-            indicator._notification_recipients.append(persons_by_id[ic.person_id])
+            recipients = list(self.recipients_for_indicator.get(ic.indicator_id, []))
+            recipients.append(PersonRecipient(ic.person))
+            self.recipients_for_indicator[ic.indicator_id] = recipients
 
         admin_people = []
         for action in self.actions_by_id.values():
             admin_people += self.ensure_action_notification_recipient(action)
         for indicator in self.indicators_by_id.values():
             admin_people += self.ensure_indicator_notification_recipient(indicator)
-        for person in admin_people:
-            persons_by_id[person.id] = person
-        self.persons_by_id = persons_by_id
 
-        for person in self.plan.general_admins.all():
-            if person.id not in persons_by_id:
-                persons_by_id[person.id] = person
-                person._notifications = {}
-
-        self.user_feedbacks_by_id = {}
         for user_feedback in self.plan.user_feedbacks.all():
-            user_feedback._notification_recipients = [
-                persons_by_id[person.id] for person in self.plan.general_admins.all()
-            ]
-            self.user_feedbacks_by_id[user_feedback.id] = user_feedback
+            recipients = list(self.recipients_for_user_feedback.get(user_feedback.id, []))
+            recipients += [PersonRecipient(person) for person in self.plan.general_admins.all()]
+            self.recipients_for_user_feedback[user_feedback.id] = recipients
 
     def ensure_action_notification_recipient(self, action):
-        if action._notification_recipients:
+        if self.recipients_for_action.get(action.id):
             return []
         organizations = set((p.organization for p in action.responsible_parties.all()))
         organizations.add(action.primary_org)
-        people = [opa.person for opa in self.plan.organization_plan_admins.filter(organization__in=organizations)]
-        for person in people:
-            person._notifications = {}
-        action._notification_recipients = people
-        return people
+        recipients = [PersonRecipient(opa.person) for opa in self.plan.organization_plan_admins.filter(organization__in=organizations)]
+        self.recipients_for_action[action.id] = recipients
+        return recipients
 
     def ensure_indicator_notification_recipient(self, indicator):
-        if indicator._notification_recipients:
+        if self.recipients_for_indicator.get(indicator.id):
             return []
         people = [opa.person for opa in self.plan.organization_plan_admins.filter(organization=indicator.organization)]
-        for person in people:
-            person._notifications = {}
-        indicator._notification_recipients = people
+        self.recipients_for_indicator[indicator.id] = people
         return people
 
     def generate_task_notifications(self, task: ActionTask):
@@ -149,7 +130,8 @@ class NotificationEngine:
             notif = TaskDueSoonNotification(self.plan, task, diff)
         else:
             return
-        notif.generate_notifications(task.action._notification_recipients, now=self.now)
+        recipients = self.recipients_for_action[task.action.id]
+        notif.generate_notifications(self, recipients, now=self.now)
 
     def generate_indicator_notifications(self, indicator: Indicator):
         if indicator.updated_values_due_at is None:
@@ -163,7 +145,8 @@ class NotificationEngine:
             notif = UpdatedIndicatorValuesDueSoonNotification(self.plan, indicator, diff)
         else:
             return
-        notif.generate_notifications(indicator._notification_recipients, now=self.now)
+        recipients = self.recipients_for_indicator[indicator.id]
+        notif.generate_notifications(self, recipients, now=self.now)
 
     def generate_action_notifications(self, action: Action):
         # Generate a notification if action doesn't have at least
@@ -181,15 +164,15 @@ class NotificationEngine:
                 count += 1
         if count < TASK_COUNT:
             notif = NotEnoughTasksNotification(self.plan, action)
-            notif.generate_notifications(now=self.now)
+            notif.generate_notifications(self, now=self.now)
 
         if self.now.date() - action.updated_at.date() >= timedelta(days=LAST_UPDATED_DAYS):
             notif = ActionNotUpdatedNotification(self.plan, action)
-            notif.generate_notifications(now=self.now)
+            notif.generate_notifications(self, now=self.now)
 
     def generate_user_feedback_notifications(self, user_feedback: UserFeedback):
         notification = UserFeedbackReceivedNotification(self.plan, user_feedback)
-        notification.generate_notifications(now=self.now)
+        notification.generate_notifications(self, now=self.now)
 
     def render(self, template, context, language_code=None):
         if not language_code:
@@ -214,10 +197,15 @@ class NotificationEngine:
         return rendered
 
     def generate_notifications(self):
+        self.queue = NotificationQueue()
+        self.recipients_for_action: Dict[int, Sequence[NotificationRecipient]] = {}
+        self.recipients_for_indicator: Dict[int, Sequence[NotificationRecipient]] = {}
+        self.recipients_for_user_feedback: Dict[int, Sequence[NotificationRecipient]] = {}
+
         self._fetch_data()
 
         for task in self.active_tasks:
-            if task.action._ignore or not task.action.is_active():
+            if self.ignore_action(task.action) or not task.action.is_active():
                 continue
             try:
                 self.generate_task_notifications(task)
@@ -226,15 +214,14 @@ class NotificationEngine:
                 logger.error(str(e))
 
         for indicator in self.indicators_by_id.values():
-            if not indicator._ignore:
+            if not self.ignore_indicator(indicator):
                 self.generate_indicator_notifications(indicator)
 
         for action in self.actions_by_id.values():
-            if action._ignore or not action.is_active():
-                continue
-            self.generate_action_notifications(action)
+            if not self.ignore_action(action) and action.is_active():
+                self.generate_action_notifications(action)
 
-        for user_feedback in self.user_feedbacks_by_id.values():
+        for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
 
         base_template = self.plan.notification_base_template
@@ -246,10 +233,11 @@ class NotificationEngine:
         templates_by_type = {t.type: t for t in base_template.templates.all()}
         notification_count = 0
 
-        for person in self.persons_by_id.values():
-            if self.only_email and person.email != self.only_email:
+        for recipient, items_for_type in self.queue.items_for_recipient.items():
+            if self.only_email and recipient.get_email() != self.only_email:
                 continue
-            for ttype, notifications in person._notifications.items():
+            for notification_type, queue_items in items_for_type.items():
+                ttype = notification_type.identifier
                 if self.only_type and ttype != self.only_type:
                     continue
                 template = templates_by_type.get(ttype)
@@ -261,8 +249,8 @@ class NotificationEngine:
                 content_blocks = {cb.identifier: Markup(cb.content) for cb in cb_qs}
 
                 context = {
-                    'items': [x.get_context() for x in notifications],
-                    'person': person.get_notification_context(),
+                    'items': [item.notification.get_context() for item in queue_items],
+                    'recipient': recipient.get_notification_context(),
                     'content_blocks': content_blocks,
                     'site': self.plan.get_site_notification_context(),
                 }
@@ -272,7 +260,10 @@ class NotificationEngine:
                 if self.force_to:
                     to_email = self.force_to
                 else:
-                    to_email = person.email
+                    to_email = recipient.get_email()  # can be None if the recipient has no corresponding email address
+                if not to_email:
+                    continue
+
                 msg = EmailMessage(
                     subject=rendered['subject'],
                     body=rendered['html_body'],
@@ -283,19 +274,23 @@ class NotificationEngine:
                 msg.content_subtype = "html"  # Main content is now text/html
 
                 nstr = []
-                for n in notifications:
-                    if isinstance(n.obj, ActionTask):
-                        s = '\t%s: %s' % (n.obj.action, n.obj)
+                for item in queue_items:
+                    if isinstance(item.notification.obj, ActionTask):
+                        s = '\t%s: %s' % (item.notification.obj.action, item.notification.obj)
                     else:
-                        s = '\t%s' % str(n.obj)
+                        s = '\t%s' % str(item.notification.obj)
                     nstr.append(s)
                 logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
 
                 if not self.noop:
                     msg.send()
                 if not self.force_to and not self.noop:
-                    for n in notifications:
-                        n.mark_sent(person)
+                    for item in queue_items:
+                        item.notification.mark_sent(recipient)
                 notification_count += 1
                 if self.limit and notification_count >= self.limit:
                     return
+
+    def queue_notification(self, notification: Notification, recipient: NotificationRecipient):
+        item = recipient.queue_item(notification)
+        self.queue.push(item)

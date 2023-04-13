@@ -1,9 +1,13 @@
+from __future__ import annotations
+
 import datetime
 import logging
+import typing
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models import Q
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from enum import Enum
 from modelcluster.fields import ParentalKey
@@ -12,6 +16,9 @@ from wagtail.core.fields import RichTextField
 
 from people.models import Person
 from aplans.utils import PlanRelatedModel
+
+if typing.TYPE_CHECKING:
+    from .recipients import NotificationRecipient
 
 DEFAULT_FONT_FAMILY = (
     '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
@@ -67,6 +74,11 @@ class NotificationSettings(ClusterableModel, PlanRelatedModel):
         return str(self.plan)
 
 
+class SentNotificationQuerySet(models.QuerySet):
+    def recipient(self, recipient: NotificationRecipient):
+        return recipient.filter_sent_notifications(self)
+
+
 class SentNotification(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -77,7 +89,21 @@ class SentNotification(models.Model):
         verbose_name=_('type'), choices=notification_type_choice_builder(),
         max_length=100
     )
-    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='notifications')
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='notifications', blank=True, null=True)
+    email = models.EmailField(
+        blank=True,
+        help_text=_('Set if the notification was sent to an email address instead of a person'),
+    )
+
+    objects = SentNotificationQuerySet.as_manager()
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
+                name='person_xor_email',
+           )
+        ]
 
     def __str__(self):
         return '%s: %s -> %s' % (self.content_object, self.type, self.person)
@@ -155,6 +181,10 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     type = models.CharField(
         verbose_name=_('type'), choices=notification_type_choice_builder(),
         max_length=100,
+    )
+    recipient_email = models.EmailField(
+        blank=True, verbose_name=_('recipient email address'),
+        help_text=_('Overrides the default recipients for this template'),
     )
 
     objects = NotificationTemplateManager()

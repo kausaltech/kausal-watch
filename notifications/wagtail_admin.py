@@ -28,12 +28,13 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('from_name'),
-        FieldPanel('reply_to')
+        FieldPanel('reply_to'),
     ]
 
     templates_panels = [
         FieldPanel('type'),
-        FieldPanel('subject')
+        FieldPanel('subject'),
+        FieldPanel('recipient_email'),
     ]
 
     block_panels = [
