@@ -785,8 +785,8 @@ class ActionNode(AttributesMixin, DjangoNode):
     view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
-    status_summary = ActionStatusSummaryIdentifierNode(required=True)
-    timeliness = ActionTimelinessIdentifierNode(required=True)
+    status_summary = graphene.Field('actions.schema.ActionStatusSummaryNode', required=True)
+    timeliness = graphene.Field('actions.schema.ActionTimelinessNode', required=True)
 
     class Meta:
         model = Action
