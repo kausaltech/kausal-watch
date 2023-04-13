@@ -138,6 +138,14 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
+    def xlsx_values_for_action(self, block_value, action) -> List[Any]:
+        value = self.value_for_action(block_value, action)
+        return [str(value)]
+
+    def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
+        value = self.value_for_action_snapshot(block_value, snapshot)
+        return [str(value)]
+
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label)]
 
