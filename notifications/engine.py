@@ -250,9 +250,9 @@ class NotificationEngine:
 
                 context = {
                     'items': [item.notification.get_context() for item in queue_items],
-                    'recipient': recipient.get_notification_context(),
                     'content_blocks': content_blocks,
                     'site': self.plan.get_site_notification_context(),
+                    **recipient.get_notification_context(),
                 }
 
                 rendered = self.render(template, context)

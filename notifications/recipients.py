@@ -1,11 +1,18 @@
+from __future__ import annotations
+
+import typing
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from django.db import models
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from .notifications import Notification
 from .queue import NotificationQueueItem
 from people.models import Person
+
+if typing.TYPE_CHECKING:
+    from . import NotificationObject
+    from .models import SentNotification
 
 
 class NotificationRecipient(ABC):
@@ -14,11 +21,12 @@ class NotificationRecipient(ABC):
         pass
 
     @abstractmethod
-    def create_sent_notification(self, **kwargs):
+    def create_sent_notification(self, obj: NotificationObject, **kwargs) -> SentNotification:
+        """Create a SentNotification concerning the given object, which must have an attribute `sent_notifications`."""
         pass
 
     @abstractmethod
-    def get_notification_context(self):
+    def get_notification_context(self) -> Dict[str, Any]:
         pass
 
     def queue_item(self, notification: Notification) -> NotificationQueueItem:
@@ -36,12 +44,11 @@ class PersonRecipient(NotificationRecipient):
     def filter_sent_notifications(self, qs: models.QuerySet):
         return qs.filter(person=self.person)
 
-    def create_sent_notification(self, **kwargs):
-        from .models import SentNotification
+    def create_sent_notification(self, obj, **kwargs) -> SentNotification:
         assert 'person' not in kwargs
-        return SentNotification.objects.create(person=self.person, **kwargs)
+        return obj.sent_notifications.create(person=self.person, **kwargs)
 
-    def get_notification_context(self):
+    def get_notification_context(self) -> Dict[str, Any]:
         return self.person.get_notification_context()
 
     def get_email(self) -> Optional[str]:
@@ -55,13 +62,12 @@ class EmailRecipient(NotificationRecipient):
     def filter_sent_notifications(self, qs: models.QuerySet):
         return qs.filter(email=self.email)
 
-    def create_sent_notification(self, **kwargs):
-        from .models import SentNotification
+    def create_sent_notification(self, obj, **kwargs) -> SentNotification:
         assert 'email' not in kwargs
-        return SentNotification.objects.create(email=self.email, **kwargs)
+        return obj.sent_notifications.create(email=self.email, **kwargs)
 
     # TODO
-    # def get_notification_context(self):
+    # def get_notification_context(self) -> Dict[str, Any]:
     #     pass
 
     def get_email(self) -> Optional[str]:

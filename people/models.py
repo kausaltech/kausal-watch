@@ -334,14 +334,16 @@ class Person(index.Indexed, ClusterableModel):
 
         return client
 
-    def get_notification_context(self, plan=None):
+    def get_notification_context(self):
         client = self.get_admin_client()
         admin_url = client.get_admin_url()
-        out = dict(
-            first_name=self.first_name,
-            last_name=self.last_name,
-            admin_url=admin_url
-        )
+        out = {
+            'person': {
+                'first_name': self.first_name,
+                'last_name': self.last_name,
+            },
+            'admin_url': admin_url,
+        }
 
         logo = client.logo
         rendition = None
@@ -353,16 +355,13 @@ class Person(index.Indexed, ClusterableModel):
                 # Sentry anyway.
                 capture_exception(e)
                 rendition = None
-        if rendition is None:
-            out['logo_url'] = None
-            out['logo_height'] = None
-            out['logo_width'] = None
-            out['logo_alt'] = None
-        else:
-            out['logo_url'] = admin_url + rendition.url
-            out['logo_height'] = rendition.height
-            out['logo_width'] = rendition.width
-            out['logo_alt'] = logo.title
+        if rendition:
+            out['logo'] = {
+                'url': admin_url + rendition.url,
+                'height': rendition.height,
+                'width': rendition.width,
+                'alt': logo.title,
+            }
 
         return out
 

@@ -7,6 +7,7 @@ from feedback.models import UserFeedback
 from indicators.models import Indicator
 
 if typing.TYPE_CHECKING:
+    from . import NotificationObject
     from .engine import NotificationEngine
     from .recipients import NotificationRecipient
 
@@ -16,7 +17,7 @@ MINIMUM_NOTIFICATION_PERIOD = 5  # days
 class Notification:
     type: NotificationType
     plan: Plan
-    obj: typing.Union[Action, ActionTask, Indicator, UserFeedback]
+    obj: NotificationObject
 
     def __init__(self, type: NotificationType, plan: Plan, obj):
         self.type = type
@@ -30,7 +31,7 @@ class Notification:
     def mark_sent(self, recipient: NotificationRecipient, now=None):
         if now is None:
             now = self.plan.now_in_local_timezone()
-        recipient.create_sent_notification(sent_at=now, type=self.type.identifier)
+        recipient.create_sent_notification(self.obj, sent_at=now, type=self.type.identifier)
 
     def notification_last_sent(self, recipient: typing.Optional[NotificationRecipient] = None, now=None) -> typing.Optional[int]:
         if now is None:
