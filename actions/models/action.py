@@ -678,10 +678,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         snapshots.delete()
 
     def get_status_summary(self):
-        return ActionStatusSummaryIdentifier.for_action(self).value
+        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan})
 
     def get_timeliness(self):
-        return ActionTimelinessIdentifier.for_action(self).value
+        return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan})
 
 
 class ActionResponsibleParty(OrderedModel):

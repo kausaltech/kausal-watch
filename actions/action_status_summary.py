@@ -117,8 +117,11 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
 
     @classmethod
     def for_action(cls, action: 'Action'):
-        status = action.status.identifier if action.status else None
-        phase = action.implementation_phase.identifier if action.implementation_phase else None
+        # Some plans in production have inconsistent Capitalized identifiers
+        # Once the db has been cleaned up, this match logic
+        # should be revisited
+        status = action.status.identifier.lower() if action.status else None
+        phase = action.implementation_phase.identifier.lower() if action.implementation_phase else None
         if action.merged_with is not None:
             return cls.MERGED
         # TODO: check phase "completed" property
