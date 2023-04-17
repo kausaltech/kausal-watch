@@ -14,8 +14,23 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='notificationtemplate',
-            name='recipient_email',
-            field=models.EmailField(blank=True, help_text='Overrides the default recipients for this template', max_length=254, verbose_name='recipient email address'),
+            name='custom_email',
+            field=models.EmailField(blank=True, help_text='Email address used when "send to custom email address" is checked', max_length=254, verbose_name='recipient email address'),
+        ),
+        migrations.AddField(
+            model_name='notificationtemplate',
+            name='send_to_contact_persons',
+            field=models.BooleanField(default=False, verbose_name='send to contact persons'),
+        ),
+        migrations.AddField(
+            model_name='notificationtemplate',
+            name='send_to_custom_email',
+            field=models.BooleanField(default=False, verbose_name='send to custom email address'),
+        ),
+        migrations.AddField(
+            model_name='notificationtemplate',
+            name='send_to_plan_admins',
+            field=models.BooleanField(default=True, verbose_name='send to plan admins'),
         ),
         migrations.AddField(
             model_name='sentnotification',

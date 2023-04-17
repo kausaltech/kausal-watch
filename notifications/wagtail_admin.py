@@ -1,6 +1,8 @@
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-from wagtail.admin.edit_handlers import (FieldPanel, ObjectList, InlinePanel, RichTextFieldPanel)
+from wagtail.admin.edit_handlers import (
+    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
+)
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.core import hooks
@@ -34,7 +36,17 @@ class BaseTemplateAdmin(AplansModelAdmin):
     templates_panels = [
         FieldPanel('type'),
         FieldPanel('subject'),
-        FieldPanel('recipient_email'),
+        FieldPanel('custom_email'),
+        MultiFieldPanel([
+            FieldRowPanel([
+                FieldPanel('send_to_plan_admins'),
+                # TODO: Add validation to make sure this is set only if it makes sense (i.e., if the template applies to
+                # actions or indicators)
+                FieldPanel('send_to_contact_persons'),
+                # TODO: Add validation to make sure this is set iff custom_email is set
+                FieldPanel('send_to_custom_email'),
+            ]),
+        ], heading=_('Recipients'), classname='collapsible'),
     ]
 
     block_panels = [

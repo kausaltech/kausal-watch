@@ -12,6 +12,7 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from enum import Enum
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
+from typing import Sequence
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import PlanRelatedModel
@@ -44,6 +45,18 @@ class NotificationType(Enum):
     @property
     def verbose_name(self):
         return self.value
+
+ACTION_NOTIFICATION_TYPES = [
+    NotificationType.TASK_LATE,
+    NotificationType.TASK_DUE_SOON,
+    NotificationType.ACTION_NOT_UPDATED,
+    NotificationType.NOT_ENOUGH_TASKS,
+]
+
+INDICATOR_NOTIFICATION_TYPES = [
+    NotificationType.UPDATED_INDICATOR_VALUES_LATE,
+    NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON,
+]
 
 
 def notification_type_choice_builder():
@@ -182,10 +195,13 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         verbose_name=_('type'), choices=notification_type_choice_builder(),
         max_length=100,
     )
-    recipient_email = models.EmailField(
-        blank=True, verbose_name=_('recipient email address'),
-        help_text=_('Overrides the default recipients for this template'),
+    custom_email = models.EmailField(
+        blank=True, verbose_name=_('custom email address'),
+        help_text=_('Email address used when "send to custom email address" is checked'),
     )
+    send_to_plan_admins = models.BooleanField(verbose_name=_('send to plan admins'), default=True)
+    send_to_contact_persons = models.BooleanField(verbose_name=_('send to contact persons'), default=False)
+    send_to_custom_email = models.BooleanField(verbose_name=_('send to custom email address'), default=False)
 
     objects = NotificationTemplateManager()
 
@@ -208,9 +224,34 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     def clean(self):
         pass
 
+    def get_recipients(
+        self, plan_admins: Sequence[NotificationRecipient], action_contacts: Sequence[NotificationRecipient],
+        indicator_contacts: Sequence[NotificationRecipient], action=None, indicator=None,
+    ) -> Sequence[NotificationRecipient]:
+        recipients = []
+        if self.send_to_plan_admins:
+            recipients += plan_admins
+        if self.send_to_contact_persons:
+            contact_person_recipients = []
+            if self.type in (t.identifier for t in ACTION_NOTIFICATION_TYPES):
+                if not action:
+                    raise Exception(f'Notifications of type {self.type} must refer to an action')
+                contact_person_recipients += action_contacts[action.id]
+            if self.type in (t.identifier for t in INDICATOR_NOTIFICATION_TYPES):
+                if not indicator:
+                    raise Exception(f'Notifications of type {self.type} must refer to an indicator')
+                contact_person_recipients += indicator_contacts[indicator.id]
+            recipients += contact_person_recipients
+        if self.send_to_custom_email:
+            recipient = self.get_email_recipient()
+            if not recipient:
+                raise Exception(f'There is no custom email recipient for notifications of type {self.type}')
+            recipients += [recipient]
+        return recipients
+
     def get_email_recipient(self) -> typing.Optional[EmailRecipient]:
         from .recipients import EmailRecipient
-        if not self.recipient_email:
+        if not self.custom_email:
             return None
         # FIXME: This sucks
         plan = self.base.plan
@@ -220,7 +261,7 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
             if admin:
                 client = admin.get_admin_client()
         assert client
-        return EmailRecipient(email=self.recipient_email, client=client)
+        return EmailRecipient(email=self.custom_email, client=client)
 
 
 class ContentBlockManager(models.Manager):
