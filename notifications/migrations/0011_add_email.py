@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='sentnotification',
             name='email',
-            field=models.EmailField(blank=True, help_text='Set if the notification was set to an email address instead of a person', max_length=254),
+            field=models.EmailField(blank=True, help_text='Set if the notification was sent to an email address instead of a person', max_length=254),
         ),
         migrations.AlterField(
             model_name='sentnotification',

@@ -24,7 +24,6 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.search import index
-from wagtail.images.models import SourceImageIOError
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
@@ -336,34 +335,17 @@ class Person(index.Indexed, ClusterableModel):
 
     def get_notification_context(self):
         client = self.get_admin_client()
-        admin_url = client.get_admin_url()
-        out = {
+        context = {
             'person': {
                 'first_name': self.first_name,
                 'last_name': self.last_name,
             },
-            'admin_url': admin_url,
+            'admin_url': client.get_admin_url(),
         }
-
-        logo = client.logo
-        rendition = None
-        if logo is not None:
-            try:
-                rendition = logo.get_rendition('max-200x50')
-            except (FileNotFoundError, SourceImageIOError) as e:
-                # We ignore the error so that the query will not fail, but report it to
-                # Sentry anyway.
-                capture_exception(e)
-                rendition = None
-        if rendition:
-            out['logo'] = {
-                'url': admin_url + rendition.url,
-                'height': rendition.height,
-                'width': rendition.width,
-                'alt': logo.title,
-            }
-
-        return out
+        logo_context = client.get_notification_logo_context()
+        if logo_context:
+            context['logo'] = logo_context
+        return context
 
     def get_corresponding_user(self):
         if self.user:

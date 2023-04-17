@@ -14,11 +14,11 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from wagtail.core.fields import RichTextField
 
-from people.models import Person
 from aplans.utils import PlanRelatedModel
+from people.models import Person
 
 if typing.TYPE_CHECKING:
-    from .recipients import NotificationRecipient
+    from .recipients import EmailRecipient, NotificationRecipient
 
 DEFAULT_FONT_FAMILY = (
     '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
@@ -207,6 +207,20 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
 
     def clean(self):
         pass
+
+    def get_email_recipient(self) -> typing.Optional[EmailRecipient]:
+        from .recipients import EmailRecipient
+        if not self.recipient_email:
+            return None
+        # FIXME: This sucks
+        plan = self.base.plan
+        client = plan.clients.first()
+        if not client:
+            admin = plan.general_admins.first()
+            if admin:
+                client = admin.get_admin_client()
+        assert client
+        return EmailRecipient(email=self.recipient_email, client=client)
 
 
 class ContentBlockManager(models.Manager):

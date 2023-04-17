@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import List
+from typing import Any, List
 from urllib.parse import urljoin
 
 from django import forms
@@ -420,7 +420,7 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
                        PlanRelatedViewMixin, CreateView):
     request: WatchAdminRequest
 
-    def get_instance(self):
+    def get_instance(self) -> Any:
         instance = super().get_instance()
         # If it is a model directly or indirectly related to the
         # active plan, ensure the 'plan' field or other plan related

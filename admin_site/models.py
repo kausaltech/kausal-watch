@@ -3,6 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from sentry_sdk import capture_exception
+from wagtail.images.models import SourceImageIOError
 
 from aplans.fields import HostnameField
 from aplans.utils import OrderedModel
@@ -45,6 +47,30 @@ class Client(ClusterableModel):
             raise Exception('No hostnames for client %s' % self)
 
         return 'https://%s' % hostnames.first()
+
+    def get_notification_logo_rendition(self):
+        """Return the rendition of the logo to be used for notifications, or None."""
+        if self.logo is None:
+            return None
+        try:
+            return self.logo.get_rendition('max-200x50')
+        except (FileNotFoundError, SourceImageIOError) as e:
+            # We ignore the error so that the query will not fail, but report it to Sentry anyway.
+            capture_exception(e)
+        return None
+
+    def get_notification_logo_context(self):
+        """Return the context describing the logo rendition to be used for notifications, or None."""
+        rendition = self.get_notification_logo_rendition()
+        if rendition:
+            assert self.logo
+            return {
+                'url': self.get_admin_url() + rendition.url,
+                'height': rendition.height,
+                'width': rendition.width,
+                'alt': self.logo.title,
+            }
+        return None
 
 
 class AdminHostname(OrderedModel, ClusterableModel):

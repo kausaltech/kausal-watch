@@ -137,10 +137,9 @@ class NotEnoughTasksNotification(Notification):
     def get_context(self):
         return dict(action=self.obj.get_notification_context(self.plan))
 
-    def generate_notifications(self, engine: NotificationEngine, now=None):
+    def generate_notifications(self, engine: NotificationEngine, recipients: typing.Sequence[NotificationRecipient], now=None):
         if now is None:
             now = self.plan.now_in_local_timezone()
-        recipients = engine.recipients_for_action[self.obj.id]
         for recipient in recipients:
             days_since = self.notification_last_sent(recipient, now=now)
             if days_since is not None:
@@ -158,10 +157,9 @@ class ActionNotUpdatedNotification(Notification):
     def get_context(self):
         return dict(action=self.obj.get_notification_context(self.plan), last_updated_at=self.obj.updated_at)
 
-    def generate_notifications(self, engine: NotificationEngine, now=None):
+    def generate_notifications(self, engine: NotificationEngine, recipients: typing.Sequence[NotificationRecipient], now=None):
         if now is None:
             now = self.plan.now_in_local_timezone()
-        recipients = engine.recipients_for_action[self.obj.id]
         for recipient in recipients:
             days_since = self.notification_last_sent(recipient, now=now)
             if days_since is not None:
@@ -179,10 +177,10 @@ class UserFeedbackReceivedNotification(Notification):
     def get_context(self):
         return {'user_feedback': self.obj}
 
-    def generate_notifications(self, engine: NotificationEngine, now=None):
+    def generate_notifications(self, engine: NotificationEngine, recipients: typing.Sequence[NotificationRecipient], now=None):
         if now is None:
             now = self.plan.now_in_local_timezone()
         # Send user feedback received notifications only if they haven't been sent yet to anybody
         if self.notification_last_sent(now=now) is None:
-            for recipient in engine.recipients_for_user_feedback[self.obj.id]:
+            for recipient in recipients:
                 engine.queue_notification(self, recipient)

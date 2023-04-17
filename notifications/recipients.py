@@ -13,6 +13,7 @@ from people.models import Person
 if typing.TYPE_CHECKING:
     from . import NotificationObject
     from .models import SentNotification
+    from admin_site.models import Client
 
 
 class NotificationRecipient(ABC):
@@ -58,6 +59,7 @@ class PersonRecipient(NotificationRecipient):
 @dataclass(frozen=True)  # frozen to make it hashable
 class EmailRecipient(NotificationRecipient):
     email: str
+    client: Client  # Used for obtaining the admin URL etc.
 
     def filter_sent_notifications(self, qs: models.QuerySet):
         return qs.filter(email=self.email)
@@ -66,9 +68,14 @@ class EmailRecipient(NotificationRecipient):
         assert 'email' not in kwargs
         return obj.sent_notifications.create(email=self.email, **kwargs)
 
-    # TODO
-    # def get_notification_context(self) -> Dict[str, Any]:
-    #     pass
+    def get_notification_context(self) -> Dict[str, Any]:
+        context = {
+            'admin_url': self.client.get_admin_url(),
+        }
+        logo_context = self.client.get_notification_logo_context()
+        if logo_context:
+            context['logo'] = logo_context
+        return context
 
     def get_email(self) -> Optional[str]:
         return self.email
