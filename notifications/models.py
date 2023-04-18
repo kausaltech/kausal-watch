@@ -286,7 +286,9 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         # FIXME: This sucks
         plan = self.base.plan
         client = plan.clients.first()
-        if not client:
+        if client:
+            client = client.client
+        else:
             admin = plan.general_admins.first()
             if admin:
                 client = admin.get_admin_client()

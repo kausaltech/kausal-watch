@@ -22,6 +22,10 @@ class NotificationTemplateFactory(DjangoModelFactory):
     subject = "Test"
     # Use the first notification type by default
     type = next(iter(NotificationType)).identifier
+    custom_email = 'test@example.com'
+    send_to_plan_admins = False
+    send_to_contact_persons = False
+    send_to_custom_email = True
 
 
 @factory.django.mute_signals(post_save)
