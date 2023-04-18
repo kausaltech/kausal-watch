@@ -40,10 +40,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
         MultiFieldPanel([
             FieldRowPanel([
                 FieldPanel('send_to_plan_admins'),
-                # TODO: Add validation to make sure this is set only if it makes sense (i.e., if the template applies to
-                # actions or indicators)
                 FieldPanel('send_to_contact_persons'),
-                # TODO: Add validation to make sure this is set iff custom_email is set
                 FieldPanel('send_to_custom_email'),
             ]),
         ], heading=_('Recipients'), classname='collapsible'),

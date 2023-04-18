@@ -6,6 +6,7 @@ import typing
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -46,17 +47,17 @@ class NotificationType(Enum):
     def verbose_name(self):
         return self.value
 
-ACTION_NOTIFICATION_TYPES = [
+ACTION_NOTIFICATION_TYPES = {
     NotificationType.TASK_LATE,
     NotificationType.TASK_DUE_SOON,
     NotificationType.ACTION_NOT_UPDATED,
     NotificationType.NOT_ENOUGH_TASKS,
-]
+}
 
-INDICATOR_NOTIFICATION_TYPES = [
+INDICATOR_NOTIFICATION_TYPES = {
     NotificationType.UPDATED_INDICATOR_VALUES_LATE,
     NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON,
-]
+}
 
 
 def notification_type_choice_builder():
@@ -210,6 +211,16 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         verbose_name = _('notification template')
         verbose_name_plural = _('notification templates')
         unique_together = (('base', 'type'),)
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    (Q(custom_email='') & Q(send_to_custom_email=False))
+                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
+                ),
+                name='custom_email_iff_send_to_custom_email',
+           )
+        ]
+
 
     def __str__(self):
         for val in NotificationType:
@@ -222,7 +233,26 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     natural_key.dependencies = ['notifications.BaseTemplate']
 
     def clean(self):
-        pass
+        if not self.custom_email and self.send_to_custom_email:
+            raise ValidationError({
+                'send_to_custom_email': _('This can only be set if a custom email address is defined')
+            })
+        if self.custom_email and not self.send_to_custom_email:
+            raise ValidationError({
+                'send_to_custom_email': _('If a custom email address is defined, this must be set')
+            })
+        if self.send_to_contact_persons and not self.concerns_action and not self.concerns_indicator:
+            raise ValidationError({
+                'send_to_contact_persons': _('Notifications of this type cannot be sent to contact persons')
+            })
+
+    @property
+    def concerns_action(self):
+        return self.type in (t.identifier for t in ACTION_NOTIFICATION_TYPES)
+
+    @property
+    def concerns_indicator(self):
+        return self.type in (t.identifier for t in INDICATOR_NOTIFICATION_TYPES)
 
     def get_recipients(
         self, plan_admins: Sequence[NotificationRecipient], action_contacts: Sequence[NotificationRecipient],
@@ -233,11 +263,11 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
             recipients += plan_admins
         if self.send_to_contact_persons:
             contact_person_recipients = []
-            if self.type in (t.identifier for t in ACTION_NOTIFICATION_TYPES):
+            if self.concerns_action:
                 if not action:
                     raise Exception(f'Notifications of type {self.type} must refer to an action')
                 contact_person_recipients += action_contacts[action.id]
-            if self.type in (t.identifier for t in INDICATOR_NOTIFICATION_TYPES):
+            if self.concerns_indicator:
                 if not indicator:
                     raise Exception(f'Notifications of type {self.type} must refer to an indicator')
                 contact_person_recipients += indicator_contacts[indicator.id]

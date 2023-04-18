@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='notificationtemplate',
             name='custom_email',
-            field=models.EmailField(blank=True, help_text='Email address used when "send to custom email address" is checked', max_length=254, verbose_name='recipient email address'),
+            field=models.EmailField(blank=True, help_text='Email address used when "send to custom email address" is checked', max_length=254, verbose_name='custom email address'),
         ),
         migrations.AddField(
             model_name='notificationtemplate',
@@ -31,6 +31,10 @@ class Migration(migrations.Migration):
             model_name='notificationtemplate',
             name='send_to_plan_admins',
             field=models.BooleanField(default=True, verbose_name='send to plan admins'),
+        ),
+        migrations.AddConstraint(
+            model_name='notificationtemplate',
+            constraint=models.CheckConstraint(check=models.Q(models.Q(('custom_email', ''), ('send_to_custom_email', False)), models.Q(models.Q(('custom_email', ''), _negated=True), ('send_to_custom_email', True)), _connector='OR'), name='custom_email_iff_send_to_custom_email'),
         ),
         migrations.AddField(
             model_name='sentnotification',
