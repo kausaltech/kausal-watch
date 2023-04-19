@@ -236,6 +236,7 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('indicator_group', IndicatorGroupBlock()),
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
