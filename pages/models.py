@@ -266,7 +266,10 @@ class CategoryPage(AplansPage):
         verbose_name_plural = _('Category pages')
 
     def set_url_path(self, parent):
-        path = f'{slugify(self.category.identifier)}-{self.slug}/'
+        if self.category.type.hide_category_identifiers:
+            path = f'{self.slug}/'
+        else:
+            path = f'{slugify(self.category.identifier)}-{self.slug}/'
         assert parent is not None
         self.url_path = parent.url_path + path
         return self.url_path
