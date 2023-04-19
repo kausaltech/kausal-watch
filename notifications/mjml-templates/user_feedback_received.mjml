@@ -4,12 +4,28 @@
 <mj-section mj-class="notification-content-section">
     <mj-column>
     {% for item in items %}
-    {% with user_feedback = item.user_feedback %}
+    {% with user_feedback=item.user_feedback %}
         <mj-text align="left" css-class="notification-subheader">
-            Feedback regarding <a href="{{ user_feedback.url }}">{{ user_feedback.url }}</a> ({{ user_feedback.created_at }})
+            {% trans url=user_feedback.url, created_at=user_feedback.created_at|format_date %}Feedback regarding <a href="{{ url }}">{{ url }}</a> ({{ created_at }}){% endtrans %}
         </mj-text>
         <mj-text align="left" css-class="notification-header">
-            <h2>Feedback from {% if user_feedback.email %}<a href="mailto:{{ user_feedback.email }}">{{ user_feedback.name }}</a>{% else %}{{ user_feedback.name }}{% endif %}</h2>
+            <h2>
+                {% if user_feedback.email and user_feedback.name %}
+                    {% trans trimmed email=user_feedback.email, name=user_feedback.name %}
+                    Feedback from <a href="mailto:{{ email }}">{{ name }}</a>
+                    {% endtrans %}
+                {% elif user_feedback.email %}
+                    {% trans trimmed email=user_feedback.email %}
+                    Feedback from <a href="mailto:{{ email }}">{{ email }}</a>
+                    {% endtrans %}
+                {% elif user_feedback.name %}
+                    {% trans trimmed name=user_feedback.name %}
+                    Feedback from {{ name }}
+                    {% endtrans %}
+                {% else %}
+                    {% trans %}Anonymous feedback{% endtrans %}
+                {% endif %}
+            </h2>
             <p>{{ user_feedback.comment }}</p>
         </mj-text>
         {% if not loop.last %}<mj-divider />{% endif %}

@@ -1,3 +1,3 @@
 <mj-button align="left" href="{{ admin_url }}{{ action.change_url }}">
-    <strong style="color: {{ theme.link_in_brand_bg_color }}">Muokkaa toimenpidettä</strong>
+    <strong style="color: {{ theme.link_in_brand_bg_color }}">{% trans %}Edit action{% endtrans %}</strong>
 </mj-button>

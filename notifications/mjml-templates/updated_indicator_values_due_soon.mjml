@@ -7,12 +7,16 @@
         {% with indicator = item.indicator %}
         <mj-text align="left" css-class="notification-subheader">
             <a href="{{ indicator.view_url }}">
-                <strong style="color: {{ theme.brand_dark_color }}">Mittari {{ indicator.id }}</strong>
+                <strong style="color: {{ theme.brand_dark_color }}">{% trans id=indicator.id %}Indicator {{ id }}{% endtrans %}</strong>
             </a>
         </mj-text>
         <mj-text align="left" css-class="notification-header">
             <h2>{{ indicator.name }}</h2>
-            <p>Deadline {{ indicator.updated_values_due_at|format_date }} ({{ item.days_left }} päivän päästä)</p>
+            {% trans trimmed days_left=item.days_left, due_at=indicator.updated_values_due_at|format_date %}
+            Due at {{ due_at }} (tomorrow)
+            {% pluralize %}
+            Due at {{ due_at }} (in {{ days_left }} days)
+            {% endtrans %}
         </mj-text>
         {% include 'includes/modify_indicator_button.mjml' %}
         {% if not loop.last %}<mj-divider />{% endif %}

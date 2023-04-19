@@ -37,6 +37,10 @@ class NotificationRecipient(ABC):
         """If this recipient has a corresponding email address, return it, else return None."""
         return None
 
+    def get_preferred_language(self) -> Optional[str]:
+        """If this recipient has a preferred language, return it, else return None."""
+        return None
+
 
 @dataclass(frozen=True)  # frozen to make it hashable
 class PersonRecipient(NotificationRecipient):
@@ -54,6 +58,12 @@ class PersonRecipient(NotificationRecipient):
 
     def get_email(self) -> Optional[str]:
         return self.person.email
+
+    def get_preferred_language(self) -> Optional[str]:
+        user = self.person.user
+        if user and hasattr(user, 'wagtail_userprofile'):
+            return user.wagtail_userprofile.preferred_language
+        return None
 
 
 @dataclass(frozen=True)  # frozen to make it hashable

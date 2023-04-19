@@ -4,18 +4,22 @@
 <mj-section mj-class="notification-content-section">
     <mj-column>
         {% for action, task_list in items|sort(attribute='task.action.order')|groupby('task.action.identifier') %}
-        {% with action = task_list[0].task.action %}
+        {% with action=task_list[0].task.action %}
         <mj-text align="left" css-class="notification-subheader">
-            <a href="{{ action.view_url }}">{% with identifier = action.identifier %}Toimenpide {{ identifier }}{% endwith %}</a>
+            <a href="{{ action.view_url }}">{% trans identifier=action.identifier %}Action {{ identifier }}{% endtrans %}</a>
         </mj-text>
         <mj-text align="left" css-class="notification-header">
             <h2>{{ action.name }}</h2>
-            <h3>Tehtävät</h3>
+            <h3>{% trans %}Tasks{% endtrans %}</h3>
             <ul>
             {% for list_item in task_list %}
                 <li>
                     <strong>{{ list_item.task.name }}</strong><br>
-                    deadline {{ list_item.task.due_at|format_date }} <span class="danger">(myöhässä {{ list_item.days_late }} pv)</span>
+                    {% trans trimmed days_late=list_item.days_late, due_at=list_item.task.due_at|format_date %}
+                    Was due at {{ due_at }} (yesterday)
+                    {% pluralize %}
+                    Was due at {{ due_at }} ({{ days_late }} days ago)
+                    {% endtrans %}
                 </li>
             {% endfor %}
             </ul>

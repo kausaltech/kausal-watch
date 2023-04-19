@@ -5,7 +5,13 @@
     <mj-column vertical-align="top" width="100%">
         <mj-text align="left">
             <h1>{{ title }}</h1>
-            <p>{% if person is defined and person.first_name %}Hei {{ person.first_name }},{% else %}Hei,{% endif %}</p>
+            <p>
+                {% if person is defined and person.first_name %}
+                    {% trans first_name=person.first_name %}Hi {{ first_name }},{% endtrans %}
+                {% else %}
+                    {% trans %}Hi,{% endtrans %}
+                {% endif %}
+            </p>
             {% if 'intro' in content_blocks %}{{ content_blocks.intro }}{% endif %}
         </mj-text>
     </mj-column>

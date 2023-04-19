@@ -5,7 +5,8 @@
     <mj-column>
         {% for item in items %}{% with action=item.action %}
         <mj-text align="left">
-            <strong>Toimenpide {{ action.identifier }}. {{ action.name }}</strong> (viimeksi muokattu {{ action.updated_at|format_date }})
+            <strong>{% trans identifier=action.identifier, name=action.name %}Action {{ identifier }}. {{ name }}{% endtrans %}</strong>
+            {% trans updated_at=action.updated_at|format_date %} (last updated at {{ updated_at }}){% endtrans %}
         </mj-text>
         {% include 'includes/modify_action_button.mjml' %}
         {% if not loop.last %}<mj-divider />{% endif %}

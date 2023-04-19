@@ -281,7 +281,7 @@ class NotificationEngine:
                     **recipient.get_notification_context(),
                 }
 
-                rendered = self.render(template, context)
+                rendered = self.render(template, context, language_code=recipient.get_preferred_language())
 
                 if self.force_to:
                     to_email = self.force_to

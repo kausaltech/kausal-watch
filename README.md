@@ -84,3 +84,31 @@ pinned versions for updates.
 To remove a dependency, remove it from `requirements.in`,
 run `pip-compile` and then `pip-sync`. If everything works
 as expected, commit the changes.
+
+### Updating translations
+
+To extract translatable strings and update translations in the `locale` directory, run the following command (example for the `de` locale):
+```
+python manage.py makemessages --locale de --add-location=file --no-wrap --keep-pot
+```
+The option `--keep-pot` retains the `.pot` files that can be used as the source files for external translation services.
+
+However, this does not update the translatable strings for the notification templates, which have the extension `.mjml`. To do this, run the following:
+```
+pybabel extract -F babel.cfg --input-dirs=. -o locale/notifications.pot --add-location=file --no-wrap
+```
+We use `pybabel` instead of `makemessages` because notification templates use Jinja2 and not the Django template language.
+
+To create a new message catalog (`.po` file) from the generated `.pot` file, you can run the following (example for the `de` locale):
+```
+pybabel init -D notifications -i locale/notifications.pot -d locale -l de
+```
+For subsequently updating this catalog, run the following:
+```
+pybabel update -D notifications -i locale/notifications.pot -d locale -l de
+```
+
+The equivalent of `compilemessages` for the MJML templates is the following (example for the `de` locale):
+```
+pybabel compile -D notifications -d locale -l de
+```
