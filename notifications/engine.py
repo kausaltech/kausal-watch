@@ -77,38 +77,22 @@ class NotificationEngine:
 
         action_contacts = ActionContactPerson.objects.filter(action__in=actions).select_related('person')
         for ac in action_contacts:
-            action = self.actions_by_id[ac.action_id]
             recipients = list(self.action_contact_person_recipients.get(ac.action_id, []))
             recipients.append(PersonRecipient(ac.person))
             self.action_contact_person_recipients[ac.action_id] = recipients
 
         indicator_contacts = IndicatorContactPerson.objects.filter(indicator__in=indicators).select_related('person')
         for ic in indicator_contacts:
-            indicator = self.indicators_by_id[ic.indicator_id]
             recipients = list(self.indicator_contact_person_recipients.get(ic.indicator_id, []))
             recipients.append(PersonRecipient(ic.person))
             self.indicator_contact_person_recipients[ic.indicator_id] = recipients
 
-        for action in self.actions_by_id.values():
-            self.ensure_action_notification_recipient(action)
-        for indicator in self.indicators_by_id.values():
-            self.ensure_indicator_notification_recipient(indicator)
+        for org_plan_admin in self.plan.organization_plan_admins.all().select_related('person'):
+            recipients = list(self.organization_plan_admin_recipients.get(org_plan_admin.organization_id, []))
+            recipients.append(PersonRecipient(org_plan_admin.person))
+            self.organization_plan_admin_recipients[org_plan_admin.organization_id] = recipients
 
         self.plan_admin_recipients = [PersonRecipient(person) for person in self.plan.general_admins.all()]
-
-    def ensure_action_notification_recipient(self, action):
-        if self.action_contact_person_recipients.get(action.id):
-            return
-        organizations = set((p.organization for p in action.responsible_parties.all()))
-        organizations.add(action.primary_org)
-        recipients = [PersonRecipient(opa.person) for opa in self.plan.organization_plan_admins.filter(organization__in=organizations)]
-        self.action_contact_person_recipients[action.id] = recipients
-
-    def ensure_indicator_notification_recipient(self, indicator):
-        if self.indicator_contact_person_recipients.get(indicator.id):
-            return
-        people = [opa.person for opa in self.plan.organization_plan_admins.filter(organization=indicator.organization)]
-        self.indicator_contact_person_recipients[indicator.id] = people
 
     def generate_task_notifications(self, task: ActionTask):
         if task.state in (ActionTask.CANCELLED, ActionTask.COMPLETED):
@@ -129,8 +113,8 @@ class NotificationEngine:
             return
         if template:
             recipients = template.get_recipients(
-                self.plan_admin_recipients, self.action_contact_person_recipients,
-                self.indicator_contact_person_recipients, action=task.action
+                self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+                self.plan_admin_recipients, self.organization_plan_admin_recipients, action=task.action
             )
             notif.generate_notifications(self, recipients, now=self.now)
 
@@ -150,8 +134,8 @@ class NotificationEngine:
             return
         if template:
             recipients = template.get_recipients(
-                self.plan_admin_recipients, self.action_contact_person_recipients,
-                self.indicator_contact_person_recipients, indicator=indicator
+                self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+                self.plan_admin_recipients, self.organization_plan_admin_recipients, indicator=indicator
             )
             notif.generate_notifications(self, recipients, now=self.now)
 
@@ -174,8 +158,8 @@ class NotificationEngine:
             template = self.templates_by_type.get(NotificationType.NOT_ENOUGH_TASKS.identifier)
             if template:
                 recipients = template.get_recipients(
-                    self.plan_admin_recipients, self.action_contact_person_recipients,
-                    self.indicator_contact_person_recipients, action=action
+                    self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+                    self.plan_admin_recipients, self.organization_plan_admin_recipients, action=action
                 )
                 notif.generate_notifications(self, recipients, now=self.now)
 
@@ -184,8 +168,8 @@ class NotificationEngine:
             template = self.templates_by_type.get(NotificationType.ACTION_NOT_UPDATED.identifier)
             if template:
                 recipients = template.get_recipients(
-                    self.plan_admin_recipients, self.action_contact_person_recipients,
-                    self.indicator_contact_person_recipients, action=action
+                    self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+                    self.plan_admin_recipients, self.organization_plan_admin_recipients, action=action
                 )
                 notif.generate_notifications(self, recipients, now=self.now)
 
@@ -194,8 +178,8 @@ class NotificationEngine:
         template = self.templates_by_type.get(NotificationType.USER_FEEDBACK_RECEIVED.identifier)
         if template:
             recipients = template.get_recipients(
-                self.plan_admin_recipients, self.action_contact_person_recipients,
-                self.indicator_contact_person_recipients
+                self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+                self.plan_admin_recipients, self.organization_plan_admin_recipients
             )
             notification.generate_notifications(self, recipients, now=self.now)
 
@@ -225,6 +209,7 @@ class NotificationEngine:
         self.queue = NotificationQueue()
         self.action_contact_person_recipients: Dict[int, Sequence[NotificationRecipient]] = {}
         self.indicator_contact_person_recipients: Dict[int, Sequence[NotificationRecipient]] = {}
+        self.organization_plan_admin_recipients: Dict[int, Sequence[NotificationRecipient]] = {}
         self.plan_admin_recipients: Sequence[NotificationRecipient] = []
 
         self._fetch_data()

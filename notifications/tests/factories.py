@@ -4,7 +4,7 @@ from factory import SubFactory
 from factory.django import DjangoModelFactory
 
 from actions.tests.factories import PlanFactory
-from notifications.models import NotificationType
+from notifications.models import NotificationTemplate, NotificationType
 
 
 class BaseTemplateFactory(DjangoModelFactory):
@@ -24,8 +24,8 @@ class NotificationTemplateFactory(DjangoModelFactory):
     type = next(iter(NotificationType)).identifier
     custom_email = 'test@example.com'
     send_to_plan_admins = False
-    send_to_contact_persons = False
     send_to_custom_email = True
+    send_to_contact_persons = NotificationTemplate.ContactPersonFallbackChain.DO_NOT_SEND
 
 
 @factory.django.mute_signals(post_save)

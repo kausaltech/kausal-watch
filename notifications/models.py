@@ -13,7 +13,7 @@ from django.utils.translation import pgettext_lazy, gettext_lazy as _
 from enum import Enum
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from typing import Sequence
+from typing import Dict, Sequence
 from wagtail.core.fields import RichTextField
 
 from aplans.utils import PlanRelatedModel
@@ -201,8 +201,18 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         help_text=_('Email address used when "send to custom email address" is checked'),
     )
     send_to_plan_admins = models.BooleanField(verbose_name=_('send to plan admins'), default=True)
-    send_to_contact_persons = models.BooleanField(verbose_name=_('send to contact persons'), default=False)
     send_to_custom_email = models.BooleanField(verbose_name=_('send to custom email address'), default=False)
+
+    class ContactPersonFallbackChain(models.TextChoices):
+        DO_NOT_SEND = '', _('Do not send to contact persons')
+        CONTACT_PERSONS = 'cp', _('Send to contact persons')
+        CONTACT_PERSONS_THEN_ORG_ADMINS = 'cp-oa', _('Send to contact persons; fallback: organization admins')
+        CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS = 'cp-oa-pa', _('Send to contact persons; fallback: organization admins, plan admins')
+
+    send_to_contact_persons = models.CharField(
+        max_length=50, verbose_name=_('send to contact persons'), blank=True,
+        choices=ContactPersonFallbackChain.choices,
+    )
 
     objects = NotificationTemplateManager()
 
@@ -255,28 +265,59 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         return self.type in (t.identifier for t in INDICATOR_NOTIFICATION_TYPES)
 
     def get_recipients(
-        self, plan_admins: Sequence[NotificationRecipient], action_contacts: Sequence[NotificationRecipient],
-        indicator_contacts: Sequence[NotificationRecipient], action=None, indicator=None,
+        self, action_contacts: Dict[int, Sequence[NotificationRecipient]],
+        indicator_contacts: Dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
+        organization_plan_admins: Dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
     ) -> Sequence[NotificationRecipient]:
         recipients = []
         if self.send_to_plan_admins:
             recipients += plan_admins
-        if self.send_to_contact_persons:
-            contact_person_recipients = []
-            if self.concerns_action:
-                if not action:
-                    raise Exception(f'Notifications of type {self.type} must refer to an action')
-                contact_person_recipients += action_contacts[action.id]
-            if self.concerns_indicator:
-                if not indicator:
-                    raise Exception(f'Notifications of type {self.type} must refer to an indicator')
-                contact_person_recipients += indicator_contacts[indicator.id]
-            recipients += contact_person_recipients
         if self.send_to_custom_email:
             recipient = self.get_email_recipient()
             if not recipient:
                 raise Exception(f'There is no custom email recipient for notifications of type {self.type}')
             recipients += [recipient]
+        if self.send_to_contact_persons:
+            recipients += self._get_contact_person_recipients(
+                action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator
+            )
+        return recipients
+
+    def _get_contact_person_recipients(
+        self, action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator
+    ):
+        recipients = []
+        fall_back_to_org_admins = (
+            self.send_to_contact_persons == self.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS
+            or self.send_to_contact_persons == self.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS
+        )
+        fall_back_to_plan_admins = (
+            self.send_to_contact_persons == self.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS
+        )
+
+        if self.concerns_action:
+            if not action:
+                raise Exception(f'Notifications of type {self.type} must refer to an action')
+            recipients += action_contacts.get(action.id, [])
+            if not recipients:
+                if fall_back_to_org_admins:
+                    org_ids = set((p.organization_id for p in action.responsible_parties.all()))
+                    org_ids.add(action.primary_org_id)
+                    opa_lists = (organization_plan_admins.get(org_id, []) for org_id in org_ids)
+                    recipients += set(recipient for opas in opa_lists for recipient in opas)
+                    if not recipients and fall_back_to_plan_admins:
+                        recipients += plan_admins
+
+        if self.concerns_indicator:
+            if not indicator:
+                raise Exception(f'Notifications of type {self.type} must refer to an indicator')
+            recipients += indicator_contacts.get(indicator.id, [])
+            if not recipients:
+                if fall_back_to_org_admins:
+                    recipients += organization_plan_admins.get(indicator.organization_id, [])
+                    if not recipients and fall_back_to_plan_admins:
+                        recipients += plan_admins
+
         return recipients
 
     def get_email_recipient(self) -> typing.Optional[EmailRecipient]:

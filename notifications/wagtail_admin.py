@@ -40,8 +40,10 @@ class BaseTemplateAdmin(AplansModelAdmin):
         MultiFieldPanel([
             FieldRowPanel([
                 FieldPanel('send_to_plan_admins'),
-                FieldPanel('send_to_contact_persons'),
                 FieldPanel('send_to_custom_email'),
+            ]),
+            FieldRowPanel([
+                FieldPanel('send_to_contact_persons'),
             ]),
         ], heading=_('Recipients'), classname='collapsible'),
     ]

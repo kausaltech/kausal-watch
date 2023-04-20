@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='notificationtemplate',
             name='send_to_contact_persons',
-            field=models.BooleanField(default=False, verbose_name='send to contact persons'),
+            field=models.CharField(blank=True, choices=[('', 'Do not send to contact persons'), ('cp', 'Send to contact persons'), ('cp-oa', 'Send to contact persons; fallback: organization admins'), ('cp-oa-pa', 'Send to contact persons; fallback: organization admins, plan admins')], max_length=50, verbose_name='send to contact persons'),
         ),
         migrations.AddField(
             model_name='notificationtemplate',
