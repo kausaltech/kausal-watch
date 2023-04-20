@@ -1,10 +1,10 @@
 from django.utils.functional import cached_property
-from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
-from wagtail.core.blocks import (CharBlock, ChoiceBlock, ChooserBlock, ListBlock, RichTextBlock, StaticBlock,
-                                 StructBlock)
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
+from wagtail.core.blocks import (
+    BooleanBlock, CharBlock, ChoiceBlock, ChooserBlock, ListBlock, RichTextBlock, StaticBlock, StructBlock
+)
 
 from .chooser import IndicatorChooser
 from .models import Indicator
@@ -67,12 +67,14 @@ class IndicatorShowcaseBlock(StructBlock):
     link_button = PageLinkBlock()
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
     # PageLinkBlock.
+    indicator_is_normalized = BooleanBlock(required=False)
 
     graphql_fields = [
         GraphQLString('title'),
         GraphQLString('body'),
         GraphQLForeignKey('indicator', Indicator),
         GraphQLStreamfield('link_button', is_list=False),
+        GraphQLBoolean('indicator_is_normalized'),
     ]
 
 
