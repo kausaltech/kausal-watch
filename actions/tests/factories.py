@@ -44,6 +44,7 @@ class PlanFactory(ModelFactory[Plan]):
     def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
         from actions.models.plan import set_default_page_creation
 
+        Locale.objects.get_or_create(language_code=kwargs['primary_language'])
         for language in kwargs.get('other_languages', []):
             Locale.objects.get_or_create(language_code=language)
 

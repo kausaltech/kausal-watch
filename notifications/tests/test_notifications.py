@@ -9,7 +9,7 @@ from admin_site.tests.factories import ClientPlanFactory
 from feedback.tests.factories import UserFeedbackFactory
 from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory, IndicatorLevelFactory
 from orgs.tests.factories import OrganizationPlanAdminFactory
-from notifications.models import NotificationTemplate, NotificationType
+from notifications.models import NotificationTemplate, NotificationType, SentNotification
 from notifications.management.commands.send_plan_notifications import NotificationEngine
 from notifications.tests.factories import NotificationTemplateFactory
 from people.tests.factories import PersonFactory
@@ -45,6 +45,28 @@ def test_task_due_soon():
     ClientPlanFactory(plan=plan)
     engine = NotificationEngine(plan, only_type=NotificationType.TASK_DUE_SOON.identifier, now=now)
     assert len(mail.outbox) == 0
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
+
+
+def test_not_enough_tasks():
+    plan = PlanFactory()
+    ClientPlanFactory(plan=plan)
+    NotificationTemplateFactory(
+        base__plan=plan,
+        type=NotificationType.NOT_ENOUGH_TASKS.identifier,
+    )
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
+    action = ActionFactory(plan=plan)
+    ActionContactFactory(action=action)
+    engine = NotificationEngine(plan, only_type=NotificationType.NOT_ENOUGH_TASKS.identifier, now=now)
+    assert len(mail.outbox) == 0
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
+    SentNotification.objects.all().delete()
+    today = now.date()
+    due_at = today + timedelta(days=1)
+    ActionTaskFactory(action=action, due_at=due_at)
     engine.generate_notifications()
     assert len(mail.outbox) == 1
 
@@ -209,3 +231,18 @@ def test_user_feedback_received(plan, plan_admin_person):
     UserFeedbackFactory(plan=plan)
     engine.generate_notifications()
     assert len(mail.outbox) == 1
+
+
+def test_i18n(plan, plan_admin_person):
+    plan = PlanFactory(primary_language='de')
+    NotificationTemplateFactory(base__plan=plan,
+                                type=NotificationType.TASK_LATE.identifier)
+    now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
+    today = now.date()
+    due_at = today - timedelta(days=1)
+    task = ActionTaskFactory(action__plan=plan, due_at=due_at)
+    ActionContactFactory(action=task.action)
+    ClientPlanFactory(plan=plan)
+    engine = NotificationEngine(plan, only_type=NotificationType.TASK_LATE.identifier, now=now)
+    engine.generate_notifications()
+    assert 'Hallo' in mail.outbox[0].body
