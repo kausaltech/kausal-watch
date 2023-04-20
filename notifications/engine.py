@@ -266,7 +266,9 @@ class NotificationEngine:
                     **recipient.get_notification_context(),
                 }
 
-                rendered = self.render(template, context, language_code=recipient.get_preferred_language())
+                # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
+                # For now, use primary language of plan instead of the recipient's preferred language
+                rendered = self.render(template, context)
 
                 if self.force_to:
                     to_email = self.force_to
