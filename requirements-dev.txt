@@ -16,8 +16,6 @@ asttokens==2.0.7
     # via stack-data
 autopep8==1.7.0
     # via -r requirements-dev.in
-babel==2.12.1
-    # via -r requirements-dev.in
 backcall==0.2.0
     # via ipython
 build==0.8.0

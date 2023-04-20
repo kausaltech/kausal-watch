@@ -22,6 +22,8 @@ attrs==21.4.0
     # via
     #   jsonschema
     #   pytest
+babel==2.12.1
+    # via -r requirements.in
 beautifulsoup4==4.9.3
     # via wagtail
 billiard==3.6.4.0
