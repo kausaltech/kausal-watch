@@ -289,7 +289,7 @@ class NotificationEngine:
                     else:
                         s = '\t%s' % str(n.obj)
                     nstr.append(s)
-                logger.debug('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
+                logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
 
                 if not self.noop:
                     msg.send()
