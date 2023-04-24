@@ -378,6 +378,8 @@ LANGUAGES = (
     ('en-AU', _('English (Australia)')),
     ('fi', _('Finnish')),
     ('sv', _('Swedish')),
+    ('es-US', _('Spanish (United States)')),
+    ('es', _('Spanish')),
 )
 # For languages that Django has no translations for, we need to manually specify what the language is called in that
 # language. We use this for displaying the list of available languages in the user settings.
