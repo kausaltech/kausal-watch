@@ -94,14 +94,14 @@ def get_translation_tabs(
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
         languages = plan.other_languages
-    for lang_code in languages:
+    for lang_code in (language.lower() for language in languages):
         panels = []
         for field in i18n_field.get_translated_fields():
             if field.language != lang_code:
                 continue
             panels.append(FieldPanel(field.name))
         panels += extra_panels.get(lang_code, [])
-        tabs.append(ObjectList(panels, heading=languages_by_code[lang_code.lower()]))
+        tabs.append(ObjectList(panels, heading=languages_by_code[lang_code]))
     return tabs
 
 
