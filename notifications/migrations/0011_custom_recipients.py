@@ -4,6 +4,28 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def set_default_recipients(apps, schema_editor):
+    NotificationTemplate = apps.get_model('notifications', 'NotificationTemplate')
+
+    TYPES_FOR_CONTACT_PERSONS = [
+        'task_late', 'task_due_soon', 'action_not_updated', 'not_enough_tasks', 'updated_indicator_values_late',
+        'updated_indicator_values_due_soon',
+    ]
+    TYPES_FOR_PLAN_ADMINS = [
+        'user_feedback_received',
+    ]
+
+    for template in NotificationTemplate.objects.all():
+        if template.type in TYPES_FOR_CONTACT_PERSONS:
+            template.send_to_plan_admins = False
+            template.send_to_contact_persons = 'cp-oa-pa'
+            template.save()
+        elif template.type in TYPES_FOR_PLAN_ADMINS:
+            assert template.send_to_plan_admins == True
+        else:
+            raise Exception(f"Unexpected template type {template.type}")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -50,4 +72,5 @@ class Migration(migrations.Migration):
             model_name='sentnotification',
             constraint=models.CheckConstraint(check=models.Q(models.Q(('person__isnull', True), models.Q(('email', ''), _negated=True)), models.Q(('person__isnull', False), ('email', '')), _connector='OR'), name='person_xor_email'),
         ),
+        migrations.RunPython(set_default_recipients, reverse_code=migrations.RunPython.noop),
     ]
