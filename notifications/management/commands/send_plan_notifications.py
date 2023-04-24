@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import translation
 
@@ -24,6 +25,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files'
         )
+        parser.add_argument('--time', type=datetime.fromisoformat, help='Override current time (ISO format)')
 
     def handle(self, *args, **options):
         if not options['plan']:
@@ -48,6 +50,11 @@ class Command(BaseCommand):
                 raise CommandError('Indicator %s does not exist' % indicator_id)
             ignore_indicators.append(indicator.identifier)
 
+        if options['time']:
+            now = plan.to_local_timezone(options['time'])
+        else:
+            now = plan.now_in_local_timezone()
+
         engine = NotificationEngine(
             plan,
             force_to=options['force_to'],
@@ -58,6 +65,7 @@ class Command(BaseCommand):
             ignore_actions=ignore_actions,
             ignore_indicators=ignore_indicators,
             dump=options['dump'],
+            now=now,
         )
         engine.generate_notifications()
         # In contrast to the management command send_daily_notifications, this does not set

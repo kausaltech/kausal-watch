@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core.management.base import BaseCommand
 from django.utils import translation
 from logging import getLogger
@@ -23,10 +24,14 @@ class Command(BaseCommand):
         parser.add_argument(
             '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files'
         )
+        parser.add_argument('--time', type=datetime.fromisoformat, help='Override current time (ISO format)')
 
     def handle(self, *args, **options):
         for plan in Plan.objects.all():
-            now = plan.now_in_local_timezone()
+            if options['time']:
+                now = plan.to_local_timezone(options['time'])
+            else:
+                now = plan.now_in_local_timezone()
             if plan.should_trigger_daily_notifications(now):
                 logger.info(f'Sending daily notifications for plan {plan}')
                 with translation.override(plan.primary_language):
