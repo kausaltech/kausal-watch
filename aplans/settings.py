@@ -383,8 +383,11 @@ LANGUAGES = (
 )
 # For languages that Django has no translations for, we need to manually specify what the language is called in that
 # language. We use this for displaying the list of available languages in the user settings.
+# If you forget to add something from LANGUAGES here, you will be reminded by an Exception when trying to access
+# /wadmin/account/
 LOCAL_LANGUAGE_NAMES = {
     'de-CH': "Deutsch (Schweiz)",
+    'es-US': "español (Estados Unidos)",
 }
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
 MODELTRANS_FALLBACK = {
