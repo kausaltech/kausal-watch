@@ -1,9 +1,10 @@
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList
+from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 
 from .models import SiteGeneralContent
+from aplans.context_vars import ctx_instance, ctx_request
 from actions.wagtail_admin import ActivePlanPermissionHelper
 from admin_site.wagtail import SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin, insert_model_translation_panels
 
@@ -66,7 +67,9 @@ class SiteGeneralContentAdmin(ModelAdmin):
     def get_menu_item(self, order=None):
         return SiteGeneralContentMenuItem(self, order or self.get_menu_order())
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         self.panels = insert_model_translation_panels(
             SiteGeneralContent, self.panels, request, instance.plan
         )

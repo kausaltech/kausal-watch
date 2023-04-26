@@ -34,9 +34,10 @@ from admin_site.wagtail import (
 )
 from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
+from aplans.extensions import modeladmin_register
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
-from aplans.extensions import modeladmin_register
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
@@ -210,20 +211,20 @@ class ActionAdminForm(WagtailAdminModelForm):
 class ActionEditHandler(AplansTabbedInterface):
     instance: Action
 
-    def get_form_class(self, request: WatchAdminRequest = None):
+    def get_form_class(self, instance: Action = None, request: WatchAdminRequest = None):
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
+            cat_fields = _get_category_fields(plan, Action, instance, with_initial=True)
         else:
             cat_fields = {}
 
-        if self.instance is not None:
-            attribute_types = self.instance.get_editable_attribute_types(user)
+        if instance is not None:
+            attribute_types = instance.get_editable_attribute_types(user)
             attribute_fields = {field.name: field.django_field
                                 for attribute_type in attribute_types
-                                for field in attribute_type.get_form_fields(self.instance)}
+                                for field in attribute_type.get_form_fields(instance)}
         else:
             attribute_fields = {}
 
@@ -652,7 +653,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self, instance: Action, request: WatchAdminRequest):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
         attribute_panels = instance.get_attribute_panels(request.user)

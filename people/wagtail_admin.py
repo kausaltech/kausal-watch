@@ -21,6 +21,7 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
     get_translation_tabs
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 
@@ -355,7 +356,9 @@ class PersonAdmin(AplansModelAdmin):
         FieldPanel('image', widget=AvatarWidget),
     ]
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
         user = request.user
         plan = user.get_active_admin_plan()

@@ -1,7 +1,7 @@
 import typing
 from django.apps import AppConfig
 from django.conf import settings
-from wagtailorderable.signal import post_reorder
+from wagtailorderable.signals import post_reorder
 
 if typing.TYPE_CHECKING:
     from wagtail.core.models import Page

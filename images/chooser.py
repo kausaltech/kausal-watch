@@ -26,13 +26,13 @@ def get_context_data(self, get_context_func):
 
 
 def monkeypatch_chooser():
-    from wagtail.images.views.chooser import ChooseView
+    from wagtail.images.views.chooser import ImageChooseView
     from wagtail.images.views.images import IndexView
     global _wagtail_chooser_get_context_data, _wagtail_index_get_context_data
 
     if _wagtail_chooser_get_context_data is None:
-        _wagtail_chooser_get_context_data = ChooseView.get_context_data
-        ChooseView.get_context_data = functools.partialmethod(get_context_data, _wagtail_chooser_get_context_data)
+        _wagtail_chooser_get_context_data = ImageChooseView.get_context_data
+        ImageChooseView.get_context_data = functools.partialmethod(get_context_data, _wagtail_chooser_get_context_data)
 
     if _wagtail_index_get_context_data is None:
         _wagtail_index_get_context_data = IndexView.get_context_data

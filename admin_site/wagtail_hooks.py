@@ -269,18 +269,20 @@ modeladmin_register(ClientAdmin)
 
 @hooks.register("insert_global_admin_css", order=0)
 def global_admin_css():
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_admin_overrides.css")
-    )
+    # return format_html(
+    #     '<link rel="stylesheet" href="{}">',
+    #     static("css/wagtail_admin_overrides.css")
+    # )
+    return ''  # FIXME: CSS needs to be changed
 
 
 @hooks.register("insert_editor_css", order=900)
 def editor_css():
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_editor_overrides.css")
-    )
+    # return format_html(
+    #     '<link rel="stylesheet" href="{}">',
+    #     static("css/wagtail_editor_overrides.css")
+    # )
+    return ''  # FIXME: CSS needs to be changed
 
 
 @hooks.register("construct_explorer_page_queryset")

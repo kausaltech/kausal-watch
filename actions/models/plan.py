@@ -28,7 +28,7 @@ from urllib.parse import urlparse
 from wagtail.core.models import Collection, Page, Site
 from wagtail.core.models.i18n import Locale
 # In future versions of wagtail_localize, this will be in wagtail_localize.operations
-from wagtail_localize.views.submit_translations import TranslationCreator
+from wagtail_localize.operations import TranslationCreator
 
 from aplans.utils import (
     ChoiceArrayField,

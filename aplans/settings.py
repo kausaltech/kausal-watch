@@ -191,6 +191,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'aplans.middleware.SocialAuthExceptionMiddleware',
     'aplans.middleware.AdminMiddleware',
+    'aplans.middleware.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'aplans.urls'

@@ -1,7 +1,6 @@
+from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
+from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from contextlib import contextmanager
-from typing import Any, List
-from urllib.parse import urljoin
-
 from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
@@ -13,28 +12,23 @@ from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
-from django.utils.safestring import mark_safe
 from django.utils.decorators import method_decorator
-
+from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
+from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
+from typing import Any, List
+from urllib.parse import urljoin
 from wagtail.admin import messages
 from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
+from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import \
-    CondensedInlinePanel as WagtailCondensedInlinePanel
-from reversion.revisions import (
-    add_to_revision, create_revision, set_comment, set_user
-)
-from wagtailautocomplete.edit_handlers import \
-    AutocompletePanel as WagtailAutocompletePanel
-
+from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel, PlanDefaultsModel
 from actions.models import Plan
@@ -221,7 +215,7 @@ class AplansButtonHelper(ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
-    def get_form_class(self, request=None):
+    def get_form_class(self, instance=None, request=None):
         return super().get_form_class()
 
     def on_request_bound(self):
@@ -240,7 +234,7 @@ class FormClassMixin:
     def get_form_class(self):
         handler = self.get_edit_handler()
         if isinstance(handler, AplansTabbedInterface):
-            return handler.get_form_class(self.request)
+            return handler.get_form_class(self.instance, self.request)
         else:
             return handler.get_form_class()
 
@@ -350,8 +344,18 @@ class ActivatePermissionHelperPlanContextMixin:
             return super().dispatch(request, *args, **kwargs)
 
 
+class SetInstanceMixin:
+    def setup(self, *args, **kwargs):
+        with set_instance(self.instance):
+            super().setup(*args, **kwargs)
+
+    def dispatch(self, *args, **kwargs):
+        with set_instance(self.instance):
+            return super().dispatch(*args, **kwargs)
+
+
 class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, EditView):
+                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, SetInstanceMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)

@@ -19,9 +19,9 @@ def remove_default_site_summary_items(hooks):
     hooks_to_remove = [
         add_documents_summary_item, add_images_summary_item, add_pages_summary_item, add_svg_summary_item
     ]
-    summary_hooks = hooks._hooks['construct_homepage_summary_items']
-    for item in list(summary_hooks):
-        if item[0] in hooks_to_remove:
+    summary_hooks = hooks.get_hooks('construct_homepage_summary_items')
+    for item in summary_hooks:
+        if item in hooks_to_remove:
             summary_hooks.remove(item)
 
 
@@ -32,9 +32,9 @@ def remove_user_related_menu_items(hooks):
 
     AvatarSettingsPanel.is_active = lambda self: False
 
-    menu_item_hooks = hooks._hooks['register_admin_menu_item']
+    menu_item_hooks = hooks.get_hooks('register_admin_menu_item')
     for idx, val in enumerate(menu_item_hooks):
-        if val[0] == register_reports_menu:
+        if val == register_reports_menu:
             break
     else:
         val = None
