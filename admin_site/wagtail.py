@@ -1,5 +1,3 @@
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import CondensedInlinePanel as WagtailCondensedInlinePanel
 from contextlib import contextmanager
 from django import forms
 from django.conf import settings
@@ -28,10 +26,10 @@ from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
+from actions.models import Plan
 from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel, PlanDefaultsModel
-from actions.models import Plan
 from pages.models import ActionListPage
 
 

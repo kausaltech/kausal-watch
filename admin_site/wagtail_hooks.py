@@ -9,7 +9,6 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
 from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
-from wagtail.admin.staticfiles import versioned_static
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
 from wagtail.images.edit_handlers import ImageChooserPanel
@@ -275,21 +274,19 @@ modeladmin_register(ClientAdmin)
 
 @hooks.register("insert_global_admin_css", order=0)
 def global_admin_css():
-    # return format_html(
-    #     '<link rel="stylesheet" href="{}">',
-    #     static("css/wagtail_admin_overrides.css")
-    # )
-    return ''  # FIXME: CSS needs to be changed
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("css/wagtail_admin_overrides.css")
+    )
 
-
+"""
 @hooks.register("insert_editor_css", order=900)
 def editor_css():
-    # return format_html(
-    #     '<link rel="stylesheet" href="{}">',
-    #     static("css/wagtail_editor_overrides.css")
-    # )
-    return ''  # FIXME: CSS needs to be changed
-
+    return format_html(
+        '<link rel="stylesheet" href="{}">',
+        static("css/wagtail_editor_overrides.css")
+    )
+"""
 
 @hooks.register("construct_explorer_page_queryset")
 def restrict_pages_to_plan(parent_page, pages, request):

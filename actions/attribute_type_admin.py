@@ -212,8 +212,6 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             FieldPanel('show_in_reporting_tab'),
         ]
         panels = insert_model_translation_panels(AttributeType, panels, request, instance)
-        user = request.user  # FIXME: request may not be there
-        plan = user.get_active_admin_plan()
         if instance is None or instance.object_content_type_id is None:
             content_type_id = request.GET['content_type']
         else:

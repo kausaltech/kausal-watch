@@ -13,7 +13,6 @@ django-cors-headers
 python-jose
 plotly
 cryptography
-django-ckeditor
 django-image-cropping
 easy-thumbnails
 Pillow
@@ -23,9 +22,6 @@ https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c114
 graphql-core>=3.2.0
 graphql-relay>=3.2.0
 aniso8601
-wagtail-condensedinlinepanel
-django-admin-numeric-filter
-django-admin-ordering
 dal_admin_filters
 django-import-export
 Jinja2

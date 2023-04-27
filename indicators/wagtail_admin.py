@@ -134,7 +134,7 @@ class QuantityAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new quantity
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -165,7 +165,7 @@ class UnitAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new unit
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -315,7 +315,7 @@ class IndicatorAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new indicator
         basic_panels = list(self.basic_panels)
         advanced_panels = list(self.advanced_panels)
         plan = request.user.get_active_admin_plan()
@@ -464,7 +464,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
     unit_display.short_description = _('Unit')
 
     def get_edit_handler(self):
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new common indicator
         basic_panels = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator

@@ -358,7 +358,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new person
         basic_panels = list(self.basic_panels)
         user = request.user
         plan = user.get_active_admin_plan()

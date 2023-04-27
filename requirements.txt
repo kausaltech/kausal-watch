@@ -81,16 +81,13 @@ diff-match-patch==20200713
 django==3.2.16
     # via
     #   -r requirements.in
-    #   django-admin-numeric-filter
     #   django-anymail
     #   django-appconf
-    #   django-ckeditor
     #   django-cors-headers
     #   django-extensions
     #   django-filter
     #   django-helusers
     #   django-import-export
-    #   django-js-asset
     #   django-modelcluster
     #   django-modeltrans
     #   django-parler
@@ -109,10 +106,6 @@ django==3.2.16
     #   wagtail-grapple
     #   wagtail-localize
     #   wagtailfontawesome
-django-admin-numeric-filter==0.1.6
-    # via -r requirements.in
-django-admin-ordering==0.16.1
-    # via -r requirements.in
 django-anymail[mailgun,sendgrid]==8.6
     # via -r requirements.in
 django-appconf==1.0.5
@@ -122,8 +115,6 @@ django-autocomplete-light==3.9.4
     #   -r requirements.in
     #   dal-admin-filters
 django-autoslug==1.9.8
-    # via -r requirements.in
-django-ckeditor==6.5.1
     # via -r requirements.in
 django-cors-headers==3.13.0
     # via -r requirements.in
@@ -143,10 +134,6 @@ django-image-cropping==1.7
     # via -r requirements.in
 django-import-export==3.0.1
     # via -r requirements.in
-django-js-asset==2.0.0
-    # via
-    #   django-admin-ordering
-    #   django-ckeditor
 django-modelcluster==6.0
     # via wagtail
 django-modeltrans @ https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
@@ -429,8 +416,6 @@ wagtail==4.1.1
 wagtail-admin-list-controls==0.1.7
     # via -r requirements.in
 wagtail-autocomplete==0.9.0
-    # via -r requirements.in
-wagtail-condensedinlinepanel==0.5.3
     # via -r requirements.in
 wagtail-factories==3.1.0
     # via -r requirements.in

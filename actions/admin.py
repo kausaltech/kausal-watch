@@ -1,13 +1,7 @@
+import dal
 from django import forms
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-
-import dal
-from admin_site.admin import AplansExportMixin, AplansModelAdmin
-from admin_site.filters import AutocompleteFilter
-from indicators.admin import ActionIndicatorAdmin
-from orgs.models import Organization
-from people.models import Person
 
 from .export import ActionResource
 from .models import (
@@ -16,6 +10,11 @@ from .models import (
     ImpactGroupAction, MonitoringQualityPoint, Plan, Scenario
 )
 from .perms import ActionRelatedAdminPermMixin
+from admin_site.admin import AplansExportMixin, AplansModelAdmin
+from admin_site.filters import AutocompleteFilter
+from indicators.admin import ActionIndicatorAdmin
+from orgs.models import Organization
+from people.models import Person
 
 
 class PlanRelatedAdmin(admin.ModelAdmin):

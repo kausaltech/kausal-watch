@@ -14,13 +14,13 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
 from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
-from aplans.context_vars import ctx_instance, ctx_request
 from .models import Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
     CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
     get_translation_tabs
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
 
 
@@ -331,7 +331,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new category
         panels = list(self.panels)
         # If the category type doesn't have semantic identifiers, we
         # hide the whole panel.
@@ -413,7 +413,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new category
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -501,7 +501,7 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
 class CommonCategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None, instance: CommonCategory | None = None):
         form_class = super().get_form_class()
-        if instance and instance.pk:  # FIXME
+        if instance and instance.pk:
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
         return form_class
@@ -534,7 +534,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new common category
         panels = list(self.panels)
 
         if request.user.is_superuser:
