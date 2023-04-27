@@ -212,7 +212,7 @@ class ActionAdminForm(WagtailAdminModelForm):
 class ActionEditHandler(AplansTabbedInterface):
     instance: Action
 
-    def get_form_class(self, instance: Action = None, request: WatchAdminRequest = None):
+    def get_form_class(self, request: WatchAdminRequest = None, instance: Action = None):
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()

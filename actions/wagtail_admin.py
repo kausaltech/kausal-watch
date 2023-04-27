@@ -33,7 +33,7 @@ class PlanEditHandler(TabbedInterface):
     instance: Plan
     form: ModelForm
 
-    def get_form_class(self, instance=None, request=None):
+    def get_form_class(self, request=None, instance=None):
         form_class = super().get_form_class()
         return form_class
 
@@ -109,7 +109,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('ends_at'),
     ]
 
-    def get_form_class(self, instance=None, request=None):
+    def get_form_class(self, request=None, instance=None):
         form_class = super().get_form_class()
         return form_class
 
