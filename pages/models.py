@@ -13,11 +13,10 @@ from grapple.models import (
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel, StreamFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel
 from wagtail.core import blocks
 from wagtail.core.fields import RichTextField, StreamField
 from wagtail.core.models import Page, Site
-from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtail.search import index
 
 from actions.blocks import (
@@ -124,6 +123,7 @@ class AplansPage(Page):
 
         return (plan.site_id, plan.site_url, self.url_path)
 
+from indicators.blocks import IndicatorChooserBlock
 
 class PlanRootPage(AplansPage):
     body = StreamField([
@@ -141,7 +141,7 @@ class PlanRootPage(AplansPage):
     ])
 
     content_panels = [
-        StreamFieldPanel('body'),
+        FieldPanel('body'),
     ]
 
     parent_page_types = []
@@ -192,9 +192,9 @@ class StaticPage(AplansPage):
     ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
-        ImageChooserPanel('header_image'),
+        FieldPanel('header_image'),
         FieldPanel('lead_paragraph'),
-        StreamFieldPanel('body'),
+        FieldPanel('body'),
     ]
 
     parent_page_types = [PlanRootPage, EmptyPage, 'StaticPage', 'CategoryPage']
@@ -246,7 +246,7 @@ class CategoryPage(AplansPage):
 
     content_panels = AplansPage.content_panels + [
         FieldPanel('category', widget=CategoryChooser),
-        StreamFieldPanel('body'),
+        FieldPanel('body'),
     ]
 
     parent_page_types = [PlanRootPage, EmptyPage, StaticPage, 'CategoryPage', 'CategoryTypePage']
@@ -380,14 +380,14 @@ class ActionListPage(FixedSlugPage):
         FieldPanel('heading_hierarchy_depth'),
         FieldPanel('include_related_plans'),
         MultiFieldPanel([
-            StreamFieldPanel('primary_filters', heading=_("Primary filters")),
-            StreamFieldPanel('main_filters', heading=_("Main filters")),
-            StreamFieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
+            FieldPanel('primary_filters', heading=_("Primary filters")),
+            FieldPanel('main_filters', heading=_("Main filters")),
+            FieldPanel('advanced_filters', heading=_("Advanced filters (hidden by default)")),
         ], heading=_("Action list filters"), classname="collapsible collapsed"),
         MultiFieldPanel([
-            StreamFieldPanel('details_main_top', heading=_("Main column (top part on mobile)")),
-            StreamFieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
-            StreamFieldPanel('details_aside', heading=_("Side column")),
+            FieldPanel('details_main_top', heading=_("Main column (top part on mobile)")),
+            FieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
+            FieldPanel('details_aside', heading=_("Side column")),
         ], heading=_("Action details page"), classname="collapsible collapsed"),
     ]
 
@@ -487,7 +487,7 @@ class AccessibilityStatementPage(FixedSlugPage):
     ], null=True, blank=True)
 
     content_panels = FixedSlugPage.content_panels + [
-        StreamFieldPanel('body'),
+        FieldPanel('body'),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [

@@ -13,19 +13,18 @@ from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup
 from wagtail.core import hooks
 
+from .admin import DisconnectedIndicatorFilter
+from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
-from aplans.types import WatchAdminRequest
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
-
-from .admin import DisconnectedIndicatorFilter
-from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -133,7 +132,9 @@ class QuantityAdmin(AplansModelAdmin):
         FieldPanel('name'),
     ]
 
-    def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -162,7 +163,9 @@ class UnitAdmin(AplansModelAdmin):
         FieldPanel('verbose_name_plural'),
     ]
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -310,7 +313,9 @@ class IndicatorAdmin(AplansModelAdmin):
 
     advanced_panels = []
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
         advanced_panels = list(self.advanced_panels)
         plan = request.user.get_active_admin_plan()
@@ -458,7 +463,8 @@ class CommonIndicatorAdmin(AplansModelAdmin):
         return unit.short_name or unit.name
     unit_display.short_description = _('Unit')
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator

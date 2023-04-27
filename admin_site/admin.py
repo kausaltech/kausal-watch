@@ -100,6 +100,8 @@ class AplansImportMixin(ImportMixin):
 
 
 class AplansImportExportMixin(AplansImportMixin, AplansExportMixin):
+    import_export_change_list_template = ImportExportMixin.import_export_change_list_template
+
     def get_resource_kwargs(self, request, *args, **kwargs):
         out = AplansExportMixin.get_resource_kwargs(self, request, *args, **kwargs)
         out['request'] = request

@@ -1,5 +1,4 @@
 import re
-
 from django.conf import settings
 from django.db import transaction
 from django.shortcuts import redirect
@@ -13,6 +12,7 @@ from social_core.exceptions import SocialAuthBaseException
 from wagtail.admin import messages
 from wagtail.users.models import UserProfile
 
+from aplans.context_vars import set_request
 from aplans.types import WatchAdminRequest
 from actions.models import Plan
 
@@ -79,3 +79,12 @@ class AdminMiddleware(MiddlewareMixin):
                 plan_to_invalidate = None
             if plan_to_invalidate:
                 transaction.on_commit(lambda: plan_to_invalidate.invalidate_cache())
+
+
+class RequestMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        with set_request(request):
+            return self.get_response(request)

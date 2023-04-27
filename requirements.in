@@ -47,6 +47,7 @@ wagtail-generic-chooser
 wagtail-localize
 #https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
 rustface
+django-npm
 django-autocomplete-light
 coreapi
 pyyaml

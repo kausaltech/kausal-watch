@@ -7,12 +7,13 @@ from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.core import hooks
 
+from .forms import NotificationPreferencesForm
+from .models import BaseTemplate
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
     PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin
 )
-from .forms import NotificationPreferencesForm
-from .models import BaseTemplate
+from aplans.context_vars import ctx_request
 
 
 class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
@@ -63,7 +64,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
     def get_menu_item(self, order=None):
         return ActivePlanMenuItem(self, order or self.get_menu_order())
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
         additional_panels = []
         if request.user.is_superuser:
             additional_panels.append(FieldPanel('from_address'))

@@ -14,6 +14,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
 from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
+from aplans.context_vars import ctx_instance, ctx_request
 from .models import Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
@@ -110,7 +111,9 @@ class CategoryTypeAdmin(AplansModelAdmin):
         plan = user.get_active_admin_plan()
         return qs.filter(plan=plan)
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         panels = list(self.panels)
         if instance and instance.common:
             panels.insert(1, FieldPanel('common'))
@@ -144,8 +147,8 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
 
 class CategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None, instance: Category | None = None):
-        user = request.user  # FIXME: request is None
+    def get_form_class(self, request=None, instance: CommonCategory | None = None):
+        user = request.user
         if instance is not None:
             attribute_types = instance.get_editable_attribute_types(user)
             attribute_fields = {field.name: field.django_field
@@ -178,7 +181,7 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None):
+    def get_form_class(self, request=None, instance: CommonCategory | None = None):
         form_class = super().get_form_class()
         common_field = form_class.base_fields.get('common')
         # The field should be displayed if and only if editing an instance that has a common category type. If it is,
@@ -326,7 +329,9 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         plan = user.get_active_admin_plan()
         return qs.filter(type__plan=plan).distinct()
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         panels = list(self.panels)
         # If the category type doesn't have semantic identifiers, we
         # hide the whole panel.
@@ -406,7 +411,9 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
         ], heading=_('Action and indicator categorization'), classname='collapsible'),
     ]
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -494,7 +501,7 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
 class CommonCategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None, instance: CommonCategory | None = None):
         form_class = super().get_form_class()
-        if instance and instance.pk:
+        if instance and instance.pk:  # FIXME
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
         return form_class
@@ -525,7 +532,9 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     def get_menu_item(self, order=None):
         return CommonCategoryAdminMenuItem(self, order or self.get_menu_order())
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         panels = list(self.panels)
 
         if request.user.is_superuser:

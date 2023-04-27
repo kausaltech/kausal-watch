@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.urls import re_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, StreamFieldPanel
+from wagtail.admin.edit_handlers import FieldPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
@@ -144,7 +144,7 @@ class ReportTypeAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        StreamFieldPanel('fields', heading=_('fields')),
+        FieldPanel('fields', heading=_('fields')),
     ]
 
     def get_form_fields_exclude(self, request):

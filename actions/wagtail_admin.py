@@ -11,6 +11,10 @@ from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
+from . import action_admin  # noqa
+from . import attribute_type_admin  # noqa
+from . import category_admin  # noqa
+from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
@@ -18,22 +22,18 @@ from admin_site.wagtail import (
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from notifications.models import NotificationSettings
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
-
-from . import action_admin  # noqa
-from . import attribute_type_admin  # noqa
-from . import category_admin  # noqa
-from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 
 class PlanEditHandler(TabbedInterface):
     instance: Plan
     form: ModelForm
 
-    def get_form_class(self, request=None):
+    def get_form_class(self, instance=None, request=None):
         form_class = super().get_form_class()
         return form_class
 
@@ -109,11 +109,13 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('ends_at'),
     ]
 
-    def get_form_class(self, request=None):
+    def get_form_class(self, instance=None, request=None):
         form_class = super().get_form_class()
         return form_class
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         action_status_panels = insert_model_translation_panels(
             ActionStatus, self.action_status_panels, request, instance
         )
@@ -270,7 +272,8 @@ class PlanFeaturesAdmin(AplansModelAdmin):
     def user_can_create(self):
         return False
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
         panels = list(self.panels)
         if request.user.is_superuser:
             panels += self.superuser_panels
@@ -348,7 +351,7 @@ class NotificationSettingsAdmin(AplansModelAdmin):
     def user_can_create(self):
         return False
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
         panels = list(self.panels)
         handler = ObjectList(panels)
         return handler

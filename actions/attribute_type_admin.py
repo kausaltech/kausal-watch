@@ -16,7 +16,7 @@ from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
     AplansTabbedInterface, CondensedInlinePanel, InitializeFormWithPlanMixin, insert_model_translation_panels
 )
-from aplans.types import WatchAdminRequest
+from aplans.context_vars import ctx_instance, ctx_request
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -192,7 +192,9 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     delete_view_class = AttributeTypeDeleteView
     button_helper_class = AttributeTypeAdminButtonHelper
 
-    def get_edit_handler(self, instance: AttributeType | None, request: WatchAdminRequest | None):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         choice_option_panels = insert_model_translation_panels(
             AttributeTypeChoiceOption, self.choice_option_panels, request, instance
         )
