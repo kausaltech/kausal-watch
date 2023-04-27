@@ -1,7 +1,7 @@
 import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
-from django.core.validators import URLValidator
+from django.core.validators import URLValidator, MinValueValidator
 from django.db import models
 from django.utils import translation
 from django.utils.text import slugify
@@ -9,7 +9,7 @@ from django.utils.translation import gettext_lazy as _
 import graphene
 from grapple.models import (
     GraphQLBoolean, GraphQLForeignKey, GraphQLImage, GraphQLStreamfield,
-    GraphQLString, GraphQLField
+    GraphQLInt, GraphQLString, GraphQLField
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
@@ -27,14 +27,16 @@ from actions.blocks import (
 )
 from actions.chooser import CategoryChooser
 from actions.models import Category, CategoryType, Plan
+from aplans.extensions import get_body_blocks
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
 from aplans.utils import OrderedModel
 from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
-    AccessibilityStatementPreparationInformationBlock, CardListBlock, FrontPageHeroBlock, QuestionAnswerBlock,
-    ActionCategoryFilterCardsBlock,
+    AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
+    FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock,
+    ActionStatusGraphsBlock
 )
 
 
@@ -47,6 +49,10 @@ class AplansPage(Page):
                                          help_text=_('Should the page be shown in the footer?'),)
     show_in_additional_links = models.BooleanField(default=False, verbose_name=_('show in additional links'),
                                                    help_text=_('Should the page be shown in the additional links?'),)
+    children_use_secondary_navigation = models.BooleanField(
+        default=False, verbose_name=_('children use secondary navigation'),
+        help_text=_('Should subpages of this page use secondary navigation?')
+    )
 
     content_panels = [
         FieldPanel('title', classname="full title"),
@@ -57,6 +63,7 @@ class AplansPage(Page):
         FieldPanel('show_in_menus'),
         FieldPanel('show_in_footer'),
         FieldPanel('show_in_additional_links'),
+        FieldPanel('children_use_secondary_navigation'),
         FieldPanel('search_description'),
     ]
 
@@ -78,6 +85,7 @@ class AplansPage(Page):
         GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
         GraphQLBoolean('show_in_additional_links'),
+        GraphQLBoolean('children_use_secondary_navigation'),
     ]
 
     class Meta:
@@ -106,7 +114,7 @@ class AplansPage(Page):
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(locale__language_code__iexact=lang)
+        qs = qs.filter(locale__language_code__istartswith=lang)
         return qs
 
     def get_url_parts(self, request=None):
@@ -128,6 +136,8 @@ class PlanRootPage(AplansPage):
         ('related_plans', RelatedPlanListBlock(label=_('Related plans'))),
         ('cards', CardListBlock()),
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
+        ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('action_status_graphs', ActionStatusGraphsBlock(label=_('Action status pie charts'))),
     ])
 
     content_panels = [
@@ -174,11 +184,11 @@ class StaticPage(AplansPage):
         help_text=_('Lead paragraph right under the heading'),
     )
     body = StreamField([
-        ('heading', blocks.CharBlock(classname='full title', label=_('Heading'))),
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
+        *get_body_blocks('StaticPage')
     ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
@@ -215,6 +225,10 @@ class CategoryTypePage(StaticPage):
         verbose_name = _('Category type page')
         verbose_name_plural = _('Category type pages')
 
+    @property
+    def remove_sort_menu_order_button(self):
+        return self.category_type.synchronize_with_pages
+
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
@@ -223,6 +237,7 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
+        ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('indicator_group', IndicatorGroupBlock()),
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
@@ -252,7 +267,10 @@ class CategoryPage(AplansPage):
         verbose_name_plural = _('Category pages')
 
     def set_url_path(self, parent):
-        path = f'{slugify(self.category.identifier)}-{self.slug}/'
+        if self.category.type.hide_category_identifiers:
+            path = f'{self.slug}/'
+        else:
+            path = f'{slugify(self.category.identifier)}-{self.slug}/'
         assert parent is not None
         self.url_path = parent.url_path + path
         return self.url_path
@@ -340,6 +358,17 @@ class ActionListPage(FixedSlugPage):
         max_length=30, choices=View.choices, default=View.CARDS, verbose_name=_('default view'),
         help_text=_("Tab of the action list page that should be visible by default")
     )
+    heading_hierarchy_depth = models.IntegerField(
+        verbose_name=_('Subheading hierarchy depth'),
+        help_text=_('Depth of category hierarchy to present as subheadings starting from the root.'),
+        validators=(MinValueValidator(1),),
+        default=1
+    )
+    include_related_plans = models.BooleanField(
+        verbose_name=_('Include related plans'),
+        help_text=_('Enable to make this page include actions from related plans.'),
+        default=False
+    )
 
     force_slug = 'actions'
     is_creatable = False  # Only let this be created programmatically
@@ -348,6 +377,8 @@ class ActionListPage(FixedSlugPage):
 
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('default_view'),
+        FieldPanel('heading_hierarchy_depth'),
+        FieldPanel('include_related_plans'),
         MultiFieldPanel([
             StreamFieldPanel('primary_filters', heading=_("Primary filters")),
             StreamFieldPanel('main_filters', heading=_("Main filters")),
@@ -365,6 +396,8 @@ class ActionListPage(FixedSlugPage):
         # GraphQLField('default_view', graphene.Enum.from_enum(View), required=True),
         # then the type would be called `View`, not `ActionListPageView`, as the automatically generated type is.
         GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
+        GraphQLInt(field_name='heading_hierarchy_depth', required=True),
+        GraphQLBoolean('include_related_plans'),
         streamfield_node_getter('primary_filters'),
         streamfield_node_getter('main_filters'),
         streamfield_node_getter('advanced_filters'),
@@ -387,6 +420,18 @@ class ActionListPage(FixedSlugPage):
             setattr(self, key, val)
 
         self.save()
+
+    def contains_model_instance_block(self, instance, field_name):
+        field = getattr(self, field_name)
+        return field.stream_block.contains_model_instance(instance, field)
+
+    def insert_model_instance_block(self, instance, field_name):
+        field = getattr(self, field_name)
+        return field.stream_block.insert_model_instance(instance, field)
+
+    def remove_model_instance_block(self, instance, field_name):
+        field = getattr(self, field_name)
+        return field.stream_block.remove_model_instance(instance, field)
 
     class Meta:
         verbose_name = _('Action list page')
@@ -438,6 +483,7 @@ class AccessibilityStatementPage(FixedSlugPage):
         ('compliance_status', AccessibilityStatementComplianceStatusBlock()),
         ('preparation', AccessibilityStatementPreparationInformationBlock()),
         ('contact_information', AccessibilityStatementContactInformationBlock()),
+        ('contact_form', AccessibilityStatementContactFormBlock()),
     ], null=True, blank=True)
 
     content_panels = FixedSlugPage.content_panels + [

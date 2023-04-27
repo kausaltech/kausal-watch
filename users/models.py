@@ -1,11 +1,12 @@
 from __future__ import annotations
 import typing
-import uuid
 
 from django.apps import apps
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from users.managers import UserManager
 from orgs.models import Organization, OrganizationMetadataAdmin
@@ -26,6 +27,15 @@ class User(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     selected_admin_plan = models.ForeignKey(
         'actions.Plan', null=True, blank=True, on_delete=models.SET_NULL
+    )
+    deactivated_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+    deactivated_by = models.ForeignKey(
+        'self',
+        on_delete=models.PROTECT,
+        null=True
     )
 
     _corresponding_person: Person
@@ -93,6 +103,51 @@ class User(AbstractUser):
         else:
             return indicator.pk in indicators
 
+    def is_contact_person_for_action_in_plan(self, plan, action=None):
+        if not hasattr(self, '_contact_for_plan_actions'):
+            self._contact_for_plan_actions = {}
+
+        if plan.id in self._contact_for_plan_actions:
+            plan_actions = self._contact_for_plan_actions[plan.id]
+            if action is None:
+                return bool(plan_actions)
+            return action.id in plan_actions
+
+        plan_actions = set()
+        self._contact_for_plan_actions[plan.id] = plan_actions
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        plan_actions.update({act.id for act in person.contact_for_actions.filter(plan=plan)})
+        if action is None:
+            return bool(plan_actions)
+        return action.id in plan_actions
+
+    def is_contact_person_for_indicator_in_plan(self, plan, indicator=None):
+        if not hasattr(self, '_contact_for_plan_indicators'):
+            self._contact_for_plan_indicators = {}
+
+        if plan.id in self._contact_for_plan_indicators:
+            plan_indicators = self._contact_for_plan_indicators[plan.id]
+            if indicator is None:
+                return bool(plan_indicators)
+            return indicator.id in plan_indicators
+
+        plan_indicators = set()
+        self._contact_for_plan_indicators[plan.id] = plan_indicators
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        plan_indicators.update({act.id for act in person.contact_for_indicators.filter(levels__plan=plan)})
+        if indicator is None:
+            return bool(plan_indicators)
+        return indicator.id in plan_indicators
+
+    def is_contact_person_in_plan(self, plan):
+        return self.is_contact_person_for_action_in_plan(plan) or self.is_contact_person_for_indicator_in_plan(plan)
+
     def is_general_admin_for_plan(self, plan=None):
         if self.is_superuser:
             return True
@@ -159,6 +214,9 @@ class User(AbstractUser):
         return self._get_admin_orgs()
 
     def get_active_admin_plan(self, adminable_plans=None) -> Plan:
+        if hasattr(self, '_active_admin_plan'):
+            return self._active_admin_plan
+
         if adminable_plans is None:
             plans = self.get_adminable_plans()
         else:
@@ -166,12 +224,14 @@ class User(AbstractUser):
         if len(plans) == 0:
             return None
         if len(plans) == 1:
-            return plans[0]
+            self._active_admin_plan = plans[0]
+            return self._active_admin_plan
 
         selected_plan = self.selected_admin_plan
         if selected_plan is not None:
             for plan in plans:
                 if plan == selected_plan:
+                    self._active_admin_plan = plan
                     return plan
 
         # If the plan is not set in session, select the
@@ -180,10 +240,15 @@ class User(AbstractUser):
 
         self.selected_admin_plan = plan
         self.save(update_fields=['selected_admin_plan'])
+        self._active_admin_plan = plan
         return plan
 
     def get_adminable_plans(self) -> models.QuerySet[Plan]:
         from actions.models import Plan
+
+        # Cache adminable plans for each request
+        if hasattr(self, '_adminable_plans'):
+            return self._adminable_plans
 
         is_action_contact = self.is_contact_person_for_action()
         is_indicator_contact = self.is_contact_person_for_indicator()
@@ -192,22 +257,19 @@ class User(AbstractUser):
         is_indicator_org_admin = self.is_organization_admin_for_indicator()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
                 and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
-            return Plan.objects.none()
+            self._adminable_plans = Plan.objects.none()
+            return self._adminable_plans
 
-        # Cache adminable plans for each request
-        if hasattr(self, '_adminable_plans'):
-            plans = self._adminable_plans
+        if self.is_superuser:
+            plans = Plan.objects.all()
         else:
-            if self.is_superuser:
-                plans = Plan.objects.all()
-            else:
-                q = Q(actions__in=self._contact_for_actions)
-                q |= Q(indicators__in=self._contact_for_indicators)
-                q |= Q(id__in=self._general_admin_for_plans)
-                q |= Q(actions__in=self._org_admin_for_actions)
-                q |= Q(indicators__in=self._org_admin_for_indicators)
-                plans = Plan.objects.filter(q).distinct()
-            self._adminable_plans = plans
+            q = Q(actions__in=self._contact_for_actions)
+            q |= Q(indicators__in=self._contact_for_indicators)
+            q |= Q(id__in=self._general_admin_for_plans)
+            q |= Q(actions__in=self._org_admin_for_actions)
+            q |= Q(indicators__in=self._org_admin_for_indicators)
+            plans = Plan.objects.filter(q).distinct()
+        self._adminable_plans = plans
         return plans
 
     def get_adminable_plans_mark_selected(self) -> models.QuerySet[Plan]:
@@ -313,3 +375,16 @@ class User(AbstractUser):
             return True
         # FIXME: Make sure we don't allow plan admins to delete organizations unrelated to them
         return self.is_general_admin_for_plan()
+
+    def can_deactivate_user(self, user):
+        if self.is_superuser:
+            return True
+        return False
+
+    def deactivate(self, admin_user):
+        if not admin_user.can_deactivate_user(self):
+            raise PermissionDenied
+        self.is_active = False
+        self.deactivated_by = admin_user
+        self.deactivated_at = timezone.now()
+        self.save()

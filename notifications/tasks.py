@@ -3,5 +3,5 @@ from django.core import management
 
 
 @shared_task
-def send_notifications(**kwargs):
-    management.call_command('send_notifications', **kwargs)
+def send_daily_notifications():
+    management.call_command('send_daily_notifications')

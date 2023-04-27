@@ -461,17 +461,12 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
         'planPage': {
             'body': [{
                 'id': static_page.body[0].id,
-                'blockType': 'CharBlock',
-                'field': 'heading',
-                'value': static_page.body[0].value,
-            }, {
-                'id': static_page.body[1].id,
                 'blockType': 'RichTextBlock',
                 'field': 'paragraph',
                 # FIXME: The newline is added by grapple in RichTextBlock.resolve_value()
-                'value': f'{static_page.body[1].value}\n',
+                'value': f'{static_page.body[0].value}\n',
             }, {
-                'id': static_page.body[2].id,
+                'id': static_page.body[1].id,
                 'blockType': 'QuestionAnswerBlock',
                 'field': 'qa_section',
             }],

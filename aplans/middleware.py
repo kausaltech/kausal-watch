@@ -14,6 +14,7 @@ from wagtail.admin import messages
 from wagtail.users.models import UserProfile
 
 from aplans.types import WatchAdminRequest
+from actions.models import Plan
 
 
 class SocialAuthExceptionMiddleware(MiddlewareMixin):
@@ -67,7 +68,14 @@ class AdminMiddleware(MiddlewareMixin):
 
         # If it's an admin method that changes something, invalidate Plan-related
         # GraphQL cache.
-        if request.method in ('POST', 'PUT', 'DELETE') and re.match(r'^/(admin|wadmin)/', request.path):
-            def invalidate_cache():
-                plan.invalidate_cache()
-            transaction.on_commit(invalidate_cache)
+        if request.method in ('POST', 'PUT', 'DELETE'):
+            rest_api_path_match = re.match(r'^\/v1\/plan\/([0-9]+)\/', request.path)
+            if rest_api_path_match:
+                plan_id = int(rest_api_path_match.group(1))
+                plan_to_invalidate = Plan.objects.get(id=plan_id)
+            elif re.match(r'^/(admin|wadmin)/', request.path):
+                plan_to_invalidate = plan
+            else:
+                plan_to_invalidate = None
+            if plan_to_invalidate:
+                transaction.on_commit(lambda: plan_to_invalidate.invalidate_cache())

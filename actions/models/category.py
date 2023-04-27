@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import reversion
 import typing
-
-from django.core.exceptions import ValidationError
+import uuid
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import translation
@@ -18,13 +20,12 @@ from modeltrans.utils import get_available_languages
 from wagtail.core.models import Page, Collection
 from wagtailsvg.models import Svg
 
-import reversion
-
+from ..attributes import AttributeType
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier,
+    IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color, get_supported_languages
 )
-from .attributes import ModelWithAttributes
 
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
@@ -150,7 +151,7 @@ class CommonCategoryType(CategoryTypeBase):
 
 
 @reversion.register()
-class CategoryType(CategoryTypeBase, ClusterableModel, PlanRelatedModel):
+class CategoryType(InstancesEditableByMixin, CategoryTypeBase, ClusterableModel, PlanRelatedModel):
     """Type of the categories.
 
     Is used to group categories together. One action plan can have several
@@ -241,10 +242,11 @@ class CategoryLevel(OrderedModel):
 
 
 class CategoryBase(OrderedModel):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
     lead_paragraph = models.TextField(
-        max_length=200, blank=True, verbose_name=_('lead paragraph')
+        max_length=300, blank=True, verbose_name=_('lead paragraph')
     )
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
@@ -257,7 +259,7 @@ class CategoryBase(OrderedModel):
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
 
     public_fields = [
-        'id', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text',
+        'id', 'uuid', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text', 'order',
     ]
 
     class Meta:
@@ -309,7 +311,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
                 value = getattr(self, f'{field}_{lang}')
                 if value:
                     translated_values[f'{field}_{lang}'] = value
-        inherited_fields = [f.name for f in CategoryBase._meta.fields if f.name not in translated_fields]
+        inherited_fields = [f.name for f in CategoryBase._meta.fields if f.name not in translated_fields + ('uuid',)]
         inherited_values = {field: getattr(self, field) for field in inherited_fields}
         return category_type.categories.create(common=self, **inherited_values, **translated_values)
 
@@ -327,6 +329,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
             return self.get_icon(language=None)
 
 
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
 class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedModel):
     """A category for actions and indicators."""
 
@@ -350,7 +353,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     )
 
     public_fields = CategoryBase.public_fields + [
-        'type', 'order', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
+        'type', 'common', 'external_identifier', 'parent', 'children', 'category_pages', 'indicators',
     ]
 
     class Meta:
@@ -480,6 +483,34 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
 
     def get_attribute_type_by_identifier(self, identifier):
         return self.type.attribute_types.get(identifier=identifier)
+
+    def get_editable_attribute_types(self, user):
+        category_ct = ContentType.objects.get_for_model(Category)
+        category_type_ct = ContentType.objects.get_for_model(self.type)
+        attribute_types = AttributeTypeModel.objects.filter(
+            object_content_type=category_ct,
+            scope_content_type=category_type_ct,
+            scope_id=self.type.id,
+        )
+        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.type.plan))
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in attribute_types]
+
+    def get_attribute_panels(self, user):
+        # Return a triple `(main_panels, i18n_panels)`, where `main_panels` is a list of panels to be put on the main
+        # tab, and `i18n_panels` is a dict mapping a non-primary language to a list of panels to be put on the tab for
+        # that language.
+        main_panels = []
+        i18n_panels = {}
+        attribute_types = self.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            fields = attribute_type.get_form_fields(self)
+            for field in fields:
+                if field.language:
+                    i18n_panels.setdefault(field.language, []).append(field.get_panel())
+                else:
+                    main_panels.append(field.get_panel())
+        return (main_panels, i18n_panels)
 
     def get_siblings(self):
         return Category.objects.filter(type=self.type, parent=self.parent)

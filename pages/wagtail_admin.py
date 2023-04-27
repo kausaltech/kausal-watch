@@ -22,6 +22,14 @@ def restrict_more_button_permissions_very_much(buttons, page, page_perms, is_par
                 button.page_perms = VeryRestrictivePagePermissionTester(page_perms.user_perms, page_perms.page)
 
 
+@hooks.register('construct_page_listing_buttons')
+def remove_sort_menu_order_button(buttons, page, page_perms, is_parent=False, context=None):
+    if getattr(page, 'remove_sort_menu_order_button', False):
+        for button in buttons:
+            if button.label == _("More"):
+                button.dropdown_buttons = [b for b in button.dropdown_buttons if b.url != '?ordering=ord']
+
+
 @hooks.register('construct_page_action_menu')
 def remove_page_action_menu_items_except_publish(menu_items, request, context):
     if getattr(context.get('page'), 'remove_page_action_menu_items_except_publish', False):

@@ -1,7 +1,7 @@
 from dal import autocomplete
 from django.db.models import Q
 
-from actions.models import Action, Category, CommonCategoryType
+from actions.models import Action, Category, CommonCategoryType, Plan
 from aplans.types import WatchAdminRequest
 
 
@@ -10,7 +10,8 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
 
     def get_result_label(self, result: Action):
         related_plans = self.forwarded.get('related_plans', False)
-        if related_plans:
+        plan_id = self.forwarded.get('plan', None)
+        if related_plans or plan_id is not None:
             plan = result.plan
             plan_name = plan.short_name or plan.name
             return '%s: %s' % (plan_name, str(result))
@@ -20,7 +21,11 @@ class ActionAutocomplete(autocomplete.Select2QuerySetView):
         if not self.request.user.is_authenticated:
             return Action.objects.none()
 
-        plan = self.request.get_active_admin_plan()
+        plan_id = self.forwarded.get('plan', None)
+        if plan_id is None:
+            plan = self.request.get_active_admin_plan()
+        else:
+            plan = Plan.objects.get(id=plan_id)
         related_plans = self.forwarded.get('related_plans', False)
         if related_plans:
             plans = plan.get_all_related_plans(inclusive=True)
@@ -45,14 +50,26 @@ class CategoryAutocomplete(autocomplete.Select2QuerySetView):
 
         plan = self.request.get_active_admin_plan()
         ct_id = self.forwarded.get('type', None)
-        if not ct_id:
-            return Category.objects.none()
-        ct = plan.category_types.get(id=ct_id)
-        qs = ct.categories.all()
-        if self.q:
-            qs = qs.filter(Q(identifier__istartswith=self.q) | Q(name__icontains=self.q))
+        target_type = self.forwarded.get('target_type', None)
 
-        return qs
+        if ct_id is None and target_type is None:
+            return Category.objects.none()
+
+        category_types = plan.category_types.all()
+        if target_type in ('indicator', 'action'):
+            for restriction in ('usable', 'editable'):
+                category_types = category_types.filter(**{f'{restriction}_for_{target_type}s': True})
+        if ct_id:
+            category_types = category_types.filter(id=ct_id)
+
+        categories = Category.objects.filter(type__in=category_types)
+        if self.q:
+            q = self.q.strip()
+            categories = categories.filter(
+                Q(identifier__istartswith=q) |
+                Q(name__icontains=q)
+            )
+        return categories
 
 
 class CommonCategoryTypeAutocomplete(autocomplete.Select2QuerySetView):

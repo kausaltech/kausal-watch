@@ -4,7 +4,7 @@ from actions.models import AttributeType
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
     ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
-    ActionTaskFactory, AttributeChoiceFactory, AttributeRichTextFactory, AttributeTypeFactory,
+    ActionTaskFactory, AttributeChoiceFactory, AttributeTextFactory, AttributeRichTextFactory, AttributeTypeFactory,
     AttributeTypeChoiceOptionFactory, CategoryFactory, CategoryLevelFactory, CategoryTypeFactory, ImpactGroupFactory,
     ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
@@ -27,6 +27,11 @@ def category_type(plan):
 
 
 @pytest.fixture
+def attribute_type__text(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.TEXT)
+
+
+@pytest.fixture
 def attribute_type__rich_text(category_type):
     return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.RICH_TEXT)
 
@@ -39,6 +44,11 @@ def attribute_type__ordered_choice(category_type):
 @pytest.fixture
 def attribute_type_choice_option(attribute_type__ordered_choice):
     return AttributeTypeChoiceOptionFactory(type=attribute_type__ordered_choice)
+
+
+@pytest.fixture
+def attribute_text(attribute_type__text, category):
+    return AttributeTextFactory(type=attribute_type__text, content_object=category)
 
 
 @pytest.fixture
@@ -285,6 +295,119 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
     assert data == expected
 
 
+def test_plan_node_superseded_by(graphql_client_query_data):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededPlans {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan2.identifier}
+    )
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan2.identifier,
+            'supersededBy': {
+                '__typename': 'Plan',
+                'id': plan1.identifier,
+            },
+            'supersededPlans': [],
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.parametrize('recursive', [False, True])
+def test_plan_node_superseding_plans(graphql_client_query_data, recursive):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    plan3 = PlanFactory(superseded_by=plan2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $recursive: Boolean!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersedingPlans(recursive: $recursive) {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan3.identifier, 'recursive': recursive}
+    )
+    expected_superseding_plans = [plan2]
+    if recursive:
+        expected_superseding_plans.append(plan1)
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan3.identifier,
+            'supersedingPlans': [{
+                '__typename': 'Plan',
+                'id': plan.identifier,
+            } for plan in expected_superseding_plans],
+        }
+    }
+    assert data == expected
+
+
+@pytest.mark.parametrize('recursive', [False, True])
+def test_plan_node_superseded_plans(graphql_client_query_data, recursive):
+    plan1 = PlanFactory()
+    plan2 = PlanFactory(superseded_by=plan1)
+    plan3 = PlanFactory(superseded_by=plan2)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!, $recursive: Boolean!) {
+          plan(id: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededPlans(recursive: $recursive) {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan1.identifier, 'recursive': recursive}
+    )
+    expected_superseded_plans = [plan2]
+    if recursive:
+        expected_superseded_plans.append(plan3)
+    expected = {
+        'plan': {
+            '__typename': 'Plan',
+            'id': plan1.identifier,
+            'supersededBy': None,
+            'supersededPlans': [{
+                '__typename': 'Plan',
+                'id': plan.identifier,
+            } for plan in expected_superseded_plans],
+        }
+    }
+    assert data == expected
+
+
 def test_plan_actions_responsible_organization(graphql_client_query_data):
     plan = PlanFactory()
     ActionFactory(plan=plan)  # org is not responsible
@@ -355,6 +478,45 @@ def test_attribute_choice_node(
                     'identifier': attribute_type_choice_option.identifier,
                     'name': attribute_type_choice_option.name,
                 },
+            }]
+        }]
+    }
+    assert data == expected
+
+
+def test_attribute_text_node(
+    graphql_client_query_data, plan, attribute_text, attribute_type__text
+):
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            attributes {
+              ... on AttributeText {
+                id
+                type {
+                  __typename
+                }
+                key
+                keyIdentifier
+                value
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planCategories': [{
+            'attributes': [{
+                'id': str(attribute_text.id),
+                'type': {
+                    '__typename': 'AttributeType',
+                },
+                'key': attribute_type__text.name,
+                'keyIdentifier': attribute_type__text.identifier,
+                'value': attribute_text.text,
             }]
         }]
     }
@@ -1184,14 +1346,59 @@ def test_action_node_merged(graphql_client_query_data):
     assert data == expected
 
 
+def test_action_node_superseded(graphql_client_query_data):
+    plan = PlanFactory()
+    action1 = ActionFactory(plan=plan)
+    action2 = ActionFactory(plan=plan, superseded_by=action1)
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planActions(plan: $plan) {
+            __typename
+            id
+            supersededBy {
+              __typename
+              id
+            }
+            supersededActions {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+    expected = {
+        'planActions': [{
+            '__typename': 'Action',
+            'id': str(action1.id),
+            'supersededBy': None,
+            'supersededActions': [{
+                '__typename': 'Action',
+                'id': str(action2.id),
+            }],
+        }, {
+            '__typename': 'Action',
+            'id': str(action2.id),
+            'supersededBy': {
+                '__typename': 'Action',
+                'id': str(action1.id),
+            },
+            'supersededActions': [],
+        }]
+    }
+    assert data == expected
+
+
 def test_action_node_next_previous(graphql_client_query_data):
     plan = PlanFactory()
     action1 = ActionFactory(plan=plan)
     action2 = ActionFactory(plan=plan)
-    assert action1.get_next_action() == action2
-    assert action2.get_next_action() is None
-    assert action1.get_previous_action() is None
-    assert action2.get_previous_action() == action1
+    assert action1.get_next_action(None) == action2
+    assert action2.get_next_action(None) is None
+    assert action1.get_previous_action(None) is None
+    assert action2.get_previous_action(None) == action1
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {

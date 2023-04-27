@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import datetime
-import typing
 import reversion
-from dateutil.relativedelta import relativedelta
+import typing
+import uuid
 
+from dateutil.relativedelta import relativedelta
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
@@ -19,6 +20,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
+from typing import Optional
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -28,6 +30,7 @@ from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
+    from .plan import Plan
 
 
 User = get_user_model()
@@ -295,6 +298,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         ('operational', _('operational')),
     )
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     common = models.ForeignKey(
         CommonIndicator, null=True, blank=True, related_name='indicators',
         on_delete=models.PROTECT, verbose_name=_('common indicator')
@@ -373,7 +377,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     ]
 
     public_fields = [
-        'id', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
+        'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
         'related_causes', 'related_effects', 'dimensions',
@@ -466,15 +470,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             'view_url': self.get_view_url(plan),
         }
 
-    def get_view_url(self, plan=None):
+    def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None) -> str:
         if plan is None:
             plan = self.plans.first()
-        if plan is None or not plan.site_url:
-            return None
-        if plan.site_url.startswith('http'):
-            return '{}/indicators/{}'.format(plan.site_url, self.id)
-        else:
-            return 'https://{}/indicators/{}'.format(plan.site_url, self.id)
+        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url), self.id)
 
     def clean(self):
         if self.updated_values_due_at:
@@ -524,6 +523,18 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             v.normalized_values = nvals
             v.save(update_fields=['normalized_values'])
 
+    @property
+    def latest_value_value(self):
+        if self.latest_value is None:
+            return None
+        return self.latest_value.value
+
+    @property
+    def latest_value_date(self):
+        if self.latest_value is None:
+            return None
+        return self.latest_value.date
+
     def __str__(self):
         return self.name
 
@@ -532,7 +543,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plans__primary_language__iexact=lang) | Q(plans__other_languages__icontains=[lang])).distinct()
+        qs = qs.filter(Q(plans__primary_language__istartswith=lang) | Q(plans__other_languages__icontains=[lang])).distinct()
         return qs
 
 

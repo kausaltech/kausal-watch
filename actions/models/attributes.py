@@ -2,16 +2,18 @@ from __future__ import annotations
 import typing
 
 import reversion
+from autoslug.fields import AutoSlugField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from modelcluster.models import ClusterableModel, ParentalKey
+from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToManyField
+from modeltrans.fields import TranslationField
 from wagtail.core.fields import RichTextField
 
-from aplans.utils import IdentifierField, OrderedModel
+from aplans.utils import ChoiceArrayField, InstancesEditableByMixin, OrderedModel, get_supported_languages
 from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
@@ -35,11 +37,12 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
         return self.filter(f)
 
 
-@reversion.register()
-class AttributeType(ClusterableModel, OrderedModel):
+@reversion.register(follow=['choice_options'])
+class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')
+        TEXT = 'text', _('Text')
         RICH_TEXT = 'rich_text', _('Rich text')
         NUMERIC = 'numeric', _('Numeric')
         CATEGORY_CHOICE = 'category_choice', _('Category')
@@ -55,8 +58,12 @@ class AttributeType(ClusterableModel, OrderedModel):
     scope_id = models.PositiveIntegerField()
     scope = GenericForeignKey('scope_content_type', 'scope_id')
 
-    identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    identifier = AutoSlugField(
+        always_update=True,
+        populate_from='name',
+        unique_with=('object_content_type', 'scope_content_type', 'scope_id'),
+    )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
     format = models.CharField(max_length=50, choices=AttributeFormat.choices, verbose_name=_('Format'))
     unit = models.ForeignKey(
@@ -77,11 +84,26 @@ class AttributeType(ClusterableModel, OrderedModel):
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
     )
+    show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages())
+    other_languages = ChoiceArrayField(
+        models.CharField(max_length=8, choices=get_supported_languages()),
+        default=list, null=True, blank=True
+    )
+
+    i18n = TranslationField(
+        fields=('name', 'help_text'),
+        # FIXME: This unfortunately duplicates the primary language of the plan of `scope` because we have no way of
+        # easily accessing it with modeltrans. It should be kept in sync with the language of the plan of `scope`, but
+        # it isn't at the moment because we hopefully will never change the primary language of a plan.
+        default_language_field='primary_language',
+    )
+
     public_fields = [
-        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'show_choice_names', 'has_zero_option',
-        'choice_options',
+        'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'attribute_category_type', 'show_choice_names',
+        'has_zero_option', 'choice_options',
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
@@ -90,87 +112,47 @@ class AttributeType(ClusterableModel, OrderedModel):
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
         verbose_name = _('attribute type')
         verbose_name_plural = _('attribute types')
+        ordering = ('scope_content_type', 'scope_id', 'order',)
 
     def clean(self):
         if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
             raise ValidationError({'unit': _('Unit must only be used for numeric attribute types')})
+        if not self.primary_language and self.other_languages:
+            raise ValidationError(_('If no primary language is set, there must not be other languages'))
 
-    def set_value(self, obj, vals):
-        # TODO: Remove equivalent from category.py
-        content_type = ContentType.objects.get_for_model(obj)
-        assert content_type.app_label == 'actions'
-        if content_type.model == 'action':
-            assert self.scope == obj.plan
-        elif content_type.model == 'category':
-            assert self.scope == obj.type
-        else:
-            raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model}")
-
-        if self.format == self.AttributeFormat.ORDERED_CHOICE:
-            val = vals.get('choice')
-            existing = self.choice_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if val is not None:
-                AttributeChoice.objects.create(type=self, content_object=obj, choice=val)
-        elif self.format == self.AttributeFormat.CATEGORY_CHOICE:
-            category_val = vals.get('categories')
-            existing = self.category_choice_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if category_val is not None:
-                acc = AttributeCategoryChoice.objects.create(type=self, content_object=obj)
-                acc.categories.set(category_val)
-        elif self.format == self.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
-            choice_val = vals.get('choice')
-            text_val = vals.get('text')
-            existing = self.choice_with_text_attributes.filter(content_type=content_type, object_id=obj.id)
-            if existing:
-                existing.delete()
-            if choice_val is not None or text_val:
-                AttributeChoiceWithText.objects.create(
-                    type=self,
-                    content_object=obj,
-                    choice=choice_val,
-                    text=text_val,
-                )
-        elif self.format == self.AttributeFormat.RICH_TEXT:
-            val = vals.get('text')
-            try:
-                obj = self.rich_text_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.rich_text_attributes.model.DoesNotExist:
-                if val:
-                    obj = AttributeRichText.objects.create(type=self, content_object=obj, text=val)
+    def save(self, *args, **kwargs):
+        if not self.primary_language:
+            assert not self.other_languages
+            scope_app_label = self.scope_content_type.app_label
+            scope_model = self.scope_content_type.model
+            if scope_app_label == 'actions' and scope_model == 'plan':
+                plan = self.scope
+            elif scope_app_label == 'actions' and scope_model == 'categorytype':
+                plan = self.scope.plan
             else:
-                if not val:
-                    obj.delete()
-                else:
-                    obj.text = val
-                    obj.save()
-        elif self.format == self.AttributeFormat.NUMERIC:
-            val = vals.get('value')
-            try:
-                obj = self.numeric_value_attributes.get(content_type=content_type, object_id=obj.id)
-            except self.numeric_value_attributes.model.DoesNotExist:
-                if val is not None:
-                    obj = AttributeNumericValue.objects.create(type=self, content_object=obj, value=val)
-            else:
-                if val is None:
-                    obj.delete()
-                else:
-                    obj.value = val
-                    obj.save()
-        else:
-            raise Exception(f"Unsupported attribute type format: {self.format}")
+                raise Exception(f"Unexpected AttributeType scope content type {scope_app_label}:{scope_model}")
+            self.primary_language = plan.primary_language
+            self.other_languages = plan.other_languages
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name
+        return self.name_i18n
 
 
+@reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
-    identifier = IdentifierField()
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    identifier = AutoSlugField(
+        always_update=True,
+        populate_from='name',
+        unique_with='type',
+    )
+
+    i18n = TranslationField(
+        fields=('name',),
+        default_language_field='type__primary_language',
+    )
 
     public_fields = ['id', 'identifier', 'name']
 
@@ -194,15 +176,14 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return self.name
 
 
-class AttributeCategoryChoice(models.Model):
+@reversion.register()
+class AttributeCategoryChoice(ClusterableModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    categories = models.ManyToManyField(
-        'actions.Category', related_name='+'
-    )
+    categories = ParentalManyToManyField('actions.Category', related_name='+')
 
     public_fields = ['id', 'categories']
 
@@ -210,10 +191,10 @@ class AttributeCategoryChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        categories = ", ".join([str(c) for c in self.categories.all()])
-        return f'[{categories}] ({self.type}) for {self.content_object} ({self.content_type})'
+        return "; ".join([str(c) for c in self.categories.all()])
 
 
+@reversion.register()
 class AttributeChoice(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
 
@@ -231,9 +212,10 @@ class AttributeChoice(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.choice, self.type, self.content_object)
+        return str(self.choice)
 
 
+@reversion.register()
 class AttributeChoiceWithText(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE,
                        related_name='choice_with_text_attributes')
@@ -250,13 +232,49 @@ class AttributeChoiceWithText(models.Model):
     )
     text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
 
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
+
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s; %s (%s) for %s' % (self.choice, self.text, self.type, self.content_object)
+        return f'{self.choice}; {self.text}'
 
 
+@reversion.register()
+class AttributeText(models.Model):
+    type = ParentalKey(
+        AttributeType,
+        on_delete=models.CASCADE,
+        related_name='text_attributes',
+    )
+
+    # `content_object` must fit `type`
+    # TODO: Enforce this
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
+
+    text = models.TextField(verbose_name=_('Text'))
+
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
+
+    public_fields = ['id', 'type', 'text']
+
+    class Meta:
+        unique_together = ('type', 'content_type', 'object_id')
+
+    def __str__(self):
+        return self.text_i18n
+
+
+@reversion.register()
 class AttributeRichText(models.Model):
     type = ParentalKey(
         AttributeType,
@@ -272,15 +290,21 @@ class AttributeRichText(models.Model):
 
     text = RichTextField(verbose_name=_('Text'))
 
+    i18n = TranslationField(
+        fields=('text',),
+        default_language_field='type__primary_language',
+    )
+
     public_fields = ['id', 'type', 'text']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s for %s' % (self.type, self.content_object)
+        return self.text_i18n
 
 
+@reversion.register()
 class AttributeNumericValue(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
 
@@ -298,7 +322,7 @@ class AttributeNumericValue(models.Model):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return '%s (%s) for %s' % (self.value, self.type, self.content_object)
+        return str(self.value)
 
 
 class ModelWithAttributes(models.Model):
@@ -309,9 +333,17 @@ class ModelWithAttributes(models.Model):
     """
     choice_attributes = GenericRelation(to='actions.AttributeChoice')
     choice_with_text_attributes = GenericRelation(to='actions.AttributeChoiceWithText')
+    text_attributes = GenericRelation(to='actions.AttributeText')
     rich_text_attributes = GenericRelation(to='actions.AttributeRichText')
     numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
     category_choice_attributes = GenericRelation(to='actions.AttributeCategoryChoice')
+
+    # Register models inheriting from this one using:
+    # @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
+    REVERSION_FOLLOW = [
+        'choice_attributes', 'choice_with_text_attributes', 'text_attributes', 'rich_text_attributes',
+        'numeric_value_attributes', 'category_choice_attributes',
+    ]
 
     def set_choice_attribute(self, type, choice_option_id):
         if isinstance(type, str):
@@ -363,6 +395,21 @@ class ModelWithAttributes(models.Model):
                 existing_attribute.value = value
                 existing_attribute.save()
 
+    def set_text_attribute(self, type, value):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.text_attributes.get(type=type)
+        except self.text_attributes.model.DoesNotExist:
+            if value is not None:
+                self.text_attributes.create(type=type, text=value)
+        else:
+            if value is None:
+                existing_attribute.delete()
+            else:
+                existing_attribute.text = value
+                existing_attribute.save()
+
     def set_rich_text_attribute(self, type, value):
         if isinstance(type, str):
             type = self.get_attribute_type_by_identifier(type)
@@ -377,6 +424,22 @@ class ModelWithAttributes(models.Model):
             else:
                 existing_attribute.text = value
                 existing_attribute.save()
+
+    def set_category_choice_attribute(self, type, category_ids):
+        if isinstance(type, str):
+            type = self.get_attribute_type_by_identifier(type)
+        try:
+            existing_attribute = self.category_choice_attributes.get(type=type)
+        except self.category_choice_attributes.model.DoesNotExist:
+            if category_ids:
+                attribute = self.category_choice_attributes.create(type=type)
+                attribute.categories.set(category_ids)
+        else:
+            if not category_ids:
+                existing_attribute.delete()
+            else:
+                existing_attribute.categories.set(category_ids)
+
 
     class Meta:
         abstract = True

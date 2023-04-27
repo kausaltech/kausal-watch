@@ -245,7 +245,7 @@ class Person(index.Indexed, ClusterableModel):
             with self.image.open() as file:  # noqa
                 pass
         except FileNotFoundError:
-            logger.error('Avatar file for %s not found' % self)
+            logger.info('Avatar file for %s not found' % self)
             return None
 
         if size is None:
@@ -306,48 +306,51 @@ class Person(index.Indexed, ClusterableModel):
             for ind in indicators:
                 plans.update(ind.plans.all())
 
+        client = None
         if plans:
             clients = Client.objects.filter(plans__plan__in=plans).distinct()
-            if len(clients) != 1:
-                raise Exception('Invalid number of clients found for %s [Person-%d]: %d' % (
-                    self.email, self.id, len(clients))
-                )
-            client = clients[0]
-        else:
+            if len(clients) == 1:
+                client = clients[0]
+            else:
+                logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
+                    self.email, self.id, len(clients)
+                ))
+        if not client:
             # Match based on email domain
-            email_domain = self.email.split('@')[1]
-            clients = Client.objects.filter(email_domains__domain=email_domain.lower())
-            if len(clients) != 1:
-                raise Exception('Unable to find client for email %s [Person-%d]' % (
-                    self.email, self.id)
-                )
-            client = clients[0]
+            # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
+            email_domain = self.email.split('@')[1].lower()
+            labels = email_domain.split('.')
+            while labels:
+                domain = '.'.join(labels)
+                labels.pop(0)
+                clients = Client.objects.filter(email_domains__domain=domain)
+                if len(clients) == 1:
+                    client = clients[0]
+                    break
+            else:
+                logger.warning('Unable to find client for email %s [Person-%d]' % (
+                    self.email, self.id
+                ))
+        if not client:
+            raise Exception('Unable to find client for email %s [Person-%d]' % (
+                self.email, self.id
+            ))
 
         return client
 
-    def get_notification_context(self, plan=None):
+    def get_notification_context(self):
         client = self.get_admin_client()
-        admin_url = client.get_admin_url()
-        out = dict(
-            first_name=self.first_name,
-            last_name=self.last_name,
-            admin_url=admin_url
-        )
-
-        logo = client.logo
-        if logo is None:
-            out['logo_url'] = None
-            out['logo_height'] = None
-            out['logo_width'] = None
-            out['logo_alt'] = None
-        else:
-            rendition = logo.get_rendition('max-200x50')
-            out['logo_url'] = admin_url + rendition.url
-            out['logo_height'] = rendition.height
-            out['logo_width'] = rendition.width
-            out['logo_alt'] = logo.title
-
-        return out
+        context = {
+            'person': {
+                'first_name': self.first_name,
+                'last_name': self.last_name,
+            },
+            'admin_url': client.get_admin_url(),
+        }
+        logo_context = client.get_notification_logo_context()
+        if logo_context:
+            context['logo'] = logo_context
+        return context
 
     def get_corresponding_user(self):
         if self.user:
@@ -371,6 +374,12 @@ class Person(index.Indexed, ClusterableModel):
             user.email = email
         user.save()
         return user
+
+    def delete_and_deactivate_corresponding_user(self, acting_admin_user):
+        target_user = getattr(self, 'user', None)
+        if target_user:
+            target_user.deactivate(acting_admin_user)
+        self.delete()
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

@@ -47,7 +47,6 @@ wagtail-generic-chooser
 wagtail-localize
 #https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
 rustface
-django-npm
 django-autocomplete-light
 coreapi
 pyyaml
@@ -66,3 +65,10 @@ celery
 drf-spectacular
 wagtailgeowidget
 wagtailsvg
+django-countries
+tzdata
+django-storages
+django-autoslug
+unidecode  # for decoding non-ASCII characters nicely in slugs, used optionally by django-autoslug
+xlsxwriter
+Babel

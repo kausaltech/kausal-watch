@@ -1,49 +1,62 @@
 from __future__ import annotations
-from contextlib import contextmanager
 
-import typing
-from typing import Optional, Tuple, Type, Union
 import logging
 import re
-from urllib.parse import urlparse
-
+import reversion
+import typing
+import zoneinfo
+from contextlib import contextmanager
+from datetime import datetime, timedelta
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
+from django.core import management
 from django.core.exceptions import ValidationError
-from django.core.validators import URLValidator, RegexValidator, MaxValueValidator
+from django.core.validators import URLValidator, RegexValidator, MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
-from django.utils.translation import gettext_lazy as _
+from django.utils.text import format_lazy
+from django.utils.translation import gettext_lazy as _, pgettext_lazy, gettext
+from django_countries.fields import CountryField
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from typing import Optional, Tuple, Type, Union
+from urllib.parse import urlparse
 from wagtail.core.models import Collection, Page, Site
 from wagtail.core.models.i18n import Locale
 # In future versions of wagtail_localize, this will be in wagtail_localize.operations
 from wagtail_localize.operations import TranslationCreator
 
-import reversion
 from aplans.types import WatchRequest
-
 from aplans.utils import (
-    ChoiceArrayField, IdentifierField, OrderedModel, PlanRelatedModel, validate_css_color, get_default_language,
+    ChoiceArrayField,
+    IdentifierField,
+    OrderedModel,
+    PlanRelatedModel,
+    validate_css_color,
+    get_default_language,
     get_supported_languages
 )
 from orgs.models import Organization
 from people.models import Person
 
 if typing.TYPE_CHECKING:
-    from .features import PlanFeatures
+    from django.db.models.manager import RelatedManager
+    from users.models import User
     from .action import ActionStatus, ActionImplementationPhase, Action
     from .category import CategoryType
-    from users.models import User
-    from django.db.models.manager import RelatedManager
+    from .features import PlanFeatures
+    from reports.models import ReportType
+    from feedback.models import UserFeedback
+    from orgs.models import OrganizationPlanAdmin
 
 
 logger = logging.getLogger(__name__)
+
+TIMEZONES = [(x, x) for x in sorted(zoneinfo.available_timezones(), key=str.lower)]
 
 
 def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, str], Tuple[None, None]]:
@@ -93,6 +106,25 @@ def set_default_page_creation(enabled: bool):
     _skip_default_page_creation = False
 
 
+def help_text_with_default_disclaimer(help_text, default_value=None):
+    """Lazily formats a help text with the default value injected
+       for clarity if one is available.
+    """
+    disclaimer = _('If you leave this blank the application will use the default value')
+    if default_value:
+        return format_lazy(
+            '{help_text} {disclaimer} {default_value}.',
+            help_text=help_text,
+            disclaimer=disclaimer,
+            default_value=default_value,
+        )
+    return format_lazy(
+        '{help_text} {disclaimer}.',
+        help_text=help_text,
+        disclaimer=disclaimer,
+    )
+
+
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
@@ -102,11 +134,17 @@ class Plan(ClusterableModel):
     Most information in this service is linked to a Plan.
     """
     DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 180
+    DEFAULT_ACTION_UPDATE_TARGET_INTERVAL = 30
+    DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL = 60
     MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 730
 
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = IdentifierField(unique=True)
     short_name = models.CharField(max_length=50, verbose_name=_('short name'), null=True, blank=True)
+    version_name = models.CharField(
+        max_length=100, blank=True, verbose_name=_('version name'),
+        help_text=_('If this plan has multiple versions, name of this version'),
+    )
     image = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
@@ -161,7 +199,7 @@ class Plan(ClusterableModel):
     related_organizations = models.ManyToManyField(Organization, blank=True, related_name='related_plans')
     related_plans = models.ManyToManyField('self', blank=True)
     parent = models.ForeignKey(
-        'self', verbose_name=_('parent'), blank=True, null=True, related_name='children',
+        'self', verbose_name=pgettext_lazy('plan', 'parent'), blank=True, null=True, related_name='children',
         on_delete=models.SET_NULL
     )
     common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
@@ -176,17 +214,45 @@ class Plan(ClusterableModel):
         'actions.CategoryType', blank=True, null=True, on_delete=models.SET_NULL,
         related_name='plans_with_secondary_classification',
         verbose_name=_('A secondary action classification'),
-        help_text=(_('Leave empty unless specifically required. Action'
-                     'filters based on this category are displayed '
-                     'more prominently than filters of other '
-                     'categories.')))
+        help_text=(_(
+            'Leave empty unless specifically required. Action filters based on this category are displayed '
+            'more prominently than filters of other categories.'
+        ))
+    )
 
     action_days_until_considered_stale = models.PositiveIntegerField(
         null=True, blank=True, validators=[MaxValueValidator(MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE)],
         verbose_name=_('Days until actions considered stale'),
-        help_text=_(
-            'Actions not updated since this many days are considered stale. '
-            'If you leave this blank a default value will be used.'))
+        help_text=help_text_with_default_disclaimer(
+            _('Actions not updated since this many days are considered stale.'),
+            DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+        )
+    )
+
+    settings_action_update_target_interval = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(365), MinValueValidator(1)],
+        verbose_name=_('Target interval in days to update actions'),
+        help_text=help_text_with_default_disclaimer(
+            _('A desirable time interval in days within which actions should be updated in the optimal case.'),
+            DEFAULT_ACTION_UPDATE_TARGET_INTERVAL
+        )
+    )
+    settings_action_update_acceptable_interval = models.PositiveIntegerField(
+        null=True, blank=True, validators=[MaxValueValidator(730), MinValueValidator(1)],
+        verbose_name=_('Acceptable interval in days to update actions'),
+        help_text=help_text_with_default_disclaimer(
+            _('A maximum time interval in days within which actions should always be updated.'),
+            DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
+        )
+    )
+
+    superseded_by = models.ForeignKey(
+        'self', verbose_name=pgettext_lazy('plan', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan')
+    )
+    timezone = models.CharField(max_length=64, choices=TIMEZONES, default='UTC')
+    country = CountryField(blank=True)
+    daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
     features: PlanFeatures
     actions: RelatedManager[Action]
@@ -195,6 +261,9 @@ class Plan(ClusterableModel):
     category_types: RelatedManager[CategoryType]
     domains: RelatedManager[PlanDomain]
     children: RelatedManager[Plan]
+    report_types: RelatedManager[ReportType]
+    user_feedbacks: RelatedManager[UserFeedback]
+    organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
@@ -207,14 +276,15 @@ class Plan(ClusterableModel):
     )
 
     public_fields = [
-        'id', 'name', 'short_name', 'identifier', 'image', 'action_schedules',
+        'id', 'name', 'short_name', 'version_name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
         'primary_language', 'other_languages', 'accessibility_statement_url',
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
-        'primary_action_classification', 'secondary_action_classification'
+        'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
+        'report_types',
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
@@ -325,9 +395,6 @@ class Plan(ClusterableModel):
             if self.contact_person_group.name != group_name:
                 self.contact_person_group.name = group_name
                 self.contact_person_group.save()
-
-        if not PlanFeatures.objects.filter(plan=self).exists():
-            PlanFeatures.objects.create(plan=self)
 
         if update_fields:
             super().save(update_fields=update_fields)
@@ -527,6 +594,9 @@ class Plan(ClusterableModel):
                 if hn_obj is None:
                     AdminHostname.objects.create(client=client, hostname=hostname)
 
+        # Set up notifications
+        management.call_command('initialize_notifications', plan=plan.identifier)
+
         return plan
 
     def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
@@ -546,9 +616,69 @@ class Plan(ClusterableModel):
 
         return qs
 
+    def get_superseded_plans(self, recursive=False):
+        result = self.superseded_plans.all()
+        if recursive:
+            # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
+            for child in list(result):
+                result |= child.get_superseded_plans(recursive=True)
+        return result
+
+    def get_superseding_plans(self, recursive=False):
+        if self.superseded_by is None:
+            return []
+        result = [self.superseded_by]
+        if recursive:
+            # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
+            result += self.superseded_by.get_superseding_plans(recursive=True)
+        return result
+
     def get_action_days_until_considered_stale(self):
         days = self.action_days_until_considered_stale
         return days if days is not None else self.DEFAULT_ACTION_DAYS_UNTIL_CONSIDERED_STALE
+
+    @property
+    def action_update_target_interval(self):
+        days = self.settings_action_update_target_interval
+        return days if days is not None else self.DEFAULT_ACTION_UPDATE_TARGET_INTERVAL
+
+    @property
+    def action_update_acceptable_interval(self):
+        days = self.settings_action_update_acceptable_interval
+        return days if days is not None else self.DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL
+
+    @property
+    def tzinfo(self):
+        return zoneinfo.ZoneInfo(self.timezone)
+
+    def to_local_timezone(self, dt: datetime):
+        return dt.astimezone(self.tzinfo)
+
+    def now_in_local_timezone(self):
+        return self.to_local_timezone(timezone.now())
+
+    def should_trigger_daily_notifications(self, now=None):
+        if now is None:
+            now = self.now_in_local_timezone()
+        if not self.notification_settings.notifications_enabled:
+            return False
+        if self.daily_notifications_triggered_at is None:
+            return True
+        sent_at = self.to_local_timezone(self.daily_notifications_triggered_at)
+        send_at_or_after = datetime.combine(sent_at.date(), self.notification_settings.send_at_time, sent_at.tzinfo)
+        if sent_at.time() >= self.notification_settings.send_at_time:
+            send_at_or_after += timedelta(days=1)
+        return now >= send_at_or_after
+
+
+class PublicationStatus(models.TextChoices):
+    PUBLISHED = 'published', _('Published')
+    UNPUBLISHED = 'unpublished', _('Unpublished')
+    SCHEDULED = 'scheduled', _('Scheduled')
+
+    @staticmethod
+    def manual_status_choices():
+        return [(c.value, c.label) for c in PublicationStatus if c != PublicationStatus.SCHEDULED]
 
 
 # ParentalManyToManyField  won't help, so we need the through model:
@@ -565,6 +695,14 @@ class GeneralPlanAdmin(OrderedModel):
         unique_together = (('plan', 'person',),)
         verbose_name = _('general plan admin')
         verbose_name_plural = _('general plan admins')
+
+    def save(self, *args, **kwargs):
+        from notifications.models import GeneralPlanAdminNotificationPreferences
+        result = super().save(*args, **kwargs)
+        GeneralPlanAdminNotificationPreferences.objects.get_or_create(
+            general_plan_admin=self,
+        )
+        return result
 
     def __str__(self):
         return str(self.person)
@@ -596,6 +734,41 @@ class PlanDomain(models.Model):
     )
     google_site_verification_tag = models.CharField(max_length=50, null=True, blank=True)
     matomo_analytics_url = models.CharField(max_length=100, null=True, blank=True)
+
+    # This field is intentionally left out from wagtail admin for now, because the majority of domains are production
+    # domains and changing their publication status is dangerous without having confirmations in the form.
+    publication_status_override = models.CharField(
+        max_length=20,
+        choices=PublicationStatus.manual_status_choices(),
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name=_('Immediate override of publishing status'),
+        help_text=_(
+            'Only set this if you are sure you want to override the publication time set in the plan. '
+            'Be aware that this will immediately change the publication status of the plan at this domain!'
+        )
+    )
+
+    @property
+    def status(self) -> PublicationStatus:
+        if self.publication_status_override is not None:
+            return self.publication_status_override
+        published_at = self.plan.published_at
+        if published_at is None:
+            return PublicationStatus.UNPUBLISHED
+        now = self.plan.now_in_local_timezone()
+        if published_at <= now:
+            return PublicationStatus.PUBLISHED
+        if published_at > now:
+            return PublicationStatus.SCHEDULED
+        return PublicationStatus.UNPUBLISHED
+
+    @property
+    def status_message(self) -> str:
+        if self.status != PublicationStatus.PUBLISHED:
+            with translation.override(self.plan.primary_language):
+                return gettext('The site is not public at this time.')
 
     def validate_hostname(self):
         dn = self.hostname
@@ -658,7 +831,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
     identifier = IdentifierField()
     parent = models.ForeignKey(
         'self', on_delete=models.SET_NULL, related_name='children', null=True, blank=True,
-        verbose_name=_('parent')
+        verbose_name=pgettext_lazy('impact group', 'parent')
     )
     weight = models.FloatField(verbose_name=_('weight'), null=True, blank=True)
     color = models.CharField(

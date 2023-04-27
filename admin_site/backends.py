@@ -22,6 +22,9 @@ class AzureADAuth(AzureADTenantOAuth2):
             tenant_id = self.client.azure_ad_tenant_id
         return tenant_id
 
+    def jwks_url(self):
+        return 'https://login.microsoftonline.com/common/discovery/keys'
+
     def auth_complete_params(self, state=None):
         ret = super().auth_complete_params(state)
         # Request access to the graph API

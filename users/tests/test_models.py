@@ -1,7 +1,7 @@
 import pytest
 
-from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory
-from indicators.tests.factories import IndicatorContactFactory
+from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
+from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
 from people.tests.factories import PersonFactory
 from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
 
@@ -32,6 +32,53 @@ def test_is_contact_person_for_indicator():
 def test_is_contact_person_for_indicator_false(user, indicator):
     assert not user.is_contact_person_for_indicator()
     assert not user.is_contact_person_for_indicator(indicator)
+
+
+def test_is_contact_person_for_action_in_plan():
+    contact = ActionContactFactory()
+    user = contact.person.user
+    action = contact.action
+    assert user.is_contact_person_for_action_in_plan(action.plan)
+    assert user.is_contact_person_for_action_in_plan(action.plan, action)
+
+
+def test_is_contact_person_for_action_in_plan_false(user, action):
+    assert not user.is_contact_person_for_action_in_plan(action.plan)
+    assert not user.is_contact_person_for_action_in_plan(action.plan, action)
+
+
+def test_is_contact_person_for_action_in_plan_false_other_plan(user):
+    contact = ActionContactFactory()
+    user = contact.person.user
+    action = contact.action
+    other_plan = PlanFactory()
+    assert not user.is_contact_person_for_action_in_plan(other_plan)
+    assert not user.is_contact_person_for_action_in_plan(other_plan, action)
+
+
+def test_is_contact_person_for_indicator_in_plan():
+    contact = IndicatorContactFactory()
+    user = contact.person.user
+    indicator = contact.indicator
+    plan = IndicatorLevelFactory(indicator=indicator).plan
+    assert user.is_contact_person_for_indicator_in_plan(plan)
+    assert user.is_contact_person_for_indicator_in_plan(plan, indicator)
+
+
+def test_is_contact_person_for_indicator_in_plan_false(user, indicator):
+    plan = IndicatorLevelFactory(indicator=indicator).plan
+    assert not user.is_contact_person_for_indicator_in_plan(plan)
+    assert not user.is_contact_person_for_indicator_in_plan(plan, indicator)
+
+
+def test_is_contact_person_for_indicator_in_plan_false_other_plan(user):
+    contact = IndicatorContactFactory()
+    user = contact.person.user
+    indicator = contact.indicator
+    IndicatorLevelFactory(indicator=indicator)
+    other_plan = PlanFactory()
+    assert not user.is_contact_person_for_indicator_in_plan(other_plan)
+    assert not user.is_contact_person_for_indicator_in_plan(other_plan, indicator)
 
 
 def test_is_general_admin_for_plan_superuser(superuser, plan):

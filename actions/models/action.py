@@ -1,14 +1,15 @@
 from __future__ import annotations
-import typing
-from typing import Literal, Optional, TypedDict
 import logging
-from datetime import date
-
+import reversion
+import typing
+import uuid
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Max, Q
+from django.db.models import IntegerField, Max, Q
+from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
@@ -16,21 +17,23 @@ from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from reversion.models import Version
+from typing import Literal, Optional, TypedDict
 from wagtail.core.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
-
-import reversion
 
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
 from orgs.models import Organization
-from users.models import User
 from people.models import Person
+from users.models import User
 
-from .attributes import ModelWithAttributes
+from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
+from ..attributes import AttributeType
 from ..monitoring_quality import determine_monitoring_quality
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
     from .plan import Plan
@@ -72,6 +75,22 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     def active(self):
         return self.unmerged().exclude(status__is_completed=True)
 
+    def visible_for_user(self, user: Optional[User], plan: Optional[Plan] = None):
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if user is None or not user.is_authenticated:
+            return self.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
+        return self
+
+    def complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        action_ids = (
+            ActionSnapshot.objects.filter(report=report)
+            .annotate(action_id=Cast('action_version__object_id', output_field=IntegerField()))
+            .values_list('action_id')
+        )
+        return self.filter(id__in=action_ids)
+
 
 class ActionIdentifierSearchMixin:
     def get_value(self, obj: Action):
@@ -97,10 +116,28 @@ class ResponsiblePartyDict(TypedDict):
     role: Literal['primary', 'collaborator', None]
 
 
-@reversion.register()
-class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, index.Indexed):
+class DraftableModel(models.Model):
+    class VisibilityState(models.TextChoices):
+        DRAFT = 'draft', _('Draft')
+        PUBLIC = 'public', _('Public')
+
+    visibility = models.CharField(
+        blank=False, null=False,
+        default=VisibilityState.PUBLIC,
+        choices=VisibilityState.choices,
+        max_length=20,
+        verbose_name=_('visibility'),
+    )
+
+    class Meta:
+        abstract = True
+
+
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
+class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     plan: Plan = ParentalKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='actions',
         verbose_name=_('plan')
@@ -216,6 +253,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         blank=True,
         null=True,
     )
+    superseded_by = models.ForeignKey(
+        'self', verbose_name=pgettext_lazy('action', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='superseded_actions', help_text=_('Set if this action is superseded by another action')
+    )
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
@@ -240,17 +281,18 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         ]),
         index.FilterField('plan'),
         index.FilterField('updated_at'),
+        index.FilterField('visibility'),
     ]
     search_auto_update = True
 
     # Used by GraphQL + REST API code
     public_fields = [
-        'id', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
+        'id', 'uuid', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
         'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
-        'primary_org', 'order',
+        'primary_org', 'order', 'superseded_by', 'superseded_actions',
     ]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
@@ -296,11 +338,24 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def is_active(self):
         return not self.is_merged() and (self.status is None or not self.status.is_completed)
 
-    def get_next_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__gt=self.order).unmerged().first()
+    def get_next_action(self, user: User):
+        return (
+            Action.objects
+            .visible_for_user(user)
+            .filter(plan=self.plan_id, order__gt=self.order)
+            .unmerged()
+            .first()
+        )
 
-    def get_previous_action(self):
-        return Action.objects.filter(plan=self.plan_id, order__lt=self.order).unmerged().order_by('-order').first()
+    def get_previous_action(self, user: User):
+        return (
+            Action.objects
+            .visible_for_user(user)
+            .filter(plan=self.plan_id, order__lt=self.order)
+            .unmerged()
+            .order_by('-order')
+            .first()
+        )
 
     def _calculate_status_from_indicators(self):
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
@@ -353,6 +408,8 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
         # Return average completion
         completion = int((total_completion / total_indicators) * 100)
+        if completion <= 0:
+            return None
         return dict(completion=completion, is_late=is_late)
 
     def _calculate_completion_from_tasks(self, tasks):
@@ -361,7 +418,10 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         n_completed = len(list(filter(lambda x: x.completed_at is not None, tasks)))
         return dict(completion=int(n_completed * 100 / len(tasks)))
 
-    def _determine_status(self, tasks, indicator_status):
+    def _determine_status(self, tasks, indicator_status, today=None):
+        if today is None:
+            today = self.plan.now_in_local_timezone().date()
+
         statuses = self.plan.action_statuses.all()
         if not statuses:
             return None
@@ -378,8 +438,6 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
 
         if indicator_status is not None and indicator_status.get('is_late'):
             return by_id['late']
-
-        today = date.today()
 
         def is_late(task):
             if task.due_at is None or task.completed_at is not None:
@@ -505,11 +563,48 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plan__primary_language__iexact=lang) | Q(plan__other_languages__icontains=[lang]))
+        qs = qs.filter(Q(plan__primary_language__istartswith=lang) | Q(plan__other_languages__icontains=[lang]))
+        # FIXME find out how to use action default manager here
+        qs = qs.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
         return qs
 
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
+
+    def get_editable_attribute_types(self, user, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+        action_ct = ContentType.objects.get_for_model(Action)
+        plan_ct = ContentType.objects.get_for_model(self.plan)
+        attribute_types = AttributeTypeModel.objects.filter(
+            object_content_type=action_ct,
+            scope_content_type=plan_ct,
+            scope_id=self.plan.id,
+        )
+        if only_in_reporting_tab:
+            attribute_types = attribute_types.filter(show_in_reporting_tab=True)
+        if unless_in_reporting_tab:
+            attribute_types = attribute_types.filter(show_in_reporting_tab=False)
+        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.plan))
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in attribute_types]
+
+    def get_attribute_panels(self, user):
+        # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be
+        # put on the main tab, `reporting_panels` is a list of panels to be put on the reporting tab, and `i18n_panels`
+        # is a dict mapping a non-primary language to a list of panels to be put on the tab for that language.
+        main_panels = []
+        reporting_panels = []
+        i18n_panels = {}
+        for panels, kwargs in [(main_panels, {'unless_in_reporting_tab': True}),
+                               (reporting_panels, {'only_in_reporting_tab': True})]:
+            attribute_types = self.get_editable_attribute_types(user, **kwargs)
+            for attribute_type in attribute_types:
+                fields = attribute_type.get_form_fields(self)
+                for field in fields:
+                    if field.language:
+                        i18n_panels.setdefault(field.language, []).append(field.get_panel())
+                    else:
+                        panels.append(field.get_panel())
+        return (main_panels, reporting_panels, i18n_panels)
 
     def get_siblings(self):
         return Action.objects.filter(plan=self.plan)
@@ -522,6 +617,68 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
                 return previous_sibling
             previous_sibling = sibling
         assert False  # should have returned above at some point
+
+    def get_snapshots(self, report=None):
+        """Return the snapshots of this action, optionally restricted to those for the given report."""
+        from reports.models import ActionSnapshot
+        versions = Version.objects.get_for_object(self)
+        qs = ActionSnapshot.objects.filter(action_version__in=versions)
+        if report is not None:
+            qs = qs.filter(report=report)
+        return qs
+
+    def get_latest_snapshot(self, report=None):
+        """Return the latest snapshot of this action, optionally restricted to those for the given report.
+
+        Raises ActionSnapshot.DoesNotExist if no such snapshot exists.
+        """
+        return self.get_snapshots(report).latest()
+
+    def is_complete_for_report(self, report):
+        from reports.models import ActionSnapshot
+        try:
+            self.get_latest_snapshot(report)
+        except ActionSnapshot.DoesNotExist:
+            return False
+        return True
+
+    def mark_as_complete_for_report(self, report, user):
+        from reports.models import ActionSnapshot
+        if self.is_complete_for_report(report):
+            raise ValueError(_("The action is already marked as complete for report %s.") % report)
+        with reversion.create_revision():
+            reversion.add_to_revision(self)
+            reversion.set_comment(
+                _("Marked action '%(action)s' as complete for report '%(report)s'") % {
+                    'action': self, 'report': report})
+            reversion.set_user(user)
+        ActionSnapshot.objects.create(
+            report=report,
+            action=self,
+        )
+
+    def undo_marking_as_complete_for_report(self, report, user):
+        from reports.models import ActionSnapshot
+        snapshots = ActionSnapshot.objects.filter(
+            report=report,
+            action_version__in=Version.objects.get_for_object(self),
+        )
+        num_snapshots = snapshots.count()
+        if num_snapshots != 1:
+            raise ValueError(_("Cannot undo marking action as complete as there are %s snapshots") % num_snapshots)
+        with reversion.create_revision():
+            reversion.add_to_revision(self)
+            reversion.set_comment(
+                _("Undid marking action '%(action)s' as complete for report '%(report)s'") % {
+                    'action': self, 'report': report})
+            reversion.set_user(user)
+        snapshots.delete()
+
+    def get_status_summary(self):
+        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan})
+
+    def get_timeliness(self):
+        return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan})
 
 
 class ActionResponsibleParty(OrderedModel):
@@ -766,8 +923,11 @@ class ActionTask(models.Model):
             raise ValidationError({'completed_at': _('Non-completed tasks cannot have a completion date')})
         if self.state == ActionTask.COMPLETED and self.completed_at is None:
             raise ValidationError({'completed_at': _('Completed tasks must have a completion date')})
-        if self.completed_at is not None and self.completed_at > date.today():
-            raise ValidationError({'completed_at': _("Date can't be in the future")})
+        # TODO: Put this check in, but the following won't work because self.action is None when creating a new
+        # ActionTask as it is a ParentalKey.
+        # today = self.action.plan.now_in_local_timezone().date()
+        # if self.completed_at is not None and self.completed_at > today:
+        #     raise ValidationError({'completed_at': _("Date can't be in the future")})
 
     def get_notification_context(self, plan=None):
         if plan is None:
@@ -835,19 +995,15 @@ class ActionStatusUpdate(models.Model):
         verbose_name=_('action')
     )
     title = models.CharField(max_length=200, verbose_name=_('title'))
-    date = models.DateField(verbose_name=_('date'), default=date.today)
+    date = models.DateField(verbose_name=_('date'), blank=True)
     author = models.ForeignKey(
         'people.Person', on_delete=models.SET_NULL, related_name='status_updates',
         null=True, blank=True, verbose_name=_('author')
     )
     content = models.TextField(verbose_name=_('content'))
 
-    created_at = models.DateField(
-        verbose_name=_('created at'), editable=False, auto_now_add=True
-    )
-    modified_at = models.DateField(
-        verbose_name=_('created at'), editable=False, auto_now=True
-    )
+    created_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
+    modified_at = models.DateField(verbose_name=_('created at'), editable=False, blank=True)
     created_by = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'), editable=False,
@@ -861,6 +1017,17 @@ class ActionStatusUpdate(models.Model):
         verbose_name = _('action status update')
         verbose_name_plural = _('action status updates')
         ordering = ('-date',)
+
+    def save(self, *args, **kwargs):
+        now = self.action.plan.now_in_local_timezone()
+        if self.pk is None:
+            if self.date is None:
+                self.date = now.date()
+            if self.created_at is None:
+                self.created_at = now.date()
+        if self.modified_at is None:
+            self.modified_at = now.date()
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return '%s – %s – %s' % (self.action, self.created_at, self.title)

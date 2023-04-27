@@ -44,6 +44,8 @@ env = environ.FileAwareEnv(
     OIDC_CLIENT_SECRET=(str, ''),
     AZURE_AD_CLIENT_ID=(str, ''),
     AZURE_AD_CLIENT_SECRET=(str, ''),
+    GOOGLE_CLIENT_ID=(str, ''),
+    GOOGLE_CLIENT_SECRET=(str, ''),
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
@@ -56,6 +58,11 @@ env = environ.FileAwareEnv(
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
+    LOG_GRAPHQL_QUERIES=(bool, True),
+    AWS_S3_ENDPOINT_URL=(str, ''),
+    AWS_STORAGE_BUCKET_NAME=(str, ''),
+    AWS_ACCESS_KEY_ID=(str, ''),
+    AWS_SECRET_ACCESS_KEY=(str, ''),
 )
 
 BASE_DIR = root()
@@ -169,6 +176,7 @@ INSTALLED_APPS += [
     'feedback',
     'orgs',
     'pages',
+    'reports',
 ]
 
 MIDDLEWARE = [
@@ -199,8 +207,9 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'actions.context_processors.current_plan',
-                'admin_site.context_processors.sentry',
                 'wagtail.contrib.settings.context_processors.settings',
+                'admin_site.context_processors.sentry',
+                'admin_site.context_processors.i18n',
             ],
         },
     },
@@ -208,21 +217,8 @@ TEMPLATES = [
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'npm.finders.NpmFinder'
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder'
 ]
-NPM_FILE_PATTERNS = {
-    'ag-grid-community': [
-        'dist/ag-grid-community.js', 'dist/ag-grid-community.noStyle.js',
-        'dist/styles/ag-theme-alpine.css', 'dist/styles/ag-theme-material.css', 'dist/styles/ag-grid.css'
-    ],
-    'moment': [
-        'dist/moment.js', 'dist/locale/*.js'
-    ],
-    '@sentry/browser': [
-        'build/bundle.min.js*'
-    ],
-}
 
 WSGI_APPLICATION = 'aplans.wsgi.application'
 
@@ -252,6 +248,7 @@ AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
     'django.contrib.auth.backends.ModelBackend',
+    'social_core.backends.google_openidconnect.GoogleOpenIdConnect'
 )
 
 AUTH_USER_MODEL = 'users.User'
@@ -269,6 +266,9 @@ SOCIAL_AUTH_TUNNISTAMO_OIDC_ENDPOINT = TUNNISTAMO_BASE_URL + '/openid'
 
 SOCIAL_AUTH_AZURE_AD_KEY = env.str('AZURE_AD_CLIENT_ID')
 SOCIAL_AUTH_AZURE_AD_SECRET = env.str('AZURE_AD_CLIENT_SECRET')
+
+SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_KEY = env.str('GOOGLE_CLIENT_ID')
+SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_SECRET = env.str('GOOGLE_CLIENT_SECRET')
 
 SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.log_login_attempt',
@@ -379,11 +379,16 @@ LANGUAGES = (
     ('en-AU', _('English (Australia)')),
     ('fi', _('Finnish')),
     ('sv', _('Swedish')),
+    ('es-US', _('Spanish (United States)')),
+    ('es', _('Spanish')),
 )
 # For languages that Django has no translations for, we need to manually specify what the language is called in that
 # language. We use this for displaying the list of available languages in the user settings.
+# If you forget to add something from LANGUAGES here, you will be reminded by an Exception when trying to access
+# /wadmin/account/
 LOCAL_LANGUAGE_NAMES = {
     'de-CH': "Deutsch (Schweiz)",
+    'es-US': "español (Estados Unidos)",
 }
 MODELTRANS_AVAILABLE_LANGUAGES = [x[0].lower() for x in LANGUAGES]
 MODELTRANS_FALLBACK = {
@@ -445,6 +450,23 @@ if env.str('SENDGRID_API_KEY'):
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
+WAGTAILEMBEDS_FINDERS = [
+    {
+        'class': 'wagtail.embeds.finders.oembed'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'ArcGIS',
+        'domain_whitelist': ('arcgis.com', 'maps.arcgis.com',),
+        'title': 'Map'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'Sharepoint',
+        'domain_whitelist': ('sharepoint.com', ),
+        'title': 'Document'
+    }
+]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
 WAGTAIL_ENABLE_UPDATE_CHECK = False
 WAGTAIL_PASSWORD_MANAGEMENT_ENABLED = True
@@ -550,6 +572,13 @@ STATIC_URL = env('STATIC_URL')
 MEDIA_URL = env('MEDIA_URL')
 STATIC_ROOT = env('STATIC_ROOT')
 MEDIA_ROOT = env('MEDIA_ROOT')
+
+AWS_S3_ENDPOINT_URL = env('AWS_S3_ENDPOINT_URL')
+AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
+AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
+if AWS_S3_ENDPOINT_URL:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
@@ -659,6 +688,7 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
         },
         'loggers': {
             'django.db': level('DEBUG' if env('LOG_SQL_QUERIES') else 'INFO'),
+            'aplans.graphene_views': level('DEBUG' if env('LOG_GRAPHQL_QUERIES') else 'INFO'),
             'django.template': level('WARNING'),
             'django.utils.autoreload': level('INFO'),
             'django': level('DEBUG'),
@@ -704,11 +734,6 @@ if ENABLE_DEBUG_TOOLBAR:
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
-NOTIFICATIONS_CRONTAB = {
-    'helsinki-kierto': {'hour': 7, 'minute': 40},
-    'lahti-ilmasto': {'hour': 8, 'minute': 10},
-    'viitasaari-ilmasto': {'hour': 8, 'minute': 40},
-}
 CELERY_BEAT_SCHEDULE = {
     'update-action-status': {
         'task': 'actions.tasks.update_action_status',
@@ -718,13 +743,10 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'indicators.tasks.calculate_indicators',
         'schedule': crontab(hour=23, minute=0),
     },
-    **{f'send_notifications.{plan}': {
-        'task': 'notifications.tasks.send_notifications',
-        'schedule': crontab(**crontab_args),
-        'kwargs': {
-            'plan': plan,
-        },
-    } for plan, crontab_args in NOTIFICATIONS_CRONTAB.items()},
+    'send_daily_notifications': {
+        'task': 'notifications.tasks.send_daily_notifications',
+        'schedule': crontab(minute=0),
+    },
     'update-index': {
         'task': 'actions.tasks.update_index',
         'schedule': crontab(hour=3, minute=0),

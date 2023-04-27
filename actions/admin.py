@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib import admin
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 import dal
@@ -559,7 +558,7 @@ class ActionAdmin(AplansExportMixin, AplansModelAdmin):
         return True
 
     def save_model(self, request, obj, form, change):
-        obj.updated_at = timezone.now()
+        obj.updated_at = obj.plan.now_in_local_timezone()
         super().save_model(request, obj, form, change)
 
         # Update categories

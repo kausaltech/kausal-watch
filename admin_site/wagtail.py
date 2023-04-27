@@ -1,9 +1,12 @@
-from typing import List
+from contextlib import contextmanager
+from typing import Any, List
 from urllib.parse import urljoin
 
+from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
+from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import ProtectedError, Model
 from django.forms.widgets import Select
@@ -11,16 +14,17 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.safestring import mark_safe
+from django.utils.decorators import method_decorator
+
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from wagtail.admin import messages
-from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
-from wagtail.contrib.modeladmin.views import CreateView, EditView
-from wagtail.admin.panels import InlinePanel
+from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
 
 from reversion.revisions import (
     add_to_revision, create_revision, set_comment, set_user
@@ -31,6 +35,7 @@ from wagtailautocomplete.edit_handlers import \
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel, PlanDefaultsModel
 from actions.models import Plan
+from pages.models import ActionListPage
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:
@@ -63,9 +68,14 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     return out
 
 
-def get_translation_tabs(instance, request, include_all_languages: bool = False, default_language=None):
+def get_translation_tabs(
+        instance, request, include_all_languages: bool = False, default_language=None, extra_panels=None
+):
     if default_language is None:
         default_language = settings.LANGUAGE_CODE
+    # extra_panels maps a language code to a list of panels that should be put on the tab of that language
+    if extra_panels is None:
+        extra_panels = {}
 
     i18n_field = get_i18n_field(type(instance))
     if not i18n_field:
@@ -81,13 +91,14 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
         languages = plan.other_languages
-    for lang_code in languages:
-        fields = []
+    for lang_code in (language.lower() for language in languages):
+        panels = []
         for field in i18n_field.get_translated_fields():
             if field.language != lang_code:
                 continue
-            fields.append(FieldPanel(field.name))
-        tabs.append(ObjectList(fields, heading=languages_by_code[lang_code.lower()]))
+            panels.append(FieldPanel(field.name))
+        panels += extra_panels.get(lang_code, [])
+        tabs.append(ObjectList(panels, heading=languages_by_code[lang_code]))
     return tabs
 
 
@@ -128,6 +139,31 @@ class PlanRelatedPermissionHelper(PermissionHelper):
         if not super().user_can_edit_obj(user, obj):
             return False
         return self._obj_matches_active_plan(user, obj)
+
+
+class PlanContextPermissionHelper(PermissionHelper):
+    plan: Plan | None
+
+    def __init__(self, model, inspect_view_enabled=False):
+        self.plan = None
+        super().__init__(model, inspect_view_enabled)
+
+    def prefetch_cache(self):
+        """Prefetch plan-related content for permission checking."""
+        pass
+
+    def clean_cache(self):
+        pass
+
+    @contextmanager
+    def activate_plan_context(self, plan: Plan):
+        self.plan = plan
+        self.prefetch_cache()
+        try:
+            yield
+        finally:
+            self.clean_cache()
+            self.plan = None
 
 
 class AdminOnlyPanel(ObjectList):
@@ -318,8 +354,25 @@ class PlanRelatedViewMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
+class ActivatePermissionHelperPlanContextMixin:
+    @method_decorator(login_required)
+    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
+        """Set the plan context for permission helper before dispatching request."""
+
+        if isinstance(self.permission_helper, PlanContextPermissionHelper):
+            with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
+                ret = super().dispatch(request, *args, **kwargs)
+                # We trigger render here, because the plan context is needed
+                # still in the render stage.
+                if hasattr(ret, 'render'):
+                    ret = ret.render()
+            return ret
+        else:
+            return super().dispatch(request, *args, **kwargs)
+
+
 class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                     PlanRelatedViewMixin, EditView):
+                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, EditView):
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)
@@ -388,7 +441,7 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
                        PlanRelatedViewMixin, CreateView):
     request: WatchAdminRequest
 
-    def get_instance(self):
+    def get_instance(self) -> Any:
         instance = super().get_instance()
         # If it is a model directly or indirectly related to the
         # active plan, ensure the 'plan' field or other plan related
@@ -423,9 +476,14 @@ class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
         return ret
 
 
+class AplansIndexView(ActivatePermissionHelperPlanContextMixin, IndexView):
+    pass
+
+
 class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
+    index_view_class = AplansIndexView
     button_helper_class = AplansButtonHelper
 
     def __init__(self, *args, **kwargs):
@@ -501,3 +559,63 @@ class InitializeFormWithUserMixin:
         kwargs = super().get_form_kwargs()
         kwargs.update({'user': self.request.user})
         return kwargs
+
+
+class ActionListPageBlockFormMixin(forms.Form):
+    # Choice names are field names in ActionListPage
+    ACTION_LIST_FILTER_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('primary_filters', _('in primary filters')),
+        ('main_filters', _('in main filters')),
+        ('advanced_filters',  _('in advanced filters')),
+    ]
+    ACTION_DETAIL_CONTENT_SECTION_CHOICES = [
+        ('', _('[not included]')),
+        ('details_main_top', _('in main column (top)')),
+        ('details_main_bottom', _('in main column (bottom)')),
+        ('details_aside',  _('in side column')),
+    ]
+
+    action_list_filter_section = forms.ChoiceField(choices=ACTION_LIST_FILTER_SECTION_CHOICES, required=False)
+    action_detail_content_section = forms.ChoiceField(choices=ACTION_DETAIL_CONTENT_SECTION_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk is not None:
+            action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+            for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+                if action_list_page.contains_model_instance_block(self.instance, field_name):
+                    self.fields['action_list_filter_section'].initial = field_name
+                    break
+            for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+                if action_list_page.contains_model_instance_block(self.instance, field_name):
+                    self.fields['action_detail_content_section'].initial = field_name
+                    break
+
+    def save(self, commit=True):
+        instance = super().save(commit)
+        action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+        action_list_filter_section = self.cleaned_data.get('action_list_filter_section')
+        for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
+            if action_list_filter_section == field_name:
+                if not action_list_page.contains_model_instance_block(instance, field_name):
+                    action_list_page.insert_model_instance_block(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_model_instance_block(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_detail_content_section = self.cleaned_data.get('action_detail_content_section')
+        for field_name in (f for f, _ in self.ACTION_DETAIL_CONTENT_SECTION_CHOICES if f):
+            if action_detail_content_section == field_name:
+                if not action_list_page.contains_model_instance_block(instance, field_name):
+                    action_list_page.insert_model_instance_block(instance, field_name)
+            else:
+                try:
+                    action_list_page.remove_model_instance_block(instance, field_name)
+                except ValueError:
+                    # Don't care if instance wasn't there in the first place
+                    pass
+        action_list_page.save()
+        return instance

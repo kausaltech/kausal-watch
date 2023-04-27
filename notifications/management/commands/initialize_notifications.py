@@ -87,7 +87,10 @@ def initialize_notification_templates(
             "reminder about updating indicator details in the action "
             "plan.  The deadline for updating the indicator values has "
             "passed. Please go and update the indicator with the latest "
-            "values.")
+            "values."),
+        'user_feedback_received': pgettext(
+            'user_feedback_received',
+            "A user has submitted feedback."),
     }
 
     default_shared_texts = {

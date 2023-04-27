@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
@@ -15,20 +14,21 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
 from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
-from .attribute_type_admin import get_attribute_fields
-from .models import AttributeType, Category, CategoryType, CommonCategory, CommonCategoryType
+from .models import Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
-    AplansCreateView, AplansEditView, AplansModelAdmin, CondensedInlinePanel, PlanFilteredFieldPanel,
-    AplansTabbedInterface, get_translation_tabs
+    ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
+    CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
+    get_translation_tabs
 )
+from aplans.utils import append_query_parameter
 
 
-def _append_query_parameter(request, url, parameter):
-    value = request.GET.get(parameter)
-    if value:
-        assert '?' not in url
-        return f'{url}?{parameter}={value}'
-    return url
+class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+    pass
+
+
+class CategoryTypeEditView(InitializeFormWithPlanMixin, AplansEditView):
+    pass
 
 
 class CategoryTypeDeleteView(DeleteView):
@@ -40,6 +40,24 @@ class CategoryTypeDeleteView(DeleteView):
         return super().delete_instance()
 
 
+class CategoryTypePermissionHelper(PermissionHelper):
+    def _is_admin_of_active_plan(self, user):
+        active_plan = user.get_active_admin_plan()
+        return user.is_general_admin_for_plan(active_plan)
+
+    def user_can_list(self, user):
+        return self._is_admin_of_active_plan(user)
+
+    def user_can_create(self, user):
+        return self._is_admin_of_active_plan(user)
+
+    def user_can_delete_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj.plan)
+
+
 @modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
@@ -49,7 +67,10 @@ class CategoryTypeAdmin(AplansModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     add_to_settings_menu = True
+    create_view_class = CategoryTypeCreateView
+    edit_view_class = CategoryTypeEditView
     delete_view_class = CategoryTypeDeleteView
+    permission_helper_class = CategoryTypePermissionHelper
 
     panels = [
         FieldPanel('name'),
@@ -73,6 +94,9 @@ class CategoryTypeAdmin(AplansModelAdmin):
             FieldPanel('name_plural',)
         ]),
         FieldPanel('synchronize_with_pages'),
+        FieldPanel('instances_editable_by'),
+        FieldPanel('action_list_filter_section'),
+        FieldPanel('action_detail_content_section'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -95,28 +119,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return CategoryTypeEditHandler(tabs)
-
-
-def get_category_attribute_fields(category_type, category, **kwargs):
-    category_ct = ContentType.objects.get_for_model(Category)
-    category_type_ct = ContentType.objects.get_for_model(category_type)
-    attribute_types = AttributeType.objects.filter(
-        object_content_type=category_ct,
-        scope_content_type=category_type_ct,
-        scope_id=category_type.id,
-    )
-    return get_attribute_fields(attribute_types, category, **kwargs)
-
-
-class AttributeFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        attribute_fields_list = get_category_attribute_fields(self.instance.type, self.instance, with_initial=True)
-        attribute_fields = {form_field_name: field
-                            for _, fields in attribute_fields_list
-                            for form_field_name, (field, _) in fields.items()}
-        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
+        return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
 
 
 class CategoryAdminForm(WagtailAdminModelForm):
@@ -133,33 +136,28 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
     def save(self, commit=True):
         obj = super().save(commit)
-
-        # Update categories
-        # TODO: Refactor duplicated code (action_admin.py)
-        for attribute_type, fields in get_category_attribute_fields(obj.type, obj):
-            vals = {}
-            for form_field_name, (field, model_field_name) in fields.items():
-                val = self.cleaned_data.get(form_field_name)
-                vals[model_field_name] = val
-            attribute_type.set_value(obj, vals)
+        user = self._user
+        attribute_types = obj.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
 
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self, request=None, instance: Category | None = None):
-        # TODO: Refactor duplicated code (action_admin.py)
+        user = request.user  # FIXME: request is None
         if instance is not None:
-            attribute_fields_list = get_category_attribute_fields(instance.type, instance, with_initial=True)
-            attribute_fields = {form_field_name: field
-                                for _, fields in attribute_fields_list
-                                for form_field_name, (field, _) in fields.items()}
+            attribute_types = instance.get_editable_attribute_types(user)
+            attribute_fields = {field.name: field.django_field
+                                for attribute_type in attribute_types
+                                for field in attribute_type.get_form_fields(instance)}
         else:
             attribute_fields = {}
 
         self.base_form_class = type(
             'CategoryAdminForm',
             (CategoryAdminForm,),
-            attribute_fields
+            {**attribute_fields, '_user': user}
         )
         form_class = super().get_form_class()
         if instance and instance.common:
@@ -171,6 +169,12 @@ class CategoryEditHandler(AplansTabbedInterface):
                 form_class.base_fields['parent'].disabled = True
                 form_class.base_fields['parent'].required = False
         return form_class
+
+
+class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        self.plan = kwargs.pop('plan')
+        super().__init__(*args, **kwargs)
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):
@@ -188,29 +192,38 @@ class CategoryTypeEditHandler(AplansTabbedInterface):
 class CategoryTypeQueryParameterMixin:
     @property
     def index_url(self):
-        return _append_query_parameter(self.request, super().index_url, 'category_type')
+        return append_query_parameter(self.request, super().index_url, 'category_type')
 
     @property
     def create_url(self):
-        return _append_query_parameter(self.request, super().create_url, 'category_type')
+        return append_query_parameter(self.request, super().create_url, 'category_type')
 
     @property
     def edit_url(self):
-        return _append_query_parameter(self.request, super().edit_url, 'category_type')
+        return append_query_parameter(self.request, super().edit_url, 'category_type')
 
     @property
     def delete_url(self):
-        return _append_query_parameter(self.request, super().delete_url, 'category_type')
+        return append_query_parameter(self.request, super().delete_url, 'category_type')
 
 
 class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
+    def check_action_permitted(self, user):
+        category_type_param = self.request.GET.get('category_type')
+        if category_type_param:
+            category_type = CategoryType.objects.get(pk=int(category_type_param))
+            plan = category_type.plan
+            if not category_type.are_instances_editable_by(user, plan):
+                return False
+        return super().check_action_permitted(user)
+
     def get_instance(self):
         """Create a category instance and set its category type to the one given in the GET or POST data."""
         instance = super().get_instance()
-        category_type = self.request.GET.get('category_type')
-        if category_type and not instance.pk:
+        category_type_param = self.request.GET.get('category_type')
+        if category_type_param and not instance.pk:
             assert not hasattr(instance, 'type')
-            instance.type = CategoryType.objects.get(pk=int(category_type))
+            instance.type = CategoryType.objects.get(pk=int(category_type_param))
             if not instance.identifier and instance.type.hide_category_identifiers:
                 instance.generate_identifier()
         return instance
@@ -234,23 +247,23 @@ class CategoryAdminButtonHelper(ButtonHelper):
         """
         if 'category_type' in self.request.GET:
             data = super().add_button(*args, **kwargs)
-            data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+            data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
             return data
         return None
 
     def inspect_button(self, *args, **kwargs):
         data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def edit_button(self, *args, **kwargs):
         data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
     def delete_button(self, *args, **kwargs):
         data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
 
@@ -270,13 +283,22 @@ class CategoryAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
+class CategoryPermissionHelper(PermissionHelper):
+    # Does not handle instance creation because we'd need the category type for that, for which we need the request. We
+    # check these permissions in CategoryCreateView.
+    def user_can_edit_obj(self, user, obj):
+        return obj.type.are_instances_editable_by(user, obj.type.plan) and super().user_can_edit_obj(user, obj)
+
+    def user_can_delete_obj(self, user, obj):
+        return obj.type.are_instances_editable_by(user, obj.type.plan) and super().user_can_delete_obj(user, obj)
+
+
 @modeladmin_register
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
     list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
-    add_to_settings_menu = True
 
     panels = [
         CategoryOfSameTypePanel('parent'),
@@ -293,6 +315,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     # Do we need to create a view for inspect_view?
     delete_view_class = CategoryDeleteView
     button_helper_class = CategoryAdminButtonHelper
+    permission_helper_class = CategoryPermissionHelper
 
     def get_menu_item(self, order=None):
         return CategoryAdminMenuItem(self, order or self.get_menu_order())
@@ -313,19 +336,8 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                     panels.remove(p)
                     break
 
-        # TODO: Refactor duplicated code (action_admin.py)
-        if instance:
-            attribute_fields = get_category_attribute_fields(instance.type, instance, with_initial=True)
-        else:
-            attribute_fields = []
-
-        for attribute_type, fields in attribute_fields:
-            for form_field_name, (field, model_field_name) in fields.items():
-                if len(fields) > 1:
-                    heading = f'{attribute_type.name} ({model_field_name})'
-                else:
-                    heading = attribute_type.name
-                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+        main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(request.user)
+        panels += main_attribute_panels
 
         if request.user.is_superuser:
             # Didn't use CondensedInlinePanel for the following because there is a bug:
@@ -339,7 +351,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         tabs += i18n_tabs
 
         return CategoryEditHandler(tabs)
@@ -407,19 +419,19 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 class CommonCategoryTypeQueryParameterMixin:
     @property
     def index_url(self):
-        return _append_query_parameter(self.request, super().index_url, 'common_category_type')
+        return append_query_parameter(self.request, super().index_url, 'common_category_type')
 
     @property
     def create_url(self):
-        return _append_query_parameter(self.request, super().create_url, 'common_category_type')
+        return append_query_parameter(self.request, super().create_url, 'common_category_type')
 
     @property
     def edit_url(self):
-        return _append_query_parameter(self.request, super().edit_url, 'common_category_type')
+        return append_query_parameter(self.request, super().edit_url, 'common_category_type')
 
     @property
     def delete_url(self):
-        return _append_query_parameter(self.request, super().delete_url, 'common_category_type')
+        return append_query_parameter(self.request, super().delete_url, 'common_category_type')
 
 
 class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCreateView):
@@ -452,23 +464,23 @@ class CommonCategoryAdminButtonHelper(ButtonHelper):
         """
         if 'common_category_type' in self.request.GET:
             data = super().add_button(*args, **kwargs)
-            data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+            data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
             return data
         return None
 
     def inspect_button(self, *args, **kwargs):
         data = super().inspect_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
     def edit_button(self, *args, **kwargs):
         data = super().edit_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
     def delete_button(self, *args, **kwargs):
         data = super().delete_button(*args, **kwargs)
-        data['url'] = _append_query_parameter(self.request, data['url'], 'common_category_type')
+        data['url'] = append_query_parameter(self.request, data['url'], 'common_category_type')
         return data
 
 
@@ -494,7 +506,6 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
-    add_to_settings_menu = True
 
     panels = [
         FieldPanel('name'),

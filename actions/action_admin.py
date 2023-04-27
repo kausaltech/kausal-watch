@@ -3,13 +3,12 @@ import logging
 from datetime import timedelta
 
 from django import forms
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.urls import re_path
 from django.utils import timezone
-from django.utils.translation import (
-    get_language, gettext, gettext_lazy as _
-)
+from django.utils.translation import gettext, gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
 )
@@ -29,7 +28,7 @@ from dal import autocomplete, forward as dal_forward
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
+    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
     PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, SafeLabelModelAdminMenuItem,
     insert_model_translation_panels, get_translation_tabs
@@ -43,8 +42,8 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .attribute_type_admin import get_attribute_fields
-from .models import Action, ActionTask, AttributeRichText, AttributeType, CategoryType
+from .models import Action, ActionTask, CategoryType
+from reports.views import MarkActionAsCompleteView
 
 logger = logging.getLogger(__name__)
 
@@ -202,13 +201,10 @@ class ActionAdminForm(WagtailAdminModelForm):
             cat_type = field.category_type
             obj.set_categories(cat_type, field_data)
 
-        # TODO: Refactor duplicated code (category_admin.py)
-        for attribute_type, fields in get_action_attribute_fields(plan, obj):
-            vals = {}
-            for form_field_name, (field, model_field_name) in fields.items():
-                val = self.cleaned_data.get(form_field_name)
-                vals[model_field_name] = val
-            attribute_type.set_value(obj, vals)
+        user = self._user
+        attribute_types = obj.get_editable_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
 
 
@@ -222,19 +218,18 @@ class ActionEditHandler(AplansTabbedInterface):
         else:
             cat_fields = {}
 
-        # TODO: Refactor duplicated code (category_admin.py)
         if instance is not None:
-            attribute_fields_list = get_action_attribute_fields(plan, instance, with_initial=True)
-            attribute_fields = {form_field_name: field
-                                for _, fields in attribute_fields_list
-                                for form_field_name, (field, _) in fields.items()}
+            attribute_types = instance.get_editable_attribute_types(user)
+            attribute_fields = {field.name: field.django_field
+                                for attribute_type in attribute_types
+                                for field in attribute_type.get_form_fields(instance)}
         else:
             attribute_fields = {}
 
         self.base_form_class = type(
             'ActionAdminForm',
             (ActionAdminForm,),
-            {**cat_fields, **attribute_fields}
+            {**cat_fields, **attribute_fields, '_user': user}
         )
 
         form_class = super().get_form_class()
@@ -461,33 +456,52 @@ class ActionIndexView(PersistIndexViewFiltersMixin, IndexView):
         return plan.general_content.get_action_term_display_plural()
 
 
-def get_action_attribute_fields(plan, action, **kwargs):
-    action_ct = ContentType.objects.get_for_model(Action)
-    plan_ct = ContentType.objects.get_for_model(plan)
-    attribute_types = AttributeType.objects.filter(
-        object_content_type=action_ct,
-        scope_content_type=plan_ct,
-        scope_id=plan.id,
-    )
-    return get_attribute_fields(attribute_types, action, **kwargs)
-
-
-class AttributeFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        plan = self.request.user.get_active_admin_plan()
-        attribute_fields_list = get_action_attribute_fields(plan, self.instance, with_initial=True)
-        attribute_fields = {form_field_name: field
-                            for _, fields in attribute_fields_list
-                            for form_field_name, (field, _) in fields.items()}
-        self.form.fields[self.field_name].initial = attribute_fields[self.field_name].initial
-
-
 class ActionMenuItem(SafeLabelModelAdminMenuItem):
     def get_label_from_context(self, context, request):
         # Ignore context; the label is going to be the configured term for "Action"
         plan = request.user.get_active_admin_plan()
         return plan.general_content.get_action_term_display_plural()
+
+
+class ActionButtonHelper(AplansButtonHelper):
+    mark_as_complete_button_classnames = []
+
+    def mark_as_complete_button(self, action_pk, report, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.mark_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('mark_action_as_complete', quote(action_pk), quote(report.pk)),
+            'label': _("Mark as complete for report %s") % report.name,
+            'classname': cn,
+            'title': _("Mark this action as complete for the report %s") % str(report),
+        }
+
+    def undo_marking_as_complete_button(self, action_pk, report, **kwargs):
+        classnames_add = kwargs.get('classnames_add', [])
+        classnames_exclude = kwargs.get('classnames_exclude', [])
+        classnames = self.mark_as_complete_button_classnames + classnames_add
+        cn = self.finalise_classname(classnames, classnames_exclude)
+        return {
+            'url': self.url_helper.get_action_url('undo_marking_action_as_complete', quote(action_pk), quote(report.pk)),
+            'label': _("Undo marking as complete for report %s") % report.name,
+            'classname': cn,
+            'title': _("Undo marking this action as complete for the report %s") % str(report),
+        }
+
+    def get_buttons_for_obj(self, obj, *args, **kwargs):
+        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
+        # For each report type, display one button for the latest report of that type
+        for report_type in obj.plan.report_types.all():
+            latest_report = report_type.reports.last()
+            if latest_report and not latest_report.is_complete:
+                if obj.is_complete_for_report(latest_report):
+                    buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
+                else:
+                    buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
+        return buttons
+
 
 
 @modeladmin_register
@@ -501,6 +515,7 @@ class ActionAdmin(AplansModelAdmin):
     list_display_add_buttons = 'name_link'
     search_fields = ('identifier', 'name')
     permission_helper_class = ActionPermissionHelper
+    button_helper_class = ActionButtonHelper
     index_order_field = 'order'
 
     ordering = ['order']
@@ -523,6 +538,8 @@ class ActionAdmin(AplansModelAdmin):
             ],
             heading=_('External links')
         ),
+    ]
+    basic_related_panels_general_admin = [
         FieldPanel(
             'related_actions',
             widget=autocomplete.ModelSelect2Multiple(
@@ -533,6 +550,7 @@ class ActionAdmin(AplansModelAdmin):
             )
         ),
         FieldPanel('merged_with', widget=ActionChooser),
+        FieldPanel('visibility'),
     ]
 
     progress_panels = [
@@ -544,7 +562,7 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('start_date'),
         FieldPanel('end_date'),
     ]
-    internal_panels = [
+    reporting_panels = [
         FieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
     ]
 
@@ -580,9 +598,9 @@ class ActionAdmin(AplansModelAdmin):
     '''
 
     def updated_at_delta(self, obj):
-        now = timezone.now()
         if not obj.updated_at:
             return None
+        now = obj.plan.now_in_local_timezone()
         delta = now - obj.updated_at
         return naturaltime(delta)
     updated_at_delta.short_description = _('Last updated')
@@ -638,6 +656,8 @@ class ActionAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance: Action, request: WatchAdminRequest):
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
+        attribute_panels = instance.get_attribute_panels(request.user)
+        main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
 
         all_tabs = []
 
@@ -654,19 +674,7 @@ class ActionAdmin(AplansModelAdmin):
             elif field_name == 'primary_org' and not plan.features.has_action_primary_orgs:
                 panels.remove(panel)
 
-        # TODO: Refactor duplicated code (category_admin.py)
-        if instance:
-            attribute_fields = get_action_attribute_fields(plan, instance, with_initial=True)
-        else:
-            attribute_fields = []
-
-        for attribute_type, fields in attribute_fields:
-            for form_field_name, (field, model_field_name) in fields.items():
-                if len(fields) > 1:
-                    heading = f'{attribute_type.name} ({model_field_name})'
-                else:
-                    heading = attribute_type.name
-                panels.append(AttributeFieldPanel(form_field_name, heading=heading))
+        panels += main_attribute_panels
 
         if is_general_admin:
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
@@ -678,6 +686,17 @@ class ActionAdmin(AplansModelAdmin):
 
         for panel in self.basic_related_panels:
             panels.append(panel)
+
+        if is_general_admin:
+            panels += self.basic_related_panels_general_admin
+
+            if plan.superseded_by:
+                panels.append(FieldPanel('superseded_by', widget=autocomplete.ModelSelect2(
+                    url='action-autocomplete',
+                    forward=(
+                        dal_forward.Const(plan.superseded_by.id, 'plan'),
+                    )
+                )))
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
@@ -722,20 +741,29 @@ class ActionAdmin(AplansModelAdmin):
             ], heading=_('Tasks')),
         ]
 
-        internal_panels = list(self.internal_panels)
+        reporting_panels = reporting_attribute_panels
+        help_panels_for_field = {}
+        for snapshot in instance.get_snapshots():
+            for field in snapshot.report.fields:
+                help_panel = field.block.get_help_panel(field.value, snapshot)
+                if help_panel:
+                    help_panels_for_field.setdefault(field.id, []).append(help_panel)
+        for help_panels in help_panels_for_field.values():
+            reporting_panels += help_panels
+        reporting_panels += list(self.reporting_panels)
 
         if is_general_admin:
-            internal_panels.append(
+            reporting_panels.append(
                 FieldPanel('internal_admin_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5)))
             )
             if plan.action_impacts.exists():
-                internal_panels.append(PlanFilteredFieldPanel('impact'))
+                reporting_panels.append(PlanFilteredFieldPanel('impact'))
             if plan.action_schedules.exists():
-                internal_panels.append(PlanFilteredFieldPanel('schedule'))
+                reporting_panels.append(PlanFilteredFieldPanel('schedule'))
 
-        all_tabs.append(ObjectList(internal_panels, heading=_('Internal information')))
+        all_tabs.append(ObjectList(reporting_panels, heading=_('Reporting')))
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
         return ActionEditHandler(all_tabs)
@@ -751,3 +779,46 @@ class ActionAdmin(AplansModelAdmin):
 
     def get_menu_item(self, order=None):
         return ActionMenuItem(self, order or self.get_menu_order())
+
+    def mark_action_as_complete_view(self, request, action_pk, report_pk):
+        return MarkActionAsCompleteView.as_view(
+            model_admin=self,
+            action_pk=action_pk,
+            report_pk=report_pk,
+            complete=True,
+        )(request)
+
+    def undo_marking_action_as_complete_view(self, request, action_pk, report_pk):
+        return MarkActionAsCompleteView.as_view(
+            model_admin=self,
+            action_pk=action_pk,
+            report_pk=report_pk,
+            complete=False,
+        )(request)
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        mark_as_complete_url = re_path(
+            # self.url_helper.get_action_url_pattern('mark_action_as_complete'),
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+                self.opts.app_label,
+                self.opts.model_name,
+                'mark_action_as_complete',
+            ),
+            self.mark_action_as_complete_view,
+            name=self.url_helper.get_action_url_name('mark_action_as_complete')
+        )
+        undo_marking_as_complete_url = re_path(
+            # self.url_helper.get_action_url_pattern('undo_marking_action_as_complete'),
+            r'^%s/%s/%s/(?P<action_pk>[-\w]+)/(?P<report_pk>[-\w]+)/$' % (
+                self.opts.app_label,
+                self.opts.model_name,
+                'undo_marking_action_as_complete',
+            ),
+            self.undo_marking_action_as_complete_view,
+            name=self.url_helper.get_action_url_name('undo_marking_action_as_complete')
+        )
+        return urls + (
+            mark_as_complete_url,
+            undo_marking_as_complete_url,
+        )

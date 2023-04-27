@@ -13,6 +13,8 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+import importlib
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -26,18 +28,26 @@ from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_url
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
-from actions.autocomplete import ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete
+from actions.autocomplete import (
+    ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
+)
 from orgs.autocomplete import OrganizationAutocomplete
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
 from people.autocomplete import PersonAutocomplete
 from admin_site.views import RootRedirectView, WadminRedirectView
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
+from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
 from users.views import change_admin_plan
 from .graphene_views import SentryGraphQLView
 from .api_router import router as api_router
 
-for view in actions_api_views + indicators_api_views + insight_api_views:
+extensions_api_views = []
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    from kausal_watch_extensions.api import all_views
+    extensions_api_views = all_views
+
+for view in actions_api_views + indicators_api_views + insight_api_views + extensions_api_views:
     api_router.register(view['name'], view['class'], basename=view.get('basename'))
 
 api_urls = []
@@ -73,8 +83,15 @@ urlpatterns = [
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
     re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
+    re_path(r'^report-autocomplete/$', ReportAutocomplete.as_view(), name='report-autocomplete'),
+    re_path(r'^report-type-autocomplete/$', ReportTypeAutocomplete.as_view(), name='report-type-autocomplete'),
+    re_path(r'^report-type-field-autocomplete/$', ReportTypeFieldAutocomplete.as_view(), name='report-type-field-autocomplete'),
     re_path(r'^unit-autocomplete/$', UnitAutocomplete.as_view(), name='unit-autocomplete'),
-    re_path(r'^common-indicator-autocomplete/$', CommonIndicatorAutocomplete.as_view(), name='common-indicator-autocomplete'),
+    re_path(
+        r'^common-indicator-autocomplete/$',
+        CommonIndicatorAutocomplete.as_view(),
+        name='common-indicator-autocomplete'
+    ),
     re_path(
         r'^commoncategorytype-autocomplete/$',
         CommonCategoryTypeAutocomplete.as_view(),

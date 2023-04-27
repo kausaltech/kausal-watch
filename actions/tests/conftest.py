@@ -9,6 +9,8 @@ from .factories import (
     PlanFactory
 )
 
+from .fixtures import actions_with_relations_factory  # noqa
+
 register(ActionFactory)
 register(CategoryFactory)
 register(CategoryTypeFactory)
@@ -58,12 +60,3 @@ def plan_list_url():
 @pytest.fixture
 def person_list_url():
     return reverse('person-list')
-
-
-@pytest.fixture
-def plan_with_pages(plan):
-    from actions.models.plan import set_default_page_creation
-
-    with set_default_page_creation(True):
-        plan.save()
-    return plan

@@ -1,16 +1,20 @@
-{% extends "person_notification.mjml" %}
+{% extends "bookended_base.mjml" %}
 
 {% block notification_content %}
 <mj-section mj-class="notification-content-section">
     <mj-column>
         {% for item in items %}
-        {% with indicator = item.indicator %}
+        {% with indicator=item.indicator %}
         <mj-text align="left" css-class="notification-subheader">
-            <a href="{{ indicator.view_url }}">Mittari {{ indicator.id }}</a>
+            <a href="{{ indicator.view_url }}">{% trans id=indicator.id %}Indicator {{ id }}{% endtrans %}</a>
         </mj-text>
         <mj-text align="left" css-class="notification-header">
             <h2>{{ indicator.name }}</h2>
-            <p>Deadline {{ indicator.updated_values_due_at|format_date }} <span class="danger">(myöhässä {{ item.days_late }} pv)</span></p>
+            {% trans trimmed days_late=item.days_late, due_at=indicator.updated_values_due_at|format_date %}
+            Was due at {{ due_at }} (yesterday)
+            {% pluralize %}
+            Was due at {{ due_at }} ({{ days_late }} days ago)
+            {% endtrans %}
         </mj-text>
         {% include 'includes/modify_indicator_button.mjml' %}
         {% if not loop.last %}<mj-divider />{% endif %}

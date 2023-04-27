@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import typing
 import datetime
+import factory
 from django.contrib.contenttypes.models import ContentType
+from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
-from factory import LazyAttribute, SelfAttribute, Sequence, SubFactory, post_generation
+from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.core.models.i18n import Locale
 from wagtail.core.rich_text import RichText
@@ -12,13 +13,14 @@ from wagtail_factories import StructBlockFactory
 
 from aplans.factories import ModelFactory
 import actions
-from actions.models import AttributeType, Plan
+from actions.models import AttributeType, Plan, PlanFeatures
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
 from users.tests.factories import UserFactory
 
 
+@factory.django.mute_signals(post_save)
 class PlanFactory(ModelFactory[Plan]):
     class Meta:
         model = 'actions.Plan'
@@ -32,11 +34,17 @@ class PlanFactory(ModelFactory[Plan]):
     primary_language = 'en'
     other_languages = ['fi']
     published_at = make_aware(datetime.datetime(2021, 1, 1))
+    general_content = RelatedFactory('content.tests.factories.SiteGeneralContentFactory', factory_related_name='plan')
+    features = RelatedFactory('actions.tests.factories.PlanFeaturesFactory', factory_related_name='plan')
+    notification_settings = RelatedFactory(
+        'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan'
+    )
 
     @classmethod
     def _create(cls, model_class, *args, create_default_pages: bool = False, **kwargs) -> Plan:
         from actions.models.plan import set_default_page_creation
 
+        Locale.objects.get_or_create(language_code=kwargs['primary_language'])
         for language in kwargs.get('other_languages', []):
             Locale.objects.get_or_create(language_code=language)
 
@@ -44,6 +52,14 @@ class PlanFactory(ModelFactory[Plan]):
             manager = cls._get_manager(model_class)
             obj = manager.create(*args, **kwargs)
         return obj
+
+
+@factory.django.mute_signals(post_save)
+class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
+    class Meta:
+        model = 'actions.PlanFeatures'
+
+    plan = SubFactory(PlanFactory, features=None)
 
 
 class PlanDomainFactory(DjangoModelFactory):
@@ -89,6 +105,15 @@ class ActionImpactFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'action-impact-{i}')
     name = Sequence(lambda i: f"Action impact {i}")
+
+
+class ActionLinkFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.ActionLink'
+
+    action = SubFactory('actions.tests.factories.ActionFactory')
+    url = Sequence(lambda i: f'https://plan{i}.example.com')
+    title = "Action link"
 
 
 class CommonCategoryTypeFactory(DjangoModelFactory):
@@ -188,6 +213,19 @@ class AttributeCategoryChoiceFactory(DjangoModelFactory):
         if extracted:
             for category in extracted:
                 self.categories.add(category)
+
+
+class AttributeTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeText'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.TEXT)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    text = Sequence(lambda i: f'AttributeText {i}')
 
 
 class AttributeRichTextFactory(DjangoModelFactory):

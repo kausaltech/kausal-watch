@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from enum import Enum
 import random
 import re
 from typing import Iterable, List, Type
@@ -15,13 +16,10 @@ from django.utils.translation import get_language, gettext_lazy as _
 import logging
 import humanize
 import libvoikko
-import pytz
 from tinycss2.color3 import parse_color
 
 
 logger = logging.getLogger(__name__)
-
-LOCAL_TZ = pytz.timezone('Europe/Helsinki')
 
 try:
     voikko_fi = libvoikko.Voikko(language='fi')
@@ -204,6 +202,36 @@ class PlanRelatedModel(PlanDefaultsModel):
         return self.filter_by_plan(plans[0], qs)
 
 
+class InstancesEditableByMixin(models.Model):
+    """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes."""
+    class EditableBy(models.TextChoices):
+        NOT_EDITABLE = 'not_editable', _('Not editable')
+        PLAN_ADMINS = 'plan_admins', _('Plan admins')
+        CONTACT_PERSONS = 'contact_persons', _('Contact persons')
+
+    instances_editable_by = models.CharField(
+        max_length=50,
+        choices=EditableBy.choices,
+        blank=True,
+        verbose_name=_('Edit rights'),
+    )
+
+    def are_instances_editable_by(self, user, instance_plan):
+        if user.is_superuser:
+            return True
+
+        if self.instances_editable_by == self.EditableBy.NOT_EDITABLE:
+            return False
+        elif self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
+            return user.is_general_admin_for_plan(instance_plan)
+        elif self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
+            return user.is_contact_person_in_plan(instance_plan)
+        return True
+
+    class Meta:
+        abstract = True
+
+
 class ChoiceArrayField(ArrayField):
     """
     A field that allows us to store an array of choices.
@@ -299,3 +327,29 @@ class ModificationTracking(models.Model):
 
     def handle_admin_save(self, context=None):
         self.update_modification_metadata(context.get('user'), context.get('operation'))
+
+
+def append_query_parameter(request, url, parameter):
+    value = request.GET.get(parameter)
+    if value:
+        assert '?' not in url
+        return f'{url}?{parameter}={value}'
+    return url
+
+
+class ConstantMetadata:
+    identifier: 'MetadataEnum'
+
+    def with_identifier(self, identifier: 'MetadataEnum'):
+        self.identifier = identifier
+        return self
+
+    def with_context(self, context: dict):
+        return self
+
+
+class MetadataEnum(Enum):
+    value: 'ConstantMetadata'
+
+    def get_data(self, context=None):
+        return self.value.with_identifier(self).with_context(context)

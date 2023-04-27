@@ -61,6 +61,7 @@ COPY . /code/
 
 RUN ./manage.py collectstatic --no-input
 RUN ./manage.py compilemessages
+RUN pybabel compile -D notifications -d locale
 COPY ./docker/app/docker-entrypoint.sh /
 COPY ./docker/app/wait-for-it.sh /
 

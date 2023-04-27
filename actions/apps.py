@@ -100,3 +100,4 @@ class ActionsConfig(AppConfig):
     def ready(self):
         # monkeypatch filtering of Collections
         monkeypatch_svg_chooser()
+        import actions.signals

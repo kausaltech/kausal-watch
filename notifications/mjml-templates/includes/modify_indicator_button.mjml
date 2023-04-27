@@ -1,3 +1,3 @@
-<mj-button align="left" href="{{ person.admin_url }}{{ indicator.edit_values_url }}">
-    <strong style="color: {{ theme.link_in_brand_bg_color }}">Muokkaa mittarin dataa</strong>
+<mj-button align="left" href="{{ admin_url }}{{ indicator.edit_values_url }}">
+    <strong style="color: {{ theme.link_in_brand_bg_color }}">{% trans %}Edit indicator data{% endtrans %}</strong>
 </mj-button>

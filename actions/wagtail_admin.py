@@ -1,28 +1,27 @@
 from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
-from django.utils.translation import gettext
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from wagtail.admin.edit_handlers import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
+from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansCreateView, AplansModelAdmin,
+    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
     CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
+from notifications.models import NotificationSettings
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
-from actions.chooser import CategoryTypeChooser
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
@@ -50,28 +49,6 @@ class PlanEditHandler(TabbedInterface):
             )
 
 
-class PlanCreateView(AplansCreateView):
-    def get_instance(self):
-        instance: Plan = super().get_instance()
-        if self.request.method == 'POST':
-            return instance
-
-        STATUSES = [
-            ('not_started', gettext('not started'), False),
-            ('in_progress', gettext('in progress'), False),
-            ('late', gettext('late'), False),
-            ('completed', gettext('completed'), True),
-        ]
-        instance.action_statuses = [ActionStatus(
-            plan=instance,
-            identifier=identifier,
-            name=name.capitalize(),
-            is_completed=is_completed
-        ) for identifier, name, is_completed in STATUSES]
-
-        return instance
-
-
 class PlanForm(AplansAdminModelForm):
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
@@ -82,7 +59,6 @@ class PlanForm(AplansAdminModelForm):
 
 class PlanAdmin(AplansModelAdmin):
     model = Plan
-    create_view_class = PlanCreateView
     menu_icon = 'fa-briefcase'
     menu_label = pgettext_lazy('hyphenated', 'Plans')
     menu_order = 500
@@ -93,11 +69,14 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('short_name'),
         FieldPanel('identifier'),
+        FieldPanel('version_name'),
         FieldPanel('actions_locked'),
         FieldPanel('site_url'),
         FieldPanel('accessibility_statement_url'),
         FieldPanel('primary_language'),
         FieldPanel('other_languages'),
+        FieldPanel('country'),
+        FieldPanel('timezone'),
         CondensedInlinePanel(
             'general_admins_ordered',
             panels=[
@@ -105,6 +84,7 @@ class PlanAdmin(AplansModelAdmin):
             ]
         ),
         ImageChooserPanel('image'),
+        FieldPanel('superseded_by', widget=PlanChooser),
     ]
 
     action_status_panels = [
@@ -187,7 +167,9 @@ class PlanAdmin(AplansModelAdmin):
                     widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
                 ),
                 FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
-                FieldPanel('action_days_until_considered_stale')
+                FieldPanel('settings_action_update_target_interval'),
+                FieldPanel('settings_action_update_acceptable_interval'),
+                FieldPanel('action_days_until_considered_stale'),
             ], heading=_('Action classifications')),
         ]
 
@@ -266,6 +248,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('show_admin_link'),
         FieldPanel('public_contact_persons'),
         FieldPanel('has_action_identifiers'),
+        FieldPanel('show_action_identifiers'),
         FieldPanel('has_action_official_name'),
         FieldPanel('has_action_lead_paragraph'),
         FieldPanel('has_action_primary_orgs'),
@@ -299,36 +282,30 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 # modeladmin_register(PlanFeaturesAdmin)
 
 
-class ActivePlanFeaturesPermissionHelper(PermissionHelper):
-    def user_can_list(self, user):
-        return user.is_superuser
+class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        # Implement in subclass
+        raise NotImplementedError()
 
-    def user_can_create(self, user):
-        return False
-
-    def user_can_inspect_obj(self, user, obj):
-        return False
-
-    def user_can_delete_obj(self, user, obj):
-        return False
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj.plan)
-
-
-class ActivePlanFeaturesMenuItem(ModelAdminMenuItem):
     def get_context(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
         context = super().get_context(request)
         plan = request.user.get_active_admin_plan()
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.features.pk)
+        field = self.get_one_to_one_field(plan)
+        context['url'] = self.model_admin.url_helper.get_action_url('edit', field.pk)
         return context
 
     def is_shown(self, request):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
         # this menu item is about editing a plan features instance, not listing.
         plan = request.user.get_active_admin_plan()
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.features)
+        field = self.get_one_to_one_field(plan)
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+
+
+class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan.features
 
 
 class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
@@ -337,7 +314,7 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
 
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
-    permission_helper_class = ActivePlanFeaturesPermissionHelper
+    permission_helper_class = ActivePlanPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan features')
     add_to_settings_menu = True
 
@@ -347,6 +324,57 @@ class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
 
 
 modeladmin_register(ActivePlanFeaturesAdmin)
+
+
+class NotificationSettingsAdmin(AplansModelAdmin):
+    model = NotificationSettings
+    menu_icon = 'fa-bell'
+    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_order = 502
+
+    panels = [
+        FieldPanel('notifications_enabled'),
+        FieldPanel('send_at_time'),
+    ]
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        user = request.user
+        person = user.get_corresponding_person()
+        if not user.is_superuser and person:
+            qs = qs.filter(plan__general_admins=person).distinct()
+        return qs
+
+    def user_can_create(self):
+        return False
+
+    def get_edit_handler(self, instance, request):
+        panels = list(self.panels)
+        handler = ObjectList(panels)
+        return handler
+
+
+class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan.notification_settings
+
+
+class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, EditView):
+    pass
+
+
+class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
+    edit_view_class = ActivePlanNotificationSettingsEditView
+    permission_helper_class = ActivePlanPermissionHelper
+    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    add_to_settings_menu = True
+
+    def get_menu_item(self, order=None):
+        item = ActivePlanNotificationSettingsMenuItem(self, order or self.get_menu_order())
+        return item
+
+
+modeladmin_register(ActivePlanNotificationSettingsAdmin)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

@@ -1,11 +1,13 @@
-{% extends "person_notification.mjml" %}
+{% extends "bookended_base.mjml" %}
 
 {% block notification_content %}
 <mj-section mj-class="notification-content-section">
     <mj-column>
         {% for item in items %}{% with action=item.action %}
         <mj-text align="left">
-          <strong>Toimenpide {{ item.action.identifier }}. {{ item.action.name }}</strong>
+          <strong>{% trans trimmed identifier=action.identifier, name=action.name %}
+          Action {{ identifier }}. {{ name }}
+          {% endtrans %}</strong>
         </mj-text>
         {% include 'includes/modify_action_button.mjml' %}
         {% if not loop.last %}<mj-divider />{% endif %}

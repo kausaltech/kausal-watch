@@ -125,11 +125,11 @@
                     </mj-text>
                 </mj-column>
                  <mj-column vertical-align="top" width="30%">
-                    {% if person.logo_url %}
+                    {% if logo is defined %}
                     <mj-image
-                        src="{{ person.logo_url }}" alt="{{ person.logo_alt }}"
-                        {% if 'logo_width' in person %}width="{{ person.logo_width }}px"{% endif %}
-                        {% if 'logo_height' in person %}height="{{ person.logo_height }}px"{% endif %}
+                        src="{{ logo.url }}" alt="{{ logo.alt }}"
+                        {% if 'width' in logo %}width="{{ logo.width }}px"{% endif %}
+                        {% if 'height' in logo %}height="{{ logo.height }}px"{% endif %}
                         align="right" border="none" padding="0 24px"
                     />
                     {% endif %}

@@ -1,25 +1,17 @@
-from datetime import datetime
-
-import pytz
-from django.conf import settings
-from django.db import transaction
-
 import django_filters as filters
+from django.db import transaction
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from sentry_sdk import capture_exception, push_scope
 
 from .models import (
     ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
 from actions.api import plan_router
 from actions.models import Plan
+from aplans.rest_api import BulkListSerializer, BulkModelViewSet
 from aplans.utils import register_view_helper
-from orgs.models import Organization
-
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
 
 
 all_views = []
@@ -73,23 +65,6 @@ class RelatedEffectIndicatorSerializer(serializers.ModelSerializer):
     class Meta:
         model = RelatedIndicator
         fields = ('effect_indicator', 'effect_type', 'confidence_level')
-
-
-class IndicatorSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Indicator
-        fields = (
-            'id', 'name', 'quantity', 'unit', 'time_resolution', 'organization'
-        )
-
-    def create(self, validated_data: dict):
-        instance = super().create(validated_data)
-        assert not instance.levels.exists()
-        plan = self.context['request'].user.get_active_admin_plan()
-        level = 'strategic'
-        assert level in [v for v, _ in Indicator.LEVELS]
-        instance.levels.create(plan=plan, level=level)
-        return instance
 
 
 class IndicatorFilter(filters.FilterSet):
@@ -187,10 +162,14 @@ class IndicatorDataPointMixin:
         indicator = self.context['indicator']
         if indicator.time_resolution == 'year':
             if date.day != 31 or date.month != 12:
-                raise ValidationError("Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date, date.year))
+                raise ValidationError(
+                    "Indicator has a yearly resolution, so '%s' must be '%d-12-31" % (date, date.year)
+                )
         elif indicator.time_resolution == 'month':
             if date.day != 1:
-                raise ValidationError("Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month))
+                raise ValidationError(
+                    "Indicator has a monthly resolution, so '%s' must be '%d-%02d-01" % (date, date.year, date.month)
+                )
         return date
 
 
@@ -225,6 +204,28 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
         list_serializer_class = IndicatorValueListSerializer
 
 
+class IndicatorSerializer(serializers.ModelSerializer):
+    uuid = serializers.UUIDField(required=False)
+    latest_value = IndicatorValueSerializer(read_only=True, required=False)
+
+    class Meta:
+        model = Indicator
+        list_serializer_class = BulkListSerializer
+        fields = (
+            'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
+            'latest_value',
+        )
+
+    def create(self, validated_data: dict):
+        instance = super().create(validated_data)
+        assert not instance.levels.exists()
+        plan = self.context['request'].user.get_active_admin_plan()
+        level = 'strategic'
+        assert level in [v for v, _ in Indicator.LEVELS]
+        instance.levels.create(plan=plan, level=level)
+        return instance
+
+
 class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
     def to_internal_value(self, data):
         data['indicator_id'] = self.context['indicator'].pk
@@ -251,7 +252,7 @@ class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
         return user.can_modify_indicator(obj)
 
 
-class IndicatorViewSet(viewsets.ModelViewSet):
+class IndicatorViewSet(BulkModelViewSet):
     serializer_class = IndicatorSerializer
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)
 

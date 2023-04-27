@@ -1,8 +1,9 @@
-from dal import autocomplete
+from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
+from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail.admin.edit_handlers import (
@@ -108,7 +109,7 @@ class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
     menu_icon = 'fa-arrows-h'
-    menu_label = _('Indicator dimensions')
+    menu_label = pgettext_lazy('hyphenated', 'Indicator dimensions')
     list_display = ('name',)
 
     panels = [
@@ -360,6 +361,25 @@ class IndicatorAdmin(AplansModelAdmin):
             )
             basic_panels.insert(
                 2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
+            )
+
+        # Until there is a reliable way to prevent the user from editing categories of a non-editable category type
+        # while another category type is editable, we will show the edit widget only when all of the category types
+        # marked as usable for indicators are also marked as editable for indicators.
+        ctypes = plan.category_types
+        usable_ctypes = ctypes.filter(usable_for_indicators=True)
+        if usable_ctypes and set(usable_ctypes) == set(ctypes.filter(editable_for_indicators=True)):
+            basic_panels.append(
+                FieldPanel(
+                    'categories',
+                    heading=_('Categories'),
+                    widget=autocomplete.ModelSelect2Multiple(
+                        url='category-autocomplete',
+                        forward=(
+                            dal_forward.Const('indicator', 'target_type'),
+                        )
+                    )
+                )
             )
 
         tabs = [

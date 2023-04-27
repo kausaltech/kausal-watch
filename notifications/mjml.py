@@ -3,8 +3,9 @@ import os
 import subprocess
 
 from django.conf import settings
-from django.utils import translation
 from django.utils.formats import date_format
+from django.utils.translation import get_language
+from django.utils.translation.trans_real import DjangoTranslation
 from jinja2 import FileSystemLoader, StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
 from sentry_sdk import capture_exception
@@ -20,17 +21,6 @@ MJML_CMD = [
 ]
 
 
-def format_date(dt):
-    current_language = translation.get_language()
-    if current_language == 'fi':
-        dt_format = r'j.n.Y'
-    else:
-        # default to English
-        dt_format = r'j/n/Y'
-
-    return date_format(dt, dt_format)
-
-
 def make_jinja_environment():
     loader = FileSystemLoader(os.path.join(settings.BASE_DIR, 'notifications', 'mjml-templates'))
     env = SandboxedEnvironment(
@@ -39,7 +29,10 @@ def make_jinja_environment():
             'jinja2.ext.i18n'
         ]
     )
-    env.filters['format_date'] = format_date
+    # In order to use gettext and related functions, we need to install them ourselves
+    trans = DjangoTranslation(get_language(), 'notifications')
+    env.install_gettext_callables(gettext=trans.gettext, ngettext=trans.ngettext, newstyle=True)
+    env.filters['format_date'] = date_format  # automatically takes active language into account
     return env
 
 

@@ -22,6 +22,7 @@ from orgs.models import Organization
 from pages import schema as pages_schema
 from people import schema as people_schema
 from people.models import Person
+from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
@@ -80,7 +81,7 @@ class Query(
         if plan_obj is None:
             return None
 
-        qs = Organization.objects.all()
+        qs = Organization.objects.available_for_plan(plan_obj)
         if plan is not None:
             query = Q()
             if for_responsible_parties:

@@ -1,22 +1,15 @@
-import pytz
-from datetime import date
-
 from django import forms
-from django.db.models import Q
 from django.contrib import admin
-from django.conf import settings
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
-from admin_site.admin import AplansImportExportMixin, AplansModelAdmin
-from actions.perms import ActionRelatedAdminPermMixin
 from .resources import IndicatorResource
 from .models import (
     Unit, Indicator, RelatedIndicator, ActionIndicator, IndicatorLevel, IndicatorGoal,
     IndicatorValue, Quantity, IndicatorContactPerson, Dataset, DatasetLicense
 )
-
-
-LOCAL_TZ = pytz.timezone(settings.TIME_ZONE)
+from admin_site.admin import AplansImportExportMixin, AplansModelAdmin
+from actions.perms import ActionRelatedAdminPermMixin
 
 
 @admin.register(Unit)
@@ -93,7 +86,7 @@ class IndicatorLevelAdmin(admin.TabularInline):
 class IndicatorGoalAdmin(admin.TabularInline):
     model = IndicatorGoal
     extra = 0
-    fields = ('plan', 'date', 'value', 'scenario')
+    fields = ('date', 'value', 'scenario')
 
     def get_formset(self, request, obj=None, **kwargs):
         plan = request.user.get_active_admin_plan()
@@ -132,7 +125,9 @@ class IndicatorValueAdmin(admin.TabularInline):
         formset = super().get_formset(request, obj, **kwargs)
         form = formset.form
 
-        current_year = date.today().year
+        plan = request.user.get_active_admin_plan()
+        today = plan.now_in_local_timezone().date()
+        current_year = today.year
 
         field = form.base_fields['date']
         if obj is not None and obj.time_resolution == 'year':
@@ -224,7 +219,7 @@ class IndicatorAdmin(AplansImportExportMixin, AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
 
         def has_goals(obj):
-            return obj.goals.filter(plan=plan).exists()
+            return obj.goals.exists()
         has_goals.short_description = _('has goals')
         has_goals.boolean = True
 

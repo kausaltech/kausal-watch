@@ -1,17 +1,19 @@
-from typing import Optional
 import graphene
 import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
 from graphql.error import GraphQLError
+from wagtail.core.rich_text import RichText
 
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
 from aplans.utils import public_fields
 from actions.schema import ScenarioNode
 from indicators.models import (
-    ActionIndicator, CommonIndicator, CommonIndicatorNormalizator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
-    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator, RelatedIndicator, Unit
+    ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
+    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator,
+    RelatedIndicator, Unit
 )
+from actions.models import Action
 
 
 class UnitNode(DjangoNode):
@@ -207,9 +209,16 @@ class IndicatorNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(self, info, plan=None):
-        qs = self.actions.all()
+        qs = self.actions.visible_for_user(info.context.user)
         if plan is not None:
             qs = qs.filter(plan__identifier=plan)
+        return qs
+
+    def resolve_related_actions(self, info, plan=None):
+        actions = Action.objects.visible_for_user(info.context.user)
+        qs = ActionIndicator.objects.filter(action__in=actions).filter(indicator=self)
+        if plan is not None:
+            qs = qs.filter(indicator__plan__identifier=plan)
         return qs
 
     @gql_optimizer.resolver_hints(
@@ -230,6 +239,15 @@ class IndicatorNode(DjangoNode):
         except IndicatorLevel.DoesNotExist:
             return None
         return obj.level
+
+    @gql_optimizer.resolver_hints(
+        model_field=('description', 'i18n'),
+    )
+    def resolve_description(self: Indicator, info):
+        description = self.description_i18n
+        if description is None:
+            return None
+        return RichText(description)
 
 
 class IndicatorDimensionNode(DjangoNode):
