@@ -137,6 +137,7 @@ class PlanRootPage(AplansPage):
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('action_status_graphs', ActionStatusGraphsBlock(label=_('Action status pie charts'))),
+        ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
     ])
 
     content_panels = [
