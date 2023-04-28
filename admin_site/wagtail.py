@@ -64,7 +64,7 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
 
 
 def get_translation_tabs(
-        instance, request, include_all_languages: bool = False, default_language=None, extra_panels=None
+    model, request, include_all_languages: bool = False, default_language=None, extra_panels=None
 ):
     if default_language is None:
         default_language = settings.LANGUAGE_CODE
@@ -72,7 +72,7 @@ def get_translation_tabs(
     if extra_panels is None:
         extra_panels = {}
 
-    i18n_field = get_i18n_field(type(instance))
+    i18n_field = get_i18n_field(model)
     if not i18n_field:
         return []
     tabs = []

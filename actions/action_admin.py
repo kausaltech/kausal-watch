@@ -762,7 +762,7 @@ class ActionAdmin(AplansModelAdmin):
 
         all_tabs.append(ObjectList(reporting_panels, heading=_('Reporting')))
 
-        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
+        i18n_tabs = get_translation_tabs(Action, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
         return ActionEditHandler(all_tabs)

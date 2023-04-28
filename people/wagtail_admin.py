@@ -386,7 +386,7 @@ class PersonAdmin(AplansModelAdmin):
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(Person, request)
         tabs += i18n_tabs
 
         return PersonEditHandler(tabs, base_form_class=form_class)
