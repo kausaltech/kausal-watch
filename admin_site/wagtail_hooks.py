@@ -355,7 +355,7 @@ def remove_settings_menu_items(request, items: list):
 class HelpMenu(Menu):
     def menu_items_for_request(self, request):
         return [
-            MenuItem(_('Video tutorials'), _('https://kausal.gitbook.io/watch'), icon_name='help')
+            MenuItem(_('Video tutorials'), _('https://kausal.gitbook.io/watch'), icon_name='help', attrs=dict(target="_blank"))
         ]
 
 
