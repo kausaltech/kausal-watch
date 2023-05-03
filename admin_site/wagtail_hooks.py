@@ -350,3 +350,23 @@ def remove_settings_menu_items(request, items: list):
             to_remove.append(item)
     for item in to_remove:
         items.remove(item)
+
+
+class HelpMenu(Menu):
+    def menu_items_for_request(self, request):
+        return [
+            MenuItem(_('Video tutorials'), _('https://kausal.gitbook.io/watch'), icon_name='help')
+        ]
+
+
+help_menu = HelpMenu(None)
+
+
+@hooks.register('register_admin_menu_item')
+def register_help_menu():
+    return SubmenuMenuItem(
+        _('Help'),
+        help_menu,
+        classnames='icon icon-help',
+        order=20000
+    )
