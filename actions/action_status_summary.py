@@ -47,7 +47,7 @@ class ActionStatusSummary(ConstantMetadata):
         plan: Plan = context['plan']
         identifier: ActionStatusSummaryIdentifier = self.identifier
         try:
-            status = plan.action_statuses.get(identifier=identifier.name.lower())
+            status = plan.action_statuses.get(plan=plan, identifier=identifier.name.lower())
             self.label = status.name
         except ObjectDoesNotExist:
             self.label = self.default_label
