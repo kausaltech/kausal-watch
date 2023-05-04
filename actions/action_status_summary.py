@@ -9,6 +9,7 @@ if typing.TYPE_CHECKING:
 from typing import Callable
 
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
@@ -22,6 +23,7 @@ class ActionStatusSummary(ConstantMetadata):
     is_completed: bool
     is_active: bool
     sentiment: Sentiment
+    label: str
 
     def __init__(self,
                  default_label=None,
@@ -34,6 +36,22 @@ class ActionStatusSummary(ConstantMetadata):
         self.is_completed = is_completed
         self.is_active = is_active
         self.sentiment = sentiment
+
+    def with_context(self, context):
+        if context is None:
+            raise ValueError('Context with plan required to resolve status label')
+        if 'plan' not in context:
+            raise KeyError('Action status values depend on the plan')
+        if self.identifier is None:
+            raise ValueError('with_identifier must be called before with_context')
+        plan: Plan = context['plan']
+        identifier: ActionStatusSummaryIdentifier = self.identifier
+        try:
+            status = plan.action_statuses.get(identifier=identifier.name.lower())
+            self.label = status.name
+        except ObjectDoesNotExist:
+            self.label = self.default_label
+        return self
 
 
 class ActionStatusSummaryIdentifier(MetadataEnum):
