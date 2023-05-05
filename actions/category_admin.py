@@ -211,6 +211,8 @@ class CategoryTypeQueryParameterMixin:
 
 
 class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
+    instance: Category
+
     def check_action_permitted(self, user):
         category_type_param = self.request.GET.get('category_type')
         if category_type_param:
@@ -220,16 +222,16 @@ class CategoryCreateView(CategoryTypeQueryParameterMixin, AplansCreateView):
                 return False
         return super().check_action_permitted(user)
 
-    def get_instance(self):
-        """Create a category instance and set its category type to the one given in the GET or POST data."""
-        instance = super().get_instance()
-        category_type_param = self.request.GET.get('category_type')
-        if category_type_param and not instance.pk:
-            assert not hasattr(instance, 'type')
-            instance.type = CategoryType.objects.get(pk=int(category_type_param))
-            if not instance.identifier and instance.type.hide_category_identifiers:
-                instance.generate_identifier()
-        return instance
+    def initialize_instance(self, request):
+        """Set the new category's type to the one given in the GET data."""
+        assert self.instance.pk is None
+        category_type_param = request.GET.get('category_type')
+        if category_type_param:
+            assert not hasattr(self.instance, 'type')
+            self.instance.type = CategoryType.objects.get(pk=int(category_type_param))
+            assert not self.instance.identifier
+            if self.instance.type.hide_category_identifiers:
+                self.instance.generate_identifier()
 
 
 class CategoryEditView(CategoryTypeQueryParameterMixin, AplansEditView):
@@ -442,16 +444,16 @@ class CommonCategoryTypeQueryParameterMixin:
 
 
 class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCreateView):
-    def get_instance(self):
-        """Create a common category instance and set its type to the one given in the GET or POST data."""
-        instance = super().get_instance()
-        common_category_type = self.request.GET.get('common_category_type')
-        if common_category_type and not instance.pk:
-            assert not hasattr(instance, 'type')
-            instance.type = CommonCategoryType.objects.get(pk=int(common_category_type))
-            # if not instance.identifier and instance.type.hide_category_identifiers:
-            #     instance.generate_identifier()
-        return instance
+    instance: CommonCategory
+
+    def initialize_instance(self, request):
+        """Set the new common category's type to the one given in the GET data."""
+        common_category_type = request.GET.get('common_category_type')
+        if common_category_type and not self.instance.pk:
+            assert not hasattr(self.instance, 'type')
+            self.instance.type = CommonCategoryType.objects.get(pk=int(common_category_type))
+            # if not self.instance.identifier and self.instance.type.hide_category_identifiers:
+            #     self.instance.generate_identifier()
 
 
 class CommonCategoryEditView(CommonCategoryTypeQueryParameterMixin, AplansEditView):

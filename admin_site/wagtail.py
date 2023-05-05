@@ -454,18 +454,18 @@ class ActivePlanEditView(SuccessUrlEditPageMixin, AplansEditView):
 
 
 class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                       PlanRelatedViewMixin, CreateView):
+                       PlanRelatedViewMixin, SetInstanceMixin, CreateView):
     request: WatchAdminRequest
 
-    def get_instance(self) -> Any:
-        instance = super().get_instance()
-        # If it is a model directly or indirectly related to the
-        # active plan, ensure the 'plan' field or other plan related
-        # fields get set correctly.
-        if isinstance(instance, PlanDefaultsModel):
-            plan = self.request.user.get_active_admin_plan()
-            instance.initialize_plan_defaults(plan)
-        return instance
+    def initialize_instance(self, request):
+        if isinstance(self.instance, PlanDefaultsModel):
+            plan = request.user.get_active_admin_plan()
+            self.instance.initialize_plan_defaults(plan)
+
+    def setup(self, request, *args, **kwargs):
+        self.instance = self.model()
+        self.initialize_instance(request)
+        super().setup(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)

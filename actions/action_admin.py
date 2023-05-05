@@ -22,7 +22,7 @@ from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.contrib.modeladmin.views import IndexView
 from wagtail.images.edit_handlers import ImageChooserPanel
 
-from .models import Action, ActionTask, CategoryType
+from .models import Action, ActionTask, CategoryType, Plan
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
@@ -204,8 +204,6 @@ class ActionAdminForm(WagtailAdminModelForm):
 
 
 class ActionEditHandler(AplansTabbedInterface):
-    instance: Action
-
     def get_form_class(self, request: WatchAdminRequest = None, instance: Action = None):
         assert request is not None
         user = request.user
@@ -263,26 +261,23 @@ class ActionEditHandler(AplansTabbedInterface):
 
 
 class ActionCreateView(AplansCreateView):
-    def get_instance(self) -> Action:
-        # Override default implementation, which would try to create an
-        # instance of self.model (i.e., Action) without a plan, causing an
-        # error when saving it
-        instance: Action = super().get_instance()
-        if instance.pk:
-            return instance
+    instance: Action
 
-        plan = self.request.get_active_admin_plan()
-        instance.plan = plan
-        if not instance.identifier and not plan.features.has_action_identifiers:
-            instance.generate_identifier()
+    def initialize_instance(self, request):
+        plan = request.user.get_active_admin_plan()
+        assert self.instance.pk is None
+        assert not hasattr(self.instance, 'plan')
+        self.instance.plan = plan
+        if not plan.features.has_action_identifiers:
+            assert not self.instance.identifier
+            self.instance.generate_identifier()
         if plan.features.has_action_primary_orgs:
-            person = self.request.user.get_corresponding_person()
+            assert self.instance.primary_org is None
+            person = request.user.get_corresponding_person()
             if person is not None:
                 available_orgs = Organization.objects.available_for_plan(plan)
                 default_org = available_orgs.filter(id=person.organization_id).first()
-                instance.primary_org = default_org
-
-        return instance
+                self.instance.primary_org = default_org
 
 
 class ActionIndexView(PersistIndexViewFiltersMixin, IndexView):
@@ -520,7 +515,7 @@ class ActionAdmin(AplansModelAdmin):
     basic_panels = [
         FieldPanel('identifier'),
         FieldPanel('official_name'),
-        FieldPanel('name', classname='full title'),
+        FieldPanel('name'),
         FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
         FieldPanel('lead_paragraph'),
         RichTextFieldPanel('description'),
