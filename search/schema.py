@@ -111,15 +111,15 @@ class Query:
         plan_obj: Optional[Plan] = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
             raise GraphQLError("Plan %s not found" % plan, [info])
-        related_plans = plan_obj.get_all_related_plans().live()
+        related_plans = plan_obj.get_all_related_plans().all()
+        if plan_obj.is_live():
+            # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site
+            related_plans = related_plans.live()
         if only_other_plans:
             plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=related_plans))
         else:
             qs = Q(id=plan_obj.id)
             if include_related_plans:
-                # If the current plan is not published yet, we include other
-                # non-published plans as well. For a production plan, we exclude
-                # all non-published plans.
                 qs |= Q(id__in=related_plans.values_list('id', flat=True))
             plans = Plan.objects.filter(qs)
 

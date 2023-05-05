@@ -753,10 +753,6 @@ class ActionStatusSummaryNode(graphene.ObjectType):
     is_completed = graphene.Boolean(required=True)
     sentiment = Sentiment(required=True)
 
-    def resolve_label(self, info):
-        # TODO: implement plan-specific labeling
-        return self.default_label
-
     class Meta:
         name = 'ActionStatusSummary'
 
