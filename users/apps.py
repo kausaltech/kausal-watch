@@ -15,14 +15,14 @@ def remove_user_related_menu_items(hooks):
 
     AvatarSettingsPanel.is_active = lambda self: False
 
-    menu_item_hooks = hooks.get_hooks('register_admin_menu_item')
+    menu_item_hooks = hooks._hooks['register_admin_menu_item']
     for idx, val in enumerate(menu_item_hooks):
-        if val == register_reports_menu:
+        if val[0] == register_reports_menu:
             break
     else:
-        val = None
-    if val is not None:
-        menu_item_hooks.remove(val)
+        idx = None
+    if idx is not None:
+        del menu_item_hooks[idx]
 
 
 class UsersConfig(AppConfig):
