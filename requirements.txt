@@ -417,7 +417,7 @@ wagtail-admin-list-controls==0.1.7
     # via -r requirements.in
 wagtail-autocomplete==0.9.0
     # via -r requirements.in
-wagtail-factories==3.1.0
+wagtail-factories==4.0.0
     # via -r requirements.in
 wagtail-generic-chooser==0.4.0
     # via

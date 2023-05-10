@@ -12,3 +12,4 @@ mypy
 django-stubs
 graphene-stubs
 ipdb
+pdbpp

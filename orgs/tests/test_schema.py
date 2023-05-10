@@ -21,8 +21,10 @@ def test_create_organization_missing_token(graphql_client_query, contains_error,
         ''',
         variables={'uuid': uuid}
     )
-    assert contains_error(response,
-                          message='Directive "auth" argument "token" of type "String!" is required but not provided.')
+    assert contains_error(
+        response,
+        message="Directive '@auth' argument 'token' of type 'String!' is required, but it was not provided."
+    )
 
 
 def test_create_organization_missing_uuid(graphql_client_query, contains_error, token):
@@ -40,8 +42,10 @@ def test_create_organization_missing_uuid(graphql_client_query, contains_error, 
         ''',
         variables={'token': token}
     )
-    assert contains_error(response,
-                          message='Directive "auth" argument "uuid" of type "String!" is required but not provided.')
+    assert contains_error(
+        response,
+        message="Directive '@auth' argument 'uuid' of type 'String!' is required, but it was not provided."
+    )
 
 
 def test_create_organization(graphql_client_query_data, uuid, token):
@@ -78,9 +82,10 @@ def test_create_organization_with_id_should_fail(graphql_client_query, contains_
         ''',
         variables={'uuid': uuid, 'token': token}
     )
-    assert contains_error(response,
-                          message='Argument "input" has invalid value {id: 0, name: "test"}.\nIn field "id": Unknown '
-                          'field.')
+    assert contains_error(
+        response,
+        message="Field 'id' is not defined by type 'CreateOrganizationMutationInput'."
+    )
 
 
 def test_delete_organization_root(graphql_client_query_data, contains_error, uuid, token):

@@ -31,7 +31,7 @@ class PageMenuItemNode(graphene.ObjectType):
     def resolve_children(item, info):
         pages = item.page.get_children().live().public()
         # TODO: Get rid of this terrible hack
-        if 'footer' in info.path:
+        if 'footer' in info.path.as_list():
             footer_page_ids = [page.id
                                for Model in AplansPage.get_subclasses()
                                for page in Model.objects.filter(show_in_footer=True)]
