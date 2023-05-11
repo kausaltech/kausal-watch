@@ -7,8 +7,8 @@ import django.db.models.deletion
 import indicators.blocks
 import modelcluster.fields
 import modeltrans.fields
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='categorypage',
             name='body',
-            field=wagtail.core.fields.StreamField([('text', wagtail.core.blocks.RichTextBlock(label='Text')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('related_indicators', indicators.blocks.RelatedIndicatorsBlock()), ('category_list', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.core.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('action_list', wagtail.core.blocks.StructBlock([('category_filter', actions.blocks.CategoryChooserBlock(label='Filter on category'))], label='Action list'))], blank=True, null=True),
+            field=wagtail.fields.StreamField([('text', wagtail.blocks.RichTextBlock(label='Text')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('related_indicators', indicators.blocks.RelatedIndicatorsBlock()), ('category_list', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('action_list', wagtail.blocks.StructBlock([('category_filter', actions.blocks.CategoryChooserBlock(label='Filter on category'))], label='Action list'))], blank=True, null=True),
         ),
         migrations.CreateModel(
             name='PlanLink',

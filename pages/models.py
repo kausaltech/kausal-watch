@@ -13,10 +13,10 @@ from grapple.models import (
 )
 from modelcluster.fields import ParentalKey
 from modeltrans.fields import TranslationField
-from wagtail.admin.edit_handlers import FieldPanel, MultiFieldPanel
-from wagtail.core import blocks
-from wagtail.core.fields import RichTextField, StreamField
-from wagtail.core.models import Page, Site
+from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail import blocks
+from wagtail.fields import RichTextField, StreamField
+from wagtail.models import Page, Site
 from wagtail.search import index
 
 from actions.blocks import (
@@ -123,7 +123,6 @@ class AplansPage(Page):
 
         return (plan.site_id, plan.site_url, self.url_path)
 
-from indicators.blocks import IndicatorChooserBlock
 
 class PlanRootPage(AplansPage):
     body = StreamField([
@@ -139,7 +138,7 @@ class PlanRootPage(AplansPage):
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('action_status_graphs', ActionStatusGraphsBlock(label=_('Action status pie charts'))),
         ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
-    ])
+    ], use_json_field=True)
 
     content_panels = [
         FieldPanel('body'),
@@ -190,7 +189,7 @@ class StaticPage(AplansPage):
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
         *get_body_blocks('StaticPage')
-    ], null=True, blank=True)
+    ], null=True, blank=True, use_json_field=True)
 
     content_panels = AplansPage.content_panels + [
         FieldPanel('header_image'),
@@ -243,7 +242,7 @@ class CategoryPage(AplansPage):
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
         ('action_list', ActionListBlock(label=_('Action list')))
-    ], null=True, blank=True)
+    ], null=True, blank=True, use_json_field=True)
 
     content_panels = AplansPage.content_panels + [
         FieldPanel('category', widget=CategoryChooser),
@@ -344,13 +343,13 @@ class ActionListPage(FixedSlugPage):
         CARDS = 'cards', _('Cards')
         DASHBOARD = 'dashboard', _('Dashboard')
 
-    primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
-    main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
-    advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True)
+    primary_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True, use_json_field=True)
+    main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True, use_json_field=True)
+    advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True, use_json_field=True)
 
-    details_main_top = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True)
-    details_main_bottom = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True)
-    details_aside = StreamField(block_types=ActionAsideContentBlock(), null=True, blank=True)
+    details_main_top = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True, use_json_field=True)
+    details_main_bottom = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True, use_json_field=True)
+    details_aside = StreamField(block_types=ActionAsideContentBlock(), null=True, blank=True, use_json_field=True)
 
     card_icon_category_type = models.ForeignKey(
         CategoryType, on_delete=models.SET_NULL, null=True, blank=True
@@ -467,7 +466,7 @@ class PrivacyPolicyPage(FixedSlugPage):
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
         # TODO: What blocks do we want to offer here (cf. AccessibilityStatementPage)?
-    ], null=True, blank=True)
+    ], null=True, blank=True, use_json_field=True)
 
     class Meta:
         verbose_name = _('Privacy policy page')
@@ -485,7 +484,7 @@ class AccessibilityStatementPage(FixedSlugPage):
         ('preparation', AccessibilityStatementPreparationInformationBlock()),
         ('contact_information', AccessibilityStatementContactInformationBlock()),
         ('contact_form', AccessibilityStatementContactFormBlock()),
-    ], null=True, blank=True)
+    ], null=True, blank=True, use_json_field=True)
 
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('body'),

@@ -11,7 +11,7 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToManyField
 from modeltrans.fields import TranslationField
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 
 from aplans.utils import ChoiceArrayField, InstancesEditableByMixin, OrderedModel, get_supported_languages
 from indicators.models import Unit

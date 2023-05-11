@@ -17,7 +17,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
-from wagtail.core.models import Page, Collection
+from wagtail.models import Page, Collection
 from wagtailsvg.models import Svg
 
 from ..attributes import AttributeType

@@ -4,7 +4,7 @@ from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQ
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 from uuid import UUID
-from wagtail.core import blocks
+from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 
 from actions.blocks import CategoryChooserBlock

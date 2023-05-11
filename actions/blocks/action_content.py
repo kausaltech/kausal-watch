@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 from typing import Tuple, Type
-from wagtail.core import blocks
+from wagtail import blocks
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin

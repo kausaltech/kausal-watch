@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.urls import re_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.panels import FieldPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register

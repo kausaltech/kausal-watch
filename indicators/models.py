@@ -21,7 +21,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
 from typing import Optional
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 

@@ -1,6 +1,6 @@
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from wagtail.core.models import Page as WagtailPage
+from wagtail.models import Page as WagtailPage
 from grapple.types.pages import PageInterface
 
 from aplans.graphql_types import get_plan_from_context, register_graphene_node

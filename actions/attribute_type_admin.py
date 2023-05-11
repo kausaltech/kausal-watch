@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList
+from wagtail.admin.panels import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register

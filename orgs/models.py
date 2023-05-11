@@ -14,7 +14,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 
 from aplans.utils import PlanRelatedModel, get_default_language, get_supported_languages

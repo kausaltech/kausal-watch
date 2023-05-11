@@ -17,7 +17,7 @@ django-image-cropping
 easy-thumbnails
 Pillow
 sentry-sdk
-https://github.com/graphql-python/graphene-django/archive/2aeb86ba3bed7dc821cc8508e1dca8297aa7dea4.zip
+graphene-django
 https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip
 graphql-core>=3.2.0
 graphql-relay>=3.2.0
@@ -32,16 +32,13 @@ django-reversion
 pytest-django
 pytest-cov
 factory-boy
-wagtail-factories
 pytest-factoryboy
 libvoikko
 https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
 wagtail>=4.1
 wagtail-autocomplete
-wagtailfontawesome
 wagtail-generic-chooser
 wagtail-localize
-#https://github.com/kausaltech/wagtail-localize/archive/3782adf.zip
 rustface
 django-npm
 django-autocomplete-light
@@ -49,7 +46,7 @@ coreapi
 pyyaml
 django_redis
 uritemplate
-https://github.com/kausaltech/wagtail-grapple/archive/be8e27bee0d7eae6a943ca360d8b4211bfded4c4.zip
+wagtail-grapple
 tinycss2
 wagtail-admin-list-controls
 humanize

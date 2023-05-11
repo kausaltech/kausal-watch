@@ -4,8 +4,8 @@ from wagtail_factories import (
     StructBlockFactory
 )
 from wagtail_factories.blocks import BlockFactory
-from wagtail.core.blocks import PageChooserBlock, RichTextBlock
-from wagtail.core.rich_text import RichText
+from wagtail.blocks import PageChooserBlock, RichTextBlock
+from wagtail.rich_text import RichText
 
 import pages
 from images.tests.factories import AplansImageFactory

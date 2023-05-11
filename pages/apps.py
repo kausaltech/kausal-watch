@@ -4,11 +4,11 @@ from django.conf import settings
 from wagtailorderable.signals import post_reorder
 
 if typing.TYPE_CHECKING:
-    from wagtail.core.models import Page
+    from wagtail.models import Page
 
 
 def get_pages_with_direct_explore_permission(user):
-    from wagtail.core.models import Page
+    from wagtail.models import Page
     return Page.objects.filter(depth=1)
 
 

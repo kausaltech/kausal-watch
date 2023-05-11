@@ -2,8 +2,8 @@ from os import path
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.html import escape
 
-from wagtail.core import hooks
-from wagtail.core.rich_text import LinkHandler
+from wagtail import hooks
+from wagtail.rich_text import LinkHandler
 from wagtail.documents import get_document_model
 
 

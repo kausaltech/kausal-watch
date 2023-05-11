@@ -13,7 +13,7 @@ from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from grapple.registry import registry as grapple_registry
 from itertools import chain
-from wagtail.core.rich_text import RichText
+from wagtail.rich_text import RichText
 
 from actions.action_admin import ActionAdmin
 from actions.models import (

@@ -19,7 +19,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 

@@ -1,11 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-from wagtail.admin.edit_handlers import (
-    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
 from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.core import hooks
+from wagtail import hooks
 
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
@@ -50,7 +50,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     ]
 
     block_panels = [
-        RichTextFieldPanel('content'),
+        FieldPanel('content'),
         PlanFilteredFieldPanel('template', widget=CondensedPanelSingleSelect),
         FieldPanel('identifier', widget=CondensedPanelSingleSelect)
     ]

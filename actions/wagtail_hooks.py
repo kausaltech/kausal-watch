@@ -2,7 +2,7 @@ from typing import Any, Mapping
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
-from wagtail.core import hooks
+from wagtail import hooks
 from wagtail.admin.menu import AdminOnlyMenuItem
 from wagtail.admin.site_summary import SummaryItem
 

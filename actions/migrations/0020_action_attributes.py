@@ -4,7 +4,7 @@ import aplans.utils
 from django.db import migrations, models
 import django.db.models.deletion
 import modelcluster.fields
-import wagtail.core.fields
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -73,7 +73,7 @@ class Migration(migrations.Migration):
             name='ActionAttributeRichText',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', wagtail.core.fields.RichTextField(verbose_name='Text')),
+                ('text', wagtail.fields.RichTextField(verbose_name='Text')),
                 ('action', modelcluster.fields.ParentalKey(
                     on_delete=django.db.models.deletion.CASCADE, related_name='richtext_attributes', to='actions.action'
                 )),
@@ -108,7 +108,7 @@ class Migration(migrations.Migration):
             name='ActionAttributeChoiceWithText',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', wagtail.core.fields.RichTextField(blank=True, null=True, verbose_name='Text')),
+                ('text', wagtail.fields.RichTextField(blank=True, null=True, verbose_name='Text')),
                 ('action', modelcluster.fields.ParentalKey(
                     on_delete=django.db.models.deletion.CASCADE, related_name='choice_with_text_attributes',
                     to='actions.action'

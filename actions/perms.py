@@ -3,7 +3,7 @@ from functools import lru_cache
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from wagtail.core.models import GroupPagePermission, PAGE_PERMISSION_TYPES
+from wagtail.models import GroupPagePermission, PAGE_PERMISSION_TYPES
 
 from content.models import SiteGeneralContent
 from indicators.models import (

@@ -2,7 +2,7 @@ import pytest
 from datetime import date, datetime, timedelta
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
-from wagtail.core.models import Locale
+from wagtail.models import Locale
 
 from actions.models import Action
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory

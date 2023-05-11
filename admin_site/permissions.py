@@ -1,6 +1,6 @@
 from typing import Optional
 from django.conf import settings
-from wagtail.core.permission_policies.collections import CollectionOwnershipPermissionPolicy
+from wagtail.permission_policies.collections import CollectionOwnershipPermissionPolicy
 
 from aplans.types import WatchAdminRequest
 

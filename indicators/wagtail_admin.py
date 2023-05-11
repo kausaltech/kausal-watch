@@ -6,12 +6,12 @@ from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail.admin.edit_handlers import (
-    FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel, HelpPanel, InlinePanel, ObjectList, MultiFieldPanel
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup
-from wagtail.core import hooks
+from wagtail import hooks
 
 from .admin import DisconnectedIndicatorFilter
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
@@ -306,7 +306,7 @@ class IndicatorAdmin(AplansModelAdmin):
             ],
             heading=_('Indicator for actions'),
         ),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
 
     advanced_panels = []
@@ -451,7 +451,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
     basic_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
 
     def unit_display(self, obj):

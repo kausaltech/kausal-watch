@@ -6,12 +6,11 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
+from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.menu import DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
-from wagtail.images.edit_handlers import ImageChooserPanel
 
 from aplans.types import WatchAdminRequest
 
@@ -257,7 +256,7 @@ class ClientAdmin(ModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        ImageChooserPanel('logo'),
+        FieldPanel('logo'),
         FieldPanel('azure_ad_tenant_id'),
         FieldPanel('login_header_text'),
         FieldPanel('login_button_text'),

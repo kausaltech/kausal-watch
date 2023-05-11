@@ -6,7 +6,7 @@ from django.utils.translation import get_language
 from django.db.models import Q
 import graphene
 from graphql.error import GraphQLError
-from wagtail.core.models import Page
+from wagtail.models import Page
 
 from actions.models import Action, Plan
 from indicators.models import Indicator

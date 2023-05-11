@@ -1,15 +1,13 @@
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import (
-    FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
+from wagtail.admin.panels import (
+    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList,
 )
-from wagtail.admin.edit_handlers import InlinePanel
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import DeleteView
-from wagtail.images.edit_handlers import ImageChooserPanel
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
@@ -310,7 +308,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('color'),
         FieldPanel('help_text'),
     ]
@@ -352,7 +350,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
             # and only if the inline instance is collapsed.
             panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
                 FieldPanel('language'),
-                ImageChooserPanel('image'),
+                FieldPanel('image'),
                 SvgChooserPanel('svg'),
             ]))
 
@@ -520,7 +518,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('color'),
         FieldPanel('help_text'),
     ]
@@ -545,7 +543,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
             # and only if the inline instance is collapsed.
             panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
                 FieldPanel('language'),
-                ImageChooserPanel('image'),
+                FieldPanel('image'),
                 SvgChooserPanel('svg'),
             ]))
 

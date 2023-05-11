@@ -11,7 +11,7 @@ from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.views import DeleteView

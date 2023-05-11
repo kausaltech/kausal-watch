@@ -3,13 +3,12 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
-from wagtail.admin.edit_handlers import (
+from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import EditView
-from wagtail.images.edit_handlers import ImageChooserPanel
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
@@ -83,7 +82,7 @@ class PlanAdmin(AplansModelAdmin):
                 FieldPanel('person', widget=PersonChooser),
             ]
         ),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('superseded_by', widget=PlanChooser),
     ]
 

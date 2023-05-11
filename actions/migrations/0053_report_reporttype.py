@@ -4,8 +4,8 @@ import reports.blocks
 import aplans.utils
 from django.db import migrations, models
 import django.db.models.deletion
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=100, verbose_name='name')),
-                ('fields', wagtail.core.fields.StreamField([('implementation_phase', reports.blocks.ActionImplementationPhaseReportFieldBlock()), ('text_attribute', wagtail.core.blocks.StructBlock([('name', wagtail.core.blocks.CharBlock(heading='Name')), ('identifier', wagtail.core.blocks.CharBlock(heading='Identifier'))]))], blank=True, null=True)),
+                ('fields', wagtail.fields.StreamField([('implementation_phase', reports.blocks.ActionImplementationPhaseReportFieldBlock()), ('text_attribute', wagtail.blocks.StructBlock([('name', wagtail.blocks.CharBlock(heading='Name')), ('identifier', wagtail.blocks.CharBlock(heading='Identifier'))]))], blank=True, null=True)),
                 ('plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='report_types', to='actions.plan')),
             ],
             bases=(models.Model, aplans.utils.PlanRelatedModel),

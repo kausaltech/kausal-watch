@@ -1,6 +1,6 @@
 import django.db.models.deletion
 import modelcluster
-import wagtail.core.fields
+import wagtail.fields
 from django.db import migrations, models
 from django.contrib.contenttypes.management import create_contenttypes
 
@@ -188,7 +188,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('object_id', models.PositiveIntegerField()),
-                ('text', wagtail.core.fields.RichTextField(blank=True, null=True, verbose_name='Text')),
+                ('text', wagtail.fields.RichTextField(blank=True, null=True, verbose_name='Text')),
             ],
         ),
         migrations.CreateModel(
@@ -205,7 +205,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('object_id', models.PositiveIntegerField()),
-                ('text', wagtail.core.fields.RichTextField(verbose_name='Text')),
+                ('text', wagtail.fields.RichTextField(verbose_name='Text')),
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='contenttypes.contenttype')),
             ],
         ),

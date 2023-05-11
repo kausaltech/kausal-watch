@@ -14,15 +14,14 @@ from django.db.models import Q
 from django.urls import re_path
 from django.utils import timezone
 from django.utils.translation import gettext, gettext_lazy as _
-from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.contrib.modeladmin.views import IndexView
-from wagtail.images.edit_handlers import ImageChooserPanel
 
-from .models import Action, ActionTask, CategoryType, Plan
+from .models import Action, ActionTask, CategoryType
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
@@ -520,10 +519,10 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
         FieldPanel('lead_paragraph'),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
     basic_related_panels = [
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         CondensedInlinePanel(
             'links',
             panels=[
@@ -565,7 +564,7 @@ class ActionAdmin(AplansModelAdmin):
         FieldPanel('due_at'),
         FieldPanel('state', widget=CondensedPanelSingleSelect),
         FieldPanel('completed_at'),
-        RichTextFieldPanel('comment'),
+        FieldPanel('comment'),
     ]
 
     task_header_from_js = '''

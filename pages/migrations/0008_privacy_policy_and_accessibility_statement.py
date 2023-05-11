@@ -4,8 +4,8 @@ import actions.blocks
 from django.db import migrations, models
 import django.db.models.deletion
 import pages.blocks
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -23,8 +23,8 @@ class Migration(migrations.Migration):
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
                 ('show_in_additional_links', models.BooleanField(default=False, help_text='Should the page be shown in the additional links?', verbose_name='show in additional links')),
-                ('lead_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='lead content')),
-                ('body', wagtail.core.fields.StreamField([('text', wagtail.core.blocks.RichTextBlock(label='Text')), ('compliance_status', pages.blocks.AccessibilityStatementComplianceStatusBlock()), ('preparation', pages.blocks.AccessibilityStatementComplianceStatusBlock())], blank=True, null=True)),
+                ('lead_content', wagtail.fields.RichTextField(blank=True, verbose_name='lead content')),
+                ('body', wagtail.fields.StreamField([('text', wagtail.blocks.RichTextBlock(label='Text')), ('compliance_status', pages.blocks.AccessibilityStatementComplianceStatusBlock()), ('preparation', pages.blocks.AccessibilityStatementComplianceStatusBlock())], blank=True, null=True)),
             ],
             options={
                 'abstract': False,
@@ -38,8 +38,8 @@ class Migration(migrations.Migration):
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
                 ('show_in_additional_links', models.BooleanField(default=False, help_text='Should the page be shown in the additional links?', verbose_name='show in additional links')),
-                ('lead_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='lead content')),
-                ('body', wagtail.core.fields.StreamField([('text', wagtail.core.blocks.RichTextBlock(label='Text'))], blank=True, null=True)),
+                ('lead_content', wagtail.fields.RichTextField(blank=True, verbose_name='lead content')),
+                ('body', wagtail.fields.StreamField([('text', wagtail.blocks.RichTextBlock(label='Text'))], blank=True, null=True)),
             ],
             options={
                 'abstract': False,
@@ -84,36 +84,36 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='actionlistpage',
             name='advanced_filters',
-            field=wagtail.core.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.core.blocks.StructBlock([('style', wagtail.core.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
+            field=wagtail.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.blocks.StructBlock([('style', wagtail.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='actionlistpage',
             name='details_aside',
-            field=wagtail.core.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('schedule', actions.blocks.ActionScheduleBlock()), ('contact_persons', actions.blocks.ActionContactPersonsBlock()), ('responsible_parties', actions.blocks.ActionResponsiblePartiesBlock())], blank=True, null=True),
+            field=wagtail.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('schedule', actions.blocks.ActionScheduleBlock()), ('contact_persons', actions.blocks.ActionContactPersonsBlock()), ('responsible_parties', actions.blocks.ActionResponsiblePartiesBlock())], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='actionlistpage',
             name='details_main_bottom',
-            field=wagtail.core.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('lead_paragraph', actions.blocks.ActionLeadParagraphBlock()), ('description', actions.blocks.ActionDescriptionBlock()), ('official_name', actions.blocks.ActionOfficialNameBlock()), ('links', actions.blocks.ActionLinksBlock()), ('tasks', actions.blocks.ActionTasksBlock()), ('merged_actions', actions.blocks.ActionMergedActionsBlock()), ('related_actions', actions.blocks.ActionRelatedActionsBlock()), ('related_indicators', actions.blocks.ActionRelatedIndicatorsBlock())], blank=True, null=True),
+            field=wagtail.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('lead_paragraph', actions.blocks.ActionLeadParagraphBlock()), ('description', actions.blocks.ActionDescriptionBlock()), ('official_name', actions.blocks.ActionOfficialNameBlock()), ('links', actions.blocks.ActionLinksBlock()), ('tasks', actions.blocks.ActionTasksBlock()), ('merged_actions', actions.blocks.ActionMergedActionsBlock()), ('related_actions', actions.blocks.ActionRelatedActionsBlock()), ('related_indicators', actions.blocks.ActionRelatedIndicatorsBlock())], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='actionlistpage',
             name='details_main_top',
-            field=wagtail.core.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('lead_paragraph', actions.blocks.ActionLeadParagraphBlock()), ('description', actions.blocks.ActionDescriptionBlock()), ('official_name', actions.blocks.ActionOfficialNameBlock()), ('links', actions.blocks.ActionLinksBlock()), ('tasks', actions.blocks.ActionTasksBlock()), ('merged_actions', actions.blocks.ActionMergedActionsBlock()), ('related_actions', actions.blocks.ActionRelatedActionsBlock()), ('related_indicators', actions.blocks.ActionRelatedIndicatorsBlock())], blank=True, null=True),
+            field=wagtail.fields.StreamField([('attribute', actions.blocks.ActionAttributeTypeChooserBlock(label='Attribute', required=True)), ('categories', actions.blocks.CategoryTypeChooserBlock(label='Category', required=True)), ('lead_paragraph', actions.blocks.ActionLeadParagraphBlock()), ('description', actions.blocks.ActionDescriptionBlock()), ('official_name', actions.blocks.ActionOfficialNameBlock()), ('links', actions.blocks.ActionLinksBlock()), ('tasks', actions.blocks.ActionTasksBlock()), ('merged_actions', actions.blocks.ActionMergedActionsBlock()), ('related_actions', actions.blocks.ActionRelatedActionsBlock()), ('related_indicators', actions.blocks.ActionRelatedIndicatorsBlock())], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='actionlistpage',
             name='main_filters',
-            field=wagtail.core.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.core.blocks.StructBlock([('style', wagtail.core.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
+            field=wagtail.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.blocks.StructBlock([('style', wagtail.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='actionlistpage',
             name='primary_filters',
-            field=wagtail.core.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.core.blocks.StructBlock([('style', wagtail.core.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
+            field=wagtail.fields.StreamField([('responsible_party', actions.blocks.ResponsiblePartyFilterBlock()), ('implementation_phase', actions.blocks.ActionImplementationPhaseFilterBlock()), ('schedule', actions.blocks.ActionScheduleFilterBlock()), ('attribute', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.ActionAttributeTypeChooserBlock(required=True))])), ('category', wagtail.blocks.StructBlock([('style', wagtail.blocks.ChoiceBlock(choices=[('dropdown', 'Dropdown'), ('buttons', 'Buttons')])), ('category_type', actions.blocks.CategoryTypeChooserBlock(required=True))]))], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='staticpage',
             name='body',
-            field=wagtail.core.fields.StreamField([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading')), ('paragraph', wagtail.core.blocks.RichTextBlock(label='Paragraph')), ('qa_section', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='title', heading='Title', required=False)), ('questions', wagtail.core.blocks.ListBlock(wagtail.core.blocks.StructBlock([('question', wagtail.core.blocks.CharBlock(heading='Question')), ('answer', wagtail.core.blocks.RichTextBlock(heading='Answer'))])))], icon='help', label='Questions & Answers')), ('category_list', wagtail.core.blocks.StructBlock([('category_type', actions.blocks.CategoryTypeChooserBlock(label='Category type', required=False)), ('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.core.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table')]))], label='Category list')), ('category_tree_map', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead', required=False)), ('category_type', actions.blocks.CategoryTypeChooserBlock(label='Category type', required=True)), ('value_attribute', actions.blocks.CategoryAttributeTypeChooserBlock(label='Value attribute', required=True))], label='Category tree map'))], blank=True, null=True),
+            field=wagtail.fields.StreamField([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading')), ('paragraph', wagtail.blocks.RichTextBlock(label='Paragraph')), ('qa_section', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='title', heading='Title', required=False)), ('questions', wagtail.blocks.ListBlock(wagtail.blocks.StructBlock([('question', wagtail.blocks.CharBlock(heading='Question')), ('answer', wagtail.blocks.RichTextBlock(heading='Answer'))])))], icon='help', label='Questions & Answers')), ('category_list', wagtail.blocks.StructBlock([('category_type', actions.blocks.CategoryTypeChooserBlock(label='Category type', required=False)), ('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table')]))], label='Category list')), ('category_tree_map', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.blocks.RichTextBlock(label='Lead', required=False)), ('category_type', actions.blocks.CategoryTypeChooserBlock(label='Category type', required=True)), ('value_attribute', actions.blocks.CategoryAttributeTypeChooserBlock(label='Value attribute', required=True))], label='Category tree map'))], blank=True, null=True),
         ),
     ]

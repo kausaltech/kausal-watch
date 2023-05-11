@@ -6,7 +6,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
 from typing import Any, Dict, List, Optional
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.panels import FieldPanel
 
 import actions.models.attributes as models
 

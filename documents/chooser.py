@@ -5,8 +5,8 @@ from django.utils.translation import gettext as _
 
 from wagtail.admin.forms.search import SearchForm
 from wagtail.admin.modal_workflow import render_modal_workflow
-from wagtail.core import hooks
-from wagtail.core.models import Collection
+from wagtail import hooks
+from wagtail.models import Collection
 from wagtail.documents import get_document_model
 from wagtail.documents.forms import get_document_form
 from wagtail.documents.permissions import permission_policy

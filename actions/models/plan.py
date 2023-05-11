@@ -25,8 +25,8 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from typing import Optional, Tuple, Type, Union
 from urllib.parse import urlparse
-from wagtail.core.models import Collection, Page, Site
-from wagtail.core.models.i18n import Locale
+from wagtail.models import Collection, Page, Site
+from wagtail.models.i18n import Locale
 # In future versions of wagtail_localize, this will be in wagtail_localize.operations
 from wagtail_localize.operations import TranslationCreator
 
