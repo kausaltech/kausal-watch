@@ -2,7 +2,6 @@ import json
 import logging
 from datetime import timedelta
 
-from django import forms
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.db.models import Q
@@ -36,73 +35,16 @@ from actions.chooser import ActionChooser
 from actions.models import ActionResponsibleParty
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
+from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
 from aplans.extensions import modeladmin_register
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .models import Action, ActionTask, CategoryType
+from .models import Action, ActionTask
 from reports.views import MarkActionAsCompleteView
 
 logger = logging.getLogger(__name__)
-
-
-class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
-    """Like ModelMultipleChoiceField, but allow only one value to be chosen."""
-    def to_python(self, value):
-        result = super().to_python(value)
-        if not result:
-            return []
-        return [result]
-
-    def prepare_value(self, value):
-        if (hasattr(value, '__iter__') and
-                not isinstance(value, str) and
-                not hasattr(value, '_meta')):
-            prepare_value = super().prepare_value
-            return [prepare_value(v) for v in value]
-        return super().prepare_value(value)
-
-
-def _get_category_fields(plan, model, obj, with_initial=False):
-    fields = {}
-    if model == Action:
-        filter_name = 'editable_for_actions'
-    # elif self.model == Indicator:
-    #     filter_name = 'editable_for_indicators'
-    else:
-        raise Exception()
-
-    for cat_type in plan.category_types.filter(**{filter_name: True}):
-        qs = cat_type.categories.all()
-        if obj and obj.pk and with_initial:
-            initial = obj.categories.filter(type=cat_type)
-        else:
-            initial = None
-        field_class = forms.ModelMultipleChoiceField
-        if cat_type.select_widget == CategoryType.SelectWidget.SINGLE:
-            field_class = ModelChoiceFieldWithValueInList
-
-            widget = autocomplete.ModelSelect2(
-                url='category-autocomplete',
-                forward=(
-                    dal_forward.Const(cat_type.id, 'type'),
-                )
-            )
-        else:
-            field_class = forms.ModelMultipleChoiceField
-            widget = autocomplete.ModelSelect2Multiple(
-                url='category-autocomplete',
-                forward=(
-                    dal_forward.Const(cat_type.id, 'type'),
-                )
-            )
-        field = field_class(
-            qs, label=cat_type.name, initial=initial, required=False, widget=widget
-        )
-        field.category_type = cat_type
-        fields['categories_%s' % cat_type.identifier] = field
-    return fields
 
 
 """
@@ -135,13 +77,6 @@ class CategoryFieldPanel(MultiFieldPanel):
             fields.extend(handler.required_fields())
         return fields
 """
-
-
-class CategoryFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        cat_fields = _get_category_fields(self.instance.plan, self.model, self.instance, with_initial=True)
-        self.form.fields[self.field_name].initial = cat_fields[self.field_name].initial
 
 
 class ActionPermissionHelper(PlanRelatedPermissionHelper):
@@ -502,7 +437,6 @@ class ActionButtonHelper(AplansButtonHelper):
                 else:
                     buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
-
 
 
 @modeladmin_register

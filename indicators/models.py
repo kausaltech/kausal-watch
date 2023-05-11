@@ -29,6 +29,7 @@ from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin, Mo
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
+    from actions.models.category import CategoryType
     from django.db.models.manager import RelatedManager
     from .plan import Plan
 
@@ -497,6 +498,20 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                 raise ValidationError({'unit': _("Unit must be the same as in common indicator (%s)"
                                                  % self.common.unit)})
             # Unfortunately it seems we need to check whether dimensions are equal in the form
+
+    def set_categories(self, ctype: CategoryType, categories: list[int]):
+        all_cats = {x.id: x for x in ctype.categories.all()}
+        existing_cats = set(self.categories.filter(type=ctype))
+        new_cats = set()
+        for cat in categories:
+            if isinstance(cat, int):
+                cat = all_cats[cat]
+            new_cats.add(cat)
+
+        for cat in existing_cats - new_cats:
+            self.categories.remove(cat)
+        for cat in new_cats - existing_cats:
+            self.categories.add(cat)
 
     def generate_normalized_values(self, cin: CommonIndicatorNormalizator):
         assert cin.normalizable == self.common

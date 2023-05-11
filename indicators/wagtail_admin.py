@@ -1,4 +1,4 @@
-from dal import autocomplete, forward as dal_forward
+from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
+from typing import Optional
 from wagtail.admin.edit_handlers import (
     FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
 )
@@ -19,6 +20,7 @@ from admin_site.wagtail import (
     CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
 )
 from aplans.extensions import modeladmin_register
+from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
 from aplans.types import WatchAdminRequest
 from orgs.models import Organization
 from people.chooser import PersonChooser
@@ -222,7 +224,15 @@ class IndicatorForm(AplansAdminModelForm):
             self.instance.latest_value = None
             self.instance.save()
             self.instance.values.all().delete()
-        return super().save(commit)
+        obj = super().save(commit)
+        plan = self.plan
+        for field_name, field in _get_category_fields(plan, Indicator, obj).items():
+            field_data = self.cleaned_data.get(field_name)
+            if field_data is None:
+                continue
+            cat_type = field.category_type
+            obj.set_categories(cat_type, field_data)
+        return obj
 
     def _save_m2m(self):
         assert self.plan
@@ -271,6 +281,29 @@ class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
     pass
 
 
+class IndicatorEditHandler(AplansTabbedInterface):
+    instance: Indicator
+
+    def get_form_class(self, request: Optional[WatchAdminRequest] = None):
+        assert request is not None
+        user = request.user
+        plan = request.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            cat_fields = _get_category_fields(plan, Indicator, self.instance, with_initial=True)
+        else:
+            cat_fields = {}
+
+        self.base_form_class = type(
+            'IndicatorForm',
+            (IndicatorForm,),
+            {**cat_fields, }
+        )
+
+        form_class = super().get_form_class()
+
+        return form_class
+
+
 class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     create_view_class = IndicatorCreateView
@@ -283,7 +316,7 @@ class IndicatorAdmin(AplansModelAdmin):
     search_fields = ('name',)
     permission_helper_class = IndicatorPermissionHelper
 
-    edit_handler = AplansTabbedInterface
+    edit_handler = IndicatorEditHandler
     base_form_class = IndicatorForm
 
     basic_panels = [
@@ -340,11 +373,6 @@ class IndicatorAdmin(AplansModelAdmin):
                     # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
                     # the ugly gap, but it seems nontrivial to do properly.
                     advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
-                basic_panels.append(
-                    MultiFieldPanel(
-                        children=advanced_panels, heading=_('Advanced options'), classname='collapsible collapsed'
-                    )
-                )
         else:
             info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
                           "edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {
@@ -360,25 +388,18 @@ class IndicatorAdmin(AplansModelAdmin):
                 2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
             )
 
-        # Until there is a reliable way to prevent the user from editing categories of a non-editable category type
-        # while another category type is editable, we will show the edit widget only when all of the category types
-        # marked as usable for indicators are also marked as editable for indicators.
-        ctypes = plan.category_types
-        usable_ctypes = ctypes.filter(usable_for_indicators=True)
-        if usable_ctypes and set(usable_ctypes) == set(ctypes.filter(editable_for_indicators=True)):
-            basic_panels.append(
-                FieldPanel(
-                    'categories',
-                    heading=_('Categories'),
-                    widget=autocomplete.ModelSelect2Multiple(
-                        url='category-autocomplete',
-                        forward=(
-                            dal_forward.Const('indicator', 'target_type'),
-                        )
-                    )
-                )
-            )
+        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+        cat_panels = []
+        for key, field in cat_fields.items():
+            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+        if cat_panels:
+            basic_panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
 
+        basic_panels.append(
+            MultiFieldPanel(
+                children=advanced_panels, heading=_('Advanced options'), classname='collapsible collapsed'
+            )
+        )
         tabs = [
             ObjectList(basic_panels, heading=_('Basic information')),
             ObjectList([
@@ -394,9 +415,7 @@ class IndicatorAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        handler = AplansTabbedInterface(tabs)
-        handler.base_form_class = IndicatorForm
-        return handler
+        return IndicatorEditHandler(tabs)
 
     def get_list_filter(self, request):
         list_filter = super().get_list_filter(request)
