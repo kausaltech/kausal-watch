@@ -210,19 +210,30 @@ class ActivePlanPermissionHelper(PermissionHelper):
 
 
 # FIXME: This is mostly duplicated in content/admin.py.
-class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
-    def get_context(self, request):
+class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        # Implement in subclass
+        raise NotImplementedError()
+
+    def render_component(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
-        context = super().get_context(request)
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.pk)
-        return context
+        field = self.get_one_to_one_field(plan)
+        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)
+        return link_menu_item
 
     def is_shown(self, request):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan, not listing.
+        # this menu item is about editing a plan features instance, not listing.
         plan = request.user.get_active_admin_plan()
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan)
+        field = self.get_one_to_one_field(plan)
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+
+
+class ActivePlanMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan
 
 
 class ActivePlanAdmin(PlanAdmin):
@@ -283,27 +294,6 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 
 # TBD: We might want to keep this for superusers.
 # modeladmin_register(PlanFeaturesAdmin)
-
-
-class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
-    def get_one_to_one_field(self, plan):
-        # Implement in subclass
-        raise NotImplementedError()
-
-    def get_context(self, request):
-        # When clicking the menu item, use the edit view instead of the index view.
-        context = super().get_context(request)
-        plan = request.user.get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', field.pk)
-        return context
-
-    def is_shown(self, request):
-        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan features instance, not listing.
-        plan = request.user.get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
 
 
 class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):

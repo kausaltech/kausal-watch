@@ -449,10 +449,12 @@ class ActionIndexView(PersistIndexViewFiltersMixin, IndexView):
 
 
 class ActionMenuItem(SafeLabelModelAdminMenuItem):
-    def get_label_from_context(self, context, request):
-        # Ignore context; the label is going to be the configured term for "Action"
+    def render_component(self, request):
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
-        return plan.general_content.get_action_term_display_plural()
+        # Change label to the configured term for "Action"
+        link_menu_item.label = plan.general_content.get_action_term_display_plural()
+        return link_menu_item
 
 
 class ActionButtonHelper(AplansButtonHelper):

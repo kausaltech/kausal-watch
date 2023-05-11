@@ -5,8 +5,8 @@ from wagtail.contrib.modeladmin.views import EditView
 
 from .models import SiteGeneralContent
 from aplans.context_vars import ctx_instance, ctx_request
-from actions.wagtail_admin import ActivePlanPermissionHelper
-from admin_site.wagtail import SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin, insert_model_translation_panels
+from actions.wagtail_admin import ActivePlanPermissionHelper, PlanSpecificSingletonModelMenuItem
+from admin_site.wagtail import SetInstanceMixin, SuccessUrlEditPageMixin, insert_model_translation_panels
 
 
 # FIXME: This is partly duplicated in actions/wagtail_admin.py.
@@ -15,23 +15,12 @@ class SiteGeneralContentPermissionHelper(ActivePlanPermissionHelper):
         return user.is_general_admin_for_plan(obj.plan)
 
 
-# FIXME: This duplicates most of what actions.wagtail_admin.ActivePlanMenuItem is doing.
-class SiteGeneralContentMenuItem(SafeLabelModelAdminMenuItem):
-    def get_context(self, request):
-        # When clicking the menu item, use the edit view instead of the index view.
-        context = super().get_context(request)
-        plan = request.user.get_active_admin_plan()
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.general_content.pk)
-        return context
-
-    def is_shown(self, request):
-        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan, not listing.
-        plan = request.user.get_active_admin_plan()
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan.general_content)
+class SiteGeneralContentMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan.general_content
 
 
-class SiteGeneralContentEditView(SuccessUrlEditPageMixin, EditView):
+class SiteGeneralContentEditView(SetInstanceMixin, SuccessUrlEditPageMixin, EditView):
     pass
 
 

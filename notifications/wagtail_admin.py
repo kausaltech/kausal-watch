@@ -96,13 +96,13 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
 class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
     # fixme duplicated in actions, content
-    def get_context(self, request):
-        context = super().get_context(request)
+    def render_component(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
         if hasattr(plan, 'notification_base_template'):
-            context['url'] = self.model_admin.url_helper.get_action_url(
-                'edit', plan.notification_base_template.pk)
-        return context
+            link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', plan.notification_base_template.pk)
+        return link_menu_item
 
     def is_shown(self, request):
         plan = request.user.get_active_admin_plan()
