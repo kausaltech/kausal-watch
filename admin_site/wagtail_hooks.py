@@ -7,7 +7,7 @@ from django.utils.html import format_html
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
-from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
+from wagtail.admin.menu import DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
@@ -357,21 +357,23 @@ def remove_settings_menu_items(request, items: list):
         items.remove(item)
 
 
-class HelpMenu(Menu):
-    def menu_items_for_request(self, request):
-        return [
-            MenuItem(_('Video tutorials'), _('https://kausal.gitbook.io/watch'), icon_name='help', attrs=dict(target="_blank"))
-        ]
-
-
-help_menu = HelpMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_help_menu():
-    return SubmenuMenuItem(
-        _('Help'),
-        help_menu,
-        classnames='icon icon-help',
-        order=20000
+@hooks.register('register_help_menu_item')
+def register_video_tutorials_menu_item():
+    return DismissibleMenuItem(
+        _("Video tutorials"),
+        _('https://kausal.gitbook.io/watch'),
+        icon_name='help',
+        order=1000,
+        attrs={"target": "_blank"},
+        name='video-tutorials',
     )
+
+
+def should_remove_help_menu_item(item):
+    return (item.name.startswith('whats-new-in-wagtail-')
+            or item.name == 'editor-guide')
+
+
+@hooks.register('construct_help_menu')
+def remove_help_menu_items(request, items: list):
+    items[:] = [item for item in items if not should_remove_help_menu_item(item)]
