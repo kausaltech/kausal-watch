@@ -53,6 +53,13 @@ class PlanFactory(ModelFactory[Plan]):
             obj = manager.create(*args, **kwargs)
         return obj
 
+    @classmethod
+    def _after_postgeneration(cls, instance, create, results=None):
+        from actions.models.plan import set_default_page_creation
+        with set_default_page_creation(False):
+            r = super()._after_postgeneration(instance, create, results=results)
+        return r
+
 
 @factory.django.mute_signals(post_save)
 class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
