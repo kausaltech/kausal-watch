@@ -31,6 +31,9 @@ if typing.TYPE_CHECKING:
     from users.models import User
     import django.test.client
 
+import logging
+logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARN)
+
 
 register(actions_factories.ActionContactFactory, 'action_contact')
 register(actions_factories.ActionFactory)
