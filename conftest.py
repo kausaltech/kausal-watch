@@ -108,10 +108,8 @@ register(wagtail_factories.factories.CollectionFactory)
 @pytest.fixture
 @factory.django.mute_signals(post_save)
 def plan_with_pages(plan):
-    from actions.models.plan import set_default_page_creation
-
-    with set_default_page_creation(True):
-        plan.save()
+    plan.create_default_site()
+    plan.save()
     return plan
 
 
