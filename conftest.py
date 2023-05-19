@@ -12,7 +12,6 @@ from django.urls import reverse
 from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
-from pytest_django.asserts import assertRedirects
 from rest_framework.authtoken.models import Token
 
 from actions.tests import factories as actions_factories
