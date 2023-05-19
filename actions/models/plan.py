@@ -525,10 +525,18 @@ class Plan(ClusterableModel):
     @classmethod
     @transaction.atomic()
     def create_with_defaults(
-        self, identifier: str, name: str, primary_language: str, organization: Organization,
+        cls,
+        identifier: str,
+        name: str,
+        primary_language: str,
+        organization: Organization,
         other_languages: typing.List[str] = [],
-        short_name: str = None, base_path: str = None, domain: str = None,
-        client_identifier: str = None, client_name: str = None, azure_ad_tenant_id: str = None
+        short_name: Optional[str] = None,
+        base_path: Optional[str] = None,
+        domain: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        client_name: Optional[str] = None,
+        azure_ad_tenant_id: Optional[str] = None
     ) -> Plan:
         from ..defaults import (
             DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
