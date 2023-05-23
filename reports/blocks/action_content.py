@@ -9,7 +9,7 @@ from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
 from actions.attributes import AttributeType
-from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel
+from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel, ActionResponsibleParty
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from aplans.graphql_types import register_graphene_node
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
@@ -160,12 +160,56 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
 
 @register_streamfield_block
+class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
+    class Meta:
+        label = _("responsible party")
+
+    @register_graphene_node
+    class Value(graphene.ObjectType):
+        class Meta:
+            name = 'ActionResponsiblePartyReportFieldBlock'
+            interfaces = (ReportValueInterface,)
+
+        responsible_party = graphene.Field('actions.schema.ActionResponsiblePartyNode')
+
+    def value_for_action(self, block_value, action):
+        return action.responsible_parties.filter(role=ActionResponsibleParty.Role.PRIMARY).first()
+
+    def value_for_action_snapshot(self, block_value, snapshot):
+        # FIXME
+        return None
+
+    def graphql_value_for_action_snapshot(self, field, snapshot):
+        return self.Value(
+            field=field,
+            implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
+        )
+
+    def xlsx_values_for_action(self, block_value, action) -> List[Any]:
+        value = self.value_for_action(block_value, action)
+        return [value.organization.name]
+
+    def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
+        value = self.value_for_action_snapshot(block_value, snapshot)
+        return [value.organization.name]
+
+    def xlsx_column_labels(self, value) -> List[str]:
+        return [str(self.label)]
+
+    def add_xlsx_cell_format(self, block_value, workbook):
+        return None
+
+
+
+@register_streamfield_block
 class ReportFieldBlock(blocks.StreamBlock):
     # All blocks mentioned here must implement xlsx_column_labels, value_for_action and value_for_action_snapshot
     implementation_phase = ActionImplementationPhaseReportFieldBlock()
     attribute_type = ActionAttributeTypeReportFieldBlock()
+    responsible_party = ActionResponsiblePartyReportFieldBlock()
     # TODO: action status
 
     graphql_types = [
         ActionImplementationPhaseReportFieldBlock, ActionAttributeTypeReportFieldBlock,
+        ActionResponsiblePartyReportFieldBlock
     ]
