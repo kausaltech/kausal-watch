@@ -75,16 +75,21 @@ class Report(models.Model, PlanRelatedModel):
     def to_xlsx(self):
         output = BytesIO()
         with xlsxwriter.Workbook(output, {'in_memory': True}) as workbook:
+            self._xlsx_cell_format_for_header_row = workbook.add_format(
+                {'font_color': '#ffffff', 'bg_color': '#0A5E43', 'bold': True}
+            )
             worksheet = workbook.add_worksheet()
             self._write_xlsx_header(worksheet)
             self._write_xlsx_action_rows(workbook, worksheet)
             worksheet.autofit()
             # Set width of some columns explicitly
-            worksheet.set_column(0, 0, 20)  # Action
-            worksheet.set_column(1, 1, 10)  # Marked as complete by
+            worksheet.set_column(0, 0, 60)  # Action
+            worksheet.set_column(1, 1, 40)  # Marked as complete by
+            worksheet.set_column(2, 2, 40)  # Marked as complete by
         return output.getvalue()
 
     def _write_xlsx_header(self, worksheet: xlsxwriter.Workbook.worksheet_class):
+        worksheet.set_row(0, 20, self._xlsx_cell_format_for_header_row)
         worksheet.write(0, 0, str(_('Action')))
         worksheet.write(0, 1, str(_('Marked as complete by')))
         worksheet.write(0, 2, str(_('Marked as complete at')))
@@ -97,6 +102,9 @@ class Report(models.Model, PlanRelatedModel):
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
         self._xlsx_cell_format_for_field = {}
         self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
+        self._xlsx_cell_format_for_odd_rows = workbook.add_format({'bg_color': '#f4f4f4'})
+        self._xlsx_cell_format_for_name_odd = workbook.add_format({'text_wrap': True, 'bg_color': '#f4f4f4'})
+        self._xlsx_cell_format_for_name_even = workbook.add_format({'text_wrap': True})
         row = 1
         # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
         # also want to include the current state of actions for which there is no snapshot.
@@ -135,11 +143,16 @@ class Report(models.Model, PlanRelatedModel):
             action_name = str(action_or_snapshot)
             completed_at = None
             completed_by = None
-        worksheet.write(row, 0, action_name)
+        style = workbook.add_format() if row % 2 else self._xlsx_cell_format_for_odd_rows
+        name_style = self._xlsx_cell_format_for_name_even if row % 2 else self._xlsx_cell_format_for_name_odd
+        name_style.set_align('top')
+        worksheet.set_row(row, 40, style)
+        worksheet.write(row, 0, action_name, name_style)
         if completed_by:
             worksheet.write(row, 1, str(completed_by))
         if completed_at:
-            worksheet.write(row, 2, completed_at, self._xlsx_cell_format_for_date)
+            style = self._xlsx_cell_format_for_date
+            worksheet.write(row, 2, completed_at, style)
         column = 3
         for field in self.fields:
             if isinstance(action_or_snapshot, ActionSnapshot):
