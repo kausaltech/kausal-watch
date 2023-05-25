@@ -1,3 +1,5 @@
+from typing import Optional
+
 from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
@@ -7,7 +9,7 @@ from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail.admin.panels import (
-    FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
+    FieldPanel, HelpPanel, InlinePanel, ObjectList, MultiFieldPanel
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup

@@ -2,7 +2,7 @@ from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.db.models import Model
 from typing import Type
-from wagtail.admin.edit_handlers import FieldPanel
+from wagtail.admin.panels import FieldPanel
 
 from actions.models import Action, CategoryType, Plan
 from indicators.models import Indicator
