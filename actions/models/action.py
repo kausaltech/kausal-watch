@@ -747,7 +747,7 @@ class ActionContactPerson(OrderedModel):
         verbose_name_plural = _('action contact persons')
 
     def __str__(self):
-        return str(self.person)
+        return f'{str(self.person)}: {str(self.action)}'
 
 
 class ActionSchedule(models.Model, PlanRelatedModel):

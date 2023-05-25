@@ -379,11 +379,21 @@ class User(AbstractUser):
     def can_deactivate_user(self, user):
         if self.is_superuser:
             return True
-        return False
+        plan = self.get_active_admin_plan()
+        if not self.is_general_admin_for_plan(plan):
+            return False
+        if user.get_adminable_plans().count() == 0:
+            return False
+        for user_plan in user.get_adminable_plans():
+            if not self.is_general_admin_for_plan(user_plan):
+                raise PermissionDenied(
+                    _('No permission to remove the user belonging to plans you are not managing.')
+                )
+        return True
 
     def deactivate(self, admin_user):
         if not admin_user.can_deactivate_user(self):
-            raise PermissionDenied
+            raise PermissionDenied(_('You do not have permissions for removing users.'))
         self.is_active = False
         self.deactivated_by = admin_user
         self.deactivated_at = timezone.now()

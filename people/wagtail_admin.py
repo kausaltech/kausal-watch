@@ -5,8 +5,10 @@ from dal import autocomplete
 from datetime import timedelta
 from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, ManyToManyField, OneToOneRel
+from django.db import models
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
@@ -15,6 +17,8 @@ from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.views import DeleteView
+from wagtail.log_actions import log
+from wagtail.admin import messages
 
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
@@ -205,6 +209,41 @@ class PersonButtonHelper(ButtonHelper):
 
 
 class PersonDeleteView(DeleteView):
+    instance: Person
+    model: typing.Type[Person]
+
+    def get(self, request, *args, **kwargs):
+        linked_objects = []
+        fields = self.model._meta.fields_map.values()
+        fields = (obj for obj in fields if not isinstance(
+            obj.field, ManyToManyField))
+        for rel in fields:
+            obj = None
+            if isinstance(rel, OneToOneRel):
+                key = rel.get_accessor_name()
+                try:
+                    if key:
+                        obj = getattr(self.instance, key)
+                except ObjectDoesNotExist:
+                    pass
+                else:
+                    if obj:
+                        linked_objects.append(obj)
+            else:
+                key = rel.get_accessor_name()
+                if key:
+                    qs = getattr(self.instance, key)
+                    for obj in qs.all():
+                        linked_objects.append(obj)
+        context = self.get_context_data(
+            protected_error=True,
+            linked_objects=linked_objects
+        )
+        return self.render_to_response(context)
+
+    def confirmation_message(self):
+        return _('Are you sure you want to deactivate this person?')
+
     def delete_instance(self):
         acting_admin_user = self.request.user
         self.instance.delete_and_deactivate_corresponding_user(acting_admin_user)
@@ -216,6 +255,7 @@ class PersonAdmin(AplansModelAdmin):
     edit_view_class = PersonEditView
     index_view_class = PersonIndexView
     delete_view_class = PersonDeleteView
+    delete_template_name = "people/delete.html"
     permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
