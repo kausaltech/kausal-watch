@@ -9,7 +9,8 @@ from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubF
 from factory.django import DjangoModelFactory
 from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
-from wagtail_factories import StructBlockFactory
+from wagtail.test.utils.wagtail_factories import StructBlockFactory
+
 
 from aplans.factories import ModelFactory
 import actions
