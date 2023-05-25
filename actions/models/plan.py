@@ -5,7 +5,6 @@ import re
 import reversion
 import typing
 import zoneinfo
-from contextlib import contextmanager
 from datetime import datetime, timedelta
 from django.apps import apps
 from django.conf import settings
@@ -93,17 +92,6 @@ class PlanQuerySet(models.QuerySet['Plan']):
         staff_actions = Action.objects.user_has_staff_role_for(user).values_list('plan').distinct()
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
-
-
-_skip_default_page_creation = False
-
-
-@contextmanager
-def set_default_page_creation(enabled: bool):
-    global _skip_default_page_creation
-    _skip_default_page_creation = not enabled
-    yield
-    _skip_default_page_creation = False
 
 
 def help_text_with_default_disclaimer(help_text, default_value=None):
@@ -288,12 +276,17 @@ class Plan(ClusterableModel):
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
+    _site_created: bool
 
     class Meta:
         verbose_name = _('plan')
         verbose_name_plural = _('plans')
         get_latest_by = 'created_at'
         ordering = ('created_at',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._site_created = False
 
     def __str__(self):
         return self.name
@@ -327,9 +320,11 @@ class Plan(ClusterableModel):
             return None
         return self.site.root_page
 
-    def get_translated_root_page(self, fallback=True):
+    def get_translated_root_page(self, fallback=True) -> Optional[Page]:
         """Return root page in activated language, fall back to default language by default."""
         root = self.root_page
+        if root is None:
+            return None
         language = translation.get_language()
         try:
             locale = Locale.objects.get(language_code__iexact=language)
@@ -338,6 +333,15 @@ class Plan(ClusterableModel):
             if not fallback:
                 raise
         return root
+
+    def create_default_site(self):
+        if self.site is not None:
+            return
+        root_page = self.create_default_pages()
+        site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
+        site.save()
+        self._site_created = True
+        self.site = site
 
     def save(self, *args, **kwargs):
         PlanFeatures: Type[PlanFeatures] = apps.get_model('actions', 'PlanFeatures')
@@ -355,23 +359,18 @@ class Plan(ClusterableModel):
                 self.root_collection.name = self.name
                 self.root_collection.save(update_fields=['name'])
 
-        if not _skip_default_page_creation:
-            if self.site is None:
-                root_page = self.create_default_pages()
-                site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
-                site.save()
-                self.site = site
-                update_fields.append('site')
-            else:
-                self.site.name = self.name
-                self.site.save()
-                for language_code in (self.primary_language, *self.other_languages):
-                    with translation.override(language_code):
-                        try:
-                            root_page = self.get_translated_root_page()
-                        except (Locale.DoesNotExist, Page.DoesNotExist):
-                            pass
-                        else:
+        if self.site is not None and not self._site_created:
+            # Synchronize site name, root page names
+            self.site.site_name = self.name
+            self.site.save()
+            for language_code in (self.primary_language, *self.other_languages):
+                with translation.override(language_code):
+                    try:
+                        root_page = self.get_translated_root_page()
+                    except (Locale.DoesNotExist, Page.DoesNotExist):
+                        pass
+                    else:
+                        if root_page is not None:
                             root_page.title = self.name_i18n
                             root_page.draft_title = self.name_i18n
                             root_page.save()
@@ -530,10 +529,18 @@ class Plan(ClusterableModel):
     @classmethod
     @transaction.atomic()
     def create_with_defaults(
-        self, identifier: str, name: str, primary_language: str, organization: Organization,
+        cls,
+        identifier: str,
+        name: str,
+        primary_language: str,
+        organization: Organization,
         other_languages: typing.List[str] = [],
-        short_name: str = None, base_path: str = None, domain: str = None,
-        client_identifier: str = None, client_name: str = None, azure_ad_tenant_id: str = None
+        short_name: Optional[str] = None,
+        base_path: Optional[str] = None,
+        domain: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        client_name: Optional[str] = None,
+        azure_ad_tenant_id: Optional[str] = None
     ) -> Plan:
         from ..defaults import (
             DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
@@ -559,6 +566,8 @@ class Plan(ClusterableModel):
         plan.statuses_updated_manually = True
         if short_name:
             plan.short_name = short_name
+
+        plan.create_default_site()
         plan.save()
 
         with translation.override(plan.primary_language):

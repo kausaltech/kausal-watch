@@ -12,7 +12,6 @@ from django.urls import reverse
 from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
-from pytest_django.asserts import assertRedirects
 from rest_framework.authtoken.models import Token
 
 from actions.tests import factories as actions_factories
@@ -31,6 +30,9 @@ if typing.TYPE_CHECKING:
     from wagtail.contrib.modeladmin.options import ModelAdmin
     from users.models import User
     import django.test.client
+
+import logging
+logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARN)
 
 
 register(actions_factories.ActionContactFactory, 'action_contact')
@@ -106,10 +108,8 @@ register(wagtail_factories.factories.CollectionFactory)
 @pytest.fixture
 @factory.django.mute_signals(post_save)
 def plan_with_pages(plan):
-    from actions.models.plan import set_default_page_creation
-
-    with set_default_page_creation(True):
-        plan.save()
+    plan.create_default_site()
+    plan.save()
     return plan
 
 
