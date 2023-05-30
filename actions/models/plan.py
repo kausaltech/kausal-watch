@@ -178,8 +178,18 @@ class Plan(ClusterableModel):
     accessibility_statement_url = models.URLField(
         blank=True,
         null=True,
-        verbose_name=_('URL to accessibility statement'),
+        verbose_name=_('Link to accessibility statement'),
     )
+    external_feedback_url = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name=_('Link to external feedback form'),
+        help_text=_(
+            "If not empty, the system's built-in user feedback feature will be replaced by "
+            "a link to an external feedback form available at this web address."
+        )
+    )
+
     uses_wagtail = models.BooleanField(default=True)
     statuses_updated_manually = models.BooleanField(default=False)
     theme_identifier = IdentifierField(verbose_name=_('Theme identifier'), null=True, blank=True)
@@ -272,7 +282,7 @@ class Plan(ClusterableModel):
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
-        'report_types',
+        'report_types', 'external_feedback_url'
     ]
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()

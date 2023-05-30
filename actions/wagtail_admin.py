@@ -142,6 +142,7 @@ class PlanAdmin(AplansModelAdmin):
         )
         links_panel.panels = insert_model_translation_panels(PlanLink, links_panel.panels, request, instance)
         panels.append(links_panel)
+        panels.append(FieldPanel('external_feedback_url'))
 
         tabs = [
             ObjectList(panels, heading=_('Basic information')),
