@@ -1,5 +1,3 @@
-import xlsxwriter
-import xlsxwriter.format
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
@@ -110,7 +108,7 @@ class AttributeType:
         # Override if, e.g., a certain attribute type uses more than one column
         return [str(self.instance)]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+    def get_xlsx_cell_format(self) -> Optional[dict]:
         """Add a format for this attribute type to the given workbook."""
         return None
 
@@ -372,5 +370,5 @@ class Numeric(AttributeType):
         assert attribute.type == self.instance
         return [attribute.value]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
-        return workbook.add_format({'num_format': '#,##0.00'})
+    def get_xlsx_cell_format(self) -> dict:
+        return {'num_format': '#,##0.00'}

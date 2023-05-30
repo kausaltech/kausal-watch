@@ -100,9 +100,9 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
         return wrapped_type.xlsx_column_labels()
 
-    def add_xlsx_cell_format(self, block_value, workbook):
+    def get_xlsx_cell_format(self, block_value):
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-        return wrapped_type.add_xlsx_cell_format(workbook)
+        return wrapped_type.get_xlsx_cell_format()
 
     def get_help_panel(self, block_value, snapshot):
         attribute_type = block_value['attribute_type']
@@ -150,7 +150,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label)]
 
-    def add_xlsx_cell_format(self, block_value, workbook):
+    def get_xlsx_cell_format(self, block_value):
         return None
 
     def get_help_panel(self, block_value, snapshot):
@@ -196,9 +196,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label)]
 
-    def add_xlsx_cell_format(self, block_value, workbook):
+    def get_xlsx_cell_format(self, block_value):
         return None
-
 
 
 @register_streamfield_block

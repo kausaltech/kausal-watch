@@ -11,28 +11,48 @@ from xlsxwriter.format import Format
 import typing
 from typing import Callable
 if typing.TYPE_CHECKING:
-    from .models import Report, ActionSnapshot
+    from .models import Report
 
 
-class ExcelFormats:
-    @staticmethod
-    def header_row(f: Format):
-        f.set_font_color('#ffffff')
-        f.set_bg_color('#0a5e43')
-        f.set_bold()
+class ExcelFormats(dict):
+    workbook: xlsxwriter.Workbook
+    _formats_for_fields: dict
+
+    def __init__(self, workbook, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.workbook = workbook
+        self._formats_for_fields = dict()
+
+    class StyleSpecifications:
+        @staticmethod
+        def header_row(f: Format):
+            f.set_font_color('#ffffff')
+            f.set_bg_color('#0a5e43')
+            f.set_bold()
+
+    def __getattr__(self, name):
+        return self[name]
+
+    def for_field(self, field):
+        cell_format = self._formats_for_fields.get(field.id)
+        if not cell_format:
+            cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
+            self.workbook.add_format(cell_format_specs)
+            self._formats_for_fields[field.id] = cell_format
+        return cell_format
 
 
 class ExcelReport:
     # pass as context to block fields
     report: 'Report'
     workbook: xlsxwriter.Workbook
-    formats: dict
+    formats: ExcelFormats
 
     def __init__(self, report: 'Report'):
         self.report = report
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
-        self.formats = dict()
+        self.formats = ExcelFormats(self.workbook)
 
         self._initialize_formats()
 
@@ -54,7 +74,7 @@ class ExcelReport:
         self.workbook.close()
 
     def _write_xlsx_header(self, worksheet: Worksheet):
-        worksheet.set_row(0, 20, self.formats['header_row'])
+        worksheet.set_row(0, 20, self.formats.header_row)
         worksheet.write(0, 0, str(_('Action')))
         worksheet.write(0, 1, str(_('Marked as complete by')))
         worksheet.write(0, 2, str(_('Marked as complete at')))
@@ -65,7 +85,6 @@ class ExcelReport:
                 column += 1
 
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
-        self._xlsx_cell_format_for_field = {}
         self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
         self._xlsx_cell_format_for_odd_rows = workbook.add_format({'bg_color': '#f4f4f4'})
         self._xlsx_cell_format_for_name_odd = workbook.add_format({'text_wrap': True, 'bg_color': '#f4f4f4'})
@@ -127,10 +146,7 @@ class ExcelReport:
                 values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
             for value in values:
                 # Add cell format only once per field and cache added formats
-                cell_format = self._xlsx_cell_format_for_field.get(field.id)
-                if not cell_format:
-                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                    self._xlsx_cell_format_for_field[field.id] = cell_format
+                cell_format = self.formats.for_field(field)
                 worksheet.write(row, column, value, cell_format)
                 column += 1
 
@@ -145,7 +161,7 @@ class ExcelReport:
         initializer(format)
 
     def _initialize_formats(self):
-        for name, callback in ExcelFormats.__dict__.items():
+        for name, callback in ExcelFormats.StyleSpecifications.__dict__.items():
             if not isinstance(callback, Callable):
                 continue
             self._initialize_format(name, callback)
