@@ -1,3 +1,5 @@
+import inspect
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 
@@ -9,7 +11,6 @@ from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.format import Format
 
 import typing
-from typing import Callable
 if typing.TYPE_CHECKING:
     from .models import Report
 
@@ -24,11 +25,34 @@ class ExcelFormats(dict):
         self._formats_for_fields = dict()
 
     class StyleSpecifications:
-        @staticmethod
-        def header_row(f: Format):
+        BG_COLOR_ODD = '#f4f4f4'
+        BG_COLOR_HEADER = '#0a5e43'
+        COLOR_WHITE = '#ffffff'
+
+        @classmethod
+        def header_row(cls, f: Format):
             f.set_font_color('#ffffff')
-            f.set_bg_color('#0a5e43')
+            f.set_bg_color(cls.BG_COLOR_HEADER)
             f.set_bold()
+
+        @classmethod
+        def date(cls, f: Format):
+            f.set_num_format('yyyy-mm-dd h:mm:ss')
+
+        @classmethod
+        def name(cls, f: Format):
+            f.set_align('vcenter')
+            f.set_text_wrap(True)
+
+        @classmethod
+        def odd_row(cls, f: Format):
+            f.set_bg_color(cls.BG_COLOR_ODD)
+
+        @classmethod
+        def all_rows(cls, f: Format):
+            f.set_border(0)
+            f.set_align('vcenter')
+            f.set_bg_color(cls.COLOR_WHITE)
 
     def __getattr__(self, name):
         return self[name]
@@ -37,7 +61,8 @@ class ExcelFormats(dict):
         cell_format = self._formats_for_fields.get(field.id)
         if not cell_format:
             cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
-            self.workbook.add_format(cell_format_specs)
+            cell_format = self.workbook.add_format(cell_format_specs)
+            self.StyleSpecifications.all_rows(cell_format)
             self._formats_for_fields[field.id] = cell_format
         return cell_format
 
@@ -63,9 +88,15 @@ class ExcelReport:
         self._write_xlsx_action_rows(workbook, worksheet)
         worksheet.autofit()
         # Set width of some columns explicitly
-        worksheet.set_column(0, 0, 60)  # Action
+        worksheet.set_column(0, 0, 80)  # Action
         worksheet.set_column(1, 1, 40)  # Marked as complete by #to end
         worksheet.set_column(2, 2, 40)  # Marked as complete by
+
+        worksheet.conditional_format(1, 0, 1000, 10, {
+            'type': 'formula',
+            'criteria': '=MOD(ROW(),2)=0',
+            'format': self.formats.odd_row
+        })
         self.post_process()
         self.close()
         return self.output.getvalue()
@@ -85,10 +116,6 @@ class ExcelReport:
                 column += 1
 
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
-        self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
-        self._xlsx_cell_format_for_odd_rows = workbook.add_format({'bg_color': '#f4f4f4'})
-        self._xlsx_cell_format_for_name_odd = workbook.add_format({'text_wrap': True, 'bg_color': '#f4f4f4'})
-        self._xlsx_cell_format_for_name_even = workbook.add_format({'text_wrap': True})
         row = 1
         # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
         # also want to include the current state of actions for which there is no snapshot.
@@ -125,19 +152,15 @@ class ExcelReport:
             # the user who marked the action as complete.
         else:
             assert isinstance(action_or_snapshot, Action)
-            action_name = str(action_or_snapshot)
+            action_name = str(action_or_snapshot).replace("\n", " ")
             completed_at = None
             completed_by = None
-        style = workbook.add_format() if row % 2 else self._xlsx_cell_format_for_odd_rows
-        name_style = self._xlsx_cell_format_for_name_even if row % 2 else self._xlsx_cell_format_for_name_odd
-        name_style.set_align('top')
-        worksheet.set_row(row, 40, style)
-        worksheet.write(row, 0, action_name, name_style)
+        worksheet.set_row(row, 50, self.formats.all_rows)
+        worksheet.write(row, 0, action_name, self.formats.name)
         if completed_by:
             worksheet.write(row, 1, str(completed_by))
         if completed_at:
-            style = self._xlsx_cell_format_for_date
-            worksheet.write(row, 2, completed_at, style)
+            worksheet.write(row, 2, completed_at, self.formats.date)
         column = 3
         for field in self.report.fields:
             if isinstance(action_or_snapshot, ActionSnapshot):
@@ -161,7 +184,5 @@ class ExcelReport:
         initializer(format)
 
     def _initialize_formats(self):
-        for name, callback in ExcelFormats.StyleSpecifications.__dict__.items():
-            if not isinstance(callback, Callable):
-                continue
+        for name, callback in inspect.getmembers(ExcelFormats.StyleSpecifications, inspect.ismethod):
             self._initialize_format(name, callback)
