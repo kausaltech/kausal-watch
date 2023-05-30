@@ -13,6 +13,7 @@ from actions.models import ActionImplementationPhase, AttributeType as Attribute
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from aplans.graphql_types import register_graphene_node
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
+from reports.spreadsheets import ExcelReport
 
 
 @register_streamfield_block
@@ -83,17 +84,20 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             attribute=attribute,
         )
 
-    def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-        """Return the value for each of this attribute type's columns for the given action."""
-        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-        attribute = self.value_for_action(block_value, action)
-        return wrapped_type.xlsx_values(attribute)
+    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
+        return []
 
-    def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-        """Return the value for each of this attribute type's columns for the given snapshot."""
-        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-        attribute = self.value_for_action_snapshot(block_value, snapshot)
-        return wrapped_type.xlsx_values(attribute)
+    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
+    #     """Return the value for each of this attribute type's columns for the given action."""
+    #     wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+    #     attribute = self.value_for_action(block_value, action)
+    #     return wrapped_type.xlsx_values(attribute)
+
+    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
+    #     """Return the value for each of this attribute type's columns for the given snapshot."""
+    #     wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+    #     attribute = self.value_for_action_snapshot(block_value, snapshot)
+    #     return wrapped_type.xlsx_values(attribute)
 
     def xlsx_column_labels(self, block_value) -> List[str]:
         """Return the label for each of this attribute type's columns."""
@@ -139,13 +143,16 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
-    def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-        value = self.value_for_action(block_value, action)
-        return [str(value)]
+    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
+        return []
 
-    def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-        value = self.value_for_action_snapshot(block_value, snapshot)
-        return [str(value)]
+    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
+    #     value = self.value_for_action(block_value, action)
+    #     return [str(value)]
+
+    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
+    #     value = self.value_for_action_snapshot(block_value, snapshot)
+    #     return [str(value)]
 
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label)]
@@ -185,13 +192,16 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
-    def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-        value = self.value_for_action(block_value, action)
-        return [value.organization.name]
+    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
+        return []
 
-    def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-        value = self.value_for_action_snapshot(block_value, snapshot)
-        return [value.organization.name]
+    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
+    #     value = self.value_for_action(block_value, action)
+    #     return [value.organization.name]
+
+    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
+    #     value = self.value_for_action_snapshot(block_value, snapshot)
+    #     return [value.organization.name]
 
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label)]

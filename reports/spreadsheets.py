@@ -1,6 +1,5 @@
 import inspect
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 
 from actions.models import Action
@@ -112,55 +111,70 @@ class ExcelReport:
         worksheet.write(0, column + 1, str(_('Marked as complete by')))
         worksheet.write(0, column + 2, str(_('Marked as complete at')))
 
+    def _prepare_serialized_model_version(self, version):
+        return dict(
+            type=version.content_type.model_class,
+            data=version.field_dict
+        )
 
-    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
-        row = 1
-        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
-        # also want to include the current state of actions for which there is no snapshot.
+    def _prepare_serialized_report_data(self):
+        row_data = []
         if self.report.is_complete:
             for snapshot in self.report.action_snapshots.all():
-                self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
-        else:
-            for action in self.report.type.plan.actions.all():
-                try:
-                    snapshot = action.get_latest_snapshot(self.report)
-                except ObjectDoesNotExist:
-                    self._write_xlsx_action_row(workbook, worksheet, action, row)
-                else:
-                    self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
+                related_objects = snapshot.get_related_versions()
+                revision = snapshot.action_version.revision
+                row_data.append(dict(
+                    action=self._prepare_serialized_model_version(snapshot.action_version),
+                    related_objects=[self._prepare_serialized_model_version(o) for o in related_objects],
+                    completion={
+                        'completed_at': revision.date_created,
+                        'completed_by': revision.user
+                    }
+                ))
+            return row_data
+
+        # Live report, not complete, although some actions might be
+        for action, related_objects, completion in self.report.get_live_action_versions():
+            row_data.append(dict(
+                action=self._prepare_serialized_model_version(action),
+                related_objects=[self._prepare_serialized_model_version(o) for o in related_objects],
+                completion=completion
+            ))
+        return row_data
+
+    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
+        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
+        # also want to include the current state of actions for which there is no snapshot.
+        prepared_data = self._prepare_serialized_report_data()
+        for i, data in enumerate(prepared_data):
+            self._write_xlsx_action_row(worksheet, data, i + 1)
 
     def _write_xlsx_action_row(
-        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action_or_snapshot, row,
+        self,
+        worksheet: xlsxwriter.Workbook.worksheet_class,
+        data: dict, row: int
     ):
-        from .models import ActionSnapshot  # FIXME
-        # FIXME: action_or_snapshot can be an Action or ActionSnapshot, but distinguishing the cases is ugly. Improve.
-        if isinstance(action_or_snapshot, ActionSnapshot):
-            # Instead of fucking around with the `name` and `i18n` fields to simulate `name_i18n`, just build a fake
-            # model instance
-            field_dict = action_or_snapshot.action_version.field_dict
-            action_name = str(Action(**{key: field_dict[key] for key in ['identifier', 'name', 'plan_id', 'i18n']}))
-            # Get creation date and user from the version's revision
-            revision = action_or_snapshot.action_version.revision
-            # Excel can't handle timezones
-            completed_at = self.report.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
-            completed_by = revision.user
-            # FIXME: Right now, we print the user who made the last change to the action, which may be different from
-            # the user who marked the action as complete.
-        else:
-            assert isinstance(action_or_snapshot, Action)
-            action_name = str(action_or_snapshot).replace("\n", " ")
-            completed_at = None
-            completed_by = None
+        action = data['action']
+        action_name = str(Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})).replace("\n", " ")
+
+        # FIXME: Right now, we print the user who made the last change to the action, which may be different from
+        # the user who marked the action as complete.
+        completed_by = data['completion']['completed_by']
+        completed_at = data['completion']['completed_at']
+        if completed_at is not None:
+            completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
+
         worksheet.set_row(row, 50, self.formats.all_rows)
         worksheet.write(row, 0, action_name, self.formats.name)
         column = 1
         for field in self.report.fields:
-            if isinstance(action_or_snapshot, ActionSnapshot):
-                values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
-            else:
-                values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
+            values = field.block.extract_action_values(
+                self, field.value, action, data['related_objects']
+            )
+            # if isinstance(action_or_snapshot, ActionSnapshot):
+            #     values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
+            # else:
+            #     values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
             for value in values:
                 # Add cell format only once per field and cache added formats
                 cell_format = self.formats.for_field(field)
@@ -170,7 +184,6 @@ class ExcelReport:
             worksheet.write(row, column + 1, str(completed_by))
         if completed_at:
             worksheet.write(row, column + 2, completed_at, self.formats.date)
-
 
     def post_process(self):
         pass
