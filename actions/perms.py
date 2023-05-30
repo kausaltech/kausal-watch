@@ -13,6 +13,7 @@ from indicators.models import (
 from notifications.models import BaseTemplate, ContentBlock, NotificationTemplate
 from orgs.models import Organization
 from people.models import Person
+from reports.models import Report, ReportType
 
 from .models import (
     Action, AttributeRichText, AttributeType, AttributeChoice, AttributeTypeChoiceOption,
@@ -241,6 +242,9 @@ PLAN_ADMIN_PERMS = (
     (Organization, ALL_PERMS),
 
     (Person, ALL_PERMS),  # also delete perm for plan admin
+
+    (ReportType, ALL_PERMS),
+    (Report, ALL_PERMS),
 
     (SiteGeneralContent, ('add', 'view', 'change')),
 

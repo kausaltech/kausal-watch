@@ -256,14 +256,15 @@ class ActionButtonHelper(AplansButtonHelper):
 
     def get_buttons_for_obj(self, obj, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
-        # For each report type, display one button for the latest report of that type
-        for report_type in obj.plan.report_types.all():
-            latest_report = report_type.reports.last()
-            if latest_report and not latest_report.is_complete:
-                if obj.is_complete_for_report(latest_report):
-                    buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
-                else:
-                    buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
+        if self.permission_helper.user_can_edit_obj(self.request.user, obj):
+            # For each report type, display one button for the latest report of that type
+            for report_type in obj.plan.report_types.all():
+                latest_report = report_type.reports.last()
+                if latest_report and not latest_report.is_complete:
+                    if obj.is_complete_for_report(latest_report):
+                        buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
+                    else:
+                        buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
 
 
