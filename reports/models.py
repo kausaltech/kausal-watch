@@ -3,16 +3,15 @@ from contextlib import contextmanager
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-from io import BytesIO
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from wagtail.core.fields import StreamField
 import reversion
-import xlsxwriter
 
 from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
 from reports.blocks.action_content import ReportFieldBlock
+from .spreadsheets import ExcelReport
 
 
 @reversion.register()
@@ -73,100 +72,8 @@ class Report(models.Model, PlanRelatedModel):
         return qs.filter(type__plan=plan)
 
     def to_xlsx(self):
-        output = BytesIO()
-        with xlsxwriter.Workbook(output, {'in_memory': True}) as workbook:
-            self._xlsx_cell_format_for_header_row = workbook.add_format(
-                {'font_color': '#ffffff', 'bg_color': '#0A5E43', 'bold': True}
-            )
-            worksheet = workbook.add_worksheet()
-            self._write_xlsx_header(worksheet)
-            self._write_xlsx_action_rows(workbook, worksheet)
-            worksheet.autofit()
-            # Set width of some columns explicitly
-            worksheet.set_column(0, 0, 60)  # Action
-            worksheet.set_column(1, 1, 40)  # Marked as complete by
-            worksheet.set_column(2, 2, 40)  # Marked as complete by
-        return output.getvalue()
-
-    def _write_xlsx_header(self, worksheet: xlsxwriter.Workbook.worksheet_class):
-        worksheet.set_row(0, 20, self._xlsx_cell_format_for_header_row)
-        worksheet.write(0, 0, str(_('Action')))
-        worksheet.write(0, 1, str(_('Marked as complete by')))
-        worksheet.write(0, 2, str(_('Marked as complete at')))
-        column = 3
-        for field in self.fields:
-            for label in field.block.xlsx_column_labels(field.value):
-                worksheet.write(0, column, label)
-                column += 1
-
-    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
-        self._xlsx_cell_format_for_field = {}
-        self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
-        self._xlsx_cell_format_for_odd_rows = workbook.add_format({'bg_color': '#f4f4f4'})
-        self._xlsx_cell_format_for_name_odd = workbook.add_format({'text_wrap': True, 'bg_color': '#f4f4f4'})
-        self._xlsx_cell_format_for_name_even = workbook.add_format({'text_wrap': True})
-        row = 1
-        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
-        # also want to include the current state of actions for which there is no snapshot.
-        if self.is_complete:
-            for snapshot in self.action_snapshots.all():
-                self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
-        else:
-            for action in self.type.plan.actions.all():
-                try:
-                    snapshot = action.get_latest_snapshot(self)
-                except ActionSnapshot.DoesNotExist:
-                    self._write_xlsx_action_row(workbook, worksheet, action, row)
-                else:
-                    self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
-
-    def _write_xlsx_action_row(
-        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action_or_snapshot, row,
-    ):
-        # FIXME: action_or_snapshot can be an Action or ActionSnapshot, but distinguishing the cases is ugly. Improve.
-        if isinstance(action_or_snapshot, ActionSnapshot):
-            # Instead of fucking around with the `name` and `i18n` fields to simulate `name_i18n`, just build a fake
-            # model instance
-            field_dict = action_or_snapshot.action_version.field_dict
-            action_name = str(Action(**{key: field_dict[key] for key in ['identifier', 'name', 'plan_id', 'i18n']}))
-            # Get creation date and user from the version's revision
-            revision = action_or_snapshot.action_version.revision
-            # Excel can't handle timezones
-            completed_at = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
-            completed_by = revision.user
-            # FIXME: Right now, we print the user who made the last change to the action, which may be different from
-            # the user who marked the action as complete.
-        else:
-            assert isinstance(action_or_snapshot, Action)
-            action_name = str(action_or_snapshot)
-            completed_at = None
-            completed_by = None
-        style = workbook.add_format() if row % 2 else self._xlsx_cell_format_for_odd_rows
-        name_style = self._xlsx_cell_format_for_name_even if row % 2 else self._xlsx_cell_format_for_name_odd
-        name_style.set_align('top')
-        worksheet.set_row(row, 40, style)
-        worksheet.write(row, 0, action_name, name_style)
-        if completed_by:
-            worksheet.write(row, 1, str(completed_by))
-        if completed_at:
-            style = self._xlsx_cell_format_for_date
-            worksheet.write(row, 2, completed_at, style)
-        column = 3
-        for field in self.fields:
-            if isinstance(action_or_snapshot, ActionSnapshot):
-                values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
-            else:
-                values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
-            for value in values:
-                # Add cell format only once per field and cache added formats
-                cell_format = self._xlsx_cell_format_for_field.get(field.id)
-                if not cell_format:
-                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                    self._xlsx_cell_format_for_field[field.id] = cell_format
-                worksheet.write(row, column, value, cell_format)
-                column += 1
+        xlsx_exporter = ExcelReport(self)
+        return xlsx_exporter.generate_xlsx()
 
     def mark_as_complete(self, user):
         """Mark this report as complete, as well as all actions that are not yet complete.
