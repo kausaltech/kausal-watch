@@ -40,19 +40,15 @@ class ExcelFormats(dict):
             f.set_num_format('yyyy-mm-dd h:mm:ss')
 
         @classmethod
-        def name(cls, f: Format):
-            f.set_align('vcenter')
-            f.set_text_wrap(True)
-
-        @classmethod
         def odd_row(cls, f: Format):
             f.set_bg_color(cls.BG_COLOR_ODD)
 
         @classmethod
         def all_rows(cls, f: Format):
             f.set_border(0)
-            f.set_align('vcenter')
+            f.set_align('top')
             f.set_bg_color(cls.COLOR_WHITE)
+            f.set_text_wrap(True)
 
     def __getattr__(self, name):
         return self[name]
@@ -98,10 +94,7 @@ class ExcelReport:
         worksheet = workbook.add_worksheet()
         self._write_xlsx_header(worksheet)
         self._write_xlsx_action_rows(workbook, worksheet)
-        worksheet.autofit()
         # Set width of some columns explicitly
-        worksheet.set_column(0, 0, 10)  # Identifier
-        worksheet.set_column(0, 1, 80)  # Action
         worksheet.conditional_format(1, 0, 1000, 10, {
             'type': 'formula',
             'criteria': '=MOD(ROW(),2)=0',
@@ -116,15 +109,19 @@ class ExcelReport:
 
     def _write_xlsx_header(self, worksheet: Worksheet):
         worksheet.set_row(0, 20, self.formats.header_row)
+
         worksheet.write(0, 0, str(_('Identifier')))
+        worksheet.set_column(0, 0, 10)
+
         worksheet.write(0, 1, str(_('Action')))
+        worksheet.set_column(1, len(self.report.fields) + 4, 80)
         column = 2
         for field in self.report.fields:
             for label in field.block.xlsx_column_labels(field.value):
                 worksheet.write(0, column, label)
                 column += 1
-        worksheet.write(0, column + 1, str(_('Marked as complete by')))
-        worksheet.write(0, column + 2, str(_('Marked as complete at')))
+        worksheet.write(0, column, str(_('Marked as complete by')))
+        worksheet.write(0, column + 1, str(_('Marked as complete at')))
 
     def _prepare_serialized_model_version(self, version):
         return dict(
