@@ -143,8 +143,11 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
-    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
-        return []
+    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+        pk = action.get('implementation_phase_id')
+        if pk is None:
+            return []
+        return [str(report.get_plan_object('implementation_phase', int(pk)))]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -174,7 +177,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
     @register_graphene_node
     class Value(graphene.ObjectType):
         class Meta:
-            name = 'ActionResponsiblePartyReportFieldBlock'
+            name = 'ActionResponsiblePartyReporteportValue'
             interfaces = (ReportValueInterface,)
 
         responsible_party = graphene.Field('actions.schema.ActionResponsiblePartyNode')
@@ -187,13 +190,25 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
         return None
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
-        return self.Value(
+        result = self.Value(
             field=field,
-            implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
+            responsible_party=self.value_for_action_snapshot(field.value, snapshot),
         )
+        return result
 
-    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
-        return []
+    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+        organization_id = None
+        try:
+            organization_id = next((
+                arp['data']['organization_id'] for arp in related_objects
+                if arp['type'] == ActionResponsibleParty and
+                arp['data'].get('action_id') == action['id'] and
+                arp['data'].get('role') == 'primary'
+            ))
+        except StopIteration:
+            return []
+        organization = report.get_plan_object('organization', organization_id)
+        return [organization.name]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -219,6 +234,7 @@ class ReportFieldBlock(blocks.StreamBlock):
     # TODO: action status
 
     graphql_types = [
-        ActionImplementationPhaseReportFieldBlock, ActionAttributeTypeReportFieldBlock,
+        ActionImplementationPhaseReportFieldBlock,
+        ActionAttributeTypeReportFieldBlock,
         ActionResponsiblePartyReportFieldBlock
     ]

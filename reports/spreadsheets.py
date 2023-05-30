@@ -3,6 +3,7 @@ import inspect
 from django.utils.translation import gettext_lazy as _
 
 from actions.models import Action
+from orgs.models import Organization
 from io import BytesIO
 
 import xlsxwriter
@@ -71,6 +72,7 @@ class ExcelReport:
     report: 'Report'
     workbook: xlsxwriter.Workbook
     formats: ExcelFormats
+    plan_current_related_objects: dict
 
     def __init__(self, report: 'Report'):
         self.report = report
@@ -78,7 +80,18 @@ class ExcelReport:
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
         self.formats = ExcelFormats(self.workbook)
 
+        self._initialize_plan_current_related_objects()
         self._initialize_formats()
+
+    def _initialize_plan_current_related_objects(self):
+        plan = self.report.type.plan
+        result = dict()
+        result['implementation_phase'] = {p.pk: p for p in plan.action_implementation_phases.all()}
+        result['organization'] = {p.pk: p for p in Organization.objects.available_for_plan(plan)}
+        self.plan_current_related_objects = result
+
+    def get_plan_object(self, model_name: str, pk: int):
+        return self.plan_current_related_objects.get(model_name, {}).get(pk)
 
     def generate_xlsx(self) -> bytes:
         workbook = self.workbook
@@ -87,7 +100,8 @@ class ExcelReport:
         self._write_xlsx_action_rows(workbook, worksheet)
         worksheet.autofit()
         # Set width of some columns explicitly
-        worksheet.set_column(0, 0, 80)  # Action
+        worksheet.set_column(0, 0, 10)  # Identifier
+        worksheet.set_column(0, 1, 80)  # Action
         worksheet.conditional_format(1, 0, 1000, 10, {
             'type': 'formula',
             'criteria': '=MOD(ROW(),2)=0',
@@ -102,8 +116,9 @@ class ExcelReport:
 
     def _write_xlsx_header(self, worksheet: Worksheet):
         worksheet.set_row(0, 20, self.formats.header_row)
-        worksheet.write(0, 0, str(_('Action')))
-        column = 1
+        worksheet.write(0, 0, str(_('Identifier')))
+        worksheet.write(0, 1, str(_('Action')))
+        column = 2
         for field in self.report.fields:
             for label in field.block.xlsx_column_labels(field.value):
                 worksheet.write(0, column, label)
@@ -113,7 +128,7 @@ class ExcelReport:
 
     def _prepare_serialized_model_version(self, version):
         return dict(
-            type=version.content_type.model_class,
+            type=version.content_type.model_class(),
             data=version.field_dict
         )
 
@@ -155,7 +170,9 @@ class ExcelReport:
         data: dict, row: int
     ):
         action = data['action']
-        action_name = str(Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})).replace("\n", " ")
+        action_identifier = action['data']['identifier']
+        action_obj = Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
+        action_name = action_obj.name.replace("\n", " ")
 
         # FIXME: Right now, we print the user who made the last change to the action, which may be different from
         # the user who marked the action as complete.
@@ -165,16 +182,15 @@ class ExcelReport:
             completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
 
         worksheet.set_row(row, 50, self.formats.all_rows)
-        worksheet.write(row, 0, action_name, self.formats.name)
-        column = 1
+        worksheet.write(row, 0, action_identifier)
+        worksheet.write(row, 1, action_name, self.formats.name)
+        column = 2
         for field in self.report.fields:
             values = field.block.extract_action_values(
-                self, field.value, action, data['related_objects']
+                self, field.value, action['data'], data['related_objects']
             )
-            # if isinstance(action_or_snapshot, ActionSnapshot):
-            #     values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
-            # else:
-            #     values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
+            if len(values) == 0:
+                column += 1
             for value in values:
                 # Add cell format only once per field and cache added formats
                 cell_format = self.formats.for_field(field)
