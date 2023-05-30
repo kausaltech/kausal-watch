@@ -176,7 +176,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return self.name
 
 
-@reversion.register()
+@reversion.register(follow=['categories'])
 class AttributeCategoryChoice(ClusterableModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
@@ -215,7 +215,7 @@ class AttributeChoice(models.Model):
         return str(self.choice)
 
 
-@reversion.register()
+@reversion.register(follow=['choice'])
 class AttributeChoiceWithText(models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE,
                        related_name='choice_with_text_attributes')

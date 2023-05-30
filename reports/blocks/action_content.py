@@ -4,16 +4,19 @@ from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Text
 from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
+import actions
 from actions.attributes import AttributeType
 from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel, ActionResponsibleParty
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from aplans.graphql_types import register_graphene_node
+
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 from reports.spreadsheets import ExcelReport
+from reports.utils import get_attribute_for_type_from_related_objects
 
 
 @register_streamfield_block
@@ -84,8 +87,17 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             attribute=attribute,
         )
 
-    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> Optional[Any]:
-        return []
+    def extract_action_values(
+            self,
+            report: ExcelReport,
+            block_value: dict,
+            action: dict,
+            related_objects: list[dict]) -> Optional[Any]:
+        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+        attribute_record = get_attribute_for_type_from_related_objects(int(action['id']), block_value['attribute_type'], related_objects)
+        if attribute_record is None:
+            return [None]
+        return wrapped_type.xlsx_values(attribute_record)
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     """Return the value for each of this attribute type's columns for the given action."""

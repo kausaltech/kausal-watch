@@ -126,18 +126,19 @@ class ExcelReport:
     def _prepare_serialized_model_version(self, version):
         return dict(
             type=version.content_type.model_class(),
-            data=version.field_dict
+            data=version.field_dict,
+            str=version.object_repr
         )
 
     def _prepare_serialized_report_data(self):
         row_data = []
         if self.report.is_complete:
             for snapshot in self.report.action_snapshots.all():
-                related_objects = snapshot.get_related_versions()
+                all_related_versions = snapshot.get_related_versions()
                 revision = snapshot.action_version.revision
                 row_data.append(dict(
                     action=self._prepare_serialized_model_version(snapshot.action_version),
-                    related_objects=[self._prepare_serialized_model_version(o) for o in related_objects],
+                    related_objects=[self._prepare_serialized_model_version(o) for o in all_related_versions],
                     completion={
                         'completed_at': revision.date_created,
                         'completed_by': revision.user
@@ -146,10 +147,10 @@ class ExcelReport:
             return row_data
 
         # Live report, not complete, although some actions might be
-        for action, related_objects, completion in self.report.get_live_action_versions():
+        for action, all_related_versions, completion in self.report.get_live_action_versions():
             row_data.append(dict(
                 action=self._prepare_serialized_model_version(action),
-                related_objects=[self._prepare_serialized_model_version(o) for o in related_objects],
+                related_objects=[self._prepare_serialized_model_version(o) for o in all_related_versions],
                 completion=completion
             ))
         return row_data
@@ -178,16 +179,15 @@ class ExcelReport:
         if completed_at is not None:
             completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
 
-        worksheet.set_row(row, 50, self.formats.all_rows)
+        worksheet.set_row(row, 80, self.formats.all_rows)
         worksheet.write(row, 0, action_identifier)
-        worksheet.write(row, 1, action_name, self.formats.name)
+        worksheet.write(row, 1, action_name)
         column = 2
         for field in self.report.fields:
             values = field.block.extract_action_values(
-                self, field.value, action['data'], data['related_objects']
+                self, field.value, action['data'],
+                data['related_objects'],
             )
-            if len(values) == 0:
-                column += 1
             for value in values:
                 # Add cell format only once per field and cache added formats
                 cell_format = self.formats.for_field(field)
