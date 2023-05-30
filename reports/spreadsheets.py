@@ -89,9 +89,6 @@ class ExcelReport:
         worksheet.autofit()
         # Set width of some columns explicitly
         worksheet.set_column(0, 0, 80)  # Action
-        worksheet.set_column(1, 1, 40)  # Marked as complete by #to end
-        worksheet.set_column(2, 2, 40)  # Marked as complete by
-
         worksheet.conditional_format(1, 0, 1000, 10, {
             'type': 'formula',
             'criteria': '=MOD(ROW(),2)=0',
@@ -107,13 +104,14 @@ class ExcelReport:
     def _write_xlsx_header(self, worksheet: Worksheet):
         worksheet.set_row(0, 20, self.formats.header_row)
         worksheet.write(0, 0, str(_('Action')))
-        worksheet.write(0, 1, str(_('Marked as complete by')))
-        worksheet.write(0, 2, str(_('Marked as complete at')))
-        column = 3
+        column = 1
         for field in self.report.fields:
             for label in field.block.xlsx_column_labels(field.value):
                 worksheet.write(0, column, label)
                 column += 1
+        worksheet.write(0, column + 1, str(_('Marked as complete by')))
+        worksheet.write(0, column + 2, str(_('Marked as complete at')))
+
 
     def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
         row = 1
@@ -157,11 +155,7 @@ class ExcelReport:
             completed_by = None
         worksheet.set_row(row, 50, self.formats.all_rows)
         worksheet.write(row, 0, action_name, self.formats.name)
-        if completed_by:
-            worksheet.write(row, 1, str(completed_by))
-        if completed_at:
-            worksheet.write(row, 2, completed_at, self.formats.date)
-        column = 3
+        column = 1
         for field in self.report.fields:
             if isinstance(action_or_snapshot, ActionSnapshot):
                 values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
@@ -172,6 +166,11 @@ class ExcelReport:
                 cell_format = self.formats.for_field(field)
                 worksheet.write(row, column, value, cell_format)
                 column += 1
+        if completed_by:
+            worksheet.write(row, column + 1, str(completed_by))
+        if completed_at:
+            worksheet.write(row, column + 2, completed_at, self.formats.date)
+
 
     def post_process(self):
         pass
