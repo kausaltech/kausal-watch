@@ -37,8 +37,7 @@ class MarkActionAsCompleteView(WMABaseView):
             return _("Undo marking action as complete")
 
     def check_action_permitted(self, user):
-        plan = user.get_active_admin_plan()
-        return user.is_general_admin_for_plan(plan)
+        return user.can_modify_action(self.action)
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):

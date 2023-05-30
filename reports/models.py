@@ -34,7 +34,7 @@ class ReportType(models.Model, PlanRelatedModel):
 
 
 @reversion.register()
-class Report(models.Model):
+class Report(models.Model, PlanRelatedModel):
     type = models.ForeignKey(ReportType, on_delete=models.PROTECT, related_name='reports')
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
@@ -64,6 +64,13 @@ class Report(models.Model):
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
+
+    def get_plans(self):
+        return [self.type.plan]
+
+    @classmethod
+    def filter_by_plan(cls, plan, qs):
+        return qs.filter(type__plan=plan)
 
     def to_xlsx(self):
         output = BytesIO()
