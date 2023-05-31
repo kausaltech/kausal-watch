@@ -597,7 +597,7 @@ class Plan(ClusterableModel):
             client = Client.objects.filter(name=client_name).first()
             if client is None:
                 client = Client.objects.create(name=client_name)
-                ClientPlan.objects.create(plan=plan, client=client)
+            ClientPlan.objects.create(plan=plan, client=client)
             if azure_ad_tenant_id:
                 client.azure_ad_tenant_id = azure_ad_tenant_id
                 client.save()
