@@ -158,7 +158,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
         pk = action.get('implementation_phase_id')
         if pk is None:
-            return []
+            return [None]
         return [str(report.get_plan_object('implementation_phase', int(pk)))]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
@@ -218,7 +218,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
                 arp['data'].get('role') == 'primary'
             ))
         except StopIteration:
-            return []
+            return [None]
         organization = report.get_plan_object('organization', organization_id)
         return [organization.name]
 
