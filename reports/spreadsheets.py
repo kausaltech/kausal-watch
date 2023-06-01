@@ -1,8 +1,9 @@
 import inspect
 
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext
 
-from actions.models import Action
+from actions.models import Action, ActionResponsibleParty
 from orgs.models import Organization
 from io import BytesIO
 
@@ -93,14 +94,15 @@ class ExcelReport:
         workbook = self.workbook
         worksheet = workbook.add_worksheet()
         self._write_xlsx_header(worksheet)
-        self._write_xlsx_action_rows(workbook, worksheet)
+        prepared_data = self._prepare_serialized_report_data()
+        self._write_xlsx_action_rows(workbook, worksheet, prepared_data)
         # Set width of some columns explicitly
         worksheet.conditional_format(1, 0, 1000, 10, {
             'type': 'formula',
             'criteria': '=MOD(ROW(),2)=0',
             'format': self.formats.odd_row
         })
-        self.post_process()
+        self.post_process(prepared_data)
         self.close()
         return self.output.getvalue()
 
@@ -146,7 +148,7 @@ class ExcelReport:
                 ))
             return row_data
 
-        # Live report, not complete, although some actions might be
+        # Live incomplete report, although some actions might be completed for report
         for action, all_related_versions, completion in self.report.get_live_action_versions():
             row_data.append(dict(
                 action=self._prepare_serialized_model_version(action),
@@ -155,10 +157,9 @@ class ExcelReport:
             ))
         return row_data
 
-    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
+    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, prepared_data: list):
         # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
         # also want to include the current state of actions for which there is no snapshot.
-        prepared_data = self._prepare_serialized_report_data()
         for i, data in enumerate(prepared_data):
             self._write_xlsx_action_row(worksheet, data, i + 1)
 
@@ -198,10 +199,59 @@ class ExcelReport:
         if completed_at:
             worksheet.write(row, column + 2, completed_at, self.formats.date)
 
-    def post_process(self):
-        pass
-        # pivot_worksheet = self.workbook.add_worksheet()
-        # return self.workbook
+    def _group_by_org_and_phase(self, data):
+        # TODO re-implement using proper data abstraction
+        counts = dict()
+        for row in data:
+            action = row['action']['data']
+            responsibles = [
+                r['str'].split('(')[0] for r in row['related_objects']
+                if r['type'] == ActionResponsibleParty and r['data']['action_id'] == action['id'] and
+                r['data']['role'] == 'primary'
+            ]
+            pk = action.get('implementation_phase_id')
+            phase = 'unknown'
+            r = 'unknown'
+            if pk is not None:
+                phase = str(self.get_plan_object('implementation_phase', int(pk)))
+            if len(responsibles) > 0:
+                r = responsibles[0]
+            counts.setdefault(r, {})
+            counts[r].setdefault(phase, 0)
+            counts[r][phase] = counts[r][phase] + 1
+        return counts
+
+    def post_process(self, prepared_data):
+        pivot_worksheet = self.workbook.add_worksheet()
+        chart = self.workbook.add_chart({'type': 'column'})
+        grouped1 = self._group_by_org_and_phase(prepared_data)
+        all_phases = set()
+        for v in grouped1.values():
+            for k in v.keys():
+                all_phases.add(k)
+        table_data = []
+        for org, group in grouped1.items():
+            row = [org]
+            for phase in all_phases:
+                row.append(group.get(phase, 0))
+            table_data.append(row)
+        table_data = sorted(table_data, key=lambda x: -(x[1] + x[2]))
+        pivot_worksheet.add_table(
+            1, 1, len(table_data), len(all_phases) + 1, {
+                'data': table_data,
+                'banded_rows': True,
+                'columns': [{'header': gettext('Organization')}] +
+                [{'header': phase} for phase in all_phases]
+            }
+        )
+        pivot_worksheet.autofit()
+        for i, phase in enumerate(all_phases):
+            chart.add_series(
+                {'categories': ['Sheet2', 2, 1, len(table_data), 1],
+                 'values': ['Sheet2', 2, 2 + i, len(table_data), 2 + i],
+                 'name': ['Sheet2', 1, 2 + i]}
+            )
+        pivot_worksheet.insert_chart('B' + str(len(table_data) + 2), chart)
 
     def _initialize_format(self, key, initializer):
         format = self.workbook.add_format()

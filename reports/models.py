@@ -85,7 +85,7 @@ class Report(models.Model, PlanRelatedModel):
         raise ValueError(_("The report is already marked as complete."))
 
     def get_live_action_versions(self):
-        """Returns similar action snapshots for an uncomplete report
+        """Returns similar action versions for an uncomplete report
         as would be saved to the database when completing a report.
         """
         if self.is_complete:
