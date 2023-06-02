@@ -1,5 +1,7 @@
 import pytest
 
+from actions import models
+
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, CategoryFactory, PlanFactory, ActionResponsiblePartyFactory,
     ActionStatusUpdateFactory, ActionTaskFactory, ImpactGroupActionFactory, MonitoringQualityPointFactory,
@@ -11,6 +13,9 @@ from indicators.tests.factories import (
 from people.tests.factories import (
     PersonFactory
 )
+
+
+from pprint import pprint as pr  # TODO remove
 
 
 @pytest.fixture
@@ -66,3 +71,15 @@ def actions_with_relations_factory():
         return draft_actions, public_actions
 
     return actions_with_relations
+
+
+#  @pytest.fixture(
+
+
+@pytest.fixture
+def plan_with_actions_with_attributes(plan, attribute_type_factory):
+    attribute_types = list()
+    for format in models.AttributeType.AttributeFormat:
+        at = attribute_type_factory(scope=plan, format=format, name=str(format.label))
+        attribute_types.append((at.format, at))
+    pr(attribute_types)

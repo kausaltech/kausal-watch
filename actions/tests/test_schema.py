@@ -17,11 +17,6 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def plan():
-    return PlanFactory()
-
-
-@pytest.fixture
 def category_type(plan):
     return CategoryTypeFactory(plan=plan)
 
