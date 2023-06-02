@@ -139,7 +139,8 @@ class PlanNode(DjangoNode):
     action_list_page = graphene.Field(get_action_list_page_node)
     category_type = graphene.Field('actions.schema.CategoryTypeNode', id=graphene.ID(required=True))
     category_types = graphene.List(
-        'actions.schema.CategoryTypeNode',
+        graphene.NonNull('actions.schema.CategoryTypeNode'),
+        required=True,
         usable_for_indicators=graphene.Boolean(),
         usable_for_actions=graphene.Boolean()
     )
@@ -792,7 +793,7 @@ class ActionNode(AttributesMixin, DjangoNode):
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
     categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID(), required=True)
-    contact_persons = graphene.List(graphene.NonNull('actions.schema.ActionContactPersonNode'))
+    contact_persons = graphene.List(graphene.NonNull('actions.schema.ActionContactPersonNode'), required=True)
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')

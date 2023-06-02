@@ -66,7 +66,8 @@ class Query(
     graphene.ObjectType
 ):
     plan_organizations = graphene.List(
-        orgs_schema.OrganizationNode, plan=graphene.ID(),
+        graphene.NonNull(orgs_schema.OrganizationNode),
+        plan=graphene.ID(),
         with_ancestors=graphene.Boolean(default_value=False),
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
