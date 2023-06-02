@@ -2,6 +2,12 @@ import pytest
 
 from actions import models
 
+from actions.models import AttributeType
+
+from actions.tests.factories import (
+    AttributeChoiceFactory, AttributeTextFactory, AttributeRichTextFactory, AttributeTypeFactory,
+    AttributeTypeChoiceOptionFactory, CategoryLevelFactory, CategoryTypeFactory
+)
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, CategoryFactory, PlanFactory, ActionResponsiblePartyFactory,
     ActionStatusUpdateFactory, ActionTaskFactory, ImpactGroupActionFactory, MonitoringQualityPointFactory,
@@ -16,6 +22,60 @@ from people.tests.factories import (
 
 
 from pprint import pprint as pr  # TODO remove
+
+
+@pytest.fixture
+def category_type(plan):
+    return CategoryTypeFactory(plan=plan)
+
+
+@pytest.fixture
+def attribute_type__text(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.TEXT)
+
+
+@pytest.fixture
+def attribute_type__rich_text(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.RICH_TEXT)
+
+
+@pytest.fixture
+def attribute_type__ordered_choice(category_type):
+    return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
+
+
+@pytest.fixture
+def attribute_type_choice_option(attribute_type__ordered_choice):
+    return AttributeTypeChoiceOptionFactory(type=attribute_type__ordered_choice)
+
+
+@pytest.fixture
+def attribute_text(attribute_type__text, category):
+    return AttributeTextFactory(type=attribute_type__text, content_object=category)
+
+
+@pytest.fixture
+def attribute_rich_text(attribute_type__rich_text, category):
+    return AttributeRichTextFactory(type=attribute_type__rich_text, content_object=category)
+
+
+@pytest.fixture
+def attribute_choice(attribute_type__ordered_choice, category, attribute_type_choice_option):
+    return AttributeChoiceFactory(
+        type=attribute_type__ordered_choice,
+        content_object=category,
+        choice=attribute_type_choice_option,
+    )
+
+
+@pytest.fixture
+def category(category_type):
+    return CategoryFactory(type=category_type)
+
+
+@pytest.fixture
+def category_level(category_type):
+    return CategoryLevelFactory(type=category_type)
 
 
 @pytest.fixture

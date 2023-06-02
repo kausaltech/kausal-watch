@@ -15,7 +15,6 @@ from pytest_factoryboy import LazyFixture, register
 from rest_framework.authtoken.models import Token
 
 from actions.tests import factories as actions_factories
-from actions.tests.fixtures import *  # noqa
 # from admin_site.tests import factories as admin_site_factories
 from content.tests import factories as content_factories
 from images.tests import factories as images_factories
