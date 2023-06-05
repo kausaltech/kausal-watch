@@ -148,7 +148,6 @@ INSTALLED_APPS = [
     'wagtailautocomplete',
     'generic_chooser',
     'wagtailorderable',
-    'admin_list_controls',
     'wagtailgeowidget',
 
     'modelcluster',

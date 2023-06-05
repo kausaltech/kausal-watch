@@ -272,16 +272,6 @@ class FormClassMixin:
         return edit_handler.bind_to_model(self.model_admin.model)
 
 
-class PersistIndexViewFiltersMixin:
-    def dispatch(self, request, *args, **kwargs):
-        result = super().dispatch(request, *args, **kwargs)
-        model = getattr(self, 'model_name')
-        if model is None:
-            return result
-        request.session[f'{model}_filter_querystring'] = super().get_query_string()
-        return result
-
-
 class PersistFiltersEditingMixin:
     def get_success_url(self):
         if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():

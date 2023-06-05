@@ -215,15 +215,6 @@ expects main contact as 3rd element in container */
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
     background-color: #0A5E43 !important;
 }
-
-.alc__root {
-    background-color: #0A5E43 !important;
-}
-
-.alc__block.own-action-filter label {
-    font-size: 80%;
-    color: white;
-}
 */
 
 /* Prevent wagtail dropdown button arrow pseudo

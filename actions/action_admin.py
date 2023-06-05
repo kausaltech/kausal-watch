@@ -1,10 +1,5 @@
 import json
 import logging
-from admin_list_controls.actions import SubmitForm, TogglePanel
-from admin_list_controls.components import (
-    Block, Button, Columns, Icon, Panel, Spacer, Summary
-)
-from admin_list_controls.filters import ChoiceFilter, RadioFilter
 from dal import autocomplete, forward as dal_forward
 from datetime import timedelta
 
@@ -24,7 +19,7 @@ from wagtail.contrib.modeladmin.views import IndexView
 from admin_site.wagtail import (
     AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, SafeLabelModelAdminMenuItem,
+    PlanRelatedPermissionHelper, SafeLabelModelAdminMenuItem,
     insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
@@ -216,169 +211,7 @@ class ActionCreateView(AplansCreateView):
                 self.instance.primary_org = default_org
 
 
-class ActionIndexView(PersistIndexViewFiltersMixin, IndexView):
-    def filter_by_person(self, queryset, value):
-        if not value:
-            return queryset
-
-        person = Person.objects.filter(id=value).first()
-        if person is not None:
-            qs = queryset.filter(contact_persons__person=person).distinct()
-            return qs
-        else:
-            return queryset.none()
-
-    def filter_by_organization(self, queryset, value):
-        try:
-            org = Organization.objects.get(id=value)
-        except Organization.DoesNotExist:
-            return queryset.none()
-        orgs = Organization.objects.filter(id=org.id) | org.get_descendants()
-        responsibilities = ActionResponsibleParty.objects.filter(organization__in=orgs).values_list('action', flat=True)
-        return queryset.filter(Q(primary_org__in=orgs) | Q(id__in=responsibilities))
-
-    def create_cat_filters(self, plan):
-        ct_filters = []
-        for ct in plan.category_types.filter(usable_for_actions=True).all():
-            def filter_by_cat(queryset, value):
-                if not value:
-                    return queryset
-
-                cat_with_kittens = set()
-
-                def add_cat(cat):
-                    cat_with_kittens.add(cat)
-                    for kitten in cat.children.all():
-                        add_cat(kitten)
-
-                cat = ct.categories.filter(id=value).first()
-                if not cat:
-                    return queryset.none()
-                add_cat(cat)
-                return queryset.filter(categories__in=cat_with_kittens).distinct()
-
-            choices = []
-
-            def add_cat_recursive(cat, level):
-                if cat.identifier[0].isdigit():
-                    id_str = '%s. ' % cat.identifier
-                else:
-                    id_str = ''
-                choice = (str(cat.id), '%s%s%s' % (' ' * level, id_str, cat.name))
-                choices.append(choice)
-                for child in cat.children.all():
-                    add_cat_recursive(child, level + 1)
-
-            for cat in ct.categories.filter(parent=None):
-                add_cat_recursive(cat, 0)
-
-            ct_filters.append(ChoiceFilter(
-                name='category_%s' % ct.identifier,
-                label=ct.name,
-                choices=choices,
-                apply_to_queryset=filter_by_cat,
-            ))
-        return ct_filters
-
-    def filter_own_action(self, queryset, value):
-        user = self.request.user
-        if value == 'modifiable':
-            return queryset.modifiable_by(user)
-        elif value == 'contact_person':
-            person = user.get_corresponding_person()
-            if person is None:
-                return queryset.none()
-            else:
-                return queryset.filter(contact_persons__person=person)
-        return queryset
-
-    def filter_last_updated(self, queryset, value):
-        if not value:
-            return queryset
-
-        start = end = None
-        if value.endswith('-'):
-            start = value.strip('-')
-        elif value.startswith('-'):
-            end = value.strip('-')
-        else:
-            start, end = value.split('-')
-
-        now = timezone.now()
-        if start:
-            queryset = queryset.filter(updated_at__lte=now - timedelta(days=int(start)))
-        if end:
-            queryset = queryset.filter(updated_at__gte=now - timedelta(days=int(end)))
-        return queryset
-
-    def build_list_controls(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        qs = Person.objects.filter(contact_for_actions__plan=plan).distinct()
-        person_choices = [(str(person.id), str(person)) for person in qs]
-        person_filter = ChoiceFilter(
-            name='contact_person',
-            label=gettext('Contact person'),
-            choices=person_choices,
-            apply_to_queryset=self.filter_by_person,
-        )
-        ct_filters = self.create_cat_filters(plan)
-
-        org_choices = [(str(org.id), str(org)) for org in Organization.objects.available_for_plan(plan)]
-        org_filter = ChoiceFilter(
-            name='organization',
-            label=gettext('Organization'),
-            choices=org_choices,
-            apply_to_queryset=self.filter_by_organization,
-        )
-
-        own_actions = RadioFilter(
-            name='own',
-            label=gettext('Own actions'),
-            choices=[
-                ('contact_person', gettext('Show only actions with me as a contact person')),
-                ('modifiable', gettext('Show only actions I can modify')),
-                (None, gettext('Show all actions')),
-            ],
-            apply_to_queryset=self.filter_own_action
-        )
-
-        updated_filter = RadioFilter(
-            name='last_updated',
-            label=gettext('By last updated'),
-            choices=[
-                (None, gettext('No filtering')),
-                ('-7', gettext('In the last 7 days')),
-                ('7-30', gettext('7–30 days ago')),
-                ('30-120', gettext('1–3 months ago')),
-                ('120-', gettext('More than 3 months ago')),
-            ],
-            apply_to_queryset=self.filter_last_updated,
-        )
-
-        return [
-            Columns(column_count=2)(
-                Block(extra_classes='own-action-filter')(own_actions),
-                Block(extra_classes='own-action-filter')(org_filter)
-            ),
-            Button(action=SubmitForm())(
-                Icon('icon icon-tick'),
-                gettext("Apply filters"),
-            ),
-            Button(action=[
-                TogglePanel(ref='filter_panel'),
-            ])(Icon('icon icon-list-ul'), gettext('Advanced filters')),
-            Panel(ref='filter_panel', collapsed=True)(
-                Columns()(person_filter),
-                Columns()(*ct_filters),
-                Spacer(),
-                Spacer(),
-                updated_filter,
-            ),
-            Summary(reset_label=gettext('Reset all'), search_query_label=gettext('Search')),
-        ]
-
+class ActionIndexView(IndexView):
     def get_page_title(self):
         plan = self.request.user.get_active_admin_plan()
         return plan.general_content.get_action_term_display_plural()
