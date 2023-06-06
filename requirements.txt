@@ -279,7 +279,7 @@ plotly==5.8.0
     # via -r requirements.in
 pluggy==1.0.0
     # via pytest
-polars==0.18.0
+polars[xlsx2csv]==0.18.0
     # via -r requirements.in
 polib==1.1.1
     # via wagtail-localize
@@ -490,6 +490,8 @@ wrapt==1.14.1
     # via deprecated
 xlrd==2.0.1
     # via tablib
+xlsx2csv==0.8.1
+    # via polars
 xlsxwriter==3.0.8
     # via
     #   -r requirements.in

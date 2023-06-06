@@ -259,7 +259,8 @@ class OptionalChoiceWithText(AttributeType):
     def xlsx_values(self, attribute) -> List[Any]:
         if not attribute:
             return [None, None]
-        return [str(attribute['choice_id']), attribute['text']]
+        attribute_data = attribute.get('data')
+        return [str(attribute_data['choice_id']), attribute_data['text']]
 
     def xlsx_column_labels(self) -> List[str]:
         return [
@@ -364,7 +365,7 @@ class Numeric(AttributeType):
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
-        return [attribute['value']]
+        return [attribute['data']['value']]
 
     def get_xlsx_cell_format(self) -> dict:
         return {'num_format': '#,##0.00'}

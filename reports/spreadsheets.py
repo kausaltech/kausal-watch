@@ -92,7 +92,7 @@ class ExcelReport:
 
     def generate_xlsx(self) -> bytes:
         workbook = self.workbook
-        worksheet = workbook.add_worksheet()
+        worksheet = workbook.add_worksheet(gettext('Actions'))
         self._write_xlsx_header(worksheet)
         prepared_data = self._prepare_serialized_report_data()
         self._write_xlsx_action_rows(workbook, worksheet, prepared_data)
@@ -222,7 +222,8 @@ class ExcelReport:
         return counts
 
     def post_process(self, prepared_data):
-        pivot_worksheet = self.workbook.add_worksheet()
+        sheet_name = gettext('Responsibilities')
+        pivot_worksheet = self.workbook.add_worksheet(sheet_name)
         chart = self.workbook.add_chart({'type': 'column'})
         grouped1 = self._group_by_org_and_phase(prepared_data)
         all_phases = set()
@@ -244,12 +245,12 @@ class ExcelReport:
                 [{'header': phase} for phase in all_phases]
             }
         )
-        pivot_worksheet.autofit()
+        # pivot_worksheet.autofit()
         for i, phase in enumerate(all_phases):
             chart.add_series(
-                {'categories': ['Sheet2', 2, 1, len(table_data), 1],
-                 'values': ['Sheet2', 2, 2 + i, len(table_data), 2 + i],
-                 'name': ['Sheet2', 1, 2 + i]}
+                {'categories': [sheet_name, 2, 1, len(table_data), 1],
+                 'values': [sheet_name, 2, 2 + i, len(table_data), 2 + i],
+                 'name': [sheet_name, 1, 2 + i]}
             )
         pivot_worksheet.insert_chart('B' + str(len(table_data) + 2), chart)
 
