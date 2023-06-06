@@ -222,6 +222,19 @@ class AttributeTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'AttributeText {i}')
 
 
+class AttributeNumericValueFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeNumericValue'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.NUMERIC)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    value = Sequence(lambda i: float(i/100))
+
+
 class AttributeRichTextFactory(DjangoModelFactory):
     class Meta:
         model = 'actions.AttributeRichText'
@@ -246,6 +259,20 @@ class AttributeChoiceFactory(DjangoModelFactory):
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
     choice = SubFactory(AttributeTypeChoiceOptionFactory)
+
+
+class AttributeChoiceWithTextFactory(DjangoModelFactory):
+    class Meta:
+        model = 'actions.AttributeChoiceWithText'
+        exclude = ['content_object']
+
+    type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    content_object = SubFactory(CategoryFactory)
+    content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
+    object_id = SelfAttribute('content_object.id')
+    choice = SubFactory(AttributeTypeChoiceOptionFactory)
+    text = Sequence(lambda i: f'AttributeChoiceText {i}')
 
 
 class CategoryLevelFactory(DjangoModelFactory):
