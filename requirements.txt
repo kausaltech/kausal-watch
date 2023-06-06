@@ -189,6 +189,8 @@ elasticsearch-dsl==7.4.0
     # via -r requirements.in
 et-xmlfile==1.1.0
     # via openpyxl
+exceptiongroup==1.1.1
+    # via pytest
 factory-boy==3.2.1
     # via
     #   -r requirements.in
@@ -277,6 +279,8 @@ plotly==5.8.0
     # via -r requirements.in
 pluggy==1.0.0
     # via pytest
+polars==0.18.0
+    # via -r requirements.in
 polib==1.1.1
     # via wagtail-localize
 promise==2.3
@@ -403,16 +407,15 @@ telepath==0.2
     # via wagtail
 tenacity==8.0.1
     # via plotly
-tinycss2==1.1.1
-    # via
-    #   -r requirements.in
-    #   cssselect2
-    #   svglib
+text-unidecode==1.3
+    # via graphene-django
+tinycss2==1.2.1
+    # via -r requirements.in
 tomli==2.0.1
     # via
     #   coverage
     #   pytest
-typing-extensions==4.2.0
+typing-extensions==4.4.0
     # via
     #   django-countries
     #   pytest-factoryboy
