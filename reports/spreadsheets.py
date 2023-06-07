@@ -1,3 +1,4 @@
+from pprint import pprint as pr
 import inspect
 
 from django.utils.translation import gettext_lazy as _
@@ -7,6 +8,7 @@ from actions.models import Action, ActionResponsibleParty
 from orgs.models import Organization
 from io import BytesIO
 
+import polars
 import xlsxwriter
 from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.format import Format
@@ -14,6 +16,12 @@ from xlsxwriter.format import Format
 import typing
 if typing.TYPE_CHECKING:
     from .models import Report
+
+
+LABEL_IDENTIFIER = gettext('Identifier')
+LABEL_ACTION_NAME = gettext('Action')
+LABEL_COMPLETED_BY = gettext('Marked as complete by'),
+LABEL_COMPLETED_AT = gettext('Marked as complete at')
 
 
 class ExcelFormats(dict):
@@ -93,18 +101,21 @@ class ExcelReport:
     def generate_xlsx(self) -> bytes:
         workbook = self.workbook
         worksheet = workbook.add_worksheet(gettext('Actions'))
-        self._write_xlsx_header(worksheet)
+        # self._write_xlsx_header(worksheet)
         prepared_data = self._prepare_serialized_report_data()
-        self._write_xlsx_action_rows(workbook, worksheet, prepared_data)
+        df = self.create_populated_actions_dataframe(prepared_data)
+        print(df)
+        # self._write_xlsx_action_rows(workbook, worksheet, prepared_data)
         # Set width of some columns explicitly
-        worksheet.conditional_format(1, 0, 1000, 10, {
-            'type': 'formula',
-            'criteria': '=MOD(ROW(),2)=0',
-            'format': self.formats.odd_row
-        })
-        self.post_process(prepared_data)
-        self.close()
-        return self.output.getvalue()
+        # worksheet.conditional_format(1, 0, 1000, 10, {
+        #     'type': 'formula',
+        #     'criteria': '=MOD(ROW(),2)=0',
+        #     'format': self.formats.odd_row
+        # })
+        # self.post_process(prepared_data)
+        # self.close()
+        # return self.output.getvalue()
+        return None
 
     def close(self):
         self.workbook.close()
@@ -198,6 +209,45 @@ class ExcelReport:
             worksheet.write(row, column + 1, str(completed_by))
         if completed_at:
             worksheet.write(row, column + 2, completed_at, self.formats.date)
+
+    def create_populated_actions_dataframe(
+            self,
+            all_actions: list
+    ):
+        data = {}
+
+        def append_to_key(key, value):
+            data.setdefault(key, []).append(value)
+
+        for action_row in all_actions:
+            action = action_row['action']
+            action_identifier = action['data']['identifier']
+            action_obj = Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
+            action_name = action_obj.name.replace("\n", " ")
+
+            # FIXME: Right now, we print the user who made the last change to the action, which may be different from
+            # the user who marked the action as complete.
+            completed_by = action_row['completion']['completed_by']
+            completed_at = action_row['completion']['completed_at']
+            if completed_at is not None:
+                completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
+            append_to_key(LABEL_IDENTIFIER, action_identifier)
+            append_to_key(LABEL_ACTION_NAME, action_name)
+            for field in self.report.fields:
+                labels = field.block.xlsx_column_labels(field.value)
+                values = field.block.extract_action_values(
+                    self, field.value, action['data'],
+                    action_row['related_objects'],
+                )
+                assert len(labels) == len(values)
+                for label, value in zip(labels, values):
+                    #  cell_format = self.formats.for_field(field)  # TODO
+                    append_to_key(label, value)
+            if completed_by:
+                append_to_key(LABEL_COMPLETED_BY, completed_by)
+            if completed_at:
+                append_to_key(LABEL_COMPLETED_AT, completed_at)
+        return polars.DataFrame(data)
 
     def _group_by_org_and_phase(self, data):
         # TODO re-implement using proper data abstraction
