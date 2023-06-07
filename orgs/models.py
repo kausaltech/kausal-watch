@@ -248,6 +248,8 @@ class Organization(index.Indexed, Node, gis_models.Model):
         index.AutocompleteField('abbreviation', partial_match=True),
     ]
 
+    MODEL_ADMIN_CLASS = 'orgs.wagtail_admin.OrganizationAdmin'  # for AdminButtonsMixin
+
     @property
     def parent(self):
         return self.get_parent()

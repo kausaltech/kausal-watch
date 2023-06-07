@@ -1,10 +1,13 @@
 import graphene
+from django.db.models import Model
+from django.utils.module_loading import import_string
 from graphene_django.forms.mutation import DjangoModelFormMutation
 from graphql import GraphQLResolveInfo
 from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
-from .graphql_types import AuthenticatedUserNode
+from .graphql_types import AdminButton, AuthenticatedUserNode, GQLInfo
+from admin_site.wagtail import PlanRelatedPermissionHelper
 
 
 def collect_fields(node, fragments):
@@ -112,3 +115,22 @@ class DeleteModelInstanceMutation(graphene.Mutation, AuthenticatedUserNode):
         obj = cls.model.objects.get(pk=id)
         obj.delete()
         return cls(ok=True)
+
+
+class AdminButtonsMixin:
+    admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
+
+    @staticmethod
+    def resolve_admin_buttons(root: Model, info: GQLInfo):
+        ModelAdmin = import_string(root.MODEL_ADMIN_CLASS)
+
+        if not info.context.user.is_staff:
+            return []
+        adm = ModelAdmin()
+        index_view = adm.index_view_class(adm)
+        helper_class = adm.get_button_helper_class()
+        helper = helper_class(index_view, info.context)
+        if isinstance(helper.permission_helper, PlanRelatedPermissionHelper):
+            helper.permission_helper.disable_admin_plan_check()
+        buttons = helper.get_buttons_for_obj(root)
+        return buttons

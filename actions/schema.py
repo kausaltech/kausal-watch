@@ -30,10 +30,9 @@ from actions.models import (
 from actions.action_status_summary import (
     ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, Sentiment, Comparison
 )
-from admin_site.wagtail import PlanRelatedPermissionHelper
 from orgs.models import Organization
 from users.models import User
-from aplans.graphql_helpers import UpdateModelInstanceMutation
+from aplans.graphql_helpers import AdminButtonsMixin, UpdateModelInstanceMutation
 from aplans.graphql_types import (
     DjangoNode,
     GQLInfo,
@@ -732,14 +731,6 @@ class ActionTaskNode(DjangoNode):
         return RichText(comment)
 
 
-class AdminButton(graphene.ObjectType):
-    url = graphene.String(required=True)
-    label = graphene.String(required=True)
-    classname = graphene.String(required=True)
-    title = graphene.String(required=False)
-    target = graphene.String(required=False)
-
-
 ActionStatusSummaryIdentifierNode = graphene.Enum.from_enum(ActionStatusSummaryIdentifier)
 ActionTimelinessIdentifierNode = graphene.Enum.from_enum(ActionTimelinessIdentifier)
 Sentiment = graphene.Enum.from_enum(Sentiment)
@@ -788,7 +779,7 @@ def _get_visible_actions(root, field_name, user: Optional[User]):
 
 
 @register_django_node
-class ActionNode(AttributesMixin, DjangoNode):
+class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
@@ -800,27 +791,12 @@ class ActionNode(AttributesMixin, DjangoNode):
     view_url = graphene.String(client_url=graphene.String(required=False), required=True)
     edit_url = graphene.String()
     similar_actions = graphene.List('actions.schema.ActionNode')
-    admin_buttons = graphene.List(graphene.NonNull(AdminButton), required=True)
     status_summary = graphene.Field('actions.schema.ActionStatusSummaryNode', required=True)
     timeliness = graphene.Field('actions.schema.ActionTimelinessNode', required=True)
 
     class Meta:
         model = Action
         fields = Action.public_fields
-
-    def resolve_admin_buttons(root: Action, info: GQLInfo):
-        from actions.action_admin import ActionAdmin
-
-        if not info.context.user.is_staff:
-            return []
-        adm = ActionAdmin()
-        index_view = adm.index_view_class(adm)
-        helper_class = adm.get_button_helper_class()
-        helper = helper_class(index_view, info.context)
-        if isinstance(helper.permission_helper, PlanRelatedPermissionHelper):
-            helper.permission_helper.disable_admin_plan_check()
-        buttons = helper.get_buttons_for_obj(root)
-        return buttons
 
     @staticmethod
     def resolve_merged_with(root: Action, info):

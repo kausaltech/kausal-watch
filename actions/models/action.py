@@ -307,6 +307,8 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             ('admin_action', _("Can administrate all actions")),
         )
 
+    MODEL_ADMIN_CLASS = 'actions.action_admin.ActionAdmin'  # for AdminButtonsMixin
+
     def __str__(self):
         s = ''
         if self.plan is not None and self.plan.features.has_action_identifiers:
