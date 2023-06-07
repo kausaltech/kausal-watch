@@ -1,7 +1,9 @@
 from actions.models.plan import PlanQuerySet
 import graphene
 import graphene_django_optimizer as gql_optimizer
-from aplans.graphql_helpers import CreateModelInstanceMutation, DeleteModelInstanceMutation, UpdateModelInstanceMutation
+from aplans.graphql_helpers import (
+    AdminButtonsMixin, CreateModelInstanceMutation, DeleteModelInstanceMutation, UpdateModelInstanceMutation,
+)
 from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, GQLInfo, register_django_node
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
@@ -25,7 +27,7 @@ class OrganizationClassNode(DjangoNode):
 
 
 @register_django_node
-class OrganizationNode(DjangoNode):
+class OrganizationNode(AdminButtonsMixin, DjangoNode):
     ancestors = graphene.List(lambda: OrganizationNode)
     descendants = graphene.List(lambda: OrganizationNode)
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)

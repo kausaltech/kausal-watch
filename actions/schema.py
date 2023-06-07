@@ -33,7 +33,7 @@ from actions.action_status_summary import (
 )
 from orgs.models import Organization
 from users.models import User
-from aplans.graphql_helpers import UpdateModelInstanceMutation
+from aplans.graphql_helpers import AdminButtonsMixin, UpdateModelInstanceMutation
 from aplans.graphql_types import (
     DjangoNode,
     GQLInfo,
@@ -769,7 +769,7 @@ def _get_visible_actions(root, field_name, user: Optional[User]):
 
 
 @register_django_node
-class ActionNode(AttributesMixin, DjangoNode):
+class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
 
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
