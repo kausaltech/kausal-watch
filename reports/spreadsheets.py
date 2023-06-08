@@ -1,21 +1,21 @@
 from pprint import pprint as pr
 import inspect
 
-from django.utils.translation import gettext_lazy as _
 from django.utils.translation import gettext
 
 from actions.models import Action, ActionResponsibleParty
 from orgs.models import Organization
+
 from io import BytesIO
 
 import polars
 import xlsxwriter
-from xlsxwriter.worksheet import Worksheet
 from xlsxwriter.format import Format
 
 import typing
 if typing.TYPE_CHECKING:
     from .models import Report
+    from reports.blocks.action_content import ReportFieldBlock
 
 
 LABEL_IDENTIFIER = gettext('Identifier')
@@ -62,14 +62,17 @@ class ExcelFormats(dict):
     def __getattr__(self, name):
         return self[name]
 
-    def for_field(self, field):
+    def set_for_field(self, field: 'ReportFieldBlock', labels: list) -> None:
         cell_format = self._formats_for_fields.get(field.id)
         if not cell_format:
             cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
             cell_format = self.workbook.add_format(cell_format_specs)
             self.StyleSpecifications.all_rows(cell_format)
-            self._formats_for_fields[field.id] = cell_format
-        return cell_format
+            for label in labels:
+                self._formats_for_fields[label] = cell_format
+
+    def get_for_label(self, label):
+        return self._formats_for_fields.get(label)
 
 
 class ExcelReport:
@@ -81,6 +84,7 @@ class ExcelReport:
 
     def __init__(self, report: 'Report'):
         self.report = report
+
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
         self.formats = ExcelFormats(self.workbook)
@@ -99,42 +103,37 @@ class ExcelReport:
         return self.plan_current_related_objects.get(model_name, {}).get(pk)
 
     def generate_xlsx(self) -> bytes:
-        workbook = self.workbook
-        worksheet = workbook.add_worksheet(gettext('Actions'))
-        # self._write_xlsx_header(worksheet)
         prepared_data = self._prepare_serialized_report_data()
-        df = self.create_populated_actions_dataframe(prepared_data)
-        print(df)
-        # self._write_xlsx_action_rows(workbook, worksheet, prepared_data)
-        # Set width of some columns explicitly
-        # worksheet.conditional_format(1, 0, 1000, 10, {
-        #     'type': 'formula',
-        #     'criteria': '=MOD(ROW(),2)=0',
-        #     'format': self.formats.odd_row
-        # })
+        actions_df = self.create_populated_actions_dataframe(prepared_data)
+        worksheet = self._write_actions_sheet(actions_df)
+
+        worksheet.conditional_format(1, 0, 1000, 10, {
+            'type': 'formula',
+            'criteria': '=MOD(ROW(),2)=0',
+            'format': self.formats.odd_row
+        })
         # self.post_process(prepared_data)
-        # self.close()
-        # return self.output.getvalue()
-        return None
+        self.close()
+        return self.output.getvalue()
+
+    def _write_actions_sheet(self, df: polars.DataFrame):
+        worksheet = self.workbook.add_worksheet(gettext('Actions'))
+
+        # Header row
+        worksheet.write_row(0, 0, df.columns)
+
+        # Data rows
+        for i, row in enumerate(df.iter_rows()):
+            worksheet.write_row(i + 1, 0, row)
+            worksheet.set_row(i + 1, 80, self.formats.all_rows)
+        for i, label in enumerate(df.columns):
+            worksheet.set_column(i, i, 80, self.formats.get_for_label(label))
+        worksheet.set_column(0, 0, 10)
+        worksheet.set_row(0, 20, self.formats.header_row)
+        return worksheet
 
     def close(self):
         self.workbook.close()
-
-    def _write_xlsx_header(self, worksheet: Worksheet):
-        worksheet.set_row(0, 20, self.formats.header_row)
-
-        worksheet.write(0, 0, str(_('Identifier')))
-        worksheet.set_column(0, 0, 10)
-
-        worksheet.write(0, 1, str(_('Action')))
-        worksheet.set_column(1, len(self.report.fields) + 4, 80)
-        column = 2
-        for field in self.report.fields:
-            for label in field.block.xlsx_column_labels(field.value):
-                worksheet.write(0, column, label)
-                column += 1
-        worksheet.write(0, column, str(_('Marked as complete by')))
-        worksheet.write(0, column + 1, str(_('Marked as complete at')))
 
     def _prepare_serialized_model_version(self, version):
         return dict(
@@ -168,48 +167,6 @@ class ExcelReport:
             ))
         return row_data
 
-    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, prepared_data: list):
-        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
-        # also want to include the current state of actions for which there is no snapshot.
-        for i, data in enumerate(prepared_data):
-            self._write_xlsx_action_row(worksheet, data, i + 1)
-
-    def _write_xlsx_action_row(
-        self,
-        worksheet: xlsxwriter.Workbook.worksheet_class,
-        data: dict, row: int
-    ):
-        action = data['action']
-        action_identifier = action['data']['identifier']
-        action_obj = Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
-        action_name = action_obj.name.replace("\n", " ")
-
-        # FIXME: Right now, we print the user who made the last change to the action, which may be different from
-        # the user who marked the action as complete.
-        completed_by = data['completion']['completed_by']
-        completed_at = data['completion']['completed_at']
-        if completed_at is not None:
-            completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
-
-        worksheet.set_row(row, 80, self.formats.all_rows)
-        worksheet.write(row, 0, action_identifier)
-        worksheet.write(row, 1, action_name)
-        column = 2
-        for field in self.report.fields:
-            values = field.block.extract_action_values(
-                self, field.value, action['data'],
-                data['related_objects'],
-            )
-            for value in values:
-                # Add cell format only once per field and cache added formats
-                cell_format = self.formats.for_field(field)
-                worksheet.write(row, column, value, cell_format)
-                column += 1
-        if completed_by:
-            worksheet.write(row, column + 1, str(completed_by))
-        if completed_at:
-            worksheet.write(row, column + 2, completed_at, self.formats.date)
-
     def create_populated_actions_dataframe(
             self,
             all_actions: list
@@ -227,8 +184,9 @@ class ExcelReport:
 
             # FIXME: Right now, we print the user who made the last change to the action, which may be different from
             # the user who marked the action as complete.
-            completed_by = action_row['completion']['completed_by']
-            completed_at = action_row['completion']['completed_at']
+            completion = action_row['completion']
+            completed_by = completion['completed_by']
+            completed_at = completion['completed_at']
             if completed_at is not None:
                 completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
             append_to_key(LABEL_IDENTIFIER, action_identifier)
@@ -240,8 +198,8 @@ class ExcelReport:
                     action_row['related_objects'],
                 )
                 assert len(labels) == len(values)
+                self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
-                    #  cell_format = self.formats.for_field(field)  # TODO
                     append_to_key(label, value)
             if completed_by:
                 append_to_key(LABEL_COMPLETED_BY, completed_by)
