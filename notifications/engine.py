@@ -1,4 +1,5 @@
 from datetime import timedelta
+from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db.models import Q
 from django.utils import translation
@@ -237,7 +238,7 @@ class NotificationEngine:
         for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
 
-        from_address = base_template.from_address or 'noreply@kausal.tech'
+        from_address = base_template.from_address or settings.DEFAULT_FROM_EMAIL or 'noreply@kausal.tech'
         from_name = base_template.from_name or 'Kausal'
         email_from = '%s <%s>' % (from_name, from_address)
         reply_to = [base_template.reply_to] if base_template.reply_to else None
