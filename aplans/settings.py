@@ -49,6 +49,8 @@ env = environ.FileAwareEnv(
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
+    MAILJET_API_KEY=(str, ''),
+    MAILJET_SECRET_KEY=(str, ''),
     SENDGRID_API_KEY=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
@@ -452,6 +454,11 @@ if env.str('MAILGUN_API_KEY'):
 if env.str('SENDGRID_API_KEY'):
     EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
     ANYMAIL['SENDGRID_API_KEY'] = env.str('SENDGRID_API_KEY')
+
+if env.str('MAILJET_API_KEY'):
+    EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
+    ANYMAIL['MAILJET_API_KEY'] = env.str('MAILJET_API_KEY')
+    ANYMAIL['MAILJET_SECRET_KEY'] = env.str('MAILJET_SECRET_KEY')
 
 # ckeditor for rich-text admin fields
 CKEDITOR_CONFIGS = {
