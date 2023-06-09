@@ -35,8 +35,9 @@ env = environ.FileAwareEnv(
     STATIC_URL=(str, '/static/'),
     SENTRY_DSN=(str, ''),
     COOKIE_PREFIX=(str, 'aplans'),
-    SERVER_EMAIL=(str, 'noreply@ilmastovahti.fi'),
-    DEFAULT_FROM_EMAIL=(str, 'noreply@ilmastovahti.fi'),
+    ALLOWED_SENDER_EMAILS=(list, []),
+    SERVER_EMAIL=(str, ''),
+    DEFAULT_FROM_EMAIL=(str, ''),
     INTERNAL_IPS=(list, []),
     OIDC_ISSUER_URL=(str, ''),
     OIDC_CLIENT_ID=(str, ''),
@@ -95,8 +96,13 @@ ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
 
 SECRET_KEY = env('SECRET_KEY')
 
+ALLOWED_SENDER_EMAILS = env('ALLOWED_SENDER_EMAILS')
 SERVER_EMAIL = env('SERVER_EMAIL')
+if not SERVER_EMAIL and ALLOWED_SENDER_EMAILS:
+    SERVER_EMAIL = ALLOWED_SENDER_EMAILS[0]
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+if not DEFAULT_FROM_EMAIL and ALLOWED_SENDER_EMAILS:
+    DEFAULT_FROM_EMAIL = ALLOWED_SENDER_EMAILS[0]
 
 SITE_ID = 1
 
