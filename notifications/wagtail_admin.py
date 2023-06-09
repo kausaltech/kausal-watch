@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.forms import Select
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from wagtail.admin.edit_handlers import (
@@ -66,7 +68,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
     def get_edit_handler(self, instance, request):
         additional_panels = []
         if request.user.is_superuser:
-            additional_panels.append(FieldPanel('from_address'))
+            choices = [(email, email) for email in settings.ALLOWED_SENDER_EMAILS]
+            additional_panels.append(FieldPanel('from_address', widget=Select(choices=choices)))
             additional_panels.append(FieldPanel('brand_dark_color'))
             additional_panels.append(FieldPanel('logo'))
             additional_panels.append(FieldPanel('font_family'))
