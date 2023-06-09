@@ -111,6 +111,9 @@ SITE_ID = 1
 # Application definition
 
 INSTALLED_APPS = [
+    # makemigration_context is used to track whether
+    # model code is being executed by the makemigrations management command
+    'makemigration_context',
     'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
