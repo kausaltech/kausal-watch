@@ -32,10 +32,6 @@ class PlanEditHandler(TabbedInterface):
     instance: Plan
     form: ModelForm
 
-    def get_form_class(self, request=None, instance=None):
-        form_class = super().get_form_class()
-        return form_class
-
     def on_form_bound(self):
         super().on_form_bound()
         plan = self.instance
@@ -107,10 +103,6 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('begins_at'),
         FieldPanel('ends_at'),
     ]
-
-    def get_form_class(self, request=None, instance=None):
-        form_class = super().get_form_class()
-        return form_class
 
     def get_edit_handler(self):
         request = ctx_request.get()

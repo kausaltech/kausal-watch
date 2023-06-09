@@ -221,9 +221,6 @@ class AplansButtonHelper(ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
-    def get_form_class(self, request=None, instance=None):
-        return super().get_form_class()
-
     def get_bound_panel(self, instance=None, request: WatchAdminRequest | None = None, form=None, prefix="panel"):
         if request is not None:
             plan = request.get_active_admin_plan()
@@ -248,28 +245,6 @@ class AplansTabbedInterface(TabbedInterface):
                     self.children.remove(child)
 
         super().on_request_bound()
-
-
-class FormClassMixin:
-    request: WatchAdminRequest
-    instance: Model
-    model_admin: ModelAdmin
-
-    def get_form_class(self):
-        handler = self.get_edit_handler()
-        if isinstance(handler, AplansTabbedInterface):
-            return handler.get_form_class(self.request, getattr(self, 'instance', None))
-        else:
-            return handler.get_form_class()
-
-    def get_edit_handler(self):
-        try:
-            edit_handler = self.model_admin.get_edit_handler()
-        except TypeError:
-            edit_handler = self.model_admin.get_edit_handler(
-                instance=getattr(self, 'instance', None), request=self.request,
-            )
-        return edit_handler.bind_to_model(self.model_admin.model)
 
 
 class PersistFiltersEditingMixin:
@@ -377,8 +352,10 @@ class SetInstanceMixin:
             return super().dispatch(*args, **kwargs)
 
 
-class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, SetInstanceMixin, EditView):
+class AplansEditView(
+    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin,
+        SetInstanceMixin, EditView
+):
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)
@@ -443,8 +420,9 @@ class ActivePlanEditView(SuccessUrlEditPageMixin, AplansEditView):
         return super().form_valid(form)
 
 
-class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                       PlanRelatedViewMixin, SetInstanceMixin, CreateView):
+class AplansCreateView(
+    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, SetInstanceMixin, CreateView
+):
     request: WatchAdminRequest
 
     def initialize_instance(self, request):

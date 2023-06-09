@@ -145,7 +145,9 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
 
 class CategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None, instance: CommonCategory | None = None):
+    def get_form_class(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         user = request.user
         if instance is not None:
             attribute_types = instance.get_editable_attribute_types(user)
@@ -179,7 +181,7 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None, instance: CommonCategory | None = None):
+    def get_form_class(self):
         form_class = super().get_form_class()
         common_field = form_class.base_fields.get('common')
         # The field should be displayed if and only if editing an instance that has a common category type. If it is,
@@ -499,7 +501,8 @@ class CommonCategoryAdminMenuItem(ModelAdminMenuItem):
 
 
 class CommonCategoryEditHandler(AplansTabbedInterface):
-    def get_form_class(self, request=None, instance: CommonCategory | None = None):
+    def get_form_class(self):
+        instance = ctx_instance.get()
         form_class = super().get_form_class()
         if instance and instance.pk:
             form_class.base_fields['identifier'].disabled = True

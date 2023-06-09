@@ -288,14 +288,14 @@ class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
 
 
 class IndicatorEditHandler(AplansTabbedInterface):
-    instance: Indicator
-
-    def get_form_class(self, request: Optional[WatchAdminRequest] = None):
+    def get_form_class(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Indicator, self.instance, with_initial=True)
+            cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
         else:
             cat_fields = {}
 
