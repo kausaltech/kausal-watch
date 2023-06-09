@@ -90,6 +90,8 @@ class Query(
                 query |= Q(responsible_actions__action__plan=plan_obj)
             if for_contact_persons:
                 query |= Q(people__contact_for_actions__plan=plan_obj)
+            if not query and not info.context.user.is_authenticated:
+                raise GraphQLError("Unfiltered organization list only available when authenticated")
             qs = qs.filter(query)
         qs = qs.distinct()
 
