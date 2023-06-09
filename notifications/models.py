@@ -47,12 +47,14 @@ class NotificationType(Enum):
     def verbose_name(self):
         return self.value
 
+
 ACTION_NOTIFICATION_TYPES = {
     NotificationType.TASK_LATE,
     NotificationType.TASK_DUE_SOON,
     NotificationType.ACTION_NOT_UPDATED,
     NotificationType.NOT_ENOUGH_TASKS,
 }
+
 
 INDICATOR_NOTIFICATION_TYPES = {
     NotificationType.UPDATED_INDICATOR_VALUES_LATE,
@@ -116,7 +118,7 @@ class SentNotification(models.Model):
             models.CheckConstraint(
                 check=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
                 name='person_xor_email',
-           )
+            )
         ]
 
     def __str__(self):
@@ -207,7 +209,9 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         DO_NOT_SEND = '', _('Do not send to contact persons')
         CONTACT_PERSONS = 'cp', _('Send to contact persons')
         CONTACT_PERSONS_THEN_ORG_ADMINS = 'cp-oa', _('Send to contact persons; fallback: organization admins')
-        CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS = 'cp-oa-pa', _('Send to contact persons; fallback: organization admins, plan admins')
+        CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS = 'cp-oa-pa', _(
+            'Send to contact persons; fallback: organization admins, plan admins'
+        )
 
     send_to_contact_persons = models.CharField(
         max_length=50, verbose_name=_('send to contact persons'), blank=True,
@@ -228,9 +232,8 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
                     | (~Q(custom_email='') & Q(send_to_custom_email=True))
                 ),
                 name='custom_email_iff_send_to_custom_email',
-           )
+            )
         ]
-
 
     def __str__(self):
         for val in NotificationType:
