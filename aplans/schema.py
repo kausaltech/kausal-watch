@@ -95,7 +95,7 @@ class Query(
 
         if with_ancestors:
             if plan is None:
-                raise GraphQLError("withAncestors can only be used when 'plan' is set", [info])
+                raise GraphQLError("withAncestors can only be used when 'plan' is set")
             qs = mp_node_get_ancestors(qs, include_self=True)
 
         selections = get_fields(info)

@@ -106,11 +106,11 @@ class Query:
     ):
         if ((query is not None and autocomplete is not None) or
                 (query is None and autocomplete is None)):
-            raise GraphQLError("You must supply either query or autocomplete", [info])
+            raise GraphQLError("You must supply either query or autocomplete")
 
         plan_obj: Optional[Plan] = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
-            raise GraphQLError("Plan %s not found" % plan, [info])
+            raise GraphQLError("Plan %s not found" % plan)
         related_plans = plan_obj.get_all_related_plans().all()
         if plan_obj.is_live():
             # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site

@@ -247,7 +247,7 @@ class PlanNode(DjangoNode):
             try:
                 urlparse(client_url)
             except Exception:
-                raise GraphQLError('clientUrl must be a valid URL', [info])
+                raise GraphQLError('clientUrl must be a valid URL')
         return self.get_view_url(client_url=client_url)
 
     def resolve_admin_url(self: Plan, info):
@@ -990,7 +990,7 @@ class Query:
 
     def resolve_plan(self, info, id=None, domain=None, **kwargs):
         if not id and not domain:
-            raise GraphQLError("You must supply either id or domain as arguments to 'plan'", [info])
+            raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
 
         qs = Plan.objects.all()
         if id:
@@ -1052,7 +1052,7 @@ class Query:
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
         if identifier and not plan:
-            raise GraphQLError("You must supply the 'plan' argument when using 'identifier'", [info])
+            raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
         qs = Action.objects.visible_for_user(info.context.user).all()
         if obj_id:

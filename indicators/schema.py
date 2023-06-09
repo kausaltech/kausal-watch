@@ -292,14 +292,14 @@ class Query:
         plan = kwargs.get('plan')
 
         if not identifier and not obj_id:
-            raise GraphQLError("You must supply either 'id' or 'identifier'", [info])
+            raise GraphQLError("You must supply either 'id' or 'identifier'")
 
         qs = Indicator.objects.all()
         if obj_id:
             try:
                 obj_id = int(obj_id)
             except ValueError:
-                raise GraphQLError("Invalid 'id'", [info])
+                raise GraphQLError("Invalid 'id'")
             qs = qs.filter(id=obj_id)
 
         if plan:

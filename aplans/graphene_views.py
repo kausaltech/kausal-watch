@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 class APITokenMiddleware:
     # def authenticate_user(self, info):
-    #     raise GraphQLError('Token not found', [info])
+    #     raise GraphQLError('Token not found')
 
     def process_auth_directive(self, info: GraphQLResolveInfo, directive: DirectiveNode):
         user = None
@@ -79,7 +79,7 @@ class APITokenMiddleware:
         gt = getattr(rt, 'graphene_type', None)
         if gt and issubclass(gt, AuthenticatedUserNode):
             if not getattr(context, 'user', None):
-                raise GraphQLAuthRequiredError("Authentication required", [info])
+                raise GraphQLAuthRequiredError("Authentication required")
         return next(root, info, **kwargs)
 
 
@@ -93,7 +93,7 @@ class LocaleMiddleware:
                 else:
                     lang = arg.value.value
                 if lang.lower() not in SUPPORTED_LANGUAGES:
-                    raise GraphQLError("unsupported language: %s" % lang, [info])
+                    raise GraphQLError("unsupported language: %s" % lang)
                 info.context._graphql_query_language = lang
                 return lang
 
