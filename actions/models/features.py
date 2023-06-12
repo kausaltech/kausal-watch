@@ -35,8 +35,8 @@ class PlanFeatures(models.Model):
         help_text=_("Set if the plan uses the lead paragraph field")
     )
     has_action_primary_orgs = models.BooleanField(
-        default=False, verbose_name=_('Has primary organisations for actions'),
-        help_text=_("Set if actions have a clear primary organisation (such as multi-city plans)")
+        default=False, verbose_name=_('Has primary organizations for actions'),
+        help_text=_("Set if actions have a clear primary organization (such as multi-city plans)")
     )
     enable_search = models.BooleanField(
         default=True, verbose_name=_('Enable site search'),

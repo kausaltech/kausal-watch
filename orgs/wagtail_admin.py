@@ -281,8 +281,8 @@ class OrganizationButtonHelper(NodeButtonHelper):
 class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
     model = Organization
     menu_label = _("Organizations")
-    menu_icon = 'fa-sitemap'
-    menu_order = 9000
+    menu_icon = 'kausal-organization'
+    menu_order = 220
     button_helper_class = OrganizationButtonHelper
     permission_helper_class = OrganizationPermissionHelper
     create_view_class = OrganizationCreateView

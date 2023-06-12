@@ -66,10 +66,10 @@ class PersonForm(AplansAdminModelForm):
 
 
 class PersonFormForGeneralAdmin(PersonForm):
-    is_admin_for_active_plan = BooleanField(required=False, label=_('is plan admin'))
+    is_admin_for_active_plan = BooleanField(required=False, label=_('Is plan admin'))
     organization_plan_admin_orgs = ModelMultipleChoiceField(
         queryset=None, required=False, widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
-        label=_('plan admin organizations'),
+        label=_('Plan admin organizations'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -259,7 +259,7 @@ class PersonAdmin(AplansModelAdmin):
     permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
-    menu_order = 10
+    menu_order = 210
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title')
     list_filter = (IsContactPersonFilter,)
@@ -359,7 +359,7 @@ class PersonAdmin(AplansModelAdmin):
 
             def is_plan_admin(obj: Person):
                 return obj.id in plan_admins
-            is_plan_admin.short_description = _('is plan admin')
+            is_plan_admin.short_description = _('Is plan admin')
             is_plan_admin._name = 'is_plan_admin'
             is_plan_admin.boolean = True
             fields.append(is_plan_admin)

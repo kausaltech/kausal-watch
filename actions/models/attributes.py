@@ -73,7 +73,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
     attribute_category_type = models.ForeignKey(
         'actions.CategoryType', blank=True, null=True, on_delete=models.CASCADE, related_name='+',
         verbose_name=_('Category type (if format is category)'),
-        help_text=_('If the format is "Category", choose which category type the attribute values can be chosen from'),
+        help_text=_('If the format is "Category", choose which category type the field values can be chosen from'),
     )
     show_choice_names = models.BooleanField(
         default=True, verbose_name=_('show choice names'),
@@ -110,8 +110,8 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
 
     class Meta:
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
-        verbose_name = _('attribute type')
-        verbose_name_plural = _('attribute types')
+        verbose_name = _('field')
+        verbose_name_plural = _('fields')
         ordering = ('scope_content_type', 'scope_id', 'order',)
 
     def clean(self):

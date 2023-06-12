@@ -3,8 +3,10 @@
 
 {% block branding_logo %}
     {% if active_client and active_client.logo %}
-    {% image active_client.logo width-80 %}
-    <!-- <h5>{{ active_plan.name }}</h5> -->
+        {% image active_client.logo width-80 %}
+        <!-- <h5>{{ active_plan.name }}</h5> -->
+    {% else %}
+        <img src="{% static 'images/kausal-avatar-dark-green.svg' %}" alt="Kausal Logo" width="80" />
     {% endif %}
 {% endblock %}
 

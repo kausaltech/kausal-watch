@@ -25,7 +25,7 @@ class CategoryMenuItem(MenuItem):
         self.base_url = reverse('actions_category_modeladmin_index')
         url = f'{self.base_url}?category_type={category_type.id}'
         label = category_type.name
-        super().__init__(label, url, **kwargs)
+        super().__init__(label, url, icon_name='kausal-category', **kwargs)
 
     def is_active(self, request):
         path, _ = self.url.split('?', maxsplit=1)
@@ -53,8 +53,8 @@ def register_category_menu():
     return SubmenuMenuItem(
         _('Categories'),
         category_menu,
-        classnames='icon icon-folder-open-inverse',
-        order=100
+        icon_name='kausal-category',
+        order=30,
     )
 
 
@@ -64,7 +64,7 @@ class CommonCategoryMenuItem(MenuItem):
         self.base_url = reverse('actions_commoncategory_modeladmin_index')
         url = f'{self.base_url}?common_category_type={common_category_type.id}'
         label = common_category_type.name
-        super().__init__(label, url, **kwargs)
+        super().__init__(label, url, icon_name='kausal-category', **kwargs)
 
     def is_active(self, request):
         path, _ = self.url.split('?', maxsplit=1)
@@ -87,8 +87,8 @@ def register_common_category_menu():
     return SubmenuMenuItem(
         _('Common categories'),
         common_category_menu,
-        classnames='icon icon-folder-open-inverse',
-        order=110
+        icon_name='kausal-category',
+        order=40,
     )
 
 
@@ -114,8 +114,8 @@ class AttributeTypeMenu(Menu):
         if user.is_general_admin_for_plan(plan):
             action_ct = ContentType.objects.get(app_label='actions', model='action')
             category_ct = ContentType.objects.get(app_label='actions', model='category')
-            items.append(AttributeTypeMenuItem(action_ct))
-            items.append(AttributeTypeMenuItem(category_ct))
+            items.append(AttributeTypeMenuItem(action_ct, icon_name='kausal-action'))
+            items.append(AttributeTypeMenuItem(category_ct, icon_name='kausal-category'))
         return items
 
 
@@ -125,10 +125,10 @@ attribute_type_menu = AttributeTypeMenu(None)
 @hooks.register('register_admin_menu_item')
 def register_attribute_type_menu():
     return SubmenuMenuItem(
-        _('Attributes'),
+        _('Fields'),
         attribute_type_menu,
-        classnames='icon icon-tag',
-        order=120,
+        order=510,
+        icon_name='kausal-attribute',
     )
 
 
@@ -169,7 +169,7 @@ def register_report_menu():
         _('Reports'),
         report_menu,
         classnames='icon icon-doc-full',
-        order=130
+        order=40
     )
 
 
@@ -209,7 +209,10 @@ plan_chooser = PlanChooserMenu(None)
 @hooks.register('register_admin_menu_item')
 def register_plan_chooser():
     return PlanChooserMenuItem(
-        _('Choose plan'), plan_chooser, classnames='icon icon-fa-check-circle-o', order=9000
+        _('Choose plan'),
+        plan_chooser,
+        order=9000,
+        icon_name='kausal-plan',
     )
 
 
@@ -249,8 +252,8 @@ def remove_default_site_summary_items(request, items: list):
 
 class ClientAdmin(ModelAdmin):
     model = Client
-    menu_icon = 'fa-bank'  # change as required
-    menu_order = 500  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_icon = 'globe'
+    menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
 
@@ -271,21 +274,12 @@ class ClientAdmin(ModelAdmin):
 modeladmin_register(ClientAdmin)
 
 
-@hooks.register("insert_global_admin_css", order=0)
+@hooks.register("insert_global_admin_css")
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_admin_overrides.css")
+        static("css/admin-styles.css")
     )
-
-"""
-@hooks.register("insert_editor_css", order=900)
-def editor_css():
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_editor_overrides.css")
-    )
-"""
 
 @hooks.register("construct_explorer_page_queryset")
 def restrict_pages_to_plan(parent_page, pages, request):
@@ -376,3 +370,17 @@ def should_remove_help_menu_item(item):
 @hooks.register('construct_help_menu')
 def remove_help_menu_items(request, items: list):
     items[:] = [item for item in items if not should_remove_help_menu_item(item)]
+
+
+@hooks.register("register_icons")
+def register_icons(icons):
+    return icons + [
+        'wagtailadmin/icons/kausal-action.svg',
+        'wagtailadmin/icons/kausal-attribute.svg',
+        'wagtailadmin/icons/kausal-category.svg',
+        'wagtailadmin/icons/kausal-dimension.svg',
+        'wagtailadmin/icons/kausal-indicator.svg',
+        'wagtailadmin/icons/kausal-organization.svg',
+        'wagtailadmin/icons/kausal-plan.svg',
+        'wagtailadmin/icons/kausal-spreadsheet.svg',
+    ]

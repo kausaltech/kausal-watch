@@ -50,5 +50,5 @@ def register_create_plan_menu_item():
         _('Create plan'),
         reverse('create-plan'),
         icon_name='plus-inverse',
-        order=10000
+        order=9100,
     )

@@ -64,7 +64,7 @@ class ContentTypeQueryParameterMixin:
 
 
 class AttributeTypeIndexView(IndexView):
-    page_title = _("Attributes")
+    page_title = _("Fields")
 
 
 class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansCreateView):
@@ -77,7 +77,7 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
     def get_page_subtitle(self):
         content_type = self.get_object_content_type()
         model_name = content_type.model_class()._meta.verbose_name_plural
-        return _("Attribute for %s") % model_name
+        return _("Field for %s") % model_name
 
     def get_instance(self):
         """Create an attribute type instance and set its object content type to the one given in GET or POST data."""
@@ -176,9 +176,9 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
-    menu_icon = 'tag'
-    menu_label = _("Attributes")
-    menu_order = 1200
+    menu_icon = 'kausal-attribute'
+    menu_label = _("Fields")
+    menu_order = 510
     list_display = ('name', 'format')
     list_filter = (AttributeTypeFilter,)
 

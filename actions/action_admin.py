@@ -272,8 +272,8 @@ class ActionAdmin(AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
     index_view_class = ActionIndexView
-    menu_icon = 'fa-cubes'  # change as required
-    menu_order = 1
+    menu_icon = 'kausal-action'
+    menu_order = 10
     list_display = ('identifier', 'name_link')
     list_display_add_buttons = 'name_link'
     search_fields = ('identifier', 'name')

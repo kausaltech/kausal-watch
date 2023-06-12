@@ -231,6 +231,7 @@ class ActivePlanAdmin(PlanAdmin):
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan')
+    menu_icon = 'kausal-plan'
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
@@ -300,6 +301,7 @@ class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
     permission_helper_class = ActivePlanPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan features')
+    menu_icon = 'circle-check'
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
@@ -351,6 +353,7 @@ class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
     edit_view_class = ActivePlanNotificationSettingsEditView
     permission_helper_class = ActivePlanPermissionHelper
     menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_icon = 'warning'  # FIXME
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):

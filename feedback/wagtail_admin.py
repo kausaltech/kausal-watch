@@ -77,6 +77,7 @@ class UserFeedbackAdmin(ModelAdmin):
     model = UserFeedback
     menu_icon = 'mail'
     menu_label = _('User feedbacks')
+    menu_order = 240
     permission_helper_class = UserFeedbackPermissionHelper
     list_display = ['created_at', 'type', 'action', 'name', 'comment', 'is_processed']
     list_filter = ['created_at', 'type', 'is_processed']

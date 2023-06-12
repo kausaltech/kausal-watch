@@ -25,6 +25,7 @@ env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),
     DEPLOYMENT_TYPE=(str, 'development'),
+    ENABLE_WAGTAIL_STYLEGUIDE=(bool, False),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
     CONFIGURE_LOGGING=(bool, True),
@@ -163,6 +164,9 @@ INSTALLED_APPS = [
     'grapple',
     'graphene_django',
 ]
+
+if env('ENABLE_WAGTAIL_STYLEGUIDE'):
+    INSTALLED_APPS += ['wagtail.contrib.styleguide']
 
 INSTALLED_APPS += [
     'users',

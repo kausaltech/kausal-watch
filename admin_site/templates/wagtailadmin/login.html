@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/login.html" %}
-{% load wagtailimages_tags wagtailadmin_tags i18n %}
+{% load wagtailimages_tags wagtailadmin_tags i18n static %}
 {% block titletag %}{% trans "Sign in" %}{% endblock %}
 {% block bodyclass %}login{% endblock %}
 
@@ -10,6 +10,12 @@
             display: none;
         }
     </style>
+{% endblock %}
+
+{% block branding_logo %}
+    <div class="login-logo">
+        <img src="{% static 'images/kausal-avatar-dark-green.svg' %}" alt="Kausal Logo" width="80" />
+    </div>
 {% endblock %}
 
 {% block branding_login %}{% if form.client and form.client.login_header_text %}{{ form.client.login_header_text }}{% else %}{% trans "Sign in to Kausal Watch" %}{% endif %}{% endblock %}

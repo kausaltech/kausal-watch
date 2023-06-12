@@ -111,7 +111,7 @@ def register_quantity_chooser_viewset():
 class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
-    menu_icon = 'fa-arrows-h'
+    menu_icon = 'kausal-dimension'
     menu_label = pgettext_lazy('hyphenated', 'Indicator dimensions')
     list_display = ('name',)
 
@@ -127,7 +127,7 @@ class QuantityForm(AplansAdminModelForm):
 
 class QuantityAdmin(AplansModelAdmin):
     model = Quantity
-    menu_icon = 'fa-thermometer-half'
+    menu_icon = 'kausal-dimension'  # FIXME
     menu_order = 6
     menu_label = _('Quantities')
     list_display = ('name_i18n',)
@@ -154,7 +154,7 @@ class UnitForm(AplansAdminModelForm):
 
 class UnitAdmin(AplansModelAdmin):
     model = Unit
-    menu_icon = 'fa-eur'
+    menu_icon = 'kausal-dimension'  # FIXME
     menu_order = 5
     menu_label = _('Units')
     list_display = ('name', 'short_name')
@@ -314,7 +314,7 @@ class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     create_view_class = IndicatorCreateView
     edit_view_class = IndicatorEditView
-    menu_icon = 'fa-bar-chart'
+    menu_icon = 'kausal-indicator'
     menu_order = 3
     menu_label = _('Indicators')
     list_display = ('name', 'organization', 'unit_display', 'quantity', 'has_data',)
@@ -464,7 +464,7 @@ class CommonIndicatorForm(AplansAdminModelForm):
 
 class CommonIndicatorAdmin(AplansModelAdmin):
     model = CommonIndicator
-    menu_icon = 'fa-object-group'
+    menu_icon = 'kausal-indicator'  # FIXME
     menu_label = _('Common indicators')
     list_display = ('name', 'unit_display', 'quantity')
     search_fields = ('name',)
@@ -510,8 +510,8 @@ class CommonIndicatorAdmin(AplansModelAdmin):
 
 class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
-    menu_icon = 'fa-bar-chart'
-    menu_order = 3
+    menu_icon = 'kausal-indicator'
+    menu_order = 20
     items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin)
 
 

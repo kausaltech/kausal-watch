@@ -44,7 +44,7 @@ class ReportValueInterface(graphene.Interface):
 
 @register_streamfield_block
 class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
-    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
+    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Field"))
 
     class Meta:
         label = _("Action attribute")

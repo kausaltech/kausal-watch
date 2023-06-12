@@ -203,14 +203,14 @@ class AttributeTypeChooserViewSet(ModelChooserViewSet):
 
     icon = 'folder-open-inverse'
     model = AttributeType
-    page_title = _("Choose an attribute")
+    page_title = _("Choose a field")
     per_page = 30
     fields = ['name']
 
 
 class AttributeTypeChooser(AdminChooser):
-    choose_one_text = _('Choose an attribute')
-    choose_another_text = _('Choose another attribute')
+    choose_one_text = _('Choose a field')
+    choose_another_text = _('Choose another field')
     model = AttributeType
     choose_modal_url_name = 'attribute_type_chooser:choose'
     scope: Literal['action', 'category'] | None
