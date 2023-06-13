@@ -2,6 +2,7 @@ import pytest
 from factory import LazyAttribute, SubFactory
 from pytest_factoryboy import register
 
+from orgs.models import Organization
 from actions.tests import factories as actions_factories
 
 from actions.models.attributes import AttributeType
@@ -75,6 +76,12 @@ def attribute_choice(attribute_choice_factory, action_attribute_type__ordered_ch
     )
 
 
+def n_of_a_kind(factory, count, context={}):
+    return [
+        factory(**context) for i in range(0, count)
+    ]
+
+
 @pytest.fixture
 def actions_having_attributes(
         plan,
@@ -86,6 +93,9 @@ def actions_having_attributes(
         action_attribute_type__numeric,
         action_attribute_type__category_choice,
         action_factory,
+        action_implementation_phase_factory,
+        organization_factory,
+        action_responsible_party_factory,
         attribute_numeric_value_factory,
         attribute_text_factory,
         attribute_rich_text_factory,
@@ -95,8 +105,22 @@ def actions_having_attributes(
         attribute_type_choice_option,
         attribute_type_choice_option__optional,
 ):
-    def decorated_action():
-        action = action_factory(plan=plan)
+
+    IMPLEMENTATION_PHASE_COUNT = 3
+    ORGANIZATION_COUNT = 4
+    implementation_phases = n_of_a_kind(action_implementation_phase_factory, IMPLEMENTATION_PHASE_COUNT, context={'plan': plan})
+    organizations = [o for o in Organization.objects.all()]
+    organizations.extend(n_of_a_kind(organization_factory, ORGANIZATION_COUNT - Organization.objects.count()))
+    for o in organizations:
+        o.related_plans.add(plan)
+
+    def decorated_action(i: int):
+        # Create less implementation phases than actions
+        implementation_phase = implementation_phases[i % IMPLEMENTATION_PHASE_COUNT]
+        action = action_factory(plan=plan, implementation_phase=implementation_phase)
+        organization = organizations[i % ORGANIZATION_COUNT]
+        action_responsible_party_factory(action=action, organization=organization)
+
         attribute_text_factory(
             type=action_attribute_type__text,
             content_object=action
@@ -130,7 +154,7 @@ def actions_having_attributes(
         )
         return action
 
-    return [decorated_action() for _ in range(0, 5)]
+    return [decorated_action(i) for i in range(0, 10)]
 
 
 @pytest.fixture

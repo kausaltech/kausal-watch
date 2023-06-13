@@ -8,14 +8,16 @@ from typing import Any, List, Optional, Text
 from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
-import actions
 from actions.attributes import AttributeType
 from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel, ActionResponsibleParty
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from aplans.graphql_types import register_graphene_node
 
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
-from reports.spreadsheets import ExcelReport
+import typing
+if typing.TYPE_CHECKING:
+    from reports.spreadsheets import ExcelReport
+
 from reports.utils import get_attribute_for_type_from_related_objects
 
 
@@ -89,7 +91,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
 
     def extract_action_values(
             self,
-            report: ExcelReport,
+            report: 'ExcelReport',
             block_value: dict,
             action: dict,
             related_objects: list[dict]) -> Optional[Any]:
@@ -155,7 +157,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
-    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
         pk = action.get('implementation_phase_id')
         if pk is None:
             return [None]
@@ -170,7 +172,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     #     return [str(value)]
 
     def xlsx_column_labels(self, value) -> List[str]:
-        return [str(self.label)]
+        return [str(self.label).capitalize()]
 
     def get_xlsx_cell_format(self, block_value):
         return None
@@ -208,7 +210,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
         )
         return result
 
-    def extract_action_values(self, report: ExcelReport, block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
         organization_id = None
         try:
             organization_id = next((
@@ -231,7 +233,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
     #     return [value.organization.name]
 
     def xlsx_column_labels(self, value) -> List[str]:
-        return [str(self.label)]
+        return [str(self.label).capitalize()]
 
     def get_xlsx_cell_format(self, block_value):
         return None

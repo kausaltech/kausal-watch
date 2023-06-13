@@ -1,10 +1,10 @@
-from pprint import pprint as pr
 import inspect
 
 from django.utils.translation import gettext
 
-from actions.models import Action, ActionResponsibleParty
+from actions.models import Action
 from orgs.models import Organization
+from .blocks.action_content import ActionImplementationPhaseReportFieldBlock
 
 from io import BytesIO
 
@@ -105,30 +105,40 @@ class ExcelReport:
     def generate_xlsx(self) -> bytes:
         prepared_data = self._prepare_serialized_report_data()
         actions_df = self.create_populated_actions_dataframe(prepared_data)
-        worksheet = self._write_actions_sheet(actions_df)
-
-        worksheet.conditional_format(1, 0, 1000, 10, {
-            'type': 'formula',
-            'criteria': '=MOD(ROW(),2)=0',
-            'format': self.formats.odd_row
-        })
-        # self.post_process(prepared_data)
+        self._write_actions_sheet(actions_df)
+        self.post_process(actions_df)
+        # Make striped even-odd rows
+        for worksheet in self.workbook.worksheets():
+            worksheet.conditional_format(1, 0, 1000, 10, {
+                'type': 'formula',
+                'criteria': '=MOD(ROW(),2)=0',
+                'format': self.formats.odd_row
+            })
         self.close()
         return self.output.getvalue()
 
     def _write_actions_sheet(self, df: polars.DataFrame):
-        worksheet = self.workbook.add_worksheet(gettext('Actions'))
+        return self._write_sheet(self.workbook.add_worksheet(gettext('Actions')), df)
 
+    def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
         # Header row
         worksheet.write_row(0, 0, df.columns)
+
+        col_width = 40 if small else 50
+        first_col_width = col_width if small else 10
+        row_height = 20 if small else 50
+        last_col_width = 10 if small else col_width
 
         # Data rows
         for i, row in enumerate(df.iter_rows()):
             worksheet.write_row(i + 1, 0, row)
-            worksheet.set_row(i + 1, 80, self.formats.all_rows)
-        for i, label in enumerate(df.columns):
-            worksheet.set_column(i, i, 80, self.formats.get_for_label(label))
-        worksheet.set_column(0, 0, 10)
+            worksheet.set_row(i + 1, row_height, self.formats.all_rows)
+        i = 0
+        for label in df.columns:
+            worksheet.set_column(i, i, col_width, self.formats.get_for_label(label))
+            i += 1
+        worksheet.set_column(0, 0, first_col_width)
+        worksheet.set_column(i-1, i-1, last_col_width)
         worksheet.set_row(0, 20, self.formats.header_row)
         return worksheet
 
@@ -192,7 +202,7 @@ class ExcelReport:
             append_to_key(LABEL_IDENTIFIER, action_identifier)
             append_to_key(LABEL_ACTION_NAME, action_name)
             for field in self.report.fields:
-                labels = field.block.xlsx_column_labels(field.value)
+                labels = [label for label in field.block.xlsx_column_labels(field.value)]
                 values = field.block.extract_action_values(
                     self, field.value, action['data'],
                     action_row['related_objects'],
@@ -207,60 +217,24 @@ class ExcelReport:
                 append_to_key(LABEL_COMPLETED_AT, completed_at)
         return polars.DataFrame(data)
 
-    def _group_by_org_and_phase(self, data):
-        # TODO re-implement using proper data abstraction
-        counts = dict()
-        for row in data:
-            action = row['action']['data']
-            responsibles = [
-                r['str'].split('(')[0] for r in row['related_objects']
-                if r['type'] == ActionResponsibleParty and r['data']['action_id'] == action['id'] and
-                r['data']['role'] == 'primary'
-            ]
-            pk = action.get('implementation_phase_id')
-            phase = 'unknown'
-            r = 'unknown'
-            if pk is not None:
-                phase = str(self.get_plan_object('implementation_phase', int(pk)))
-            if len(responsibles) > 0:
-                r = responsibles[0]
-            counts.setdefault(r, {})
-            counts[r].setdefault(phase, 0)
-            counts[r][phase] = counts[r][phase] + 1
-        return counts
+    def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
+        for label in labels:
+            if label not in action_df.columns:
+                return None
+        return action_df.groupby(labels).count().sort('count', descending=True)
 
-    def post_process(self, prepared_data):
-        sheet_name = gettext('Responsibilities')
-        pivot_worksheet = self.workbook.add_worksheet(sheet_name)
-        chart = self.workbook.add_chart({'type': 'column'})
-        grouped1 = self._group_by_org_and_phase(prepared_data)
-        all_phases = set()
-        for v in grouped1.values():
-            for k in v.keys():
-                all_phases.add(k)
-        table_data = []
-        for org, group in grouped1.items():
-            row = [org]
-            for phase in all_phases:
-                row.append(group.get(phase, 0))
-            table_data.append(row)
-        table_data = sorted(table_data, key=lambda x: -(x[1] + x[2]))
-        pivot_worksheet.add_table(
-            1, 1, len(table_data), len(all_phases) + 1, {
-                'data': table_data,
-                'banded_rows': True,
-                'columns': [{'header': gettext('Organization')}] +
-                [{'header': phase} for phase in all_phases]
-            }
-        )
-        # pivot_worksheet.autofit()
-        for i, phase in enumerate(all_phases):
-            chart.add_series(
-                {'categories': [sheet_name, 2, 1, len(table_data), 1],
-                 'values': [sheet_name, 2, 2 + i, len(table_data), 2 + i],
-                 'name': [sheet_name, 1, 2 + i]}
-            )
-        pivot_worksheet.insert_chart('B' + str(len(table_data) + 2), chart)
+    def post_process(self, action_df: polars.DataFrame):
+        for i, grouping in enumerate([
+                # Not a good idea to use label here, will improfve
+                (gettext('implementation phase').capitalize(),),
+                (gettext('responsible party').capitalize(),
+                 gettext('implementation phase').capitalize())
+        ]):
+            aggregated = self._get_aggregates(grouping, action_df)
+            if aggregated is not None:
+                sheet_name = f"Aggregates {i}"
+                worksheet = self.workbook.add_worksheet(sheet_name)
+                self._write_sheet(worksheet, aggregated, small=True)
 
     def _initialize_format(self, key, initializer):
         format = self.workbook.add_format()
