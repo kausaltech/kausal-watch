@@ -27,7 +27,10 @@ def test_excel_export(
         dataframe_from_excel_factory
 ):
     df_actions = dataframe_from_excel_factory(gettext('Actions'))
-    non_report_fields = ['action', 'identifier', 'marked_as_complete_by', 'marked_as_complete_at']
+    non_report_fields = ['action', 'identifier']
+    if report_with_all_attributes.is_complete:
+        non_report_fields.extend(['marked_as_complete_by', 'marked_as_complete_at'])
+
     # optional choice attribute results in two columns, hence + 1
     assert df_actions.width == len(report_with_all_attributes.fields) + len(non_report_fields) + 1
     assert df_actions.height == len(actions_having_attributes)
