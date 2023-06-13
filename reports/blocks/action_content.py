@@ -74,9 +74,10 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
         attribute = self.value_for_action_snapshot(field.value, snapshot)
-        # Change the ID of the attribute to include the snapshot, otherwise Apollo would cache the attribute value from
-        # one point in time and use this for all other points in time of the same attribute
-        attribute.id = f'{attribute.id}-snapshot-{snapshot.id}'
+        if attribute is not None:
+            # Change the ID of the attribute to include the snapshot, otherwise Apollo would cache the attribute value from
+            # one point in time and use this for all other points in time of the same attribute
+            attribute.id = f'{attribute.id}-snapshot-{snapshot.id}'
         return self.Value(
             field=field,
             attribute=attribute,
