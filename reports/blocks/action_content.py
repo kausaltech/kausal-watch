@@ -1,6 +1,6 @@
 import graphene
 from django.apps import apps
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
@@ -184,7 +184,20 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
 
 @register_streamfield_block
-class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
+class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
+    target_ancestor_depth = blocks.IntegerBlock(
+        label=_('Level of containing organization'),
+        required=False,
+        max_value=10,
+        min_value=1,
+        help_text=_(
+            'In addition to the organization itself, an organizational unit containing the organization '
+            'is included in the report. Counting from the top-level root organisation at level 1, which level '
+            'in the organizational hierarchy should be used to find this containing organization? '
+            'If left empty, don\'t add the containing organization to the report.'
+        )
+    )
+
     class Meta:
         label = _("responsible party")
 
@@ -210,7 +223,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
         )
         return result
 
-    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str|None]:
         organization_id = None
         try:
             organization_id = next((
@@ -222,7 +235,20 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
         except StopIteration:
             return [None]
         organization = report.get_plan_object('organization', organization_id)
-        return [organization.name]
+        target_depth = block_value.get('target_ancestor_depth')
+        if not target_depth:
+            return [organization.name]
+        ancestors = organization.get_ancestors()
+        depth = len(ancestors)
+        if depth == 0:
+            parent = None
+        elif depth == 1:
+            parent = organization
+        elif depth < target_depth:
+            parent = ancestors[depth-1]
+        else:
+            parent = ancestors[target_depth-1]
+        return [parent.name, organization.name]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -232,8 +258,11 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StaticBlock):
     #     value = self.value_for_action_snapshot(block_value, snapshot)
     #     return [value.organization.name]
 
-    def xlsx_column_labels(self, value) -> List[str]:
-        return [str(self.label).capitalize()]
+    def xlsx_column_labels(self, value: dict) -> List[str]:
+        labels = [str(self.label).capitalize()]
+        if 'target_ancestor_depth' not in value:
+            return labels
+        return [gettext('Parent organization')] + labels
 
     def get_xlsx_cell_format(self, block_value):
         return None

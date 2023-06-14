@@ -247,7 +247,7 @@ class ExcelReport:
         for i, grouping in enumerate([
                 # Not a good idea to use label here, will improfve
                 (gettext('implementation phase').capitalize(),),
-                (gettext('responsible party').capitalize(),
+                (gettext('parent organization').capitalize(),
                  gettext('implementation phase').capitalize())
         ]):
             aggregated = self._get_aggregates(grouping, action_df)
