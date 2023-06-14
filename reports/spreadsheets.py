@@ -2,7 +2,7 @@ import inspect
 
 from django.utils.translation import gettext
 
-from actions.models import Action, Category, ActionImplementationPhase
+from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
 from actions.models.category import CategoryType
 from orgs.models import Organization
 from reports.blocks.action_content import ActionCategoryReportFieldBlock
@@ -91,38 +91,38 @@ class ExcelReport:
         organizations: dict[int, Organization]
         categories: dict[int, Category]
         category_types: dict[int, CategoryType]
+        statuses: dict[int, ActionStatus]
+
+        def __init__(self, report: 'Report'):
+            plan = report.type.plan
+            self.implementation_phases = {
+                p.pk: p for p in plan.action_implementation_phases.all()
+            }
+            self.statuses = {
+                p.pk: p for p in plan.action_statuses.all()
+            }
+            self.organizations = {
+                p.pk: p for p in Organization.objects.available_for_plan(plan)
+            }
+            category_types = [
+                field.value.get('category_type')
+                for field in report.fields
+                if isinstance(field.block, ActionCategoryReportFieldBlock)
+            ]
+            self.category_types = {
+                ct.pk: ct for ct in category_types
+            }
+            self.categories = {
+                c.pk: c for ct in category_types for c in ct.categories.all()
+            }
 
     def __init__(self, report: 'Report'):
         self.report = report
-
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
         self.formats = ExcelFormats(self.workbook)
-
-        self._initialize_plan_current_related_objects()
+        self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self._initialize_formats()
-
-    def _initialize_plan_current_related_objects(self):
-        plan = self.report.type.plan
-        result = self.PlanRelatedObjects()
-        result.implementation_phases = {
-            p.pk: p for p in plan.action_implementation_phases.all()
-        }
-        result.organizations = {
-            p.pk: p for p in Organization.objects.available_for_plan(plan)
-        }
-        category_types = [
-            field.value.get('category_type')
-            for field in self.report.fields
-            if isinstance(field.block, ActionCategoryReportFieldBlock)
-        ]
-        result.category_types = {
-            ct.pk: ct for ct in category_types
-        }
-        result.categories = {
-            c.pk: c for ct in category_types for c in ct.categories.all()
-        }
-        self.plan_current_related_objects = result
 
     def generate_xlsx(self) -> bytes:
         prepared_data = self._prepare_serialized_report_data()
