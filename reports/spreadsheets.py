@@ -54,10 +54,13 @@ class ExcelFormats(dict):
             f.set_bg_color(cls.BG_COLOR_ODD)
 
         @classmethod
+        def even_row(cls, f: Format):
+            f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
         def all_rows(cls, f: Format):
             f.set_border(0)
             f.set_align('top')
-            f.set_bg_color(cls.COLOR_WHITE)
             f.set_text_wrap(True)
 
     def __getattr__(self, name):
@@ -127,12 +130,6 @@ class ExcelReport:
         self._write_actions_sheet(actions_df)
         self.post_process(actions_df)
         # Make striped even-odd rows
-        for worksheet in self.workbook.worksheets():
-            worksheet.conditional_format(1, 0, 1000, 10, {
-                'type': 'formula',
-                'criteria': '=MOD(ROW(),2)=0',
-                'format': self.formats.odd_row
-            })
         self.close()
         return self.output.getvalue()
 
@@ -141,7 +138,7 @@ class ExcelReport:
 
     def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
         # Header row
-        worksheet.write_row(0, 0, df.columns)
+        worksheet.write_row(0, 0, df.columns, self.formats.header_row)
 
         # col_width = 40 if small else 50
         # first_col_width = col_width if small else 10
@@ -155,18 +152,28 @@ class ExcelReport:
 
         # Data rows
         for i, row in enumerate(df.iter_rows()):
-            worksheet.write_row(i + 1, 0, row)
-            worksheet.set_row(i + 1, row_height, self.formats.all_rows)
+            worksheet.write_row(i + 1, 0, row, self.formats.all_rows)
+            worksheet.set_row(i + 1, row_height)
         i = 0
         for label in df.columns:
             worksheet.set_column(i, i, col_width, self.formats.get_for_label(label))
             i += 1
         worksheet.set_column(0, 0, first_col_width)
         worksheet.set_column(i-1, i-1, last_col_width)
-        worksheet.set_row(0, 20, self.formats.header_row)
+        worksheet.set_row(0, 20)
         worksheet.autofit()
         if not small:
             worksheet.set_column(1, 1, 50)
+        worksheet.conditional_format(1, 0, df.height, df.width-1, {
+            'type': 'formula',
+            'criteria': '=MOD(ROW(),2)=0',
+            'format': self.formats.odd_row
+        })
+        worksheet.conditional_format(1, 0, df.height, df.width-1, {
+            'type': 'formula',
+            'criteria': '=NOT(MOD(ROW(),2)=0)',
+            'format': self.formats.even_row
+        })
         return worksheet
 
     def close(self):
