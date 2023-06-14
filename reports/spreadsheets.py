@@ -231,7 +231,11 @@ class ExcelReport:
         if len(labels) == 0 or len(labels) > 2:
             raise ValueError('Only one or two dimensional pivot tables supported')
         if len(labels) == 1:
-            return action_df.groupby(labels).count().sort(reversed(labels), descending=False).rename({'count': gettext('Actions')})
+            return action_df\
+                .groupby(labels)\
+                .count()\
+                .sort(reversed(labels), descending=False)\
+                .rename({'count': gettext('Actions')})
         return action_df.pivot(
             values="Identifier",
             index=labels[0],
