@@ -3,7 +3,9 @@ import inspect
 from django.utils.translation import gettext
 
 from actions.models import Action, Category, ActionImplementationPhase
+from actions.models.category import CategoryType
 from orgs.models import Organization
+from reports.blocks.action_content import ActionCategoryReportFieldBlock
 
 from io import BytesIO
 
@@ -85,6 +87,7 @@ class ExcelReport:
         implementation_phases: dict[int, ActionImplementationPhase]
         organizations: dict[int, Organization]
         categories: dict[int, Category]
+        category_types: dict[int, CategoryType]
 
     def __init__(self, report: 'Report'):
         self.report = report
@@ -105,8 +108,16 @@ class ExcelReport:
         result.organizations = {
             p.pk: p for p in Organization.objects.available_for_plan(plan)
         }
+        category_types = [
+            field.value.get('category_type')
+            for field in self.report.fields
+            if isinstance(field.block, ActionCategoryReportFieldBlock)
+        ]
+        result.category_types = {
+            ct.pk: ct for ct in category_types
+        }
         result.categories = {
-            c.pk: c for ct in plan.category_types.filter(usable_for_actions=True) for c in ct.categories.all()
+            c.pk: c for ct in category_types for c in ct.categories.all()
         }
         self.plan_current_related_objects = result
 
@@ -253,15 +264,22 @@ class ExcelReport:
             ).sort(labels[0])
 
     def post_process(self, action_df: polars.DataFrame):
-        for i, grouping in enumerate([
-                # Not a good idea to use label here, will improfve
-                (gettext('implementation phase').capitalize(),),
-                (gettext('parent organization').capitalize(),
-                 gettext('implementation phase').capitalize())
-        ]):
+        groupings = [
+            # Not a good idea to use label here, will improve
+            (gettext('implementation phase').capitalize(),),
+            (gettext('parent organization').capitalize(),
+             gettext('implementation phase').capitalize())
+        ]
+        for ct in self.plan_current_related_objects.category_types.values():
+            groupings.append(
+                (ct.name, gettext('implementation phase').capitalize())
+            )
+        sheet_number = 1
+        for grouping in groupings:
             aggregated = self._get_aggregates(grouping, action_df)
             if aggregated is not None:
-                sheet_name = f"Summary {i + 1}"
+                sheet_name = f"Summary {sheet_number}"
+                sheet_number += 1
                 worksheet = self.workbook.add_worksheet(sheet_name)
                 self._write_sheet(worksheet, aggregated, small=True)
                 chart_type = 'column'
@@ -270,12 +288,10 @@ class ExcelReport:
                 chart = self.workbook.add_chart({'type': chart_type})
                 for i in range(0, aggregated.width - 1):
                     series = {
-                        'categories': [sheet_name, 1, 0, aggregated.height, 0], # all department names
-                        'values': [sheet_name, 1, 1 + i, aggregated.height, 1 + i], # all values per phase
+                        'categories': [sheet_name, 1, 0, aggregated.height, 0],
+                        'values': [sheet_name, 1, 1 + i, aggregated.height, 1 + i],
                         'name': [sheet_name, 0, 1 + i]
-                    } # phase name
-                    import pprint
-                    pprint.pprint(series)
+                    }
                     chart.add_series(series)
                 if chart_type == 'column':
                     chart.set_size({'width': 720, 'height': 576})
