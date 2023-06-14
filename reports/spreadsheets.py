@@ -2,7 +2,7 @@ import inspect
 
 from django.utils.translation import gettext
 
-from actions.models import Action
+from actions.models import Action, Category, ActionImplementationPhase
 from orgs.models import Organization
 
 from io import BytesIO
@@ -79,7 +79,12 @@ class ExcelReport:
     report: 'Report'
     workbook: xlsxwriter.Workbook
     formats: ExcelFormats
-    plan_current_related_objects: dict
+    plan_current_related_objects: 'PlanRelatedObjects'
+
+    class PlanRelatedObjects:
+        implementation_phases: dict[int, ActionImplementationPhase]
+        organizations: dict[int, Organization]
+        categories: dict[int, Category]
 
     def __init__(self, report: 'Report'):
         self.report = report
@@ -93,13 +98,17 @@ class ExcelReport:
 
     def _initialize_plan_current_related_objects(self):
         plan = self.report.type.plan
-        result = dict()
-        result['implementation_phase'] = {p.pk: p for p in plan.action_implementation_phases.all()}
-        result['organization'] = {p.pk: p for p in Organization.objects.available_for_plan(plan)}
+        result = self.PlanRelatedObjects()
+        result.implementation_phases = {
+            p.pk: p for p in plan.action_implementation_phases.all()
+        }
+        result.organizations = {
+            p.pk: p for p in Organization.objects.available_for_plan(plan)
+        }
+        result.categories = {
+            c.pk: c for ct in plan.category_types.filter(usable_for_actions=True) for c in ct.categories.all()
+        }
         self.plan_current_related_objects = result
-
-    def get_plan_object(self, model_name: str, pk: int):
-        return self.plan_current_related_objects.get(model_name, {}).get(pk)
 
     def generate_xlsx(self) -> bytes:
         prepared_data = self._prepare_serialized_report_data()
