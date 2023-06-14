@@ -240,6 +240,43 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
 
 @register_streamfield_block
+class ActionStatusReportFieldBlock(blocks.StaticBlock):
+    class Meta:
+        label = _("status")
+
+    @register_graphene_node
+    class Value(graphene.ObjectType):
+        class Meta:
+            name = 'ActionStatusReportValue'
+            interfaces = (ReportValueInterface,)
+
+        implementation_phase = graphene.Field('actions.schema.ActionStatusNode')
+
+    def extract_action_values(
+            self,
+            report: 'ExcelReport',
+            block_value: dict,
+            action: dict,
+            related_objects: list[dict]
+    ) -> list[str|None]:
+        pk = action.get('status_id')
+        if pk is None:
+            return [None]
+        return [str(report.plan_current_related_objects.statuses.get(int(pk)))]
+
+    def xlsx_column_labels(self, value) -> List[str]:
+        return [str(self.label).capitalize()]
+
+    def get_xlsx_cell_format(self, block_value):
+        return None
+
+    def get_help_panel(self, block_value, snapshot):
+        value = self.value_for_action_snapshot(block_value, snapshot) or ''
+        heading = f'{self.label} ({snapshot.report})'
+        return HelpPanel(str(value), heading=heading)
+
+
+@register_streamfield_block
 class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
     target_ancestor_depth = blocks.IntegerBlock(
         label=_('Level of containing organization'),
@@ -295,7 +332,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
                 arp['data'].get('role') == 'primary'
             ))
         except StopIteration:
-            return [None]
+            return [None, None]
         organization = report.plan_current_related_objects.organizations.get(organization_id)
         target_depth = block_value.get('target_ancestor_depth')
         if not target_depth:
@@ -310,7 +347,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
             parent = ancestors[depth-1]
         else:
             parent = ancestors[target_depth-1]
-        return [parent.name, organization.name]
+        parent_name = parent.name if parent else None
+        return [parent_name, organization.name]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -337,11 +375,12 @@ class ReportFieldBlock(blocks.StreamBlock):
     attribute_type = ActionAttributeTypeReportFieldBlock()
     responsible_party = ActionResponsiblePartyReportFieldBlock()
     category = ActionCategoryReportFieldBlock()
-    # TODO: action status
+    status = ActionStatusReportFieldBlock()
 
     graphql_types = [
         ActionImplementationPhaseReportFieldBlock,
         ActionAttributeTypeReportFieldBlock,
         ActionResponsiblePartyReportFieldBlock,
-        ActionCategoryReportFieldBlock
+        ActionCategoryReportFieldBlock,
+        ActionStatusReportFieldBlock
     ]
