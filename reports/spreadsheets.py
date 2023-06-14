@@ -264,41 +264,48 @@ class ExcelReport:
             ).sort(labels[0])
 
     def post_process(self, action_df: polars.DataFrame):
-        groupings = [
-            # Not a good idea to use label here, will improve
-            (gettext('implementation phase').capitalize(),),
-            (gettext('parent organization').capitalize(),
-             gettext('implementation phase').capitalize())
+        pivot_specs = [
+            {
+                'group': (gettext('implementation phase').capitalize(),),
+                'type': 'pie'
+            },
+            {
+                'group': (gettext('parent organization').capitalize(),
+                          gettext('implementation phase').capitalize()),
+                'type': 'column'
+            }
         ]
         for ct in self.plan_current_related_objects.category_types.values():
-            groupings.append(
-                (ct.name, gettext('implementation phase').capitalize())
-            )
+            pivot_specs.append({
+                'group': (ct.name, gettext('implementation phase').capitalize()),
+                'type': 'column',
+                'subtype': 'stacked'
+            })
         sheet_number = 1
-        for grouping in groupings:
+        for spec in pivot_specs:
+            grouping = spec['group']
             aggregated = self._get_aggregates(grouping, action_df)
-            if aggregated is not None:
-                sheet_name = f"Summary {sheet_number}"
-                sheet_number += 1
-                worksheet = self.workbook.add_worksheet(sheet_name)
-                self._write_sheet(worksheet, aggregated, small=True)
-                chart_type = 'column'
-                if len(grouping) == 1:
-                    chart_type = 'pie'
-                chart = self.workbook.add_chart({'type': chart_type})
-                for i in range(0, aggregated.width - 1):
-                    series = {
-                        'categories': [sheet_name, 1, 0, aggregated.height, 0],
-                        'values': [sheet_name, 1, 1 + i, aggregated.height, 1 + i],
-                        'name': [sheet_name, 0, 1 + i]
-                    }
-                    chart.add_series(series)
-                if chart_type == 'column':
-                    chart.set_size({'width': 720, 'height': 576})
-                chart.set_plotarea({
-                    'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
-                })
-                worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
+            if aggregated is None:
+                continue
+            sheet_name = f"Summary {sheet_number}"
+            sheet_number += 1
+            worksheet = self.workbook.add_worksheet(sheet_name)
+            self._write_sheet(worksheet, aggregated, small=True)
+            chart_type = spec['type']
+            chart = self.workbook.add_chart({'type': chart_type, 'subtype': spec.get('subtype')})
+            for i in range(0, aggregated.width - 1):
+                series = {
+                    'categories': [sheet_name, 1, 0, aggregated.height, 0],
+                    'values': [sheet_name, 1, 1 + i, aggregated.height, 1 + i],
+                    'name': [sheet_name, 0, 1 + i]
+                }
+                chart.add_series(series)
+            if chart_type == 'column':
+                chart.set_size({'width': 720, 'height': 576})
+            chart.set_plotarea({
+                'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
+            })
+            worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
 
     def _initialize_format(self, key, initializer):
         format = self.workbook.add_format()
