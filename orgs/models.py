@@ -206,6 +206,7 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
     )
     description = RichTextField(blank=True, verbose_name=_('description'))
     url = models.URLField(blank=True, verbose_name=_('URL'))
+    email = models.EmailField(blank=True, verbose_name=_('email address'))
     founding_date = models.DateField(blank=True,
                                      null=True,
                                      help_text=_('A date of founding'))

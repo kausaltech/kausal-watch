@@ -100,7 +100,7 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
     class Meta:
         model = Organization
         fields = [
-            'id', 'abbreviation', 'name', 'description', 'url', 'classification', 'distinct_name', 'location',
+            'id', 'abbreviation', 'name', 'description', 'url', 'email', 'classification', 'distinct_name', 'location',
         ]
 
 
