@@ -9,8 +9,8 @@ from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
 from actions.attributes import AttributeType
-from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel, ActionResponsibleParty
-from actions.blocks.choosers import ActionAttributeTypeChooserBlock
+from actions.models import ActionImplementationPhase, AttributeType as AttributeTypeModel, ActionResponsibleParty, CategoryType
+from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from aplans.graphql_types import register_graphene_node
 
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
@@ -130,6 +130,62 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
+class ActionCategoryReportFieldBlock(blocks.StructBlock):
+    category_type = CategoryTypeChooserBlock(required=True, label=_("Category type"))
+
+    class Meta:
+        label = _("Action category")
+
+    graphql_fields = [
+        GraphQLForeignKey('category_type', CategoryType, required=True)
+    ]
+
+    @register_graphene_node
+    class Value(graphene.ObjectType):
+        class Meta:
+            name = 'ActionCategoryReportValue'
+            interfaces = (ReportValueInterface,)
+
+        category = graphene.Field('actions.schema.CategoryNode')
+
+    # def graphql_value_for_action_snapshot(self, field, snapshot):
+    #     attribute = self.value_for_action_snapshot(field.value, snapshot)
+    #     # Change the ID of the attribute to include the snapshot, otherwise Apollo would cache the attribute value from
+    #     # one point in time and use this for all other points in time of the same attribute
+    #     attribute.id = f'{attribute.id}-snapshot-{snapshot.id}'
+    #     return self.Value(
+    #         field=field,
+    #         attribute=attribute,
+    #     )
+
+    def extract_action_values(
+            self,
+            report: 'ExcelReport',
+            block_value: dict,
+            action: dict,
+            related_objects: list[dict]
+    ) -> Optional[Any]:
+        category_pks = action.get('categories', [])
+        categories = [
+            report.plan_current_related_objects.categories.get(int(pk))
+            for pk in category_pks
+        ]
+        return ["; ".join(
+            c.name for c in categories
+            if c and c.type == block_value.get('category_type')
+        )]
+
+    def xlsx_column_labels(self, block_value) -> List[str]:
+        return [block_value.get('category_type').name]
+
+    def get_xlsx_cell_format(self, block_value):
+        return None
+
+    def get_help_panel(self, block_value, snapshot):
+        return None
+
+
+@register_streamfield_block
 class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
     class Meta:
         label = _("implementation phase")
@@ -161,7 +217,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
         pk = action.get('implementation_phase_id')
         if pk is None:
             return [None]
-        return [str(report.get_plan_object('implementation_phase', int(pk)))]
+        return [str(report.plan_current_related_objects.implementation_phases.get(int(pk)))]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -223,7 +279,13 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
         )
         return result
 
-    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str|None]:
+    def extract_action_values(
+            self,
+            report: 'ExcelReport',
+            block_value: dict,
+            action: dict,
+            related_objects: list[dict]
+    ) -> list[str | None]:
         organization_id = None
         try:
             organization_id = next((
@@ -234,7 +296,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
             ))
         except StopIteration:
             return [None]
-        organization = report.get_plan_object('organization', organization_id)
+        organization = report.plan_current_related_objects.organizations.get(organization_id)
         target_depth = block_value.get('target_ancestor_depth')
         if not target_depth:
             return [organization.name]
@@ -274,10 +336,12 @@ class ReportFieldBlock(blocks.StreamBlock):
     implementation_phase = ActionImplementationPhaseReportFieldBlock()
     attribute_type = ActionAttributeTypeReportFieldBlock()
     responsible_party = ActionResponsiblePartyReportFieldBlock()
+    category = ActionCategoryReportFieldBlock()
     # TODO: action status
 
     graphql_types = [
         ActionImplementationPhaseReportFieldBlock,
         ActionAttributeTypeReportFieldBlock,
-        ActionResponsiblePartyReportFieldBlock
+        ActionResponsiblePartyReportFieldBlock,
+        ActionCategoryReportFieldBlock
     ]
