@@ -4,7 +4,6 @@ from django.utils.translation import gettext
 
 from actions.models import Action
 from orgs.models import Organization
-from .blocks.action_content import ActionImplementationPhaseReportFieldBlock
 
 from io import BytesIO
 
@@ -124,10 +123,15 @@ class ExcelReport:
         # Header row
         worksheet.write_row(0, 0, df.columns)
 
-        col_width = 40 if small else 50
-        first_col_width = col_width if small else 10
+        # col_width = 40 if small else 50
+        # first_col_width = col_width if small else 10
+        # row_height = 20 if small else 50
+        # last_col_width = 10 if small else col_width
+
+        col_width = 5
+        first_col_width = 5
         row_height = 20 if small else 50
-        last_col_width = 10 if small else col_width
+        last_col_width = 5
 
         # Data rows
         for i, row in enumerate(df.iter_rows()):
@@ -140,6 +144,9 @@ class ExcelReport:
         worksheet.set_column(0, 0, first_col_width)
         worksheet.set_column(i-1, i-1, last_col_width)
         worksheet.set_row(0, 20, self.formats.header_row)
+        worksheet.autofit()
+        if not small:
+            worksheet.set_column(1, 1, 50)
         return worksheet
 
     def close(self):
@@ -221,7 +228,16 @@ class ExcelReport:
         for label in labels:
             if label not in action_df.columns:
                 return None
-        return action_df.groupby(labels).count().sort('count', descending=True)
+        if len(labels) == 0 or len(labels) > 2:
+            raise ValueError('Only one or two dimensional pivot tables supported')
+        if len(labels) == 1:
+            return action_df.groupby(labels).count().sort(reversed(labels), descending=False).rename({'count': gettext('Actions')})
+        return action_df.pivot(
+            values="Identifier",
+            index=labels[0],
+            columns=labels[1],
+            aggregate_function="count"
+            ).sort(labels[0])
 
     def post_process(self, action_df: polars.DataFrame):
         for i, grouping in enumerate([
@@ -232,9 +248,28 @@ class ExcelReport:
         ]):
             aggregated = self._get_aggregates(grouping, action_df)
             if aggregated is not None:
-                sheet_name = f"Aggregates {i}"
+                sheet_name = f"Summary {i + 1}"
                 worksheet = self.workbook.add_worksheet(sheet_name)
                 self._write_sheet(worksheet, aggregated, small=True)
+                chart_type = 'column'
+                if len(grouping) == 1:
+                    chart_type = 'pie'
+                chart = self.workbook.add_chart({'type': chart_type})
+                for i in range(0, aggregated.width - 1):
+                    series = {
+                        'categories': [sheet_name, 1, 0, aggregated.height, 0], # all department names
+                        'values': [sheet_name, 1, 1 + i, aggregated.height, 1 + i], # all values per phase
+                        'name': [sheet_name, 0, 1 + i]
+                    } # phase name
+                    import pprint
+                    pprint.pprint(series)
+                    chart.add_series(series)
+                if chart_type == 'column':
+                    chart.set_size({'width': 720, 'height': 576})
+                chart.set_plotarea({
+                    'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
+                })
+                worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
 
     def _initialize_format(self, key, initializer):
         format = self.workbook.add_format()
