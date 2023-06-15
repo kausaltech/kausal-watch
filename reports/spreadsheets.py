@@ -1,6 +1,7 @@
 import inspect
 
-from django.utils.translation import gettext
+from django.utils import translation
+from django.utils.translation import gettext as _
 
 from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
 from actions.models.category import CategoryType
@@ -17,12 +18,6 @@ import typing
 if typing.TYPE_CHECKING:
     from .models import Report
     from reports.blocks.action_content import ReportFieldBlock
-
-
-LABEL_IDENTIFIER = gettext('Identifier')
-LABEL_ACTION_NAME = gettext('Action')
-LABEL_COMPLETED_BY = gettext('Marked as complete by'),
-LABEL_COMPLETED_AT = gettext('Marked as complete at')
 
 
 class ExcelFormats(dict):
@@ -81,6 +76,7 @@ class ExcelFormats(dict):
 
 class ExcelReport:
     # pass as context to block fields
+    language: str
     report: 'Report'
     workbook: xlsxwriter.Workbook
     formats: ExcelFormats
@@ -116,7 +112,12 @@ class ExcelReport:
                 c.pk: c for ct in category_types for c in ct.categories.all()
             }
 
-    def __init__(self, report: 'Report'):
+    def __init__(self, report: 'Report', language: str|None = None):
+        # Currently only language None is properly supported, defaulting
+        # to the plan's primary language. When implementing support for
+        # other languages, make sure the action contents and other
+        # plan object contents are translated.
+        self.language = report.type.plan.primary_language if language is None else language
         self.report = report
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
@@ -124,17 +125,22 @@ class ExcelReport:
         self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self._initialize_formats()
 
+    def generate_actions_dataframe(self) -> polars.DataFrame:
+        with translation.override(self.language):
+            prepared_data = self._prepare_serialized_report_data()
+            return self.create_populated_actions_dataframe(prepared_data)
+
     def generate_xlsx(self) -> bytes:
-        prepared_data = self._prepare_serialized_report_data()
-        actions_df = self.create_populated_actions_dataframe(prepared_data)
-        self._write_actions_sheet(actions_df)
-        self.post_process(actions_df)
+        actions_df = self.generate_actions_dataframe()
+        with translation.override(self.language):
+            self._write_actions_sheet(actions_df)
+            self.post_process(actions_df)
         # Make striped even-odd rows
         self.close()
         return self.output.getvalue()
 
     def _write_actions_sheet(self, df: polars.DataFrame):
-        return self._write_sheet(self.workbook.add_worksheet(gettext('Actions')), df)
+        return self._write_sheet(self.workbook.add_worksheet(_('Actions')), df)
 
     def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
         # Header row
@@ -233,8 +239,8 @@ class ExcelReport:
             completed_at = completion['completed_at']
             if completed_at is not None:
                 completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
-            append_to_key(LABEL_IDENTIFIER, action_identifier)
-            append_to_key(LABEL_ACTION_NAME, action_name)
+            append_to_key(_('Identifier'), action_identifier)
+            append_to_key(_('Action'), action_name)
             for field in self.report.fields:
                 labels = [label for label in field.block.xlsx_column_labels(field.value)]
                 values = field.block.extract_action_values(
@@ -246,9 +252,9 @@ class ExcelReport:
                 for label, value in zip(labels, values):
                     append_to_key(label, value)
             if completed_by:
-                append_to_key(LABEL_COMPLETED_BY, completed_by)
+                append_to_key(_('Marked as complete by'), completed_by)
             if completed_at:
-                append_to_key(LABEL_COMPLETED_AT, completed_at)
+                append_to_key(_('Marked as complete at'), completed_at)
         return polars.DataFrame(data)
 
     def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
@@ -262,9 +268,9 @@ class ExcelReport:
                 .groupby(labels)\
                 .count()\
                 .sort(reversed(labels), descending=False)\
-                .rename({'count': gettext('Actions')})
+                .rename({'count': _('Actions')})
         return action_df.pivot(
-            values="Identifier",
+            values=_("Identifier"),
             index=labels[0],
             columns=labels[1],
             aggregate_function="count"
@@ -273,18 +279,18 @@ class ExcelReport:
     def post_process(self, action_df: polars.DataFrame):
         pivot_specs = [
             {
-                'group': (gettext('implementation phase').capitalize(),),
+                'group': (_('implementation phase').capitalize(),),
                 'type': 'pie'
             },
             {
-                'group': (gettext('parent organization').capitalize(),
-                          gettext('implementation phase').capitalize()),
+                'group': (_('parent organization').capitalize(),
+                          _('implementation phase').capitalize()),
                 'type': 'column'
             }
         ]
         for ct in self.plan_current_related_objects.category_types.values():
             pivot_specs.append({
-                'group': (ct.name, gettext('implementation phase').capitalize()),
+                'group': (ct.name, _('implementation phase').capitalize()),
                 'type': 'column',
                 'subtype': 'stacked'
             })
