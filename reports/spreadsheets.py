@@ -91,26 +91,20 @@ class ExcelReport:
 
         def __init__(self, report: 'Report'):
             plan = report.type.plan
-            self.implementation_phases = {
-                p.pk: p for p in plan.action_implementation_phases.all()
-            }
-            self.statuses = {
-                p.pk: p for p in plan.action_statuses.all()
-            }
-            self.organizations = {
-                p.pk: p for p in Organization.objects.available_for_plan(plan)
-            }
             category_types = [
                 field.value.get('category_type')
                 for field in report.fields
                 if isinstance(field.block, ActionCategoryReportFieldBlock)
             ]
-            self.category_types = {
-                ct.pk: ct for ct in category_types
-            }
-            self.categories = {
-                c.pk: c for ct in category_types for c in ct.categories.all()
-            }
+            self.category_types = self._keyed_dict(category_types)
+            self.categories = self._keyed_dict([c for ct in category_types for c in ct.categories.all()])
+            self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
+            self.statuses = self._keyed_dict(plan.action_statuses.all())
+            self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
+
+        @staticmethod
+        def _keyed_dict(seq, key='pk'):
+            return {getattr(el, key): el for el in seq}
 
     def __init__(self, report: 'Report', language: str|None = None):
         # Currently only language None is properly supported, defaulting
