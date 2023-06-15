@@ -348,7 +348,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
         else:
             parent = ancestors[target_depth-1]
         parent_name = parent.name if parent else None
-        return [parent_name, organization.name]
+        return [organization.name, parent_name]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
@@ -362,7 +362,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
         labels = [str(self.label).capitalize()]
         if 'target_ancestor_depth' not in value:
             return labels
-        return [gettext('Parent organization')] + labels
+        return labels + [gettext('Parent')]
 
     def get_xlsx_cell_format(self, block_value):
         return None

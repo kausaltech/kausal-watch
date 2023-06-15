@@ -283,8 +283,9 @@ class ExcelReport:
                 'type': 'pie'
             },
             {
-                'group': (_('parent organization').capitalize(),
-                          _('implementation phase').capitalize()),
+                'group': (
+                    _('Parent'),
+                    _('implementation phase').capitalize()),
                 'type': 'column'
             }
         ]
