@@ -174,7 +174,8 @@ class ActionEditHandler(AplansTabbedInterface):
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
 
-        if plan.actions_locked:
+        if plan.actions_locked and 'official_name' in form_class.base_fields:
+            # 'official_name' may not be in the fields if the plan has official names disabled
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
 
