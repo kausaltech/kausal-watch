@@ -334,15 +334,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'aplans.openapi.AutoSchema',
 }
 
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Kausal Watch REST API',
-    'DESCRIPTION': 'Monitor and manage action plans',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '^/v1',
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-}
-
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = list(default_cors_headers) + [
@@ -420,7 +411,6 @@ PARLER_LANGUAGES = {
     }
 }
 
-
 TIME_ZONE = 'Europe/Helsinki'
 
 USE_I18N = True
@@ -433,6 +423,18 @@ USE_TZ = True
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale')
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Kausal Watch REST API',
+    'DESCRIPTION': 'Monitor and manage action plans',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '^/v1',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'ENUM_NAME_OVERRIDES': {
+        'OtherLanguagesEnum': LANGUAGES,
+    },
+}
 
 #
 # Email

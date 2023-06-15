@@ -120,15 +120,19 @@ class PlanRelatedModelSerializer(serializers.ModelSerializer):
             context = kwargs.get('context')
             if context is not None:
                 view = context['view']
-                plan_pk = view.kwargs['plan_pk']
-                plan = Plan.objects.filter(pk=plan_pk).prefetch_related('category_types').first()
-                if plan is None:
-                    raise exceptions.NotFound('Plan not found')
-                self.plan = plan
+                if getattr(view, 'swagger_fake_view', False):
+                    # Called during schema generation
+                    assert 'plan_pk' not in view.kwargs
+                    self.plan = get_default_plan()
+                else:
+                    plan_pk = view.kwargs['plan_pk']
+                    plan = Plan.objects.filter(pk=plan_pk).prefetch_related('category_types').first()
+                    if plan is None:
+                        raise exceptions.NotFound('Plan not found')
+                    self.plan = plan
             else:
-                # Probably used for schema generation
+                # Probably called during schema generation
                 self.plan = get_default_plan()
-
         super().__init__(*args, **kwargs)
 
 
