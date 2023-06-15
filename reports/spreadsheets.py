@@ -263,6 +263,7 @@ class ExcelReport:
                 return None
         if len(labels) == 0 or len(labels) > 2:
             raise ValueError('Only one or two dimensional pivot tables supported')
+        action_df = action_df.fill_null('[' + _('Unknown') + ']')
         if len(labels) == 1:
             return action_df\
                 .groupby(labels)\

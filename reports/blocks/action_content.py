@@ -170,10 +170,13 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock):
             report.plan_current_related_objects.categories.get(int(pk))
             for pk in category_pks
         ]
-        return ["; ".join(
+        category_names = "; ".join(
             c.name for c in categories
             if c and c.type == block_value.get('category_type')
-        )]
+        )
+        if len(category_names) == 0:
+            return [None]
+        return [category_names]
 
     def xlsx_column_labels(self, block_value) -> List[str]:
         return [block_value.get('category_type').name]
@@ -217,7 +220,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
         pk = action.get('implementation_phase_id')
         if pk is None:
             return [None]
-        return [str(report.plan_current_related_objects.implementation_phases.get(int(pk)))]
+        return [str(report.plan_current_related_objects.implementation_phases.get(int(pk), f"[{_('empty')}]"))]
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     value = self.value_for_action(block_value, action)
