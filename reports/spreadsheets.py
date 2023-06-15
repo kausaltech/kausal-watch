@@ -1,3 +1,4 @@
+from datetime import datetime
 import inspect
 
 from django.utils import translation
@@ -42,7 +43,9 @@ class ExcelFormats(dict):
 
         @classmethod
         def date(cls, f: Format):
-            f.set_num_format('yyyy-mm-dd h:mm:ss')
+            f.set_num_format('d mmmm yyyy')
+            f.set_align('left')
+            f.set_bg_color(cls.COLOR_WHITE)
 
         @classmethod
         def odd_row(cls, f: Format):
@@ -50,6 +53,34 @@ class ExcelFormats(dict):
 
         @classmethod
         def even_row(cls, f: Format):
+            f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
+        def title(cls, f: Format):
+            f.set_bold()
+            f.set_font_size(24)
+            cls.header_row(f)
+
+        @classmethod
+        def sub_title(cls, f: Format):
+            f.set_bold()
+            f.set_font_size(18)
+            f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
+        def metadata_label(cls, f: Format):
+            f.set_bold()
+            f.set_align('right')
+            f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
+        def metadata_value(cls, f: Format):
+            f.set_align('left')
+            f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
+        def sub_sub_title(cls, f: Format):
+            f.set_font_size(16)
             f.set_bg_color(cls.COLOR_WHITE)
 
         @classmethod
@@ -72,6 +103,54 @@ class ExcelFormats(dict):
 
     def get_for_label(self, label):
         return self._formats_for_fields.get(label)
+
+
+class CursorWriter:
+    def __init__(self, worksheet, formats=None, default_format=None, start=(0, 0), width=None):
+        self.default_format = default_format
+        self.worksheet = worksheet
+        self.cursor = start
+        self.start = start
+        self.fill_to = start[1] + width
+        self.current_format = None
+        self.formats = formats
+
+    def write(self, value, format=None, url=None):
+        format = format if format else self.default_format
+        self.current_format = format
+        x, y = self.cursor
+        if url:
+            self.worksheet.write_url(x, y, url, format, string=value)
+        else:
+            self.worksheet.write(x, y, value, format)
+        self.cursor = (x, y + 1)
+        return self
+
+    def write_empty(self, count):
+        while count > 0:
+            self.write('', format=self.current_format)
+            count -= 1
+        return self
+
+    def newline(self):
+        x, y = self.cursor
+        y_delta = self.fill_to - y
+        if y_delta > 0:
+            self.write_empty(y_delta)
+        self.cursor = (x + 1, self.start[1])
+        return self
+
+    def write_cells(self, cells: list[list[tuple[str, str]|tuple[str, str, str]]]):
+        for row in cells:
+            for cell in row:
+                format = cell[1] if len(cell) > 1 else None
+                if isinstance(format, str):
+                    format = getattr(self.formats, format, None)
+                url = None
+                if len(cell) > 2:
+                    url = cell[2]
+                self.write(cell[0], format=format, url=url)
+            self.newline()
 
 
 class ExcelReport:
@@ -127,11 +206,47 @@ class ExcelReport:
     def generate_xlsx(self) -> bytes:
         actions_df = self.generate_actions_dataframe()
         with translation.override(self.language):
+            self._write_title_sheet()
             self._write_actions_sheet(actions_df)
             self.post_process(actions_df)
         # Make striped even-odd rows
         self.close()
         return self.output.getvalue()
+
+    def _write_title_sheet(self):
+        worksheet = self.workbook.add_worksheet(_('Lead'))
+        plan = self.report.type.plan
+        start = self.report.start_date
+        end = self.report.end_date
+        complete_key = _('status')
+        complete_label = _('complete')
+        not_complete_label = _('in progress')
+        completed = complete_label if self.report.is_complete else not_complete_label
+        cells = [
+            [(plan.name, 'title')],
+            [(self.report.type.name, 'sub_title')],
+            [(self.report.name, 'sub_sub_title')],
+            [],
+            [(complete_key, 'metadata_label'), (completed, 'metadata_value')],
+            [(str(self.report._meta.get_field('start_date').verbose_name), 'metadata_label'), (start, 'date')],
+            [(str(self.report._meta.get_field('end_date').verbose_name), 'metadata_label'), (end, 'date')],
+            [(_('updated at'), 'metadata_label'), (plan.to_local_timezone(datetime.now()).replace(tzinfo=None), 'date')],
+            [],
+            [(_('Exported from Kausal Watch'), 'metadata_value')],
+            [('kausal.tech', 'metadata_value', 'https://kausal.tech')],
+            [],
+        ]
+        CursorWriter(
+            worksheet,
+            formats=self.formats,
+            default_format=self.formats.even_row,
+            width=3
+        ).write_cells(cells)
+        worksheet.set_row(0, 30)
+        worksheet.set_row(1, 30)
+        worksheet.set_row(2, 30)
+        worksheet.autofit()
+        worksheet.set_column(1, 1, 40)
 
     def _write_actions_sheet(self, df: polars.DataFrame):
         return self._write_sheet(self.workbook.add_worksheet(_('Actions')), df)
