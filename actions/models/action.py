@@ -683,6 +683,13 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_timeliness(self):
         return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan})
 
+    def get_color(self):
+        if self.status and self.status.color:
+            return self.status.color
+        if self.implementation_phase and self.implementation_phase.color:
+            return self.implementation_phase.color
+        return None
+
 
 class ActionResponsibleParty(OrderedModel):
     class Role(models.TextChoices):
