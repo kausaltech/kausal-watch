@@ -823,7 +823,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
     public_fields = [
-        'id', 'plan', 'order', 'name', 'identifier',
+        'id', 'plan', 'order', 'name', 'identifier', 'color'
     ]
 
     class Meta:
