@@ -786,6 +786,7 @@ class ActionStatus(models.Model, PlanRelatedModel):
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
+    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
@@ -810,6 +811,7 @@ class ActionImplementationPhase(OrderedModel, PlanRelatedModel):
     )
     name = models.CharField(max_length=50, verbose_name=_('name'))
     identifier = IdentifierField(max_length=20)
+    color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
