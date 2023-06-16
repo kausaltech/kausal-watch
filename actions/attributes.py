@@ -1,12 +1,31 @@
+import re
+from html import unescape
+
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.utils.html import strip_tags
+
 from django.utils.translation import gettext_lazy as _
 from typing import Any, Dict, List, Optional
 from wagtail.admin.edit_handlers import FieldPanel
 
 import actions.models.attributes as models
+
+
+def html_to_plaintext(richtext):
+    """
+    Return a plain text version of a rich text string, suitable for search indexing;
+    like Django's strip_tags, but ensures that whitespace is left between block elements
+    so that <p>hello</p><p>world</p> gives "hello world", not "helloworld".
+    """
+    # insert space after </p>, </h1> - </h6>, </li> and </blockquote> tags
+    richtext = re.sub(
+        r"(</(p|h\d|li|blockquote)>)", r"\1\n\n", richtext, flags=re.IGNORECASE
+    )
+    richtext = re.sub(r"(<(br|hr)\s*/>)", r"\1\n", richtext, flags=re.IGNORECASE)
+    return unescape(strip_tags(richtext).strip())
 
 
 class AttributeFieldPanel(FieldPanel):
@@ -260,7 +279,8 @@ class OptionalChoiceWithText(AttributeType):
         if not attribute:
             return [None, None]
         attribute_data = attribute.get('data')
-        return [str(attribute_data['choice_id']), attribute_data['text']]
+        rich_text = attribute_data['text']
+        return [str(attribute_data['choice_id']), html_to_plaintext(rich_text)]
 
     def xlsx_column_labels(self) -> List[str]:
         return [
@@ -325,6 +345,13 @@ class Text(TextAttributeTypeMixin, AttributeType):
 
 class RichText(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
+
+    def xlsx_values(self, attribute) -> List[Any]:
+        if not attribute:
+            return [None, None]
+        attribute_data = attribute.get('data')
+        rich_text = attribute_data['text']
+        return [html_to_plaintext(rich_text)]
 
 
 class Numeric(AttributeType):
