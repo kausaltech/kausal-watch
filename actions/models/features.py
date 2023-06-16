@@ -26,6 +26,13 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Show action identifiers'),
         help_text=_("Set if action identifiers should be visible in the public UI")
     )
+    minimal_statuses = models.BooleanField(
+        default=False, verbose_name=_('Minimal statuses'),
+        help_text=_(
+            "Set to prevent showing status-specific graphs "
+            "and other elements if statuses aren't systematically used in this action plan"
+        )
+    )
     has_action_official_name = models.BooleanField(
         default=False, verbose_name=_('Has action official name field'),
         help_text=_("Set if the plan uses the official name field")
@@ -50,7 +57,8 @@ class PlanFeatures(models.Model):
     public_fields = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
-        'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison'
+        'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
+        'minimal_statuses'
     ]
 
     class Meta:
