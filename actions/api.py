@@ -4,6 +4,7 @@ import copy
 import rest_framework.fields
 import typing
 from typing import Optional
+from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
@@ -542,7 +543,7 @@ class PrevSiblingField(serializers.Field):
         # related model instance itself.
         try:
             model._meta.get_field('uuid')
-            return data
+            return UUID(data)
         except FieldDoesNotExist:
             return model.objects.get(id=data)
 
@@ -1096,7 +1097,7 @@ class TreebeardParentField(serializers.Field):
         # related model instance itself.
         try:
             model._meta.get_field('uuid')
-            return data
+            return UUID(data)
         except FieldDoesNotExist:
             return model.objects.get(id=data)
 
@@ -1116,6 +1117,18 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
             return None
         return self.Meta.model.objects.get(uuid=uuid)
 
+    def _get_validated_instance_data(self, uuid):
+        for child_data in getattr(self.parent, '_children_validated_so_far', []):
+            if child_data['uuid'] == uuid:
+                return child_data
+        raise exceptions.ValidationError("No validated instance with the given UUID found")
+
+    def run_validation(self, *args, **kwargs):
+        data = super().run_validation(*args, **kwargs)
+        if hasattr(self.parent, '_children_validated_so_far'):
+            self.parent._children_validated_so_far.append(data)
+        return data
+
     def validate(self, data):
         # Map UUID to UUID
         if data['left_sibling']:
@@ -1123,11 +1136,18 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
             if data['left_sibling'] in parents:
                 left_sibling_parent_uuid = parents[data['left_sibling']]
             else:
-                left_sibling = self._get_instance_from_uuid(data['left_sibling'])
-                if left_sibling.parent is None:
-                    left_sibling_parent_uuid = None
+                try:
+                    left_sibling = self._get_instance_from_uuid(data['left_sibling'])
+                except self.Meta.model.DoesNotExist:
+                    # Maybe the instance is not created yet because it is about to be created in the same request
+                    left_sibling = self._get_validated_instance_data(data['left_sibling'])
+                    left_sibling_parent_uuid = left_sibling['parent']
                 else:
-                    left_sibling_parent_uuid = left_sibling.parent.uuid
+                    assert left_sibling is not None
+                    if left_sibling.parent is None:
+                        left_sibling_parent_uuid = None
+                    else:
+                        left_sibling_parent_uuid = left_sibling.parent.uuid
             if left_sibling_parent_uuid != data['parent']:
                 raise exceptions.ValidationError("Instance and left sibling have different parents")
         return data
