@@ -544,7 +544,6 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
             instance,
             request,
             include_all_languages=True,
-            default_language=instance.type.primary_language,
         )
         tabs += i18n_tabs
 

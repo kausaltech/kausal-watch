@@ -412,7 +412,7 @@ class IndicatorAdmin(AplansModelAdmin):
             ], heading=_('Contact persons')),
         ]
 
-        i18n_tabs = get_translation_tabs(instance, request)
+        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
         tabs += i18n_tabs
 
         return IndicatorEditHandler(tabs)
