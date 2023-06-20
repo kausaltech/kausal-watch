@@ -101,6 +101,11 @@ class ExcelFormats(dict):
             for label in labels:
                 self._formats_for_fields[label] = cell_format
 
+    def set_for_label(self, label: str, format: Format) -> None:
+        cell_format = self._formats_for_fields.get(label)
+        if not cell_format:
+            self._formats_for_fields[label] = format
+
     def get_for_label(self, label):
         return self._formats_for_fields.get(label)
 
@@ -312,7 +317,7 @@ class ExcelReport:
                     related_objects=[self._prepare_serialized_model_version(o) for o in all_related_versions],
                     completion={
                         'completed_at': revision.date_created,
-                        'completed_by': revision.user
+                        'completed_by': str(revision.user)
                     }
                 ))
             return row_data
@@ -363,7 +368,9 @@ class ExcelReport:
             if completed_by:
                 append_to_key(_('Marked as complete by'), completed_by)
             if completed_at:
-                append_to_key(_('Marked as complete at'), completed_at)
+                label = _('Marked as complete at')
+                append_to_key(label, completed_at)
+                self.formats.set_for_label(label, self.formats.date)
         return polars.DataFrame(data)
 
     def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
