@@ -36,15 +36,13 @@ class ReportTypeQueryParameterMixin:
 
 
 class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
-    def get_instance(self):
-        """Create a report instance and set its report type to the one given in the GET or POST data."""
-        instance = super().get_instance()
-        report_type = self.request.GET.get('report_type')
-        if report_type and not instance.pk:
-            assert not hasattr(instance, 'type')
-            instance.type = ReportType.objects.get(pk=int(report_type))
-            instance.fields = instance.type.fields
-        return instance
+    def initialize_instance(self, request):
+        """Set the new report's type to the one given in the GET data end set the report fields from the type."""
+        report_type = request.GET.get('report_type')
+        if report_type and not self.instance.pk:
+            assert not hasattr(self.instance, 'type')
+            self.instance.type = ReportType.objects.get(pk=int(report_type))
+            self.instance.fields = self.instance.type.fields
 
 
 class ReportEditView(ReportTypeQueryParameterMixin, AplansEditView):
