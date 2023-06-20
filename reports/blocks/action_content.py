@@ -47,7 +47,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Field"))
 
     class Meta:
-        label = _("Action attribute")
+        label = _("Action field")
 
     graphql_fields = [
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True)
