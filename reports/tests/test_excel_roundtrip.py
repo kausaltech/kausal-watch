@@ -38,12 +38,17 @@ def test_excel_export(
         actions_having_attributes,
         report_with_all_attributes,
         excel_file_from_report_factory,
-        user
+        user,
+        django_assert_max_num_queries
 ):
-    excel_file_incomplete = excel_file_from_report_factory()
+    # TODO optimize
+    with django_assert_max_num_queries(402) as captured:
+        excel_file_incomplete = excel_file_from_report_factory()
     df_incomplete = assert_report_dimensions(excel_file_incomplete, report_with_all_attributes, actions_having_attributes)
     report_with_all_attributes.mark_as_complete(user)
-    excel_file_complete = excel_file_from_report_factory()
+    # TODO optimize
+    with django_assert_max_num_queries(975) as captured:
+        excel_file_complete = excel_file_from_report_factory()
     df_complete = assert_report_dimensions(excel_file_complete, report_with_all_attributes, actions_having_attributes)
     df_complete_minus_completion = None
     with translation.override(report_with_all_attributes.xlsx_exporter.language):
