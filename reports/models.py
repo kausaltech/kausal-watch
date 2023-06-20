@@ -79,6 +79,7 @@ class Report(models.Model, PlanRelatedModel):
 
     def to_xlsx(self):
         xlsx_exporter = ExcelReport(self)
+        self.xlsx_exporter = xlsx_exporter
         return xlsx_exporter.generate_xlsx()
 
     def _raise_complete(self):

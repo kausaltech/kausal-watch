@@ -186,6 +186,7 @@ def report_type_with_all_attributes(
 def report_with_all_attributes(
         report_type_with_all_attributes,
         report_factory,
+        actions_having_attributes
 ):
     report = report_factory(type=report_type_with_all_attributes)
     report.fields = report_type_with_all_attributes.fields

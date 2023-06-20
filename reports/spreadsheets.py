@@ -93,7 +93,7 @@ class ExcelFormats(dict):
         return self[name]
 
     def set_for_field(self, field: 'ReportFieldBlock', labels: list) -> None:
-        cell_format = self._formats_for_fields.get(field.id)
+        cell_format = self._formats_for_fields.get(field.id)  # TODO: field.id not key
         if not cell_format:
             cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
             cell_format = self.workbook.add_format(cell_format_specs)
