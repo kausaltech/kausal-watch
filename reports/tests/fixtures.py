@@ -106,6 +106,7 @@ def actions_having_attributes(
         attribute_type_choice_option__optional,
 ):
 
+    ACTION_COUNT = 10
     IMPLEMENTATION_PHASE_COUNT = 3
     ORGANIZATION_COUNT = 4
     implementation_phases = n_of_a_kind(action_implementation_phase_factory, IMPLEMENTATION_PHASE_COUNT, context={'plan': plan})
@@ -154,7 +155,7 @@ def actions_having_attributes(
         )
         return action
 
-    return [decorated_action(i) for i in range(0, 10)]
+    return [decorated_action(i) for i in range(0, ACTION_COUNT)]
 
 
 @pytest.fixture
