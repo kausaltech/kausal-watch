@@ -96,7 +96,11 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             action: dict,
             related_objects: list[dict]) -> Optional[Any]:
         wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-        attribute_record = get_attribute_for_type_from_related_objects(int(action['id']), block_value['attribute_type'], related_objects)
+        attribute_record = get_attribute_for_type_from_related_objects(
+            int(action['id']),
+            block_value['attribute_type'],
+            related_objects
+        )
         if attribute_record is None:
             return [None]
         return wrapped_type.xlsx_values(attribute_record)
