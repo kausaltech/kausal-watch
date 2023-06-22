@@ -30,6 +30,11 @@ class ActionResponsiblePartyReportFieldBlockFactory(StructBlockFactory):
         model = action_content.ActionResponsiblePartyReportFieldBlock
 
 
+class ActionCategoryReportFieldBlockFactory(StructBlockFactory):
+    class Meta:
+        model = action_content.ActionCategoryReportFieldBlock
+
+
 class ReportFieldBlockFactory(StreamBlockFactory):
     class Meta:
         model = action_content.ReportFieldBlock
@@ -47,7 +52,8 @@ class ReportTypeFactory(DjangoModelFactory):
     fields = StreamFieldFactory({
         'implementation_phase': SubFactory(ActionImplementationPhaseReportFieldBlockFactory),
         'attribute_type': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
-        'responsible_party': SubFactory(ActionResponsiblePartyReportFieldBlockFactory)
+        'responsible_party': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
+        'category': SubFactory(ActionCategoryReportFieldBlockFactory),
     })
 
 
