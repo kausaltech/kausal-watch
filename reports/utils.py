@@ -1,23 +1,30 @@
 from django.contrib.contenttypes.models import ContentType
 from modelcluster.fields import ParentalManyToManyDescriptor
-from reversion.models import Version
 
-from actions.models import Action
+from actions.models.attributes import AttributeTypeChoiceOption
 
 
-def get_attribute_for_type_from_related_objects(action_id: int, attribute_type, versions: list[Version]):
-    pattern = {
-        'type_id': attribute_type.id,
-        'content_type_id': ContentType.objects.get_for_model(Action).id,
-        'object_id': action_id
-    }
+def make_attribute_path(version_data):
+    return (
+        version_data['content_type_id'],
+        version_data['object_id'],
+        version_data['type_id']
+    )
 
+
+def get_attribute_for_type_from_related_objects(
+        required_content_type: ContentType,
+        action_id: int,
+        attribute_type,
+        versions: list[dict]
+):
+    required_attribute_path = (
+        required_content_type.id,
+        action_id,
+        attribute_type.id
+    )
     for version in versions:
-        model = version['type']
-        # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
-        if (model.__module__ == 'actions.models.attributes'
-                and all(version['data'].get(key) == value for key, value in pattern.items())):
-            # Replace PKs by model instances. (We assume they still exist in the DB, otherwise we are fucked.)
+        if version['attribute_path'] == required_attribute_path:
             return version
             # field_dict = {}
             # for field_name, value in version.field_dict.items():

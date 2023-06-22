@@ -6,6 +6,7 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 
 from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
+from actions.models.attributes import Attribute
 from actions.models.category import CategoryType
 from orgs.models import Organization
 from reports.blocks.action_content import ActionCategoryReportFieldBlock
@@ -20,6 +21,8 @@ import typing
 if typing.TYPE_CHECKING:
     from .models import Report
     from reports.blocks.action_content import ReportFieldBlock
+
+from .utils import make_attribute_path
 
 
 class ExcelFormats(dict):
@@ -173,6 +176,7 @@ class ExcelReport:
         categories: dict[int, Category]
         category_types: dict[int, CategoryType]
         statuses: dict[int, ActionStatus]
+        action_content_type: ContentType
 
         def __init__(self, report: 'Report'):
             plan = report.type.plan
@@ -181,6 +185,7 @@ class ExcelReport:
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
             self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
+            self.action_content_type = ContentType.objects.get_for_model(Action)
 
         @staticmethod
         def _keyed_dict(seq, key='pk'):
@@ -296,10 +301,14 @@ class ExcelReport:
         self.workbook.close()
 
     def _prepare_serialized_model_version(self, version):
+        attribute_path = None
+        if issubclass(version.content_type.model_class(), Attribute):
+            attribute_path = make_attribute_path(version.field_dict)
         return dict(
             type=version.content_type.model_class(),
             data=version.field_dict,
-            str=version.object_repr
+            str=version.object_repr,
+            attribute_path=attribute_path
         )
 
     def _prepare_serialized_report_data(self):

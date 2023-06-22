@@ -95,10 +95,12 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
             block_value: dict,
             action: dict,
             related_objects: list[dict]) -> Optional[Any]:
-        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
+        attribute_type_model_instance = block_value['attribute_type']
+        wrapped_type = AttributeType.from_model_instance(attribute_type_model_instance)
         attribute_record = get_attribute_for_type_from_related_objects(
+            report.plan_current_related_objects.action_content_type,
             int(action['id']),
-            block_value['attribute_type'],
+            attribute_type_model_instance,
             related_objects
         )
         if attribute_record is None:
