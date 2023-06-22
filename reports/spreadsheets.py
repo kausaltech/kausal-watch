@@ -1,6 +1,7 @@
 from datetime import datetime
 import inspect
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.utils.translation import gettext as _
 
@@ -175,13 +176,8 @@ class ExcelReport:
 
         def __init__(self, report: 'Report'):
             plan = report.type.plan
-            category_types = [
-                field.value.get('category_type')
-                for field in report.fields
-                if isinstance(field.block, ActionCategoryReportFieldBlock)
-            ]
-            self.category_types = self._keyed_dict(category_types)
-            self.categories = self._keyed_dict([c for ct in category_types for c in ct.categories.all()])
+            self.category_types = self._keyed_dict(report.type.plan.category_types.all())
+            self.categories = self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()])
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
             self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
@@ -309,8 +305,13 @@ class ExcelReport:
     def _prepare_serialized_report_data(self):
         row_data = []
         if self.report.is_complete:
-            for snapshot in self.report.action_snapshots.all():
-                all_related_versions = snapshot.get_related_versions()
+            ct = ContentType.objects.get_for_model(Action)
+            for snapshot in (
+                    self.report.action_snapshots.all()
+                    .select_related('action_version', 'action_version__revision')
+                    .prefetch_related('action_version__revision__version_set')
+            ):
+                all_related_versions = snapshot.get_related_versions(ct)
                 revision = snapshot.action_version.revision
                 row_data.append(dict(
                     action=self._prepare_serialized_model_version(snapshot.action_version),

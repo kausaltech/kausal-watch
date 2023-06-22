@@ -8,6 +8,7 @@ import polars.selectors as cs
 
 from .fixtures import *  # noqa
 
+polars.Config.set_ascii_tables(True)
 
 pytestmark = pytest.mark.django_db
 
@@ -41,15 +42,19 @@ def test_excel_export(
         user,
         django_assert_max_num_queries
 ):
-    # TODO optimize
-    with django_assert_max_num_queries(402) as captured:
+    with django_assert_max_num_queries(352) as captured:
+        # report.get_live_action_versions hack currently causes hundreds of queries
+        # because of following actions' relations. Will let it be
         excel_file_incomplete = excel_file_from_report_factory()
+
     df_incomplete = assert_report_dimensions(excel_file_incomplete, report_with_all_attributes, actions_having_attributes)
     report_with_all_attributes.mark_as_complete(user)
-    # TODO optimize
-    with django_assert_max_num_queries(975) as captured:
+
+    with django_assert_max_num_queries(39) as captured:
         excel_file_complete = excel_file_from_report_factory()
+
     df_complete = assert_report_dimensions(excel_file_complete, report_with_all_attributes, actions_having_attributes)
+
     df_complete_minus_completion = None
     with translation.override(report_with_all_attributes.xlsx_exporter.language):
         df_complete_minus_completion = df_complete.select(

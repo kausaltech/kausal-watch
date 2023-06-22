@@ -85,39 +85,46 @@ class Report(models.Model, PlanRelatedModel):
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))
 
-    def get_live_action_versions(self):
-        """Returns similar action versions for an uncomplete report
-        as would be saved to the database when completing a report.
+    def get_live_action_versions(self) -> list[tuple[Version, list[Version], dict]]:
+        """Returns action versions for an incomplete report
+        similar to those that would be saved to the database when completing a report.
         """
         if self.is_complete:
             self._raise_complete()
-        actions_to_snapshot = self.type.plan.actions.all()
+
+        actions_to_snapshot = (
+            self.type.plan.actions.all()
+            .prefetch_related('responsible_parties__organization', 'categories__type')
+        )
         result = list()
 
         def is_action(v):
             return v._model == Action
+
+        incomplete_actions = []
         for action in actions_to_snapshot:
             try:
-                snapshot = action.get_latest_snapshot(self)
+                snapshot = action.get_latest_snapshot(report=self)
                 revision = snapshot.action_version.revision
                 result.append((snapshot.action_version, snapshot.get_related_versions(),
                                {'completed_at': revision.date_created,
                                 'completed_by': revision.user}))
                 continue
             except ObjectDoesNotExist:
-                pass
-            versions = []
-            try:
-                with create_revision(manage_manually=True):
+                incomplete_actions.append(action)
+        versions = []
+        try:
+            with create_revision(manage_manually=True):
+                for action in incomplete_actions:
                     add_to_revision(action)
-                    versions = list(_current_frame().db_versions['default'].values())
-                    raise NoRevisionSave()
-            except NoRevisionSave:
-                pass
-            action_versions = list(filter(is_action, versions))
-            assert len(action_versions) == 1
-            related_versions = list(filter(lambda v: not is_action(v), versions))
-            result.append((action_versions[0], related_versions,
+                versions = list(_current_frame().db_versions['default'].values())
+                raise NoRevisionSave()
+        except NoRevisionSave:
+            pass
+        action_versions = list(filter(is_action, versions))
+        related_versions = list(filter(lambda v: not is_action(v), versions))
+        for action_version in action_versions:
+            result.append((action_version, related_versions,
                            {'completed_at': None,
                             'completed_by': None}))
         return result
@@ -188,15 +195,13 @@ class ActionSnapshot(models.Model):
         except ActionSnapshot._RollbackRevision:
             pass
 
-    def get_related_versions(self):
-        ct = ContentType.objects.get_for_model(Action)
-        return self.action_version.revision.version_set.exclude(content_type=ct)
+    def get_related_versions(self, ct):
+        return self.action_version.revision.version_set.exclude(content_type=ct).select_related('content_type')
 
-    @staticmethod
-    def get_attribute_for_type_from_versions(attribute_type, versions):
+    def get_attribute_for_type_from_versions(self, attribute_type, versions, ct):
         pattern = {
             'type_id': attribute_type.id,
-            'content_type_id': ContentType.objects.get_for_model(Action).id,
+            'content_type_id': ct.id,
             'object_id': int(self.action_version.object_id),
         }
 
@@ -229,8 +234,9 @@ class ActionSnapshot(models.Model):
 
         Returned model instances have the PK field set, but this does not mean they currently exist in the DB.
         """
+        ct = ContentType.objects.get_for_model(Action)
         return self.get_attribute_for_type_from_versions(
-            attribute_type, self.get_related_versions()
+            attribute_type, self.get_related_versions(ct), ct
         )
 
     def __str__(self):
