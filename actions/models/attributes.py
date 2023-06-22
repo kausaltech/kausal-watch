@@ -139,6 +139,10 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         return self.name_i18n
 
 
+class Attribute:
+    pass
+
+
 @reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
@@ -177,7 +181,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
 
 
 @reversion.register(follow=['categories'])
-class AttributeCategoryChoice(ClusterableModel):
+class AttributeCategoryChoice(Attribute, ClusterableModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     object_id = models.PositiveIntegerField()
@@ -195,7 +199,7 @@ class AttributeCategoryChoice(ClusterableModel):
 
 
 @reversion.register()
-class AttributeChoice(models.Model):
+class AttributeChoice(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
 
     # `content_object` must fit `type`
@@ -216,7 +220,7 @@ class AttributeChoice(models.Model):
 
 
 @reversion.register(follow=['choice'])
-class AttributeChoiceWithText(models.Model):
+class AttributeChoiceWithText(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE,
                        related_name='choice_with_text_attributes')
 
@@ -245,7 +249,7 @@ class AttributeChoiceWithText(models.Model):
 
 
 @reversion.register()
-class AttributeText(models.Model):
+class AttributeText(Attribute, models.Model):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -275,7 +279,7 @@ class AttributeText(models.Model):
 
 
 @reversion.register()
-class AttributeRichText(models.Model):
+class AttributeRichText(Attribute, models.Model):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -305,7 +309,7 @@ class AttributeRichText(models.Model):
 
 
 @reversion.register()
-class AttributeNumericValue(models.Model):
+class AttributeNumericValue(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
 
     # `content_object` must fit `type`
@@ -439,7 +443,6 @@ class ModelWithAttributes(models.Model):
                 existing_attribute.delete()
             else:
                 existing_attribute.categories.set(category_ids)
-
 
     class Meta:
         abstract = True
