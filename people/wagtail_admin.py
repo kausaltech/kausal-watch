@@ -398,7 +398,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new person
+        instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
         user = request.user
         plan = user.get_active_admin_plan()
@@ -426,7 +426,7 @@ class PersonAdmin(AplansModelAdmin):
 
         tabs = [ObjectList(basic_panels, heading=_('General'))]
 
-        i18n_tabs = get_translation_tabs(Person, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
         return PersonEditHandler(tabs, base_form_class=form_class)

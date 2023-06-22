@@ -28,6 +28,7 @@ Jinja2
 django-parler
 django-anymail[mailgun]
 django-anymail[sendgrid]
+django-anymail[mailjet]
 django-reversion
 pytest-django
 pytest-cov

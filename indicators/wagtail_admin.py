@@ -138,9 +138,10 @@ class QuantityAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
-            *get_translation_tabs(Quantity, request, include_all_languages=True)
+            *get_translation_tabs(instance, request, include_all_languages=True)
         ]
         return AplansTabbedInterface(tabs, base_form_class=QuantityForm)
 
@@ -168,9 +169,10 @@ class UnitAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
-            *get_translation_tabs(Unit, request, include_all_languages=True)
+            *get_translation_tabs(instance, request, include_all_languages=True)
         ]
         return AplansTabbedInterface(tabs, base_form_class=UnitForm)
 
@@ -420,7 +422,7 @@ class IndicatorAdmin(AplansModelAdmin):
             ], heading=_('Contact persons')),
         ]
 
-        i18n_tabs = get_translation_tabs(Indicator, request)
+        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
         tabs += i18n_tabs
 
         return IndicatorEditHandler(tabs)

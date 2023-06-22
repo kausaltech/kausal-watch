@@ -117,7 +117,7 @@ class CategoryTypeAdmin(AplansModelAdmin):
             panels.insert(1, FieldPanel('common'))
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(CategoryType, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
         return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
@@ -334,7 +334,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new category
+        instance = ctx_instance.get()
         panels = list(self.panels)
         # If the category type doesn't have semantic identifiers, we
         # hide the whole panel.
@@ -359,7 +359,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(Category, request, extra_panels=i18n_attribute_panels)
+        i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         tabs += i18n_tabs
 
         return CategoryEditHandler(tabs)
@@ -416,11 +416,11 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new category
+        instance = ctx_instance.get()
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(CommonCategoryType, request)
+        i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
         return AplansTabbedInterface(tabs)
@@ -539,7 +539,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()  # FIXME: Fails when creating a new common category
+        instance = ctx_instance.get()
         panels = list(self.panels)
 
         if request.user.is_superuser:
@@ -554,12 +554,7 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
-        i18n_tabs = get_translation_tabs(
-            CommonCategory,
-            request,
-            include_all_languages=True,
-            default_language=instance.type.primary_language,
-        )
+        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
         tabs += i18n_tabs
 
         return CommonCategoryEditHandler(tabs)

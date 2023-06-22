@@ -37,8 +37,9 @@ env = environ.FileAwareEnv(
     STATIC_URL=(str, '/static/'),
     SENTRY_DSN=(str, ''),
     COOKIE_PREFIX=(str, 'aplans'),
-    SERVER_EMAIL=(str, 'noreply@ilmastovahti.fi'),
-    DEFAULT_FROM_EMAIL=(str, 'noreply@ilmastovahti.fi'),
+    ALLOWED_SENDER_EMAILS=(list, []),
+    SERVER_EMAIL=(str, ''),
+    DEFAULT_FROM_EMAIL=(str, ''),
     INTERNAL_IPS=(list, []),
     OIDC_ISSUER_URL=(str, ''),
     OIDC_CLIENT_ID=(str, ''),
@@ -50,6 +51,8 @@ env = environ.FileAwareEnv(
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
+    MAILJET_API_KEY=(str, ''),
+    MAILJET_SECRET_KEY=(str, ''),
     SENDGRID_API_KEY=(str, ''),
     HOSTNAME_PLAN_DOMAINS=(list, ['localhost']),
     ELASTICSEARCH_URL=(str, ''),
@@ -98,8 +101,13 @@ ELASTICSEARCH_URL = env('ELASTICSEARCH_URL')
 
 SECRET_KEY = env('SECRET_KEY')
 
+ALLOWED_SENDER_EMAILS = env('ALLOWED_SENDER_EMAILS')
 SERVER_EMAIL = env('SERVER_EMAIL')
+if not SERVER_EMAIL and ALLOWED_SENDER_EMAILS:
+    SERVER_EMAIL = ALLOWED_SENDER_EMAILS[0]
 DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
+if not DEFAULT_FROM_EMAIL and ALLOWED_SENDER_EMAILS:
+    DEFAULT_FROM_EMAIL = ALLOWED_SENDER_EMAILS[0]
 
 WAGTAILADMIN_BASE_URL = env('ADMIN_BASE_URL')
 WAGTAILADMIN_COMMENTS_ENABLED = True
@@ -452,6 +460,45 @@ if env.str('MAILGUN_API_KEY'):
 if env.str('SENDGRID_API_KEY'):
     EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
     ANYMAIL['SENDGRID_API_KEY'] = env.str('SENDGRID_API_KEY')
+
+if env.str('MAILJET_API_KEY'):
+    EMAIL_BACKEND = "anymail.backends.mailjet.EmailBackend"
+    ANYMAIL['MAILJET_API_KEY'] = env.str('MAILJET_API_KEY')
+    ANYMAIL['MAILJET_SECRET_KEY'] = env.str('MAILJET_SECRET_KEY')
+
+# ckeditor for rich-text admin fields
+CKEDITOR_CONFIGS = {
+    'default': {
+        'skin': 'moono-lisa',
+        'toolbar_Basic': [
+            ['Source', '-', 'Bold', 'Italic']
+        ],
+        'toolbar_Full': [
+            ['Format', 'Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
+            ['Link', 'Unlink'],
+            ['HorizontalRule'],
+            ['Source'],
+        ],
+        'removePlugins': 'uploadimage,uploadwidget',
+        'extraPlugins': '',
+        'toolbar': 'Full',
+        'height': 300,
+        'format_tags': 'p;h3;h4;h5;h6;pre'
+    },
+    'lite': {
+        'skin': 'moono-lisa',
+        'toolbar_Full': [
+            ['Bold', 'Italic', 'Underline', 'Strike', 'List', 'Undo', 'Redo'],
+            ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote'],
+            ['Link', 'Unlink'],
+        ],
+        'removePlugins': 'uploadimage,uploadwidget',
+        'extraPlugins': '',
+        'toolbar': 'Full',
+        'height': 150,
+    }
+}
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'

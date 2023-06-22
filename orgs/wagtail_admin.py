@@ -357,9 +357,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
             ObjectList(permissions_panels, heading=_('Permissions')),
         ]
 
-        i18n_tabs = get_translation_tabs(
-            instance, request, include_all_languages=True, default_language=instance.primary_language
-        )
+        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
         tabs += i18n_tabs
 
         plan = request.user.get_active_admin_plan()

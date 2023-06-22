@@ -72,6 +72,20 @@ class BulkListSerializer(serializers.ListSerializer):
         result = [self.child.create(attrs) for attrs in validated_data]
         return result
 
+    def run_validation(self, *args, **kwargs):
+        # If we POST multiple instances at the same time, then validation will be run for all of them sequentially
+        # before creating the first instance in the DB. Some of the new instances might reference instances (e.g., via
+        # `parent` or `left_sibling` in the case of `Organization`) that are also still to be created. So we keep track
+        # of the instances that we already validated (i.e., that we're about to create). For this, we must make sure to
+        # override run_validation() in model serializers so that they add the validated data to
+        # `self.parent._validated_so_far`, if `parent` is a BulkListSerializer. This sucks and it would be better to
+        # override `to_internal_value()` here, which iterates over the children and calls `run_validation()` on them.
+        # However, `ListSerializer.to_internal_value()` has a lot of other code and we might be in trouble if DRF
+        # changes some of that.
+        self._children_validated_so_far = []
+        return super().run_validation(*args, **kwargs)
+
+
 
 class BulkModelViewSet(viewsets.ModelViewSet):
     request: WatchAPIRequest

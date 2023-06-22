@@ -11,12 +11,12 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
 from django.utils.decorators import method_decorator
-from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
+from modeltrans.utils import get_instance_field_value
 from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
-from typing import Any, List
+from typing import List
 from urllib.parse import urljoin
 from wagtail.admin import messages
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
@@ -63,15 +63,12 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     return out
 
 
-def get_translation_tabs(
-    model, request, include_all_languages: bool = False, default_language=None, extra_panels=None
-):
-    if default_language is None:
-        default_language = settings.LANGUAGE_CODE
+def get_translation_tabs(instance, request, include_all_languages: bool = False, extra_panels=None):
     # extra_panels maps a language code to a list of panels that should be put on the tab of that language
     if extra_panels is None:
         extra_panels = {}
 
+    model = type(instance)
     i18n_field = get_i18n_field(model)
     if not i18n_field:
         return []
@@ -82,7 +79,11 @@ def get_translation_tabs(
 
     languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
     if include_all_languages:
-        # Omit main language because it's stored in the model field without a modeltrans language suffix
+        # Omit default language because it's stored in the model field without a modeltrans language suffix
+        if i18n_field.default_language_field:
+            default_language = get_instance_field_value(instance, i18n_field.default_language_field)
+        else:
+            default_language = settings.LANGUAGE_CODE
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
         languages = plan.other_languages
