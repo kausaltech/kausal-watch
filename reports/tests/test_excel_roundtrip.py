@@ -9,6 +9,8 @@ import polars.selectors as cs
 from .fixtures import *  # noqa
 
 polars.Config.set_ascii_tables(True)
+polars.Config.set_tbl_rows(20)
+polars.Config.set_tbl_cols(20)
 
 pytestmark = pytest.mark.django_db
 
