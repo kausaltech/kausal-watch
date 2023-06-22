@@ -37,7 +37,6 @@ def assert_report_dimensions(excel_file, report, actions):
 
 
 def test_excel_export(
-        plan,
         actions_having_attributes,
         report_with_all_attributes,
         excel_file_from_report_factory,

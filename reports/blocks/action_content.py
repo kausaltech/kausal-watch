@@ -105,7 +105,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
         )
         if attribute_record is None:
             return [None]
-        return wrapped_type.xlsx_values(attribute_record)
+        return wrapped_type.xlsx_values(attribute_record, related_objects)
 
     # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
     #     """Return the value for each of this attribute type's columns for the given action."""
@@ -335,9 +335,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
         organization_id = None
         try:
             organization_id = next((
-                arp['data']['organization_id'] for arp in related_objects
-                if arp['type'] == ActionResponsibleParty and
-                arp['data'].get('action_id') == action['id'] and
+                arp['data']['organization_id'] for arp in related_objects[ActionResponsibleParty]
+                if arp['data'].get('action_id') == action['id'] and
                 arp['data'].get('role') == 'primary'
             ))
         except StopIteration:

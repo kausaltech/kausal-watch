@@ -311,20 +311,30 @@ class ExcelReport:
             attribute_path=attribute_path
         )
 
+    def _group_by_model(self, serialized_versions: list[dict]):
+        result = {}
+        for version in serialized_versions:
+            _cls = version['type']
+            result.setdefault(_cls, [])
+            result[_cls].append(version)
+        return result
+
     def _prepare_serialized_report_data(self):
         row_data = []
         if self.report.is_complete:
             ct = ContentType.objects.get_for_model(Action)
             for snapshot in (
                     self.report.action_snapshots.all()
-                    .select_related('action_version', 'action_version__revision')
+                    .select_related('action_version__revision__user')
                     .prefetch_related('action_version__revision__version_set')
             ):
                 all_related_versions = snapshot.get_related_versions(ct)
                 revision = snapshot.action_version.revision
+                action = self._prepare_serialized_model_version(snapshot.action_version)
+                related_objects = self._group_by_model([self._prepare_serialized_model_version(o) for o in all_related_versions])
                 row_data.append(dict(
-                    action=self._prepare_serialized_model_version(snapshot.action_version),
-                    related_objects=[self._prepare_serialized_model_version(o) for o in all_related_versions],
+                    action=action,
+                    related_objects=related_objects,
                     completion={
                         'completed_at': revision.date_created,
                         'completed_by': str(revision.user)
@@ -336,7 +346,7 @@ class ExcelReport:
         for action, all_related_versions, completion in self.report.get_live_action_versions():
             row_data.append(dict(
                 action=self._prepare_serialized_model_version(action),
-                related_objects=[self._prepare_serialized_model_version(o) for o in all_related_versions],
+                related_objects=self._group_by_model([self._prepare_serialized_model_version(o) for o in all_related_versions]),
                 completion=completion
             ))
         return row_data
