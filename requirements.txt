@@ -396,7 +396,7 @@ vine==5.0.0
     #   amqp
     #   celery
     #   kombu
-wagtail==5.0
+wagtail==5.0.2
     # via
     #   -r requirements.in
     #   wagtail-autocomplete
