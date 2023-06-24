@@ -307,6 +307,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         # ]),
         FieldPanel('description'),
         FieldPanel('url'),
+        FieldPanel('email'),
     ]
 
     permissions_panels = [
