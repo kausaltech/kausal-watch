@@ -15,7 +15,6 @@ from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup
 from wagtail import hooks
 
-from .admin import DisconnectedIndicatorFilter
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansCreateView, AplansEditView,
@@ -29,6 +28,38 @@ from aplans.types import WatchAdminRequest
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
+
+
+class DisconnectedIndicatorFilter(SimpleListFilter):
+    title = _('Show indicators')
+    parameter_name = 'disconnected'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, _('in active plan')),
+            ('2', _('not in active plan')),
+            ('1', _('all')),
+        )
+
+    def queryset(self, request, queryset):
+        plan = request.user.get_active_admin_plan()
+        if self.value() == '1':
+            pass
+        elif self.value() == '2':
+            queryset = queryset.exclude(id__in=IndicatorLevel.objects.filter(plan=plan).values_list('indicator_id'))
+        else:
+            queryset = queryset.filter(levels__plan=plan)
+        return queryset
+
+    def choices(self, changelist):
+        for lookup, title in self.lookup_choices:
+            if lookup is not None:
+                lookup = str(lookup)
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': changelist.get_query_string({self.parameter_name: lookup}),
+                'display': title,
+            }
 
 
 class IndicatorPermissionHelper(PermissionHelper):

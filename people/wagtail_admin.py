@@ -3,12 +3,12 @@ import typing
 
 from dal import autocomplete
 from datetime import timedelta
+from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import F, ManyToManyField, OneToOneRel
-from django.db import models
+from django.db.models import F, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
@@ -17,9 +17,8 @@ from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.views import DeleteView
-from wagtail.log_actions import log
-from wagtail.admin import messages
 
+from actions.models import ActionContactPerson, Plan
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
     InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
@@ -29,7 +28,6 @@ from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 
-from .admin import IsContactPersonFilter
 from .models import Person
 from orgs.models import Organization, OrganizationPlanAdmin
 
@@ -40,6 +38,51 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class IsContactPersonFilter(SimpleListFilter):
+    title = _('Is contact person')
+    parameter_name = 'contact_person'
+
+    def lookups(self, request, model_admin):
+        plan = request.user.get_active_admin_plan()
+        related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
+        # If there are related plans that have action contact persons, show a filter for each of these plans
+        related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
+        filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
+        if filter_plans.exists():
+            action_filters = [(f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n})
+                              for plan in filter_plans]
+        else:
+            action_filters = [('action', _('For an action'))]
+        choices = [
+            *action_filters,
+            ('indicator', _('For an indicator')),
+            ('none', _('Not a contact person')),
+        ]
+        return choices
+
+    def queryset(self, request, queryset):
+        plan = request.user.get_active_admin_plan()
+        queryset = queryset.prefetch_related(
+            Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
+        )
+        queryset = queryset.prefetch_related(
+            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators')
+        )
+        if self.value() is None:
+            return queryset
+        if self.value() == 'action':
+            queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
+        elif self.value().startswith('action_in_plan__'):
+            plan_pk = int(self.value()[16:])
+            queryset = queryset.filter(contact_for_actions__plan=plan_pk)
+        elif self.value() == 'indicator':
+            queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
+        else:
+            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
+                .exclude(contact_for_indicators__in=plan.indicators.all())
+        return queryset.distinct()
+
+
 def smart_truncate(content, length=100, suffix='...'):
     if len(content) <= length:
         return content
@@ -48,7 +91,7 @@ def smart_truncate(content, length=100, suffix='...'):
 
 
 class AvatarWidget(AdminFileWidget):
-    template_name = 'admin/avatar_widget.html'
+    template_name = 'people/avatar_widget.html'
 
 
 class PersonForm(AplansAdminModelForm):

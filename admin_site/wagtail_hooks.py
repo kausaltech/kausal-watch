@@ -217,7 +217,7 @@ def register_plan_chooser():
 class OwnIndicatorsPanel(Component):
     name = 'own_indicators'
     order = 102
-    template_name = 'aplans_admin/own_indicators_panel.html'
+    template_name = 'admin_site/own_indicators_panel.html'
 
     def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
         request: WatchAdminRequest = parent_context['request']

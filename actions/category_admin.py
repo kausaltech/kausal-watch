@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.contrib.admin import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList,
@@ -11,7 +12,6 @@ from wagtail.contrib.modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 
-from .admin import CategoryTypeFilter, CommonCategoryTypeFilter
 from .models import Category, CategoryType, CommonCategory, CommonCategoryType
 from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
@@ -20,6 +20,41 @@ from admin_site.wagtail import (
 )
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
+
+
+class CategoryTypeFilter(SimpleListFilter):
+    title = _('Category type')
+    parameter_name = 'category_type'
+
+    def lookups(self, request, model_admin):
+        user = request.user
+        plan = user.get_active_admin_plan()
+        choices = [(i.id, i.name) for i in plan.category_types.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(type=self.value())
+        else:
+            return queryset
+
+
+class CommonCategoryTypeFilter(SimpleListFilter):
+    title = _('Common category type')
+    parameter_name = 'common_category_type'
+
+    def lookups(self, request, model_admin):
+        # user = request.user
+        # plan = user.get_active_admin_plan()
+        # choices = [(i.id, i.name) for i in plan.category_types.all()]
+        choices = [(i.id, i.name) for i in CommonCategoryType.objects.all()]
+        return choices
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            return queryset.filter(type=self.value())
+        else:
+            return queryset
 
 
 class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):

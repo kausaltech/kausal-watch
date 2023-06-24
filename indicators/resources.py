@@ -4,9 +4,8 @@ from collections import OrderedDict
 from django.db.models import Max, Min
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
-
-from admin_site.admin import AplansResource
 from import_export import fields, widgets
+from import_export.resources import ModelResource
 
 from .models import Indicator, IndicatorValue, IndicatorLevel, Unit
 
@@ -61,12 +60,16 @@ class UnitWidget(widgets.ForeignKeyWidget):
         return unit
 
 
-class IndicatorResource(AplansResource):
+class IndicatorResource(ModelResource):
     unit = fields.Field(
         column_name='unit',
         attribute='unit',
         widget=UnitWidget(Unit, 'name'),
     )
+
+    def __init__(self, request=None):
+        self.request = request
+        super().__init__()
 
     def get_fields(self, **kwargs):
         out = super().get_fields(**kwargs)
