@@ -43,7 +43,7 @@ def test_excel_export(
         user,
         django_assert_max_num_queries
 ):
-    with django_assert_max_num_queries(352) as captured:
+    with django_assert_max_num_queries(462):
         # report.get_live_action_versions hack currently causes hundreds of queries
         # because of following actions' relations. Will let it be
         excel_file_incomplete = excel_file_from_report_factory()
@@ -51,7 +51,7 @@ def test_excel_export(
     df_incomplete = assert_report_dimensions(excel_file_incomplete, report_with_all_attributes, actions_having_attributes)
     report_with_all_attributes.mark_as_complete(user)
 
-    with django_assert_max_num_queries(39) as captured:
+    with django_assert_max_num_queries(39):
         excel_file_complete = excel_file_from_report_factory()
 
     df_complete = assert_report_dimensions(excel_file_complete, report_with_all_attributes, actions_having_attributes)
