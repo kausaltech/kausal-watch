@@ -508,6 +508,12 @@ WAGTAILEMBEDS_FINDERS = [
     },
     {
         'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'Plotly Chart Studio',
+        'domain_whitelist': ('chart-studio.plotly.com',),
+        'title': 'Chart'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
         'provider': 'Sharepoint',
         'domain_whitelist': ('sharepoint.com', ),
         'title': 'Document'
