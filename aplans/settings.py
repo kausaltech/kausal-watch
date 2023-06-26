@@ -441,7 +441,7 @@ LOCALE_PATHS = [
 #
 # Email
 #
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "anymail.backends.console.EmailBackend"
 ANYMAIL = {}
 
 if env.str('MAILGUN_API_KEY'):
