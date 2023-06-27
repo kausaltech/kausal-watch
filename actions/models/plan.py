@@ -742,7 +742,7 @@ class PlanDomain(models.Model):
     base_path = models.CharField(
         max_length=200, verbose_name=_('base path'), null=True, blank=True,
         validators=[RegexValidator(
-            regex=r'^\/[a-z_-]+',
+            regex=r'^\/[a-z0-9_-]+',
             message=_("Base path must begin with a '/' and not end with '/'")
         )],
     )
