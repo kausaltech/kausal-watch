@@ -36,7 +36,7 @@ from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
     AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
     FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock,
-    ActionStatusGraphsBlock
+    ActionStatusGraphsBlock, AdaptiveEmbedBlock
 )
 
 
@@ -187,6 +187,7 @@ class StaticPage(AplansPage):
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
         ('category_list', CategoryListBlock(label=_('Category list'))),
+        ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
         *get_body_blocks('StaticPage')
     ], null=True, blank=True)
@@ -241,7 +242,8 @@ class CategoryPage(AplansPage):
         ('indicator_group', IndicatorGroupBlock()),
         ('related_indicators', RelatedIndicatorsBlock()),
         ('category_list', CategoryListBlock(label=_('Category list'))),
-        ('action_list', ActionListBlock(label=_('Action list')))
+        ('action_list', ActionListBlock(label=_('Action list'))),
+        ('embed', AdaptiveEmbedBlock())
     ], null=True, blank=True)
 
     content_panels = AplansPage.content_panels + [
