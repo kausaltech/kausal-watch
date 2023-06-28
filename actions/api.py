@@ -191,7 +191,7 @@ plan_router.register(
 
 
 class ActionPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with CategoryPermission and OrganizationPermission
+    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
     def check_permission(self, user: User, perm: str, plan: Plan, action: Action = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
@@ -866,7 +866,7 @@ class CategoryTypeSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class CategoryPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission and OrganizationPermission
+    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
     def check_permission(self, user: User, perm: str, category_type: CategoryType, category: Category = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
@@ -1033,7 +1033,7 @@ category_type_router.register('categories', CategoryViewSet, basename='category'
 
 
 class OrganizationPermission(permissions.DjangoObjectPermissions):
-    # TODO: Refactor duplicated code with ActionPermission and CategoryPermission
+    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
     def check_permission(self, user: User, perm: str, organization: Organization = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
@@ -1254,7 +1254,8 @@ class OrganizationViewSet(BulkModelViewSet):
         return Organization.objects.available_for_plan(plan)
 
 
-class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSerializerMixin):
+class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixin):
+    uuid = serializers.UUIDField(required=False)
     avatar_url = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
@@ -1267,39 +1268,105 @@ class PersonSerializer(serializers.HyperlinkedModelSerializer, ModelWithImageSer
 
     class Meta:
         model = Person
-        fields = ('id', 'first_name', 'last_name', 'avatar_url', 'email')
+        list_serializer_class = BulkListSerializer
+        fields = public_fields(Person, add_fields=['avatar_url'])
+
+
+class PersonPermission(permissions.DjangoObjectPermissions):
+    # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
+    def check_permission(self, user: User, perm: str, person: Person = None):
+        # Check for object permissions first
+        if not user.has_perms([perm]):
+            return False
+        if perm == 'people.change_person':
+            if not user.can_modify_person(person=person):
+                return False
+        elif perm == 'people.add_person':
+            if not user.can_create_person():
+                return False
+        elif perm == 'people.delete_person':
+            if not user.can_delete_person():
+                return False
+        else:
+            return False
+        return True
+
+    def has_permission(self, request: AuthenticatedWatchRequest, view):
+        perms = self.get_required_permissions(request.method, Person)
+        for perm in perms:
+            if not self.check_permission(request.user, perm):
+                return False
+        return True
+
+    def has_object_permission(self, request, view, obj):
+        perms = self.get_required_object_permissions(request.method, Person)
+        if not perms and request.method in permissions.SAFE_METHODS:
+            return True
+        for perm in perms:
+            if not self.check_permission(request.user, perm, obj):
+                return False
+        return True
 
 
 @register_view
-class PersonViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
+class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.plan = None
+
+    # This view set is not registered with a "bulk router" (see BulkRouter or NestedBulkRouter), so we need to define
+    # patch and put ourselves
+    def patch(self, request, *args, **kwargs):
+        return self.partial_bulk_update(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.bulk_update(request, *args, **kwargs)
+
+
+    def get_permissions(self):
+        if self.action == 'list':
+            permission_classes = [AnonReadOnly]
+        else:
+            permission_classes = [PersonPermission]
+        return [permission() for permission in permission_classes]
+
+    def get_plan(self):
+        plan_identifier = self.request.query_params.get('plan', None)
+        if plan_identifier is None:
+            return None
+        try:
+            return Plan.objects.get(identifier=plan_identifier)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+
+    def user_is_authorized_for_plan(self, plan):
+        user = self.request.user
+        return (
+            user is not None
+            and user.is_authenticated
+            and hasattr(user, 'is_general_admin_for_plan')
+            and user.is_general_admin_for_plan(plan)
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({'authorized_for_plan': self.plan})
+        plan = self.get_plan()
+        if plan is None:
+            return context
+        if self.user_is_authorized_for_plan(plan):
+            context.update({'authorized_for_plan': plan})
         return context
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        plan_identifier = self.request.query_params.get('plan', None)
-        if plan_identifier is None:
+        plan = self.get_plan()
+        if plan is None:
             return queryset
-        if self.request.user is None or not self.request.user.is_authenticated:
-            exceptions.PermissionDenied(detail="Not authorized")
-        try:
-            plan = Plan.objects.get(identifier=plan_identifier)
-        except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
-        user = self.request.user
-        if hasattr(user, 'is_general_admin_for_plan') and user.is_general_admin_for_plan(plan):
-            self.plan = plan
-            return queryset.available_for_plan(plan)
-        raise exceptions.PermissionDenied(detail="Not authorized")
+        if not self.user_is_authorized_for_plan(plan):
+            raise exceptions.PermissionDenied(detail="Not authorized")
+        return queryset.available_for_plan(plan)
 
 
 class ActionTaskSerializer(serializers.HyperlinkedModelSerializer):

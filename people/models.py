@@ -88,6 +88,7 @@ class PersonQuerySet(models.QuerySet):
 
 
 class Person(index.Indexed, ClusterableModel):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
     last_name = models.CharField(max_length=100, verbose_name=_('last name'))
     email = models.EmailField(verbose_name=_('email address'))
@@ -144,6 +145,10 @@ class Person(index.Indexed, ClusterableModel):
             index.AutocompleteField('distinct_name', partial_match=True),
             index.AutocompleteField('abbreviation', partial_match=True),
         ]),
+    ]
+
+    public_fields = [
+        'id', 'uuid', 'first_name', 'last_name', 'email', 'title', 'organization', 'participated_in_training',
     ]
 
     class Meta:
