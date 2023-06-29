@@ -1,11 +1,13 @@
 from django.utils.translation import gettext_lazy as _
+import graphene
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey
+from grapple.models import GraphQLField, GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 from uuid import UUID
 from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
+from wagtail.embeds.embeds import get_embed
 
 from actions.blocks import CategoryChooserBlock
 from actions.models import Category
@@ -39,6 +41,41 @@ class QuestionBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('question'),
         GraphQLString('answer'),
+    ]
+
+
+HEIGHTS = {
+    'l': 800,
+    'm': 600,
+    's': 400
+}
+
+
+class EmbedHTMLValue(graphene.ObjectType):
+    html = graphene.String()
+
+    def resolve_html(parent, info):
+        height_key = parent['height']
+        url = parent['url']
+        embed = get_embed(url, max_height=HEIGHTS.get(height_key, list(HEIGHTS.values())[0]))
+        return embed.html
+
+
+@register_streamfield_block
+class AdaptiveEmbedBlock(blocks.StructBlock):
+    # Note: Do not try to use Wagtail's EmbedBlock here.
+    # It doesn't support dynamic, configurable heights.
+    # The extra inner field is just to enable the custom
+    # resolve_html method
+    embed = blocks.StructBlock(
+        [('url', blocks.CharBlock()),
+         ('height', blocks.ChoiceBlock(
+             choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))]
+         ))]
+    )
+
+    graphql_fields = [
+        GraphQLField('embed', EmbedHTMLValue)
     ]
 
 

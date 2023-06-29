@@ -376,6 +376,23 @@ class User(AbstractUser):
         # FIXME: Make sure we don't allow plan admins to delete organizations unrelated to them
         return self.is_general_admin_for_plan()
 
+    def can_modify_person(self, person=None):
+        if self.is_superuser:
+            return True
+        self_person = self.get_corresponding_person()
+        if not self_person:
+            return False
+        # FIXME: Probably crap
+        return self.can_modify_organization(self_person.organization)
+
+    def can_create_person(self):
+        # FIXME: Probably crap
+        return self.can_modify_person()
+
+    def can_delete_person(self):
+        # FIXME: Probably crap
+        return self.can_modify_person()
+
     def can_deactivate_user(self, user):
         if self.is_superuser:
             return True

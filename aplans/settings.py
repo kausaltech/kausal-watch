@@ -447,7 +447,7 @@ SPECTACULAR_SETTINGS = {
 #
 # Email
 #
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = "anymail.backends.console.EmailBackend"
 ANYMAIL = {}
 
 if env.str('MAILGUN_API_KEY'):
@@ -511,6 +511,12 @@ WAGTAILEMBEDS_FINDERS = [
         'provider': 'ArcGIS',
         'domain_whitelist': ('arcgis.com', 'maps.arcgis.com',),
         'title': 'Map'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'Plotly Chart Studio',
+        'domain_whitelist': ('chart-studio.plotly.com',),
+        'title': 'Chart'
     },
     {
         'class': 'aplans.wagtail_embed_finders.GenericFinder',
