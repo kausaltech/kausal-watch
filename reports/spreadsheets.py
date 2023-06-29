@@ -9,7 +9,6 @@ from actions.models import Action, Category, ActionImplementationPhase, ActionSt
 from actions.models.attributes import Attribute
 from actions.models.category import CategoryType
 from orgs.models import Organization
-from reports.blocks.action_content import ActionCategoryReportFieldBlock
 
 from io import BytesIO
 
@@ -360,6 +359,9 @@ class ExcelReport:
         def append_to_key(key, value):
             data.setdefault(key, []).append(value)
 
+        COMPLETED_BY_LABEL = _('Marked as complete by')
+        COMPLETED_AT_LABEL = _('Marked as complete at')
+
         for action_row in all_actions:
             action = action_row['action']
             action_identifier = action['data']['identifier']
@@ -385,12 +387,12 @@ class ExcelReport:
                 self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
                     append_to_key(label, value)
-            if completed_by:
-                append_to_key(_('Marked as complete by'), completed_by)
-            if completed_at:
-                label = _('Marked as complete at')
-                append_to_key(label, completed_at)
-                self.formats.set_for_label(label, self.formats.date)
+            append_to_key(COMPLETED_BY_LABEL, completed_by)
+            append_to_key(COMPLETED_AT_LABEL, completed_at)
+            self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.date)
+        if set(data[COMPLETED_AT_LABEL]) == {None}:
+            del data[COMPLETED_AT_LABEL]
+            del data[COMPLETED_BY_LABEL]
         return polars.DataFrame(data)
 
     def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):

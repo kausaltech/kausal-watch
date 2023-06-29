@@ -27,7 +27,15 @@ def excel_file_from_report_factory(actions_having_attributes, report_with_all_at
 def assert_report_dimensions(excel_file, report, actions):
     df_actions = polars.read_excel(BytesIO(excel_file), sheet_name=_('Actions'))
     non_report_fields = ['action', 'identifier']
+    has_complete_actions = False
     if report.is_complete:
+        has_complete_actions = True
+    else:
+        for a in actions:
+            if a.is_complete_for_report(report):
+                has_complete_actions = True
+                break
+    if has_complete_actions:
         non_report_fields.extend(['marked_as_complete_by', 'marked_as_complete_at'])
 
     # optional choice attribute results in two columns, hence + 1
@@ -61,3 +69,16 @@ def test_excel_export(
         df_complete_minus_completion = df_complete.select(
             cs.all() - cs.by_name(_('Marked as complete by'), _('Marked as complete at')))
     assert df_incomplete.frame_equal(df_complete_minus_completion)
+
+
+def test_partly_completed_report_excel_export(
+        actions_having_attributes,
+        report_with_all_attributes,
+        excel_file_from_report_factory,
+        user):
+    actions_having_attributes[0].mark_as_complete_for_report(
+        report_with_all_attributes,
+        user
+    )
+    excel = excel_file_from_report_factory()
+    assert_report_dimensions(excel, report_with_all_attributes, actions_having_attributes)

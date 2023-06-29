@@ -102,13 +102,14 @@ class Report(models.Model, PlanRelatedModel):
             return v._model == Action
 
         incomplete_actions = []
+        ct = ContentType.objects.get_for_model(Action)
         for action in actions_to_snapshot:
             try:
                 snapshot = action.get_latest_snapshot(report=self)
                 revision = snapshot.action_version.revision
-                result.append((snapshot.action_version, snapshot.get_related_versions(),
+                result.append((snapshot.action_version, snapshot.get_related_versions(ct),
                                {'completed_at': revision.date_created,
-                                'completed_by': revision.user}))
+                                'completed_by': str(revision.user)}))
                 continue
             except ObjectDoesNotExist:
                 incomplete_actions.append(action)
