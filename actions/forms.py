@@ -57,12 +57,6 @@ class CreatePlanWithDefaultsForm(forms.Form):
         required=False,
         help_text=_('Name of the customer administering the plan')
     )
-    azure_ad_tenant_id = forms.CharField(
-        label=_('Azure AD tenant id'),
-        max_length=200,
-        required=False,
-        help_text=_('Most often the host name, ie. everything after the @ sign in employee email addresses')
-    )
     admin_client_id = forms.CharField(
         label=_('Client subdomain for admin UI'),
         max_length=100,

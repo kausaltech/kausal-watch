@@ -550,7 +550,6 @@ class Plan(ClusterableModel):
         domain: Optional[str] = None,
         client_identifier: Optional[str] = None,
         client_name: Optional[str] = None,
-        azure_ad_tenant_id: Optional[str] = None
     ) -> Plan:
         from ..defaults import (
             DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
@@ -603,9 +602,6 @@ class Plan(ClusterableModel):
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-            if azure_ad_tenant_id:
-                client.azure_ad_tenant_id = azure_ad_tenant_id
-                client.save()
 
             if settings.ADMIN_WILDCARD_DOMAIN and client_identifier:
                 hostname = '%s.%s' % (client_identifier, settings.ADMIN_WILDCARD_DOMAIN)

@@ -15,9 +15,6 @@ class ClientFactory(DjangoModelFactory):
         model = 'admin_site.Client'
 
     name = Sequence(lambda i: f'Client {i}')
-    azure_ad_tenant_id = ''
-    login_header_text = "Client login header text"
-    login_button_text = "Client login button text"
     admin_hostnames = RelatedFactory(AdminHostnameFactory, factory_related_name='client')
 
 
