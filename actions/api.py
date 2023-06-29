@@ -1324,6 +1324,10 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
     def put(self, request, *args, **kwargs):
         return self.bulk_update(request, *args, **kwargs)
 
+    def perform_destroy(self, instance):
+        # FIXME: Duplicated in people.wagtail_admin.PersonDeleteView.delete_instance()
+        acting_admin_user = self.request.user
+        instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
     def get_permissions(self):
         if self.action == 'list':

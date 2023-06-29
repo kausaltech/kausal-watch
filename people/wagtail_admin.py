@@ -205,6 +205,7 @@ class PersonButtonHelper(ButtonHelper):
 
 class PersonDeleteView(DeleteView):
     def delete_instance(self):
+        # FIXME: Duplicated in actions.api.PersonViewSet.perform_destroy()
         acting_admin_user = self.request.user
         self.instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
