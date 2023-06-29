@@ -1,6 +1,4 @@
 def current_plan(request):
-    from admin_site.models import Client
-
     out = {}
     if not request or not request.user or not request.user.is_authenticated:
         return out
@@ -12,7 +10,11 @@ def current_plan(request):
     if getattr(request, '_active_client', None):
         client = request._active_client
     else:
-        client = Client.objects.for_request(request).first()
+        person = request.user.get_corresponding_person()
+        if person:
+            client = person.get_admin_client()
+        else:
+            client = None
         request._active_client = client
 
     out['active_plan'] = plan

@@ -22,11 +22,10 @@ class RootRedirectView(RedirectView):
 
     def get_redirect_url(self, *args, **kwargs):
         request = self.request
-        client = Client.objects.for_request(request).first()
-        if client is None:
-            url = reverse('graphql')
-        else:
+        if request.user.is_authenticated:
             url = reverse('wagtailadmin_home')
+        else:
+            url = reverse('graphql')
         return url
 
 

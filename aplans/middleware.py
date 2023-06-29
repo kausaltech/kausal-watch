@@ -34,7 +34,7 @@ class SocialAuthExceptionMiddleware(MiddlewareMixin):
 
         message = _('Login was unsuccessful.')
         messages.error(request, message, extra_tags='social-auth ' + backend_name)
-        return redirect(reverse('auth_login'))
+        return redirect(reverse('wagtailadmin_login'))
 
 
 def get_active_admin_plan(self):

@@ -1,26 +1,13 @@
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
 
-from .models import Client
-
 
 class AzureADAuth(AzureADTenantOAuth2):
     name = 'azure_ad'
     DEFAULT_SCOPE = ['openid', 'profile', 'email', 'User.Read']
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.strategy.request is not None:
-            self.client = Client.objects.for_request(self.strategy.request).first()
-        else:
-            self.client = None
-
     @property
     def tenant_id(self):
-        if self.client is None or not self.client.azure_ad_tenant_id:
-            tenant_id = 'organizations'
-        else:
-            tenant_id = self.client.azure_ad_tenant_id
-        return tenant_id
+        return 'organizations'
 
     def jwks_url(self):
         return 'https://login.microsoftonline.com/common/discovery/keys'
@@ -44,7 +31,15 @@ class AzureADAuth(AzureADTenantOAuth2):
         # check `verified_primary_email` and enumerate through
         # `verified_secondary_email` to find possible matches
         # for `Person.email`
-        if self.client and self.client.use_id_token_email_field:
-            details['email'] = response.get('email') or details.get('email')
+        # if self.client and self.client.use_id_token_email_field:
+        #     details['email'] = response.get('email') or details.get('email')
         details['uuid'] = response.get('oid')
         return details
+
+    def auth_extra_arguments(self):
+        extra_arguments = super().auth_extra_arguments()
+        request_data = self.strategy.request_data()
+        email = request_data.get('email')
+        if email:
+            extra_arguments['login_hint'] = email
+        return extra_arguments

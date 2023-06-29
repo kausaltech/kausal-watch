@@ -93,7 +93,7 @@
                 let url = socialUrlBase.replace(/BACKEND/, method);
                 const next = form.find('input[name="next"]').val();
                 if (next) {
-                    url += '?' + (new URLSearchParams({next})).toString();
+                    url += '?' + (new URLSearchParams({next, email})).toString();
                 }
                 window.location = url;
             }

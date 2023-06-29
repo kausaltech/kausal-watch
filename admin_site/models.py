@@ -10,14 +10,6 @@ from aplans.fields import HostnameField
 from aplans.utils import OrderedModel
 
 
-class ClientQuerySet(models.QuerySet):
-    def for_request(self, request):
-        hostname = request.get_host()
-        if ':' in hostname:
-            hostname = hostname.split(':')[0]
-        return self.filter(admin_hostnames__hostname=hostname)
-
-
 class Client(ClusterableModel):
     name = models.CharField(max_length=100)
     azure_ad_tenant_id = models.CharField(max_length=200, null=True, blank=True)
@@ -35,8 +27,6 @@ class Client(ClusterableModel):
     )
 
     i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
-
-    objects = ClientQuerySet.as_manager()
 
     def __str__(self):
         return self.name
