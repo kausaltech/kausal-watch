@@ -14,6 +14,7 @@ from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
 from reports.blocks.action_content import ReportFieldBlock
 from .spreadsheets import ExcelReport
+from .utils import prepare_serialized_model_version, group_by_model
 
 
 class NoRevisionSave(Exception):
@@ -229,7 +230,6 @@ class ActionSnapshot(models.Model):
 
     def get_attribute_for_type(self, attribute_type):
         """Get the first action attribute of the given type in this snapshot.
-        For unsaved snapshots used for live o
 
         Returns None if there is no such attribute.
 
@@ -238,6 +238,21 @@ class ActionSnapshot(models.Model):
         ct = ContentType.objects.get_for_model(Action)
         return self.get_attribute_for_type_from_versions(
             attribute_type, self.get_related_versions(ct), ct
+        )
+
+    def get_related_serialized_data(self):
+        ct = ContentType.objects.get_for_model(Action)
+        all_related_versions = self.get_related_versions(ct)
+        revision = self.action_version.revision
+        action = prepare_serialized_model_version(self.action_version)
+        related_objects = group_by_model([prepare_serialized_model_version(o) for o in all_related_versions])
+        return dict(
+            action=action,
+            related_objects=related_objects,
+            completion={
+                'completed_at': revision.date_created,
+                'completed_by': str(revision.user)
+            }
         )
 
     def __str__(self):

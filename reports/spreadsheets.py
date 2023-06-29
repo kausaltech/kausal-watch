@@ -6,7 +6,6 @@ from django.utils import translation
 from django.utils.translation import gettext as _
 
 from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
-from actions.models.attributes import Attribute
 from actions.models.category import CategoryType
 from orgs.models import Organization
 
@@ -21,7 +20,7 @@ if typing.TYPE_CHECKING:
     from .models import Report
     from reports.blocks.action_content import ReportFieldBlock
 
-from .utils import make_attribute_path
+from .utils import make_attribute_path, group_by_model, prepare_serialized_model_version
 
 
 class ExcelFormats(dict):
@@ -299,53 +298,23 @@ class ExcelReport:
     def close(self):
         self.workbook.close()
 
-    def _prepare_serialized_model_version(self, version):
-        attribute_path = None
-        if issubclass(version.content_type.model_class(), Attribute):
-            attribute_path = make_attribute_path(version.field_dict)
-        return dict(
-            type=version.content_type.model_class(),
-            data=version.field_dict,
-            str=version.object_repr,
-            attribute_path=attribute_path
-        )
-
-    def _group_by_model(self, serialized_versions: list[dict]):
-        result = {}
-        for version in serialized_versions:
-            _cls = version['type']
-            result.setdefault(_cls, [])
-            result[_cls].append(version)
-        return result
 
     def _prepare_serialized_report_data(self):
         row_data = []
         if self.report.is_complete:
-            ct = ContentType.objects.get_for_model(Action)
             for snapshot in (
                     self.report.action_snapshots.all()
                     .select_related('action_version__revision__user')
                     .prefetch_related('action_version__revision__version_set')
             ):
-                all_related_versions = snapshot.get_related_versions(ct)
-                revision = snapshot.action_version.revision
-                action = self._prepare_serialized_model_version(snapshot.action_version)
-                related_objects = self._group_by_model([self._prepare_serialized_model_version(o) for o in all_related_versions])
-                row_data.append(dict(
-                    action=action,
-                    related_objects=related_objects,
-                    completion={
-                        'completed_at': revision.date_created,
-                        'completed_by': str(revision.user)
-                    }
-                ))
+                row_data.append(snapshot.get_related_serialized_data())
             return row_data
 
         # Live incomplete report, although some actions might be completed for report
         for action, all_related_versions, completion in self.report.get_live_action_versions():
             row_data.append(dict(
-                action=self._prepare_serialized_model_version(action),
-                related_objects=self._group_by_model([self._prepare_serialized_model_version(o) for o in all_related_versions]),
+                action=prepare_serialized_model_version(action),
+                related_objects=group_by_model([prepare_serialized_model_version(o) for o in all_related_versions]),
                 completion=completion
             ))
         return row_data
