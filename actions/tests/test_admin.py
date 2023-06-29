@@ -6,9 +6,10 @@ import pytest
 from django.urls import reverse
 from pytest_django.asserts import assertContains
 
-from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.action_admin import ActionAdmin
+from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.wagtail_admin import ActivePlanAdmin
+from admin_site.tests.factories import ClientPlanFactory
 from conftest import ModelAdminEditTest
 
 if typing.TYPE_CHECKING:
@@ -95,6 +96,7 @@ def test_cannot_access_other_plan_edit_page(plan_admin_user, client):
 def test_can_access_plan_edit_page(plan_admin_user, client):
     active_plan_admin = ActivePlanAdmin()
     plan = plan_admin_user.get_adminable_plans()[0]
+    ClientPlanFactory(plan=plan)
     url = active_plan_admin.url_helper.get_action_url('edit', plan.pk)
     client.force_login(plan_admin_user)
     response = client.get(url)
@@ -105,6 +107,7 @@ def test_action_admin(
     plan_admin_user: User, action_contact_person: Person, action: Action,
     test_modeladmin_edit: ModelAdminEditTest
 ):
+    ClientPlanFactory(plan=action.plan)
     post_data = dict(name='Modified name', identifier=action.identifier)
     test_modeladmin_edit(
         ActionAdmin, action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
