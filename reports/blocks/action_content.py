@@ -4,7 +4,7 @@ from django.utils.translation import gettext, gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
-from typing import Any, List, Optional, Text
+from typing import Any, List, Optional
 from wagtail.admin.edit_handlers import HelpPanel
 from wagtail.core import blocks
 
@@ -67,14 +67,6 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
 
         attribute = graphene.Field('actions.schema.AttributeInterface')
 
-    def value_for_action(self, block_value, action) -> Optional[Any]:
-        wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-        try:
-            attribute = wrapped_type.get_attributes(action).get()
-        except wrapped_type.ATTRIBUTE_MODEL.DoesNotExist:
-            return None
-        return attribute
-
     def value_for_action_snapshot(self, block_value, snapshot) -> Optional[Any]:
         return snapshot.get_attribute_for_type(block_value['attribute_type'])
 
@@ -106,18 +98,6 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock):
         if attribute_record is None:
             return [None]
         return wrapped_type.xlsx_values(attribute_record, related_objects)
-
-    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-    #     """Return the value for each of this attribute type's columns for the given action."""
-    #     wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-    #     attribute = self.value_for_action(block_value, action)
-    #     return wrapped_type.xlsx_values(attribute)
-
-    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-    #     """Return the value for each of this attribute type's columns for the given snapshot."""
-    #     wrapped_type = AttributeType.from_model_instance(block_value['attribute_type'])
-    #     attribute = self.value_for_action_snapshot(block_value, snapshot)
-    #     return wrapped_type.xlsx_values(attribute)
 
     def xlsx_column_labels(self, block_value) -> List[str]:
         """Return the label for each of this attribute type's columns."""
@@ -207,9 +187,6 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
 
         implementation_phase = graphene.Field('actions.schema.ActionImplementationPhaseNode')
 
-    def value_for_action(self, block_value, action) -> Optional[Any]:
-        return action.implementation_phase
-
     def value_for_action_snapshot(self, block_value, snapshot) -> Optional[Any]:
         implementation_phase_id = snapshot.action_version.field_dict['implementation_phase_id']
         if implementation_phase_id:
@@ -227,14 +204,6 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock):
         if pk is None:
             return [None]
         return [str(report.plan_current_related_objects.implementation_phases.get(int(pk), f"[{_('empty')}]"))]
-
-    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-    #     value = self.value_for_action(block_value, action)
-    #     return [str(value)]
-
-    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-    #     value = self.value_for_action_snapshot(block_value, snapshot)
-    #     return [str(value)]
 
     def xlsx_column_labels(self, value) -> List[str]:
         return [str(self.label).capitalize()]
@@ -311,9 +280,6 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
 
         responsible_party = graphene.Field('actions.schema.ActionResponsiblePartyNode')
 
-    def value_for_action(self, block_value, action):
-        return action.responsible_parties.filter(role=ActionResponsibleParty.Role.PRIMARY).first()
-
     def value_for_action_snapshot(self, block_value, snapshot):
         # FIXME
         return None
@@ -357,14 +323,6 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
             parent = ancestors[target_depth-1]
         parent_name = parent.name if parent else None
         return [organization.name, parent_name]
-
-    # def xlsx_values_for_action(self, block_value, action) -> List[Any]:
-    #     value = self.value_for_action(block_value, action)
-    #     return [value.organization.name]
-
-    # def xlsx_values_for_action_snapshot(self, block_value, snapshot) -> List[Any]:
-    #     value = self.value_for_action_snapshot(block_value, snapshot)
-    #     return [value.organization.name]
 
     def xlsx_column_labels(self, value: dict) -> List[str]:
         labels = [str(self.label).capitalize()]
