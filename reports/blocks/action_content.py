@@ -302,8 +302,9 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock):
         try:
             organization_id = next((
                 arp['data']['organization_id'] for arp in related_objects[ActionResponsibleParty]
-                if arp['data'].get('action_id') == action['id'] and
-                arp['data'].get('role') == 'primary'
+                if arp['data'].get('action_id') == action['id'] and (
+                    arp['data'].get('role') == 'primary'
+                )
             ))
         except StopIteration:
             return [None, None]
