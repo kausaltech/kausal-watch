@@ -457,7 +457,7 @@ wagtail-autocomplete==0.8.1
     # via -r requirements.in
 wagtail-condensedinlinepanel==0.5.3
     # via -r requirements.in
-wagtail-factories==2.0.1
+wagtail-factories==4.0.0
     # via -r requirements.in
 wagtail-generic-chooser==0.3.1
     # via

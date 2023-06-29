@@ -2,7 +2,7 @@ import datetime
 
 from factory.django import DjangoModelFactory
 from factory import SubFactory, Sequence
-from wagtail.test.utils.wagtail_factories import (
+from wagtail_factories import (
     StreamBlockFactory, StructBlockFactory, StreamFieldFactory
 )
 
@@ -17,7 +17,6 @@ class ActionAttributeTypeReportFieldBlockFactory(StructBlockFactory):
         model = action_content.ActionAttributeTypeReportFieldBlock
 
     attribute_type = SubFactory(AttributeTypeFactory)
-
 
 
 class ActionImplementationPhaseReportFieldBlockFactory(StructBlockFactory):
