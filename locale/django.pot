@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-11 22:27+0300\n"
+"POT-Creation-Date: 2023-06-30 16:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -71,7 +71,7 @@ msgstr ""
 msgid "More than 3 months ago"
 msgstr ""
 
-#: actions/action_admin.py
+#: actions/action_admin.py orgs/org_admin_legacy.py
 msgid "Apply filters"
 msgstr ""
 
@@ -116,7 +116,8 @@ msgid "Last updated"
 msgstr ""
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: orgs/models.py people/templates/people/chooser_results.html
+#: orgs/models.py orgs/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -129,6 +130,7 @@ msgstr ""
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr ""
 
@@ -189,7 +191,7 @@ msgstr ""
 msgid "Postponed"
 msgstr ""
 
-#: actions/action_status_summary.py
+#: actions/action_status_summary.py reports/spreadsheets.py
 msgid "Unknown"
 msgstr ""
 
@@ -233,6 +235,7 @@ msgstr ""
 
 #: actions/admin.py actions/attribute_type_admin.py
 #: actions/blocks/category_list.py actions/blocks/filters.py pages/models.py
+#: reports/blocks/action_content.py
 msgid "Category type"
 msgstr ""
 
@@ -278,6 +281,7 @@ msgid "collection"
 msgstr ""
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr ""
 
@@ -381,7 +385,7 @@ msgstr ""
 msgid "Filter on category"
 msgstr ""
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr ""
 
@@ -426,7 +430,7 @@ msgstr ""
 msgid "Filter: %(filter_label)s"
 msgstr ""
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr ""
 
@@ -435,7 +439,7 @@ msgid "primary organization"
 msgstr ""
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr ""
 
@@ -539,7 +543,8 @@ msgstr ""
 msgid "impact"
 msgstr ""
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr ""
 
@@ -760,7 +765,7 @@ msgstr ""
 msgid "responsible organizations"
 msgstr ""
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr ""
 
@@ -904,6 +909,10 @@ msgstr ""
 msgid "is completed"
 msgstr ""
 
+#: actions/models/action.py actions/models/plan.py
+msgid "color"
+msgstr ""
+
 #: actions/models/action.py
 msgid "action status"
 msgstr ""
@@ -924,7 +933,7 @@ msgstr ""
 msgid "not started"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr ""
 
@@ -1304,6 +1313,14 @@ msgid "Set if action identifiers should be visible in the public UI"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Minimal statuses"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Has action official name field"
 msgstr ""
 
@@ -1400,7 +1417,15 @@ msgid "Persons that can modify everything related to the action plan"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "URL to accessibility statement"
+msgid "Link to accessibility statement"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Link to external feedback form"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "If not empty, the system's built-in user feedback feature will be replaced by a link to an external feedback form available at this web address."
 msgstr ""
 
 #: actions/models/plan.py
@@ -1565,10 +1590,6 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "weight"
-msgstr ""
-
-#: actions/models/plan.py
-msgid "color"
 msgstr ""
 
 #: actions/models/plan.py
@@ -1820,6 +1841,18 @@ msgstr ""
 msgid "Plans"
 msgstr ""
 
+#: admin_site/wagtail_hooks.py
+msgid "Video tutorials"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "https://kausal.gitbook.io/watch"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "Help"
+msgstr ""
+
 #: aplans/fields.py
 msgid "Enter a valid hostname."
 msgstr ""
@@ -1876,6 +1909,14 @@ msgstr ""
 msgid "Swedish"
 msgstr ""
 
+#: aplans/settings.py
+msgid "Spanish (United States)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Spanish"
+msgstr ""
+
 #: aplans/utils.py
 msgid "order"
 msgstr ""
@@ -1884,7 +1925,7 @@ msgstr ""
 msgid "Not editable"
 msgstr ""
 
-#: aplans/utils.py
+#: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr ""
 
@@ -1913,7 +1954,7 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr ""
 
@@ -1997,7 +2038,7 @@ msgstr ""
 msgid "documents"
 msgstr ""
 
-#: feedback/models.py people/models.py users/models.py
+#: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
 msgstr ""
 
@@ -2435,7 +2476,7 @@ msgstr ""
 msgid "high"
 msgstr ""
 
-#: indicators/models.py
+#: indicators/models.py pages/blocks.py
 msgid "medium"
 msgstr ""
 
@@ -2584,12 +2625,12 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgid "Advanced options"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -2744,6 +2785,10 @@ msgid "notification settings"
 msgstr ""
 
 #: notifications/models.py
+msgid "Set if the notification was sent to an email address instead of a person"
+msgstr ""
+
+#: notifications/models.py
 msgid "Email From name"
 msgstr ""
 
@@ -2793,11 +2838,59 @@ msgid "Subject for email notifications"
 msgstr ""
 
 #: notifications/models.py
+msgid "custom email address"
+msgstr ""
+
+#: notifications/models.py
+msgid "Email address used when \"send to custom email address\" is checked"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to plan admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to custom email address"
+msgstr ""
+
+#: notifications/models.py
+msgid "Do not send to contact persons"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins, plan admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to contact persons"
+msgstr ""
+
+#: notifications/models.py
 msgid "notification template"
 msgstr ""
 
 #: notifications/models.py
 msgid "notification templates"
+msgstr ""
+
+#: notifications/models.py
+msgid "This can only be set if a custom email address is defined"
+msgstr ""
+
+#: notifications/models.py
+msgid "If a custom email address is defined, this must be set"
+msgstr ""
+
+#: notifications/models.py
+msgid "Notifications of this type cannot be sent to contact persons"
 msgstr ""
 
 #: notifications/models.py
@@ -2850,6 +2943,10 @@ msgid "Notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr ""
+
+#: notifications/wagtail_admin.py
 msgid "Notification types"
 msgstr ""
 
@@ -2861,7 +2958,7 @@ msgstr ""
 msgid "Notification preferences"
 msgstr ""
 
-#: orgs/apps.py
+#: orgs/apps.py orgs/wagtail_admin.py
 msgid "Organizations"
 msgstr ""
 
@@ -2869,7 +2966,7 @@ msgstr ""
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr ""
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr ""
 
@@ -2949,12 +3046,140 @@ msgstr ""
 msgid "metadata admins"
 msgstr ""
 
+#: orgs/org_admin_legacy.py
+msgid "Show only organizations in active plan"
+msgstr ""
+
+#: orgs/org_admin_legacy.py
+msgid "Show only editable organizations"
+msgstr ""
+
+#: orgs/views.py
+msgid "Add organization to active plan"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm including %(org)s in plan %(plan)s"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm excluding %(org)s from plan %(plan)s"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
+msgstr ""
+
+#: orgs/views.py
+msgid "The organization is already included in the plan"
+msgstr ""
+
+#: orgs/views.py
+msgid "The organization is not included in the plan"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been included in plan '%(plan)s'."
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been excluded from plan '%(plan)s'."
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add child"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add child under this node"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Edit subtree"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+#, python-format
+msgid "Edit subtree rooted at this %s"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Creating organizations without a parent not allowed."
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization under this organization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Include in plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Include this organization in the active plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Exclude from plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Exclude this organization from the active plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgctxt "organization"
+msgid "Parent"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "People who can edit plan-specific content related to this organization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Metadata admins"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Is in plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Permissions"
+msgstr ""
+
 #: pages/blocks.py
 msgid "Question"
 msgstr ""
 
 #: pages/blocks.py
 msgid "Answer"
+msgstr ""
+
+#: pages/blocks.py
+msgid "small"
+msgstr ""
+
+#: pages/blocks.py
+msgid "large"
 msgstr ""
 
 #: pages/blocks.py
@@ -3046,6 +3271,10 @@ msgid "Action status pie charts"
 msgstr ""
 
 #: pages/models.py
+msgid "Category tree map"
+msgstr ""
+
+#: pages/models.py
 msgid "Front page"
 msgstr ""
 
@@ -3079,10 +3308,6 @@ msgstr ""
 
 #: pages/models.py
 msgid "Questions & Answers"
-msgstr ""
-
-#: pages/models.py
-msgid "Category tree map"
 msgstr ""
 
 #: pages/models.py
@@ -3355,6 +3580,18 @@ msgstr ""
 msgid "Action attribute"
 msgstr ""
 
+#: reports/blocks/action_content.py
+msgid "Action category"
+msgstr ""
+
+#: reports/blocks/action_content.py
+msgid "Level of containing organization"
+msgstr ""
+
+#: reports/blocks/action_content.py
+msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr ""
+
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr ""
@@ -3371,7 +3608,7 @@ msgstr ""
 msgid "report types"
 msgstr ""
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr ""
 
@@ -3393,14 +3630,6 @@ msgstr ""
 
 #: reports/models.py
 msgid "reports"
-msgstr ""
-
-#: reports/models.py
-msgid "Marked as complete by"
-msgstr ""
-
-#: reports/models.py
-msgid "Marked as complete at"
 msgstr ""
 
 #: reports/models.py
@@ -3427,6 +3656,22 @@ msgstr ""
 
 #: reports/models.py
 msgid "action snapshots"
+msgstr ""
+
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr ""
+
+#: reports/spreadsheets.py templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
@@ -3575,10 +3820,6 @@ msgstr ""
 
 #: templates/aplans_admin/index.html
 msgid "Unknown content"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Identifier"
 msgstr ""
 
 #: templates/aplans_admin/own_actions_panel.html
