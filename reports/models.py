@@ -1,18 +1,24 @@
 from autoslug.fields import AutoSlugField
 from contextlib import contextmanager
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-from io import BytesIO
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from wagtail.core.fields import StreamField
+from reversion.revisions import create_revision, add_to_revision, _current_frame
 import reversion
-import xlsxwriter
 
 from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
 from reports.blocks.action_content import ReportFieldBlock
+from .spreadsheets import ExcelReport
+from .utils import prepare_serialized_model_version, group_by_model
+
+
+class NoRevisionSave(Exception):
+    pass
 
 
 @reversion.register()
@@ -73,87 +79,57 @@ class Report(models.Model, PlanRelatedModel):
         return qs.filter(type__plan=plan)
 
     def to_xlsx(self):
-        output = BytesIO()
-        with xlsxwriter.Workbook(output, {'in_memory': True}) as workbook:
-            worksheet = workbook.add_worksheet()
-            self._write_xlsx_header(worksheet)
-            self._write_xlsx_action_rows(workbook, worksheet)
-            worksheet.autofit()
-            # Set width of some columns explicitly
-            worksheet.set_column(0, 0, 20)  # Action
-            worksheet.set_column(1, 1, 10)  # Marked as complete by
-        return output.getvalue()
+        xlsx_exporter = ExcelReport(self)
+        self.xlsx_exporter = xlsx_exporter
+        return xlsx_exporter.generate_xlsx()
 
-    def _write_xlsx_header(self, worksheet: xlsxwriter.Workbook.worksheet_class):
-        worksheet.write(0, 0, str(_('Action')))
-        worksheet.write(0, 1, str(_('Marked as complete by')))
-        worksheet.write(0, 2, str(_('Marked as complete at')))
-        column = 3
-        for field in self.fields:
-            for label in field.block.xlsx_column_labels(field.value):
-                worksheet.write(0, column, label)
-                column += 1
+    def _raise_complete(self):
+        raise ValueError(_("The report is already marked as complete."))
 
-    def _write_xlsx_action_rows(self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class):
-        self._xlsx_cell_format_for_field = {}
-        self._xlsx_cell_format_for_date = workbook.add_format({'num_format': 'yyyy-mm-dd h:mm:ss'})
-        row = 1
-        # For complete reports, we only want to write actions for which we have a snapshot. For incomplete reports, we
-        # also want to include the current state of actions for which there is no snapshot.
+    def get_live_action_versions(self) -> list[tuple[Version, list[Version], dict]]:
+        """Returns action versions for an incomplete report
+        similar to those that would be saved to the database when completing a report.
+        """
         if self.is_complete:
-            for snapshot in self.action_snapshots.all():
-                self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
-        else:
-            for action in self.type.plan.actions.all():
-                try:
-                    snapshot = action.get_latest_snapshot(self)
-                except ActionSnapshot.DoesNotExist:
-                    self._write_xlsx_action_row(workbook, worksheet, action, row)
-                else:
-                    self._write_xlsx_action_row(workbook, worksheet, snapshot, row)
-                row += 1
+            self._raise_complete()
 
-    def _write_xlsx_action_row(
-        self, workbook: xlsxwriter.Workbook, worksheet: xlsxwriter.Workbook.worksheet_class, action_or_snapshot, row,
-    ):
-        # FIXME: action_or_snapshot can be an Action or ActionSnapshot, but distinguishing the cases is ugly. Improve.
-        if isinstance(action_or_snapshot, ActionSnapshot):
-            # Instead of fucking around with the `name` and `i18n` fields to simulate `name_i18n`, just build a fake
-            # model instance
-            field_dict = action_or_snapshot.action_version.field_dict
-            action_name = str(Action(**{key: field_dict[key] for key in ['identifier', 'name', 'plan_id', 'i18n']}))
-            # Get creation date and user from the version's revision
-            revision = action_or_snapshot.action_version.revision
-            # Excel can't handle timezones
-            completed_at = self.type.plan.to_local_timezone(revision.date_created).replace(tzinfo=None)
-            completed_by = revision.user
-            # FIXME: Right now, we print the user who made the last change to the action, which may be different from
-            # the user who marked the action as complete.
-        else:
-            assert isinstance(action_or_snapshot, Action)
-            action_name = str(action_or_snapshot)
-            completed_at = None
-            completed_by = None
-        worksheet.write(row, 0, action_name)
-        if completed_by:
-            worksheet.write(row, 1, str(completed_by))
-        if completed_at:
-            worksheet.write(row, 2, completed_at, self._xlsx_cell_format_for_date)
-        column = 3
-        for field in self.fields:
-            if isinstance(action_or_snapshot, ActionSnapshot):
-                values = field.block.xlsx_values_for_action_snapshot(field.value, action_or_snapshot)
-            else:
-                values = field.block.xlsx_values_for_action(field.value, action_or_snapshot)
-            for value in values:
-                # Add cell format only once per field and cache added formats
-                cell_format = self._xlsx_cell_format_for_field.get(field.id)
-                if not cell_format:
-                    cell_format = field.block.add_xlsx_cell_format(field.value, workbook)
-                    self._xlsx_cell_format_for_field[field.id] = cell_format
-                worksheet.write(row, column, value, cell_format)
-                column += 1
+        actions_to_snapshot = (
+            self.type.plan.actions.all()
+            .prefetch_related('responsible_parties__organization', 'categories__type')
+        )
+        result = list()
+
+        def is_action(v):
+            return v._model == Action
+
+        incomplete_actions = []
+        ct = ContentType.objects.get_for_model(Action)
+        for action in actions_to_snapshot:
+            try:
+                snapshot = action.get_latest_snapshot(report=self)
+                revision = snapshot.action_version.revision
+                result.append((snapshot.action_version, snapshot.get_related_versions(ct),
+                               {'completed_at': revision.date_created,
+                                'completed_by': str(revision.user)}))
+                continue
+            except ObjectDoesNotExist:
+                incomplete_actions.append(action)
+        versions = []
+        try:
+            with create_revision(manage_manually=True):
+                for action in incomplete_actions:
+                    add_to_revision(action)
+                versions = list(_current_frame().db_versions['default'].values())
+                raise NoRevisionSave()
+        except NoRevisionSave:
+            pass
+        action_versions = list(filter(is_action, versions))
+        related_versions = list(filter(lambda v: not is_action(v), versions))
+        for action_version in action_versions:
+            result.append((action_version, related_versions,
+                           {'completed_at': None,
+                            'completed_by': None}))
+        return result
 
     def mark_as_complete(self, user):
         """Mark this report as complete, as well as all actions that are not yet complete.
@@ -161,7 +137,7 @@ class Report(models.Model, PlanRelatedModel):
         The snapshots for actions that are marked as complete by this will have `created_explicitly` set to False.
         """
         if self.is_complete:
-            raise ValueError(_("The report is already marked as complete."))
+            self._raise_complete()
         actions_to_snapshot = self.type.plan.actions.exclude(id__in=Action.objects.complete_for_report(self))
         with reversion.create_revision():
             reversion.set_comment(_("Marked report '%s' as complete") % self)
@@ -221,19 +197,17 @@ class ActionSnapshot(models.Model):
         except ActionSnapshot._RollbackRevision:
             pass
 
-    def get_attribute_for_type(self, attribute_type):
-        """Get the first action attribute of the given type in this snapshot.
+    def get_related_versions(self, ct):
+        return self.action_version.revision.version_set.exclude(content_type=ct).select_related('content_type')
 
-        Returns None if there is no such attribute.
-
-        Returned model instances have the PK field set, but this does not mean they currently exist in the DB.
-        """
+    def get_attribute_for_type_from_versions(self, attribute_type, versions, ct):
         pattern = {
             'type_id': attribute_type.id,
-            'content_type_id': ContentType.objects.get_for_model(Action).id,
+            'content_type_id': ct.id,
             'object_id': int(self.action_version.object_id),
         }
-        for version in self.action_version.revision.version_set.all():
+
+        for version in versions:
             model = version.content_type.model_class()
             # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
             if (model.__module__ == 'actions.models.attributes'
@@ -253,6 +227,33 @@ class ActionSnapshot(models.Model):
                 instance = model(**field_dict)
                 return instance
         return None
+
+    def get_attribute_for_type(self, attribute_type):
+        """Get the first action attribute of the given type in this snapshot.
+
+        Returns None if there is no such attribute.
+
+        Returned model instances have the PK field set, but this does not mean they currently exist in the DB.
+        """
+        ct = ContentType.objects.get_for_model(Action)
+        return self.get_attribute_for_type_from_versions(
+            attribute_type, self.get_related_versions(ct), ct
+        )
+
+    def get_related_serialized_data(self):
+        ct = ContentType.objects.get_for_model(Action)
+        all_related_versions = self.get_related_versions(ct)
+        revision = self.action_version.revision
+        action = prepare_serialized_model_version(self.action_version)
+        related_objects = group_by_model([prepare_serialized_model_version(o) for o in all_related_versions])
+        return dict(
+            action=action,
+            related_objects=related_objects,
+            completion={
+                'completed_at': revision.date_created,
+                'completed_by': str(revision.user)
+            }
+        )
 
     def __str__(self):
         return f'{self.action_version} @ {self.report}'

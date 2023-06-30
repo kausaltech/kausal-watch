@@ -1,14 +1,31 @@
-import xlsxwriter
-import xlsxwriter.format
+import re
+from html import unescape
+
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.utils.html import strip_tags
+
 from django.utils.translation import gettext_lazy as _
 from typing import Any, Dict, List, Optional
 from wagtail.admin.edit_handlers import FieldPanel
 
 import actions.models.attributes as models
+
+
+def html_to_plaintext(richtext):
+    """
+    Return a plain text version of a rich text string, suitable for search indexing;
+    like Django's strip_tags, but ensures that whitespace is left between block elements
+    so that <p>hello</p><p>world</p> gives "hello world", not "helloworld".
+    """
+    # insert space after </p>, </h1> - </h6>, </li> and </blockquote> tags
+    richtext = re.sub(
+        r"(</(p|h\d|li|blockquote)>)", r"\1\n\n", richtext, flags=re.IGNORECASE
+    )
+    richtext = re.sub(r"(<(br|hr)\s*/>)", r"\1\n", richtext, flags=re.IGNORECASE)
+    return unescape(strip_tags(richtext).strip())
 
 
 class AttributeFieldPanel(FieldPanel):
@@ -98,19 +115,18 @@ class AttributeType:
         # Implement in subclass
         raise NotImplementedError()
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, foo) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
-        assert attribute.type == self.instance
-        return [str(attribute)]
+        return [attribute['str']]
 
     def xlsx_column_labels(self) -> List[str]:
         """Return the label for each of this attribute type's columns."""
         # Override if, e.g., a certain attribute type uses more than one column
         return [str(self.instance)]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+    def get_xlsx_cell_format(self) -> Optional[dict]:
         """Add a format for this attribute type to the given workbook."""
         return None
 
@@ -143,11 +159,10 @@ class OrderedChoice(AttributeType):
         if val is not None:
             self.create_attribute(obj, choice=val)
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, foo) -> List[Any]:
         if not attribute:
             return [None]
-        assert attribute.type == self.instance
-        return [str(attribute.choice)]
+        return [attribute['str']]
 
 
 class CategoryChoice(AttributeType):
@@ -260,11 +275,17 @@ class OptionalChoiceWithText(AttributeType):
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    #def xlsx_required_related_objects(self) -> List[RelatedObjectMatchRequirement]
+
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None, None]
-        assert attribute.type == self.instance
-        return [str(attribute.choice), attribute.text_i18n]
+        attribute_data = attribute.get('data')
+        choice = next(
+            (o['data']['name'] for o in related_data_objects[models.AttributeTypeChoiceOption]
+             if o['data']['id'] == attribute_data['choice_id']))
+        rich_text = attribute_data['text']
+        return [choice, html_to_plaintext(rich_text)]
 
     def xlsx_column_labels(self) -> List[str]:
         return [
@@ -330,6 +351,13 @@ class Text(TextAttributeTypeMixin, AttributeType):
 class RichText(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
 
+    def xlsx_values(self, attribute, foo) -> List[Any]:
+        if not attribute:
+            return [None, None]
+        attribute_data = attribute.get('data')
+        rich_text = attribute_data['text']
+        return [html_to_plaintext(rich_text)]
+
 
 class Numeric(AttributeType):
     ATTRIBUTE_MODEL = models.AttributeNumericValue
@@ -365,12 +393,11 @@ class Numeric(AttributeType):
     def xlsx_column_labels(self) -> List[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, foo) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
-        assert attribute.type == self.instance
-        return [attribute.value]
+        return [attribute['data']['value']]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
-        return workbook.add_format({'num_format': '#,##0.00'})
+    def get_xlsx_cell_format(self) -> dict:
+        return {'num_format': '#,##0.00'}
