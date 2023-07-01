@@ -115,7 +115,7 @@ class AttributeType:
         # Implement in subclass
         raise NotImplementedError()
 
-    def xlsx_values(self, attribute, foo) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
@@ -159,7 +159,7 @@ class OrderedChoice(AttributeType):
         if val is not None:
             self.create_attribute(obj, choice=val)
 
-    def xlsx_values(self, attribute, foo) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None]
         return [attribute['str']]
@@ -275,8 +275,6 @@ class OptionalChoiceWithText(AttributeType):
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
 
-    #def xlsx_required_related_objects(self) -> List[RelatedObjectMatchRequirement]
-
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None, None]
@@ -351,7 +349,7 @@ class Text(TextAttributeTypeMixin, AttributeType):
 class RichText(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
 
-    def xlsx_values(self, attribute, foo) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None, None]
         attribute_data = attribute.get('data')
@@ -393,7 +391,7 @@ class Numeric(AttributeType):
     def xlsx_column_labels(self) -> List[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
-    def xlsx_values(self, attribute, foo) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]

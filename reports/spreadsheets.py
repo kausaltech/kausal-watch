@@ -161,7 +161,6 @@ class CursorWriter:
 
 
 class ExcelReport:
-    # pass as context to block fields
     language: str
     report: 'Report'
     workbook: xlsxwriter.Workbook

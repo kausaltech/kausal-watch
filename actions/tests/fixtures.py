@@ -21,9 +21,6 @@ from people.tests.factories import (
 )
 
 
-from pprint import pprint as pr  # TODO remove
-
-
 @pytest.fixture
 def category_type(plan):
     return CategoryTypeFactory(plan=plan)
@@ -133,13 +130,9 @@ def actions_with_relations_factory():
     return actions_with_relations
 
 
-#  @pytest.fixture(
-
-
 @pytest.fixture
 def plan_with_actions_with_attributes(plan, attribute_type_factory):
     attribute_types = list()
     for format in models.AttributeType.AttributeFormat:
         at = attribute_type_factory(scope=plan, format=format, name=str(format.label))
         attribute_types.append((at.format, at))
-    pr(attribute_types)
