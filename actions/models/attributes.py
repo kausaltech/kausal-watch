@@ -198,7 +198,7 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
         return "; ".join([str(c) for c in self.categories.all()])
 
 
-@reversion.register()
+@reversion.register(follow=['choice'])
 class AttributeChoice(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
 

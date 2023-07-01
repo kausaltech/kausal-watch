@@ -59,7 +59,7 @@ def test_excel_export(
     df_incomplete = assert_report_dimensions(excel_file_incomplete, report_with_all_attributes, actions_having_attributes)
     report_with_all_attributes.mark_as_complete(user)
 
-    with django_assert_max_num_queries(39):
+    with django_assert_max_num_queries(59):
         excel_file_complete = excel_file_from_report_factory()
 
     df_complete = assert_report_dimensions(excel_file_complete, report_with_all_attributes, actions_having_attributes)
