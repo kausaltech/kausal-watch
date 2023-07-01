@@ -352,7 +352,10 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             action: dict,
             related_objects: list[dict]
     ) -> list[str | None]:
-        organization_id = self._find_organization_id(related_objects[ActionResponsibleParty], action['id'])
+        organization_id = self._find_organization_id(
+            related_objects['actions.models.action.ActionResponsibleParty'],
+            action['id']
+        )
         if organization_id is None:
             return [None, None]
         organization = report.plan_current_related_objects.organizations.get(organization_id)

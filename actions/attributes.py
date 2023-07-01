@@ -280,7 +280,7 @@ class OptionalChoiceWithText(AttributeType):
             return [None, None]
         attribute_data = attribute.get('data')
         choice = next(
-            (o['data']['name'] for o in related_data_objects[models.AttributeTypeChoiceOption]
+            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
              if o['data']['id'] == attribute_data['choice_id']))
         rich_text = attribute_data['text']
         return [choice, html_to_plaintext(rich_text)]

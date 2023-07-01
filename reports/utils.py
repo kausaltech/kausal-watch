@@ -47,6 +47,7 @@ def group_by_model(serialized_versions: list[dict]):
     result = {}
     for version in serialized_versions:
         _cls = version['type']
-        result.setdefault(_cls, [])
-        result[_cls].append(version)
+        key = f'{_cls.__module__}.{_cls.__name__}'
+        result.setdefault(key, [])
+        result[key].append(version)
     return result
