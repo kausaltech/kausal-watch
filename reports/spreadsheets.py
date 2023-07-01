@@ -370,9 +370,11 @@ class ExcelReport:
             append_to_key(COMPLETED_BY_LABEL, completed_by or '')
             append_to_key(COMPLETED_AT_LABEL, completed_at)
             self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
-        if set(data[COMPLETED_AT_LABEL]) == {None}:
-            del data[COMPLETED_AT_LABEL]
-            del data[COMPLETED_BY_LABEL]
+        if data and set(data.get(COMPLETED_AT_LABEL)) == {None}:
+            if COMPLETED_AT_LABEL in data:
+                del data[COMPLETED_AT_LABEL]
+            if COMPLETED_BY_LABEL in data:
+                del data[COMPLETED_BY_LABEL]
         return polars.DataFrame(data)
 
     def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
