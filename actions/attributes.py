@@ -117,9 +117,7 @@ class AttributeType:
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
-        if not attribute:
-            return [None]
-        return [attribute['str']]
+        raise NotImplementedError()
 
     def xlsx_column_labels(self) -> List[str]:
         """Return the label for each of this attribute type's columns."""
@@ -162,7 +160,11 @@ class OrderedChoice(AttributeType):
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None]
-        return [attribute['str']]
+        attribute_data = attribute.get('data')
+        choice = next(
+            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
+             if o['data']['id'] == attribute_data['choice_id']))
+        return [choice]
 
 
 class CategoryChoice(AttributeType):
@@ -206,6 +208,17 @@ class CategoryChoice(AttributeType):
             # attribute is a ClusterableModel, or at least it probably should be, so we need to call save() to
             # persist the categories we just set
             attribute.save()
+
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+        category_ids = attribute['data']['categories']
+        # TODO i18n doesn't really work easily with the serialized
+        # models
+        category_names = [
+            d['data']['name']
+            for d in related_data_objects['actions.models.category.Category']
+            if d['data']['id'] in category_ids
+        ]
+        return ['; '.join(sorted(category_names))]
 
 
 class OptionalChoiceWithText(AttributeType):
@@ -345,13 +358,20 @@ class TextAttributeTypeMixin:
 class Text(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeText
 
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+        if not attribute:
+            return [None, None]
+        attribute_data = attribute.get('data')
+        text = attribute_data['text']
+        return [text]
+
 
 class RichText(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
-            return [None, None]
+            return [None]
         attribute_data = attribute.get('data')
         rich_text = attribute_data['text']
         return [html_to_plaintext(rich_text)]
