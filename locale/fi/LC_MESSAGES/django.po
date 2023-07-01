@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-04-11 22:27+0300\n"
-"PO-Revision-Date: 2023-04-12 13:44+0300\n"
+"POT-Creation-Date: 2023-06-30 16:48+0300\n"
+"PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Timo Tuominen, 2023\n"
 "Language-Team: Finnish (https://app.transifex.com/kausal-tech/teams/113123/fi/)\n"
 "MIME-Version: 1.0\n"
@@ -75,7 +75,7 @@ msgstr "1–3 kuukautta sitten"
 msgid "More than 3 months ago"
 msgstr "Päälle 3 kuukautta sitten"
 
-#: actions/action_admin.py
+#: actions/action_admin.py orgs/org_admin_legacy.py
 msgid "Apply filters"
 msgstr "Toteuta suodatukset"
 
@@ -120,7 +120,8 @@ msgid "Last updated"
 msgstr "Viimeksi päivitetty"
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: orgs/models.py people/templates/people/chooser_results.html
+#: orgs/models.py orgs/wagtail_admin.py
+#: people/templates/people/chooser_results.html
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
 msgid "Name"
@@ -133,6 +134,7 @@ msgstr "Luokat"
 
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
 msgid "Basic information"
 msgstr "Perustiedot"
 
@@ -193,7 +195,7 @@ msgstr "Yhdistetty"
 msgid "Postponed"
 msgstr "Lykätty"
 
-#: actions/action_status_summary.py
+#: actions/action_status_summary.py reports/spreadsheets.py
 msgid "Unknown"
 msgstr "Tuntematon"
 
@@ -237,6 +239,7 @@ msgstr "Vaikuttavuus"
 
 #: actions/admin.py actions/attribute_type_admin.py
 #: actions/blocks/category_list.py actions/blocks/filters.py pages/models.py
+#: reports/blocks/action_content.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
 
@@ -282,6 +285,7 @@ msgid "collection"
 msgstr "kokoelma"
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -385,7 +389,7 @@ msgstr "Osio"
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Johdanto"
 
@@ -430,7 +434,7 @@ msgstr "Montako tasoa kategorihierarkiasta näytetään"
 msgid "Filter: %(filter_label)s"
 msgstr "Suodatin: %(filter_label)s"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr "vastuutaho"
 
@@ -439,7 +443,7 @@ msgid "primary organization"
 msgstr "pääorganisaatio"
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr "toteutusvaihe"
 
@@ -543,7 +547,8 @@ msgstr "nimi"
 msgid "impact"
 msgstr "vaikuttavuus"
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr "tila"
 
@@ -793,7 +798,7 @@ msgstr "liittyvät toimenpiteet"
 msgid "responsible organizations"
 msgstr "vastuuorganisaatiot"
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr "päivitysaika"
 
@@ -937,6 +942,10 @@ msgstr "toimenpiteiden aikataulut"
 msgid "is completed"
 msgstr "valmis"
 
+#: actions/models/action.py actions/models/plan.py
+msgid "color"
+msgstr "väri"
+
 #: actions/models/action.py
 msgid "action status"
 msgstr "toimenpiteen tila"
@@ -957,7 +966,7 @@ msgstr "toimenpiteen toteutusvaiheet"
 msgid "not started"
 msgstr "ei käynnistynyt"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr "käynnissä"
 
@@ -1354,6 +1363,16 @@ msgstr ""
 "Aseta jos julkisessa sivustossa halutaan näyttää toimenpiteiden tunnisteet"
 
 #: actions/models/features.py
+msgid "Minimal statuses"
+msgstr ""
+
+#: actions/models/features.py
+msgid ""
+"Set to prevent showing status-specific graphs and other elements if statuses"
+" aren't systematically used in this action plan"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Has action official name field"
 msgstr "Toimenpiteillä on virallinen nimi -kenttä"
 
@@ -1451,8 +1470,18 @@ msgid "Persons that can modify everything related to the action plan"
 msgstr "Käyttäjät, jotka voivat muokata kaikkea toimenpideohjelmaan liittyvää"
 
 #: actions/models/plan.py
-msgid "URL to accessibility statement"
-msgstr "Linkki saavutettavuusselosteeseen"
+msgid "Link to accessibility statement"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Link to external feedback form"
+msgstr ""
+
+#: actions/models/plan.py
+msgid ""
+"If not empty, the system's built-in user feedback feature will be replaced "
+"by a link to an external feedback form available at this web address."
+msgstr ""
 
 #: actions/models/plan.py
 msgid "Theme identifier"
@@ -1641,10 +1670,6 @@ msgstr "Emoryhmä"
 #: actions/models/plan.py
 msgid "weight"
 msgstr "paino"
-
-#: actions/models/plan.py
-msgid "color"
-msgstr "väri"
 
 #: actions/models/plan.py
 msgid "impact group"
@@ -1915,6 +1940,18 @@ msgstr "Sähköpostiosoitteet"
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
 
+#: admin_site/wagtail_hooks.py
+msgid "Video tutorials"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "https://kausal.gitbook.io/watch"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
+msgid "Help"
+msgstr ""
+
 #: aplans/fields.py
 msgid "Enter a valid hostname."
 msgstr "Syötä sallittu hostname."
@@ -1971,6 +2008,14 @@ msgstr "suomi"
 msgid "Swedish"
 msgstr "ruotsi"
 
+#: aplans/settings.py
+msgid "Spanish (United States)"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Spanish"
+msgstr ""
+
 #: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
@@ -1979,7 +2024,7 @@ msgstr "järjestys"
 msgid "Not editable"
 msgstr "Ei muokattavissa"
 
-#: aplans/utils.py
+#: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Toimenpideohjelman ylläpitäjät"
 
@@ -2010,7 +2055,7 @@ msgstr "Toimenpideohjelman mukaisesti"
 msgid "Content"
 msgstr "Sisältö"
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr "Toimenpide"
 
@@ -2096,7 +2141,7 @@ msgstr "asiakirja"
 msgid "documents"
 msgstr "asiakirjat"
 
-#: feedback/models.py people/models.py users/models.py
+#: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
 msgstr "sähköpostiosoite"
 
@@ -2555,7 +2600,7 @@ msgstr "mittarin tavoitteet"
 msgid "high"
 msgstr "korkea"
 
-#: indicators/models.py
+#: indicators/models.py pages/blocks.py
 msgid "medium"
 msgstr "keskitaso"
 
@@ -2712,10 +2757,6 @@ msgstr[1] ""
 "%(num)d arvoa poistetaan."
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
-msgstr "Edistyneet valinnat"
-
-#: indicators/wagtail_admin.py
 #, python-format
 msgid ""
 "This indicator is linked to a common indicator, so quantity, unit and "
@@ -2724,6 +2765,10 @@ msgid ""
 msgstr ""
 "Mittari on kytketty yleiseen mittariin, joten sen suuretta (%(quantity)s), "
 "yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+
+#: indicators/wagtail_admin.py
+msgid "Advanced options"
+msgstr "Edistyneet valinnat"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
@@ -2966,6 +3011,11 @@ msgid "notification settings"
 msgstr "heräteasetukset"
 
 #: notifications/models.py
+msgid ""
+"Set if the notification was sent to an email address instead of a person"
+msgstr ""
+
+#: notifications/models.py
 msgid "Email From name"
 msgstr "Sähköpostin lähettäjän nimi"
 
@@ -3015,12 +3065,60 @@ msgid "Subject for email notifications"
 msgstr "Sähköpostiherätteen otsikko"
 
 #: notifications/models.py
+msgid "custom email address"
+msgstr ""
+
+#: notifications/models.py
+msgid "Email address used when \"send to custom email address\" is checked"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to plan admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to custom email address"
+msgstr ""
+
+#: notifications/models.py
+msgid "Do not send to contact persons"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins, plan admins"
+msgstr ""
+
+#: notifications/models.py
+msgid "send to contact persons"
+msgstr ""
+
+#: notifications/models.py
 msgid "notification template"
 msgstr "herätteen mallinne"
 
 #: notifications/models.py
 msgid "notification templates"
 msgstr "herätteiden mallinteet"
+
+#: notifications/models.py
+msgid "This can only be set if a custom email address is defined"
+msgstr ""
+
+#: notifications/models.py
+msgid "If a custom email address is defined, this must be set"
+msgstr ""
+
+#: notifications/models.py
+msgid "Notifications of this type cannot be sent to contact persons"
+msgstr ""
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -3072,6 +3170,10 @@ msgid "Notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr ""
+
+#: notifications/wagtail_admin.py
 msgid "Notification types"
 msgstr "Herätetyypit"
 
@@ -3083,7 +3185,7 @@ msgstr "Herätteiden sisältö"
 msgid "Notification preferences"
 msgstr "Heräteasetukset"
 
-#: orgs/apps.py
+#: orgs/apps.py orgs/wagtail_admin.py
 msgid "Organizations"
 msgstr "Organisaatiot"
 
@@ -3091,7 +3193,7 @@ msgstr "Organisaatiot"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr "Yläorganisaatio"
 
@@ -3171,6 +3273,132 @@ msgstr "perustietojen ylläpitäjä"
 msgid "metadata admins"
 msgstr "perustietojen ylläpitäjät"
 
+#: orgs/org_admin_legacy.py
+msgid "Show only organizations in active plan"
+msgstr ""
+
+#: orgs/org_admin_legacy.py
+msgid "Show only editable organizations"
+msgstr ""
+
+#: orgs/views.py
+msgid "Add organization to active plan"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm including %(org)s in plan %(plan)s"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm excluding %(org)s from plan %(plan)s"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid ""
+"Do you really want to include the organization '%(org)s' in the plan "
+"'%(plan)s'?"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid ""
+"Do you really want to exclude the organization '%(org)s' from the plan "
+"'%(plan)s'?"
+msgstr ""
+
+#: orgs/views.py
+msgid "The organization is already included in the plan"
+msgstr ""
+
+#: orgs/views.py
+msgid "The organization is not included in the plan"
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been included in plan '%(plan)s'."
+msgstr ""
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been excluded from plan '%(plan)s'."
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add child"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add child under this node"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Edit subtree"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+#, python-format
+msgid "Edit subtree rooted at this %s"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Creating organizations without a parent not allowed."
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization under this organization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Include in plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Include this organization in the active plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Exclude from plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Exclude this organization from the active plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgctxt "organization"
+msgid "Parent"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "People who can edit plan-specific content related to this organization"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Metadata admins"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid ""
+"People who can edit data of this organization and suborganizations but no "
+"plan-specific content"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Is in plan"
+msgstr ""
+
+#: orgs/wagtail_admin.py
+msgid "Permissions"
+msgstr ""
+
 #: pages/blocks.py
 msgid "Question"
 msgstr "Kysymys"
@@ -3178,6 +3406,14 @@ msgstr "Kysymys"
 #: pages/blocks.py
 msgid "Answer"
 msgstr "Vastaus"
+
+#: pages/blocks.py
+msgid "small"
+msgstr ""
+
+#: pages/blocks.py
+msgid "large"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Title"
@@ -3272,6 +3508,10 @@ msgid "Action status pie charts"
 msgstr "Ympyräkaaviot toimenpiteiden tilanteesta"
 
 #: pages/models.py
+msgid "Category tree map"
+msgstr "Luokkien puuvisualisaatio"
+
+#: pages/models.py
 msgid "Front page"
 msgstr "Etusivu"
 
@@ -3306,10 +3546,6 @@ msgstr "Kappale"
 #: pages/models.py
 msgid "Questions & Answers"
 msgstr "Kysymykset & vastaukset"
-
-#: pages/models.py
-msgid "Category tree map"
-msgstr "Luokkien puuvisualisaatio"
 
 #: pages/models.py
 msgid "Content page"
@@ -3587,6 +3823,27 @@ msgstr ""
 msgid "Action attribute"
 msgstr ""
 
+#: reports/blocks/action_content.py
+msgid "Action category"
+msgstr ""
+
+#: reports/blocks/action_content.py
+msgid "Level of containing organization"
+msgstr "Yläorganisaation hierarkiataso"
+
+#: reports/blocks/action_content.py
+msgid ""
+"In addition to the organization itself, an organizational unit containing "
+"the organization is included in the report. Counting from the top-level root"
+" organisation at level 1, which level in the organizational hierarchy should"
+" be used to find this containing organization? If left empty, don't add the "
+"containing organization to the report."
+msgstr ""
+"Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. "
+"Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa "
+"tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä "
+"raporttiin."
+
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr ""
@@ -3603,7 +3860,7 @@ msgstr "raportin tyyppi"
 msgid "report types"
 msgstr "raporttien tyypit"
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr "valmis"
 
@@ -3626,14 +3883,6 @@ msgstr "raportti"
 #: reports/models.py
 msgid "reports"
 msgstr "raportit"
-
-#: reports/models.py
-msgid "Marked as complete by"
-msgstr ""
-
-#: reports/models.py
-msgid "Marked as complete at"
-msgstr ""
 
 #: reports/models.py
 msgid "The report is already marked as complete."
@@ -3660,6 +3909,22 @@ msgstr ""
 #: reports/models.py
 msgid "action snapshots"
 msgstr ""
+
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr "Tallennettu Kausal Watchista"
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr ""
+
+#: reports/spreadsheets.py templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr "Tunniste"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
@@ -3817,10 +4082,6 @@ msgstr "Ei löydy"
 #: templates/aplans_admin/index.html
 msgid "Unknown content"
 msgstr "Tuntematon sisältö"
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Identifier"
-msgstr "Tunniste"
 
 #: templates/aplans_admin/own_actions_panel.html
 #: templates/aplans_admin/own_indicators_panel.html
