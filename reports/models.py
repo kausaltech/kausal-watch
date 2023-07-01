@@ -110,7 +110,7 @@ class Report(models.Model, PlanRelatedModel):
                 revision = snapshot.action_version.revision
                 result.append((snapshot.action_version, snapshot.get_related_versions(ct),
                                {'completed_at': revision.date_created,
-                                'completed_by': str(revision.user)}))
+                                'completed_by': str(revision.user) if revision.user else ''}))
                 continue
             except ObjectDoesNotExist:
                 incomplete_actions.append(action)

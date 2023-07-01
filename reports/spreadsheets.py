@@ -3,6 +3,7 @@ import inspect
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
+from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
@@ -20,7 +21,7 @@ if typing.TYPE_CHECKING:
     from .models import Report
     from reports.blocks.action_content import ReportFieldBlock
 
-from .utils import make_attribute_path, group_by_model, prepare_serialized_model_version
+from .utils import group_by_model, prepare_serialized_model_version
 
 
 class ExcelFormats(dict):
@@ -48,6 +49,11 @@ class ExcelFormats(dict):
             f.set_num_format('d mmmm yyyy')
             f.set_align('left')
             f.set_bg_color(cls.COLOR_WHITE)
+
+        @classmethod
+        def timestamp(cls, f: Format):
+            cls.date(f)
+            f.set_num_format('d mmmm yyyy hh:mm')
 
         @classmethod
         def odd_row(cls, f: Format):
@@ -255,33 +261,35 @@ class ExcelReport:
         return self._write_sheet(self.workbook.add_worksheet(_('Actions')), df)
 
     def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
-        # Header row
-        worksheet.write_row(0, 0, df.columns, self.formats.header_row)
 
         # col_width = 40 if small else 50
         # first_col_width = col_width if small else 10
         # row_height = 20 if small else 50
         # last_col_width = 10 if small else col_width
 
-        col_width = 5
+        col_width = 50
         first_col_width = 5
         row_height = 20 if small else 50
-        last_col_width = 5
+        last_col_width = 30
 
         # Data rows
         for i, row in enumerate(df.iter_rows()):
-            worksheet.write_row(i + 1, 0, row, self.formats.all_rows)
+            worksheet.write_row(i + 1, 0, row)
             worksheet.set_row(i + 1, row_height)
         i = 0
         for label in df.columns:
-            worksheet.set_column(i, i, col_width, self.formats.get_for_label(label))
+            format = self.formats.get_for_label(label)
+            if format is None:
+                format = self.formats.all_rows
+            width = col_width
+            if i == 0:
+                width = first_col_width
+            elif i == len(df.columns) - 1:
+                width = last_col_width
+            if small:
+                width = None
+            worksheet.set_column(i, i, width, format)
             i += 1
-        worksheet.set_column(0, 0, first_col_width)
-        worksheet.set_column(i-1, i-1, last_col_width)
-        worksheet.set_row(0, 20)
-        worksheet.autofit()
-        if not small:
-            worksheet.set_column(1, 1, 50)
         worksheet.conditional_format(1, 0, df.height, df.width-1, {
             'type': 'formula',
             'criteria': '=MOD(ROW(),2)=0',
@@ -292,11 +300,15 @@ class ExcelReport:
             'criteria': '=NOT(MOD(ROW(),2)=0)',
             'format': self.formats.even_row
         })
+        # Header row
+        worksheet.set_row(0, 20)
+        worksheet.write_row(0, 0, df.columns, self.formats.header_row)
+        if small:
+            worksheet.autofit()
         return worksheet
 
     def close(self):
         self.workbook.close()
-
 
     def _prepare_serialized_report_data(self):
         row_data = []
@@ -342,7 +354,7 @@ class ExcelReport:
             completed_by = completion['completed_by']
             completed_at = completion['completed_at']
             if completed_at is not None:
-                completed_at = self.report.type.plan.to_local_timezone(completed_at).replace(tzinfo=None)
+                completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier)
             append_to_key(_('Action'), action_name)
             for field in self.report.fields:
@@ -355,9 +367,9 @@ class ExcelReport:
                 self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
                     append_to_key(label, value)
-            append_to_key(COMPLETED_BY_LABEL, completed_by)
+            append_to_key(COMPLETED_BY_LABEL, completed_by or '')
             append_to_key(COMPLETED_AT_LABEL, completed_at)
-            self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.date)
+            self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
         if set(data[COMPLETED_AT_LABEL]) == {None}:
             del data[COMPLETED_AT_LABEL]
             del data[COMPLETED_BY_LABEL]
