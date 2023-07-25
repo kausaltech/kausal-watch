@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.images.models import SourceImageIOError
 
@@ -11,9 +10,20 @@ from aplans.utils import OrderedModel
 
 
 class Client(ClusterableModel):
+    class AuthBackend(models.TextChoices):
+        NONE = '', _('Only allow password login')
+        # Values are social auth backend names
+        AZURE_AD = 'azure_ad', _('Microsoft Azure AD')
+        GOOGLE = 'google-openidconnect', _('Google')
+
     name = models.CharField(max_length=100)
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+    )
+    # Login method can be overridden per user: If the user has a usable password, that will be used regardless.
+    auth_backend = models.CharField(
+        max_length=30, choices=AuthBackend.choices, blank=True, verbose_name=_("login method"),
+        help_text=_("Login method that will be used for users that don't have a password set"),
     )
 
     def __str__(self):
