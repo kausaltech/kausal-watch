@@ -103,7 +103,7 @@ class AttributeType:
     def create_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()
 
@@ -136,7 +136,7 @@ class OrderedChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         initial_choice = None
         if obj:
             c = self.get_attributes(obj).first()
@@ -174,7 +174,7 @@ class CategoryChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         from actions.models.category import Category
         initial_categories = None
         if obj:
@@ -234,7 +234,7 @@ class OptionalChoiceWithText(AttributeType):
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -262,9 +262,10 @@ class OptionalChoiceWithText(AttributeType):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
-            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
-                initial=initial_text, required=False, help_text=self.instance.help_text_i18n
-            )
+            form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            if self.instance.max_length:
+                form_field_kwargs.update(max_length=self.instance.max_length)
+            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
@@ -312,7 +313,7 @@ class TextAttributeTypeMixin:
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -323,9 +324,10 @@ class TextAttributeTypeMixin:
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
-            field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
-                initial=initial_text, required=False, help_text=self.instance.help_text_i18n
-            )
+            form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            if self.instance.max_length:
+                form_field_kwargs.update(max_length=self.instance.max_length)
+            field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
@@ -384,7 +386,7 @@ class Numeric(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()

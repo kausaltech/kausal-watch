@@ -84,6 +84,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
     )
+    max_length = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('character limit for text fields'))
     show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
