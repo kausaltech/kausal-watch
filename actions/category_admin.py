@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.edit_handlers import (
     FieldPanel, FieldRowPanel, MultiFieldPanel, ObjectList,
@@ -445,6 +446,15 @@ class CommonCategoryCreateView(CommonCategoryTypeQueryParameterMixin, AplansCrea
             # if not instance.identifier and instance.type.hide_category_identifiers:
             #     instance.generate_identifier()
         return instance
+
+    @transaction.atomic()
+    def form_valid(self, form):
+        """Create category corresponding to this common category for all plans using this common category's type."""
+        result = super().form_valid(form)
+        for plan in self.instance.type.plans.all():
+            ct = self.instance.type.category_type_instances.get(plan=plan)
+            self.instance.instantiate_for_category_type(ct)
+        return result
 
 
 class CommonCategoryEditView(CommonCategoryTypeQueryParameterMixin, AplansEditView):
