@@ -1254,7 +1254,11 @@ class OrganizationViewSet(BulkModelViewSet):
         return Organization.objects.available_for_plan(plan)
 
 
-class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixin):
+class PersonSerializer(
+    BulkSerializerValidationInstanceMixin,
+    serializers.ModelSerializer,
+    ModelWithImageSerializerMixin,
+):
     uuid = serializers.UUIDField(required=False)
     avatar_url = serializers.SerializerMethodField()
 
@@ -1265,6 +1269,14 @@ class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixi
 
     def get_avatar_url(self, obj):
         return obj.get_avatar_url(self.context['request'])
+
+    def validate_email(self, value):
+        qs = Person.objects.filter(email__iexact=value)
+        if self._instance is not None:
+            qs = qs.exclude(pk=self._instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(_('Person with that email already exists'))
+        return value
 
     class Meta:
         model = Person
