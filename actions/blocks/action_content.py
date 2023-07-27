@@ -174,21 +174,6 @@ action_attribute_blocks = generate_blocks_for_fields(Action, [
 ])
 
 
-action_content_fields = [
-    'lead_paragraph',
-    'description',
-    ('official_name', ActionOfficialNameBlock(label=_('official name'))),
-    ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
-    ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
-    'links',
-    'tasks',
-    'merged_actions',
-    'related_actions',
-    'related_indicators',
-    ('contact_form', ActionContactFormBlock(required=True, label=_('Contact form'))),
-    ('report_comparison', ReportComparisonBlock()),
-]
-
 action_content_extra_args = {
     'model_instance_container_blocks': {
         AttributeType: 'attribute',
@@ -199,7 +184,10 @@ action_content_extra_args = {
 ActionContentSectionElementBlock = generate_stream_block(
     'ActionMainContentSectionElementBlock',
     action_attribute_blocks,
-    fields=action_content_fields,
+    fields = [
+        ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
+        ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
+    ]
 )
 
 
@@ -226,7 +214,18 @@ ActionMainContentBlock = generate_stream_block(
     action_attribute_blocks,
     fields=[
         ('section', ActionContentSectionBlock(required=True, label=_('Section'))),
-        *action_content_fields,
+        'lead_paragraph',
+        'description',
+        ('official_name', ActionOfficialNameBlock(label=_('official name'))),
+        ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
+        ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
+        'links',
+        'tasks',
+        'merged_actions',
+        'related_actions',
+        'related_indicators',
+        ('contact_form', ActionContactFormBlock(required=True, label=_('Contact form'))),
+        ('report_comparison', ReportComparisonBlock()),
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={
