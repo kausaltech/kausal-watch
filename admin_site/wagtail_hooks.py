@@ -1,13 +1,11 @@
 from typing import Any
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, InlinePanel
-from wagtail.admin.menu import DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
+from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
@@ -92,46 +90,6 @@ def register_common_category_menu():
     )
 
 
-class AttributeTypeMenuItem(MenuItem):
-    def __init__(self, content_type, **kwargs):
-        self.content_type = content_type
-        self.base_url = reverse('actions_attributetype_modeladmin_index')
-        url = f'{self.base_url}?content_type={content_type.id}'
-        label = capfirst(content_type.model_class()._meta.verbose_name)
-        super().__init__(label, url, **kwargs)
-
-    def is_active(self, request):
-        path, _ = self.url.split('?', maxsplit=1)
-        content_type = request.GET.get('content_type')
-        return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
-
-
-class AttributeTypeMenu(Menu):
-    def menu_items_for_request(self, request):
-        user = request.user
-        plan = user.get_active_admin_plan()
-        items = []
-        if user.is_general_admin_for_plan(plan):
-            action_ct = ContentType.objects.get(app_label='actions', model='action')
-            category_ct = ContentType.objects.get(app_label='actions', model='category')
-            items.append(AttributeTypeMenuItem(action_ct, icon_name='kausal-action'))
-            items.append(AttributeTypeMenuItem(category_ct, icon_name='kausal-category'))
-        return items
-
-
-attribute_type_menu = AttributeTypeMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_attribute_type_menu():
-    return SubmenuMenuItem(
-        _('Fields'),
-        attribute_type_menu,
-        order=510,
-        icon_name='kausal-attribute',
-    )
-
-
 class ReportMenuItem(MenuItem):
     def __init__(self, report_type, **kwargs):
         self.report_type = report_type
@@ -198,6 +156,12 @@ class PlanChooserMenu(Menu):
                 icon_name = 'tick'
             item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
+        items.append(AdminOnlyMenuItem(
+            _('Create plan'),
+            reverse('create-plan'),
+            icon_name='plus-inverse',
+            #order=9100,
+        ))
         return items
 
 

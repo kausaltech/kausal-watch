@@ -2,7 +2,11 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
+from django.urls import reverse
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
+from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
@@ -147,6 +151,32 @@ class AttributeTypeAdminMenuItem(ModelAdminMenuItem):
         # Hide it because we will have menu items for listing attribute types of specific content types.
         # Note that we need to register AttributeTypeAdmin nonetheless, otherwise the URLs wouldn't be set up.
         return False
+
+
+class AttributeTypeMenuItem(MenuItem):
+    def __init__(self, content_type, **kwargs):
+        self.content_type = content_type
+        self.base_url = reverse('actions_attributetype_modeladmin_index')
+        url = f'{self.base_url}?content_type={content_type.id}'
+        model_name = capfirst(content_type.model_class()._meta.verbose_name)
+        label = _("Fields (%(model)s)") % {'model': model_name}
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        content_type = request.GET.get('content_type')
+        return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
+
+
+@hooks.register('construct_settings_menu')
+def add_attribute_types_to_settings_menu(request, items: list):
+    user = request.user
+    plan = user.get_active_admin_plan()
+    if user.is_general_admin_for_plan(plan):
+        action_ct = ContentType.objects.get(app_label='actions', model='action')
+        category_ct = ContentType.objects.get(app_label='actions', model='category')
+        items.append(AttributeTypeMenuItem(action_ct, icon_name='kausal-attribute'))
+        items.append(AttributeTypeMenuItem(category_ct, icon_name='kausal-attribute'))
 
 
 class AttributeTypeForm(AplansAdminModelForm):
