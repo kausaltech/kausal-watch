@@ -95,7 +95,7 @@ class CategoryTypePermissionHelper(PermissionHelper):
 @modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
-    menu_icon = 'kausal-category'
+    menu_icon = 'kausal-categories'
     menu_label = _('Category types')
     menu_order = 1100
     list_display = ('name',)
@@ -420,7 +420,7 @@ class CommonCategoryTypePermissionHelper(PermissionHelper):
 @modeladmin_register
 class CommonCategoryTypeAdmin(AplansModelAdmin):
     model = CommonCategoryType
-    menu_icon = 'kausal-category'
+    menu_icon = 'kausal-categories'
     menu_label = _('Common category types')
     menu_order = 1101
     permission_helper_class = CommonCategoryTypePermissionHelper
@@ -549,7 +549,7 @@ class CommonCategoryEditHandler(AplansTabbedInterface):
 @modeladmin_register
 class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Common categories')
-    menu_icon = 'kausal-category'  # FIXME
+    menu_icon = 'kausal-categories'  # FIXME
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
