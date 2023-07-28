@@ -2063,7 +2063,7 @@ msgid "user feedback"
 msgstr "brugerfeedback"
 
 #: feedback/models.py
-msgid "user feedbacks"
+msgid "user feedback"
 msgstr "brugerfeedback"
 
 #: feedback/templates/feedback/set_user_feedback_processed.html
@@ -2143,7 +2143,7 @@ msgid "Mark this user feedback as unprocessed"
 msgstr "Markere denne brugerfeedback som ubehandlet"
 
 #: feedback/wagtail_admin.py
-msgid "User feedbacks"
+msgid "User feedback"
 msgstr "Brugerfeedback"
 
 #: images/image_formats.py

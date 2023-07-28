@@ -1400,11 +1400,11 @@ msgid "user feedback"
 msgstr ""
 
 #: feedback/models.py
-msgid "user feedbacks"
+msgid "user feedback"
 msgstr ""
 
 #: feedback/wagtail_admin.py
-msgid "User feedbacks"
+msgid "User feedback"
 msgstr ""
 
 #: images/models.py

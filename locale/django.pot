@@ -1937,7 +1937,7 @@ msgid "user feedback"
 msgstr ""
 
 #: feedback/models.py
-msgid "user feedbacks"
+msgid "user feedback"
 msgstr ""
 
 #: feedback/views.py
@@ -2003,7 +2003,7 @@ msgid "Mark this user feedback as unprocessed"
 msgstr ""
 
 #: feedback/wagtail_admin.py
-msgid "User feedbacks"
+msgid "User feedback"
 msgstr ""
 
 #: images/image_formats.py
