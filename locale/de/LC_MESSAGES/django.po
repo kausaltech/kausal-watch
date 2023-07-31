@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-01 00:56+0300\n"
-"PO-Revision-Date: 2023-07-31 12:16+0000\n"
-"Last-Translator: Weblate Admin <foo@example.com>\n"
-"Language-Team: German <http://weblate.example.com/projects/watch-wagtail-5/backend-django/de/>\n"
+"PO-Revision-Date: 2023-07-31 23:10+0000\n"
+"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch-backend/"
+"django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -180,14 +181,11 @@ msgid "Fields (%(model)s)"
 msgstr "Felder (%(model)s)"
 
 #: actions/attribute_type_admin.py
-#, fuzzy
-#| msgid "If format is 'Category', a category type must be set "
 msgid "If format is 'Category', a category type must be set"
-msgstr "Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt werden"
+msgstr ""
+"Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt werden"
 
 #: actions/attribute_type_admin.py
-#, fuzzy
-#| msgid "If format is 'Numeric', a unit must be set "
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werden"
 
@@ -216,10 +214,10 @@ msgid "contact form"
 msgstr "Kontaktformular"
 
 #: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "What label should be used in the public UI for the official name"
 msgid "What label should be used in the public UI for the official name?"
-msgstr "Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den offiziellen Namen verwendet werden?"
+msgstr ""
+"Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den "
+"offiziellen Namen verwendet werden?"
 
 #: actions/blocks/action_content.py
 msgid "Description to show after the field content"
@@ -500,20 +498,20 @@ msgid "Domain name"
 msgstr "Domänenname"
 
 #: actions/forms.py
-#, fuzzy
-#| msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr "Der vollständig qualifizierte Domänenname, z. B. klima.stadtname.gov. Leerlassen wenn noch unbekannt."
+msgstr ""
+"Der vollständig qualifizierte Domänenname, z. B. klima.stadtname.gov. "
+"Leerlassen wenn noch unbekannt."
 
 #: actions/forms.py
 msgid "Base path"
 msgstr "Basispfad"
 
 #: actions/forms.py
-#, fuzzy
-#| msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr "Füllen Sie dies für eine Website mit mehreren Plänen aus, wenn sich der Plan nicht im Stammverzeichnis der Domäne befindet."
+msgstr ""
+"Füllen Sie dies für eine Website mit mehreren Plänen aus, wenn sich der Plan "
+"nicht im Stammverzeichnis der Domäne befindet."
 
 #: actions/forms.py
 msgid "Name of client"
@@ -2022,10 +2020,8 @@ msgid "Mark this user feedback as unprocessed"
 msgstr "Markiere dieses Benutzer-Feedback als unbearbeitet"
 
 #: feedback/wagtail_admin.py
-#, fuzzy
-#| msgid "User feedbacks"
 msgid "User feedback"
-msgstr "Benutzer-Feedbacks"
+msgstr "Benutzer-Feedback"
 
 #: images/image_formats.py
 msgid "Full width (zoomable)"
@@ -2624,14 +2620,6 @@ msgid "Thank you for keeping the action plan updated. Up-to-date information abo
 msgstr "Vielen Dank, dass Sie den Maßnahmenplan auf dem neuesten Stand halten. Aktuelle Informationen über die Maßnahmen sind für uns unerlässlich, um unsere Ziele zu erreichen."
 
 #: notifications/management/commands/initialize_notifications.py
-#, fuzzy
-#| msgctxt "outro"
-#| msgid ""
-#| "If you are having difficulties using the action plan watch platform, please send an email to the administrators of the action plan.\n"
-#| "\n"
-#| "Thank you for taking part in implementing the action plan!\n"
-#| "\n"
-#| "Kind regards, the action plan administrators."
 msgctxt "outro"
 msgid ""
 "If you are having difficulties using the action plan watch platform, please send an email to the administrators of the action plan.\n"
@@ -2641,7 +2629,9 @@ msgid ""
 "Kind regards,\n"
 "the action plan administrators"
 msgstr ""
-"Wenn Sie Schwierigkeiten bei der Verwendung der Maßnahmenplan-Beobachtungsplattform haben, senden Sie bitte eine E-Mail an die Administratoren des Maßnahmenplans.\n"
+"Wenn Sie Schwierigkeiten bei der Verwendung der Maßnahmenplan-"
+"Beobachtungsplattform haben, senden Sie bitte eine E-Mail an die "
+"Administratoren des Maßnahmenplans.\n"
 "\n"
 "Vielen Dank, dass Sie sich an der Umsetzung des Maßnahmenplans beteiligen!\n"
 "\n"
@@ -3128,10 +3118,10 @@ msgid "Maintenance responsibility paragraph"
 msgstr "Absatz über Wartungsverantwortung"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "If this is set, it will be displayed instead of \"This service is published by [publisher].\""
 msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
-msgstr "Wenn dies gesetzt ist, wird es statt \"Dieser Dienst wird von [Herausgeber] bereitgestellt\" angezeigt."
+msgstr ""
+"Wenn dies gesetzt ist, wird es statt \"Dieser Dienst wird von [Herausgeber] "
+"bereitgestellt\" angezeigt."
 
 #: pages/blocks.py
 msgid "Email address"
@@ -3604,16 +3594,18 @@ msgid "action snapshots"
 msgstr "Maßnahmen-Snapshots"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy, python-format
-#| msgid "Do you really want to mark the report <i>%(report)s<i> as complete?"
+#, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr "Möchten Sie den Bericht <i> %(report)s <i> wirklich als abgeschlossen markieren?"
+msgstr ""
+"Möchten Sie den Bericht <i> %(report)s </i> wirklich als abgeschlossen "
+"markieren?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
-#, fuzzy, python-format
-#| msgid "Do you really want to undo marking the report <i>%(report)s</em> as complete?"
+#, python-format
 msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
-msgstr "Möchten Sie das Markieren des Berichts <i> %(report)s </em> als abgeschlossen wirklich rückgängig machen?"
+msgstr ""
+"Möchten Sie das Markieren des Berichts <i> %(report)s </i> als abgeschlossen "
+"wirklich rückgängig machen?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will mark the following actions as complete:"
