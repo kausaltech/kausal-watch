@@ -48,7 +48,7 @@ class CreatePlanWithDefaultsForm(forms.Form):
         label=_('Base path'),
         max_length=50,
         required=False,
-        help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain')
+        help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain.')
 
     )
     client = forms.CharField(
