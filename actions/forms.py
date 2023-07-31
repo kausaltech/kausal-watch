@@ -42,7 +42,7 @@ class CreatePlanWithDefaultsForm(forms.Form):
         label=_('Domain name'),
         max_length=100,
         required=False,
-        help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known')
+        help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known.')
     )
     base_path = forms.CharField(
         label=_('Base path'),

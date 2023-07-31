@@ -133,7 +133,7 @@ class ActionContactFormBlock(blocks.StaticBlock):
 class ActionOfficialNameBlock(blocks.StructBlock):
     field_label = blocks.CharBlock(
         required=False,
-        help_text=_("What label should be used in the public UI for the official name"),
+        help_text=_("What label should be used in the public UI for the official name?"),
         default='',
     )
     caption = blocks.CharBlock(

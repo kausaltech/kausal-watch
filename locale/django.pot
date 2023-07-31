@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-31 14:56+0300\n"
+"POT-Creation-Date: 2023-07-31 15:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -177,11 +177,11 @@ msgid "Fields (%(model)s)"
 msgstr ""
 
 #: actions/attribute_type_admin.py
-msgid "If format is 'Category', a category type must be set "
+msgid "If format is 'Category', a category type must be set"
 msgstr ""
 
 #: actions/attribute_type_admin.py
-msgid "If format is 'Numeric', a unit must be set "
+msgid "If format is 'Numeric', a unit must be set"
 msgstr ""
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
@@ -209,7 +209,7 @@ msgid "contact form"
 msgstr ""
 
 #: actions/blocks/action_content.py
-msgid "What label should be used in the public UI for the official name"
+msgid "What label should be used in the public UI for the official name?"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -491,7 +491,7 @@ msgid "Domain name"
 msgstr ""
 
 #: actions/forms.py
-msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
 msgstr ""
 
 #: actions/forms.py
@@ -2603,7 +2603,7 @@ msgid ""
 "\n"
 "Thank you for taking part in implementing the action plan!\n"
 "\n"
-"Kind regards, the action plan administrators."
+"Kind regards, the action plan administrators"
 msgstr ""
 
 #: notifications/models.py
@@ -3086,7 +3086,7 @@ msgid "Maintenance responsibility paragraph"
 msgstr ""
 
 #: pages/blocks.py
-msgid "If this is set, it will be displayed instead of \"This service is published by [publisher].\""
+msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
 msgstr ""
 
 #: pages/blocks.py

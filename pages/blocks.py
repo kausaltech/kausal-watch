@@ -186,7 +186,7 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
     publisher_name = blocks.CharBlock(label=_('Publisher name'))
     maintenance_responsibility_paragraph = blocks.CharBlock(
         required=False, label=_('Maintenance responsibility paragraph'),
-        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]."')
+        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]".')
     )
     email = blocks.CharBlock(label=_('Email address'))
 
