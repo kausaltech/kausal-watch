@@ -105,7 +105,7 @@ def initialize_notification_templates(
             "plan watch platform, please send an email to the "
             "administrators of the action plan.\n\n"
             "Thank you for taking part in implementing the action plan!\n\n"
-            "Kind regards, the action plan administrators"),
+            "Kind regards,\nthe action plan administrators"),
     }
 
     base_template, created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
