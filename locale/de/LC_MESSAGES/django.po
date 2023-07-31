@@ -6,20 +6,21 @@
 # Translators:
 # Bernhard Bliem, 2023
 # 
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-07-28 14:27+0300\n"
-"PO-Revision-Date: 2023-07-28 10:27+0000\n"
-"Last-Translator: Bernhard Bliem, 2023\n"
-"Language-Team: German (https://app.transifex.com/kausal-tech/teams/173102/de/)\n"
+"PO-Revision-Date: 2023-07-31 12:14+0000\n"
+"Last-Translator: Weblate Admin <foo@example.com>\n"
+"Language-Team: German <http://weblate.example.com/projects/watch-wagtail-5/"
+"backend-django/de/>\n"
+"Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: de\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.18.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -323,7 +324,7 @@ msgstr "Wie viele Ebenen der Kategoriehierarchie angezeigt werden sollen"
 #: actions/blocks/filters.py
 #, python-format
 msgid "Filter: %(filter_label)s"
-msgstr " Filter: %(filter_label)s "
+msgstr "Filter: %(filter_label)s"
 
 #: actions/blocks/filters.py
 msgid "responsible party"
@@ -4037,7 +4038,7 @@ msgstr "Nein"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "This page has unsaved changes."
-msgstr "Diese Seite hat ungespeicherte Änderunge"
+msgstr "Diese Seite hat ungespeicherte Änderungen."
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
