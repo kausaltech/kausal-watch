@@ -2109,8 +2109,8 @@ msgid "user feedback"
 msgstr "käyttäjän palaute"
 
 #: feedback/models.py
-msgid "user feedback"
-msgstr "käyttäjien palaute"
+msgid "user feedbacks"
+msgstr "käyttäjien palautteet"
 
 #: feedback/views.py
 msgid "Mark user feedback as processed"
@@ -2183,8 +2183,8 @@ msgid "Mark this user feedback as unprocessed"
 msgstr "Merkitse tämä käyttäjäpalaute käsittelemättömäksi"
 
 #: feedback/wagtail_admin.py
-msgid "User feedback"
-msgstr "Käyttäjien palaute"
+msgid "User feedbacks"
+msgstr "Käyttäjien palautteet"
 
 #: images/image_formats.py
 msgid "Full width (zoomable)"

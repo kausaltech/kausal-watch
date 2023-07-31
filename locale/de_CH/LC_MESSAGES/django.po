@@ -2026,7 +2026,7 @@ msgid "user feedback"
 msgstr ""
 
 #: feedback/models.py
-msgid "user feedback"
+msgid "user feedbacks"
 msgstr ""
 
 #: feedback/views.py
@@ -2096,7 +2096,7 @@ msgid "Mark this user feedback as unprocessed"
 msgstr ""
 
 #: feedback/wagtail_admin.py
-msgid "User feedback"
+msgid "User feedbacks"
 msgstr ""
 
 #: images/image_formats.py

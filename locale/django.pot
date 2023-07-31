@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-07-28 14:27+0300\n"
+"POT-Creation-Date: 2023-07-31 14:56+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1937,7 +1937,7 @@ msgid "user feedback"
 msgstr ""
 
 #: feedback/models.py
-msgid "user feedback"
+msgid "user feedbacks"
 msgstr ""
 
 #: feedback/views.py
@@ -3561,12 +3561,12 @@ msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s<i> as complete?"
+msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to undo marking the report <i>%(report)s</em> as complete?"
+msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
