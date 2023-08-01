@@ -213,7 +213,7 @@ class User(AbstractUser):
 
         return self._get_admin_orgs()
 
-    def get_active_admin_plan(self, adminable_plans=None) -> Plan:
+    def get_active_admin_plan(self, adminable_plans=None) -> Plan | None:
         if hasattr(self, '_active_admin_plan'):
             return self._active_admin_plan
 
