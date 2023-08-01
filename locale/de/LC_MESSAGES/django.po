@@ -12,7 +12,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-01 00:56+0300\n"
 "PO-Revision-Date: 2023-08-01 19:20+0000\n"
-"Last-Translator: Anonymous <noreply@weblate.org>\n"
+"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
 "\n"
 "Language: de\n"
@@ -1253,11 +1253,13 @@ msgstr "Setze, wenn der Plan das Feld für den Lead-Absatz verwendet"
 
 #: actions/models/features.py
 msgid "Has primary organizations for actions"
-msgstr "Hat Hauptorganisationen für Maßnahmen"
+msgstr "Hat Primärorganisationen für Maßnahmen"
 
 #: actions/models/features.py
 msgid "Set if actions have a clear primary organization (such as multi-city plans)"
-msgstr "Setzen, wenn Maßnahmen eine klare Hauptorganisation haben (z. B. bei Plänen für mehrere Städte)"
+msgstr ""
+"Setzen, wenn Maßnahmen eine klare Primärorganisation haben (z. B. bei Plänen "
+"für mehrere Städte)"
 
 #: actions/models/features.py
 msgid "Enable site search"
