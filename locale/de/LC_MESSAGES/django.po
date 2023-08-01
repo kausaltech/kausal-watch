@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-01 00:56+0300\n"
-"PO-Revision-Date: 2023-08-01 19:20+0000\n"
+"PO-Revision-Date: 2023-08-01 20:29+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
 "\n"
@@ -709,7 +709,6 @@ msgid "Other action is merged with this one"
 msgstr "Andere Maßnahme ist mit dieser zusammengeführt"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "Has contact persons"
 msgstr "Hat Ansprechpartner"
 
@@ -812,12 +811,10 @@ msgid "color"
 msgstr "Farbe"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "action status"
 msgstr "Maßnahmenstatus"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "action statuses"
 msgstr "Maßnahmenstatus"
 
@@ -826,7 +823,6 @@ msgid "action implementation phase"
 msgstr "Maßnahmenumsetzungsphase"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "action implementation phases"
 msgstr "Maßnahmenumsetzungsphasen"
 
@@ -917,7 +913,6 @@ msgid "URL"
 msgstr "URL"
 
 #: actions/models/action.py pages/models.py
-#, fuzzy
 msgid "title"
 msgstr "Titel"
 
@@ -930,7 +925,6 @@ msgid "action links"
 msgstr "Maßnahmenlinks"
 
 #: actions/models/action.py indicators/models.py
-#, fuzzy
 msgid "date"
 msgstr "Datum"
 
@@ -983,7 +977,6 @@ msgid "Numeric"
 msgstr "Numerisch"
 
 #: actions/models/attributes.py actions/models/category.py
-#, fuzzy
 msgid "help text"
 msgstr "Hilfetext"
 
@@ -1024,12 +1017,10 @@ msgid "show in reporting tab"
 msgstr "in Registerkarte \"Berichterstattung\" anzeigen"
 
 #: actions/models/attributes.py
-#, fuzzy
 msgid "field"
 msgstr "Feld"
 
 #: actions/models/attributes.py reports/wagtail_admin.py
-#, fuzzy
 msgid "fields"
 msgstr "Felder"
 
@@ -1066,7 +1057,6 @@ msgid "Set if the categories do not have meaningful identifiers"
 msgstr "Setzen, wenn die Kategorien keine sinnvollen Kennungen haben"
 
 #: actions/models/category.py
-#, fuzzy
 msgid "lead paragraph"
 msgstr "Lead-Absatz"
 
@@ -1108,7 +1098,6 @@ msgid "common category type"
 msgstr "Gemeinsamer Kategorietyp"
 
 #: actions/models/category.py
-#, fuzzy
 msgid "common category types"
 msgstr "Gemeinsame Kategorietypen"
 
@@ -1121,12 +1110,10 @@ msgid "Set if categories of this type should be synchronized with pages"
 msgstr "Setzen, wenn Kategorien dieses Typs mit Seiten synchronisiert werden sollen"
 
 #: actions/models/category.py
-#, fuzzy
 msgid "category type"
 msgstr "Kategorietyp"
 
 #: actions/models/category.py
-#, fuzzy
 msgid "category types"
 msgstr "Kategorietypen"
 
@@ -1159,7 +1146,6 @@ msgid "common category"
 msgstr "gemeinsame Kategorie"
 
 #: actions/models/category.py
-#, fuzzy
 msgid "common categories"
 msgstr "Gemeinsame Kategorien"
 
@@ -1282,7 +1268,6 @@ msgid "plan feature"
 msgstr "Plan-Feature"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "plan features"
 msgstr "Plan-Features"
 
@@ -1291,7 +1276,6 @@ msgid "If you leave this blank the application will use the default value"
 msgstr "Wenn Sie dies leer lassen, verwendet die Anwendung den Standardwert"
 
 #: actions/models/plan.py indicators/models.py
-#, fuzzy
 msgid "short name"
 msgstr "Kurzname"
 
@@ -1352,7 +1336,6 @@ msgid "Theme identifier"
 msgstr "Themakennung"
 
 #: actions/models/plan.py
-#, fuzzy
 msgctxt "plan"
 msgid "parent"
 msgstr "Vorgänger"
@@ -1428,7 +1411,6 @@ msgstr "Primäre und sekundäre Klassifizierung können nicht identisch sein"
 
 #: actions/models/plan.py indicators/apps.py indicators/blocks.py
 #: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-#, fuzzy
 msgid "Indicators"
 msgstr "Indikatoren"
 
@@ -1465,7 +1447,6 @@ msgid "host name"
 msgstr "Hostname"
 
 #: actions/models/plan.py
-#, fuzzy
 msgid "base path"
 msgstr "Basispfad"
 
@@ -1506,7 +1487,6 @@ msgid "scenarios"
 msgstr "Szenarien"
 
 #: actions/models/plan.py
-#, fuzzy
 msgctxt "impact group"
 msgid "parent"
 msgstr "Vorgänger"
@@ -1540,7 +1520,6 @@ msgid "monitoring quality points"
 msgstr "Überwachungsqualitätspunkte"
 
 #: actions/templates/actions/chooser_results.html
-#, fuzzy
 msgid "Plan"
 msgstr "Plan"
 
@@ -1585,12 +1564,10 @@ msgid "Domains"
 msgstr "Domänen"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgid "Action statuses"
 msgstr "Maßnahmenstatus"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgid "Action implementation phases"
 msgstr "Maßnahmenumsetzungsphasen"
 
@@ -1599,7 +1576,6 @@ msgid "Action impacts"
 msgstr "Maßnahmenauswirkungen"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgid "Action schedules"
 msgstr "Maßnahmenzeitpläne"
 
@@ -1608,13 +1584,11 @@ msgid "Action classifications"
 msgstr "Maßnahmenklassifizierungen"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgctxt "hyphenated"
 msgid "Plan"
 msgstr "Plan"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Plan-Features"
@@ -1861,7 +1835,6 @@ msgid "Not editable"
 msgstr "Nicht editierbar"
 
 #: aplans/utils.py orgs/wagtail_admin.py
-#, fuzzy
 msgid "Plan admins"
 msgstr "Plan-Admins"
 
@@ -1971,7 +1944,6 @@ msgid "documents"
 msgstr "Dokumente"
 
 #: feedback/models.py orgs/models.py people/models.py users/models.py
-#, fuzzy
 msgid "email address"
 msgstr "E-Mail-Adresse"
 
@@ -1980,7 +1952,6 @@ msgid "is processed"
 msgstr "ist bearbeitet"
 
 #: feedback/models.py
-#, fuzzy
 msgid "user feedback"
 msgstr "Benutzer-Feedback"
 
@@ -2051,7 +2022,6 @@ msgid "Mark this user feedback as unprocessed"
 msgstr "Markiere dieses Benutzer-Feedback als unbearbeitet"
 
 #: feedback/wagtail_admin.py
-#, fuzzy
 msgid "User feedback"
 msgstr "Benutzer-Feedback"
 
@@ -2068,7 +2038,6 @@ msgid "Alt text"
 msgstr "Alt-Text"
 
 #: images/models.py people/models.py
-#, fuzzy
 msgid "image"
 msgstr "Bild"
 
@@ -2077,7 +2046,6 @@ msgid "images"
 msgstr "Bilder"
 
 #: indicators/blocks.py
-#, fuzzy
 msgid "Indicator"
 msgstr "Indikator"
 
@@ -2103,7 +2071,6 @@ msgid "quantity"
 msgstr "Größe"
 
 #: indicators/models.py
-#, fuzzy
 msgctxt "physical"
 msgid "quantities"
 msgstr "Größen"
@@ -2117,12 +2084,10 @@ msgid "verbose name plural"
 msgstr "ausführlicher Plural-Name"
 
 #: indicators/models.py
-#, fuzzy
 msgid "unit"
 msgstr "Einheit"
 
 #: indicators/models.py
-#, fuzzy
 msgid "units"
 msgstr "Einheiten"
 
@@ -2231,7 +2196,6 @@ msgid "year"
 msgstr "Jahr"
 
 #: indicators/models.py
-#, fuzzy
 msgid "month"
 msgstr "Monat"
 
@@ -2276,7 +2240,6 @@ msgid "updated values due at"
 msgstr "aktualisierte Werte fällig am"
 
 #: indicators/models.py
-#, fuzzy
 msgid "indicator"
 msgstr "Indikator"
 
@@ -2315,7 +2278,6 @@ msgid "dimension"
 msgstr "Dimension"
 
 #: indicators/models.py
-#, fuzzy
 msgid "dimensions"
 msgstr "Dimensionen"
 
@@ -2352,7 +2314,6 @@ msgid "indicator levels"
 msgstr "Indikatorstufen"
 
 #: indicators/models.py
-#, fuzzy
 msgid "value"
 msgstr "Wert"
 
@@ -2361,7 +2322,6 @@ msgid "indicator value"
 msgstr "Indikatorwert"
 
 #: indicators/models.py
-#, fuzzy
 msgid "indicator values"
 msgstr "Indikatorwerte"
 
@@ -2462,7 +2422,6 @@ msgid "Year"
 msgstr "Jahr"
 
 #: indicators/templates/indicators/edit_values.html
-#, fuzzy
 msgid "Date"
 msgstr "Datum"
 
@@ -2531,12 +2490,10 @@ msgid "Indicator dimensions"
 msgstr "Indikator&shy;dimensionen"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
 msgid "Quantities"
 msgstr "Größen"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
 msgid "Units"
 msgstr "Einheiten"
 
@@ -2549,7 +2506,6 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensionen müssen gleich wie im Gemeinsamen Indikator sein"
 
 #: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-#, fuzzy
 msgid "Organization"
 msgstr "Organisation"
 
@@ -2578,7 +2534,6 @@ msgid "Advanced options"
 msgstr "Fortgeschrittene Optionen"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
 msgid "Unit"
 msgstr "Einheit"
 
@@ -2730,13 +2685,11 @@ msgid "The local time of day when notifications are sent"
 msgstr "Die lokale Tageszeit, zu der Benachrichtigungen gesendet werden"
 
 #: notifications/models.py
-#, fuzzy
 msgctxt "partitive"
 msgid "notification settings"
 msgstr "Benachrichtigungseinstellungen"
 
 #: notifications/models.py
-#, fuzzy
 msgid "notification settings"
 msgstr "Benachrichtigungseinstellungen"
 
@@ -2911,7 +2864,6 @@ msgid "Notification contents"
 msgstr "Benachrichtigungsinhalte"
 
 #: notifications/wagtail_admin.py
-#, fuzzy
 msgid "Notification preferences"
 msgstr "Benachrichtigungseinstellungen"
 
@@ -2924,7 +2876,6 @@ msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Ein Knoten kann in der Hierarchie nicht unter sich selbst verschoben werden."
 
 #: orgs/models.py
-#, fuzzy
 msgid "Parent"
 msgstr "Vorgänger"
 
@@ -2953,7 +2904,6 @@ msgid "A primary name, e.g. a legally recognized name"
 msgstr "Ein primärer Name, z. B. ein gesetzlich anerkannter Name"
 
 #: orgs/models.py
-#, fuzzy
 msgid "Short name"
 msgstr "Kurzname"
 
@@ -2994,7 +2944,6 @@ msgid "plan admin"
 msgstr "Plan-Admin"
 
 #: orgs/models.py
-#, fuzzy
 msgid "plan admins"
 msgstr "Plan-Admins"
 
@@ -3020,7 +2969,7 @@ msgstr "Filter anwenden"
 
 #: orgs/views.py
 msgid "Add organization to active plan"
-msgstr "Organisation zum aktiven Plan hinzufügen"
+msgstr "Füge Organisation aktivem Plan hinzu"
 
 #: orgs/views.py
 #, python-format
@@ -3097,7 +3046,7 @@ msgstr "In Plan aufnehmen"
 
 #: orgs/wagtail_admin.py
 msgid "Include this organization in the active plan"
-msgstr "Nimm diese Organisation in den aktiven Plan auf"
+msgstr "Nimm Organisation in aktiven Plan auf"
 
 #: orgs/wagtail_admin.py
 msgid "Exclude from plan"
@@ -3105,19 +3054,18 @@ msgstr "Aus Plan ausschließen"
 
 #: orgs/wagtail_admin.py
 msgid "Exclude this organization from the active plan"
-msgstr "Schließe diese Organisation aus aktivem Plan aus"
+msgstr "Schließe Organisation aus aktivem Plan aus"
 
 #: orgs/wagtail_admin.py
 msgctxt "organization"
 msgid "Parent"
-msgstr "Elternknoten"
+msgstr "Vorgänger"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit plan-specific content related to this organization"
 msgstr "Personen, die planbezogene Inhalte verbunden mit dieser Organisation bearbeiten können"
 
 #: orgs/wagtail_admin.py
-#, fuzzy
 msgid "Metadata admins"
 msgstr "Metadaten-Admins"
 
@@ -3152,7 +3100,6 @@ msgid "large"
 msgstr "groß"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Title"
 msgstr "Titel"
 
@@ -3183,7 +3130,6 @@ msgstr ""
 "bereitgestellt\" angezeigt."
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Email address"
 msgstr "E-Mail-Adresse"
 
@@ -3248,7 +3194,6 @@ msgid "Category tree map"
 msgstr "Kategorie-Baumkarte"
 
 #: pages/models.py
-#, fuzzy
 msgid "Front page"
 msgstr "Titelseite"
 
@@ -3429,7 +3374,6 @@ msgid "More"
 msgstr "Mehr"
 
 #: people/apps.py people/wagtail_admin.py
-#, fuzzy
 msgid "People"
 msgstr "Personen"
 
@@ -3462,7 +3406,6 @@ msgid "last name"
 msgstr "Nachname"
 
 #: people/models.py
-#, fuzzy
 msgctxt "person's role"
 msgid "title"
 msgstr "Titel"
@@ -3476,7 +3419,6 @@ msgid "What is this person's organization"
 msgstr "Was ist die Organisation dieser Person"
 
 #: people/models.py
-#, fuzzy
 msgid "user"
 msgstr "Benutzer"
 
@@ -3501,7 +3443,6 @@ msgid "contact for actions"
 msgstr "Ansprechpartner für Maßnahmen"
 
 #: people/models.py
-#, fuzzy
 msgid "people"
 msgstr "Personen"
 
@@ -3573,7 +3514,6 @@ msgid "contact for indicators"
 msgstr "Ansprechpartner für Indikatoren"
 
 #: reports/blocks/action_content.py reports/wagtail_admin.py
-#, fuzzy
 msgid "Report type"
 msgstr "Berichtstyp"
 
@@ -3594,12 +3534,10 @@ msgid "Choose another report type"
 msgstr "Wähle einen anderen Berichtstyp"
 
 #: reports/models.py
-#, fuzzy
 msgid "report type"
 msgstr "Berichtstyp"
 
 #: reports/models.py
-#, fuzzy
 msgid "report types"
 msgstr "Berichtstypen"
 
@@ -3774,7 +3712,6 @@ msgid "Undo marking this report as complete"
 msgstr "Markieren dieses Berichts als abgeschlossen rückgängig machen"
 
 #: reports/wagtail_admin.py
-#, fuzzy
 msgid "Report types"
 msgstr "Berichtstypen"
 
@@ -3807,7 +3744,6 @@ msgid "Delete"
 msgstr "Löschen"
 
 #: users/apps.py
-#, fuzzy
 msgid "Users"
 msgstr "Benutzer"
 
