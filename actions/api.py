@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import rest_framework.fields
 import typing
+from collections import Counter
 from typing import Optional
 from uuid import UUID
 
@@ -1277,6 +1278,14 @@ class PersonSerializer(
         if qs.exists():
             raise serializers.ValidationError(_('Person with that email already exists'))
         return value
+
+    def validate(self, data):
+        emails = Counter(data['email'] for data in self.initial_data)
+        duplicates = [email for email, n in emails.most_common() if n > 1]
+        if duplicates:
+            # TODO: This should better be in validate_email to highlight the faulty table cells
+            raise exceptions.ValidationError(_("Duplicate email addresses: %s") % ', '.join(duplicates))
+        return data
 
     class Meta:
         model = Person
