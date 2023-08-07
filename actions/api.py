@@ -1295,7 +1295,7 @@ class PersonSerializer(
 
 class PersonPermission(permissions.DjangoObjectPermissions):
     # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, person: Person = None):
+    def check_permission(self, user: User, perm: str, person: Person = None, plan: Plan = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -1306,7 +1306,12 @@ class PersonPermission(permissions.DjangoObjectPermissions):
             if not user.can_create_person():
                 return False
         elif perm == 'people.delete_person':
-            if not user.can_delete_person():
+            if person is None:
+                #  Does the user have deletion rights in general
+                if not user.is_general_admin_for_plan(plan) and not user.is_superuser:
+                    return False
+            # Does the user have deletion rights to this person in this plan
+            elif not user.can_edit_or_delete_person_within_plan(person, plan=plan):
                 return False
         else:
             return False
@@ -1314,17 +1319,19 @@ class PersonPermission(permissions.DjangoObjectPermissions):
 
     def has_permission(self, request: AuthenticatedWatchRequest, view):
         perms = self.get_required_permissions(request.method, Person)
+        plan = request.get_active_admin_plan()
         for perm in perms:
-            if not self.check_permission(request.user, perm):
+            if not self.check_permission(request.user, perm, plan=plan):
                 return False
         return True
 
     def has_object_permission(self, request, view, obj):
         perms = self.get_required_object_permissions(request.method, Person)
+        plan = request.get_active_admin_plan()
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
         for perm in perms:
-            if not self.check_permission(request.user, perm, obj):
+            if not self.check_permission(request.user, perm, person=obj, plan=plan):
                 return False
         return True
 

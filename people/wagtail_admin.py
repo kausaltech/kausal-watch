@@ -19,6 +19,7 @@ from wagtail.contrib.modeladmin.views import DeleteView
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
     InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
+    ActivatePermissionHelperPlanContextMixin,
     get_translation_tabs
 )
 from aplans.types import WatchAdminRequest
@@ -27,6 +28,7 @@ from aplans.utils import naturaltime
 from .admin import IsContactPersonFilter
 from .models import Person
 from orgs.models import Organization, OrganizationPlanAdmin
+from actions.models import Plan
 
 if typing.TYPE_CHECKING:
     from users.models import User
@@ -164,31 +166,22 @@ class PersonPermissionHelper(PlanContextPermissionHelper):
     def clean_cache(self):
         self._org_map = None
 
-    def _user_can_edit_or_delete(self, user: 'User', person: Person):
-        if user.is_superuser:
-            return True
-
-        # The creating user has edit rights until the created user first logs in
-        if person.created_by_id == user.id and person.user and not person.user.last_login:
-            return True
-
-        if self.plan is not None and user.is_general_admin_for_plan(self.plan):
-            return person.organization_id in self._org_map
-        else:
-            return False
-
     def user_can_edit_obj(self, user: 'User', obj: Person):
         if not super().user_can_edit_obj(user, obj):
             return False
         # Users can always edit themselves
         if obj.user == user:
             return True
-        return self._user_can_edit_or_delete(user, obj)
+        return user.can_edit_or_delete_person_within_plan(
+            obj, plan=self.plan, orgs=self._org_map
+        )
 
     def user_can_delete_obj(self, user, obj: Person):
         if not super().user_can_delete_obj(user, obj):
             return False
-        return self._user_can_edit_or_delete(user, obj)
+        return user.can_edit_or_delete_person_within_plan(
+            obj, plan=self.plan, orgs=self._org_map
+        )
 
     def user_can_create(self, user):
         if not super().user_can_create(user):
@@ -203,7 +196,7 @@ class PersonButtonHelper(ButtonHelper):
         return button
 
 
-class PersonDeleteView(DeleteView):
+class PersonDeleteView(ActivatePermissionHelperPlanContextMixin, DeleteView):
     def delete_instance(self):
         # FIXME: Duplicated in actions.api.PersonViewSet.perform_destroy()
         acting_admin_user = self.request.user

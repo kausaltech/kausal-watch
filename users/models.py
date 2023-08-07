@@ -2,7 +2,6 @@ from __future__ import annotations
 import typing
 
 from django.apps import apps
-from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -398,9 +397,27 @@ class User(AbstractUser):
             return True
         return False
 
+    def can_edit_or_delete_person_within_plan(
+            self, person: Person, plan: Plan = None, orgs: dict = None) -> bool:
+        # orgs is a performance optimization, a pre-populated
+        # dict for cases where this function is called from within a loop
+
+        if self.is_superuser:
+            return True
+
+        # The creating user has edit rights until the created user first logs in
+        if person.created_by_id == self.id and person.user and not person.user.last_login:
+            return True
+
+        if plan is not None and self.is_general_admin_for_plan(plan):
+            if orgs is not None:
+                return person.organization_id in orgs
+            else:
+                return person.organization_id in Organization.objects.available_for_plan(plan).values_list('id', flat=True)
+        else:
+            return False
+
     def deactivate(self, admin_user):
-        if not admin_user.can_deactivate_user(self):
-            raise PermissionDenied
         self.is_active = False
         self.deactivated_by = admin_user
         self.deactivated_at = timezone.now()
