@@ -1,32 +1,17 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+# Translators:
+# Juha Yrjölä <juha.yrjola@kausal.tech>, 2022
+# Timo Tuominen, 2023
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"PO-Revision-Date: 2023-08-08 12:42+0300\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
-"Content-Transfer-Encoding: 8bit\n"
-
-#~ # SOME DESCRIPTIVE TITLE.
-#~ # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-#~ # This file is distributed under the same license as the PACKAGE package.
-#~ # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#~ #
-#~ # Translators:
-#~ # Juha Yrjölä <juha.yrjola@kausal.tech>, 2022
-#~ # Timo Tuominen, 2023
-#~ #
-#~ #, fuzzy
-#~ msgid ""
-#~ msgstr ""
-#~ "Project-Id-Version: PACKAGE VERSION\n"
-#~ "Report-Msgid-Bugs-To: \n"
+"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-01 00:56+0300\n"
 "PO-Revision-Date: 2023-04-12 13:44+0300\n"
 "Last-Translator: Timo Tuominen, 2023\n"
@@ -143,7 +128,7 @@ msgstr "Yhdistetty"
 msgid "Postponed"
 msgstr "Lykätty"
 
-#: actions/action_status_summary.py reports/spreadsheets.py
+#: actions/action_status_summary.py
 msgid "Unknown"
 msgstr "Tuntematon"
 
@@ -174,7 +159,6 @@ msgid "collection"
 msgstr "kokoelma"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -299,7 +283,7 @@ msgstr "Osio"
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
 
-#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
+#: actions/blocks/category_list.py pages/blocks.py
 msgid "Lead"
 msgstr "Johdanto"
 
@@ -346,7 +330,7 @@ msgstr "Montako tasoa kategorihierarkiasta näytetään"
 msgid "Filter: %(filter_label)s"
 msgstr "Suodatin: %(filter_label)s"
 
-#: actions/blocks/filters.py reports/blocks/action_content.py
+#: actions/blocks/filters.py
 msgid "responsible party"
 msgstr "vastuutaho"
 
@@ -355,7 +339,7 @@ msgid "primary organization"
 msgstr "pääorganisaatio"
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py reports/spreadsheets.py
+#: reports/blocks/action_content.py
 msgid "implementation phase"
 msgstr "toteutusvaihe"
 
@@ -467,8 +451,7 @@ msgstr "nimi"
 msgid "impact"
 msgstr "vaikuttavuus"
 
-#: actions/export.py actions/models/action.py reports/blocks/action_content.py
-#: reports/spreadsheets.py
+#: actions/export.py actions/models/action.py
 msgid "status"
 msgstr "tila"
 
@@ -685,7 +668,7 @@ msgstr "liittyvät toimenpiteet"
 msgid "responsible organizations"
 msgstr "vastuuorganisaatiot"
 
-#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
+#: actions/models/action.py aplans/utils.py
 msgid "updated at"
 msgstr "päivitysaika"
 
@@ -857,7 +840,7 @@ msgstr "toimenpiteen toteutusvaiheet"
 msgid "not started"
 msgstr "ei käynnistynyt"
 
-#: actions/models/action.py reports/spreadsheets.py
+#: actions/models/action.py
 msgid "in progress"
 msgstr "käynnissä"
 
@@ -1254,16 +1237,6 @@ msgstr "toimenpiteen tilat"
 
 #: actions/models/features.py
 msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
-msgstr ""
-
-#: actions/models/features.py
-msgid "Minimal statuses"
-msgstr ""
-
-#: actions/models/features.py
-msgid ""
-"Set to prevent showing status-specific graphs and other elements if statuses"
-" aren't systematically used in this action plan"
 msgstr ""
 
 #: actions/models/features.py
@@ -1916,7 +1889,7 @@ msgstr "Toimenpideohjelman mukaisesti"
 msgid "Content"
 msgstr "Sisältö"
 
-#: content/models.py feedback/models.py reports/spreadsheets.py
+#: content/models.py feedback/models.py reports/models.py
 msgid "Action"
 msgstr "Toimenpide"
 
@@ -2999,7 +2972,7 @@ msgstr "Organisaatiot"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
 
-#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
+#: orgs/models.py
 msgid "Parent"
 msgstr "Yläorganisaatio"
 
@@ -3683,27 +3656,6 @@ msgstr ""
 msgid "Action field"
 msgstr "Toimenpideluettelo"
 
-#: reports/blocks/action_content.py
-msgid "Action category"
-msgstr ""
-
-#: reports/blocks/action_content.py
-msgid "Level of containing organization"
-msgstr "Yläorganisaation hierarkiataso"
-
-#: reports/blocks/action_content.py
-msgid ""
-"In addition to the organization itself, an organizational unit containing "
-"the organization is included in the report. Counting from the top-level root"
-" organisation at level 1, which level in the organizational hierarchy should"
-" be used to find this containing organization? If left empty, don't add the "
-"containing organization to the report."
-msgstr ""
-"Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. "
-"Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa "
-"tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä "
-"raporttiin."
-
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr ""
@@ -3720,7 +3672,7 @@ msgstr "raportin tyyppi"
 msgid "report types"
 msgstr "raporttien tyypit"
 
-#: reports/models.py reports/spreadsheets.py
+#: reports/models.py
 msgid "complete"
 msgstr "valmis"
 
@@ -3743,6 +3695,14 @@ msgstr "raportti"
 #: reports/models.py
 msgid "reports"
 msgstr "raportit"
+
+#: reports/models.py
+msgid "Marked as complete by"
+msgstr ""
+
+#: reports/models.py
+msgid "Marked as complete at"
+msgstr ""
 
 #: reports/models.py
 msgid "The report is already marked as complete."
@@ -3769,22 +3729,6 @@ msgstr ""
 #: reports/models.py
 msgid "action snapshots"
 msgstr ""
-
-#: reports/spreadsheets.py
-msgid "Exported from Kausal Watch"
-msgstr "Tallennettu Kausal Watchista"
-
-#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete by"
-msgstr ""
-
-#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
-msgid "Marked as complete at"
-msgstr ""
-
-#: reports/spreadsheets.py templates/aplans_admin/own_actions_panel.html
-msgid "Identifier"
-msgstr "Tunniste"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, fuzzy, python-format
