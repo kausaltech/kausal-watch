@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-01 00:56+0300\n"
+"POT-Creation-Date: 2023-08-08 15:27+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -124,7 +124,7 @@ msgstr ""
 msgid "Postponed"
 msgstr ""
 
-#: actions/action_status_summary.py
+#: actions/action_status_summary.py reports/spreadsheets.py
 msgid "Unknown"
 msgstr ""
 
@@ -150,11 +150,21 @@ msgstr ""
 msgid "Identifier already exists"
 msgstr ""
 
+#: actions/api.py
+msgid "Person with that email already exists"
+msgstr ""
+
+#: actions/api.py
+#, python-format
+msgid "Duplicate email addresses: %s"
+msgstr ""
+
 #: actions/apps.py
 msgid "collection"
 msgstr ""
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr ""
 
@@ -186,6 +196,7 @@ msgstr ""
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
+#: reports/blocks/action_content.py
 msgid "Category type"
 msgstr ""
 
@@ -225,10 +236,6 @@ msgstr ""
 msgid "Merged actions"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr ""
-
 #: actions/blocks/action_content.py
 msgid "Attribute"
 msgstr ""
@@ -237,10 +244,6 @@ msgstr ""
 #: actions/blocks/filters.py actions/models/attributes.py pages/blocks.py
 #: pages/models.py
 msgid "Category"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -268,11 +271,19 @@ msgstr ""
 msgid "Section"
 msgstr ""
 
+#: actions/blocks/action_content.py actions/models/action.py
+msgid "official name"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Contact form"
+msgstr ""
+
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr ""
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr ""
 
@@ -317,7 +328,7 @@ msgstr ""
 msgid "Filter: %(filter_label)s"
 msgstr ""
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr ""
 
@@ -326,7 +337,7 @@ msgid "primary organization"
 msgstr ""
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr ""
 
@@ -434,7 +445,8 @@ msgstr ""
 msgid "impact"
 msgstr ""
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr ""
 
@@ -647,7 +659,7 @@ msgstr ""
 msgid "responsible organizations"
 msgstr ""
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr ""
 
@@ -819,7 +831,7 @@ msgstr ""
 msgid "not started"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr ""
 
@@ -999,6 +1011,10 @@ msgstr ""
 
 #: actions/models/attributes.py
 msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "character limit for text fields"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1840,7 +1856,7 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr ""
 
@@ -2842,7 +2858,7 @@ msgstr ""
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr ""
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr ""
 
@@ -3486,6 +3502,18 @@ msgstr ""
 msgid "Action field"
 msgstr ""
 
+#: reports/blocks/action_content.py
+msgid "Action category"
+msgstr ""
+
+#: reports/blocks/action_content.py
+msgid "Level of containing organization"
+msgstr ""
+
+#: reports/blocks/action_content.py
+msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr ""
+
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr ""
@@ -3502,7 +3530,7 @@ msgstr ""
 msgid "report types"
 msgstr ""
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr ""
 
@@ -3524,14 +3552,6 @@ msgstr ""
 
 #: reports/models.py
 msgid "reports"
-msgstr ""
-
-#: reports/models.py
-msgid "Marked as complete by"
-msgstr ""
-
-#: reports/models.py
-msgid "Marked as complete at"
 msgstr ""
 
 #: reports/models.py
@@ -3558,6 +3578,22 @@ msgstr ""
 
 #: reports/models.py
 msgid "action snapshots"
+msgstr ""
+
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr ""
+
+#: reports/spreadsheets.py
+msgid "Identifier"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
@@ -3706,8 +3742,4 @@ msgstr ""
 
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
-msgstr ""
-
-#: users/models.py
-msgid "You do not have permissions for removing users."
 msgstr ""
