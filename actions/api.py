@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import rest_framework.fields
 import typing
+from collections import Counter
 from typing import Optional
 from uuid import UUID
 
@@ -1263,7 +1264,11 @@ class OrganizationViewSet(BulkModelViewSet):
         return Organization.objects.available_for_plan(plan)
 
 
-class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixin):
+class PersonSerializer(
+    BulkSerializerValidationInstanceMixin,
+    serializers.ModelSerializer,
+    ModelWithImageSerializerMixin,
+):
     uuid = serializers.UUIDField(required=False)
     avatar_url = serializers.SerializerMethodField()
 
@@ -1275,6 +1280,22 @@ class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixi
     def get_avatar_url(self, obj: Person) -> str | None:
         return obj.get_avatar_url(self.context['request'])
 
+    def validate_email(self, value):
+        qs = Person.objects.filter(email__iexact=value)
+        if self._instance is not None:
+            qs = qs.exclude(pk=self._instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(_('Person with that email already exists'))
+        return value
+
+    def validate(self, data):
+        emails = Counter(data['email'] for data in self.initial_data)
+        duplicates = [email for email, n in emails.most_common() if n > 1]
+        if duplicates:
+            # TODO: This should better be in validate_email to highlight the faulty table cells
+            raise exceptions.ValidationError(_("Duplicate email addresses: %s") % ', '.join(duplicates))
+        return data
+
     class Meta:
         model = Person
         list_serializer_class = BulkListSerializer
@@ -1283,7 +1304,7 @@ class PersonSerializer(serializers.ModelSerializer, ModelWithImageSerializerMixi
 
 class PersonPermission(permissions.DjangoObjectPermissions):
     # TODO: Refactor duplicated code with ActionPermission, CategoryPermission, OrganizationPermission and PersonPermission
-    def check_permission(self, user: User, perm: str, person: Person = None):
+    def check_permission(self, user: User, perm: str, person: Person = None, plan: Plan = None):
         # Check for object permissions first
         if not user.has_perms([perm]):
             return False
@@ -1294,7 +1315,12 @@ class PersonPermission(permissions.DjangoObjectPermissions):
             if not user.can_create_person():
                 return False
         elif perm == 'people.delete_person':
-            if not user.can_delete_person():
+            if person is None:
+                #  Does the user have deletion rights in general
+                if not user.is_general_admin_for_plan(plan) and not user.is_superuser:
+                    return False
+            # Does the user have deletion rights to this person in this plan
+            elif not user.can_edit_or_delete_person_within_plan(person, plan=plan):
                 return False
         else:
             return False
@@ -1302,17 +1328,19 @@ class PersonPermission(permissions.DjangoObjectPermissions):
 
     def has_permission(self, request: AuthenticatedWatchRequest, view):
         perms = self.get_required_permissions(request.method, Person)
+        plan = request.get_active_admin_plan()
         for perm in perms:
-            if not self.check_permission(request.user, perm):
+            if not self.check_permission(request.user, perm, plan=plan):
                 return False
         return True
 
     def has_object_permission(self, request, view, obj):
         perms = self.get_required_object_permissions(request.method, Person)
+        plan = request.get_active_admin_plan()
         if not perms and request.method in permissions.SAFE_METHODS:
             return True
         for perm in perms:
-            if not self.check_permission(request.user, perm, obj):
+            if not self.check_permission(request.user, perm, person=obj, plan=plan):
                 return False
         return True
 

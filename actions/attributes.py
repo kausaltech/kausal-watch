@@ -1,14 +1,31 @@
-import xlsxwriter
-import xlsxwriter.format
+import re
+from html import unescape
+
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
+from django.utils.html import strip_tags
+
 from django.utils.translation import gettext_lazy as _
 from typing import Any, Dict, List, Optional
 from wagtail.admin.panels import FieldPanel
 
 import actions.models.attributes as models
+
+
+def html_to_plaintext(richtext):
+    """
+    Return a plain text version of a rich text string, suitable for search indexing;
+    like Django's strip_tags, but ensures that whitespace is left between block elements
+    so that <p>hello</p><p>world</p> gives "hello world", not "helloworld".
+    """
+    # insert space after </p>, </h1> - </h6>, </li> and </blockquote> tags
+    richtext = re.sub(
+        r"(</(p|h\d|li|blockquote)>)", r"\1\n\n", richtext, flags=re.IGNORECASE
+    )
+    richtext = re.sub(r"(<(br|hr)\s*/>)", r"\1\n", richtext, flags=re.IGNORECASE)
+    return unescape(strip_tags(richtext).strip())
 
 
 class AttributeFieldPanel(FieldPanel):
@@ -86,7 +103,7 @@ class AttributeType:
     def create_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()
 
@@ -98,19 +115,16 @@ class AttributeType:
         # Implement in subclass
         raise NotImplementedError()
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
-        if not attribute:
-            return [None]
-        assert attribute.type == self.instance
-        return [str(attribute)]
+        raise NotImplementedError()
 
     def xlsx_column_labels(self) -> List[str]:
         """Return the label for each of this attribute type's columns."""
         # Override if, e.g., a certain attribute type uses more than one column
         return [str(self.instance)]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
+    def get_xlsx_cell_format(self) -> Optional[dict]:
         """Add a format for this attribute type to the given workbook."""
         return None
 
@@ -122,7 +136,7 @@ class OrderedChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         initial_choice = None
         if obj:
             c = self.get_attributes(obj).first()
@@ -143,11 +157,14 @@ class OrderedChoice(AttributeType):
         if val is not None:
             self.create_attribute(obj, choice=val)
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None]
-        assert attribute.type == self.instance
-        return [str(attribute.choice)]
+        attribute_data = attribute.get('data')
+        choice = next(
+            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
+             if o['data']['id'] == attribute_data['choice_id']))
+        return [choice]
 
 
 class CategoryChoice(AttributeType):
@@ -157,7 +174,7 @@ class CategoryChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         from actions.models.category import Category
         initial_categories = None
         if obj:
@@ -192,6 +209,17 @@ class CategoryChoice(AttributeType):
             # persist the categories we just set
             attribute.save()
 
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+        category_ids = attribute['data']['categories']
+        # TODO i18n doesn't really work easily with the serialized
+        # models
+        category_names = [
+            d['data']['name']
+            for d in related_data_objects['actions.models.category.Category']
+            if d['data']['id'] in category_ids
+        ]
+        return ['; '.join(sorted(category_names))]
+
 
 class OptionalChoiceWithText(AttributeType):
     ATTRIBUTE_MODEL = models.AttributeChoiceWithText
@@ -206,7 +234,7 @@ class OptionalChoiceWithText(AttributeType):
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -234,9 +262,10 @@ class OptionalChoiceWithText(AttributeType):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
-            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
-                initial=initial_text, required=False, help_text=self.instance.help_text_i18n
-            )
+            form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            if self.instance.max_length:
+                form_field_kwargs.update(max_length=self.instance.max_length)
+            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
@@ -260,11 +289,15 @@ class OptionalChoiceWithText(AttributeType):
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
             return [None, None]
-        assert attribute.type == self.instance
-        return [str(attribute.choice), attribute.text_i18n]
+        attribute_data = attribute.get('data')
+        choice = next(
+            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
+             if o['data']['id'] == attribute_data['choice_id']))
+        rich_text = attribute_data['text']
+        return [choice, html_to_plaintext(rich_text)]
 
     def xlsx_column_labels(self) -> List[str]:
         return [
@@ -280,7 +313,7 @@ class TextAttributeTypeMixin:
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -291,9 +324,10 @@ class TextAttributeTypeMixin:
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
-            field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(
-                initial=initial_text, required=False, help_text=self.instance.help_text_i18n
-            )
+            form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
+            if self.instance.max_length:
+                form_field_kwargs.update(max_length=self.instance.max_length)
+            field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
@@ -326,9 +360,23 @@ class TextAttributeTypeMixin:
 class Text(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeText
 
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+        if not attribute:
+            return [None, None]
+        attribute_data = attribute.get('data')
+        text = attribute_data['text']
+        return [text]
+
 
 class RichText(TextAttributeTypeMixin, AttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
+
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+        if not attribute:
+            return [None]
+        attribute_data = attribute.get('data')
+        rich_text = attribute_data['text']
+        return [html_to_plaintext(rich_text)]
 
 
 class Numeric(AttributeType):
@@ -338,7 +386,7 @@ class Numeric(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: models.ModelWithAttributes = None) -> List[FormField]:
+    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
@@ -365,12 +413,11 @@ class Numeric(AttributeType):
     def xlsx_column_labels(self) -> List[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
-    def xlsx_values(self, attribute) -> List[Any]:
+    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
-        assert attribute.type == self.instance
-        return [attribute.value]
+        return [attribute['data']['value']]
 
-    def add_xlsx_cell_format(self, workbook: xlsxwriter.Workbook) -> Optional[xlsxwriter.format.Format]:
-        return workbook.add_format({'num_format': '#,##0.00'})
+    def get_xlsx_cell_format(self) -> dict:
+        return {'num_format': '#,##0.00'}

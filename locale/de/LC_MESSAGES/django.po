@@ -159,6 +159,7 @@ msgid "collection"
 msgstr "Sammlung"
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr "Maßnahmen"
 
@@ -279,7 +280,7 @@ msgstr "Abschnitt"
 msgid "Filter on category"
 msgstr "Filtere nach Kategorie"
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Leittext"
 
@@ -324,7 +325,7 @@ msgstr "Wie viele Ebenen der Kategoriehierarchie angezeigt werden sollen"
 msgid "Filter: %(filter_label)s"
 msgstr "Filter: %(filter_label)s"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr "Zuständige Stelle"
 
@@ -333,7 +334,7 @@ msgid "primary organization"
 msgstr "Primärorganisation"
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr "Umsetzungsphase"
 
@@ -441,7 +442,8 @@ msgstr "Name"
 msgid "impact"
 msgstr "Auswirkung"
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr "Status"
 
@@ -658,7 +660,7 @@ msgstr "verbundene Maßnahmen"
 msgid "responsible organizations"
 msgstr "Zuständige Organisationen"
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr "aktualisiert am"
 
@@ -830,7 +832,7 @@ msgstr "Maßnahmenumsetzungsphasen"
 msgid "not started"
 msgstr "nicht begonnen"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr "im Gange"
 
@@ -1220,6 +1222,16 @@ msgstr "Minimale Status"
 #: actions/models/features.py
 msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
 msgstr "Setzen, um keine statusabhängigen Diagramme und andere Elemente anzuzeigen, wenn Status in diesem Maßnahmenplan nicht systematisch verwendet werden"
+
+#: actions/models/features.py
+msgid "Minimal statuses"
+msgstr ""
+
+#: actions/models/features.py
+msgid ""
+"Set to prevent showing status-specific graphs and other elements if statuses"
+" aren't systematically used in this action plan"
+msgstr ""
 
 #: actions/models/features.py
 msgid "Has action official name field"
@@ -1859,7 +1871,7 @@ msgstr "Gemäß Maßnahmenplan"
 msgid "Content"
 msgstr "Inhalt"
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr "Maßnahme"
 
@@ -2875,7 +2887,7 @@ msgstr "Organisationen"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Ein Knoten kann in der Hierarchie nicht unter sich selbst verschoben werden."
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr "Vorgänger"
 
@@ -3290,6 +3302,15 @@ msgid "Enable to make this page include actions from related plans."
 msgstr "Aktivieren, damit diese Seite Maßnahmen aus verbundenen Plänen enthält."
 
 #: pages/models.py
+msgid "Include related plans"
+msgstr "Verbundene Pläne einschließen"
+
+#: pages/models.py
+msgid "Enable to make this page include actions from related plans."
+msgstr ""
+"Aktivieren, damit diese Seite Maßnahmen aus verbundenen Plänen enthält."
+
+#: pages/models.py
 msgid "Primary filters"
 msgstr "Primäre Filter"
 
@@ -3525,6 +3546,29 @@ msgstr "UUID des Berichtfelds"
 msgid "Action field"
 msgstr "Maßnahmenfeld"
 
+#: reports/blocks/action_content.py
+msgid "Action category"
+msgstr "Maßnahmenkategorie"
+
+#: reports/blocks/action_content.py
+msgid "Level of containing organization"
+msgstr "Ebene der enthaltenden Organisation"
+
+#: reports/blocks/action_content.py
+msgid ""
+"In addition to the organization itself, an organizational unit containing "
+"the organization is included in the report. Counting from the top-level root"
+" organisation at level 1, which level in the organizational hierarchy should"
+" be used to find this containing organization? If left empty, don't add the "
+"containing organization to the report."
+msgstr ""
+"Der Bericht enthält nicht nur die Organisation selbst, sondern auch eine "
+"Organisationseinheit, die die Organisation enthält. Auf welcher Ebene in der"
+" Organisationshierarchie, ausgehend von der obersten Organisation auf Ebene "
+"1, soll diese enthaltende Organisation gesucht werden? Wenn keine Angabe "
+"gemacht wird, wird die enthaltende Organisation nicht in den Bericht "
+"aufgenommen."
+
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr "Wähle einen Berichtstyp"
@@ -3541,7 +3585,7 @@ msgstr "Berichtstyp"
 msgid "report types"
 msgstr "Berichtstypen"
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr "fertiggestellt"
 
@@ -3564,14 +3608,6 @@ msgstr "Bericht"
 #: reports/models.py
 msgid "reports"
 msgstr "Berichte"
-
-#: reports/models.py
-msgid "Marked as complete by"
-msgstr "Als abgeschlossen markiert von"
-
-#: reports/models.py
-msgid "Marked as complete at"
-msgstr "Als abgeschlossen markiert am"
 
 #: reports/models.py
 msgid "The report is already marked as complete."
@@ -3598,6 +3634,22 @@ msgstr "Maßnahmen-Snapshot"
 #: reports/models.py
 msgid "action snapshots"
 msgstr "Maßnahmen-Snapshots"
+
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr "Aus Kausal Watch exportiert"
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Als abgeschlossen markiert von"
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Als abgeschlossen markiert am"
+
+#: reports/spreadsheets.py templates/aplans_admin/own_actions_panel.html
+msgid "Identifier"
+msgstr "Kennung"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format

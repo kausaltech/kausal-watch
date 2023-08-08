@@ -84,6 +84,7 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         help_text=_('If the format is "ordered choice", determines whether the first option is displayed with zero '
                     'bullets instead of one'),
     )
+    max_length = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('character limit for text fields'))
     show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
@@ -139,6 +140,10 @@ class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
         return self.name_i18n
 
 
+class Attribute:
+    pass
+
+
 @reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
@@ -176,8 +181,8 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         return self.name
 
 
-@reversion.register()
-class AttributeCategoryChoice(ClusterableModel):
+@reversion.register(follow=['categories'])
+class AttributeCategoryChoice(Attribute, ClusterableModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     object_id = models.PositiveIntegerField()
@@ -194,8 +199,8 @@ class AttributeCategoryChoice(ClusterableModel):
         return "; ".join([str(c) for c in self.categories.all()])
 
 
-@reversion.register()
-class AttributeChoice(models.Model):
+@reversion.register(follow=['choice'])
+class AttributeChoice(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
 
     # `content_object` must fit `type`
@@ -215,8 +220,8 @@ class AttributeChoice(models.Model):
         return str(self.choice)
 
 
-@reversion.register()
-class AttributeChoiceWithText(models.Model):
+@reversion.register(follow=['choice'])
+class AttributeChoiceWithText(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE,
                        related_name='choice_with_text_attributes')
 
@@ -245,7 +250,7 @@ class AttributeChoiceWithText(models.Model):
 
 
 @reversion.register()
-class AttributeText(models.Model):
+class AttributeText(Attribute, models.Model):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -275,7 +280,7 @@ class AttributeText(models.Model):
 
 
 @reversion.register()
-class AttributeRichText(models.Model):
+class AttributeRichText(Attribute, models.Model):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
@@ -305,7 +310,7 @@ class AttributeRichText(models.Model):
 
 
 @reversion.register()
-class AttributeNumericValue(models.Model):
+class AttributeNumericValue(Attribute, models.Model):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
 
     # `content_object` must fit `type`
@@ -439,7 +444,6 @@ class ModelWithAttributes(models.Model):
                 existing_attribute.delete()
             else:
                 existing_attribute.categories.set(category_ids)
-
 
     class Meta:
         abstract = True

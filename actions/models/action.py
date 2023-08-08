@@ -133,7 +133,7 @@ class DraftableModel(models.Model):
         abstract = True
 
 
-@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties'])
 class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed):
     """One action/measure tracked in an action plan."""
 
@@ -690,6 +690,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         return None
 
 
+@reversion.register()
 class ActionResponsibleParty(OrderedModel):
     class Role(models.TextChoices):
         PRIMARY = 'primary', _('Primary responsible party')

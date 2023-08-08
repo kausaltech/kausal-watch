@@ -213,7 +213,7 @@ class User(AbstractUser):
 
         return self._get_admin_orgs()
 
-    def get_active_admin_plan(self, adminable_plans=None) -> Plan:
+    def get_active_admin_plan(self, adminable_plans=None) -> Plan | None:
         if hasattr(self, '_active_admin_plan'):
             return self._active_admin_plan
 
@@ -408,9 +408,27 @@ class User(AbstractUser):
                 )
         return True
 
+    def can_edit_or_delete_person_within_plan(
+            self, person: Person, plan: Plan = None, orgs: dict = None) -> bool:
+        # orgs is a performance optimization, a pre-populated
+        # dict for cases where this function is called from within a loop
+
+        if self.is_superuser:
+            return True
+
+        # The creating user has edit rights until the created user first logs in
+        if person.created_by_id == self.id and person.user and not person.user.last_login:
+            return True
+
+        if plan is not None and self.is_general_admin_for_plan(plan):
+            if orgs is not None:
+                return person.organization_id in orgs
+            else:
+                return person.organization_id in Organization.objects.available_for_plan(plan).values_list('id', flat=True)
+        else:
+            return False
+
     def deactivate(self, admin_user):
-        if not admin_user.can_deactivate_user(self):
-            raise PermissionDenied(_('You do not have permissions for removing users.'))
         self.is_active = False
         self.deactivated_by = admin_user
         self.deactivated_at = timezone.now()
