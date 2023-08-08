@@ -7,20 +7,21 @@
 # Juha Yrjölä <juha.yrjola@kausal.tech>, 2022
 # Ida Sihvonen, 2023
 #
-#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-01 00:56+0300\n"
-"PO-Revision-Date: 2020-09-07 15:50+0000\n"
-"Last-Translator: Ida Sihvonen, 2023\n"
-"Language-Team: Danish (https://www.transifex.com/kausal-tech/teams/113123/da/)\n"
+"PO-Revision-Date: 2023-08-08 13:02+0000\n"
+"Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
+"\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.18.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -516,20 +517,20 @@ msgid "Domain name"
 msgstr "Domænenavn"
 
 #: actions/forms.py
-#, fuzzy
-#| msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr "Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad det være tomt, hvis det endnu ikke er kendt"
+msgstr ""
+"Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad "
+"det være tomt, hvis det endnu ikke er kendt."
 
 #: actions/forms.py
 msgid "Base path"
 msgstr "Grundsti"
 
 #: actions/forms.py
-#, fuzzy
-#| msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr "Udfyld dette for et websted med flere planer, når planen ikke findes i roden af ​​domænet"
+msgstr ""
+"Udfyld dette for et websted med flere planer, når planen ikke findes i roden "
+"af domænet."
 
 #: actions/forms.py
 msgid "Name of client"
@@ -3875,7 +3876,7 @@ msgstr "Denne side har ikke-gemte ændringer."
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Saving…"
-msgstr "Gemmer..."
+msgstr "Gemmer…"
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
 msgid "Save"
