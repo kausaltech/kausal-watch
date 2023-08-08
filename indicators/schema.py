@@ -145,9 +145,21 @@ class NormalizedValue(graphene.ObjectType):
     value = graphene.Float()
 
 
-class IndicatorValueNode(DjangoNode):
-    date = graphene.String()
+# Use for models that have an attribute `normalized_values`
+class NormalizedValuesMixin:
     normalized_values = graphene.List(NormalizedValue)
+
+    @gql_optimizer.resolver_hints(
+        model_field='normalized_values',
+    )
+    def resolve_normalized_values(root, info):
+        if not root.normalized_values:
+            return []
+        return [dict(normalizer_id=k, value=v) for k, v in root.normalized_values.items()]
+
+
+class IndicatorValueNode(NormalizedValuesMixin, DjangoNode):
+    date = graphene.String()
 
     class Meta:
         model = IndicatorValue
@@ -157,16 +169,8 @@ class IndicatorValueNode(DjangoNode):
         date = self.date.isoformat()
         return date
 
-    @gql_optimizer.resolver_hints(
-        model_field='normalized_values',
-    )
-    def resolve_normalized_values(self: IndicatorValue, info):
-        if not self.normalized_values:
-            return []
-        return [dict(normalizer_id=k, value=v) for k, v in self.normalized_values.items()]
 
-
-class IndicatorGoalNode(DjangoNode):
+class IndicatorGoalNode(NormalizedValuesMixin, DjangoNode):
     date = graphene.String()
     scenario = graphene.Field(ScenarioNode)
 

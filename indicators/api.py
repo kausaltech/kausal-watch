@@ -154,6 +154,8 @@ class IndicatorGoalListSerializer(serializers.ListSerializer):
                 obj.save()
                 created_objs.append(obj)
 
+            indicator.handle_goals_update()
+
         return created_objs
 
 

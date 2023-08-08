@@ -438,6 +438,12 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         self.save(update_fields=update_fields)
 
+    def handle_goals_update(self):
+        if self.common is not None:
+            cins = CommonIndicatorNormalizator.objects.filter(normalizable=self.common)
+            for cin in cins:
+                self.generate_normalized_goals(cin)
+
     def has_current_data(self):
         return self.latest_value_id is not None
 
@@ -540,6 +546,31 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             nvals[str(nci.id)] = val
             v.normalized_values = nvals
             v.save(update_fields=['normalized_values'])
+
+    def generate_normalized_goals(self, cin: CommonIndicatorNormalizator):
+        assert cin.normalizable == self.common
+        nci = cin.normalizer
+
+        ni = Indicator.objects.filter(common=nci, organization=self.organization).first()
+        if not ni:
+            return None
+
+        ni_goals_by_date = {g.date: g for g in ni.goals.all()}
+
+        for g in self.goals.all():
+            nig = ni_goals_by_date.get(g.date)
+            if not nig:
+                continue
+            if not nig.value:
+                continue
+            val = g.value / nig.value
+            val *= cin.unit_multiplier
+            g.value /= nig.value
+            g.value *= cin.unit_multiplier
+            nvals = g.normalized_values or {}
+            nvals[str(nci.id)] = val
+            g.normalized_values = nvals
+            g.save(update_fields=['normalized_values'])
 
     @property
     def latest_value_value(self):
@@ -724,6 +755,9 @@ class IndicatorGoal(models.Model):
     )
     value = models.FloatField()
     date = models.DateField(verbose_name=_('date'))
+
+    # Cached here for performance reasons
+    normalized_values = models.JSONField(null=True, blank=True)
 
     public_fields = ['id', 'indicator', 'value', 'date']
 
