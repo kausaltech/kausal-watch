@@ -33,6 +33,8 @@ def get_i18n_field_with_fallback(field_name, obj, info):
     if not active_language:
         return fallback
 
+    active_language = active_language.lower().replace('-', '_')
+
     i18n_field = get_i18n_field(obj._meta.model)
 
     i18n_values = getattr(obj, i18n_field.name)
