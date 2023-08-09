@@ -12,9 +12,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-09 10:56+0300\n"
-"PO-Revision-Date: 2023-08-08 14:32+0000\n"
+"PO-Revision-Date: 2023-08-09 08:44+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
+">\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -159,10 +160,9 @@ msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
 #: actions/api.py
-#, fuzzy, python-format
-#| msgid "custom email address"
+#, python-format
 msgid "Duplicate email addresses: %s"
-msgstr "erillinen sähköpostiosoite"
+msgstr "Sama sähköpostiosoite toistuu: %s"
 
 #: actions/apps.py
 msgid "collection"
@@ -1020,7 +1020,7 @@ msgstr "Näytetäänkö ensimmäisen vaihtoehdon kohdalla nolla ympyrää yhden 
 
 #: actions/models/attributes.py
 msgid "character limit for text fields"
-msgstr ""
+msgstr "merkkimäärärajoitus tekstikentille"
 
 #: actions/models/attributes.py
 msgid "show in reporting tab"
@@ -3488,7 +3488,7 @@ msgstr "henkilöt"
 #: people/override_django_translations.py
 #, python-format
 msgid "%(model_name)s '%(object)s' deleted."
-msgstr ""
+msgstr "%(model_name)s '%(object)s' poistettu."
 
 #: people/templates/people/delete.html
 #, python-format
@@ -3566,20 +3566,20 @@ msgid "Action field"
 msgstr "Toimenpiteen kenttä"
 
 #: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "common category"
 msgid "Action category"
-msgstr "yleinen luokka"
+msgstr "Toimenpiteen luokka"
 
 #: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "Main organization"
 msgid "Level of containing organization"
-msgstr "Pääorganisaatio"
+msgstr "Organisaatiohierarkian taso"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr ""
+"Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. "
+"Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa "
+"tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä "
+"raporttiin."
 
 #: reports/chooser.py
 msgid "Choose a report type"
@@ -3649,7 +3649,7 @@ msgstr "toimenpiteiden tallenteet"
 
 #: reports/spreadsheets.py
 msgid "Exported from Kausal Watch"
-msgstr ""
+msgstr "Tallennettu Kausal Watchista"
 
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete by"
