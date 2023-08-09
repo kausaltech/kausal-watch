@@ -1285,7 +1285,7 @@ class PersonSerializer(
         if self._instance is not None:
             qs = qs.exclude(pk=self._instance.pk)
         if qs.exists():
-            raise serializers.ValidationError(_('Person with that email already exists'))
+            raise serializers.ValidationError(_('Person with this email already exists'))
         return value
 
     def validate(self, data):
