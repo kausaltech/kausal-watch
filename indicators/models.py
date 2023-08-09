@@ -432,17 +432,27 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                 update_fields.append('updated_values_due_at')
 
         if self.common is not None:
-            cins = CommonIndicatorNormalizator.objects.filter(normalizable=self.common)
-            for cin in cins:
-                self.generate_normalized_values(cin)
+            for normalizator in self.common.normalizations.all():
+                self.generate_normalized_values(normalizator)
+            # Also update indicators that normalize by this indicator
+            # TODO: Ideally we should check for cycles, but they wouldn't make sense semantically anyway
+            for normalizator in CommonIndicatorNormalizator.objects.filter(normalizer=self.common):
+                affected_indicators = normalizator.normalizable.indicators.filter(organization=self.organization)
+                for indicator in affected_indicators:
+                    indicator.generate_normalized_values(normalizator)
 
         self.save(update_fields=update_fields)
 
     def handle_goals_update(self):
         if self.common is not None:
-            cins = CommonIndicatorNormalizator.objects.filter(normalizable=self.common)
-            for cin in cins:
-                self.generate_normalized_goals(cin)
+            for normalizator in self.common.normalizations.all():
+                self.generate_normalized_goals(normalizator)
+            # Also update indicators that normalize by this indicator
+            # TODO: Ideally we should check for cycles, but they wouldn't make sense semantically anyway
+            for normalizator in CommonIndicatorNormalizator.objects.filter(normalizer=self.common):
+                affected_indicators = normalizator.normalizable.indicators.filter(organization=self.organization)
+                for indicator in affected_indicators:
+                    indicator.generate_normalized_goals(normalizator)
 
     def has_current_data(self):
         return self.latest_value_id is not None
@@ -533,17 +543,15 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         vals = list(self.values.filter(categories__isnull=True))
         for v in vals:
+            nvals = {}
             niv = ni_vals_by_date.get(v.date)
-            if not niv:
-                continue
-            if not niv.value:
-                continue
-            val = v.value / niv.value
-            val *= cin.unit_multiplier
-            v.value /= niv.value
-            v.value *= cin.unit_multiplier
-            nvals = v.normalized_values or {}
-            nvals[str(nci.id)] = val
+            if niv and niv.value:
+                val = v.value / niv.value
+                val *= cin.unit_multiplier
+                v.value /= niv.value
+                v.value *= cin.unit_multiplier
+                nvals = v.normalized_values or {}
+                nvals[str(nci.id)] = val
             v.normalized_values = nvals
             v.save(update_fields=['normalized_values'])
 
@@ -558,17 +566,15 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         ni_goals_by_date = {g.date: g for g in ni.goals.all()}
 
         for g in self.goals.all():
+            nvals = {}
             nig = ni_goals_by_date.get(g.date)
-            if not nig:
-                continue
-            if not nig.value:
-                continue
-            val = g.value / nig.value
-            val *= cin.unit_multiplier
-            g.value /= nig.value
-            g.value *= cin.unit_multiplier
-            nvals = g.normalized_values or {}
-            nvals[str(nci.id)] = val
+            if nig and nig.value:
+                val = g.value / nig.value
+                val *= cin.unit_multiplier
+                g.value /= nig.value
+                g.value *= cin.unit_multiplier
+                nvals = g.normalized_values or {}
+                nvals[str(nci.id)] = val
             g.normalized_values = nvals
             g.save(update_fields=['normalized_values'])
 

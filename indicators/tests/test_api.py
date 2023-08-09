@@ -2,7 +2,7 @@ import pytest
 from datetime import date
 from django.urls import reverse
 
-from indicators.tests.factories import IndicatorFactory
+from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -90,6 +90,46 @@ def test_all_goals_get_replaced(client, plan, plan_admin_user):
     for values in [[GOAL_2030, GOAL_2045], [GOAL_2035, GOAL_2040]]:
         post(client, plan, plan_admin_user, 'indicator-goals', indicator, values)
         assert_goals_match(indicator, values)
+
+
+@pytest.mark.parametrize("reverse_request_order", [False, True])
+@pytest.mark.parametrize("test_goals_instead", [False, True])
+def test_values_get_normalized(client, plan, plan_admin_user, reverse_request_order, test_goals_instead):
+    # Normalize emissions by population
+    emissions = IndicatorFactory()
+    population = IndicatorFactory(organization=emissions.organization)
+    normalizator = CommonIndicatorNormalizatorFactory(
+        normalizable=emissions.common,
+        normalizer=population.common,
+    )
+    emissions_value = {
+        'categories': [],
+        'date': '2019-12-31',
+        'value': 1,
+    }
+    population_value = {
+        'categories': [],
+        'date': '2019-12-31',
+        'value': 2,
+    }
+    # It shouldn't matter whether we first update the normalizable or the normalizer
+    request_data = [(population, [population_value]), (emissions, [emissions_value])]
+    if reverse_request_order:
+        request_data.reverse()
+    path = 'indicator-values'
+    if test_goals_instead:
+        path = 'indicator-goals'
+        del emissions_value['categories']
+        del population_value['categories']
+    for indicator, values in request_data:
+        post(client, plan, plan_admin_user, path, indicator, values)
+    expected_value = emissions_value['value'] / population_value['value'] * normalizator.unit_multiplier
+    expected = [{str(population.common.id): expected_value}]
+    if test_goals_instead:
+        result = list(emissions.goals.values_list('normalized_values', flat=True))
+    else:
+        result = list(emissions.values.values_list('normalized_values', flat=True))
+    assert result == expected
 
 
 # TODO: these authorization test turned out difficult to implement

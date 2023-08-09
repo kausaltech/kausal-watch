@@ -35,6 +35,16 @@ class CommonIndicatorFactory(DjangoModelFactory):
     unit = SubFactory(UnitFactory)
 
 
+class CommonIndicatorNormalizatorFactory(DjangoModelFactory):
+    class Meta:
+        model = 'indicators.CommonIndicatorNormalizator'
+
+    normalizable = SubFactory(CommonIndicatorFactory)
+    normalizer = SubFactory(CommonIndicatorFactory)
+    unit = SubFactory(UnitFactory)
+    unit_multiplier = 1000.0
+
+
 class IndicatorFactory(DjangoModelFactory):
     class Meta:
         model = 'indicators.Indicator'
