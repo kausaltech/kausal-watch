@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-09 10:56+0300\n"
-"PO-Revision-Date: 2023-08-09 08:44+0000\n"
+"PO-Revision-Date: 2023-08-10 09:18+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
 ">\n"
@@ -1716,7 +1716,9 @@ msgstr "%s ei voitu tallentaa virheiden takia."
 #: admin_site/wagtail.py
 #, python-brace-format
 msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgstr "Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa ohjelmassa on vielä luokkia joiden tyyppi on kytketty tyyppiin '{removed_cct}'."
+msgstr ""
+"Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on "
+"vielä luokkia joiden tyyppi on kytketty siihen."
 
 #: admin_site/wagtail.py
 msgid "[not included]"
@@ -2773,7 +2775,7 @@ msgstr "URL-osoite kirjasimen CSS-tyylitiedostoon"
 #: notifications/models.py
 msgctxt "partitive"
 msgid "base templates"
-msgstr ""
+msgstr "perusmallit"
 
 #: notifications/models.py
 msgid "base template"
