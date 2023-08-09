@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-09 10:56+0300\n"
-"PO-Revision-Date: 2023-08-01 20:29+0000\n"
-"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"PO-Revision-Date: 2023-08-09 08:44+0000\n"
+"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -158,10 +159,9 @@ msgid "Person with this email already exists"
 msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
 
 #: actions/api.py
-#, fuzzy, python-format
-#| msgid "custom email address"
+#, python-format
 msgid "Duplicate email addresses: %s"
-msgstr "benutzerdefinierte E-Mail Adresse"
+msgstr ""
 
 #: actions/apps.py
 msgid "collection"
@@ -3526,20 +3526,22 @@ msgid "Action field"
 msgstr "Maßnahmenfeld"
 
 #: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "common category"
 msgid "Action category"
-msgstr "gemeinsame Kategorie"
+msgstr "Maßnahmenkategorie"
 
 #: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "Main organization"
 msgid "Level of containing organization"
-msgstr "Hauptorganisation"
+msgstr "Ebene der enthaltenden Organisation"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr ""
+"Der Bericht enthält nicht nur die Organisation selbst, sondern auch eine "
+"Organisationseinheit, die die Organisation enthält. Auf welcher Ebene in der "
+"Organisationshierarchie, ausgehend von der obersten Organisation auf Ebene "
+"1, soll diese enthaltende Organisation gesucht werden? Wenn keine Angabe "
+"gemacht wird, wird die enthaltende Organisation nicht in den Bericht "
+"aufgenommen."
 
 #: reports/chooser.py
 msgid "Choose a report type"
@@ -3609,7 +3611,7 @@ msgstr "Maßnahmen-Snapshots"
 
 #: reports/spreadsheets.py
 msgid "Exported from Kausal Watch"
-msgstr ""
+msgstr "Aus Kausal Watch exportiert"
 
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete by"
@@ -3620,8 +3622,6 @@ msgid "Marked as complete at"
 msgstr "Als abgeschlossen markiert am"
 
 #: reports/spreadsheets.py
-#, fuzzy
-#| msgid "identifier"
 msgid "Identifier"
 msgstr "Kennung"
 
