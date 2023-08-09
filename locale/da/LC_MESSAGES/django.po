@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-01 00:56+0300\n"
+"POT-Creation-Date: 2023-08-09 10:56+0300\n"
 "PO-Revision-Date: 2023-08-08 13:02+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
-"\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -135,7 +134,7 @@ msgstr "Sammenkoblede handlinger"
 msgid "Postponed"
 msgstr ""
 
-#: actions/action_status_summary.py
+#: actions/action_status_summary.py reports/spreadsheets.py
 #, fuzzy
 #| msgid "Unknown content"
 msgid "Unknown"
@@ -163,11 +162,22 @@ msgstr "Identifikator skal indstilles"
 msgid "Identifier already exists"
 msgstr "Identifikator findes allerede"
 
+#: actions/api.py people/models.py
+msgid "Person with this email already exists"
+msgstr "En person med denne e-mailadresse findes allerede"
+
+#: actions/api.py
+#, fuzzy, python-format
+#| msgid "email address"
+msgid "Duplicate email addresses: %s"
+msgstr "email adresse"
+
 #: actions/apps.py
 msgid "collection"
 msgstr "kollektion"
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr "Handlinger"
 
@@ -204,6 +214,7 @@ msgstr ""
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
+#: reports/blocks/action_content.py
 msgid "Category type"
 msgstr "Kategoritype"
 
@@ -245,10 +256,6 @@ msgstr "Indholdsblok: %(label)s"
 msgid "Merged actions"
 msgstr "Sammenkoblede handlinger"
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr "officielt navn"
-
 #: actions/blocks/action_content.py
 msgid "Attribute"
 msgstr "Attribut"
@@ -258,10 +265,6 @@ msgstr "Attribut"
 #: pages/models.py
 msgid "Category"
 msgstr "Kategori"
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
-msgstr "Kontaktformular"
 
 #: actions/blocks/action_content.py
 msgid "Full width"
@@ -288,11 +291,19 @@ msgstr "Blokke"
 msgid "Section"
 msgstr "Afsnit"
 
+#: actions/blocks/action_content.py actions/models/action.py
+msgid "official name"
+msgstr "officielt navn"
+
+#: actions/blocks/action_content.py
+msgid "Contact form"
+msgstr "Kontaktformular"
+
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Filtrer på kategori"
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Ledende"
 
@@ -339,7 +350,7 @@ msgstr "Hvor mange niveauer af kategorihierarki der skal vises"
 msgid "Filter: %(filter_label)s"
 msgstr "Filter: %(filter_label)s"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr "ansvarlig part"
 
@@ -348,7 +359,7 @@ msgid "primary organization"
 msgstr "primær organisation"
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr "implementeringsfasen"
 
@@ -460,7 +471,8 @@ msgstr "navn"
 msgid "impact"
 msgstr "indvirkning"
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr "status"
 
@@ -518,9 +530,7 @@ msgstr "Domænenavn"
 
 #: actions/forms.py
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr ""
-"Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad "
-"det være tomt, hvis det endnu ikke er kendt."
+msgstr "Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad det være tomt, hvis det endnu ikke er kendt."
 
 #: actions/forms.py
 msgid "Base path"
@@ -528,9 +538,7 @@ msgstr "Grundsti"
 
 #: actions/forms.py
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr ""
-"Udfyld dette for et websted med flere planer, når planen ikke findes i roden "
-"af domænet."
+msgstr "Udfyld dette for et websted med flere planer, når planen ikke findes i roden af domænet."
 
 #: actions/forms.py
 msgid "Name of client"
@@ -681,7 +689,7 @@ msgstr "relaterede handlinger"
 msgid "responsible organizations"
 msgstr "ansvarlige organisationer"
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr "opdateret kl"
 
@@ -853,7 +861,7 @@ msgstr "handlingsimplementeringsfaser"
 msgid "not started"
 msgstr "ikke startet"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr "i gang"
 
@@ -1036,6 +1044,10 @@ msgstr "har nul mulighed"
 #: actions/models/attributes.py
 msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
 msgstr "Hvis formatet er \"ordret valg\", afgør, om den første mulighed vises med nul punkttegn i stedet for én"
+
+#: actions/models/attributes.py
+msgid "character limit for text fields"
+msgstr ""
 
 #: actions/models/attributes.py
 msgid "show in reporting tab"
@@ -1904,7 +1916,7 @@ msgstr "Ifølge handlingsplanen"
 msgid "Content"
 msgstr "Indhold"
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr "Handling"
 
@@ -2963,7 +2975,7 @@ msgstr "Organisationer"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "En node kan ikke flyttes under sig selv i hierarkiet."
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr "Forælder"
 
@@ -3564,9 +3576,10 @@ msgstr "kontakt for handlinger"
 msgid "people"
 msgstr "mennesker"
 
-#: people/models.py
-msgid "Person with this email already exists"
-msgstr "En person med denne e-mailadresse findes allerede"
+#: people/override_django_translations.py
+#, python-format
+msgid "%(model_name)s '%(object)s' deleted."
+msgstr ""
 
 #: people/templates/people/delete.html
 #, python-format
@@ -3649,6 +3662,22 @@ msgstr ""
 msgid "Action field"
 msgstr "Handlingsliste"
 
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "common category"
+msgid "Action category"
+msgstr "fælles kategori"
+
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "Main organization"
+msgid "Level of containing organization"
+msgstr "Hovedorganisation"
+
+#: reports/blocks/action_content.py
+msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr ""
+
 #: reports/chooser.py
 #, fuzzy
 #| msgid "Choose a category type"
@@ -3669,7 +3698,7 @@ msgstr "rapporttype"
 msgid "report types"
 msgstr "rapporttyper"
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr "komplet"
 
@@ -3694,18 +3723,6 @@ msgstr "rapport"
 #: reports/models.py
 msgid "reports"
 msgstr "rapporter"
-
-#: reports/models.py
-#, fuzzy
-#| msgid "completed by"
-msgid "Marked as complete by"
-msgstr "færdiggjort af"
-
-#: reports/models.py
-#, fuzzy
-#| msgid "is completed"
-msgid "Marked as complete at"
-msgstr "er afsluttet"
 
 #: reports/models.py
 msgid "The report is already marked as complete."
@@ -3738,6 +3755,26 @@ msgstr "handlingsstatus"
 #| msgid "action status"
 msgid "action snapshots"
 msgstr "handlingsstatus"
+
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#, fuzzy
+#| msgid "completed by"
+msgid "Marked as complete by"
+msgstr "færdiggjort af"
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#, fuzzy
+#| msgid "is completed"
+msgid "Marked as complete at"
+msgstr "er afsluttet"
+
+#: reports/spreadsheets.py
+msgid "Identifier"
+msgstr "Identifikator"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, fuzzy, python-format
@@ -3898,10 +3935,6 @@ msgstr "Brugere"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
 
-#: users/models.py
-msgid "You do not have permissions for removing users."
-msgstr ""
-
 #~ msgid "Contact person"
 #~ msgstr "Kontaktperson"
 
@@ -3976,9 +4009,6 @@ msgstr ""
 
 #~ msgid "Attribute type"
 #~ msgstr "Attributtype"
-
-#~ msgid "Identifier"
-#~ msgstr "Identifikator"
 
 #~ msgid "Text attribute"
 #~ msgstr "Textattribut"

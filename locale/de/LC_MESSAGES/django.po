@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-01 00:56+0300\n"
+"POT-Creation-Date: 2023-08-09 10:56+0300\n"
 "PO-Revision-Date: 2023-08-01 20:29+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -128,7 +127,7 @@ msgstr "Zusammengeführt"
 msgid "Postponed"
 msgstr "Verschoben"
 
-#: actions/action_status_summary.py
+#: actions/action_status_summary.py reports/spreadsheets.py
 msgid "Unknown"
 msgstr "Unbekannt"
 
@@ -154,11 +153,22 @@ msgstr "Kennung muss gesetzt sein"
 msgid "Identifier already exists"
 msgstr "Kennung existiert bereits"
 
+#: actions/api.py people/models.py
+msgid "Person with this email already exists"
+msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
+
+#: actions/api.py
+#, fuzzy, python-format
+#| msgid "custom email address"
+msgid "Duplicate email addresses: %s"
+msgstr "benutzerdefinierte E-Mail Adresse"
+
 #: actions/apps.py
 msgid "collection"
 msgstr "Sammlung"
 
 #: actions/apps.py actions/models/plan.py content/models.py
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Actions"
 msgstr "Maßnahmen"
 
@@ -182,8 +192,7 @@ msgstr "Felder (%(model)s)"
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Category', a category type must be set"
-msgstr ""
-"Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt werden"
+msgstr "Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt werden"
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
@@ -191,6 +200,7 @@ msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werde
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
+#: reports/blocks/action_content.py
 msgid "Category type"
 msgstr "Kategorietyp"
 
@@ -215,9 +225,7 @@ msgstr "Kontaktformular"
 
 #: actions/blocks/action_content.py
 msgid "What label should be used in the public UI for the official name?"
-msgstr ""
-"Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den "
-"offiziellen Namen verwendet werden?"
+msgstr "Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den offiziellen Namen verwendet werden?"
 
 #: actions/blocks/action_content.py
 msgid "Description to show after the field content"
@@ -232,10 +240,6 @@ msgstr "Inhaltsblock: %(label)s"
 msgid "Merged actions"
 msgstr "Zusammengeführte Maßnahmen"
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr "Offizieller Name"
-
 #: actions/blocks/action_content.py
 msgid "Attribute"
 msgstr "Attribut"
@@ -245,10 +249,6 @@ msgstr "Attribut"
 #: pages/models.py
 msgid "Category"
 msgstr "Kategorie"
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
-msgstr "Kontaktformular"
 
 #: actions/blocks/action_content.py
 msgid "Full width"
@@ -275,11 +275,19 @@ msgstr "Blocks"
 msgid "Section"
 msgstr "Abschnitt"
 
+#: actions/blocks/action_content.py actions/models/action.py
+msgid "official name"
+msgstr "Offizieller Name"
+
+#: actions/blocks/action_content.py
+msgid "Contact form"
+msgstr "Kontaktformular"
+
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Filtere nach Kategorie"
 
-#: actions/blocks/category_list.py pages/blocks.py
+#: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Leittext"
 
@@ -324,7 +332,7 @@ msgstr "Wie viele Ebenen der Kategoriehierarchie angezeigt werden sollen"
 msgid "Filter: %(filter_label)s"
 msgstr "Filter: %(filter_label)s"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "responsible party"
 msgstr "Zuständige Stelle"
 
@@ -333,7 +341,7 @@ msgid "primary organization"
 msgstr "Primärorganisation"
 
 #: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py
+#: reports/blocks/action_content.py reports/spreadsheets.py
 msgid "implementation phase"
 msgstr "Umsetzungsphase"
 
@@ -441,7 +449,8 @@ msgstr "Name"
 msgid "impact"
 msgstr "Auswirkung"
 
-#: actions/export.py actions/models/action.py
+#: actions/export.py actions/models/action.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "status"
 msgstr "Status"
 
@@ -499,9 +508,7 @@ msgstr "Domänenname"
 
 #: actions/forms.py
 msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr ""
-"Der vollständig qualifizierte Domänenname, z. B. klima.stadtname.gov. "
-"Leerlassen wenn noch unbekannt."
+msgstr "Der vollständig qualifizierte Domänenname, z. B. klima.stadtname.gov. Leerlassen wenn noch unbekannt."
 
 #: actions/forms.py
 msgid "Base path"
@@ -509,9 +516,7 @@ msgstr "Basispfad"
 
 #: actions/forms.py
 msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr ""
-"Füllen Sie dies für eine Website mit mehreren Plänen aus, wenn sich der Plan "
-"nicht im Stammverzeichnis der Domäne befindet."
+msgstr "Füllen Sie dies für eine Website mit mehreren Plänen aus, wenn sich der Plan nicht im Stammverzeichnis der Domäne befindet."
 
 #: actions/forms.py
 msgid "Name of client"
@@ -658,7 +663,7 @@ msgstr "verbundene Maßnahmen"
 msgid "responsible organizations"
 msgstr "Zuständige Organisationen"
 
-#: actions/models/action.py aplans/utils.py
+#: actions/models/action.py aplans/utils.py reports/spreadsheets.py
 msgid "updated at"
 msgstr "aktualisiert am"
 
@@ -830,7 +835,7 @@ msgstr "Maßnahmenumsetzungsphasen"
 msgid "not started"
 msgstr "nicht begonnen"
 
-#: actions/models/action.py
+#: actions/models/action.py reports/spreadsheets.py
 msgid "in progress"
 msgstr "im Gange"
 
@@ -1011,6 +1016,10 @@ msgstr "hat Option für Null"
 #: actions/models/attributes.py
 msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
 msgstr "Legt, falls das Format \"Geordnete Auswahl\" ist, fest, ob die erste Option mit null Kugeln statt einer angezeigt wird"
+
+#: actions/models/attributes.py
+msgid "character limit for text fields"
+msgstr ""
 
 #: actions/models/attributes.py
 msgid "show in reporting tab"
@@ -1243,9 +1252,7 @@ msgstr "Hat Primärorganisationen für Maßnahmen"
 
 #: actions/models/features.py
 msgid "Set if actions have a clear primary organization (such as multi-city plans)"
-msgstr ""
-"Setzen, wenn Maßnahmen eine klare Primärorganisation haben (z. B. bei Plänen "
-"für mehrere Städte)"
+msgstr "Setzen, wenn Maßnahmen eine klare Primärorganisation haben (z. B. bei Plänen für mehrere Städte)"
 
 #: actions/models/features.py
 msgid "Enable site search"
@@ -1859,7 +1866,7 @@ msgstr "Gemäß Maßnahmenplan"
 msgid "Content"
 msgstr "Inhalt"
 
-#: content/models.py feedback/models.py reports/models.py
+#: content/models.py feedback/models.py reports/spreadsheets.py
 msgid "Action"
 msgstr "Maßnahme"
 
@@ -2631,9 +2638,7 @@ msgid ""
 "Kind regards,\n"
 "the action plan administrators"
 msgstr ""
-"Wenn Sie Schwierigkeiten bei der Verwendung der Maßnahmenplan-"
-"Beobachtungsplattform haben, senden Sie bitte eine E-Mail an die "
-"Administratoren des Maßnahmenplans.\n"
+"Wenn Sie Schwierigkeiten bei der Verwendung der Maßnahmenplan-Beobachtungsplattform haben, senden Sie bitte eine E-Mail an die Administratoren des Maßnahmenplans.\n"
 "\n"
 "Vielen Dank, dass Sie sich an der Umsetzung des Maßnahmenplans beteiligen!\n"
 "\n"
@@ -2875,7 +2880,7 @@ msgstr "Organisationen"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Ein Knoten kann in der Hierarchie nicht unter sich selbst verschoben werden."
 
-#: orgs/models.py
+#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
 msgid "Parent"
 msgstr "Vorgänger"
 
@@ -2984,9 +2989,7 @@ msgstr "Bestätige Ausschließen von %(org)s aus Plan %(plan)s"
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
-msgstr ""
-"Wollen Sie die Organisation '%(org)s' wirklich in den Plan '%(plan)s' "
-"aufnehmen?"
+msgstr "Wollen Sie die Organisation '%(org)s' wirklich in den Plan '%(plan)s' aufnehmen?"
 
 #: orgs/views.py
 #, python-format
@@ -3071,9 +3074,7 @@ msgstr "Metadaten-Admins"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
-msgstr ""
-"Personen, die Daten dieser Organisation und Unterorganisationen bearbeiten "
-"können, aber keine planbezogenen Inhalte"
+msgstr "Personen, die Daten dieser Organisation und Unterorganisationen bearbeiten können, aber keine planbezogenen Inhalte"
 
 #: orgs/wagtail_admin.py
 msgid "Is in plan"
@@ -3125,9 +3126,7 @@ msgstr "Absatz über Wartungsverantwortung"
 
 #: pages/blocks.py
 msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
-msgstr ""
-"Wenn dies gesetzt ist, wird es statt \"Dieser Dienst wird von [Herausgeber] "
-"bereitgestellt\" angezeigt."
+msgstr "Wenn dies gesetzt ist, wird es statt \"Dieser Dienst wird von [Herausgeber] bereitgestellt\" angezeigt."
 
 #: pages/blocks.py
 msgid "Email address"
@@ -3446,9 +3445,10 @@ msgstr "Ansprechpartner für Maßnahmen"
 msgid "people"
 msgstr "Personen"
 
-#: people/models.py
-msgid "Person with this email already exists"
-msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
+#: people/override_django_translations.py
+#, python-format
+msgid "%(model_name)s '%(object)s' deleted."
+msgstr ""
 
 #: people/templates/people/delete.html
 #, python-format
@@ -3525,6 +3525,22 @@ msgstr "UUID des Berichtfelds"
 msgid "Action field"
 msgstr "Maßnahmenfeld"
 
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "common category"
+msgid "Action category"
+msgstr "gemeinsame Kategorie"
+
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "Main organization"
+msgid "Level of containing organization"
+msgstr "Hauptorganisation"
+
+#: reports/blocks/action_content.py
+msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr ""
+
 #: reports/chooser.py
 msgid "Choose a report type"
 msgstr "Wähle einen Berichtstyp"
@@ -3541,7 +3557,7 @@ msgstr "Berichtstyp"
 msgid "report types"
 msgstr "Berichtstypen"
 
-#: reports/models.py
+#: reports/models.py reports/spreadsheets.py
 msgid "complete"
 msgstr "fertiggestellt"
 
@@ -3564,14 +3580,6 @@ msgstr "Bericht"
 #: reports/models.py
 msgid "reports"
 msgstr "Berichte"
-
-#: reports/models.py
-msgid "Marked as complete by"
-msgstr "Als abgeschlossen markiert von"
-
-#: reports/models.py
-msgid "Marked as complete at"
-msgstr "Als abgeschlossen markiert am"
 
 #: reports/models.py
 msgid "The report is already marked as complete."
@@ -3599,19 +3607,33 @@ msgstr "Maßnahmen-Snapshot"
 msgid "action snapshots"
 msgstr "Maßnahmen-Snapshots"
 
+#: reports/spreadsheets.py
+msgid "Exported from Kausal Watch"
+msgstr ""
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Als abgeschlossen markiert von"
+
+#: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Als abgeschlossen markiert am"
+
+#: reports/spreadsheets.py
+#, fuzzy
+#| msgid "identifier"
+msgid "Identifier"
+msgstr "Kennung"
+
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
-msgstr ""
-"Möchten Sie den Bericht <i> %(report)s </i> wirklich als abgeschlossen "
-"markieren?"
+msgstr "Möchten Sie den Bericht <i> %(report)s </i> wirklich als abgeschlossen markieren?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
-msgstr ""
-"Möchten Sie das Markieren des Berichts <i> %(report)s </i> als abgeschlossen "
-"wirklich rückgängig machen?"
+msgstr "Möchten Sie das Markieren des Berichts <i> %(report)s </i> als abgeschlossen wirklich rückgängig machen?"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will mark the following actions as complete:"
@@ -3751,6 +3773,10 @@ msgstr "Benutzer"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
 
-#: users/models.py
-msgid "You do not have permissions for removing users."
-msgstr "Sie haben keine Berechtigung zum Entfernen von Benutzern."
+#, fuzzy
+#~| msgid "Person with this email already exists"
+#~ msgid "Person with that email already exists"
+#~ msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
+
+#~ msgid "You do not have permissions for removing users."
+#~ msgstr "Sie haben keine Berechtigung zum Entfernen von Benutzern."
