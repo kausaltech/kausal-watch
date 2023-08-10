@@ -437,9 +437,11 @@ class ExcelReport:
                 chart.add_series(series)
             if chart_type == 'column':
                 chart.set_size({'width': 720, 'height': 576})
-            chart.set_plotarea({
-                'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
-            })
+            # The gradient is ugly on native Excel, some color design is needed before this should be enabled again
+            #
+            # chart.set_plotarea({
+            #     'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
+            # })
             worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
 
     def _initialize_format(self, key, initializer):
