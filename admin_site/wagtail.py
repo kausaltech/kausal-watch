@@ -5,7 +5,7 @@ from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
-from django.db.models import ProtectedError, Model
+from django.db.models import ProtectedError
 from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
@@ -22,7 +22,7 @@ from wagtail.admin import messages
 from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
+from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
 from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
@@ -448,21 +448,6 @@ class AplansCreateView(
         return ret
 
 
-class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
-    # FIXME: The previous approach no longer works because get_context() does not exist anymore
-    pass
-    # def get_label_from_context(self, context, request):
-    #     # This method may be trivial, but we override it elsewhere
-    #     return context.get('label')
-
-    # def get_context(self, request):
-    #     ret = super().get_context(request)
-    #     label = self.get_label_from_context(ret, request)
-    #     if label:
-    #         ret['label'] = mark_safe(label)
-    #     return ret
-
-
 class AplansIndexView(ActivatePermissionHelperPlanContextMixin, IndexView):
     pass
 
@@ -481,9 +466,6 @@ class AplansModelAdmin(ModelAdmin):
     def get_index_view_extra_js(self):
         ret = super().get_index_view_extra_js()
         return ret + ['admin_site/js/wagtail_customizations.js']
-
-    def get_menu_item(self, order=None):
-        return SafeLabelModelAdminMenuItem(self, order or self.get_menu_order())
 
 
 class CondensedInlinePanel(InlinePanel):

@@ -1,29 +1,26 @@
 import json
 import logging
 from dal import autocomplete, forward as dal_forward
-from datetime import timedelta
 
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.urls import re_path
 from django.utils import timezone
-from django.utils.translation import gettext, gettext_lazy as _
+from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
+from wagtail.contrib.modeladmin.options import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
-    CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper, SafeLabelModelAdminMenuItem,
-    insert_model_translation_panels, get_translation_tabs
+    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    CondensedPanelSingleSelect, PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
+    get_translation_tabs
 )
 from actions.chooser import ActionChooser
-from actions.models import ActionResponsibleParty
 from aplans.extensions import modeladmin_register
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
@@ -31,7 +28,6 @@ from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
 from orgs.models import Organization
 from people.chooser import PersonChooser
-from people.models import Person
 
 from .models import Action, ActionTask
 from reports.views import MarkActionAsCompleteView
@@ -219,7 +215,7 @@ class ActionIndexView(IndexView):
         return plan.general_content.get_action_term_display_plural()
 
 
-class ActionMenuItem(SafeLabelModelAdminMenuItem):
+class ActionMenuItem(ModelAdminMenuItem):
     def render_component(self, request):
         link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()

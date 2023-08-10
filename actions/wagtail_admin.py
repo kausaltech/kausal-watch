@@ -7,7 +7,7 @@ from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import EditView
 
 from . import action_admin  # noqa
@@ -17,8 +17,7 @@ from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
-    CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
+    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin, CondensedInlinePanel, SuccessUrlEditPageMixin,
     insert_model_translation_panels
 )
 from aplans.context_vars import ctx_instance, ctx_request
@@ -202,7 +201,7 @@ class ActivePlanPermissionHelper(PermissionHelper):
 
 
 # FIXME: This is mostly duplicated in content/admin.py.
-class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
+class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         # Implement in subclass
         raise NotImplementedError()

@@ -6,14 +6,14 @@ from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
-from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail import hooks
 
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
 )
 from aplans.context_vars import ctx_request
 
@@ -97,7 +97,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
         ])
 
 
-class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
+class ActivePlanMenuItem(ModelAdminMenuItem):
     # fixme duplicated in actions, content
     def render_component(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
