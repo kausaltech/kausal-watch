@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-09 10:56+0300\n"
+"POT-Creation-Date: 2023-08-11 12:23+0300\n"
 "PO-Revision-Date: 2023-08-08 13:02+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1702,7 +1702,7 @@ msgstr "övervakningskvalitetspunkt"
 msgid "monitoring quality points"
 msgstr "övervakning av kvalitetspunkter"
 
-#: actions/templates/actions/chooser_results.html
+#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
 msgid "Plan"
 msgstr "Planen"
 
@@ -1741,10 +1741,7 @@ msgstr[1] ""
 "         <span> %(total)s </span> åtgärder <span class=\"visuallyhidden\"> övervakas i %(plan.name)s </span>\n"
 "    "
 
-#: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "Plans"
-msgctxt "hyphenated"
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Planer"
 
@@ -1778,20 +1775,13 @@ msgstr "Actionklassificeringar"
 
 #: actions/wagtail_admin.py
 #, fuzzy
-#| msgid "Plan"
-msgctxt "hyphenated"
-msgid "Plan"
-msgstr "Planen"
-
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#| msgid "last name"
 msgid "Plan features"
-msgstr ""
+msgstr "efternamn"
 
 #: actions/wagtail_admin.py
 #, fuzzy
 #| msgid "notification templates"
-msgctxt "hyphenated"
 msgid "Plan notification settings"
 msgstr "anmälningsmallar"
 
@@ -1964,10 +1954,6 @@ msgstr "Admin värdnamn"
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "E -postdomäner"
-
-#: admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Planer"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
@@ -2730,7 +2716,6 @@ msgstr "Redigera denna kvantitet"
 #: indicators/wagtail_admin.py
 #, fuzzy
 #| msgid "Indicator dimensions"
-msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr "Indikator dimensioner"
 
@@ -2802,7 +2787,7 @@ msgstr "gemensamma indikatorer"
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr "Meddelanden"
 
@@ -3121,13 +3106,6 @@ msgstr "Ämne för e-postaviseringar"
 #| msgid "Subject for email notifications"
 msgid "receive action feedback notifications"
 msgstr "Ämne för e-postaviseringar"
-
-#: notifications/wagtail_admin.py
-#, fuzzy
-#| msgid "Notifications"
-msgctxt "hyphenated"
-msgid "Notifications"
-msgstr "Meddelanden"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"
@@ -4198,6 +4176,24 @@ msgstr "Användare"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
+
+#, fuzzy
+#~| msgid "Plans"
+#~ msgctxt "hyphenated"
+#~ msgid "Plans"
+#~ msgstr "Planer"
+
+#, fuzzy
+#~| msgid "Plan"
+#~ msgctxt "hyphenated"
+#~ msgid "Plan"
+#~ msgstr "Planen"
+
+#, fuzzy
+#~| msgid "Notifications"
+#~ msgctxt "hyphenated"
+#~ msgid "Notifications"
+#~ msgstr "Meddelanden"
 
 #~ msgid "Responsible organization"
 #~ msgstr "Ansvarig organisation"

@@ -2,7 +2,6 @@ from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import pgettext_lazy
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
@@ -54,7 +53,7 @@ class PlanForm(AplansAdminModelForm):
 class PlanAdmin(AplansModelAdmin):
     model = Plan
     menu_icon = 'fa-briefcase'
-    menu_label = pgettext_lazy('hyphenated', 'Plans')
+    menu_label = _('Plans')
     menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
@@ -230,7 +229,7 @@ class ActivePlanMenuItem(PlanSpecificSingletonModelMenuItem):
 class ActivePlanAdmin(PlanAdmin):
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan')
+    menu_label = _('Plan')
     menu_icon = 'kausal-plan'
     add_to_settings_menu = True
 
@@ -245,7 +244,7 @@ modeladmin_register(ActivePlanAdmin)
 class PlanFeaturesAdmin(AplansModelAdmin):
     model = PlanFeatures
     menu_icon = 'tasks'
-    menu_label = pgettext_lazy('hyphenated', 'Plan features')
+    menu_label = _('Plan features')
     menu_order = 501
 
     superuser_panels = [
@@ -301,7 +300,7 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan features')
+    menu_label = _('Plan features')
     menu_icon = 'circle-check'
     add_to_settings_menu = True
 
@@ -316,7 +315,7 @@ modeladmin_register(ActivePlanFeaturesAdmin)
 class NotificationSettingsAdmin(AplansModelAdmin):
     model = NotificationSettings
     menu_icon = 'fa-bell'
-    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_label = _('Plan notification settings')
     menu_order = 502
 
     panels = [
@@ -353,7 +352,7 @@ class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, EditView):
 class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
     edit_view_class = ActivePlanNotificationSettingsEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_label = _('Plan notification settings')
     menu_icon = 'warning'  # FIXME
     add_to_settings_menu = True
 

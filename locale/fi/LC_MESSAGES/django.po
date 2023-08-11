@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-09 10:56+0300\n"
+"POT-Creation-Date: 2023-08-11 12:23+0300\n"
 "PO-Revision-Date: 2023-08-10 09:18+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
-">\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1527,7 +1526,7 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
-#: actions/templates/actions/chooser_results.html
+#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
 msgid "Plan"
 msgstr "Toimenpideohjelma"
 
@@ -1562,8 +1561,7 @@ msgstr[1] ""
 "        <span>%(total)s</span> toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
 
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
 
@@ -1592,17 +1590,10 @@ msgid "Action classifications"
 msgstr "Toimenpiteiden luokittelu"
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Plan"
-msgstr "Toimenpide&shy;ohjelma"
-
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Ohjelman ominaisuudet"
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan notification settings"
 msgstr "Toimenpiteen heräteasetukset"
 
@@ -1716,9 +1707,7 @@ msgstr "%s ei voitu tallentaa virheiden takia."
 #: admin_site/wagtail.py
 #, python-brace-format
 msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgstr ""
-"Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on "
-"vielä luokkia joiden tyyppi on kytketty siihen."
+msgstr "Yleisen luokan tyyppiä '{removed_cct}' ei voitu poistaa, koska ohjelmassa on vielä luokkia joiden tyyppi on kytketty siihen."
 
 #: admin_site/wagtail.py
 msgid "[not included]"
@@ -1767,10 +1756,6 @@ msgstr "Ylläpidon palvelinnimet"
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
-
-#: admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Toimenpideohjelmat"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
@@ -2495,7 +2480,6 @@ msgid "Edit this quantity"
 msgstr "Muokkaa tätä suuretta"
 
 #: indicators/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr "Mittarin dimensiot"
 
@@ -2560,7 +2544,7 @@ msgstr "Yleiset mittarit"
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on linkitetty muihin mittareihin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr "Herätteet"
 
@@ -2892,11 +2876,6 @@ msgstr "vastaanota yleisiä herätteitä toimenpiteestä"
 #: notifications/models.py
 msgid "receive action feedback notifications"
 msgstr "vastaanota herätteitä toimenpiteen palautteista"
-
-#: notifications/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Notifications"
-msgstr "Herätteet"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"
@@ -3577,11 +3556,7 @@ msgstr "Organisaatiohierarkian taso"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
-msgstr ""
-"Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. "
-"Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa "
-"tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä "
-"raporttiin."
+msgstr "Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä raporttiin."
 
 #: reports/chooser.py
 msgid "Choose a report type"
@@ -3812,6 +3787,18 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgctxt "hyphenated"
+#~ msgid "Plans"
+#~ msgstr "Toimenpideohjelmat"
+
+#~ msgctxt "hyphenated"
+#~ msgid "Plan"
+#~ msgstr "Toimenpide&shy;ohjelma"
+
+#~ msgctxt "hyphenated"
+#~ msgid "Notifications"
+#~ msgstr "Herätteet"
 
 #, fuzzy
 #~| msgid "Person with this email already exists"

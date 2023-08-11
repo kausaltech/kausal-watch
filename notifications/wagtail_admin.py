@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.forms import Select
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import pgettext_lazy
 from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
@@ -29,7 +28,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     create_view_class = AplansCreateView
     edit_view_class = BaseTemplateEditView
     menu_icon = 'warning'  # FIXME
-    menu_label = pgettext_lazy('hyphenated', 'Notifications')
+    menu_label = _('Notifications')
 
     panels = [
         FieldPanel('from_name'),

@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-09 10:56+0300\n"
+"POT-Creation-Date: 2023-08-11 12:23+0300\n"
 "PO-Revision-Date: 2023-08-09 08:44+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1526,7 +1525,7 @@ msgstr "Überwachungsqualitätspunkt"
 msgid "monitoring quality points"
 msgstr "Überwachungsqualitätspunkte"
 
-#: actions/templates/actions/chooser_results.html
+#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
 msgid "Plan"
 msgstr "Plan"
 
@@ -1561,8 +1560,7 @@ msgstr[1] ""
 "         <span> %(total)s </span> Maßnahmen <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
 "    "
 
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Pläne"
 
@@ -1591,19 +1589,12 @@ msgid "Action classifications"
 msgstr "Maßnahmenklassifizierungen"
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Plan"
-msgstr "Plan"
-
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan features"
 msgstr "Plan-Features"
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan notification settings"
-msgstr "Plan-Benachrichtigungs&shy;einstellungen"
+msgstr "Plan-Benachrichtigungseinstellungen"
 
 #: admin_site/api.py
 msgid "Invalid email address"
@@ -1764,10 +1755,6 @@ msgstr "Admin-Hostnamen"
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "E-Mail-Domänen"
-
-#: admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr "Pläne"
 
 #: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
@@ -2492,9 +2479,8 @@ msgid "Edit this quantity"
 msgstr "Bearbeite diese Größe"
 
 #: indicators/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Indicator dimensions"
-msgstr "Indikator&shy;dimensionen"
+msgstr "Indikatordimensionen"
 
 #: indicators/wagtail_admin.py
 msgid "Quantities"
@@ -2557,7 +2543,7 @@ msgstr "Gemeinsame Indikatoren"
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Dieser Gemeinsame Indikator hat mit ihm verbundene Indikatoren, daher können Größe, Einheit und Dimensionen nicht bearbeitet werden. Aktuelle Größe: %(quantity)s; Einheit: %(unit)s; Dimensionen: %(dimensions)s"
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr "Benachrichtigungen"
 
@@ -2850,11 +2836,6 @@ msgstr "erhalte allgemeine Maßnahmen-Benachrichtigungen"
 #: notifications/models.py
 msgid "receive action feedback notifications"
 msgstr "erhalte Maßnahmen-Feedback-Benachrichtigungen"
-
-#: notifications/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Notifications"
-msgstr "Be&shy;nach&shy;rich&shy;ti&shy;gung&shy;en"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"
@@ -3535,13 +3516,7 @@ msgstr "Ebene der enthaltenden Organisation"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
-msgstr ""
-"Der Bericht enthält nicht nur die Organisation selbst, sondern auch eine "
-"Organisationseinheit, die die Organisation enthält. Auf welcher Ebene in der "
-"Organisationshierarchie, ausgehend von der obersten Organisation auf Ebene "
-"1, soll diese enthaltende Organisation gesucht werden? Wenn keine Angabe "
-"gemacht wird, wird die enthaltende Organisation nicht in den Bericht "
-"aufgenommen."
+msgstr "Der Bericht enthält nicht nur die Organisation selbst, sondern auch eine Organisationseinheit, die die Organisation enthält. Auf welcher Ebene in der Organisationshierarchie, ausgehend von der obersten Organisation auf Ebene 1, soll diese enthaltende Organisation gesucht werden? Wenn keine Angabe gemacht wird, wird die enthaltende Organisation nicht in den Bericht aufgenommen."
 
 #: reports/chooser.py
 msgid "Choose a report type"
@@ -3772,6 +3747,18 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#~ msgctxt "hyphenated"
+#~ msgid "Plans"
+#~ msgstr "Pläne"
+
+#~ msgctxt "hyphenated"
+#~ msgid "Plan"
+#~ msgstr "Plan"
+
+#~ msgctxt "hyphenated"
+#~ msgid "Notifications"
+#~ msgstr "Be&shy;nach&shy;rich&shy;ti&shy;gung&shy;en"
 
 #, fuzzy
 #~| msgid "Person with this email already exists"

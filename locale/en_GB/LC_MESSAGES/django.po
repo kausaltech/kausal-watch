@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-09 10:56+0300\n"
+"POT-Creation-Date: 2023-08-11 12:23+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Bernhard Bliem, 2022\n"
 "Language-Team: English (United Kingdom) (https://www.transifex.com/kausal-tech/teams/113123/en_GB/)\n"
@@ -1541,7 +1541,7 @@ msgstr ""
 msgid "monitoring quality points"
 msgstr ""
 
-#: actions/templates/actions/chooser_results.html
+#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
 msgid "Plan"
 msgstr ""
 
@@ -1570,8 +1570,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr ""
 
@@ -1600,19 +1599,14 @@ msgid "Action classifications"
 msgstr ""
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Plan"
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan features"
 msgstr ""
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#, fuzzy
+#| msgid "organizations"
 msgid "Plan notification settings"
-msgstr ""
+msgstr "organisations"
 
 #: admin_site/api.py
 msgid "Invalid email address"
@@ -1772,10 +1766,6 @@ msgstr ""
 
 #: admin_site/wagtail_hooks.py
 msgid "Email domains"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
-msgid "Plans"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
@@ -2495,7 +2485,6 @@ msgid "Edit this quantity"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr ""
 
@@ -2560,7 +2549,7 @@ msgstr ""
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr ""
 
@@ -2847,13 +2836,6 @@ msgstr ""
 #: notifications/models.py
 msgid "receive action feedback notifications"
 msgstr ""
-
-#: notifications/wagtail_admin.py
-#, fuzzy
-#| msgid "organizations"
-msgctxt "hyphenated"
-msgid "Notifications"
-msgstr "organisations"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"

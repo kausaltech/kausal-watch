@@ -1,11 +1,9 @@
-from typing import Optional
 
 from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
-from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail.admin.panels import (
@@ -24,7 +22,6 @@ from admin_site.wagtail import (
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
-from aplans.types import WatchAdminRequest
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
@@ -143,7 +140,7 @@ class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
     menu_icon = 'kausal-dimension'
-    menu_label = pgettext_lazy('hyphenated', 'Indicator dimensions')
+    menu_label = _('Indicator dimensions')
     list_display = ('name',)
 
     panels = [
