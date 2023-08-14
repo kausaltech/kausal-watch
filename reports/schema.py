@@ -36,7 +36,11 @@ class ReportNode(DjangoNode):
             snapshot = action.get_latest_snapshot(root)
         except ActionSnapshot.DoesNotExist:
             return None
-        return [field.block.graphql_value_for_action_snapshot(field, snapshot) for field in root.fields]
+        return [
+            field.block.graphql_value_for_action_snapshot(field, snapshot)
+            for field in root.fields
+            if hasattr(field.block, 'graphql_value_for_action_snapshot')
+        ]
 
 
 @register_django_node
