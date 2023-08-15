@@ -16,7 +16,7 @@ from wagtail.contrib.modeladmin.options import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     CondensedPanelSingleSelect, PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
     get_translation_tabs
 )
@@ -265,11 +265,24 @@ class ActionButtonHelper(AplansButtonHelper):
         return buttons
 
 
+class ActionEditView(AplansEditView):
+    def get_description(self):
+        action = self.instance
+        primary_action_classification = action.plan.primary_action_classification
+        if primary_action_classification is None:
+            return ''
+        category = action.categories.filter(type=primary_action_classification)
+        if not category:
+            return ''
+        return str(category.first())
+
+
 @modeladmin_register
 class ActionAdmin(AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
     index_view_class = ActionIndexView
+    edit_view_class = ActionEditView
     menu_icon = 'kausal-action'
     menu_order = 10
     list_display = ('identifier', 'name_link')

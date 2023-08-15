@@ -1,6 +1,13 @@
 {% extends "modeladmin/edit.html" %}
 {% load i18n wagtailadmin_tags %}
 
+{# This header is overridden from modeladmin/edit.html to support adding more context
+   for actions in the header description parameter #}
+{% block header %}
+    {% include "modeladmin/includes/header_with_history.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon merged=1 latest_log_entry=latest_log_entry history_url=history_url description=view.get_description %}
+{% endblock %}
+
+
 {% block extra_js %}
     {{ block.super }}
     {# Copied from wagtail/admin/templates/wagtailadmin/pages/edit.html #}
