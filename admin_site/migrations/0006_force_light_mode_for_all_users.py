@@ -2,13 +2,23 @@ from django.db import migrations
 
 
 def force_light(apps, schema_editor):
-    UserProfile = apps.get_model('wagtailusers', 'UserProfile')
-    UserProfile.objects.all().update(theme='light')
+    try:
+        UserProfile = apps.get_model('wagtailusers', 'UserProfile')
+    except LookupError:
+        # Can happen in tests for some reason
+        pass
+    else:
+        UserProfile.objects.all().update(theme='light')
 
 
 def force_system(apps, schema_editor):
-    UserProfile = apps.get_model('wagtailusers', 'UserProfile')
-    UserProfile.objects.all().update(theme='system')
+    try:
+        UserProfile = apps.get_model('wagtailusers', 'UserProfile')
+    except LookupError:
+        # Can happen in tests for some reason
+        pass
+    else:
+        UserProfile.objects.all().update(theme='system')
 
 
 class Migration(migrations.Migration):
