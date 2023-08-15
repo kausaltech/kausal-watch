@@ -256,6 +256,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('has_action_official_name'),
         FieldPanel('has_action_lead_paragraph'),
         FieldPanel('has_action_primary_orgs'),
+        FieldPanel('has_action_contact_person_roles'),
         FieldPanel('minimal_statuses'),
     ]
 
