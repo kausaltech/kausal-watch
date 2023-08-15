@@ -30,7 +30,7 @@ from actions.api import all_views as actions_api_views, all_routers as actions_a
 from actions.autocomplete import (
     ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
 )
-from admin_site.views import RootRedirectView, WadminRedirectView
+from admin_site.views import account, RootRedirectView, WadminRedirectView
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
@@ -72,6 +72,8 @@ urlpatterns = [
     ), name='graphql-voyager'),
 
     re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
+    # FIXME: This overrides the URL in Wagtail's admin.urls/__init__.py to disable dark mode until we fix CSS issues
+    re_path("^admin/account/", account, name="wagtailadmin_account"),
     re_path(r'^admin/', include(wagtailadmin_urls)),
     re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
