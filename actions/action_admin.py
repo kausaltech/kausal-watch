@@ -488,14 +488,19 @@ class ActionAdmin(AplansModelAdmin):
 
         all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
+        contact_persons_panels = [
+            FieldPanel('person', widget=PersonChooser),
+            FieldPanel('primary_contact')
+        ]
+
+        if plan.features.has_action_contact_person_roles:
+            contact_persons_panels.append(FieldPanel('role'))
+
         all_tabs += [
             ObjectList([
                 CondensedInlinePanel(
                     'contact_persons',
-                    panels=[
-                        FieldPanel('person', widget=PersonChooser),
-                        FieldPanel('primary_contact')
-                    ]
+                    panels=contact_persons_panels
                 )
             ], heading=_('Contact persons')),
             AdminOnlyPanel([

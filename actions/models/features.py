@@ -26,6 +26,10 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Show action identifiers'),
         help_text=_("Set if action identifiers should be visible in the public UI")
     )
+    has_action_contact_person_roles = models.BooleanField(
+        default=False, verbose_name=_('Action contact persons have different roles'),
+        help_text=_("Set if there are separate contact persons with publishing rights and others who can only suggest changes")
+    )
     minimal_statuses = models.BooleanField(
         default=False, verbose_name=_('Minimal statuses'),
         help_text=_(

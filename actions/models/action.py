@@ -732,6 +732,11 @@ class ActionResponsibleParty(OrderedModel):
 
 class ActionContactPerson(OrderedModel):
     """A Person acting as a contact for an action"""
+    class Role(models.TextChoices):
+        EDITOR = 'editor', _('Editor')
+        MODERATOR = 'moderator', _('Moderator')
+
+    role = models.CharField(max_length=40, choices=Role.choices, default='moderator', blank=False, null=False, verbose_name=_('role'))
 
     action = ParentalKey(
         Action, on_delete=models.CASCADE, verbose_name=_('action'), related_name='contact_persons'
