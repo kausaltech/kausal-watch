@@ -316,49 +316,94 @@ class ActionCategoriesSerializer(serializers.Serializer):
             instance.set_categories(ct_id, cats)
 
 
-@extend_schema_field(dict(
-    type='object',
-    title=_('Responsible parties'),
-))
-class ActionResponsiblePartySerializer(serializers.Serializer):
+class ActionResponsibleWithRoleSerializer(serializers.Serializer):
     parent: ActionSerializer
 
+    def get_type_label(self):
+        raise NotImplementedError()
+
+    def get_available_instances(self, plan) -> QuerySet:
+        raise NotImplementedError()
+
+    def get_allowed_roles(self):
+        raise NotImplementedError()
+
+    def get_queryset(self):
+        raise NotImplementedError()
+
+    def set_instance_values(self, data):
+        raise NotImplementedError()
+
+    def get_multiple_error(self):
+        raise NotImplementedError()
+
     def to_representation(self, value):
+        key = self.get_type_label()
+        fk_id_label = f'{key}_id'
         return [{
-            'organization': v.organization_id,
+            key: getattr(v, fk_id_label),
             'role': v.role,
         } for v in value.all()]
+
 
     def to_internal_value(self, data):
         s = self.parent
         plan: Plan = s.plan
         if not isinstance(data, list):
             raise exceptions.ValidationError('expecting a list')
-        available_orgs = {x for x in Organization.objects.available_for_plan(plan).values_list('id', flat=True)}
-        seen_orgs = set()
+        available_instances = {x for x in self.get_available_instances(plan).values_list('id', flat=True)}
+        seen_instances = set()
+        key = self.get_type_label()
+        allowed_roles = self.get_allowed_roles
+
         for val in data:
-            org_id = val.get('organization', None)
+            instance_id = val.get(key, None)
             role = val.get('role', None)
             if not (isinstance(val, dict)
-                    and isinstance(org_id, int)
+                    and isinstance(instance_id, int)
                     and (role is None or isinstance(role, str))):
                 raise exceptions.ValidationError(
                     'expecting a list of dicts mapping "organization" to int and "role" to str or None'
                 )
-            if val['organization'] not in available_orgs:
-                raise exceptions.ValidationError('%d not available for plan' % val['organization'])
-            if val['role'] not in ActionResponsibleParty.Role.values:
+            if val[key] not in available_instances:
+                raise exceptions.ValidationError('%d not available for plan' % val[key])
+            if val['role'] not in self.get_allowed_roles():
                 raise exceptions.ValidationError(f"{val['role']} is not a valid role")
-            if org_id in seen_orgs:
-                raise exceptions.ValidationError(_("Organization occurs multiple times as responsible party"))
-            seen_orgs.add(org_id)
-            val['organization'] = Organization.objects.get(id=org_id)
+            if instance_id in seen_instances:
+                raise exceptions.ValidationError(self.get_multiple_error())
+            seen_instances.add(instance_id)
+            val[key] = self.get_queryset().get(id=instance_id)
         return data
 
     def update(self, instance: Action, validated_data):
         assert isinstance(instance, Action)
         assert instance.pk is not None
-        instance.set_responsible_parties(validated_data)
+        self.set_instance_values(instance, validated_data)
+
+
+@extend_schema_field(dict(
+    type='object',
+    title=_('Responsible parties'),
+))
+class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
+    def get_type_label(self):
+        return 'organization'
+
+    def get_available_instances(self, plan) -> QuerySet:
+        return Organization.objects.available_for_plan(plan)
+
+    def get_allowed_roles(self):
+        return ActionResponsibleParty.Role.values
+
+    def get_queryset(self):
+        return Organization.objects.all()
+
+    def set_instance_values(self, instance, data):
+        instance.set_responsible_parties(data)
+
+    def get_multiple_error(self):
+        return _("Organization occurs multiple times as responsible party")
+
 
 
 @extend_schema_field(dict(
