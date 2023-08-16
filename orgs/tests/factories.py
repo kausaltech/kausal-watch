@@ -1,6 +1,6 @@
 from factory import Sequence, SubFactory
 from factory.django import DjangoModelFactory
-from wagtail.core.rich_text import RichText
+from wagtail.rich_text import RichText
 
 from aplans.factories import ModelFactory
 from orgs.models import Namespace, Organization, OrganizationPlanAdmin, OrganizationClass, OrganizationIdentifier

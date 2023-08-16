@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
-from wagtail.core import hooks
-from wagtail.core.models import PagePermissionTester
+from wagtail import hooks
+from wagtail.models import PagePermissionTester
 
 
 class VeryRestrictivePagePermissionTester(PagePermissionTester):

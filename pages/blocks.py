@@ -5,7 +5,7 @@ from grapple.models import GraphQLField, GraphQLImage, GraphQLPage, GraphQLStrea
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 from uuid import UUID
-from wagtail.core import blocks
+from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.embeds.embeds import get_embed
 
@@ -186,7 +186,7 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
     publisher_name = blocks.CharBlock(label=_('Publisher name'))
     maintenance_responsibility_paragraph = blocks.CharBlock(
         required=False, label=_('Maintenance responsibility paragraph'),
-        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]."')
+        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]".')
     )
     email = blocks.CharBlock(label=_('Email address'))
 

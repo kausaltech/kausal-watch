@@ -1,17 +1,14 @@
 from typing import Any
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
-from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, InlinePanel
-from wagtail.admin.menu import Menu, MenuItem, SubmenuMenuItem
+from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
 from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
-from wagtail.core import hooks
-from wagtail.images.edit_handlers import ImageChooserPanel
+from wagtail import hooks
 
 from aplans.types import WatchAdminRequest
 
@@ -26,7 +23,7 @@ class CategoryMenuItem(MenuItem):
         self.base_url = reverse('actions_category_modeladmin_index')
         url = f'{self.base_url}?category_type={category_type.id}'
         label = category_type.name
-        super().__init__(label, url, **kwargs)
+        super().__init__(label, url, icon_name='kausal-category', **kwargs)
 
     def is_active(self, request):
         path, _ = self.url.split('?', maxsplit=1)
@@ -54,8 +51,8 @@ def register_category_menu():
     return SubmenuMenuItem(
         _('Categories'),
         category_menu,
-        classnames='icon icon-folder-open-inverse',
-        order=100
+        icon_name='kausal-category',
+        order=30,
     )
 
 
@@ -65,7 +62,7 @@ class CommonCategoryMenuItem(MenuItem):
         self.base_url = reverse('actions_commoncategory_modeladmin_index')
         url = f'{self.base_url}?common_category_type={common_category_type.id}'
         label = common_category_type.name
-        super().__init__(label, url, **kwargs)
+        super().__init__(label, url, icon_name='kausal-category', **kwargs)
 
     def is_active(self, request):
         path, _ = self.url.split('?', maxsplit=1)
@@ -88,48 +85,8 @@ def register_common_category_menu():
     return SubmenuMenuItem(
         _('Common categories'),
         common_category_menu,
-        classnames='icon icon-folder-open-inverse',
-        order=110
-    )
-
-
-class AttributeTypeMenuItem(MenuItem):
-    def __init__(self, content_type, **kwargs):
-        self.content_type = content_type
-        self.base_url = reverse('actions_attributetype_modeladmin_index')
-        url = f'{self.base_url}?content_type={content_type.id}'
-        label = capfirst(content_type.model_class()._meta.verbose_name)
-        super().__init__(label, url, **kwargs)
-
-    def is_active(self, request):
-        path, _ = self.url.split('?', maxsplit=1)
-        content_type = request.GET.get('content_type')
-        return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
-
-
-class AttributeTypeMenu(Menu):
-    def menu_items_for_request(self, request):
-        user = request.user
-        plan = user.get_active_admin_plan()
-        items = []
-        if user.is_general_admin_for_plan(plan):
-            action_ct = ContentType.objects.get(app_label='actions', model='action')
-            category_ct = ContentType.objects.get(app_label='actions', model='category')
-            items.append(AttributeTypeMenuItem(action_ct))
-            items.append(AttributeTypeMenuItem(category_ct))
-        return items
-
-
-attribute_type_menu = AttributeTypeMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_attribute_type_menu():
-    return SubmenuMenuItem(
-        _('Attributes'),
-        attribute_type_menu,
-        classnames='icon icon-tag',
-        order=120,
+        icon_name='kausal-category',
+        order=40,
     )
 
 
@@ -168,7 +125,7 @@ def register_report_menu():
         _('Reports'),
         report_menu,
         classnames='icon icon-doc-full',
-        order=130
+        order=40
     )
 
 
@@ -199,6 +156,12 @@ class PlanChooserMenu(Menu):
                 icon_name = 'tick'
             item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
+        items.append(AdminOnlyMenuItem(
+            _('Create plan'),
+            reverse('create-plan'),
+            icon_name='plus-inverse',
+            #order=9100,
+        ))
         return items
 
 
@@ -208,14 +171,17 @@ plan_chooser = PlanChooserMenu(None)
 @hooks.register('register_admin_menu_item')
 def register_plan_chooser():
     return PlanChooserMenuItem(
-        _('Choose plan'), plan_chooser, classnames='icon icon-fa-check-circle-o', order=9000
+        _('Choose plan'),
+        plan_chooser,
+        order=9000,
+        icon_name='kausal-plan',
     )
 
 
 class OwnIndicatorsPanel(Component):
     name = 'own_indicators'
     order = 102
-    template_name = 'aplans_admin/own_indicators_panel.html'
+    template_name = 'admin_site/own_indicators_panel.html'
 
     def get_context_data(self, parent_context: dict[str, Any]) -> dict[str, Any]:
         request: WatchAdminRequest = parent_context['request']
@@ -241,21 +207,21 @@ def construct_homepage_panels(request, panels):
     panels.insert(1, OwnIndicatorsPanel())
 
 
+@hooks.register('construct_homepage_summary_items', order=1000)
+def remove_default_site_summary_items(request, items: list):
+    items.clear()
+
+
 class ClientAdmin(ModelAdmin):
     model = Client
-    menu_icon = 'fa-bank'  # change as required
-    menu_order = 500  # will put in 3rd place (000 being 1st, 100 2nd)
+    menu_icon = 'globe'
+    menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
 
     panels = [
         FieldPanel('name'),
-        ImageChooserPanel('logo'),
-        FieldPanel('azure_ad_tenant_id'),
-        FieldPanel('login_header_text'),
-        FieldPanel('login_button_text'),
-        FieldPanel('google_login_enabled'),
-        FieldPanel('google_login_button_text'),
+        FieldPanel('logo'),
         InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
         InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
         InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
@@ -265,21 +231,12 @@ class ClientAdmin(ModelAdmin):
 modeladmin_register(ClientAdmin)
 
 
-@hooks.register("insert_global_admin_css", order=0)
+@hooks.register("insert_global_admin_css")
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_admin_overrides.css")
+        static("css/admin-styles.css")
     )
-
-
-@hooks.register("insert_editor_css", order=900)
-def editor_css():
-    return format_html(
-        '<link rel="stylesheet" href="{}">',
-        static("css/wagtail_editor_overrides.css")
-    )
-
 
 @hooks.register("construct_explorer_page_queryset")
 def restrict_pages_to_plan(parent_page, pages, request):
@@ -350,21 +307,37 @@ def remove_settings_menu_items(request, items: list):
         items.remove(item)
 
 
-class HelpMenu(Menu):
-    def menu_items_for_request(self, request):
-        return [
-            MenuItem(_('Video tutorials'), _('https://kausal.gitbook.io/watch'), icon_name='help', attrs=dict(target="_blank"))
-        ]
-
-
-help_menu = HelpMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_help_menu():
-    return SubmenuMenuItem(
-        _('Help'),
-        help_menu,
-        classnames='icon icon-help',
-        order=20000
+@hooks.register('register_help_menu_item')
+def register_video_tutorials_menu_item():
+    return DismissibleMenuItem(
+        _("Video tutorials"),
+        _('https://kausal.gitbook.io/watch'),
+        icon_name='help',
+        order=1000,
+        attrs={"target": "_blank"},
+        name='video-tutorials',
     )
+
+
+def should_remove_help_menu_item(item):
+    return (item.name.startswith('whats-new-in-wagtail-')
+            or item.name == 'editor-guide')
+
+
+@hooks.register('construct_help_menu')
+def remove_help_menu_items(request, items: list):
+    items[:] = [item for item in items if not should_remove_help_menu_item(item)]
+
+
+@hooks.register("register_icons")
+def register_icons(icons):
+    return icons + [
+        'wagtailadmin/icons/kausal-action.svg',
+        'wagtailadmin/icons/kausal-attribute.svg',
+        'wagtailadmin/icons/kausal-category.svg',
+        'wagtailadmin/icons/kausal-dimension.svg',
+        'wagtailadmin/icons/kausal-indicator.svg',
+        'wagtailadmin/icons/kausal-organization.svg',
+        'wagtailadmin/icons/kausal-plan.svg',
+        'wagtailadmin/icons/kausal-spreadsheet.svg',
+    ]

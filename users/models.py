@@ -2,6 +2,7 @@ from __future__ import annotations
 import typing
 
 from django.apps import apps
+from django.core.exceptions import PermissionDenied
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
@@ -395,7 +396,17 @@ class User(AbstractUser):
     def can_deactivate_user(self, user):
         if self.is_superuser:
             return True
-        return False
+        plan = self.get_active_admin_plan()
+        if not self.is_general_admin_for_plan(plan):
+            return False
+        if user.get_adminable_plans().count() == 0:
+            return False
+        for user_plan in user.get_adminable_plans():
+            if not self.is_general_admin_for_plan(user_plan):
+                raise PermissionDenied(
+                    _('No permission to remove the user belonging to plans you are not managing.')
+                )
+        return True
 
     def can_edit_or_delete_person_within_plan(
             self, person: Person, plan: Plan = None, orgs: dict = None) -> bool:

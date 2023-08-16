@@ -1,5 +1,7 @@
 import django_filters as filters
 from django.db import transaction
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -254,6 +256,12 @@ class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
         return user.can_modify_indicator(obj)
 
 
+@extend_schema(
+    # Get rid of some warnings
+    parameters=[
+        OpenApiParameter(name='plan_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
+    ],
+)
 class IndicatorViewSet(BulkModelViewSet):
     serializer_class = IndicatorSerializer
     permission_classes = (permissions.DjangoModelPermissionsOrAnonReadOnly,)

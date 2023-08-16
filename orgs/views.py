@@ -6,8 +6,10 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from wagtail.admin import messages
-from wagtail.contrib.modeladmin.views import CreateView, EditView, WMABaseView
+from wagtail.contrib.modeladmin.views import EditView, WMABaseView
 
+from admin_site.wagtail import SetInstanceMixin
+from admin_site.wagtail import AplansCreateView
 from orgs.models import Organization
 
 
@@ -23,7 +25,7 @@ class OrganizationViewMixin:
         return kwargs
 
 
-class CreateChildNodeView(OrganizationViewMixin, CreateView):
+class CreateChildNodeView(OrganizationViewMixin, AplansCreateView):
     """View class that can take an additional URL param for parent id."""
     parent_pk = None
 
@@ -43,7 +45,7 @@ class CreateChildNodeView(OrganizationViewMixin, CreateView):
         return {'parent': self.parent_pk}
 
 
-class OrganizationCreateView(OrganizationViewMixin, CreateView):
+class OrganizationCreateView(OrganizationViewMixin, AplansCreateView):
     def form_valid(self, form):
         result = super().form_valid(form)
         # Add the new organization to the related organizations of the user's active plan
@@ -52,15 +54,8 @@ class OrganizationCreateView(OrganizationViewMixin, CreateView):
         plan.related_organizations.add(org)
         return result
 
-    def get_instance(self):
-        instance = super().get_instance()
-        if not instance.pk:
-            plan = self.request.get_active_admin_plan()
-            instance.primary_language = plan.primary_language
-        return instance
 
-
-class OrganizationEditView(OrganizationViewMixin, EditView):
+class OrganizationEditView(OrganizationViewMixin, SetInstanceMixin, EditView):
     pass
 
 

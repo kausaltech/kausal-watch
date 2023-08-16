@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.urls import re_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, StreamFieldPanel
+from wagtail.admin.panels import FieldPanel
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
@@ -36,15 +36,13 @@ class ReportTypeQueryParameterMixin:
 
 
 class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
-    def get_instance(self):
-        """Create a report instance and set its report type to the one given in the GET or POST data."""
-        instance = super().get_instance()
-        report_type = self.request.GET.get('report_type')
-        if report_type and not instance.pk:
-            assert not hasattr(instance, 'type')
-            instance.type = ReportType.objects.get(pk=int(report_type))
-            instance.fields = instance.type.fields
-        return instance
+    def initialize_instance(self, request):
+        """Set the new report's type to the one given in the GET data end set the report fields from the type."""
+        report_type = request.GET.get('report_type')
+        if report_type and not self.instance.pk:
+            assert not hasattr(self.instance, 'type')
+            self.instance.type = ReportType.objects.get(pk=int(report_type))
+            self.instance.fields = self.instance.type.fields
 
 
 class ReportEditView(ReportTypeQueryParameterMixin, AplansEditView):
@@ -144,7 +142,7 @@ class ReportTypeAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
-        StreamFieldPanel('fields', heading=_('fields')),
+        FieldPanel('fields', heading=_('fields')),
     ]
 
     def get_form_fields_exclude(self, request):

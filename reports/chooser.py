@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
 from generic_chooser.widgets import AdminChooser
 from wagtail.search.backends import get_search_backend
-from wagtail.core import hooks
+from wagtail import hooks
 
 from .models import ReportType
 from aplans.types import WatchAdminRequest

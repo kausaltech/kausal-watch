@@ -1,4 +1,4 @@
-from wagtail.core import blocks
+from wagtail import blocks
 from django.utils.functional import cached_property
 from grapple.helpers import register_streamfield_block
 

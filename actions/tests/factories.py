@@ -7,9 +7,10 @@ from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
 from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
-from wagtail.core.models.i18n import Locale
-from wagtail.core.rich_text import RichText
-from wagtail_factories import StructBlockFactory
+from wagtail.models.i18n import Locale
+from wagtail.rich_text import RichText
+from wagtail.test.utils.wagtail_factories import StructBlockFactory
+
 
 from aplans.factories import ModelFactory
 import actions

@@ -3,29 +3,32 @@ import typing
 
 from dal import autocomplete
 from datetime import timedelta
+from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.views import DeleteView
 
+from actions.models import ActionContactPerson, Plan
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
     InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
     ActivatePermissionHelperPlanContextMixin,
     get_translation_tabs
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 
-from .admin import IsContactPersonFilter
 from .models import Person
 from orgs.models import Organization, OrganizationPlanAdmin
 from actions.models import Plan
@@ -37,6 +40,51 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class IsContactPersonFilter(SimpleListFilter):
+    title = _('Is contact person')
+    parameter_name = 'contact_person'
+
+    def lookups(self, request, model_admin):
+        plan = request.user.get_active_admin_plan()
+        related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
+        # If there are related plans that have action contact persons, show a filter for each of these plans
+        related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
+        filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
+        if filter_plans.exists():
+            action_filters = [(f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n})
+                              for plan in filter_plans]
+        else:
+            action_filters = [('action', _('For an action'))]
+        choices = [
+            *action_filters,
+            ('indicator', _('For an indicator')),
+            ('none', _('Not a contact person')),
+        ]
+        return choices
+
+    def queryset(self, request, queryset):
+        plan = request.user.get_active_admin_plan()
+        queryset = queryset.prefetch_related(
+            Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
+        )
+        queryset = queryset.prefetch_related(
+            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators')
+        )
+        if self.value() is None:
+            return queryset
+        if self.value() == 'action':
+            queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
+        elif self.value().startswith('action_in_plan__'):
+            plan_pk = int(self.value()[16:])
+            queryset = queryset.filter(contact_for_actions__plan=plan_pk)
+        elif self.value() == 'indicator':
+            queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
+        else:
+            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
+                .exclude(contact_for_indicators__in=plan.indicators.all())
+        return queryset.distinct()
+
+
 def smart_truncate(content, length=100, suffix='...'):
     if len(content) <= length:
         return content
@@ -45,7 +93,7 @@ def smart_truncate(content, length=100, suffix='...'):
 
 
 class AvatarWidget(AdminFileWidget):
-    template_name = 'admin/avatar_widget.html'
+    template_name = 'people/avatar_widget.html'
 
 
 class PersonForm(AplansAdminModelForm):
@@ -63,10 +111,10 @@ class PersonForm(AplansAdminModelForm):
 
 
 class PersonFormForGeneralAdmin(PersonForm):
-    is_admin_for_active_plan = BooleanField(required=False, label=_('is plan admin'))
+    is_admin_for_active_plan = BooleanField(required=False, label=_('Is plan admin'))
     organization_plan_admin_orgs = ModelMultipleChoiceField(
         queryset=None, required=False, widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
-        label=_('plan admin organizations'),
+        label=_('Plan admin organizations'),
     )
 
     def __init__(self, *args, **kwargs):
@@ -197,6 +245,41 @@ class PersonButtonHelper(ButtonHelper):
 
 
 class PersonDeleteView(ActivatePermissionHelperPlanContextMixin, DeleteView):
+    instance: Person
+    model: typing.Type[Person]
+
+    def get(self, request, *args, **kwargs):
+        linked_objects = []
+        fields = self.model._meta.fields_map.values()
+        fields = (obj for obj in fields if not isinstance(
+            obj.field, ManyToManyField))
+        for rel in fields:
+            obj = None
+            if isinstance(rel, OneToOneRel):
+                key = rel.get_accessor_name()
+                try:
+                    if key:
+                        obj = getattr(self.instance, key)
+                except ObjectDoesNotExist:
+                    pass
+                else:
+                    if obj:
+                        linked_objects.append(obj)
+            else:
+                key = rel.get_accessor_name()
+                if key:
+                    qs = getattr(self.instance, key)
+                    for obj in qs.all():
+                        linked_objects.append(obj)
+        context = self.get_context_data(
+            protected_error=True,
+            linked_objects=linked_objects
+        )
+        return self.render_to_response(context)
+
+    def confirmation_message(self):
+        return _('Are you sure you want to deactivate this person?')
+
     def delete_instance(self):
         # FIXME: Duplicated in actions.api.PersonViewSet.perform_destroy()
         acting_admin_user = self.request.user
@@ -209,10 +292,11 @@ class PersonAdmin(AplansModelAdmin):
     edit_view_class = PersonEditView
     index_view_class = PersonIndexView
     delete_view_class = PersonDeleteView
+    delete_template_name = "people/delete.html"
     permission_helper_class = PersonPermissionHelper
     menu_icon = 'user'
     menu_label = _('People')
-    menu_order = 10
+    menu_order = 210
     exclude_from_explorer = False
     search_fields = ('first_name', 'last_name', 'title')
     list_filter = (IsContactPersonFilter,)
@@ -312,7 +396,7 @@ class PersonAdmin(AplansModelAdmin):
 
             def is_plan_admin(obj: Person):
                 return obj.id in plan_admins
-            is_plan_admin.short_description = _('is plan admin')
+            is_plan_admin.short_description = _('Is plan admin')
             is_plan_admin._name = 'is_plan_admin'
             is_plan_admin.boolean = True
             fields.append(is_plan_admin)
@@ -349,7 +433,9 @@ class PersonAdmin(AplansModelAdmin):
         FieldPanel('image', widget=AvatarWidget),
     ]
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
         user = request.user
         plan = user.get_active_admin_plan()

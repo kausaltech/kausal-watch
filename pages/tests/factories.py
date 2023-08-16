@@ -1,10 +1,11 @@
 from factory import Factory, LazyAttribute, SelfAttribute, SubFactory
-from wagtail_factories import (
-    ImageChooserBlockFactory, ListBlockFactory, PageFactory, StructBlockFactory
+from wagtail.test.utils.wagtail_factories import (
+    CharBlockFactory, ImageChooserBlockFactory, ListBlockFactory, PageFactory, StreamBlockFactory, StreamFieldFactory,
+    StructBlockFactory
 )
-from wagtail_factories.blocks import BlockFactory
-from wagtail.core.blocks import PageChooserBlock, RichTextBlock
-from wagtail.core.rich_text import RichText
+from wagtail.test.utils.wagtail_factories.blocks import BlockFactory
+from wagtail.blocks import PageChooserBlock, RichTextBlock
+from wagtail.rich_text import RichText
 
 import pages
 from images.tests.factories import AplansImageFactory
@@ -19,7 +20,7 @@ class PageChooserBlockFactory(BlockFactory):
 
 # wagtail-factories doesn't support rich text blocks.
 # Copied from https://github.com/wagtail/wagtail-factories/pull/25
-class RichTextBlockFactory(Factory):
+class RichTextBlockFactory(StreamBlockFactory):
     @classmethod
     def _build(cls, model_class, value=''):
         block = model_class()
@@ -73,29 +74,26 @@ class StaticPageFactory(PageFactory):
 
     header_image = SubFactory(AplansImageFactory)
     lead_paragraph = "Lead paragraph"
-    # This was the old version and after a Wagtail upgrade the `qa_section` part broke, but maybe it works as done
-    # below? We tried to use it that way already some time ago anyway, but there seemed to be some problem back then.
-    # body = StreamFieldFactory({
-    #     'heading': CharBlockFactory,
-    #     'paragraph': RichTextBlockFactory,
-    #     # This got broken after a Wagtail upgrade
-    #     # 'qa_section': QuestionAnswerBlockFactory,
-    # })
-    # body__0__heading__value = "Test heading"
-    # body__1__paragraph__value = "<p>Test paragraph</p>"
-    # # This got broken after a Wagtail upgrade
-    # # body__2__qa_section__heading = "QA section heading"
-    # # body__2__qa_section__questions__0 = None
-    body = [
-        ('paragraph', RichText("<p>Paragraph</p>")),
-        ('qa_section', {
-            'heading': "QA section heading",
-            'questions': [{
-                'question': "Question",
-                'answer': RichText("<p>Answer</p>"),
-            }]
-        }),
-    ]
+    # Used to work but then got broken at some point
+    # body = [
+    #     ('paragraph', RichText("<p>Paragraph</p>")),
+    #     ('qa_section', {
+    #         'heading': "QA section heading",
+    #         'questions': [{
+    #             'question': "Question",
+    #             'answer': RichText("<p>Answer</p>"),
+    #         }]
+    #     }),
+    # ]
+    body = StreamFieldFactory({
+        'heading': SubFactory(CharBlockFactory),
+        'paragraph': SubFactory(RichTextBlockFactory),
+        'qa_section': SubFactory(QuestionAnswerBlockFactory),
+    })
+    body__0__paragraph = RichText("<p>Test paragraph</p>")
+    body__1__qa_section__heading = "QA section heading"
+    body__1__qa_section__questions__0__question = "Question"
+    body__1__qa_section__questions__0__answer = RichText("<p>Answer<p>")
 
 
 class CategoryPageFactory(PageFactory):

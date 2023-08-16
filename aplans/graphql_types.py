@@ -5,8 +5,8 @@ import typing
 import graphene
 import re
 
-from graphql.execution import ResolveInfo
-from graphql.language.ast import OperationDefinition
+from graphql import GraphQLResolveInfo
+from graphql.language.ast import OperationDefinitionNode
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -17,8 +17,6 @@ from modeltrans.translator import get_i18n_field
 from actions.models import Plan
 from aplans.types import WatchAPIRequest
 
-if typing.TYPE_CHECKING:
-    from aplans.graphql_types import GQLInfo
 
 graphene_registry = []
 
@@ -98,7 +96,7 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> 
 
     cache = getattr(info.context, '_plan_cache', None)
     if cache is None:
-        cache = info.context._plan_cache = {}
+        cache = info.context._plan_cache = {}  # type: ignore
 
     if plan_identifier in cache:
         return cache[plan_identifier]
@@ -149,9 +147,9 @@ class AuthenticatedUserNode(graphene.ObjectType):
     pass
 
 
-class GQLInfo(ResolveInfo):
+class GQLInfo(GraphQLResolveInfo):
     context: WatchAPIRequest
-    operation: OperationDefinition
+    operation: OperationDefinitionNode
 
 
 class AdminButton(graphene.ObjectType):

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import sys
 import importlib
 from celery.schedules import crontab
 from typing import Literal
@@ -24,6 +25,7 @@ env = environ.FileAwareEnv(
     ENV_FILE=(str, ''),
     DEBUG=(bool, False),
     DEPLOYMENT_TYPE=(str, 'development'),
+    ENABLE_WAGTAIL_STYLEGUIDE=(bool, False),
     SECRET_KEY=(str, ''),
     ALLOWED_HOSTS=(list, []),
     CONFIGURE_LOGGING=(bool, True),
@@ -58,6 +60,7 @@ env = environ.FileAwareEnv(
     CELERY_BROKER_URL=(str, 'redis://localhost:6379'),
     CELERY_RESULT_BACKEND=(str, 'redis://localhost:6379'),
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
+    ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
     LOG_GRAPHQL_QUERIES=(bool, True),
     AWS_S3_ENDPOINT_URL=(str, ''),
@@ -106,12 +109,14 @@ DEFAULT_FROM_EMAIL = env('DEFAULT_FROM_EMAIL')
 if not DEFAULT_FROM_EMAIL and ALLOWED_SENDER_EMAILS:
     DEFAULT_FROM_EMAIL = ALLOWED_SENDER_EMAILS[0]
 
+WAGTAILADMIN_BASE_URL = env('ADMIN_BASE_URL')
+WAGTAILADMIN_COMMENTS_ENABLED = True
+
 SITE_ID = 1
 
 # Application definition
 
 INSTALLED_APPS = [
-    'admin_numeric_filter',
     'admin_site.apps.AdminSiteConfig',
     'admin_site.apps.AdminSiteStatic',
     'dal',
@@ -144,26 +149,20 @@ INSTALLED_APPS = [
     'wagtail.images',
     'wagtail.search',
     'wagtail.admin',
-    'wagtail.core',
+    'wagtail',
     'wagtailsvg',
     'wagtail.contrib.modeladmin',
     'wagtail_localize',
     'wagtail_localize.locales',  # replaces `wagtail.locales`
     'wagtailautocomplete',
-    'wagtailfontawesome',
-    'condensedinlinepanel',
     'generic_chooser',
     'wagtailorderable',
-    'admin_list_controls',
     'wagtailgeowidget',
 
     'modelcluster',
     'taggit',
 
-    'admin_ordering',
-    'ckeditor',
     'easy_thumbnails',
-    'image_cropping',
     'reversion',
 
     'rest_framework',
@@ -173,6 +172,9 @@ INSTALLED_APPS = [
     'grapple',
     'graphene_django',
 ]
+
+if env('ENABLE_WAGTAIL_STYLEGUIDE'):
+    INSTALLED_APPS += ['wagtail.contrib.styleguide']
 
 INSTALLED_APPS += [
     'users',
@@ -199,6 +201,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'aplans.middleware.SocialAuthExceptionMiddleware',
     'aplans.middleware.AdminMiddleware',
+    'aplans.middleware.RequestMiddleware',
 ]
 
 ROOT_URLCONF = 'aplans.urls'
@@ -339,15 +342,6 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'aplans.openapi.AutoSchema',
 }
 
-SPECTACULAR_SETTINGS = {
-    'TITLE': 'Kausal Watch REST API',
-    'DESCRIPTION': 'Monitor and manage action plans',
-    'VERSION': '1.0.0',
-    'SERVE_INCLUDE_SCHEMA': False,
-    'SCHEMA_PATH_PREFIX': '^/v1',
-    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
-}
-
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_HEADERS = list(default_cors_headers) + [
@@ -364,6 +358,7 @@ GRAPHENE = {
     'MIDDLEWARE': [
         'aplans.graphene_views.APITokenMiddleware',
     ],
+    'DJANGO_CHOICE_FIELD_ENUM_V2_NAMING': True,
 }
 
 # Internationalization
@@ -424,7 +419,6 @@ PARLER_LANGUAGES = {
     }
 }
 
-
 TIME_ZONE = 'Europe/Helsinki'
 
 USE_I18N = True
@@ -437,6 +431,18 @@ USE_TZ = True
 LOCALE_PATHS = [
     os.path.join(BASE_DIR, 'locale')
 ]
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Kausal Watch REST API',
+    'DESCRIPTION': 'Monitor and manage action plans',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SCHEMA_PATH_PREFIX': '^/v1',
+    'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    'ENUM_NAME_OVERRIDES': {
+        'OtherLanguagesEnum': LANGUAGES,
+    },
+}
 
 #
 # Email
@@ -687,11 +693,12 @@ if not locals().get('SECRET_KEY', ''):
 
 
 if DEBUG:
-    try:
-        from aplans.watchfiles_reloader import replace_reloader
-        replace_reloader()
-    except ImportError:
-        pass
+    if len(sys.argv) > 1 and 'runserver' in sys.argv[1]:
+        try:
+            from aplans.watchfiles_reloader import replace_reloader
+            replace_reloader()
+        except ImportError:
+            pass
 
     from rich.traceback import install
     install()

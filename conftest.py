@@ -5,7 +5,7 @@ import factory
 import json
 import pytest
 import typing
-import wagtail_factories
+from wagtail.test.utils import wagtail_factories
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.urls import reverse

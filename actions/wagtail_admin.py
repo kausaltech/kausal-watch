@@ -2,40 +2,33 @@ from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import pgettext_lazy
-from wagtail.admin.edit_handlers import (
+from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import modeladmin_register
+from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import EditView
-from wagtail.images.edit_handlers import ImageChooserPanel
-
-from actions.chooser import CategoryTypeChooser, PlanChooser
-from actions.models.action import ActionSchedule
-from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
-    CondensedInlinePanel, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin,
-    insert_model_translation_panels
-)
-from notifications.models import NotificationSettings
-from orgs.models import Organization
-from pages.models import PlanLink
-from people.chooser import PersonChooser
 
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
 from . import category_admin  # noqa
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
+from actions.chooser import CategoryTypeChooser, PlanChooser
+from actions.models.action import ActionSchedule
+from admin_site.wagtail import (
+    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin, CondensedInlinePanel, SuccessUrlEditPageMixin,
+    insert_model_translation_panels
+)
+from aplans.context_vars import ctx_instance, ctx_request
+from notifications.models import NotificationSettings
+from orgs.models import Organization
+from pages.models import PlanLink
+from people.chooser import PersonChooser
 
 
 class PlanEditHandler(TabbedInterface):
     instance: Plan
     form: ModelForm
-
-    def get_form_class(self, request=None):
-        form_class = super().get_form_class()
-        return form_class
 
     def on_form_bound(self):
         super().on_form_bound()
@@ -60,7 +53,7 @@ class PlanForm(AplansAdminModelForm):
 class PlanAdmin(AplansModelAdmin):
     model = Plan
     menu_icon = 'fa-briefcase'
-    menu_label = pgettext_lazy('hyphenated', 'Plans')
+    menu_label = _('Plans')
     menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
@@ -83,7 +76,7 @@ class PlanAdmin(AplansModelAdmin):
                 FieldPanel('person', widget=PersonChooser),
             ]
         ),
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         FieldPanel('superseded_by', widget=PlanChooser),
     ]
 
@@ -109,11 +102,9 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('ends_at'),
     ]
 
-    def get_form_class(self, request=None):
-        form_class = super().get_form_class()
-        return form_class
-
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         action_status_panels = insert_model_translation_panels(
             ActionStatus, self.action_status_panels, request, instance
         )
@@ -209,25 +200,37 @@ class ActivePlanPermissionHelper(PermissionHelper):
 
 
 # FIXME: This is mostly duplicated in content/admin.py.
-class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
-    def get_context(self, request):
+class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        # Implement in subclass
+        raise NotImplementedError()
+
+    def render_component(self, request):
         # When clicking the menu item, use the edit view instead of the index view.
-        context = super().get_context(request)
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', plan.pk)
-        return context
+        field = self.get_one_to_one_field(plan)
+        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)
+        return link_menu_item
 
     def is_shown(self, request):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan, not listing.
+        # this menu item is about editing a plan features instance, not listing.
         plan = request.user.get_active_admin_plan()
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, plan)
+        field = self.get_one_to_one_field(plan)
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+
+
+class ActivePlanMenuItem(PlanSpecificSingletonModelMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan
 
 
 class ActivePlanAdmin(PlanAdmin):
     edit_view_class = ActivePlanEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan')
+    menu_label = _('Plan')
+    menu_icon = 'kausal-plan'
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
@@ -241,7 +244,7 @@ modeladmin_register(ActivePlanAdmin)
 class PlanFeaturesAdmin(AplansModelAdmin):
     model = PlanFeatures
     menu_icon = 'tasks'
-    menu_label = pgettext_lazy('hyphenated', 'Plan features')
+    menu_label = _('Plan features')
     menu_order = 501
 
     superuser_panels = [
@@ -272,7 +275,8 @@ class PlanFeaturesAdmin(AplansModelAdmin):
     def user_can_create(self):
         return False
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
         panels = list(self.panels)
         if request.user.is_superuser:
             panels += self.superuser_panels
@@ -282,27 +286,6 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 
 # TBD: We might want to keep this for superusers.
 # modeladmin_register(PlanFeaturesAdmin)
-
-
-class PlanSpecificSingletonModelMenuItem(SafeLabelModelAdminMenuItem):
-    def get_one_to_one_field(self, plan):
-        # Implement in subclass
-        raise NotImplementedError()
-
-    def get_context(self, request):
-        # When clicking the menu item, use the edit view instead of the index view.
-        context = super().get_context(request)
-        plan = request.user.get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        context['url'] = self.model_admin.url_helper.get_action_url('edit', field.pk)
-        return context
-
-    def is_shown(self, request):
-        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan features instance, not listing.
-        plan = request.user.get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
 
 
 class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
@@ -317,7 +300,8 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan features')
+    menu_label = _('Plan features')
+    menu_icon = 'circle-check'
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
@@ -331,7 +315,7 @@ modeladmin_register(ActivePlanFeaturesAdmin)
 class NotificationSettingsAdmin(AplansModelAdmin):
     model = NotificationSettings
     menu_icon = 'fa-bell'
-    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_label = _('Plan notification settings')
     menu_order = 502
 
     panels = [
@@ -350,7 +334,7 @@ class NotificationSettingsAdmin(AplansModelAdmin):
     def user_can_create(self):
         return False
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
         panels = list(self.panels)
         handler = ObjectList(panels)
         return handler
@@ -368,7 +352,8 @@ class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, EditView):
 class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
     edit_view_class = ActivePlanNotificationSettingsEditView
     permission_helper_class = ActivePlanPermissionHelper
-    menu_label = pgettext_lazy('hyphenated', 'Plan notification settings')
+    menu_label = _('Plan notification settings')
+    menu_icon = 'warning'  # FIXME
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):

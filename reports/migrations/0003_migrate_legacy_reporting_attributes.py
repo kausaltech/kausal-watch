@@ -1,7 +1,7 @@
 from django.db import migrations
 import reversion
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 
 import actions.blocks.choosers
 import reports.blocks.action_content
@@ -128,36 +128,36 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='reporttype',
             name='fields',
-            field=wagtail.core.fields.StreamField([
+            field=wagtail.fields.StreamField([
                 ('implementation_phase', reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock()),
-                ('text_attribute', wagtail.core.blocks.StructBlock([('name', wagtail.core.blocks.CharBlock(heading='Name')), ('identifier', wagtail.core.blocks.CharBlock(heading='Identifier'))])),
-                ('attribute_type', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
+                ('text_attribute', wagtail.blocks.StructBlock([('name', wagtail.blocks.CharBlock(heading='Name')), ('identifier', wagtail.blocks.CharBlock(heading='Identifier'))])),
+                ('attribute_type', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
             ], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='report',
             name='fields',
-            field=wagtail.core.fields.StreamField([
+            field=wagtail.fields.StreamField([
                 ('implementation_phase', reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock()),
-                ('text_attribute', wagtail.core.blocks.StructBlock([('name', wagtail.core.blocks.CharBlock(heading='Name')), ('identifier', wagtail.core.blocks.CharBlock(heading='Identifier'))])),
-                ('attribute_type', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
+                ('text_attribute', wagtail.blocks.StructBlock([('name', wagtail.blocks.CharBlock(heading='Name')), ('identifier', wagtail.blocks.CharBlock(heading='Identifier'))])),
+                ('attribute_type', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
             ], blank=True, null=True),
         ),
         migrations.RunPython(migrate_data),
         migrations.AlterField(
             model_name='reporttype',
             name='fields',
-            field=wagtail.core.fields.StreamField([
+            field=wagtail.fields.StreamField([
                 ('implementation_phase', reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock()),
-                ('attribute_type', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
+                ('attribute_type', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
             ], blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='report',
             name='fields',
-            field=wagtail.core.fields.StreamField([
+            field=wagtail.fields.StreamField([
                 ('implementation_phase', reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock()),
-                ('attribute_type', wagtail.core.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
+                ('attribute_type', wagtail.blocks.StructBlock([('attribute_type', actions.blocks.choosers.ActionAttributeTypeChooserBlock(label='Attribute type', required=True))])),
             ], blank=True, null=True),
         ),
     ]

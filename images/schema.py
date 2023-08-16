@@ -50,21 +50,21 @@ class ImageNode(DjangoNode):
             try:
                 width, height = size.split('x')
             except Exception:
-                raise GraphQLError('invalid size (should be <width>x<height>)', [info])
+                raise GraphQLError('invalid size (should be <width>x<height>)')
 
             try:
                 width = int(width)
                 if width <= 100 or width > 1600:
                     raise Exception()
             except Exception:
-                raise GraphQLError('invalid width: %d' % width, [info])
+                raise GraphQLError('invalid width: %d' % width)
 
             try:
                 height = int(height)
                 if height <= 100 or height > 1600:
                     raise Exception()
             except Exception:
-                raise GraphQLError('invalid height: %d' % height, [info])
+                raise GraphQLError('invalid height: %d' % height)
             size = '%dx%d' % (width, height)
         else:
             size = '800x600'

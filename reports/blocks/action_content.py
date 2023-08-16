@@ -10,8 +10,8 @@ from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
 from typing import Any, List, Optional
-from wagtail.admin.edit_handlers import HelpPanel
-from wagtail.core import blocks
+from wagtail.admin.panels import HelpPanel
+from wagtail import blocks
 
 from actions.attributes import AttributeType
 from actions.models import (
@@ -97,10 +97,10 @@ ReportFieldBlockInterface.register(FieldBlockWithHelpPanel)
 
 @register_streamfield_block
 class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
+    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Field"))
 
     class Meta:
-        label = _("Action attribute")
+        label = _("Action field")
 
     graphql_fields = [
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True)

@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey
-from wagtail.core import blocks
+from wagtail import blocks
 
 from actions.blocks.choosers import CategoryChooserBlock
 from actions.models.category import Category

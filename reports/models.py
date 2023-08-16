@@ -6,7 +6,7 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
-from wagtail.core.fields import StreamField
+from wagtail.fields import StreamField
 from reversion.revisions import create_revision, add_to_revision, _current_frame
 import reversion
 
@@ -25,7 +25,7 @@ class NoRevisionSave(Exception):
 class ReportType(models.Model, PlanRelatedModel):
     plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
+    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
 
     public_fields = [
         'id', 'plan', 'name', 'reports',
@@ -50,7 +50,7 @@ class Report(models.Model, PlanRelatedModel):
     )
     start_date = models.DateField(verbose_name=_('start date'))
     end_date = models.DateField(verbose_name=_('end date'))
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
+    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
     is_complete = models.BooleanField(
         default=False, verbose_name=_('complete'),
         help_text=_('Set if report cannot be changed anymore'),

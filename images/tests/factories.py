@@ -1,5 +1,5 @@
 from factory.django import DjangoModelFactory, ImageField
-from wagtail_factories import ImageFactory
+from wagtail.test.utils.wagtail_factories import ImageFactory
 
 
 class AplansImageFactory(ImageFactory):

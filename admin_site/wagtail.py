@@ -1,7 +1,4 @@
 from contextlib import contextmanager
-from typing import Any, List
-from urllib.parse import urljoin
-
 from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
@@ -13,32 +10,26 @@ from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
-from django.utils.safestring import mark_safe
 from django.utils.decorators import method_decorator
-
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_instance_field_value
+from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
+from typing import List
+from urllib.parse import urljoin
 from wagtail.admin import messages
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem
+from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
+from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
 
-from condensedinlinepanel.edit_handlers import BaseCondensedInlinePanelFormSet
-from condensedinlinepanel.edit_handlers import \
-    CondensedInlinePanel as WagtailCondensedInlinePanel
-from reversion.revisions import (
-    add_to_revision, create_revision, set_comment, set_user
-)
-from wagtailautocomplete.edit_handlers import \
-    AutocompletePanel as WagtailAutocompletePanel
-
+from actions.models import Plan
+from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel, PlanDefaultsModel
-from actions.models import Plan
 from pages.models import ActionListPage
 
 
@@ -72,14 +63,13 @@ def insert_model_translation_panels(model, panels, request, plan=None) -> List:
     return out
 
 
-def get_translation_tabs(
-    instance, request, include_all_languages: bool = False, extra_panels=None
-):
+def get_translation_tabs(instance, request, include_all_languages: bool = False, extra_panels=None):
     # extra_panels maps a language code to a list of panels that should be put on the tab of that language
     if extra_panels is None:
         extra_panels = {}
 
-    i18n_field = get_i18n_field(type(instance))
+    model = type(instance)
+    i18n_field = get_i18n_field(model)
     if not i18n_field:
         return []
     tabs = []
@@ -109,6 +99,11 @@ def get_translation_tabs(
 
 
 class PlanRelatedPermissionHelper(PermissionHelper):
+    check_admin_plan = True
+
+    def disable_admin_plan_check(self):
+        self.check_admin_plan = False
+
     def get_plans(self, obj):
         if isinstance(obj, PlanRelatedModel):
             return obj.get_plans()
@@ -116,6 +111,9 @@ class PlanRelatedPermissionHelper(PermissionHelper):
             raise NotImplementedError('implement in subclass')
 
     def _obj_matches_active_plan(self, user, obj):
+        if not self.check_admin_plan:
+            return True
+
         obj_plans = self.get_plans(obj)
         active_plan = user.get_active_admin_plan()
         for obj_plan in obj_plans:
@@ -175,16 +173,16 @@ class AplansAdminModelForm(WagtailAdminModelForm):
 class PlanFilteredFieldPanel(FieldPanel):
     """Filters the related model queryset based on the active plan."""
 
-    def on_form_bound(self):
-        super().on_form_bound()
+    class BoundPanel(FieldPanel.BoundPanel):
+        request: WatchAdminRequest
 
-        field = self.bound_field.field
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        related_model = field.queryset.model
-        assert issubclass(related_model, PlanRelatedModel)
-        field.queryset = related_model.filter_by_plan(plan, field.queryset)
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            field = self.bound_field.field
+            plan = self.request.get_active_admin_plan()
+            related_model = field.queryset.model
+            assert issubclass(related_model, PlanRelatedModel)
+            field.queryset = related_model.filter_by_plan(plan, field.queryset)
 
 
 class AplansButtonHelper(ButtonHelper):
@@ -224,8 +222,19 @@ class AplansButtonHelper(ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
-    def get_form_class(self, request=None):
-        return super().get_form_class()
+    def get_bound_panel(self, instance=None, request: WatchAdminRequest | None = None, form=None, prefix="panel"):
+        if request is not None:
+            plan = request.get_active_admin_plan()
+            user = request.user
+            is_admin = user.is_general_admin_for_plan(plan)
+        else:
+            is_admin = False
+        if not is_admin:
+            for child in list(self.children):
+                if isinstance(child, AdminOnlyPanel):
+                    self.children.remove(child)
+
+        return super().get_bound_panel(instance, request, form, prefix)
 
     def on_request_bound(self):
         user = self.request.user
@@ -237,25 +246,6 @@ class AplansTabbedInterface(TabbedInterface):
                     self.children.remove(child)
 
         super().on_request_bound()
-
-
-class FormClassMixin:
-    def get_form_class(self):
-        handler = self.get_edit_handler()
-        if isinstance(handler, AplansTabbedInterface):
-            return handler.get_form_class(self.request)
-        else:
-            return handler.get_form_class()
-
-
-class PersistIndexViewFiltersMixin:
-    def dispatch(self, request, *args, **kwargs):
-        result = super().dispatch(request, *args, **kwargs)
-        model = getattr(self, 'model_name')
-        if model is None:
-            return result
-        request.session[f'{model}_filter_querystring'] = super().get_query_string()
-        return result
 
 
 class PersistFiltersEditingMixin:
@@ -353,8 +343,20 @@ class ActivatePermissionHelperPlanContextMixin:
             return super().dispatch(request, *args, **kwargs)
 
 
-class AplansEditView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                     PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin, EditView):
+class SetInstanceMixin:
+    def setup(self, *args, **kwargs):
+        with set_instance(self.instance):
+            super().setup(*args, **kwargs)
+
+    def dispatch(self, *args, **kwargs):
+        with set_instance(self.instance):
+            return super().dispatch(*args, **kwargs)
+
+
+class AplansEditView(
+    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin,
+        SetInstanceMixin, EditView
+):
     def form_valid(self, form, *args, **kwargs):
         try:
             form_valid_return = super().form_valid(form, *args, **kwargs)
@@ -419,19 +421,20 @@ class ActivePlanEditView(SuccessUrlEditPageMixin, AplansEditView):
         return super().form_valid(form)
 
 
-class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormClassMixin,
-                       PlanRelatedViewMixin, CreateView):
+class AplansCreateView(
+    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, SetInstanceMixin, CreateView
+):
     request: WatchAdminRequest
 
-    def get_instance(self) -> Any:
-        instance = super().get_instance()
-        # If it is a model directly or indirectly related to the
-        # active plan, ensure the 'plan' field or other plan related
-        # fields get set correctly.
-        if isinstance(instance, PlanDefaultsModel):
-            plan = self.request.user.get_active_admin_plan()
-            instance.initialize_plan_defaults(plan)
-        return instance
+    def initialize_instance(self, request):
+        if isinstance(self.instance, PlanDefaultsModel):
+            plan = request.user.get_active_admin_plan()
+            self.instance.initialize_plan_defaults(plan)
+
+    def setup(self, request, *args, **kwargs):
+        self.instance = self.model()
+        self.initialize_instance(request)
+        super().setup(request, *args, **kwargs)
 
     def form_valid(self, form, *args, **kwargs):
         ret = super().form_valid(form, *args, **kwargs)
@@ -442,19 +445,6 @@ class AplansCreateView(PersistFiltersEditingMixin, ContinueEditingMixin, FormCla
                 'operation': 'create'
             })
 
-        return ret
-
-
-class SafeLabelModelAdminMenuItem(ModelAdminMenuItem):
-    def get_label_from_context(self, context, request):
-        # This method may be trivial, but we override it elsewhere
-        return context.get('label')
-
-    def get_context(self, request):
-        ret = super().get_context(request)
-        label = self.get_label_from_context(ret, request)
-        if label:
-            ret['label'] = mark_safe(label)
         return ret
 
 
@@ -477,52 +467,9 @@ class AplansModelAdmin(ModelAdmin):
         ret = super().get_index_view_extra_js()
         return ret + ['admin_site/js/wagtail_customizations.js']
 
-    def get_menu_item(self, order=None):
-        return SafeLabelModelAdminMenuItem(self, order or self.get_menu_order())
 
-
-class EmptyFromTolerantBaseCondensedInlinePanelFormSet(BaseCondensedInlinePanelFormSet):
-    """Remove empty new forms from data"""
-
-    def process_post_data(self, data, *args, **kwargs):
-        prefix = kwargs['prefix']
-
-        initial_forms = int(data.get('%s-INITIAL_FORMS' % prefix, 0))
-        total_forms = int(data.get('%s-TOTAL_FORMS' % prefix, 0))
-
-        delete = data.get('%s-DELETE' % prefix, '').lstrip('[').rstrip(']')
-        if delete:
-            delete = [int(x) for x in delete.split(',')]
-        else:
-            delete = []
-
-        for idx in range(initial_forms, total_forms):
-            keys = filter(lambda x: x.startswith('%s-%d-' % (prefix, idx)), data.keys())
-            for key in keys:
-                if data[key]:
-                    break
-            else:
-                delete.append(idx)
-
-        if delete:
-            data = data.copy()
-            data['%s-DELETE' % prefix] = '[%s]' % (','.join([str(x) for x in sorted(delete)]))
-
-        return super().process_post_data(data, *args, **kwargs)
-
-
-class CondensedInlinePanel(WagtailCondensedInlinePanel):
-    formset_class = EmptyFromTolerantBaseCondensedInlinePanelFormSet
-
-    def on_instance_bound(self):
-        label = self.label
-        new_card_header_text = self.new_card_header_text
-        super().on_instance_bound()
-        related_name = {
-            'related_verbose_name': self.db_field.related_model._meta.verbose_name,
-        }
-        self.label = label or _('Add %(related_verbose_name)s') % related_name
-        self.new_card_header_text = new_card_header_text or _('New %(related_verbose_name)s') % related_name
+class CondensedInlinePanel(InlinePanel):
+    pass
 
 
 class AutocompletePanel(WagtailAutocompletePanel):

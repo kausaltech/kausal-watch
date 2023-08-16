@@ -1,33 +1,62 @@
+
 from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
-from django.utils.translation import pgettext_lazy
 from generic_chooser.views import ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from typing import Optional
-from wagtail.admin.edit_handlers import (
-    FieldPanel, HelpPanel, InlinePanel, ObjectList, RichTextFieldPanel, MultiFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel, HelpPanel, InlinePanel, ObjectList, MultiFieldPanel
 )
 from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdminGroup
-from wagtail.core import hooks
+from wagtail import hooks
 
+from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
 )
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
-from aplans.types import WatchAdminRequest
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
 
-from .admin import DisconnectedIndicatorFilter
-from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
+
+class DisconnectedIndicatorFilter(SimpleListFilter):
+    title = _('Show indicators')
+    parameter_name = 'disconnected'
+
+    def lookups(self, request, model_admin):
+        return (
+            (None, _('in active plan')),
+            ('2', _('not in active plan')),
+            ('1', _('all')),
+        )
+
+    def queryset(self, request, queryset):
+        plan = request.user.get_active_admin_plan()
+        if self.value() == '1':
+            pass
+        elif self.value() == '2':
+            queryset = queryset.exclude(id__in=IndicatorLevel.objects.filter(plan=plan).values_list('indicator_id'))
+        else:
+            queryset = queryset.filter(levels__plan=plan)
+        return queryset
+
+    def choices(self, changelist):
+        for lookup, title in self.lookup_choices:
+            if lookup is not None:
+                lookup = str(lookup)
+            yield {
+                'selected': self.value() == lookup,
+                'query_string': changelist.get_query_string({self.parameter_name: lookup}),
+                'display': title,
+            }
 
 
 class IndicatorPermissionHelper(PermissionHelper):
@@ -110,8 +139,8 @@ def register_quantity_chooser_viewset():
 class DimensionAdmin(AplansModelAdmin):
     model = Dimension
     menu_order = 4
-    menu_icon = 'fa-arrows-h'
-    menu_label = pgettext_lazy('hyphenated', 'Indicator dimensions')
+    menu_icon = 'kausal-dimension'
+    menu_label = _('Indicator dimensions')
     list_display = ('name',)
 
     panels = [
@@ -126,7 +155,7 @@ class QuantityForm(AplansAdminModelForm):
 
 class QuantityAdmin(AplansModelAdmin):
     model = Quantity
-    menu_icon = 'fa-thermometer-half'
+    menu_icon = 'kausal-dimension'  # FIXME
     menu_order = 6
     menu_label = _('Quantities')
     list_display = ('name_i18n',)
@@ -135,7 +164,9 @@ class QuantityAdmin(AplansModelAdmin):
         FieldPanel('name'),
     ]
 
-    def get_edit_handler(self, instance: Quantity, request: WatchAdminRequest):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -152,7 +183,7 @@ class UnitForm(AplansAdminModelForm):
 
 class UnitAdmin(AplansModelAdmin):
     model = Unit
-    menu_icon = 'fa-eur'
+    menu_icon = 'kausal-dimension'  # FIXME
     menu_order = 5
     menu_label = _('Units')
     list_display = ('name', 'short_name')
@@ -164,7 +195,9 @@ class UnitAdmin(AplansModelAdmin):
         FieldPanel('verbose_name_plural'),
     ]
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         tabs = [
             ObjectList(self.panels, heading=_('General')),
             *get_translation_tabs(instance, request, include_all_languages=True)
@@ -193,7 +226,10 @@ class IndicatorForm(AplansAdminModelForm):
     def get_dimension_ids_from_formset(self):
         if 'dimensions' not in self.formsets:
             return None
-        sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
+        fs = self.formsets['dimensions']
+        if not hasattr(fs, 'cleaned_data'):
+            return None
+        sorted_form_data = sorted(fs.cleaned_data, key=lambda d: d.get('ORDER'))
         return [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
 
     def clean(self):
@@ -282,14 +318,14 @@ class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
 
 
 class IndicatorEditHandler(AplansTabbedInterface):
-    instance: Indicator
-
-    def get_form_class(self, request: Optional[WatchAdminRequest] = None):
+    def get_form_class(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Indicator, self.instance, with_initial=True)
+            cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
         else:
             cat_fields = {}
 
@@ -308,7 +344,7 @@ class IndicatorAdmin(AplansModelAdmin):
     model = Indicator
     create_view_class = IndicatorCreateView
     edit_view_class = IndicatorEditView
-    menu_icon = 'fa-bar-chart'
+    menu_icon = 'kausal-indicator'
     menu_order = 3
     menu_label = _('Indicators')
     list_display = ('name', 'organization', 'unit_display', 'quantity', 'has_data',)
@@ -335,12 +371,14 @@ class IndicatorAdmin(AplansModelAdmin):
             ],
             heading=_('Indicator for actions'),
         ),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
 
     advanced_panels = []
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new indicator
         basic_panels = list(self.basic_panels)
         advanced_panels = list(self.advanced_panels)
         plan = request.user.get_active_admin_plan()
@@ -456,7 +494,7 @@ class CommonIndicatorForm(AplansAdminModelForm):
 
 class CommonIndicatorAdmin(AplansModelAdmin):
     model = CommonIndicator
-    menu_icon = 'fa-object-group'
+    menu_icon = 'kausal-indicator'  # FIXME
     menu_label = _('Common indicators')
     list_display = ('name', 'unit_display', 'quantity')
     search_fields = ('name',)
@@ -464,7 +502,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
     basic_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
 
     def unit_display(self, obj):
@@ -474,7 +512,8 @@ class CommonIndicatorAdmin(AplansModelAdmin):
         return unit.short_name or unit.name
     unit_display.short_description = _('Unit')
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        instance = ctx_instance.get()  # FIXME: Fails when creating a new common indicator
         basic_panels = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator
@@ -501,8 +540,8 @@ class CommonIndicatorAdmin(AplansModelAdmin):
 
 class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
-    menu_icon = 'fa-bar-chart'
-    menu_order = 3
+    menu_icon = 'kausal-indicator'
+    menu_order = 20
     items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin)
 
 

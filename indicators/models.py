@@ -21,7 +21,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
 from typing import Optional
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -477,10 +477,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     has_graph.boolean = True
 
     def get_notification_context(self, plan):
-        if plan.uses_wagtail:
-            edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
-        else:
-            edit_values_url = reverse('admin:indicators_indicator_change', args=(self.id,))
+        edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
         return {
             'id': self.id,
             'name': self.name,

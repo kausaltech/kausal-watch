@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
 from wagtail.images.models import SourceImageIOError
 
@@ -10,33 +9,22 @@ from aplans.fields import HostnameField
 from aplans.utils import OrderedModel
 
 
-class ClientQuerySet(models.QuerySet):
-    def for_request(self, request):
-        hostname = request.get_host()
-        if ':' in hostname:
-            hostname = hostname.split(':')[0]
-        return self.filter(admin_hostnames__hostname=hostname)
-
-
 class Client(ClusterableModel):
+    class AuthBackend(models.TextChoices):
+        NONE = '', _('Only allow password login')
+        # Values are social auth backend names
+        AZURE_AD = 'azure_ad', _('Microsoft Azure AD')
+        GOOGLE = 'google-openidconnect', _('Google')
+
     name = models.CharField(max_length=100)
-    azure_ad_tenant_id = models.CharField(max_length=200, null=True, blank=True)
-    login_header_text = models.CharField(verbose_name=_('login header text'), max_length=200)
-    login_button_text = models.CharField(verbose_name=_('login button text'), max_length=200)
-    use_id_token_email_field = models.BooleanField(verbose_name=_('use email field of ID Token'), default=False)
-
-    google_login_enabled = models.BooleanField(verbose_name=_('Google login enabled'), default=False, null=False)
-    google_login_button_text = models.CharField(
-        verbose_name=_('login button text for google'), max_length=200, null=True, blank=True
-    )
-
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
-
-    i18n = TranslationField(fields=['login_header_text', 'login_button_text'])
-
-    objects = ClientQuerySet.as_manager()
+    # Login method can be overridden per user: If the user has a usable password, that will be used regardless.
+    auth_backend = models.CharField(
+        max_length=30, choices=AuthBackend.choices, blank=True, verbose_name=_("login method"),
+        help_text=_("Login method that will be used for users that don't have a password set"),
+    )
 
     def __str__(self):
         return self.name

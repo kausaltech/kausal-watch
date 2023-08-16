@@ -3,8 +3,9 @@ import graphene_django_optimizer as gql_optimizer
 
 from django.db.models import Count, Q
 from graphql.error import GraphQLError
+from graphql import DirectiveLocation
 from graphql.type import (
-    DirectiveLocation, GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+    GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
 )
 from grapple.registry import registry as grapple_registry
 
@@ -66,7 +67,8 @@ class Query(
     graphene.ObjectType
 ):
     plan_organizations = graphene.List(
-        orgs_schema.OrganizationNode, plan=graphene.ID(),
+        graphene.NonNull(orgs_schema.OrganizationNode),
+        plan=graphene.ID(),
         with_ancestors=graphene.Boolean(default_value=False),
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
@@ -88,12 +90,14 @@ class Query(
                 query |= Q(responsible_actions__action__plan=plan_obj)
             if for_contact_persons:
                 query |= Q(people__contact_for_actions__plan=plan_obj)
+            if not query and not info.context.user.is_authenticated:
+                raise GraphQLError("Unfiltered organization list only available when authenticated")
             qs = qs.filter(query)
         qs = qs.distinct()
 
         if with_ancestors:
             if plan is None:
-                raise GraphQLError("withAncestors can only be used when 'plan' is set", [info])
+                raise GraphQLError("withAncestors can only be used when 'plan' is set")
             qs = mp_node_get_ancestors(qs, include_self=True)
 
         selections = get_fields(info)
@@ -191,6 +195,6 @@ class AuthDirective(GraphQLDirective):
 schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
-    directives=specified_directives + [LocaleDirective(), AuthDirective()],
+    directives=specified_directives + (LocaleDirective(), AuthDirective()),
     types=graphene_registry + list(grapple_registry.models.values())
 )

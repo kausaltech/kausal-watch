@@ -7,8 +7,6 @@ from django.http import Http404
 from django.http.response import FileResponse, HttpResponseBadRequest
 from django.utils.translation import gettext_lazy as _
 from django.views.decorators.cache import cache_control
-from easy_thumbnails.files import get_thumbnailer
-from image_cropping import ImageRatioField
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -46,52 +44,6 @@ def determine_image_dim(image, width, height):
         width = height * ratio
 
     return (width, height)
-
-
-class ModelWithImage(models.Model):
-    image = models.ImageField(
-        blank=True, upload_to=image_upload_path, verbose_name=_('image'),
-        height_field='image_height', width_field='image_width'
-    )
-    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
-    image_height = models.PositiveIntegerField(null=True, editable=False)
-    image_width = models.PositiveIntegerField(null=True, editable=False)
-
-    main_image = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
-    )
-
-    def get_image_url(self, request, size=None):
-        if not request or not self.image:
-            return None
-
-        if size is None:
-            url = self.image.url
-        else:
-            m = re.match(r'(\d+)?(x(\d+))?', size)
-            if not m:
-                raise ValueError('Invalid size argument (should be "<width>x<height>")')
-            width, _, height = m.groups()
-
-            try:
-                dim = determine_image_dim(self.image, width, height)
-            except OSError as e:
-                # Treat this as a non-fatal error but report it to Sentry anyway
-                capture_exception(e)
-                return None
-
-            out_image = get_thumbnailer(self.image).get_thumbnail({
-                'size': dim,
-                'box': self.image_cropping,
-                'crop': True,
-                'detail': True,
-            })
-            url = out_image.url
-
-        return request.build_absolute_uri(url)
-
-    class Meta:
-        abstract = True
 
 
 class ModelWithImageSerializerMixin(serializers.Serializer):

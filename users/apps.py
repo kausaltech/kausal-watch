@@ -8,23 +8,6 @@ def remove_from_staff_if_no_plan_admin(user, **kwargs):
         user.save()
 
 
-def remove_default_site_summary_items(hooks):
-    # Wagtail shows the number of pages, images and documents in the default summary
-    # panel with no option to prevent it. Monkeypatch them away.
-    from wagtail.documents.wagtail_hooks import add_documents_summary_item
-    from wagtail.images.wagtail_hooks import add_images_summary_item
-    from wagtail.admin.wagtail_hooks import add_pages_summary_item
-    from wagtailsvg.wagtail_hooks import add_svg_summary_item
-
-    hooks_to_remove = [
-        add_documents_summary_item, add_images_summary_item, add_pages_summary_item, add_svg_summary_item
-    ]
-    summary_hooks = hooks._hooks['construct_homepage_summary_items']
-    for item in list(summary_hooks):
-        if item[0] in hooks_to_remove:
-            summary_hooks.remove(item)
-
-
 def remove_user_related_menu_items(hooks):
     from wagtail.admin import wagtail_hooks  # noqa
     from wagtail.admin.views.account import AvatarSettingsPanel
@@ -37,9 +20,9 @@ def remove_user_related_menu_items(hooks):
         if val[0] == register_reports_menu:
             break
     else:
-        val = None
-    if val is not None:
-        menu_item_hooks.remove(val)
+        idx = None
+    if idx is not None:
+        del menu_item_hooks[idx]
 
 
 class UsersConfig(AppConfig):
@@ -49,9 +32,8 @@ class UsersConfig(AppConfig):
     def ready(self):
         from django.contrib.auth import user_logged_in
         from .perms import create_permissions
-        from wagtail.core import hooks
+        from wagtail import hooks
 
         user_logged_in.connect(create_permissions)
         user_logged_in.connect(remove_from_staff_if_no_plan_admin)
         remove_user_related_menu_items(hooks)
-        remove_default_site_summary_items(hooks)

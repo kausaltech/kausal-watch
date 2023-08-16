@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-06-30 16:48+0300\n"
+"POT-Creation-Date: 2023-08-11 12:23+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,71 +20,6 @@ msgstr ""
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
-msgstr ""
-
-#: actions/action_admin.py actions/admin.py
-msgid "Contact person"
-msgstr ""
-
-#: actions/action_admin.py indicators/wagtail_admin.py
-#: people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr ""
-
-#: actions/action_admin.py templates/aplans_admin/own_actions_panel.html
-msgid "Own actions"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Show only actions with me as a contact person"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Show only actions I can modify"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Show all actions"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "By last updated"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "No filtering"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "In the last 7 days"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "7–30 days ago"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "1–3 months ago"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "More than 3 months ago"
-msgstr ""
-
-#: actions/action_admin.py orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Advanced filters"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Reset all"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Search"
 msgstr ""
 
 #: actions/action_admin.py
@@ -116,15 +51,13 @@ msgid "Last updated"
 msgstr ""
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: orgs/models.py orgs/wagtail_admin.py
-#: people/templates/people/chooser_results.html
-#: templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
+#: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
+#: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
 msgstr ""
 
 #: actions/action_admin.py actions/category_admin.py
-#: admin_site/wagtail_hooks.py indicators/admin.py indicators/wagtail_admin.py
+#: admin_site/wagtail_hooks.py indicators/wagtail_admin.py
 msgid "Categories"
 msgstr ""
 
@@ -205,65 +138,6 @@ msgstr ""
 msgid "Over %d days"
 msgstr ""
 
-#: actions/admin.py
-msgid "Non-modifiable actions"
-msgstr ""
-
-#: actions/admin.py
-msgid "Show modifiable"
-msgstr ""
-
-#: actions/admin.py
-msgid "Show all"
-msgstr ""
-
-#: actions/admin.py actions/blocks/action_content.py
-msgid "Merged actions"
-msgstr ""
-
-#: actions/admin.py
-msgid "Show only un-merged actions"
-msgstr ""
-
-#: actions/admin.py
-msgid "Show also merged actions"
-msgstr ""
-
-#: actions/admin.py
-msgid "Impact"
-msgstr ""
-
-#: actions/admin.py actions/attribute_type_admin.py
-#: actions/blocks/category_list.py actions/blocks/filters.py pages/models.py
-#: reports/blocks/action_content.py
-msgid "Category type"
-msgstr ""
-
-#: actions/admin.py
-msgid "Common category type"
-msgstr ""
-
-#: actions/admin.py
-msgid "Responsible organizations"
-msgstr ""
-
-#: actions/admin.py
-msgid "Completion"
-msgstr ""
-
-#: actions/admin.py
-msgid "Internal fields"
-msgstr ""
-
-#: actions/admin.py
-msgid "Schedule and decision level"
-msgstr ""
-
-#: actions/admin.py actions/models/action.py feedback/models.py
-#: indicators/models.py
-msgid "action"
-msgstr ""
-
 #: actions/api.py
 msgid "Organization occurs multiple times as responsible party"
 msgstr ""
@@ -274,6 +148,15 @@ msgstr ""
 
 #: actions/api.py
 msgid "Identifier already exists"
+msgstr ""
+
+#: actions/api.py people/models.py
+msgid "Person with this email already exists"
+msgstr ""
+
+#: actions/api.py
+#, python-format
+msgid "Duplicate email addresses: %s"
 msgstr ""
 
 #: actions/apps.py
@@ -289,21 +172,32 @@ msgstr ""
 msgid "Object type"
 msgstr ""
 
-#: actions/attribute_type_admin.py admin_site/wagtail_hooks.py
-msgid "Attributes"
+#: actions/attribute_type_admin.py
+msgid "Fields"
 msgstr ""
 
 #: actions/attribute_type_admin.py
 #, python-format
-msgid "Attribute for %s"
+msgid "Field for %s"
 msgstr ""
 
 #: actions/attribute_type_admin.py
-msgid "If format is 'Category', a category type must be set "
+#, python-format
+msgid "Fields (%(model)s)"
 msgstr ""
 
 #: actions/attribute_type_admin.py
-msgid "If format is 'Numeric', a unit must be set "
+msgid "If format is 'Category', a category type must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py
+msgid "If format is 'Numeric', a unit must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py actions/blocks/category_list.py
+#: actions/blocks/filters.py actions/category_admin.py pages/models.py
+#: reports/blocks/action_content.py
+msgid "Category type"
 msgstr ""
 
 #: actions/attribute_type_admin.py feedback/models.py
@@ -326,7 +220,7 @@ msgid "contact form"
 msgstr ""
 
 #: actions/blocks/action_content.py
-msgid "What label should be used in the public UI for the official name"
+msgid "What label should be used in the public UI for the official name?"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -338,11 +232,11 @@ msgstr ""
 msgid "Content block: %(label)s"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
+#: actions/blocks/action_content.py
+msgid "Merged actions"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/blocks/filters.py
+#: actions/blocks/action_content.py
 msgid "Attribute"
 msgstr ""
 
@@ -350,10 +244,6 @@ msgstr ""
 #: actions/blocks/filters.py actions/models/attributes.py pages/blocks.py
 #: pages/models.py
 msgid "Category"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -381,6 +271,14 @@ msgstr ""
 msgid "Section"
 msgstr ""
 
+#: actions/blocks/action_content.py actions/models/action.py
+msgid "official name"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Contact form"
+msgstr ""
+
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr ""
@@ -402,7 +300,7 @@ msgid "Value attribute"
 msgstr ""
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "Attribute type"
+msgid "Field"
 msgstr ""
 
 #: actions/blocks/filters.py
@@ -451,6 +349,10 @@ msgstr ""
 
 #: actions/blocks/filters.py actions/models/action.py
 msgid "schedule"
+msgstr ""
+
+#: actions/category_admin.py
+msgid "Common category type"
 msgstr ""
 
 #: actions/category_admin.py
@@ -510,11 +412,11 @@ msgid "Choose another plan"
 msgstr ""
 
 #: actions/chooser.py
-msgid "Choose an attribute"
+msgid "Choose a field"
 msgstr ""
 
 #: actions/chooser.py
-msgid "Choose another attribute"
+msgid "Choose another field"
 msgstr ""
 
 #: actions/defaults.py
@@ -601,7 +503,7 @@ msgid "Domain name"
 msgstr ""
 
 #: actions/forms.py
-msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known"
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
 msgstr ""
 
 #: actions/forms.py
@@ -609,7 +511,7 @@ msgid "Base path"
 msgstr ""
 
 #: actions/forms.py
-msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain"
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
 msgstr ""
 
 #: actions/forms.py
@@ -618,14 +520,6 @@ msgstr ""
 
 #: actions/forms.py
 msgid "Name of the customer administering the plan"
-msgstr ""
-
-#: actions/forms.py
-msgid "Azure AD tenant id"
-msgstr ""
-
-#: actions/forms.py
-msgid "Most often the host name, ie. everything after the @ sign in employee email addresses"
 msgstr ""
 
 #: actions/forms.py
@@ -796,6 +690,10 @@ msgstr ""
 
 #: actions/models/action.py
 msgctxt "partitive"
+msgid "action"
+msgstr ""
+
+#: actions/models/action.py feedback/models.py indicators/models.py
 msgid "action"
 msgstr ""
 
@@ -1096,7 +994,7 @@ msgid "Category type (if format is category)"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "If the format is \"Category\", choose which category type the attribute values can be chosen from"
+msgid "If the format is \"Category\", choose which category type the field values can be chosen from"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1116,15 +1014,19 @@ msgid "If the format is \"ordered choice\", determines whether the first option 
 msgstr ""
 
 #: actions/models/attributes.py
+msgid "character limit for text fields"
+msgstr ""
+
+#: actions/models/attributes.py
 msgid "show in reporting tab"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "attribute type"
+msgid "field"
 msgstr ""
 
-#: actions/models/attributes.py
-msgid "attribute types"
+#: actions/models/attributes.py reports/wagtail_admin.py
+msgid "fields"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1249,6 +1151,10 @@ msgid "common category"
 msgstr ""
 
 #: actions/models/category.py
+msgid "common categories"
+msgstr ""
+
+#: actions/models/category.py
 msgid "parent category"
 msgstr ""
 
@@ -1337,11 +1243,11 @@ msgid "Set if the plan uses the lead paragraph field"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Has primary organisations for actions"
+msgid "Has primary organizations for actions"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Set if actions have a clear primary organisation (such as multi-city plans)"
+msgid "Set if actions have a clear primary organization (such as multi-city plans)"
 msgstr ""
 
 #: actions/models/features.py
@@ -1616,7 +1522,7 @@ msgstr ""
 msgid "monitoring quality points"
 msgstr ""
 
-#: actions/templates/actions/chooser_results.html
+#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
 msgid "Plan"
 msgstr ""
 
@@ -1645,8 +1551,7 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr ""
 
@@ -1675,41 +1580,23 @@ msgid "Action classifications"
 msgstr ""
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Plan"
-msgstr ""
-
-#: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan features"
 msgstr ""
 
 #: actions/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Plan notification settings"
 msgstr ""
 
-#: actions/wagtail_hooks.py
-msgid "Create plan"
+#: admin_site/api.py
+msgid "Invalid email address"
 msgstr ""
 
-#: admin_site/admin.py
-#, python-format
-msgid "Add another %(model)s"
+#: admin_site/api.py
+msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr ""
 
-#: admin_site/admin.py
-#, python-format
-msgid "Add another %(verbose_name)s"
-msgstr ""
-
-#: admin_site/admin.py
-msgid "Django admin"
-msgstr ""
-
-#: admin_site/admin.py
-#, python-format
-msgid "%(site_name)s admin"
+#: admin_site/api.py
+msgid "This user does not have access to admin."
 msgstr ""
 
 #: admin_site/forms.py
@@ -1721,23 +1608,53 @@ msgid "Enter your email address"
 msgstr ""
 
 #: admin_site/models.py
-msgid "login header text"
+msgid "Only allow password login"
 msgstr ""
 
 #: admin_site/models.py
-msgid "login button text"
+msgid "Microsoft Azure AD"
 msgstr ""
 
 #: admin_site/models.py
-msgid "use email field of ID Token"
+msgid "Google"
 msgstr ""
 
 #: admin_site/models.py
-msgid "Google login enabled"
+msgid "login method"
 msgstr ""
 
 #: admin_site/models.py
-msgid "login button text for google"
+msgid "Login method that will be used for users that don't have a password set"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Own indicators"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Last modified"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Last data point"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Edit this indicator"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Edit data"
+msgstr ""
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#, python-format
+msgid "%(time_period)s ago"
 msgstr ""
 
 #: admin_site/templates/dal_admin_filters/autocomplete-filter.html
@@ -1745,8 +1662,12 @@ msgstr ""
 msgid " By %(filter_title)s "
 msgstr ""
 
-#: admin_site/views.py
-msgid "You have been successfully logged out."
+#: admin_site/templates/wagtailadmin/login.html
+msgid "Sign in to Kausal Watch admin"
+msgstr ""
+
+#: admin_site/templates/wagtailadmin/login.html
+msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr ""
 
 #: admin_site/wagtail.py
@@ -1756,11 +1677,6 @@ msgstr ""
 #: admin_site/wagtail.py
 #, python-format
 msgid "View %s live"
-msgstr ""
-
-#: admin_site/wagtail.py templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Edit"
 msgstr ""
 
 #: admin_site/wagtail.py
@@ -1781,16 +1697,6 @@ msgstr ""
 #: admin_site/wagtail.py
 #, python-brace-format
 msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
-msgstr ""
-
-#: admin_site/wagtail.py
-#, python-format
-msgid "Add %(related_verbose_name)s"
-msgstr ""
-
-#: admin_site/wagtail.py
-#, python-format
-msgid "New %(related_verbose_name)s"
 msgstr ""
 
 #: admin_site/wagtail.py
@@ -1826,6 +1732,10 @@ msgid "Reports"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
+msgid "Create plan"
+msgstr ""
+
+#: admin_site/wagtail_hooks.py
 msgid "Choose plan"
 msgstr ""
 
@@ -1838,19 +1748,11 @@ msgid "Email domains"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
-msgid "Plans"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
 msgid "Video tutorials"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
 msgid "https://kausal.gitbook.io/watch"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
-msgid "Help"
 msgstr ""
 
 #: aplans/fields.py
@@ -1863,14 +1765,6 @@ msgstr ""
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
-msgstr ""
-
-#: aplans/model_images.py images/models.py people/models.py
-msgid "image"
-msgstr ""
-
-#: aplans/model_images.py people/models.py
-msgid "image cropping"
 msgstr ""
 
 #: aplans/rest_api.py
@@ -1940,10 +1834,6 @@ msgstr ""
 
 #: aplans/utils.py
 msgid "updated by"
-msgstr ""
-
-#: content/admin.py
-msgid "Site settings"
 msgstr ""
 
 #: content/apps.py
@@ -2117,7 +2007,7 @@ msgid "Mark this user feedback as unprocessed"
 msgstr ""
 
 #: feedback/wagtail_admin.py
-msgid "User feedbacks"
+msgid "User feedback"
 msgstr ""
 
 #: images/image_formats.py
@@ -2132,60 +2022,12 @@ msgstr ""
 msgid "Alt text"
 msgstr ""
 
+#: images/models.py people/models.py
+msgid "image"
+msgstr ""
+
 #: images/models.py
 msgid "images"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Downstream indicator"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Downstream indicators"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Upstream indicator"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Upstream indicators"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Indicator action"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Indicator actions"
-msgstr ""
-
-#: indicators/admin.py indicators/models.py
-msgid "level"
-msgstr ""
-
-#: indicators/admin.py
-msgid "Show indicators"
-msgstr ""
-
-#: indicators/admin.py
-msgid "in active plan"
-msgstr ""
-
-#: indicators/admin.py
-msgid "not in active plan"
-msgstr ""
-
-#: indicators/admin.py
-msgid "all"
-msgstr ""
-
-#: indicators/admin.py
-msgid "[nothing]"
-msgstr ""
-
-#: indicators/admin.py
-msgid "has goals"
 msgstr ""
 
 #: indicators/blocks.py
@@ -2449,6 +2291,10 @@ msgid "common indicator dimensions"
 msgstr ""
 
 #: indicators/models.py
+msgid "level"
+msgstr ""
+
+#: indicators/models.py
 msgid "indicator levels"
 msgstr ""
 
@@ -2576,6 +2422,35 @@ msgstr ""
 msgid "Changes were saved"
 msgstr ""
 
+#: indicators/templates/site_summary/indicators.html
+#, python-format
+msgid ""
+"\n"
+"        <span>%(total)s</span> indicator <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgid_plural ""
+"\n"
+"        <span>%(total)s</span> indicators <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"    "
+msgstr[0] ""
+msgstr[1] ""
+
+#: indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "all"
+msgstr ""
+
 #: indicators/wagtail_admin.py
 msgid "Choose a quantity"
 msgstr ""
@@ -2589,7 +2464,6 @@ msgid "Edit this quantity"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgctxt "hyphenated"
 msgid "Indicator dimensions"
 msgstr ""
 
@@ -2607,6 +2481,10 @@ msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
+msgstr ""
+
+#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
+msgid "Organization"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -2650,7 +2528,7 @@ msgstr ""
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
 
-#: notifications/apps.py
+#: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
 msgstr ""
 
@@ -2728,7 +2606,8 @@ msgid ""
 "\n"
 "Thank you for taking part in implementing the action plan!\n"
 "\n"
-"Kind regards, the action plan administrators."
+"Kind regards,\n"
+"the action plan administrators"
 msgstr ""
 
 #: notifications/models.py
@@ -2938,11 +2817,6 @@ msgid "receive action feedback notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py
-msgctxt "hyphenated"
-msgid "Notifications"
-msgstr ""
-
-#: notifications/wagtail_admin.py
 msgid "Recipients"
 msgstr ""
 
@@ -3052,6 +2926,10 @@ msgstr ""
 
 #: orgs/org_admin_legacy.py
 msgid "Show only editable organizations"
+msgstr ""
+
+#: orgs/org_admin_legacy.py
+msgid "Apply filters"
 msgstr ""
 
 #: orgs/views.py
@@ -3207,7 +3085,7 @@ msgid "Maintenance responsibility paragraph"
 msgstr ""
 
 #: pages/blocks.py
-msgid "If this is set, it will be displayed instead of \"This service is published by [publisher].\""
+msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
 msgstr ""
 
 #: pages/blocks.py
@@ -3454,31 +3332,6 @@ msgstr ""
 msgid "More"
 msgstr ""
 
-#: people/admin.py
-msgid "Is contact person"
-msgstr ""
-
-#: people/admin.py
-#, python-format
-msgid "For an action in %(plan)s"
-msgstr ""
-
-#: people/admin.py
-msgid "For an action"
-msgstr ""
-
-#: people/admin.py
-msgid "For an indicator"
-msgstr ""
-
-#: people/admin.py
-msgid "Not a contact person"
-msgstr ""
-
-#: people/admin.py people/models.py people/wagtail_admin.py
-msgid "contact for actions"
-msgstr ""
-
 #: people/apps.py people/wagtail_admin.py
 msgid "People"
 msgstr ""
@@ -3541,23 +3394,75 @@ msgid "Set to keep track who have attended training sessions"
 msgstr ""
 
 #: people/models.py
-msgid "people"
+msgid "image cropping"
+msgstr ""
+
+#: people/models.py people/wagtail_admin.py
+msgid "contact for actions"
 msgstr ""
 
 #: people/models.py
-msgid "Person with this email already exists"
+msgid "people"
+msgstr ""
+
+#: people/override_django_translations.py
+#, python-format
+msgid "%(model_name)s '%(object)s' deleted."
+msgstr ""
+
+#: people/templates/people/delete.html
+#, python-format
+msgid "Confirm deletion of %(model_name)s"
+msgstr ""
+
+#: people/templates/people/delete.html
+#, python-format
+msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
+msgstr ""
+
+#: people/templates/people/delete.html
+msgid "Yes, delete"
+msgstr ""
+
+#: people/templates/people/delete.html
+msgid "No, don't delete"
 msgstr ""
 
 #: people/wagtail_admin.py
-msgid "is plan admin"
+msgid "Is contact person"
 msgstr ""
 
 #: people/wagtail_admin.py
-msgid "plan admin organizations"
+#, python-format
+msgid "For an action in %(plan)s"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "For an action"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "For an indicator"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Not a contact person"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Is plan admin"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Plan admin organizations"
 msgstr ""
 
 #: people/wagtail_admin.py
 msgid "Deactivate"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Are you sure you want to deactivate this person?"
 msgstr ""
 
 #: people/wagtail_admin.py
@@ -3577,7 +3482,7 @@ msgid "UUID of report field"
 msgstr ""
 
 #: reports/blocks/action_content.py
-msgid "Action attribute"
+msgid "Action field"
 msgstr ""
 
 #: reports/blocks/action_content.py
@@ -3670,18 +3575,18 @@ msgstr ""
 msgid "Marked as complete at"
 msgstr ""
 
-#: reports/spreadsheets.py templates/aplans_admin/own_actions_panel.html
+#: reports/spreadsheets.py
 msgid "Identifier"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to mark the report <i>%(report)s<i> as complete?"
+msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
-msgid "Do you really want to undo marking the report <i>%(report)s</em> as complete?"
+msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
@@ -3786,79 +3691,12 @@ msgstr ""
 msgid "Report types"
 msgstr ""
 
-#: reports/wagtail_admin.py
-msgid "fields"
-msgstr ""
-
 #: templates/aplans/confirmation.html
 msgid "Yes"
 msgstr ""
 
 #: templates/aplans/confirmation.html
 msgid "No"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "Select action plan"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "Action plans"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "Recent actions"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "My actions"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "None available"
-msgstr ""
-
-#: templates/aplans_admin/index.html
-msgid "Unknown content"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Last modified"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Status"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "Edit this action"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-msgid "View"
-msgstr ""
-
-#: templates/aplans_admin/own_actions_panel.html
-#: templates/aplans_admin/own_indicators_panel.html
-#, python-format
-msgid "%(time_period)s ago"
-msgstr ""
-
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Own indicators"
-msgstr ""
-
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Last data point"
-msgstr ""
-
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Edit this indicator"
-msgstr ""
-
-#: templates/aplans_admin/own_indicators_panel.html
-msgid "Edit data"
 msgstr ""
 
 #: templates/modeladmin/create.html templates/modeladmin/edit.html
@@ -3881,55 +3719,10 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: templates/wagtailadmin/login.html
-msgid "Sign in"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-#, python-format
-msgid "Your %(username_field)s and password didn't match. Please try again."
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Sign in to Kausal Watch"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Signing in…"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Sign in with Microsoft"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Sign in with Google"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "If you have a separate password, click here to sign in"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Reset your password"
-msgstr ""
-
-#: templates/wagtailadmin/login.html
-msgid "Forgotten it?"
-msgstr ""
-
-#: templates/wagtailadmin/shared/main_nav.html
-msgid "Edit your account"
-msgstr ""
-
-#: templates/wagtailadmin/shared/main_nav.html
-msgid "Account settings"
-msgstr ""
-
-#: templates/wagtailadmin/shared/main_nav.html
-msgid "Log out"
-msgstr ""
-
 #: users/apps.py
 msgid "Users"
+msgstr ""
+
+#: users/models.py
+msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""

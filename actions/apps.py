@@ -49,7 +49,7 @@ def get_queryset(self, request):
 
 def get_edit_handler(self, *args, **kwargs):
     # If we import this on the top level, there will be an error that apps aren't loaded yet
-    from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface
+    from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 
     class CollectionFieldPanel(FieldPanel):
         def on_form_bound(self):

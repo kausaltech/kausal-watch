@@ -2,13 +2,11 @@
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import ClusterForm
 from wagtail import VERSION as WAGTAIL_VERSION
-# from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList, TabbedInterface, get_form_for_model
-from wagtail.contrib.modeladmin.helpers import AdminURLHelper, ButtonHelper, PermissionHelper
+from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.mixins import ThumbnailMixin
 from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as WAGTAILGEOWIDGET_VERSION
@@ -19,7 +17,7 @@ from .views import (
     OrganizationCreateView, OrganizationEditView, SetOrganizationRelatedToActivePlanView, CreateChildNodeView,
 )
 from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
-# from aplans.context_vars import ctx_instance, ctx_request
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from people.chooser import PersonChooser
 
@@ -163,20 +161,6 @@ class OrganizationPermissionHelper(PermissionHelper):
         return obj.user_can_edit(user)
 
 
-class OrganizationURLHelper(AdminURLHelper):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    @cached_property
-    def index_url(self):
-        # TODO: Remove this shim and delete org_admin_legacy once everything is upgraded to Wagtail 5
-        if WAGTAIL_VERSION < (3, 0):
-            # FIXME: This is a workaround to switch the only_added_to_plan filter on by default, but it causes
-            # undesired behavior, e.g., resetting filters after editing an organization
-            return f'{super().index_url}?only_added_to_plan=true'
-        return super().index_url
-
-
 class OrganizationForm(NodeForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
@@ -215,36 +199,26 @@ class OrganizationForm(NodeForm):
 
 
 class OrganizationEditHandler(TabbedInterface):
-    def get_form_class(self):
-        # Adapted from BaseFormEditHandler.get_form_class to do something similar as if we had set base_form_class to
-        # a form like this that we could put in forms.py:
-        # class OrganizationForm(NodeForm):
-        #     class Meta:
-        #         model = Organization
-        #         fields = ['parent', 'classification', 'name', 'abbreviation', 'founding_date', 'dissolution_date']
-        # However, we can't just set base_form_class because we can't use OrganizationForm yet at the time of class
-        # definition due to circular dependencies between this file and forms.py. (TODO: Have things changed after
-        # refactoring to separate extensions package?)
+    def __init__(self, plan, *args, **kwargs):
+        self.plan = plan
+        super().__init__(*args, **kwargs)
 
-        # We need the request in the model or form for OrganizationAdmin in order to set the plan of the
-        # OrganizationAdmin instance to the currently active plan. However, we only have access to the request in the
-        # view or edit handler. Django-modelcluster seems to offer no way to customize the formset / form classes it
-        # creates by metaprogramming, so we hack the request into it like this:
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        kwargs['plan'] = self.plan
+        return kwargs
+
+    def get_form_options(self):
         class PlanSpecificOrganizationAdminForm(ClusterForm):
-            plan = self.request.user.get_active_admin_plan()
+            plan = self.plan
 
             def save(self, *args, **kwargs):
                 self.instance.plan = self.plan
                 return super().save(*args, **kwargs)
 
-        formsets = self.required_formsets()
-        formsets['organization_plan_admins']['form'] = PlanSpecificOrganizationAdminForm
-        return get_form_for_model(
-            self.model,
-            form_class=OrganizationForm,
-            fields=self.required_fields(),
-            formsets=formsets,
-            widgets=self.widget_overrides())
+        options = super().get_form_options()
+        options['formsets']['organization_plan_admins']['form'] = PlanSpecificOrganizationAdminForm
+        return options
 
 
 class OrganizationButtonHelper(NodeButtonHelper):
@@ -307,22 +281,16 @@ class OrganizationButtonHelper(NodeButtonHelper):
 class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
     model = Organization
     menu_label = _("Organizations")
-    menu_icon = 'fa-sitemap'
-    menu_order = 9000
+    menu_icon = 'kausal-organization'
+    menu_order = 220
     button_helper_class = OrganizationButtonHelper
     permission_helper_class = OrganizationPermissionHelper
-    url_helper_class = OrganizationURLHelper
     create_view_class = OrganizationCreateView
     edit_view_class = OrganizationEditView
     search_fields = ('name', 'abbreviation')
     list_display = ('admin_thumb',) + NodeAdmin.list_display + ('abbreviation',)
     list_display_add_buttons = NodeAdmin.list_display[0]
     thumb_image_field_name = 'logo'
-
-    # TODO: Remove this shim and delete org_admin_legacy once everything is upgraded to Wagtail 5
-    if WAGTAIL_VERSION < (3, 0):
-        from .org_admin_legacy import LegacyOrganizationIndexView
-        index_view_class = LegacyOrganizationIndexView
 
     basic_panels = NodeAdmin.panels + [
         FieldPanel(
@@ -376,14 +344,9 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         is_in_plan.boolean = True
         return self.list_display + (is_in_plan,)
 
-    # def get_edit_handler(self):
-    # TODO: When migrated to Wagtail >= 3, remove deprecated arguments
-    def get_edit_handler(self, instance=None, request=None):
-        if WAGTAIL_VERSION >= (3, 0):
-            assert instance is None
-            assert request is None
-            request = ctx_request.get()
-            instance = ctx_instance.get()
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
 
         basic_panels = list(self.basic_panels)
         if request.user.is_superuser:
@@ -398,8 +361,5 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
         tabs += i18n_tabs
 
-        if WAGTAIL_VERSION >= (3, 0):
-            plan = request.user.get_active_admin_plan()
-            return OrganizationEditHandler(plan, tabs, base_form_class=OrganizationForm)
-        else:
-            return OrganizationEditHandler(tabs)
+        plan = request.user.get_active_admin_plan()
+        return OrganizationEditHandler(plan, tabs, base_form_class=OrganizationForm)

@@ -1,45 +1,33 @@
 import json
 import logging
-from datetime import timedelta
+from dal import autocomplete, forward as dal_forward
 
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
-from django.db.models import Q
 from django.urls import re_path
 from django.utils import timezone
-from django.utils.translation import gettext, gettext_lazy as _
-from wagtail.admin.edit_handlers import (
-    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
+from django.utils.translation import gettext_lazy as _
+from wagtail.admin.panels import (
+    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
-from wagtail.images.edit_handlers import ImageChooserPanel
-
-from admin_list_controls.actions import SubmitForm, TogglePanel
-from admin_list_controls.components import (
-    Block, Button, Columns, Icon, Panel, Spacer, Summary
-)
-from admin_list_controls.filters import ChoiceFilter, RadioFilter
-from admin_list_controls.views import ListControlsIndexView
-
-from dal import autocomplete, forward as dal_forward
-from wagtailorderable.modeladmin.mixins import OrderableMixin
+from wagtail.contrib.modeladmin.options import ModelAdminMenuItem
+from wagtail.contrib.modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
-    CondensedInlinePanel, CondensedPanelSingleSelect, PlanFilteredFieldPanel,
-    PlanRelatedPermissionHelper, PersistIndexViewFiltersMixin, SafeLabelModelAdminMenuItem,
-    insert_model_translation_panels, get_translation_tabs
+    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    CondensedPanelSingleSelect, PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
+    get_translation_tabs
 )
 from actions.chooser import ActionChooser
-from actions.models import ActionResponsibleParty
+from aplans.extensions import modeladmin_register
+from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
-from aplans.extensions import modeladmin_register
 from orgs.models import Organization
 from people.chooser import PersonChooser
-from people.models import Person
 
 from .models import Action, ActionTask
 from reports.views import MarkActionAsCompleteView
@@ -143,22 +131,21 @@ class ActionAdminForm(WagtailAdminModelForm):
 
 
 class ActionEditHandler(AplansTabbedInterface):
-    instance: Action
-
-    def get_form_class(self, request: WatchAdminRequest = None):
-        assert request is not None
+    def get_form_class(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Action, self.instance, with_initial=True)
+            cat_fields = _get_category_fields(plan, Action, instance, with_initial=True)
         else:
             cat_fields = {}
 
-        if self.instance is not None:
-            attribute_types = self.instance.get_editable_attribute_types(user)
+        if instance is not None:
+            attribute_types = instance.get_editable_attribute_types(user)
             attribute_fields = {field.name: field.django_field
                                 for attribute_type in attribute_types
-                                for field in attribute_type.get_form_fields(self.instance)}
+                                for field in attribute_type.get_form_fields(instance)}
         else:
             attribute_fields = {}
 
@@ -203,201 +190,38 @@ class ActionEditHandler(AplansTabbedInterface):
 
 
 class ActionCreateView(AplansCreateView):
-    def get_instance(self) -> Action:
-        # Override default implementation, which would try to create an
-        # instance of self.model (i.e., Action) without a plan, causing an
-        # error when saving it
-        instance: Action = super().get_instance()
-        if instance.pk:
-            return instance
+    instance: Action
 
-        plan = self.request.get_active_admin_plan()
-        instance.plan = plan
-        if not instance.identifier and not plan.features.has_action_identifiers:
-            instance.generate_identifier()
+    def initialize_instance(self, request):
+        plan = request.user.get_active_admin_plan()
+        assert self.instance.pk is None
+        assert not hasattr(self.instance, 'plan')
+        self.instance.plan = plan
+        if not plan.features.has_action_identifiers:
+            assert not self.instance.identifier
+            self.instance.generate_identifier()
         if plan.features.has_action_primary_orgs:
-            person = self.request.user.get_corresponding_person()
+            assert self.instance.primary_org is None
+            person = request.user.get_corresponding_person()
             if person is not None:
                 available_orgs = Organization.objects.available_for_plan(plan)
                 default_org = available_orgs.filter(id=person.organization_id).first()
-                instance.primary_org = default_org
-
-        return instance
+                self.instance.primary_org = default_org
 
 
-class ActionIndexView(PersistIndexViewFiltersMixin, ListControlsIndexView):
-    def filter_by_person(self, queryset, value):
-        if not value:
-            return queryset
-
-        person = Person.objects.filter(id=value).first()
-        if person is not None:
-            qs = queryset.filter(contact_persons__person=person).distinct()
-            return qs
-        else:
-            return queryset.none()
-
-    def filter_by_organization(self, queryset, value):
-        try:
-            org = Organization.objects.get(id=value)
-        except Organization.DoesNotExist:
-            return queryset.none()
-        orgs = Organization.objects.filter(id=org.id) | org.get_descendants()
-        responsibilities = ActionResponsibleParty.objects.filter(organization__in=orgs).values_list('action', flat=True)
-        return queryset.filter(Q(primary_org__in=orgs) | Q(id__in=responsibilities))
-
-    def create_cat_filters(self, plan):
-        ct_filters = []
-        for ct in plan.category_types.filter(usable_for_actions=True).all():
-            def filter_by_cat(queryset, value):
-                if not value:
-                    return queryset
-
-                cat_with_kittens = set()
-
-                def add_cat(cat):
-                    cat_with_kittens.add(cat)
-                    for kitten in cat.children.all():
-                        add_cat(kitten)
-
-                cat = ct.categories.filter(id=value).first()
-                if not cat:
-                    return queryset.none()
-                add_cat(cat)
-                return queryset.filter(categories__in=cat_with_kittens).distinct()
-
-            choices = []
-
-            def add_cat_recursive(cat, level):
-                if cat.identifier[0].isdigit():
-                    id_str = '%s. ' % cat.identifier
-                else:
-                    id_str = ''
-                choice = (str(cat.id), '%s%s%s' % (' ' * level, id_str, cat.name))
-                choices.append(choice)
-                for child in cat.children.all():
-                    add_cat_recursive(child, level + 1)
-
-            for cat in ct.categories.filter(parent=None):
-                add_cat_recursive(cat, 0)
-
-            ct_filters.append(ChoiceFilter(
-                name='category_%s' % ct.identifier,
-                label=ct.name,
-                choices=choices,
-                apply_to_queryset=filter_by_cat,
-            ))
-        return ct_filters
-
-    def filter_own_action(self, queryset, value):
-        user = self.request.user
-        if value == 'modifiable':
-            return queryset.modifiable_by(user)
-        elif value == 'contact_person':
-            person = user.get_corresponding_person()
-            if person is None:
-                return queryset.none()
-            else:
-                return queryset.filter(contact_persons__person=person)
-        return queryset
-
-    def filter_last_updated(self, queryset, value):
-        if not value:
-            return queryset
-
-        start = end = None
-        if value.endswith('-'):
-            start = value.strip('-')
-        elif value.startswith('-'):
-            end = value.strip('-')
-        else:
-            start, end = value.split('-')
-
-        now = timezone.now()
-        if start:
-            queryset = queryset.filter(updated_at__lte=now - timedelta(days=int(start)))
-        if end:
-            queryset = queryset.filter(updated_at__gte=now - timedelta(days=int(end)))
-        return queryset
-
-    def build_list_controls(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        qs = Person.objects.filter(contact_for_actions__plan=plan).distinct()
-        person_choices = [(str(person.id), str(person)) for person in qs]
-        person_filter = ChoiceFilter(
-            name='contact_person',
-            label=gettext('Contact person'),
-            choices=person_choices,
-            apply_to_queryset=self.filter_by_person,
-        )
-        ct_filters = self.create_cat_filters(plan)
-
-        org_choices = [(str(org.id), str(org)) for org in Organization.objects.available_for_plan(plan)]
-        org_filter = ChoiceFilter(
-            name='organization',
-            label=gettext('Organization'),
-            choices=org_choices,
-            apply_to_queryset=self.filter_by_organization,
-        )
-
-        own_actions = RadioFilter(
-            name='own',
-            label=gettext('Own actions'),
-            choices=[
-                ('contact_person', gettext('Show only actions with me as a contact person')),
-                ('modifiable', gettext('Show only actions I can modify')),
-                (None, gettext('Show all actions')),
-            ],
-            apply_to_queryset=self.filter_own_action
-        )
-
-        updated_filter = RadioFilter(
-            name='last_updated',
-            label=gettext('By last updated'),
-            choices=[
-                (None, gettext('No filtering')),
-                ('-7', gettext('In the last 7 days')),
-                ('7-30', gettext('7–30 days ago')),
-                ('30-120', gettext('1–3 months ago')),
-                ('120-', gettext('More than 3 months ago')),
-            ],
-            apply_to_queryset=self.filter_last_updated,
-        )
-
-        return [
-            Columns(column_count=2)(
-                Block(extra_classes='own-action-filter')(own_actions),
-                Block(extra_classes='own-action-filter')(org_filter)
-            ),
-            Button(action=SubmitForm())(
-                Icon('icon icon-tick'),
-                gettext("Apply filters"),
-            ),
-            Button(action=[
-                TogglePanel(ref='filter_panel'),
-            ])(Icon('icon icon-list-ul'), gettext('Advanced filters')),
-            Panel(ref='filter_panel', collapsed=True)(
-                Columns()(person_filter),
-                Columns()(*ct_filters),
-                Spacer(),
-                Spacer(),
-                updated_filter,
-            ),
-            Summary(reset_label=gettext('Reset all'), search_query_label=gettext('Search')),
-        ]
-
+class ActionIndexView(IndexView):
     def get_page_title(self):
         plan = self.request.user.get_active_admin_plan()
         return plan.general_content.get_action_term_display_plural()
 
 
-class ActionMenuItem(SafeLabelModelAdminMenuItem):
-    def get_label_from_context(self, context, request):
-        # Ignore context; the label is going to be the configured term for "Action"
+class ActionMenuItem(ModelAdminMenuItem):
+    def render_component(self, request):
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
-        return plan.general_content.get_action_term_display_plural()
+        # Change label to the configured term for "Action"
+        link_menu_item.label = plan.general_content.get_action_term_display_plural()
+        return link_menu_item
 
 
 class ActionButtonHelper(AplansButtonHelper):
@@ -441,13 +265,26 @@ class ActionButtonHelper(AplansButtonHelper):
         return buttons
 
 
+class ActionEditView(AplansEditView):
+    def get_description(self):
+        action = self.instance
+        primary_action_classification = action.plan.primary_action_classification
+        if primary_action_classification is None:
+            return ''
+        category = action.categories.filter(type=primary_action_classification)
+        if not category:
+            return ''
+        return str(category.first())
+
+
 @modeladmin_register
-class ActionAdmin(OrderableMixin, AplansModelAdmin):
+class ActionAdmin(AplansModelAdmin):
     model = Action
     create_view_class = ActionCreateView
     index_view_class = ActionIndexView
-    menu_icon = 'fa-cubes'  # change as required
-    menu_order = 1
+    edit_view_class = ActionEditView
+    menu_icon = 'kausal-action'
+    menu_order = 10
     list_display = ('identifier', 'name_link')
     list_display_add_buttons = 'name_link'
     search_fields = ('identifier', 'name')
@@ -460,13 +297,13 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
     basic_panels = [
         FieldPanel('identifier'),
         FieldPanel('official_name'),
-        FieldPanel('name', classname='full title'),
+        FieldPanel('name'),
         FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
         FieldPanel('lead_paragraph'),
-        RichTextFieldPanel('description'),
+        FieldPanel('description'),
     ]
     basic_related_panels = [
-        ImageChooserPanel('image'),
+        FieldPanel('image'),
         CondensedInlinePanel(
             'links',
             panels=[
@@ -508,7 +345,7 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         FieldPanel('due_at'),
         FieldPanel('state', widget=CondensedPanelSingleSelect),
         FieldPanel('completed_at'),
-        RichTextFieldPanel('comment'),
+        FieldPanel('comment'),
     ]
 
     task_header_from_js = '''
@@ -576,8 +413,10 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
 
         list_display.append('updated_at_delta')
 
+        """
         if not plan.actions_locked and request.user.is_general_admin_for_plan(plan):
             list_display.insert(0, 'index_order')
+        """
 
         out = tuple(list_display)
         request._action_admin_list_display = out
@@ -588,7 +427,9 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self, instance: Action, request: WatchAdminRequest):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
         attribute_panels = instance.get_attribute_panels(request.user)
@@ -672,7 +513,6 @@ class ActionAdmin(OrderableMixin, AplansModelAdmin):
                 CondensedInlinePanel(
                     'tasks',
                     panels=task_panels,
-                    card_header_from_js_safe=self.get_task_header_formatter()
                 )
             ], heading=_('Tasks')),
         ]

@@ -2,7 +2,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
-from wagtail.core.blocks import (
+from wagtail.blocks import (
     BooleanBlock, CharBlock, ChoiceBlock, ChooserBlock, ListBlock, RichTextBlock, StaticBlock, StructBlock
 )
 

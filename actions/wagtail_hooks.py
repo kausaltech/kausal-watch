@@ -2,8 +2,7 @@ from typing import Any, Mapping
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
-from wagtail.core import hooks
-from wagtail.admin.menu import AdminOnlyMenuItem
+from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
 from aplans.types import WatchAdminRequest
@@ -13,7 +12,6 @@ from .views import create_plan_with_defaults
 
 
 class ActionsSummaryItem(SummaryItem):
-    order = 200
     template_name = 'site_summary/actions.html'
     request: WatchAdminRequest
 
@@ -28,7 +26,7 @@ class ActionsSummaryItem(SummaryItem):
         return True
 
 
-@hooks.register('construct_homepage_summary_items')
+@hooks.register('construct_homepage_summary_items', order=1001)
 def add_actions_summary_item(request, items):
     items.append(ActionsSummaryItem(request))
 
@@ -43,13 +41,3 @@ def register_create_plan_with_defaults_url():
     return [
         path('create_plan/', create_plan_with_defaults, name='create-plan')
     ]
-
-
-@hooks.register('register_admin_menu_item')
-def register_create_plan_menu_item():
-    return AdminOnlyMenuItem(
-        _('Create plan'),
-        reverse('create-plan'),
-        icon_name='plus-inverse',
-        order=10000
-    )

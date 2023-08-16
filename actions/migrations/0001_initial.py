@@ -10,7 +10,7 @@ import django.db.models.deletion
 import django.utils.timezone
 import modelcluster.fields
 import modeltrans.fields
-import wagtail.core.fields
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('official_name', models.TextField(blank=True, help_text='The name as approved by an official party', null=True, verbose_name='official name')),
                 ('identifier', aplans.utils.IdentifierField(help_text='The identifier for this action (e.g. number)', max_length=50, validators=[aplans.utils.IdentifierValidator()], verbose_name='identifier')),
                 ('lead_paragraph', models.TextField(blank=True, verbose_name='Lead paragraph')),
-                ('description', wagtail.core.fields.RichTextField(blank=True, help_text='What does this action involve in more detail?', null=True, verbose_name='description')),
+                ('description', wagtail.fields.RichTextField(blank=True, help_text='What does this action involve in more detail?', null=True, verbose_name='description')),
                 ('internal_priority', models.PositiveIntegerField(blank=True, null=True, verbose_name='internal priority')),
                 ('internal_admin_notes', models.TextField(blank=True, null=True, verbose_name='internal notes for plan administrators')),
                 ('internal_notes', models.TextField(blank=True, null=True, verbose_name='internal notes')),
@@ -185,7 +185,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=250, verbose_name='name')),
                 ('state', models.CharField(choices=[('not_started', 'not started'), ('in_progress', 'in progress'), ('completed', 'completed'), ('cancelled', 'cancelled')], default='not_started', max_length=20, verbose_name='state')),
-                ('comment', wagtail.core.fields.RichTextField(blank=True, null=True, verbose_name='comment')),
+                ('comment', wagtail.fields.RichTextField(blank=True, null=True, verbose_name='comment')),
                 ('due_at', models.DateField(help_text='The date by which the task should be completed (deadline)', verbose_name='due date')),
                 ('completed_at', models.DateField(blank=True, help_text='The date when the task was completed', null=True, verbose_name='completion date')),
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='created at')),
@@ -248,7 +248,7 @@ class Migration(migrations.Migration):
             name='CategoryMetadataRichText',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('text', wagtail.core.fields.RichTextField(verbose_name='Text')),
+                ('text', wagtail.fields.RichTextField(verbose_name='Text')),
             ],
         ),
         migrations.CreateModel(

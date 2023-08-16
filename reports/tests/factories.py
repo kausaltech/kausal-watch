@@ -2,7 +2,7 @@ import datetime
 
 from factory.django import DjangoModelFactory
 from factory import SubFactory, Sequence
-from wagtail_factories import (
+from wagtail.test.utils.wagtail_factories import (
     StreamBlockFactory, StructBlockFactory, StreamFieldFactory
 )
 

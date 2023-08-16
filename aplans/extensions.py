@@ -2,7 +2,7 @@ from typing import Tuple
 import typing
 
 if typing.TYPE_CHECKING:
-    from wagtail.core.blocks import Block
+    from wagtail.blocks import Block
 
 
 # Some ModelAdmins can be disabled if they are replaced in an extension.

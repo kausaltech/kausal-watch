@@ -1,6 +1,9 @@
 import pytest
+from wagtail import blocks
 
 from actions.tests.factories import ActionListBlockFactory
+from indicators.blocks import IndicatorBlock
+from pages.blocks import CardBlock, QuestionBlock
 from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFactory
 
 pytestmark = pytest.mark.django_db
@@ -147,8 +150,9 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
     unit = indicator.unit
 
     page = plan.root_page
+    indicator_group = blocks.list_block.ListValue(blocks.list_block.ListBlock(IndicatorBlock), [indicator_block])
     page.body = [
-        ('indicator_group', [indicator_block]),
+        ('indicator_group', indicator_group),
     ]
     page.save()
     assert_body_block(
@@ -297,7 +301,8 @@ def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages)
     # NOTE: Due to a presumed bug in wagtail-factories, we deliberately do not register factories containing a
     # ListBlockFactory. For these factories, we *should not use a fixture* but instead use the factory explicitly.
     # https://github.com/wagtail/wagtail-factories/issues/40
-    card_list_block = CardListBlockFactory(cards=[card_block])
+    cards = blocks.list_block.ListValue(blocks.list_block.ListBlock(CardBlock), [card_block])
+    card_list_block = CardListBlockFactory(cards=cards)
     page = plan.root_page
     page.body = [
         ('cards', card_list_block),
@@ -335,7 +340,8 @@ def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages)
 
 
 def test_question_answer_block(graphql_client_query_data, plan_with_pages, static_page, question_block):
-    question_answer_block = QuestionAnswerBlockFactory(questions=[question_block])
+    questions = blocks.list_block.ListValue(blocks.list_block.ListBlock(QuestionBlock), [question_block])
+    question_answer_block = QuestionAnswerBlockFactory(questions=questions)
     static_page.body = [
         ('qa_section', question_answer_block),
     ]
@@ -463,8 +469,7 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
                 'id': static_page.body[0].id,
                 'blockType': 'RichTextBlock',
                 'field': 'paragraph',
-                # FIXME: The newline is added by grapple in RichTextBlock.resolve_value()
-                'value': f'{static_page.body[0].value}\n',
+                'value': str(static_page.body[0].value),
             }, {
                 'id': static_page.body[1].id,
                 'blockType': 'QuestionAnswerBlock',

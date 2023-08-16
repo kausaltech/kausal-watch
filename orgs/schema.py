@@ -106,15 +106,10 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
 
 class Query:
     organization = graphene.Field(OrganizationNode, id=graphene.ID(required=True))
-    all_organizations = graphene.List(OrganizationNode)
 
     @staticmethod
     def resolve_organization(root, info, id):
         return Organization.objects.get(id=id)
-
-    @staticmethod
-    def resolve_all_organizations(root, info):
-        return Organization.objects.all()
 
 
 class CreateOrganizationMutation(CreateModelInstanceMutation):

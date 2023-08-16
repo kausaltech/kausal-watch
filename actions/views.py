@@ -26,7 +26,6 @@ def create_plan_with_defaults(request):
                 domain=data['domain'],
                 client_identifier=data['admin_client_id'],
                 client_name=data['client'],
-                azure_ad_tenant_id=data['azure_ad_tenant_id']
             )
             return HttpResponseRedirect(
                 reverse('change-admin-plan', kwargs=dict(plan_id=plan.id)) + (

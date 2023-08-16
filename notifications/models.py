@@ -14,7 +14,7 @@ from enum import Enum
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from typing import Dict, Sequence
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 
 from aplans.utils import PlanRelatedModel
 from people.models import Person

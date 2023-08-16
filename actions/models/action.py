@@ -19,7 +19,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
-from wagtail.core.fields import RichTextField
+from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -536,10 +536,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_notification_context(self, plan=None):
         if plan is None:
             plan = self.plan
-        if plan.uses_wagtail:
-            change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
-        else:
-            change_url = reverse('admin:actions_action_change', args=(self.id,))
+        change_url = reverse('actions_action_modeladmin_edit', kwargs=dict(instance_pk=self.id))
         return {
             'id': self.id, 'identifier': self.identifier, 'name': self.name, 'change_url': change_url,
             'updated_at': self.updated_at, 'view_url': self.get_view_url(plan=plan), 'order': self.order,
@@ -760,7 +757,7 @@ class ActionContactPerson(OrderedModel):
         verbose_name_plural = _('action contact persons')
 
     def __str__(self):
-        return str(self.person)
+        return f'{str(self.person)}: {str(self.action)}'
 
 
 class ActionSchedule(models.Model, PlanRelatedModel):

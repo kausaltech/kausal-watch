@@ -2,7 +2,7 @@ import graphene
 import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
 from graphql.error import GraphQLError
-from wagtail.core.rich_text import RichText
+from wagtail.rich_text import RichText
 
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
@@ -296,14 +296,14 @@ class Query:
         plan = kwargs.get('plan')
 
         if not identifier and not obj_id:
-            raise GraphQLError("You must supply either 'id' or 'identifier'", [info])
+            raise GraphQLError("You must supply either 'id' or 'identifier'")
 
         qs = Indicator.objects.all()
         if obj_id:
             try:
                 obj_id = int(obj_id)
             except ValueError:
-                raise GraphQLError("Invalid 'id'", [info])
+                raise GraphQLError("Invalid 'id'")
             qs = qs.filter(id=obj_id)
 
         if plan:

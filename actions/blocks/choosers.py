@@ -1,5 +1,5 @@
 from django.utils.functional import cached_property
-from wagtail.core import blocks
+from wagtail import blocks
 
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType

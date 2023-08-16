@@ -14,33 +14,30 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 import importlib
-
 from django.conf import settings
 from django.conf.urls.static import static
-from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from wagtail.admin import urls as wagtailadmin_urls
-from wagtail.core import urls as wagtail_urls
 from wagtail.documents import urls as wagtaildocs_urls
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
+from .graphene_views import SentryGraphQLView
+from .api_router import router as api_router
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from actions.autocomplete import (
     ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
 )
-from orgs.autocomplete import OrganizationAutocomplete
+from admin_site.views import account, RootRedirectView, WadminRedirectView
 from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
+from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
-from admin_site.views import RootRedirectView
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
 from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
 from users.views import change_admin_plan
-from .graphene_views import SentryGraphQLView
-from .api_router import router as api_router
 
 extensions_api_views = []
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
@@ -60,7 +57,6 @@ api_urlconf = [
 
 urlpatterns = [
     re_path(r'^admin/change-admin-plan/(?:(?P<plan_id>\d+)/)?$', change_admin_plan, name='change-admin-plan'),
-    path('admin/', admin.site.urls),
     *api_urlconf,
     path('v1/docs/', TemplateView.as_view(
         template_name='swagger-ui.html',
@@ -75,10 +71,13 @@ urlpatterns = [
         template_name='graphql-voyager.html',
     ), name='graphql-voyager'),
 
-    re_path(r'^wadmin/autocomplete/', include(autocomplete_admin_urls)),
-    re_path(r'^wadmin/', include(wagtailadmin_urls)),
+    re_path(r'^admin/autocomplete/', include(autocomplete_admin_urls)),
+    # FIXME: This overrides the URL in Wagtail's admin.urls/__init__.py to disable dark mode until we fix CSS issues
+    re_path("^admin/account/", account, name="wagtailadmin_account"),
+    re_path(r'^admin/', include(wagtailadmin_urls)),
+    re_path(r'^wadmin', WadminRedirectView.as_view(), name='wadmin-redirect'),
     re_path(r'^documents/', include(wagtaildocs_urls)),
-    re_path(r'^pages/', include(wagtail_urls)),
+    # re_path(r'^pages/', include(wagtail_urls)),
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),

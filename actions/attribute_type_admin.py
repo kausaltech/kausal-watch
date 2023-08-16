@@ -2,9 +2,13 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
+from django.urls import reverse
+from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.edit_handlers import FieldPanel, ObjectList
-from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
+from wagtail import hooks
+from wagtail.admin.menu import MenuItem
+from wagtail.admin.panels import FieldPanel, ObjectList
+from wagtail.contrib.modeladmin.helpers import ButtonHelper
 from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
 from wagtail.contrib.modeladmin.options import modeladmin_register
 from wagtail.contrib.modeladmin.views import IndexView, DeleteView
@@ -16,6 +20,7 @@ from admin_site.wagtail import (
     ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
     AplansTabbedInterface, CondensedInlinePanel, InitializeFormWithPlanMixin, insert_model_translation_panels
 )
+from aplans.context_vars import ctx_instance, ctx_request
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -63,7 +68,7 @@ class ContentTypeQueryParameterMixin:
 
 
 class AttributeTypeIndexView(IndexView):
-    page_title = _("Attributes")
+    page_title = _("Fields")
 
 
 class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansCreateView):
@@ -76,7 +81,7 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
     def get_page_subtitle(self):
         content_type = self.get_object_content_type()
         model_name = content_type.model_class()._meta.verbose_name_plural
-        return _("Attribute for %s") % model_name
+        return _("Field for %s") % model_name
 
     def get_instance(self):
         """Create an attribute type instance and set its object content type to the one given in GET or POST data."""
@@ -148,6 +153,32 @@ class AttributeTypeAdminMenuItem(ModelAdminMenuItem):
         return False
 
 
+class AttributeTypeMenuItem(MenuItem):
+    def __init__(self, content_type, **kwargs):
+        self.content_type = content_type
+        self.base_url = reverse('actions_attributetype_modeladmin_index')
+        url = f'{self.base_url}?content_type={content_type.id}'
+        model_name = capfirst(content_type.model_class()._meta.verbose_name)
+        label = _("Fields (%(model)s)") % {'model': model_name}
+        super().__init__(label, url, **kwargs)
+
+    def is_active(self, request):
+        path, _ = self.url.split('?', maxsplit=1)
+        content_type = request.GET.get('content_type')
+        return request.path.startswith(self.base_url) and content_type == str(self.content_type.pk)
+
+
+@hooks.register('construct_settings_menu')
+def add_attribute_types_to_settings_menu(request, items: list):
+    user = request.user
+    plan = user.get_active_admin_plan()
+    if user.is_general_admin_for_plan(plan):
+        action_ct = ContentType.objects.get(app_label='actions', model='action')
+        category_ct = ContentType.objects.get(app_label='actions', model='category')
+        items.append(AttributeTypeMenuItem(action_ct, icon_name='kausal-attribute'))
+        items.append(AttributeTypeMenuItem(category_ct, icon_name='kausal-attribute'))
+
+
 class AttributeTypeForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
@@ -157,14 +188,14 @@ class AttributeTypeForm(AplansAdminModelForm):
         attribute_category_type = self.cleaned_data['attribute_category_type']
         format = self.cleaned_data.get('format')  # avoid blowing up if None (will fail validation elsewhere)
         if format == AttributeType.AttributeFormat.CATEGORY_CHOICE and attribute_category_type is None:
-            raise ValidationError(_("If format is 'Category', a category type must be set "))
+            raise ValidationError(_("If format is 'Category', a category type must be set"))
         return attribute_category_type
 
     def clean_unit(self):
         unit = self.cleaned_data['unit']
         format = self.cleaned_data.get('format')  # avoid blowing up if None (will fail validation elsewhere)
         if format == AttributeType.AttributeFormat.NUMERIC and unit is None:
-            raise ValidationError(_("If format is 'Numeric', a unit must be set "))
+            raise ValidationError(_("If format is 'Numeric', a unit must be set"))
         return unit
 
 
@@ -175,9 +206,9 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
-    menu_icon = 'tag'
-    menu_label = _("Attributes")
-    menu_order = 1200
+    menu_icon = 'kausal-attribute'
+    menu_label = _("Fields")
+    menu_order = 510
     list_display = ('name', 'format')
     list_filter = (AttributeTypeFilter,)
 
@@ -191,7 +222,9 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     delete_view_class = AttributeTypeDeleteView
     button_helper_class = AttributeTypeAdminButtonHelper
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = ctx_instance.get()
         choice_option_panels = insert_model_translation_panels(
             AttributeTypeChoiceOption, self.choice_option_panels, request, instance
         )
@@ -210,9 +243,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             FieldPanel('show_in_reporting_tab'),
         ]
         panels = insert_model_translation_panels(AttributeType, panels, request, instance)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        if instance.object_content_type_id is None:
+        if instance is None or instance.object_content_type_id is None:
             content_type_id = request.GET['content_type']
         else:
             content_type_id = instance.object_content_type_id

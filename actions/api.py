@@ -13,8 +13,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from rest_framework import exceptions, permissions, serializers, viewsets
 
-from drf_spectacular.utils import extend_schema, extend_schema_field
-from drf_spectacular.types import OpenApiTypes  # noqa
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, extend_schema_field, OpenApiParameter
 from rest_framework_nested import routers
 
 from actions.models.action import ActionImplementationPhase
@@ -171,6 +171,9 @@ class ActionScheduleViewSet(viewsets.ModelViewSet):
     serializer_class = ActionScheduleSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
+            return ActionSchedule.objects.none()
         return ActionSchedule.objects.filter(plan=self.kwargs['plan_pk'])
 
 
@@ -183,6 +186,9 @@ class ActionImplementationPhaseViewSet(viewsets.ModelViewSet):
     serializer_class = ActionImplementationPhaseSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
+            return ActionImplementationPhase.objects.none()
         return ActionImplementationPhase.objects.filter(plan=self.kwargs['plan_pk'])
 
 
@@ -520,7 +526,7 @@ class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetacla
                 self.fields[field_name].update(instance, data)
 
 
-class PrevSiblingField(serializers.Field):
+class PrevSiblingField(serializers.CharField):
     # Instances must implement method get_prev_sibling(). (Treebeard nodes do that.) Must be used in ModelSerializer so
     # we can get the model for to_internal_value().
     # FIXME: This is ugly.
@@ -805,12 +811,6 @@ class ActionSerializer(
 class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = ActionSerializer
 
-    def get_serializer(self, *args, **kwargs):
-        if 'plan_pk' not in self.kwargs:
-            plan = PlanViewSet.get_default_plan(request=self.request)
-            kwargs['plan'] = plan
-        return super().get_serializer(*args, **kwargs)
-
     def get_permissions(self):
         if self.action == 'list':
             permission_classes = [AnonReadOnly]
@@ -819,9 +819,10 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        plan_pk = self.kwargs.get('plan_pk')
-        if not plan_pk:
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
             return Action.objects.none()
+        plan_pk = self.kwargs['plan_pk']
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
             raise exceptions.NotFound(detail="Plan not found")
@@ -913,16 +914,11 @@ class CategoryTypeViewSet(viewsets.ModelViewSet):
     queryset = CategoryType.objects.all()
     serializer_class = CategoryTypeSerializer
 
-    def get_serializer(self, *args, **kwargs):
-        if 'plan_pk' not in self.kwargs:
-            plan = PlanViewSet.get_default_plan(request=self.request)
-            kwargs['plan'] = plan
-        return super().get_serializer(*args, **kwargs)
-
     def get_queryset(self):
-        plan_pk = self.kwargs.get('plan_pk')
-        if not plan_pk:
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
             return CategoryType.objects.none()
+        plan_pk = self.kwargs['plan_pk']
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
             raise exceptions.NotFound(detail="Plan not found")
@@ -966,13 +962,18 @@ class CategorySerializer(
             context = kwargs.get('context')
             if context is not None:
                 view = context['view']
-                category_type_pk = view.kwargs['category_type_pk']
-                category_type = CategoryType.objects.filter(pk=category_type_pk).first()
-                if category_type is None:
-                    raise exceptions.NotFound('Category type not found')
-                self.category_type = category_type
+                if getattr(view, 'swagger_fake_view', False):
+                    # Called during schema generation
+                    assert 'category_type_pk' not in view.kwargs
+                    self.category_type = CategoryType.objects.first()
+                else:
+                    category_type_pk = view.kwargs['category_type_pk']
+                    category_type = CategoryType.objects.filter(pk=category_type_pk).first()
+                    if category_type is None:
+                        raise exceptions.NotFound('Category type not found')
+                    self.category_type = category_type
             else:
-                # Probably used for schema generation
+                # Probably called during schema generation
                 self.category_type = CategoryType.objects.first()
         super().__init__(*args, **kwargs)
 
@@ -1013,6 +1014,13 @@ class CategorySerializer(
         read_only_fields = ['type']
 
 
+@extend_schema(
+    # Get rid of some warnings
+    parameters=[
+        OpenApiParameter(name='plan_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
+        OpenApiParameter(name='category_type_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
+    ],
+)
 class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = CategorySerializer
 
@@ -1024,9 +1032,10 @@ class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        category_type_pk = self.kwargs.get('category_type_pk')
-        if not category_type_pk:
+        if getattr(self, 'swagger_fake_view', False):
+            # Called during schema generation
             return Category.objects.none()
+        category_type_pk = self.kwargs['category_type_pk']
         return Category.objects.filter(type=category_type_pk)
 
 
@@ -1076,7 +1085,7 @@ class OrganizationPermission(permissions.DjangoObjectPermissions):
         return True
 
 
-class TreebeardParentField(serializers.Field):
+class TreebeardParentField(serializers.CharField):
     # For serializers of Treebeard node models
     def get_attribute(self, instance):
         return instance.get_parent()
@@ -1268,7 +1277,7 @@ class PersonSerializer(
         if self.context.get('authorized_for_plan') is None:
             self.fields.pop('email')
 
-    def get_avatar_url(self, obj):
+    def get_avatar_url(self, obj: Person) -> str | None:
         return obj.get_avatar_url(self.context['request'])
 
     def validate_email(self, value):
@@ -1276,7 +1285,7 @@ class PersonSerializer(
         if self._instance is not None:
             qs = qs.exclude(pk=self._instance.pk)
         if qs.exists():
-            raise serializers.ValidationError(_('Person with that email already exists'))
+            raise serializers.ValidationError(_('Person with this email already exists'))
         return value
 
     def validate(self, data):

@@ -4,9 +4,9 @@
 {% block confirmation_message %}
 <p>
   {% if view.complete %}
-    {% blocktranslate with report=view.report %}Do you really want to mark the report <i>{{ report }}<i> as complete?{% endblocktranslate %}
+    {% blocktranslate with report=view.report %}Do you really want to mark the report <i>{{ report }}</i> as complete?{% endblocktranslate %}
   {% else %}
-    {% blocktranslate with report=view.report %}Do you really want to undo marking the report <i>{{ report }}</em> as complete?{% endblocktranslate %}
+    {% blocktranslate with report=view.report %}Do you really want to undo marking the report <i>{{ report }}</i> as complete?{% endblocktranslate %}
   {% endif %}
 </p>
 {% if affected_actions %}

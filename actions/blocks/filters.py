@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLString, GraphQLInt
-from wagtail.core import blocks
+from wagtail import blocks
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
@@ -11,7 +11,7 @@ from actions.models.category import CategoryType
 
 @register_streamfield_block
 class ActionAttributeTypeFilterBlock(blocks.StructBlock):
-    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Attribute type"))
+    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Field"))
     show_all_label = blocks.CharBlock(required=False, label=_("Label for 'show all'"))
 
     model_instance_container_blocks = {
@@ -24,7 +24,7 @@ class ActionAttributeTypeFilterBlock(blocks.StructBlock):
     ]
 
     class Meta:
-        label = _("Attribute")
+        label = _("Field")
 
 
 @register_streamfield_block

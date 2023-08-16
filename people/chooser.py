@@ -3,7 +3,7 @@ from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
 from django.forms.models import modelform_factory
 from wagtail.search.backends import get_search_backend
-from wagtail.core import hooks
+from wagtail import hooks
 from dal import autocomplete
 
 from .models import Person

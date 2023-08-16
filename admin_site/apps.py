@@ -43,8 +43,6 @@ def _get_language_choices():
 
 
 class AdminSiteConfig(AdminConfig):
-    default_site = 'admin_site.admin.AplansAdminSite'
-
     def ready(self):
         super().ready()
         # monkeypatch collection create to make new collections as children

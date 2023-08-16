@@ -42,13 +42,13 @@ class CreatePlanWithDefaultsForm(forms.Form):
         label=_('Domain name'),
         max_length=100,
         required=False,
-        help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known')
+        help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known.')
     )
     base_path = forms.CharField(
         label=_('Base path'),
         max_length=50,
         required=False,
-        help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain')
+        help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain.')
 
     )
     client = forms.CharField(
@@ -56,12 +56,6 @@ class CreatePlanWithDefaultsForm(forms.Form):
         max_length=200,
         required=False,
         help_text=_('Name of the customer administering the plan')
-    )
-    azure_ad_tenant_id = forms.CharField(
-        label=_('Azure AD tenant id'),
-        max_length=200,
-        required=False,
-        help_text=_('Most often the host name, ie. everything after the @ sign in employee email addresses')
     )
     admin_client_id = forms.CharField(
         label=_('Client subdomain for admin UI'),

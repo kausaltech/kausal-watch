@@ -1,12 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 from import_export.fields import Field
-
-from admin_site.admin import AplansResource
+from import_export.resources import ModelResource
 
 from .models import Action
 
 
-class ActionResource(AplansResource):
+class ActionResource(ModelResource):
     identifier = Field(attribute='identifier', column_name=_('identifier'))
     name = Field(attribute='name', column_name=_('name'))
     impact = Field(attribute='impact__name', column_name=_('impact'))
@@ -21,6 +20,10 @@ class ActionResource(AplansResource):
             'identifier', 'name', 'impact', 'status', 'progress_indicators', 'indicators', 'contact_persons',
         )
         export_order = fields
+
+    def __init__(self, request=None):
+        self.request = request
+        super().__init__()
 
     def _dehydrate_indicators(self, obj, qs):
         plan = self.request.user.get_active_admin_plan()

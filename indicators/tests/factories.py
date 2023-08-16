@@ -1,8 +1,8 @@
 import datetime
 from factory import SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
-from wagtail.core.rich_text import RichText
-from wagtail_factories import StructBlockFactory
+from wagtail.rich_text import RichText
+from wagtail.test.utils.wagtail_factories import StructBlockFactory
 
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory

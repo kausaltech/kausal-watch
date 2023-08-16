@@ -1,0 +1,12 @@
+{% load i18n wagtailadmin_tags %}
+
+<li>
+    <span class="icon icon-fa-bar-chart"></span>
+    <a href="{% url 'indicators_indicator_modeladmin_index' %}">
+    {% blocktrans count counter=total_indicators with total_indicators|intcomma as total %}
+        <span>{{ total }}</span> indicator <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% plural %}
+        <span>{{ total }}</span> indicators <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% endblocktrans %}
+    </a>
+</li>

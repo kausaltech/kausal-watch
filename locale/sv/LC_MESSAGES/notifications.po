@@ -1,0 +1,103 @@
+# Translations template for PROJECT.
+# Copyright (C) 2023 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2023-04-19 18:06+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: sv\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.12.1\n"
+
+#: notifications/mjml-templates/action_not_updated.mjml
+#: notifications/mjml-templates/not_enough_tasks.mjml
+#, python-format
+msgid "Action %(identifier)s. %(name)s"
+msgstr ""
+
+#: notifications/mjml-templates/action_not_updated.mjml
+#, python-format
+msgid " (last updated at %(updated_at)s)"
+msgstr ""
+
+#: notifications/mjml-templates/bookended_base.mjml
+#, python-format
+msgid "Hi %(first_name)s,"
+msgstr ""
+
+#: notifications/mjml-templates/bookended_base.mjml
+msgid "Hi,"
+msgstr ""
+
+#: notifications/mjml-templates/task_due_soon.mjml
+#: notifications/mjml-templates/task_late.mjml
+#, python-format
+msgid "Action %(identifier)s"
+msgstr ""
+
+#: notifications/mjml-templates/task_due_soon.mjml
+#: notifications/mjml-templates/task_late.mjml
+msgid "Tasks"
+msgstr ""
+
+#: notifications/mjml-templates/task_due_soon.mjml
+#: notifications/mjml-templates/updated_indicator_values_due_soon.mjml
+#, python-format
+msgid "Due at %(due_at)s (tomorrow)"
+msgid_plural "Due at %(due_at)s (in %(days_left)s days)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/mjml-templates/task_late.mjml
+#: notifications/mjml-templates/updated_indicator_values_late.mjml
+#, python-format
+msgid "Was due at %(due_at)s (yesterday)"
+msgid_plural "Was due at %(due_at)s (%(days_late)s days ago)"
+msgstr[0] ""
+msgstr[1] ""
+
+#: notifications/mjml-templates/updated_indicator_values_due_soon.mjml
+#: notifications/mjml-templates/updated_indicator_values_late.mjml
+#, python-format
+msgid "Indicator %(id)s"
+msgstr ""
+
+#: notifications/mjml-templates/user_feedback_received.mjml
+#, python-format
+msgid "Feedback regarding <a href=\"%(url)s\">%(url)s</a> (%(created_at)s)"
+msgstr ""
+
+#: notifications/mjml-templates/user_feedback_received.mjml
+#, python-format
+msgid "Feedback from <a href=\"mailto:%(email)s\">%(name)s</a>"
+msgstr ""
+
+#: notifications/mjml-templates/user_feedback_received.mjml
+#, python-format
+msgid "Feedback from <a href=\"mailto:%(email)s\">%(email)s</a>"
+msgstr ""
+
+#: notifications/mjml-templates/user_feedback_received.mjml
+#, python-format
+msgid "Feedback from %(name)s"
+msgstr ""
+
+#: notifications/mjml-templates/user_feedback_received.mjml
+msgid "Anonymous feedback"
+msgstr ""
+
+#: notifications/mjml-templates/includes/modify_action_button.mjml
+msgid "Edit action"
+msgstr ""
+
+#: notifications/mjml-templates/includes/modify_indicator_button.mjml
+msgid "Edit indicator data"
+msgstr ""

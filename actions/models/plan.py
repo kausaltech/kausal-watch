@@ -24,11 +24,12 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from typing import Optional, Tuple, Type, Union
 from urllib.parse import urlparse
-from wagtail.core.models import Collection, Page, Site
-from wagtail.core.models.i18n import Locale
+from wagtail.models import Collection, Page, Site
+from wagtail.models.i18n import Locale
 # In future versions of wagtail_localize, this will be in wagtail_localize.operations
-from wagtail_localize.views.submit_translations import TranslationCreator
+from wagtail_localize.operations import TranslationCreator
 
+from aplans.types import WatchRequest
 from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
@@ -79,6 +80,10 @@ class PlanQuerySet(models.QuerySet['Plan']):
 
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
+
+    def available_for_request(self, request: WatchRequest):
+        # FIXME later: support for logged-in users
+        return self.live()
 
     def user_has_staff_role_for(self, user: User):
         if not user.is_authenticated or not user.is_staff:
@@ -545,7 +550,6 @@ class Plan(ClusterableModel):
         domain: Optional[str] = None,
         client_identifier: Optional[str] = None,
         client_name: Optional[str] = None,
-        azure_ad_tenant_id: Optional[str] = None
     ) -> Plan:
         from ..defaults import (
             DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
@@ -598,9 +602,6 @@ class Plan(ClusterableModel):
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-            if azure_ad_tenant_id:
-                client.azure_ad_tenant_id = azure_ad_tenant_id
-                client.save()
 
             if settings.ADMIN_WILDCARD_DOMAIN and client_identifier:
                 hostname = '%s.%s' % (client_identifier, settings.ADMIN_WILDCARD_DOMAIN)

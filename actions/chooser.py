@@ -4,7 +4,7 @@ from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
 from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
 from wagtail.search.backends import get_search_backend
-from wagtail.core import hooks
+from wagtail import hooks
 
 from .models import Action, AttributeType, Category, CategoryType, Plan
 from aplans.types import WatchAdminRequest
@@ -203,14 +203,14 @@ class AttributeTypeChooserViewSet(ModelChooserViewSet):
 
     icon = 'folder-open-inverse'
     model = AttributeType
-    page_title = _("Choose an attribute")
+    page_title = _("Choose a field")
     per_page = 30
     fields = ['name']
 
 
 class AttributeTypeChooser(AdminChooser):
-    choose_one_text = _('Choose an attribute')
-    choose_another_text = _('Choose another attribute')
+    choose_one_text = _('Choose a field')
+    choose_another_text = _('Choose another field')
     model = AttributeType
     choose_modal_url_name = 'attribute_type_chooser:choose'
     scope: Literal['action', 'category'] | None

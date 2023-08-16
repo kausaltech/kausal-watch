@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import reversion
+import typing
 import uuid
-
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -17,7 +17,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_available_languages
-from wagtail.core.models import Page, Collection
+from wagtail.models import Page, Collection
 from wagtailsvg.models import Svg
 
 from ..attributes import AttributeType
@@ -26,6 +26,9 @@ from aplans.utils import (
     IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, generate_identifier,
     validate_css_color, get_supported_languages
 )
+
+if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
 
 
 class CategoryTypeBase(models.Model):
@@ -269,6 +272,9 @@ class CommonCategory(CategoryBase, ClusterableModel):
         CommonCategoryType,  on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
+
+    category_instances: RelatedManager[Category]
+
     i18n = TranslationField(
         fields=('name', 'lead_paragraph', 'help_text'),
         default_language_field='type__primary_language'
@@ -281,6 +287,8 @@ class CommonCategory(CategoryBase, ClusterableModel):
     class Meta:
         unique_together = (('type', 'identifier'),)
         ordering = ('type', 'order')
+        verbose_name = _('common category')
+        verbose_name_plural = _('common categories')
 
     def __str__(self):
         return '[%s] %s' % (self.identifier, self.name)

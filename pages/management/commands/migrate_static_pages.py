@@ -1,7 +1,7 @@
 import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from wagtail.core.models import PageLogEntry
+from wagtail.models import PageLogEntry
 
 from content.models import StaticPage as OldStaticPage
 from pages.models import PlanRootPage

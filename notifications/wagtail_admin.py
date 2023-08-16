@@ -1,20 +1,20 @@
 from django.conf import settings
 from django.forms import Select
 from django.utils.translation import gettext_lazy as _
-from django.utils.translation import pgettext_lazy
-from wagtail.admin.edit_handlers import (
-    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList, RichTextFieldPanel
+from wagtail.admin.panels import (
+    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
-from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.core import hooks
+from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
+from wagtail import hooks
 
-from admin_site.wagtail import (
-    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SafeLabelModelAdminMenuItem, SuccessUrlEditPageMixin
-)
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
+from admin_site.wagtail import (
+    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
+)
+from aplans.context_vars import ctx_request
 
 
 class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
@@ -27,8 +27,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
     add_to_settings_menu = True
     create_view_class = AplansCreateView
     edit_view_class = BaseTemplateEditView
-    menu_icon = 'fa-bell'
-    menu_label = pgettext_lazy('hyphenated', 'Notifications')
+    menu_icon = 'warning'  # FIXME
+    menu_label = _('Notifications')
 
     panels = [
         FieldPanel('from_name'),
@@ -51,7 +51,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     ]
 
     block_panels = [
-        RichTextFieldPanel('content'),
+        FieldPanel('content'),
         PlanFilteredFieldPanel('template', widget=CondensedPanelSingleSelect),
         FieldPanel('identifier', widget=CondensedPanelSingleSelect)
     ]
@@ -65,7 +65,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
     def get_menu_item(self, order=None):
         return ActivePlanMenuItem(self, order or self.get_menu_order())
 
-    def get_edit_handler(self, instance, request):
+    def get_edit_handler(self):
+        request = ctx_request.get()
         additional_panels = []
         if request.user.is_superuser:
             choices = [(email, email) for email in settings.ALLOWED_SENDER_EMAILS]
@@ -95,15 +96,15 @@ class BaseTemplateAdmin(AplansModelAdmin):
         ])
 
 
-class ActivePlanMenuItem(SafeLabelModelAdminMenuItem):
+class ActivePlanMenuItem(ModelAdminMenuItem):
     # fixme duplicated in actions, content
-    def get_context(self, request):
-        context = super().get_context(request)
+    def render_component(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        link_menu_item = super().render_component(request)
         plan = request.user.get_active_admin_plan()
         if hasattr(plan, 'notification_base_template'):
-            context['url'] = self.model_admin.url_helper.get_action_url(
-                'edit', plan.notification_base_template.pk)
-        return context
+            link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', plan.notification_base_template.pk)
+        return link_menu_item
 
     def is_shown(self, request):
         plan = request.user.get_active_admin_plan()

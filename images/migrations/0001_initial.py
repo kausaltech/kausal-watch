@@ -3,7 +3,7 @@
 from django.db import migrations, models
 import django.db.models.deletion
 import taggit.managers
-import wagtail.core.models
+import wagtail.models
 import wagtail.images.models
 import wagtail.search.index
 
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('file_hash', models.CharField(blank=True, editable=False, max_length=40)),
                 ('image_credit', models.CharField(blank=True, max_length=254)),
                 ('alt_text', models.CharField(blank=True, max_length=254)),
-                ('collection', models.ForeignKey(default=wagtail.core.models.get_root_collection_id, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='wagtailcore.collection', verbose_name='collection')),
+                ('collection', models.ForeignKey(default=wagtail.models.get_root_collection_id, on_delete=django.db.models.deletion.CASCADE, related_name='+', to='wagtailcore.collection', verbose_name='collection')),
                 ('tags', taggit.managers.TaggableManager(blank=True, help_text=None, through='taggit.TaggedItem', to='taggit.Tag', verbose_name='tags')),
             ],
             options={

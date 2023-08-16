@@ -4,8 +4,8 @@ import actions.blocks
 from django.db import migrations, models
 import django.db.models.deletion
 import indicators.blocks
-import wagtail.core.blocks
-import wagtail.core.fields
+import wagtail.blocks
+import wagtail.fields
 import wagtail.images.blocks
 
 
@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.page')),
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
-                ('lead_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='lead content')),
+                ('lead_content', wagtail.fields.RichTextField(blank=True, verbose_name='lead content')),
             ],
             options={
                 'abstract': False,
@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.page')),
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
-                ('lead_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='lead content')),
+                ('lead_content', wagtail.fields.RichTextField(blank=True, verbose_name='lead content')),
             ],
             options={
                 'abstract': False,
@@ -65,7 +65,7 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.page')),
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
-                ('lead_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='lead content')),
+                ('lead_content', wagtail.fields.RichTextField(blank=True, verbose_name='lead content')),
             ],
             options={
                 'abstract': False,
@@ -78,10 +78,10 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.page')),
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
-                ('hero_content', wagtail.core.fields.RichTextField(blank=True, verbose_name='hero content')),
-                ('action_short_description', wagtail.core.fields.RichTextField(blank=True, verbose_name='Short description for what actions are')),
-                ('indicator_short_description', wagtail.core.fields.RichTextField(blank=True, verbose_name='Short description for what indicators are')),
-                ('body', wagtail.core.fields.StreamField([('front_page_hero', wagtail.core.blocks.StructBlock([('layout', wagtail.core.blocks.ChoiceBlock(choices=[('big_image', 'Big image'), ('small_image', 'Small image')])), ('image', wagtail.images.blocks.ImageChooserBlock()), ('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading')), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead'))], label='Front page hero block')), ('category_list', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.core.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('indicator_highlights', indicators.blocks.IndicatorHighlightsBlock(label='Indicator highlights')), ('indicator_showcase', wagtail.core.blocks.StructBlock([('title', wagtail.core.blocks.CharBlock(required=False)), ('body', wagtail.core.blocks.RichTextBlock(required=False)), ('indicator', indicators.blocks.IndicatorChooserBlock()), ('link_button', wagtail.core.blocks.StructBlock([('text', wagtail.core.blocks.CharBlock(required=False)), ('page', wagtail.core.blocks.PageChooserBlock(required=False))]))])), ('action_highlights', actions.blocks.ActionHighlightsBlock(label='Action highlights')), ('cards', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock()), ('lead', wagtail.core.blocks.CharBlock(required=False)), ('cards', wagtail.core.blocks.ListBlock(wagtail.core.blocks.StructBlock([('image', wagtail.images.blocks.ImageChooserBlock(required=False)), ('heading', wagtail.core.blocks.CharBlock()), ('content', wagtail.core.blocks.CharBlock(required=False)), ('link', wagtail.core.blocks.CharBlock(required=False))])))]))])),
+                ('hero_content', wagtail.fields.RichTextField(blank=True, verbose_name='hero content')),
+                ('action_short_description', wagtail.fields.RichTextField(blank=True, verbose_name='Short description for what actions are')),
+                ('indicator_short_description', wagtail.fields.RichTextField(blank=True, verbose_name='Short description for what indicators are')),
+                ('body', wagtail.fields.StreamField([('front_page_hero', wagtail.blocks.StructBlock([('layout', wagtail.blocks.ChoiceBlock(choices=[('big_image', 'Big image'), ('small_image', 'Small image')])), ('image', wagtail.images.blocks.ImageChooserBlock()), ('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading')), ('lead', wagtail.blocks.RichTextBlock(label='Lead'))], label='Front page hero block')), ('category_list', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('indicator_highlights', indicators.blocks.IndicatorHighlightsBlock(label='Indicator highlights')), ('indicator_showcase', wagtail.blocks.StructBlock([('title', wagtail.blocks.CharBlock(required=False)), ('body', wagtail.blocks.RichTextBlock(required=False)), ('indicator', indicators.blocks.IndicatorChooserBlock()), ('link_button', wagtail.blocks.StructBlock([('text', wagtail.blocks.CharBlock(required=False)), ('page', wagtail.blocks.PageChooserBlock(required=False))]))])), ('action_highlights', actions.blocks.ActionHighlightsBlock(label='Action highlights')), ('cards', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock()), ('lead', wagtail.blocks.CharBlock(required=False)), ('cards', wagtail.blocks.ListBlock(wagtail.blocks.StructBlock([('image', wagtail.images.blocks.ImageChooserBlock(required=False)), ('heading', wagtail.blocks.CharBlock()), ('content', wagtail.blocks.CharBlock(required=False)), ('link', wagtail.blocks.CharBlock(required=False))])))]))])),
             ],
             options={
                 'verbose_name': 'Front page',
@@ -96,7 +96,7 @@ class Migration(migrations.Migration):
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
                 ('lead_paragraph', models.TextField(blank=True, help_text='Lead paragraph right under the heading', null=True, verbose_name='Lead paragraph')),
-                ('body', wagtail.core.fields.StreamField([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading')), ('paragraph', wagtail.core.blocks.RichTextBlock(label='Paragraph')), ('qa_section', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='title', heading='Title', required=False)), ('questions', wagtail.core.blocks.ListBlock(wagtail.core.blocks.StructBlock([('question', wagtail.core.blocks.CharBlock(heading='Question')), ('answer', wagtail.core.blocks.RichTextBlock(heading='Answer'))])))], icon='help', label='Questions & Answers'))], blank=True, null=True)),
+                ('body', wagtail.fields.StreamField([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading')), ('paragraph', wagtail.blocks.RichTextBlock(label='Paragraph')), ('qa_section', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='title', heading='Title', required=False)), ('questions', wagtail.blocks.ListBlock(wagtail.blocks.StructBlock([('question', wagtail.blocks.CharBlock(heading='Question')), ('answer', wagtail.blocks.RichTextBlock(heading='Answer'))])))], icon='help', label='Questions & Answers'))], blank=True, null=True)),
                 ('header_image', models.ForeignKey(blank=True, help_text='Image to use in the header for this page', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='images.aplansimage', verbose_name='Header image')),
             ],
             options={
@@ -111,7 +111,7 @@ class Migration(migrations.Migration):
                 ('page_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='wagtailcore.page')),
                 ('i18n', models.JSONField(blank=True, null=True)),
                 ('show_in_footer', models.BooleanField(default=False, help_text='Should the page be shown in the footer?', verbose_name='show in footer')),
-                ('body', wagtail.core.fields.StreamField([('text', wagtail.core.blocks.RichTextBlock(label='Text')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('category_list', wagtail.core.blocks.StructBlock([('heading', wagtail.core.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.core.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.core.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('action_list', wagtail.core.blocks.StructBlock([('category_filter', actions.blocks.CategoryChooserBlock(label='Filter on category'))], label='Action list'))])),
+                ('body', wagtail.fields.StreamField([('text', wagtail.blocks.RichTextBlock(label='Text')), ('indicator_group', indicators.blocks.IndicatorGroupBlock()), ('category_list', wagtail.blocks.StructBlock([('heading', wagtail.blocks.CharBlock(form_classname='full title', label='Heading', required=False)), ('lead', wagtail.blocks.RichTextBlock(label='Lead', required=False)), ('style', wagtail.blocks.ChoiceBlock(choices=[('cards', 'Cards'), ('table', 'Table'), ('treemap', 'Tree map')]))], label='Category list')), ('action_list', wagtail.blocks.StructBlock([('category_filter', actions.blocks.CategoryChooserBlock(label='Filter on category'))], label='Action list'))])),
                 ('category', models.OneToOneField(on_delete=django.db.models.deletion.PROTECT, related_name='category_page', to='actions.category', verbose_name='Category')),
             ],
             options={

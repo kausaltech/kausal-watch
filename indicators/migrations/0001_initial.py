@@ -6,7 +6,7 @@ from django.db import migrations, models
 import django.db.models.deletion
 import modelcluster.fields
 import modeltrans.fields
-import wagtail.core.fields
+import wagtail.fields
 
 
 class Migration(migrations.Migration):
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('identifier', aplans.utils.IdentifierField(max_length=50, validators=[aplans.utils.IdentifierValidator()], verbose_name='identifier')),
                 ('name', models.CharField(max_length=200, verbose_name='name')),
-                ('description', wagtail.core.fields.RichTextField(blank=True, null=True, verbose_name='description')),
+                ('description', wagtail.fields.RichTextField(blank=True, null=True, verbose_name='description')),
                 ('i18n', modeltrans.fields.TranslationField(fields=['name', 'description'], required_languages=(), virtual_fields=True)),
             ],
             options={
@@ -125,7 +125,7 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=200, verbose_name='name')),
                 ('min_value', models.FloatField(blank=True, help_text='What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum.', null=True, verbose_name='minimum value')),
                 ('max_value', models.FloatField(blank=True, help_text='What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum.', null=True, verbose_name='maximum value')),
-                ('description', wagtail.core.fields.RichTextField(blank=True, null=True, verbose_name='description')),
+                ('description', wagtail.fields.RichTextField(blank=True, null=True, verbose_name='description')),
                 ('time_resolution', models.CharField(choices=[('year', 'year'), ('month', 'month'), ('week', 'week'), ('day', 'day')], default='year', max_length=50, verbose_name='time resolution')),
                 ('updated_values_due_at', models.DateField(blank=True, null=True, verbose_name='updated values due at')),
                 ('updated_at', models.DateTimeField(auto_now=True, verbose_name='updated at')),
