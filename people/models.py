@@ -7,6 +7,7 @@ import hashlib
 import typing
 import uuid
 import requests
+import reversion
 import logging
 
 from datetime import timedelta
