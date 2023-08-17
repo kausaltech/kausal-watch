@@ -285,6 +285,7 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
         return self.filter(organization__in=related_orgs)
 
 
+@reversion.register()
 class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
