@@ -17,7 +17,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_field, OpenApiParameter
 from rest_framework_nested import routers
 
-from actions.models.action import ActionImplementationPhase
+from actions.models.action import ActionImplementationPhase, ActionContactPerson
 from actions.models.attributes import AttributeType
 from actions.models.plan import PlanQuerySet
 from aplans.api_router import router
@@ -345,7 +345,6 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
             'role': v.role,
         } for v in value.all()]
 
-
     def to_internal_value(self, data):
         s = self.parent
         plan: Plan = s.plan
@@ -354,7 +353,6 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
         available_instances = {x for x in self.get_available_instances(plan).values_list('id', flat=True)}
         seen_instances = set()
         key = self.get_type_label()
-        allowed_roles = self.get_allowed_roles
 
         for val in data:
             instance_id = val.get(key, None)
@@ -405,22 +403,28 @@ class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
         return _("Organization occurs multiple times as responsible party")
 
 
-
 @extend_schema_field(dict(
     type='object',
     title=_('Contact persons'),
 ))
-class ActionContactPersonSerializer(serializers.Serializer):
-    def to_representation(self, value):
-        return [v.person_id for v in value.all()]
+class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
+    def get_type_label(self):
+        return 'person'
 
-    def to_internal_value(self, data):
-        return data
+    def get_available_instances(self, plan) -> QuerySet:
+        return Person.objects.available_for_plan(plan)
 
-    def update(self, instance: Action, validated_data):
-        assert isinstance(instance, Action)
-        assert instance.pk is not None
-        instance.set_contact_persons(validated_data)
+    def get_allowed_roles(self):
+        return ActionContactPerson.Role.values
+
+    def get_queryset(self):
+        return Person.objects.all()
+
+    def set_instance_values(self, instance, data):
+        instance.set_contact_persons(data)
+
+    def get_multiple_error(self):
+        return _("Person occurs multiple times as contact person")
 
 
 class AttributesSerializerMixin:

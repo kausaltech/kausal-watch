@@ -62,7 +62,7 @@ class PlanFeatures(models.Model):
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
         'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
-        'minimal_statuses'
+        'minimal_statuses', 'has_action_contact_person_roles'
     ]
 
     class Meta:
