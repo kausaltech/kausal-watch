@@ -88,6 +88,7 @@ class PersonQuerySet(models.QuerySet):
         return self.filter(contact_for_actions__plan=plan).distinct()
 
 
+@reversion.register()
 class Person(index.Indexed, ClusterableModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     first_name = models.CharField(max_length=100, verbose_name=_('first name'))
