@@ -15,6 +15,7 @@ class Client(ClusterableModel):
         # Values are social auth backend names
         AZURE_AD = 'azure_ad', _('Microsoft Azure AD')
         GOOGLE = 'google-openidconnect', _('Google')
+        TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
 
     name = models.CharField(max_length=100)
     logo = models.ForeignKey(
