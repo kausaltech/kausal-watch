@@ -671,7 +671,6 @@ if importlib.util.find_spec('kausal_watch_extensions') is not None:
 # like database and email that differ between development and production.
 f = os.path.join(BASE_DIR, "local_settings.py")
 if os.path.exists(f):
-    import sys
     import types
     module_name = "%s.local_settings" % ROOT_URLCONF.split('.')[0]
     module = types.ModuleType(module_name)
