@@ -373,7 +373,14 @@ class Person(index.Indexed, ClusterableModel):
                 email=email,
                 uuid=uuid.uuid4(),
             )
-            user.set_password(str(uuid.uuid4()))
+            try:
+                client = self.get_admin_client()
+            except:
+                client = None
+            if client is None or client.auth_backend:
+                user.set_unusable_password()
+            else:
+                user.set_password(str(uuid.uuid4()))
 
         user.first_name = self.first_name
         user.last_name = self.last_name
