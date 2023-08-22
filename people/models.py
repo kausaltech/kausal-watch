@@ -296,6 +296,18 @@ class Person(index.Indexed, ClusterableModel):
 
         return ret
 
+    def get_client_for_email_domain(self):
+        # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
+        email_domain = self.email.split('@')[1].lower()
+        labels = email_domain.split('.')
+        while labels:
+            domain = '.'.join(labels)
+            labels.pop(0)
+            clients = Client.objects.filter(email_domains__domain=domain)
+            if len(clients) == 1:
+                return clients[0]
+        return None
+
     def get_admin_client(self):
         user = self.get_corresponding_user()
 
@@ -323,25 +335,11 @@ class Person(index.Indexed, ClusterableModel):
                     self.email, self.id, len(clients)
                 ))
         if not client:
-            # Match based on email domain
-            # Handling of subdomains: We try to find a match for 'a.b.c' first, then for 'b.c', then for 'c'.
-            email_domain = self.email.split('@')[1].lower()
-            labels = email_domain.split('.')
-            while labels:
-                domain = '.'.join(labels)
-                labels.pop(0)
-                clients = Client.objects.filter(email_domains__domain=domain)
-                if len(clients) == 1:
-                    client = clients[0]
-                    break
-            else:
-                logger.warning('Unable to find client for email %s [Person-%d]' % (
+            client = self.get_client_for_email_domain()
+            if not client:
+                raise Exception('Unable to find client for email %s [Person-%d]' % (
                     self.email, self.id
                 ))
-        if not client:
-            raise Exception('Unable to find client for email %s [Person-%d]' % (
-                self.email, self.id
-            ))
 
         return client
 
