@@ -355,7 +355,7 @@ class SetInstanceMixin:
 
 class AplansEditView(
     PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin,
-        SetInstanceMixin, EditView
+    SetInstanceMixin, EditView
 ):
     def form_valid(self, form, *args, **kwargs):
         try:
