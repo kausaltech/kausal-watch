@@ -429,6 +429,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 'related_effects',
                 panels=[
                     FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
                     FieldPanel('confidence_level'),
                 ],
                 heading=_('Effects'),
@@ -437,6 +438,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 'related_causes',
                 panels=[
                     FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
                     FieldPanel('confidence_level'),
                 ],
                 heading=_('Causes'),
