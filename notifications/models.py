@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime
 import logging
+import reversion
 import typing
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -136,6 +137,7 @@ class IndirectPlanRelatedModel(PlanRelatedModel):
         return qs.filter(base__plan=plan)
 
 
+@reversion.register()
 class BaseTemplate(ClusterableModel, PlanRelatedModel):
     plan = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_base_template',
