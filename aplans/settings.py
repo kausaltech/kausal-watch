@@ -67,6 +67,9 @@ env = environ.FileAwareEnv(
     AWS_STORAGE_BUCKET_NAME=(str, ''),
     AWS_ACCESS_KEY_ID=(str, ''),
     AWS_SECRET_ACCESS_KEY=(str, ''),
+    REQUEST_LOG_LIMIT=(int, 1000),
+    REQUEST_LOG_METHODS=(list, ['POST', 'PUT', 'PATCH', 'DELETE']),
+    REQUEST_LOG_IGNORE_PATHS=(list, ['/v1/graphql/']),
 )
 
 BASE_DIR = root()
@@ -187,6 +190,7 @@ INSTALLED_APPS += [
     'orgs',
     'pages',
     'reports',
+    'request_log',
 ]
 
 MIDDLEWARE = [
@@ -202,6 +206,7 @@ MIDDLEWARE = [
     'aplans.middleware.SocialAuthExceptionMiddleware',
     'aplans.middleware.AdminMiddleware',
     'aplans.middleware.RequestMiddleware',
+    'request_log.middleware.LogUnsafeRequestMiddleware',
 ]
 
 ROOT_URLCONF = 'aplans.urls'
@@ -765,6 +770,10 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             '': level('DEBUG'),
         }
     }
+
+REQUEST_LOG_LIMIT = env('REQUEST_LOG_LIMIT')
+REQUEST_LOG_METHODS = env('REQUEST_LOG_METHODS')
+REQUEST_LOG_IGNORE_PATHS = env('REQUEST_LOG_IGNORE_PATHS')
 
 
 if SENTRY_DSN:

@@ -1,0 +1,33 @@
+from django.conf import settings
+
+from request_log.models import LoggedRequest
+
+
+class LogUnsafeRequestMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        path = request.get_full_path()
+        if request.method in settings.REQUEST_LOG_METHODS and path not in settings.REQUEST_LOG_IGNORE_PATHS:
+            self.log_request(request)
+        return self.get_response(request)
+
+    def log_request(self, request):
+        path = request.get_full_path()
+        raw_request = f'{request.method} {path} HTTP/1.1\r\n'
+        for header, value in request.META.items():
+            if header.startswith('HTTP_'):
+                header_name = header[5:].replace('_', '-').title()
+                raw_request += f'{header_name}: {value}\r\n'
+        if 'CONTENT_TYPE' in request.META:
+            raw_request += f'Content-Type: {request.META["CONTENT_TYPE"]}\r\n'
+        raw_request += f'Content-Length: {len(request.body)}\r\n'
+        raw_request += '\r\n' + request.body.decode('utf-8')
+        user_id = getattr(request.user, 'id', None)
+        LoggedRequest.objects.create(
+            method=request.method,
+            path=path,
+            raw_request=raw_request,
+            user_id=user_id,
+        )
