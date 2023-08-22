@@ -599,6 +599,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         qs = qs.filter(Q(plans__primary_language__istartswith=lang) | Q(plans__other_languages__icontains=[lang])).distinct()
         return qs
 
+    def autocomplete_label(self):
+        return str(self)
+
 
 @reversion.register()
 class Dimension(ClusterableModel):
@@ -790,11 +793,11 @@ class RelatedIndicator(IndicatorRelationship):
         (LOW_CONFIDENCE, _('low'))
     )
 
-    causal_indicator = models.ForeignKey(
+    causal_indicator = ParentalKey(
         Indicator, related_name='related_effects', on_delete=models.CASCADE,
         verbose_name=_('causal indicator')
     )
-    effect_indicator = models.ForeignKey(
+    effect_indicator = ParentalKey(
         Indicator, related_name='related_causes', on_delete=models.CASCADE,
         verbose_name=_('effect indicator')
     )

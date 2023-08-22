@@ -425,6 +425,22 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(
                 2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
             )
+            basic_panels.append(InlinePanel(
+                'related_effects',
+                panels=[
+                    FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Effects'),
+            ))
+            basic_panels.append(InlinePanel(
+                'related_causes',
+                panels=[
+                    FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Causes'),
+            ))
 
         cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
         cat_panels = []

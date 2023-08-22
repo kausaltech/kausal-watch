@@ -31,7 +31,9 @@ from actions.autocomplete import (
     ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
 )
 from admin_site.views import account, RootRedirectView, WadminRedirectView
-from indicators.autocomplete import QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete
+from indicators.autocomplete import (
+    QuantityAutocomplete, UnitAutocomplete, CommonIndicatorAutocomplete, IndicatorAutocomplete
+)
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from indicators.api import all_views as indicators_api_views
@@ -81,6 +83,7 @@ urlpatterns = [
     re_path(r'^org-autocomplete/$', OrganizationAutocomplete.as_view(), name='organization-autocomplete'),
     re_path(r'^action-autocomplete/$', ActionAutocomplete.as_view(), name='action-autocomplete'),
     re_path(r'^category-autocomplete/$', CategoryAutocomplete.as_view(), name='category-autocomplete'),
+    re_path(r'^indicator-autocomplete/$', IndicatorAutocomplete.as_view(), name='indicator-autocomplete'),
     re_path(r'^quantity-autocomplete/$', QuantityAutocomplete.as_view(), name='quantity-autocomplete'),
     re_path(r'^report-autocomplete/$', ReportAutocomplete.as_view(), name='report-autocomplete'),
     re_path(r'^report-type-autocomplete/$', ReportTypeAutocomplete.as_view(), name='report-type-autocomplete'),
