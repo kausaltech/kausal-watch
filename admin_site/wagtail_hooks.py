@@ -156,12 +156,13 @@ class PlanChooserMenu(Menu):
                 icon_name = 'tick'
             item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
-        items.append(AdminOnlyMenuItem(
-            _('Create plan'),
-            reverse('create-plan'),
-            icon_name='plus-inverse',
-            #order=9100,
-        ))
+        if request.user.is_superuser:
+            items.append(AdminOnlyMenuItem(
+                _('Create plan'),
+                reverse('create-plan'),
+                icon_name='plus-inverse',
+                #order=9100,
+            ))
         return items
 
 
