@@ -1,6 +1,9 @@
+import logging
 from django.conf import settings
 
 from request_log.models import LoggedRequest
+
+logger = logging.getLogger(__name__)
 
 
 class LogUnsafeRequestMiddleware:
@@ -10,7 +13,10 @@ class LogUnsafeRequestMiddleware:
     def __call__(self, request):
         path = request.get_full_path()
         if request.method in settings.REQUEST_LOG_METHODS and path not in settings.REQUEST_LOG_IGNORE_PATHS:
-            self.log_request(request)
+            try:
+                self.log_request(request)
+            except Exception as e:
+                logger.warning(f'{Error logging request: {e}')
         return self.get_response(request)
 
     def log_request(self, request):
