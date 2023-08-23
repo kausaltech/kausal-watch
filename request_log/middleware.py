@@ -22,8 +22,12 @@ class LogUnsafeRequestMiddleware:
                 raw_request += f'{header_name}: {value}\r\n'
         if 'CONTENT_TYPE' in request.META:
             raw_request += f'Content-Type: {request.META["CONTENT_TYPE"]}\r\n'
-        raw_request += f'Content-Length: {len(request.body)}\r\n'
-        raw_request += '\r\n' + request.body.decode('utf-8')
+        try:
+            request_body = request.body.decode('utf-8')
+        except UnicodeDecodeError:
+            request_body = '[UnicodeDecodeError]'
+        raw_request += f'Content-Length: {len(request_body)}\r\n\r\n'
+        raw_request += request_body
         user_id = getattr(request.user, 'id', None)
         LoggedRequest.objects.create(
             method=request.method,
