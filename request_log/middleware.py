@@ -1,5 +1,6 @@
 import logging
 from django.conf import settings
+from sentry_sdk import capture_exception
 
 from request_log.models import LoggedRequest
 
@@ -17,6 +18,7 @@ class LogUnsafeRequestMiddleware:
                 self.log_request(request)
             except Exception as e:
                 logger.warning(f'Error logging request: {e}')
+                capture_exception(e)
         return self.get_response(request)
 
     def log_request(self, request):
