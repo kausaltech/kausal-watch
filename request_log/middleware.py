@@ -16,7 +16,7 @@ class LogUnsafeRequestMiddleware:
             try:
                 self.log_request(request)
             except Exception as e:
-                logger.warning(f'{Error logging request: {e}')
+                logger.warning(f'Error logging request: {e}')
         return self.get_response(request)
 
     def log_request(self, request):
