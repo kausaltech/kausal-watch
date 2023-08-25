@@ -27,7 +27,6 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
 from orgs.models import Organization
-from people.models import Person
 from users.models import User
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
@@ -614,15 +613,15 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         return (main_panels, reporting_panels, i18n_panels)
 
     def get_siblings(self):
-        return Action.objects.filter(plan=self.plan)
+        return self.plan.cached_actions
 
     def get_prev_sibling(self):
-        # TODO: Refactor duplicated code in Category
-        previous_sibling = None
-        for sibling in self.get_siblings():
+        all_actions = self.plan.cached_actions
+        for i, sibling in enumerate(all_actions):
             if sibling.id == self.id:
-                return previous_sibling
-            previous_sibling = sibling
+                if i == 0:
+                    return None
+                return all_actions[i - 1]
         assert False  # should have returned above at some point
 
     def get_snapshots(self, report=None):

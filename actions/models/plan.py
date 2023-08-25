@@ -16,6 +16,7 @@ from django.core.validators import URLValidator, RegexValidator, MaxValueValidat
 from django.db import models, transaction
 from django.db.models import Q
 from django.utils import timezone, translation
+from django.utils.functional import cached_property
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _, pgettext_lazy, gettext
 from django_countries.fields import CountryField
@@ -304,6 +305,10 @@ class Plan(ClusterableModel):
 
     def get_last_action_identifier(self):
         return self.actions.order_by('order').values_list('identifier', flat=True).last()
+
+    @cached_property
+    def cached_actions(self):
+        return self.actions.order_by('order')
 
     def clean(self):
         if self.primary_language in self.other_languages:
