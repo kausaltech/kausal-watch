@@ -205,28 +205,35 @@ class PlanRelatedModel(PlanDefaultsModel):
 class InstancesEditableByMixin(models.Model):
     """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes."""
     class EditableBy(models.TextChoices):
-        NOT_EDITABLE = 'not_editable', _('Not editable')
+        AUTHENTICATED = 'authenticated', _('Authenticated users')  # practically you also need access to the edit page
+        CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # plan admins also can edit
         PLAN_ADMINS = 'plan_admins', _('Plan admins')
-        CONTACT_PERSONS = 'contact_persons', _('Contact persons')
+        NOT_EDITABLE = 'not_editable', _('Not editable')
 
     instances_editable_by = models.CharField(
         max_length=50,
         choices=EditableBy.choices,
-        blank=True,
+        default=EditableBy.AUTHENTICATED,
         verbose_name=_('Edit rights'),
     )
 
     def are_instances_editable_by(self, user, instance_plan):
         if user.is_superuser:
             return True
-
         if self.instances_editable_by == self.EditableBy.NOT_EDITABLE:
             return False
-        elif self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
-            return user.is_general_admin_for_plan(instance_plan)
-        elif self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
-            return user.is_contact_person_in_plan(instance_plan)
-        return True
+        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
+        if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
+            return is_plan_admin
+        # FIXME: The user should probably be a contact person for the instance, not for *anything* in the plan.
+        # Also, generally, `are_instances_editable_by` may not be very meaningful because it should depend on the
+        # instance.
+        is_contact_person = user.is_contact_person_in_plan(instance_plan)
+        if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
+            return is_contact_person or is_plan_admin
+        if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
+            return user.is_authenticated
+        assert False, "Unexpected value for instances_editable_by"
 
     class Meta:
         abstract = True
@@ -235,28 +242,35 @@ class InstancesEditableByMixin(models.Model):
 class InstancesVisibleForMixin(models.Model):
     """Mixin for models such as AttributeType to restrict visibility of attributes."""
     class VisibleFor(models.TextChoices):
-        PLAN_ADMINS = 'plan_admins', _('Plan admins')
-        CONTACT_PERSONS = 'contact_persons', _('Contact persons')
         PUBLIC = 'public', _('Public')
+        AUTHENTICATED = 'authenticated', _('Authenticated users')
+        CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # also visible for plan admins
+        PLAN_ADMINS = 'plan_admins', _('Plan admins')
 
     instances_visible_for = models.CharField(
         max_length=50,
         choices=VisibleFor.choices,
-        blank=True,
+        default=VisibleFor.PUBLIC,
         verbose_name=_('Visibility'),
     )
 
     def are_instances_visible_for(self, user, instance_plan):
         if user.is_superuser:
             return True
-
+        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
-            return user.is_general_admin_for_plan(instance_plan)
-        elif self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
-            return user.is_contact_person_in_plan(instance_plan)
-        elif self.instances_visible_for == self.VisibleFor.PUBLIC:
+            return is_plan_admin
+        # FIXME: The user should probably be a contact person for the instance, not for *anything* in the plan.
+        # Also, generally, `are_instances_editable_by` may not be very meaningful because it should depend on the
+        # instance.
+        is_contact_person = user.is_contact_person_in_plan(instance_plan)
+        if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
+            return is_contact_person or is_plan_admin
+        if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
+            return user.is_authenticated
+        if self.instances_visible_for == self.VisibleFor.PUBLIC:
             return True
-        return True
+        assert False, "Unexpected value for instances_visible_for"
 
     class Meta:
         abstract = True

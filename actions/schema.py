@@ -559,13 +559,14 @@ class AttributesMixin:
             else:
                 return qs.filter(query)
 
+        plan = get_plan_from_context(info)
         attributes = chain(
-            filter_attrs(self.text_attributes),
-            filter_attrs(self.rich_text_attributes),
-            filter_attrs(self.choice_attributes),
-            filter_attrs(self.choice_with_text_attributes),
-            filter_attrs(self.numeric_value_attributes),
-            filter_attrs(self.category_choice_attributes)
+            filter_attrs(self.text_attributes.visible_for_user(info.context.user, plan)),
+            filter_attrs(self.rich_text_attributes.visible_for_user(info.context.user, plan)),
+            filter_attrs(self.choice_attributes.visible_for_user(info.context.user, plan)),
+            filter_attrs(self.choice_with_text_attributes.visible_for_user(info.context.user, plan)),
+            filter_attrs(self.numeric_value_attributes.visible_for_user(info.context.user, plan)),
+            filter_attrs(self.category_choice_attributes.visible_for_user(info.context.user, plan)),
         )
         return sorted(attributes, key=lambda a: a.type.order)
 

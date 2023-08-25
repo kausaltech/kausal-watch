@@ -20,6 +20,7 @@ from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
     from .plan import Plan
+    from users.models import User
 
 
 class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
@@ -146,6 +147,23 @@ class Attribute:
     pass
 
 
+class AttributeQuerySet(models.QuerySet):
+    def visible_for_user(self, user: User, plan: typing.Optional[Plan]):
+        if user.is_superuser:
+            return self
+        permissions = [InstancesVisibleForMixin.VisibleFor.PUBLIC]
+        if user.is_authenticated:
+            permissions.append(InstancesVisibleForMixin.VisibleFor.AUTHENTICATED)
+            is_plan_admin = plan is not None and user.is_general_admin_for_plan(plan)
+            if is_plan_admin:
+                permissions.append(InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS)
+            # FIXME: Check if the user is a contact person for the object, not for *anything* in the plan.
+            is_contact_person = plan is not None and user.is_contact_person_in_plan(plan)
+            if is_contact_person or is_plan_admin:
+                permissions.append(InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS)
+        return self.filter(type__instances_visible_for__in=permissions)
+
+
 @reversion.register()
 class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
@@ -192,6 +210,8 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
 
     categories = ParentalManyToManyField('actions.Category', related_name='+')
 
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
+
     public_fields = ['id', 'categories']
 
     class Meta:
@@ -214,6 +234,8 @@ class AttributeChoice(Attribute, models.Model):
     choice = models.ForeignKey(
         AttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='choice_attributes'
     )
+
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -244,6 +266,8 @@ class AttributeChoiceWithText(Attribute, models.Model):
         default_language_field='type__primary_language',
     )
 
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
+
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
@@ -271,6 +295,8 @@ class AttributeText(Attribute, models.Model):
         fields=('text',),
         default_language_field='type__primary_language',
     )
+
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
 
     public_fields = ['id', 'type', 'text']
 
@@ -302,6 +328,8 @@ class AttributeRichText(Attribute, models.Model):
         default_language_field='type__primary_language',
     )
 
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
+
     public_fields = ['id', 'type', 'text']
 
     class Meta:
@@ -322,6 +350,8 @@ class AttributeNumericValue(Attribute, models.Model):
     content_object = GenericForeignKey()
 
     value = models.FloatField()
+
+    objects = models.Manager.from_queryset(AttributeQuerySet)()
 
     public_fields = ['id', 'type', 'value']
 
