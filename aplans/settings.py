@@ -231,6 +231,9 @@ TEMPLATES = [
     },
 ]
 
+WAGTAILADMIN_STATIC_FILE_VERSION_STRINGS = False
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder'
