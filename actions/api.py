@@ -8,9 +8,7 @@ from typing import Optional
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
-from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Model
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from rest_framework import exceptions, permissions, serializers, viewsets
@@ -446,23 +444,12 @@ class AttributesSerializerMixin:
                 )
         return fields
 
-    def get_cached_values(self):
-        if '_cache' not in self.context or '_current_instance' not in self.context:
-            return None
-        # I was unable to access the individual serializable instance through serializer or its parents when serializing with a
-        # listserializer. Hence, the need to store the instance in the context
-        instance_pk = self.context['_current_instance'].pk
-        attributes = self.context['_cache'].get(self.attribute_format, {})
-        return attributes.get(instance_pk, [])
-
 
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_format = AttributeType.AttributeFormat.ORDERED_CHOICE
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.choice_id for v in values}
+        return {v.type.identifier: v.choice_id for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -477,9 +464,7 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
     attribute_format = AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in values}
+        return {v.type.identifier: {'choice': v.choice_id, 'text': v.text} for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -494,9 +479,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
     attribute_format = AttributeType.AttributeFormat.NUMERIC
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.value for v in values}
+        return {v.type.identifier: v.value for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -511,9 +494,7 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
     attribute_format = AttributeType.AttributeFormat.TEXT
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.text for v in values}
+        return {v.type.identifier: v.text for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -528,9 +509,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
     attribute_format = AttributeType.AttributeFormat.RICH_TEXT
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: v.text for v in values}
+        return {v.type.identifier: v.text for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -545,9 +524,7 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
     attribute_format = AttributeType.AttributeFormat.CATEGORY_CHOICE
 
     def to_representation(self, value):
-        cached = self.get_cached_values()
-        values = cached if cached is not None else value.all()
-        return {v.type.identifier: [cat.id for cat in v.categories.all()] for v in values}
+        return {v.type.identifier: [cat.id for cat in v.categories.all()] for v in value.all()}
 
     def to_internal_value(self, data):
         return data
@@ -773,7 +750,6 @@ class ActionSerializer(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initialize_cache_context(self.instance, self.plan)
         must_generate_identifiers = not self.plan.features.has_action_identifiers
         if must_generate_identifiers:
             actions_data = getattr(self, 'initial_data', [])
@@ -784,24 +760,6 @@ class ActionSerializer(
                     # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so
                     # to avoid an error when we omit an identifier, we need to do it here
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
-
-    def initialize_cache_context(self, instance: Model | list[Model], plan: Plan):
-        if instance is None or 'request' not in self.context:
-            return
-        if isinstance(instance, list):
-            instance = instance[0]
-        request = self.context['request']
-        user = request.user
-        attribute_types = instance.get_editable_attribute_types(user)
-        prepopulated_attributes = {}
-        action_content_type = ContentType.objects.get_for_model(instance)
-        for at in attribute_types:
-            prepopulated_attributes.setdefault(at.instance.format, {})
-            for a in at.attributes.filter(content_type=action_content_type):
-                prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
-
-        for field_name in self._attribute_fields:
-            self.fields[field_name].context['_cache'] = prepopulated_attributes
 
     def get_fields(self):
         fields = super().get_fields()
@@ -814,11 +772,8 @@ class ActionSerializer(
             # Remove fields that are only for admins
             del fields['internal_notes']
             del fields['internal_admin_notes']
-        return fields
 
-    def to_representation(self, value):
-        self.context['_current_instance'] = value
-        return super().to_representation(value)
+        return fields
 
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
@@ -920,12 +875,8 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         plan = PlanViewSet.get_available_plans(request=self.request).filter(id=plan_pk).first()
         if plan is None:
             raise exceptions.NotFound(detail="Plan not found")
-        self.plan = plan
-        # For caching reasons, we must query the actions through the
-        # plan so all of the actions share the same Plan instance
-        return plan.actions.all().prefetch_related(
-            'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions'
-        )
+        return Action.objects.filter(plan=plan_pk)\
+            .prefetch_related('schedule', 'categories')
 
 
 plan_router.register(
