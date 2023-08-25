@@ -287,6 +287,7 @@ class Plan(ClusterableModel):
 
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
     _site_created: bool
+    wagtail_reference_index_ignore = True
 
     class Meta:
         verbose_name = _('plan')
