@@ -232,6 +232,36 @@ class InstancesEditableByMixin(models.Model):
         abstract = True
 
 
+class InstancesVisibleForMixin(models.Model):
+    """Mixin for models such as AttributeType to restrict visibility of attributes."""
+    class VisibleFor(models.TextChoices):
+        PLAN_ADMINS = 'plan_admins', _('Plan admins')
+        CONTACT_PERSONS = 'contact_persons', _('Contact persons')
+        PUBLIC = 'public', _('Public')
+
+    instances_visible_for = models.CharField(
+        max_length=50,
+        choices=VisibleFor.choices,
+        blank=True,
+        verbose_name=_('Visibility'),
+    )
+
+    def are_instances_visible_for(self, user, instance_plan):
+        if user.is_superuser:
+            return True
+
+        if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
+            return user.is_general_admin_for_plan(instance_plan)
+        elif self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
+            return user.is_contact_person_in_plan(instance_plan)
+        elif self.instances_visible_for == self.VisibleFor.PUBLIC:
+            return True
+        return True
+
+    class Meta:
+        abstract = True
+
+
 class ChoiceArrayField(ArrayField):
     """
     A field that allows us to store an array of choices.

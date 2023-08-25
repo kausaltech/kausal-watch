@@ -486,7 +486,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def get_attribute_type_by_identifier(self, identifier):
         return self.type.attribute_types.get(identifier=identifier)
 
-    def get_editable_attribute_types(self, user):
+    def get_visible_attribute_types(self, user):
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
         attribute_types = AttributeTypeModel.objects.filter(
@@ -494,7 +494,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             scope_content_type=category_type_ct,
             scope_id=self.type.id,
         )
-        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.type.plan))
+        attribute_types = (at for at in attribute_types if at.are_instances_visible_by(user, self.type.plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
@@ -504,9 +504,10 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # that language.
         main_panels = []
         i18n_panels = {}
-        attribute_types = self.get_editable_attribute_types(user)
+        attribute_types = self.get_visible_attribute_types(user)
+        plan = user.get_active_admin_plan()  # not sure if this is reasonable...
         for attribute_type in attribute_types:
-            fields = attribute_type.get_form_fields(self)
+            fields = attribute_type.get_form_fields(user, plan, self)
             for field in fields:
                 if field.language:
                     i18n_panels.setdefault(field.language, []).append(field.get_panel())

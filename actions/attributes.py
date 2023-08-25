@@ -1,17 +1,21 @@
+from __future__ import annotations
 import re
-from html import unescape
-
+import typing
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.utils.html import strip_tags
-
 from django.utils.translation import gettext_lazy as _
+from html import unescape
 from typing import Any, Dict, List, Optional
 from wagtail.admin.panels import FieldPanel
 
 import actions.models.attributes as models
+
+if typing.TYPE_CHECKING:
+    from actions.models import Plan
+    from users.models import User
 
 
 def html_to_plaintext(richtext):
@@ -32,9 +36,9 @@ class AttributeFieldPanel(FieldPanel):
     def on_form_bound(self):
         super().on_form_bound()
         user = self.request.user
-        attribute_types = self.instance.get_editable_attribute_types(user)
+        attribute_types = self.instance.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
-            for field in attribute_type.get_form_fields(self.instance):
+            for field in attribute_type.get_form_fields(user, plan, self.instance):
                 if field.name == self.field_name:
                     self.form.fields[self.field_name].initial = field.django_field.initial
                     return
@@ -103,7 +107,7 @@ class AttributeType:
     def create_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()
 
@@ -136,7 +140,7 @@ class OrderedChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         initial_choice = None
         if obj:
             c = self.get_attributes(obj).first()
@@ -147,6 +151,8 @@ class OrderedChoice(AttributeType):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
+        if not self.instance.are_instances_editable_by(user, plan):
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -174,7 +180,7 @@ class CategoryChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         from actions.models.category import Category
         initial_categories = None
         if obj:
@@ -195,6 +201,8 @@ class CategoryChoice(AttributeType):
                 )
             ),
         )
+        if not self.instance.are_instances_editable_by(user, plan):
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
@@ -234,11 +242,12 @@ class OptionalChoiceWithText(AttributeType):
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
+        editable = self.instance.are_instances_editable_by(user, plan)
 
         # Choice
         initial_choice = None
@@ -249,6 +258,8 @@ class OptionalChoiceWithText(AttributeType):
         choice_field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
+        if not editable:
+            choice_field.disabled = True
         fields.append(FormField(
             attribute_type=self,
             django_field=choice_field,
@@ -266,6 +277,8 @@ class OptionalChoiceWithText(AttributeType):
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
+            if not editable:
+                text_field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
@@ -313,11 +326,12 @@ class TextAttributeTypeMixin:
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
+        editable = self.instance.are_instances_editable_by(user, plan)
 
         for language in ('', *self.instance.other_languages):
             initial_text = None
@@ -328,6 +342,8 @@ class TextAttributeTypeMixin:
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
+            if not editable:
+                field.disabled = True
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
@@ -386,7 +402,7 @@ class Numeric(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
@@ -394,6 +410,8 @@ class Numeric(AttributeType):
         if attribute:
             initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
+        if not self.instance.are_instances_editable_by(user, plan):
+            field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):

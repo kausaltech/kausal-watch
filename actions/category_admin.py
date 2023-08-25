@@ -174,7 +174,7 @@ class CategoryAdminForm(WagtailAdminModelForm):
     def save(self, commit=True):
         obj = super().save(commit)
         user = self._user
-        attribute_types = obj.get_editable_attribute_types(user)
+        attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
@@ -185,11 +185,12 @@ class CategoryEditHandler(AplansTabbedInterface):
         request = ctx_request.get()
         instance = ctx_instance.get()
         user = request.user
+        plan = request.get_active_admin_plan()
         if instance is not None:
-            attribute_types = instance.get_editable_attribute_types(user)
+            attribute_types = instance.get_visible_attribute_types(user)
             attribute_fields = {field.name: field.django_field
                                 for attribute_type in attribute_types
-                                for field in attribute_type.get_form_fields(instance)}
+                                for field in attribute_type.get_form_fields(user, plan, instance)}
         else:
             attribute_fields = {}
 

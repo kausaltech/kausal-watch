@@ -3,6 +3,7 @@ from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
@@ -342,3 +343,18 @@ def register_icons(icons):
         'wagtailadmin/icons/kausal-plan.svg',
         'wagtailadmin/icons/kausal-spreadsheet.svg',
     ]
+
+
+@hooks.register('insert_editor_js')
+def hack_wagtail_rich_text_fields():
+    # Wagtail's rich text editor doesn't care whether its form field is disabled. But it should!
+    return mark_safe("""
+        <script>
+        $(function () {
+            const wrapper = $('input[disabled] + * + .Draftail-Editor__wrapper');
+            wrapper.find('*').attr('tabindex', '-1');
+            wrapper.css('pointer-events', 'none');
+            wrapper.parent().css('cursor', 'not-allowed');
+        });
+        </script>
+        """)

@@ -13,7 +13,9 @@ from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToMan
 from modeltrans.fields import TranslationField
 from wagtail.fields import RichTextField
 
-from aplans.utils import ChoiceArrayField, InstancesEditableByMixin, OrderedModel, get_supported_languages
+from aplans.utils import (
+    ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, get_supported_languages
+)
 from indicators.models import Unit
 
 if typing.TYPE_CHECKING:
@@ -38,7 +40,7 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
 
 
 @reversion.register(follow=['choice_options'])
-class AttributeType(InstancesEditableByMixin, ClusterableModel, OrderedModel):
+class AttributeType(InstancesEditableByMixin, InstancesVisibleForMixin, ClusterableModel, OrderedModel):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')

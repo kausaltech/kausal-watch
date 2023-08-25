@@ -577,7 +577,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
 
-    def get_editable_attribute_types(self, user, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+    def get_visible_attribute_types(self, user, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(self.plan)
         attribute_types = AttributeTypeModel.objects.filter(
@@ -589,7 +589,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
             attribute_types = attribute_types.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
             attribute_types = attribute_types.filter(show_in_reporting_tab=False)
-        attribute_types = (at for at in attribute_types if at.are_instances_editable_by(user, self.plan))
+        attribute_types = (at for at in attribute_types if at.are_instances_visible_for(user, self.plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
@@ -600,11 +600,12 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         main_panels = []
         reporting_panels = []
         i18n_panels = {}
+        plan = user.get_active_admin_plan()  # not sure if this is reasonable...
         for panels, kwargs in [(main_panels, {'unless_in_reporting_tab': True}),
                                (reporting_panels, {'only_in_reporting_tab': True})]:
-            attribute_types = self.get_editable_attribute_types(user, **kwargs)
+            attribute_types = self.get_visible_attribute_types(user, **kwargs)
             for attribute_type in attribute_types:
-                fields = attribute_type.get_form_fields(self)
+                fields = attribute_type.get_form_fields(user, plan, self)
                 for field in fields:
                     if field.language:
                         i18n_panels.setdefault(field.language, []).append(field.get_panel())
