@@ -235,7 +235,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             FieldPanel('format'),
             FieldPanel('unit'),
             FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
-            CondensedInlinePanel('choice_options', panels=choice_option_panels),
+            CondensedInlinePanel('choice_options', heading=_("Choice options"), panels=choice_option_panels),
             FieldPanel('show_choice_names'),
             FieldPanel('has_zero_option'),
             FieldPanel('max_length'),
