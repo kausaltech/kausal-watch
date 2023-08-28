@@ -250,7 +250,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
     superuser_panels = [
         FieldPanel('allow_images_for_actions'),
         FieldPanel('show_admin_link'),
-        FieldPanel('public_contact_persons'),
+        FieldPanel('contact_persons_public_data'),
         FieldPanel('has_action_identifiers'),
         FieldPanel('show_action_identifiers'),
         FieldPanel('has_action_official_name'),

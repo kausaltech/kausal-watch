@@ -69,9 +69,15 @@ class PlanDomainNode(DjangoNode):
 
 
 class PlanFeaturesNode(DjangoNode):
+    public_contact_persons = graphene.Boolean(required=True)
+
     class Meta:
         model = PlanFeatures
         fields = public_fields(PlanFeatures)
+
+    @staticmethod
+    def resolve_public_contact_persons(parent, info):
+        return parent.public_contact_persons
 
 
 def get_action_list_page_node():

@@ -5,6 +5,11 @@ from django.db import models
 
 @reversion.register()
 class PlanFeatures(models.Model):
+    class ContactPersonsPublicData(models.TextChoices):
+        NONE = 'none', _('Do not show contact persons publicly')
+        NAME = 'name', _('Show only name, role and affiliation')
+        ALL = 'all', _('Show all information')
+
     plan = models.OneToOneField('actions.Plan', related_name='features', on_delete=models.CASCADE)
     allow_images_for_actions = models.BooleanField(
         default=True, verbose_name=_('Allow images for actions'),
@@ -14,9 +19,12 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_('Show admin link'),
         help_text=_('Should the public website contain a link to the admin login?'),
     )
-    public_contact_persons = models.BooleanField(
-        default=True, verbose_name=_('Contact persons public'),
-        help_text=_('Set if the contact persons should be visible in the public UI')
+    contact_persons_public_data = models.CharField(
+        max_length=50,
+        choices=ContactPersonsPublicData.choices,
+        default=ContactPersonsPublicData.ALL,
+        verbose_name=_('Publicly visible data about contact persons'),
+        help_text=_('Choose which information about contact persons is visible in the public UI')
     )
     has_action_identifiers = models.BooleanField(
         default=True, verbose_name=_('Has action identifiers'),
@@ -58,8 +66,12 @@ class PlanFeatures(models.Model):
         help_text=_("Set to enable comparing indicators between organizations")
     )
 
+    @property
+    def public_contact_persons(self):
+        return self.contact_persons_public_data != self.ContactPersonsPublicData.NONE
+
     public_fields = [
-        'allow_images_for_actions', 'show_admin_link', 'public_contact_persons',
+        'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
         'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
         'minimal_statuses', 'has_action_contact_person_roles'
