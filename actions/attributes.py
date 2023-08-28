@@ -107,6 +107,9 @@ class AttributeType:
     def create_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)
 
+    def instantiate_attribute(self, obj: models.ModelWithAttributes, **args):
+        return self.ATTRIBUTE_MODEL(type=self.instance, content_object=obj, **args)
+
     def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()

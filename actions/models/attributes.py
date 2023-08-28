@@ -19,6 +19,7 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
+from typing import Dict, Any, List, Tuple
 if typing.TYPE_CHECKING:
     from .plan import Plan
     from users.models import User
@@ -385,100 +386,30 @@ class ModelWithAttributes(models.Model):
         'numeric_value_attributes', 'category_choice_attributes',
     ]
 
-    def set_choice_attribute(self, type, choice_option_id):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.choice_attributes.get(type=type)
-        except self.choice_attributes.model.DoesNotExist:
-            if choice_option_id is not None:
-                self.choice_attributes.create(type=type, choice_id=choice_option_id)
-        else:
-            if choice_option_id is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.choice_id = choice_option_id
-                existing_attribute.save()
+    def _value_is_empty(self, value):
+        return len([v for v in value.values() if v is not None or v == '' or v == []]) == 0
 
-    def set_choice_with_text_attribute(self, type, choice_option_id, text):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.choice_with_text_attributes.get(type=type)
-        except self.choice_with_text_attributes.model.DoesNotExist:
-            if choice_option_id is not None or text:
-                self.choice_with_text_attributes.create(
-                    type=type,
-                    choice_id=choice_option_id,
-                    text=text,
-                )
-        else:
-            if choice_option_id is None and not text:
-                existing_attribute.delete()
-            else:
-                existing_attribute.choice_id = choice_option_id
-                existing_attribute.text = text
-                existing_attribute.save()
+    def set_attribute(self, attribute_type, existing_attribute, value: Dict[str, Any]):
+        if existing_attribute is None:
+            if self._value_is_empty(value):
+                return (None, None)
+            new_attribute = attribute_type.instantiate_attribute(self, **value)
+            return ('create', new_attribute)
+        if self._value_is_empty(value):
+            return ('delete', existing_attribute)
+        for k, v in value.items():
+            setattr(existing_attribute, k, v)
+        return ('update', existing_attribute, value.keys())
 
-    def set_numeric_value_attribute(self, type, value):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.numeric_value_attributes.get(type=type)
-        except self.numeric_value_attributes.model.DoesNotExist:
-            if value is not None:
-                self.numeric_value_attributes.create(type=type, value=value)
-        else:
-            if value is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.value = value
-                existing_attribute.save()
-
-    def set_text_attribute(self, type, value):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.text_attributes.get(type=type)
-        except self.text_attributes.model.DoesNotExist:
-            if value is not None:
-                self.text_attributes.create(type=type, text=value)
-        else:
-            if value is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.text = value
-                existing_attribute.save()
-
-    def set_rich_text_attribute(self, type, value):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.rich_text_attributes.get(type=type)
-        except self.rich_text_attributes.model.DoesNotExist:
-            if value is not None:
-                self.rich_text_attributes.create(type=type, text=value)
-        else:
-            if value is None:
-                existing_attribute.delete()
-            else:
-                existing_attribute.text = value
-                existing_attribute.save()
-
-    def set_category_choice_attribute(self, type, category_ids):
-        if isinstance(type, str):
-            type = self.get_attribute_type_by_identifier(type)
-        try:
-            existing_attribute = self.category_choice_attributes.get(type=type)
-        except self.category_choice_attributes.model.DoesNotExist:
-            if category_ids:
-                attribute = self.category_choice_attributes.create(type=type)
-                attribute.categories.set(category_ids)
-        else:
-            if not category_ids:
-                existing_attribute.delete()
-            else:
-                existing_attribute.categories.set(category_ids)
+    def set_category_choice_attribute(self, attribute_type, existing_attribute, category_ids):
+        if existing_attribute is None:
+            if category_ids == []:
+                return (None, None)
+            new_attribute = attribute_type.instantiate_attribute(self)
+            return ('create_and_set_related', new_attribute, 'categories', category_ids)
+        if category_ids == []:
+            return ('delete', existing_attribute)
+        return ('set_related', existing_attribute, 'categories', category_ids)
 
     class Meta:
         abstract = True

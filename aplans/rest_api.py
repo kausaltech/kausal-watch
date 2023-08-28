@@ -61,14 +61,72 @@ class BulkListSerializer(serializers.ListSerializer):
 
         return super().to_internal_value(data)
 
+    def _handle_updates(self, update_ops):
+        for model in update_ops.keys():
+            # TODO: build the deferred operations structure
+            # like this from the get go
+            fields_for_instance = {}
+            for instance, fields in update_ops[model]:
+                existing = fields_for_instance.get(instance, tuple())
+                fields_for_instance[instance] = existing + tuple(fields)
+            instances_for_fields = dict()
+            for instance, fields in fields_for_instance.items():
+                instances_for_fields.setdefault(fields, []).append(instance)
+            for fields, instances in instances_for_fields.items():
+                model.objects.bulk_update(instances, fields)
+
+    def _handle_deletes(self, delete_ops):
+        for model in delete_ops.keys():
+            pks = [o[0].pk for o in delete_ops[model]]
+            model.objects.filter(pk__in=pks).delete()
+
+    def _handle_creates(self, create_ops):
+        for model in create_ops.keys():
+            instances = [o[0] for o in create_ops[model]]
+            model.objects.bulk_create(instances)
+
+    def _handle_set_related(self, set_ops):
+        for model in set_ops.keys():
+            # TODO: actually batch this up
+            for instance, field_name, related_ids in set_ops[model]:
+                setattr(instance, field_name, related_ids)
+                # TODO: is saved?
+
+    def _execute_deferred_operations(self, ops):
+        grouped_by_operation_and_model = dict()
+        for operation, obj, *rest in ops:
+            grouped_by_operation_and_model.setdefault(
+                operation, {}
+            ).setdefault(
+                type(obj), []
+            ).append(
+                tuple([obj] + rest)
+            )
+        # import pprint
+        # pprint.pprint(grouped_by_operation_and_model)
+        self._handle_updates(grouped_by_operation_and_model.get('update', {}))
+        self._handle_deletes(grouped_by_operation_and_model.get('delete', {}))
+        self._handle_creates(grouped_by_operation_and_model.get('create', {}))
+        self._handle_creates(grouped_by_operation_and_model.get('create_and_set_related', {}))
+        self._handle_set_related(grouped_by_operation_and_model.get('create_and_set_related', {}))
+        self._handle_set_related(grouped_by_operation_and_model.get('set_related', {}))
+
+
+
     def update(self, queryset, all_validated_data):
         updated_data = []
+        # TODO
+        self.child.enable_deferred_operations()
         for obj_id, obj_data in zip(self.obj_ids, all_validated_data):
             obj = self.objs_by_id[obj_id]
             updated_data.append(self.child.update(obj, obj_data))
+        ops = self.child.get_deferred_operations()
+        self._execute_deferred_operations(ops)
         return updated_data
 
     def create(self, validated_data):
+        # TODO
+        self.child.enable_deferred_operations()
         result = [self.child.create(attrs) for attrs in validated_data]
         return result
 

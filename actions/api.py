@@ -20,7 +20,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_field, OpenApiPar
 from rest_framework_nested import routers
 
 from actions.models.action import ActionImplementationPhase, ActionContactPerson
-from actions.models.attributes import AttributeType
+from actions.models.attributes import AttributeType, ModelWithAttributes
 from actions.models.plan import PlanQuerySet
 from aplans.api_router import router
 from aplans.model_images import (
@@ -41,6 +41,7 @@ from .models import (
     ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, Plan,
     Scenario
 )
+from .deferred_ops import DeferredDatabaseOperationsMixin
 
 if typing.TYPE_CHECKING:
     from django.db.models import QuerySet  # noqa
@@ -446,14 +447,46 @@ class AttributesSerializerMixin:
                 )
         return fields
 
-    def get_cached_values(self):
-        if '_cache' not in self.context or '_current_instance' not in self.context:
+    def get_cached_values(self, instance_pk: Number | None = None):
+        if '_cache' not in self.context:
+            return None
+        if '_current_instance' not in self.context and instance_pk is None:
             return None
         # I was unable to access the individual serializable instance through serializer or its parents when serializing with a
         # listserializer. Hence, the need to store the instance in the context
-        instance_pk = self.context['_current_instance'].pk
-        attributes = self.context['_cache'].get(self.attribute_format, {})
+        if instance_pk is None:
+            instance_pk = self.context['_current_instance'].pk
+        attributes = self.context['_cache']['attribute_values'].get(self.attribute_format, {})
         return attributes.get(instance_pk, [])
+
+    def get_cached_attribute_type(self, attribute_type_identifier: str):
+        if '_cache' not in self.context:
+            return None
+        attribute_type = self.context['_cache']['attribute_types'][attribute_type_identifier]
+        return attribute_type
+
+    def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
+        return instance.set_attribute(
+            attribute_type, existing_attribute, self.to_value_parameter(item)
+        )
+
+    def update(self, instance: Model, validated_data):
+        assert instance.pk is not None
+        cached_values = self.get_cached_values(instance_pk=instance.pk)
+        attribute_operations = []
+        for attribute_type_identifier, item in validated_data.items():
+            attribute_type = self.get_cached_attribute_type(attribute_type_identifier)
+            existing_attributes = [cv for cv in cached_values if cv.type == attribute_type.instance]
+            if len(existing_attributes) == 0:
+                existing_attribute = None
+            else:
+                assert len(existing_attributes) == 1
+                existing_attribute = existing_attributes[0]
+            assert len(existing_attributes) < 2
+            attribute_operations.append(
+                self.set_instance_attribute(instance, attribute_type, existing_attribute, item)
+            )
+        return attribute_operations
 
 
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -467,10 +500,8 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, choice_id in validated_data.items():
-            instance.set_choice_attribute(attribute_type_identifier, choice_id)
+    def to_value_parameter(self, item):
+        return {'choice_id': item}
 
 
 class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -484,10 +515,11 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, item in validated_data.items():
-            instance.set_choice_with_text_attribute(attribute_type_identifier, item.get('choice'), item.get('text'))
+    def to_value_parameter(self, item):
+        return {
+            'choice_id': item.get('choice'),
+            'text': item.get('text')
+        }
 
 
 class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -501,10 +533,10 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, value in validated_data.items():
-            instance.set_numeric_value_attribute(attribute_type_identifier, value)
+    def to_value_parameter(self, item):
+        return {
+            'value': item
+        }
 
 
 class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -518,10 +550,10 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, value in validated_data.items():
-            instance.set_text_attribute(attribute_type_identifier, value)
+    def to_value_parameter(self, item):
+        return {
+            'text': item
+        }
 
 
 class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -535,10 +567,10 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, value in validated_data.items():
-            instance.set_rich_text_attribute(attribute_type_identifier, value)
+    def to_value_parameter(self, item):
+        return {
+            'text': item
+        }
 
 
 class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -552,15 +584,15 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
     def to_internal_value(self, data):
         return data
 
-    def update(self, instance: Action, validated_data):
-        assert instance.pk is not None
-        for attribute_type_identifier, category_ids in validated_data.items():
-            instance.set_category_choice_attribute(attribute_type_identifier, category_ids)
+    def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
+        return instance.set_category_choice_attribute(
+            attribute_type, existing_attribute, item
+        )
 
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
-class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetaclass):
-    choice_attributes = ChoiceAttributesSerializer(required=False)
+class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
+    choice_attributes = ChoiceAttributesSerializer(required=False)  #HERE
     choice_with_text_attributes = ChoiceWithTextAttributesSerializer(required=False)
     numeric_value_attributes = NumericValueAttributesSerializer(required=False)
     text_attributes = TextAttributesSerializer(required=False)
@@ -586,16 +618,19 @@ class ModelWithAttributesSerializerMixin(metaclass=serializers.SerializerMetacla
     def update(self, instance, validated_data):
         popped_fields = self._pop_attributes_from_validated_data(validated_data)
         instance = super().update(instance, validated_data)
-        self._update_attribute_fields(instance, popped_fields)
+        ops = self._update_attribute_fields(instance, popped_fields)
+        instance._cached_attribute_ops = ops
         return instance
 
     def _pop_attributes_from_validated_data(self, validated_data: dict):
         return {field: validated_data.pop(field, None) for field in self._attribute_fields}
 
-    def _update_attribute_fields(self, instance, popped_fields):
+    def _update_attribute_fields(self, instance: ModelWithAttributes, popped_fields):
         for field_name, data in popped_fields.items():
             if data is not None:
-                self.fields[field_name].update(instance, data)
+                ops = self.fields[field_name].update(instance, data)
+                self.add_deferred_operations(ops)
+        return ops
 
 
 class PrevSiblingField(serializers.CharField):
@@ -628,7 +663,7 @@ class PrevSiblingField(serializers.CharField):
 
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
-class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.SerializerMetaclass):
+class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
     left_sibling = PrevSiblingField(allow_null=True, required=False)
 
     def get_field_names(self, declared_fields, info):
@@ -644,7 +679,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
             left_sibling = None
         else:
             left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
-        self._update_tree_position(instance, left_sibling)
+        ops = self._update_tree_position(instance, left_sibling)
+        self.add_deferred_operations(ops)
         return instance
 
     def update(self, instance, validated_data):
@@ -657,7 +693,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
             left_sibling = None
         else:
             left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
-        self._update_tree_position(instance, left_sibling)
+        ops = self._update_tree_position(instance, left_sibling)
+        self.add_deferred_operations(ops)
         return instance
 
     # The following would make `order` unique only relative to parent, i.e., each first child gets order 0.
@@ -749,7 +786,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(metaclass=serializers.Ser
             node = self._cached_instances[node_id]
             order = self._reorder_descendants(node, order, instance, predecessor)
 
-        self.Meta.model.objects.bulk_update(self._cached_instances.values(), ['order'])
+        return [('update', instance, ['order']) for instance in self._cached_instances.values()]
 
     def _cache_descendants(self, node):
         """Add instance `node` and all its descendants to the dict `self._cached_instances`."""
@@ -773,7 +810,7 @@ class ActionSerializer(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initialize_cache_context(self.instance, self.plan)
+        self.initialize_cache_context()
         must_generate_identifiers = not self.plan.features.has_action_identifiers
         if must_generate_identifiers:
             actions_data = getattr(self, 'initial_data', [])
@@ -785,7 +822,8 @@ class ActionSerializer(
                     # to avoid an error when we omit an identifier, we need to do it here
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
-    def initialize_cache_context(self, instance: Model | list[Model], plan: Plan):
+    def initialize_cache_context(self):
+        instance = self.instance
         if instance is None or 'request' not in self.context:
             return
         try:
@@ -795,7 +833,10 @@ class ActionSerializer(
         request = self.context['request']
         user = request.user
         attribute_types = instance.get_visible_attribute_types(user)
-        prepopulated_attributes = {}
+        attribute_types_by_identifier = {
+            at.instance.identifier: at for at in attribute_types
+        }
+        prepopulated_attributes: Dict[str, Dict] = {}
         action_content_type = ContentType.objects.get_for_model(instance)
         for at in attribute_types:
             prepopulated_attributes.setdefault(at.instance.format, {})
@@ -803,7 +844,10 @@ class ActionSerializer(
                 prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
 
         for field_name in self._attribute_fields:
-            self.fields[field_name].context['_cache'] = prepopulated_attributes
+            self.fields[field_name].context['_cache'] = {
+                'attribute_values': prepopulated_attributes,
+                'attribute_types': attribute_types_by_identifier
+            }
 
     def get_fields(self):
         fields = super().get_fields()
