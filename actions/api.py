@@ -476,7 +476,11 @@ class AttributesSerializerMixin:
         attribute_operations = []
         for attribute_type_identifier, item in validated_data.items():
             attribute_type = self.get_cached_attribute_type(attribute_type_identifier)
-            existing_attributes = [cv for cv in cached_values if cv.type == attribute_type.instance]
+            if cached_values is None:
+                # We reach here when creating new host instances with new attributes
+                existing_attributes = []
+            else:
+                existing_attributes = [cv for cv in cached_values if cv.type == attribute_type.instance]
             if len(existing_attributes) == 0:
                 existing_attribute = None
             else:
