@@ -494,7 +494,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             scope_content_type=category_type_ct,
             scope_id=self.type.id,
         )
-        attribute_types = (at for at in attribute_types if at.are_instances_visible_by(user, self.type.plan))
+        attribute_types = (at for at in attribute_types if at.are_instances_visible_for(user, self.type.plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
