@@ -179,7 +179,8 @@ def contains_error():
 
 @pytest.fixture(autouse=True)
 def disable_search_autoupdate(settings):
-    settings.WAGTAILSEARCH_BACKENDS['default']['AUTO_UPDATE'] = False
+    for conf in settings.WAGTAILSEARCH_BACKENDS.values():
+        conf['AUTO_UPDATE'] = False
 
 
 class ModelAdminEditTest(Protocol):
