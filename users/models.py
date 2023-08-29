@@ -16,10 +16,11 @@ from .base import AbstractUser
 if typing.TYPE_CHECKING:
     from actions.models import Plan, Action
     from people.models import Person
+    from actions.models.plan import PlanQuerySet
 
 
 class User(AbstractUser):
-    objects = UserManager()
+    objects = UserManager()  # type: ignore
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -38,7 +39,10 @@ class User(AbstractUser):
         null=True
     )
 
+    person: Person
     _corresponding_person: Person
+    _active_admin_plan: Plan
+    _adminable_plans: 'PlanQuerySet'
 
     autocomplete_search_field = 'email'
 
@@ -213,15 +217,20 @@ class User(AbstractUser):
 
         return self._get_admin_orgs()
 
-    def get_active_admin_plan(self, adminable_plans=None) -> Plan | None:
+    @typing.overload
+    def get_active_admin_plan(self, required: typing.Literal[False]) -> Plan | None: ...
+
+    @typing.overload
+    def get_active_admin_plan(self, required: typing.Literal[True] = True) -> Plan: ...
+
+    def get_active_admin_plan(self, required: bool = True) -> Plan | None:
         if hasattr(self, '_active_admin_plan'):
             return self._active_admin_plan
 
-        if adminable_plans is None:
-            plans = self.get_adminable_plans()
-        else:
-            plans = adminable_plans
+        plans = self.get_adminable_plans()
         if len(plans) == 0:
+            if required:
+                raise Exception("No active admin plan")
             return None
         if len(plans) == 1:
             self._active_admin_plan = plans[0]

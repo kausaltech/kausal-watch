@@ -253,17 +253,6 @@ class Plan(ClusterableModel):
     country = CountryField(blank=True)
     daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
-    features: PlanFeatures
-    actions: RelatedManager[Action]
-    action_statuses: RelatedManager[ActionStatus]
-    action_implementation_phases: RelatedManager[ActionImplementationPhase]
-    category_types: RelatedManager[CategoryType]
-    domains: RelatedManager[PlanDomain]
-    children: RelatedManager[Plan]
-    report_types: RelatedManager[ReportType]
-    user_feedbacks: RelatedManager[UserFeedback]
-    organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
-
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
 
@@ -289,6 +278,18 @@ class Plan(ClusterableModel):
     objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
     _site_created: bool
     wagtail_reference_index_ignore = True
+
+    # Type annotations for related models
+    features: PlanFeatures
+    actions: RelatedManager[Action]
+    action_statuses: RelatedManager[ActionStatus]
+    action_implementation_phases: RelatedManager[ActionImplementationPhase]
+    category_types: RelatedManager[CategoryType]
+    domains: RelatedManager[PlanDomain]
+    children: RelatedManager[Plan]
+    report_types: RelatedManager[ReportType]
+    user_feedbacks: RelatedManager[UserFeedback]
+    organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
 
     class Meta:
         verbose_name = _('plan')

@@ -36,6 +36,7 @@ from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
     from .plan import Plan
+    from django.db.models.manager import RelatedManager
 
 
 logger = logging.getLogger(__name__)
@@ -293,6 +294,9 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
         'primary_org', 'order', 'superseded_by', 'superseded_actions',
     ]
+
+    # type annotations for related objects
+    contact_persons: RelatedManager[ActionContactPerson]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')
 

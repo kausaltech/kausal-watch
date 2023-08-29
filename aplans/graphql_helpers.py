@@ -1,3 +1,4 @@
+from typing import Type
 import graphene
 from django.db.models import Model
 from django.utils.module_loading import import_string
@@ -7,7 +8,7 @@ from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
 from .graphql_types import AdminButton, AuthenticatedUserNode, GQLInfo
-from admin_site.wagtail import PlanRelatedPermissionHelper
+from admin_site.wagtail import AplansModelAdmin, PlanRelatedPermissionHelper
 
 
 def collect_fields(node, fragments):
@@ -122,7 +123,7 @@ class AdminButtonsMixin:
 
     @staticmethod
     def resolve_admin_buttons(root: Model, info: GQLInfo):
-        ModelAdmin = import_string(root.MODEL_ADMIN_CLASS)
+        ModelAdmin: Type[AplansModelAdmin] = import_string(root.MODEL_ADMIN_CLASS)  # type: ignore
 
         if not info.context.user.is_staff:
             return []

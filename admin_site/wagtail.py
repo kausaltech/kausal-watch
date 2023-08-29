@@ -1,4 +1,7 @@
 from contextlib import contextmanager
+from typing import List, TYPE_CHECKING
+from urllib.parse import urljoin
+
 from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
@@ -15,22 +18,30 @@ from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_instance_field_value
-from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
-from typing import List
-from urllib.parse import urljoin
 from wagtail.admin import messages
-from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.admin.panels import (
+    FieldPanel, InlinePanel, ObjectList, TabbedInterface
+)
 from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail.contrib.modeladmin.options import ModelAdmin
 from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
-from wagtailautocomplete.edit_handlers import AutocompletePanel as WagtailAutocompletePanel
+
+from reversion.revisions import (
+    add_to_revision, create_revision, set_comment, set_user
+)
+from wagtailautocomplete.edit_handlers import \
+    AutocompletePanel as WagtailAutocompletePanel
 
 from actions.models import Plan
 from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
-from aplans.utils import PlanRelatedModel, PlanDefaultsModel
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel
 from pages.models import ActionListPage
+
+
+if TYPE_CHECKING:
+    from wagtail.contrib.modeladmin.views import ModelFormView
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:
@@ -296,6 +307,8 @@ class ContinueEditingMixin():
 
 
 class PlanRelatedViewMixin:
+    request: WatchAdminRequest
+
     def form_valid(self, form, *args, **kwargs):
         obj = form.instance
         if isinstance(obj, PlanRelatedModel):
@@ -307,7 +320,7 @@ class PlanRelatedViewMixin:
 
         return super().form_valid(form, *args, **kwargs)
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
         user = request.user
         instance = getattr(self, 'instance', None)
         # Check if we need to change the active action plan to be able to modify

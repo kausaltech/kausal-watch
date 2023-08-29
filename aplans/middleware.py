@@ -43,7 +43,7 @@ def get_active_admin_plan(self):
 
 
 class AdminMiddleware(MiddlewareMixin):
-    def process_view(self, request, *args, **kwargs):
+    def process_view(self, request: WatchAdminRequest, *args, **kwargs):
         user = request.user
         if not user or not user.is_authenticated or not user.is_staff:
             return

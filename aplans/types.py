@@ -18,8 +18,7 @@ class AuthenticatedWatchRequest(HttpRequest):
 
 
 class WatchAdminRequest(AuthenticatedWatchRequest):
-    def get_active_admin_plan(self) -> Plan:
-        ...
+    def get_active_admin_plan(self) -> Plan: ...
 
 
 class WatchAPIRequest(HttpRequest):

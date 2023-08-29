@@ -87,6 +87,14 @@ def set_active_plan(info, plan):
     info.context._graphql_active_plan = plan
 
 
+@typing.overload
+def get_plan_from_context(info: GQLInfo, plan_identifier: None = None) -> Plan: ...
+
+
+@typing.overload
+def get_plan_from_context(info: GQLInfo, plan_identifier: str) -> Plan | None: ...
+
+
 def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> Plan | None:
     if plan_identifier is None:
         plan = getattr(info.context, '_graphql_active_plan', None)
