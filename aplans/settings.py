@@ -385,12 +385,13 @@ LANGUAGES = (
     ('de', _('German')),
     ('de-CH', _('German (Switzerland)')),
     ('en', _('English (United States)')),
-    ('en-GB', _('English (United Kingdom)')),
     ('en-AU', _('English (Australia)')),
-    ('fi', _('Finnish')),
-    ('sv', _('Swedish')),
-    ('es-US', _('Spanish (United States)')),
+    ('en-GB', _('English (United Kingdom)')),
     ('es', _('Spanish')),
+    ('es-US', _('Spanish (United States)')),
+    ('fi', _('Finnish')),
+    ('lv', _('Latvian')),
+    ('sv', _('Swedish')),
 )
 # For languages that Django has no translations for, we need to manually specify what the language is called in that
 # language. We use this for displaying the list of available languages in the user settings.
