@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta
-from enum import Enum
+import humanize
+import libvoikko
+import logging
 import random
 import re
-from typing import Iterable, List, Type
-
+import sentry_sdk
+from datetime import datetime, timedelta
 from django import forms
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -12,11 +13,11 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
-
-import logging
-import humanize
-import libvoikko
+from enum import Enum
 from tinycss2.color3 import parse_color
+from typing import Iterable, List, Type
+from wagtail.fields import StreamField
+from wagtail.models import Page, ReferenceIndex
 
 
 logger = logging.getLogger(__name__)
@@ -274,6 +275,30 @@ class InstancesVisibleForMixin(models.Model):
 
     class Meta:
         abstract = True
+
+
+class ReferenceIndexedModelMixin:
+    def delete(self,*args, **kwargs):
+        """Remove referencing StreamField blocks before deleting."""
+        references = ReferenceIndex.get_references_to(self)
+        for ref in references:
+            logger.debug(f"Removing referencing block '{ref.describe_source_field()}' from {ref.model_name} "
+                         f"{ref.object_id}")
+            page = ref.content_type.model_class().objects.get(id=ref.object_id)
+            if isinstance(page, Page) and isinstance(ref.source_field, StreamField):
+                stream_value = ref.source_field.value_from_object(page)
+                model_field, block_id, block_field = ref.content_path.split('.')
+                assert getattr(page, model_field) == stream_value
+                block = next(iter(b for b in stream_value if b.id == block_id))
+                assert block.value[block_field] == self
+                stream_value.remove(block)
+                page.save()
+            else:
+                message = (f"Unexpected type of reference ({type(page)} expected to be Page; {type(ref.source_field)} "
+                           "expected to be StreamField)")
+                logger.warning(message)
+                sentry_sdk.capture_message(message)
+        super().delete(*args, **kwargs)
 
 
 class ChoiceArrayField(ArrayField):

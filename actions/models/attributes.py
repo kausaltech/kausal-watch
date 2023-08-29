@@ -14,7 +14,8 @@ from modeltrans.fields import TranslationField
 from wagtail.fields import RichTextField
 
 from aplans.utils import (
-    ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, get_supported_languages
+    ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, ReferenceIndexedModelMixin,
+    get_supported_languages
 )
 from indicators.models import Unit
 
@@ -41,7 +42,9 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
 
 
 @reversion.register(follow=['choice_options'])
-class AttributeType(InstancesEditableByMixin, InstancesVisibleForMixin, ClusterableModel, OrderedModel):
+class AttributeType(
+    InstancesEditableByMixin, InstancesVisibleForMixin, ReferenceIndexedModelMixin, ClusterableModel, OrderedModel
+):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')
