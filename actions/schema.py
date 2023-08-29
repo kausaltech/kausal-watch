@@ -501,6 +501,7 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
     categories = graphene.List(
         graphene.NonNull('actions.schema.CategoryNode'),
         only_root=graphene.Boolean(default_value=False),
+        only_with_actions=graphene.Boolean(default_value=False),
         required=True
     )
 
@@ -523,8 +524,10 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
     @gql_optimizer.resolver_hints(
         model_field='categories',
     )
-    def resolve_categories(root: CategoryType, info, only_root: bool):
+    def resolve_categories(root: CategoryType, info, only_root: bool, only_with_actions: bool):
         qs = root.categories.all()
+        if only_with_actions:
+            qs = qs.filter(actions__isnull=False).distinct()
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
