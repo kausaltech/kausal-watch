@@ -4,7 +4,7 @@ import copy
 import rest_framework.fields
 import typing
 from collections import Counter
-from typing import Optional
+from typing import Optional, Dict
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
