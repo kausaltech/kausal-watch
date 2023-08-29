@@ -9,6 +9,8 @@ from wagtail.contrib.modeladmin.helpers import PermissionHelper
 from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail.contrib.modeladmin.views import EditView
 
+from aplans.types import WatchAdminRequest
+
 from . import action_admin  # noqa
 from . import attribute_type_admin  # noqa
 from . import category_admin  # noqa
@@ -213,10 +215,15 @@ class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
         link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)
         return link_menu_item
 
-    def is_shown(self, request):
+    def is_shown(self, request: WatchAdminRequest):
         # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
         # this menu item is about editing a plan features instance, not listing.
-        plan = request.user.get_active_admin_plan()
+        user = request.user
+        if user.is_superuser:
+            return True
+        plan = request.user.get_active_admin_plan(required=False)
+        if plan is None:
+            return False
         field = self.get_one_to_one_field(plan)
         return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
 
