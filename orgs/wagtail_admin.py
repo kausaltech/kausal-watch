@@ -254,7 +254,7 @@ class OrganizationButtonHelper(NodeButtonHelper):
             'url': self.url_helper.get_action_url('exclude_organization_from_active_plan', quote(pk)),
         }
 
-    def get_buttons_for_obj(self, obj, *args, **kwargs):
+    def get_buttons_for_obj(self, obj: Organization, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
 
         # Show "include in / exclude from active plan" button if user has permission and it's a root organization

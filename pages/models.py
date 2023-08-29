@@ -1,6 +1,7 @@
 import functools
 from typing import Optional
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, MinValueValidator
 from django.db import models
 from django.utils import translation
@@ -276,6 +277,17 @@ class CategoryPage(AplansPage):
         assert parent is not None
         self.url_path = parent.url_path + path
         return self.url_path
+
+    def validate_unique(self, exclude=None):
+        # This can't be a constraint on the DB level because `locale` and `category` are in different tables
+        super().validate_unique(exclude)
+        qs = CategoryPage.objects.filter(category=self.category, locale=self.locale)
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        if qs.exists():
+            raise ValidationError({
+                'category': _('This category already has a page')
+            })
 
 
 class FixedSlugPage(AplansPage):
