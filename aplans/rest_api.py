@@ -17,6 +17,11 @@ class BulkListSerializer(serializers.ListSerializer):
     child: serializers.ModelSerializer
     instance: typing.Optional[QuerySet]
     update_lookup_field = 'id'
+    _refresh_cache: bool
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._refresh_cache = False
 
     def to_internal_value(self, data):
         id_attr = self.update_lookup_field
@@ -111,8 +116,6 @@ class BulkListSerializer(serializers.ListSerializer):
         self._handle_set_related(grouped_by_operation_and_model.get('create_and_set_related', {}))
         self._handle_set_related(grouped_by_operation_and_model.get('set_related', {}))
 
-
-
     def update(self, queryset, all_validated_data):
         updated_data = []
         # TODO
@@ -122,13 +125,22 @@ class BulkListSerializer(serializers.ListSerializer):
             updated_data.append(self.child.update(obj, obj_data))
         ops = self.child.get_deferred_operations()
         self._execute_deferred_operations(ops)
+        self._refresh_cache = True
         return updated_data
 
     def create(self, validated_data):
         # TODO
         self.child.enable_deferred_operations()
         result = [self.child.create(attrs) for attrs in validated_data]
+        self._refresh_cache = True
         return result
+
+    def to_representation(self, value):
+        if self._refresh_cache:
+            if hasattr(self.child, 'initialize_cache_context'):
+                self.child.initialize_cache_context()
+                self._refresh_cache = False
+        return super().to_representation(value)
 
     def run_validation(self, *args, **kwargs):
         # If we POST multiple instances at the same time, then validation will be run for all of them sequentially
@@ -142,7 +154,6 @@ class BulkListSerializer(serializers.ListSerializer):
         # changes some of that.
         self._children_validated_so_far = []
         return super().run_validation(*args, **kwargs)
-
 
 
 class BulkModelViewSet(viewsets.ModelViewSet):
