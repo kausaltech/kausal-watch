@@ -622,8 +622,7 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
     def update(self, instance, validated_data):
         popped_fields = self._pop_attributes_from_validated_data(validated_data)
         instance = super().update(instance, validated_data)
-        ops = self._update_attribute_fields(instance, popped_fields)
-        instance._cached_attribute_ops = ops
+        self._update_attribute_fields(instance, popped_fields)
         return instance
 
     def _pop_attributes_from_validated_data(self, validated_data: dict):
@@ -634,7 +633,6 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
             if data is not None:
                 ops = self.fields[field_name].update(instance, data)
                 self.add_deferred_operations(ops)
-        return ops
 
 
 class PrevSiblingField(serializers.CharField):
@@ -929,6 +927,9 @@ class ActionSerializer(
             self.fields['responsible_parties'].update(instance, responsible_parties)
         if contact_persons is not None:
             self.fields['contact_persons'].update(instance, contact_persons)
+        instance._prefetched_objects_cache = {}
+        if self.parent is None:
+            self.initialize_cache_context()
         return instance
 
     class Meta:
