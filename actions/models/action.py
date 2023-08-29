@@ -581,18 +581,27 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
         return self.plan.action_attribute_types.get(identifier=identifier)
 
     def get_visible_attribute_types(self, user, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+        return self.__class__.get_visible_attribute_types_for_plan(
+            user,
+            self.plan,
+            only_in_reporting_tab=only_in_reporting_tab,
+            unless_in_reporting_tab=unless_in_reporting_tab
+        )
+
+    @classmethod
+    def get_visible_attribute_types_for_plan(cls, user, plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
-        plan_ct = ContentType.objects.get_for_model(self.plan)
+        plan_ct = ContentType.objects.get_for_model(plan)
         attribute_types = AttributeTypeModel.objects.filter(
             object_content_type=action_ct,
             scope_content_type=plan_ct,
-            scope_id=self.plan.id,
+            scope_id=plan.id,
         )
         if only_in_reporting_tab:
             attribute_types = attribute_types.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
             attribute_types = attribute_types.filter(show_in_reporting_tab=False)
-        attribute_types = (at for at in attribute_types if at.are_instances_visible_for(user, self.plan))
+        attribute_types = (at for at in attribute_types if at.are_instances_visible_for(user, plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 

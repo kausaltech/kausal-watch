@@ -826,20 +826,23 @@ class ActionSerializer(
 
     def initialize_cache_context(self):
         instance = self.instance
-        if instance is None or 'request' not in self.context:
+        if 'request' not in self.context:
             return
         try:
             instance = next(iter(instance))
         except TypeError:
             pass
+        plan = self.context.get('plan')
+        if plan is None:
+            return
         request = self.context['request']
         user = request.user
-        attribute_types = instance.get_visible_attribute_types(user)
+        attribute_types = Action.get_visible_attribute_types_for_plan(user, plan)
         attribute_types_by_identifier = {
             at.instance.identifier: at for at in attribute_types
         }
         prepopulated_attributes: Dict[str, Dict] = {}
-        action_content_type = ContentType.objects.get_for_model(instance)
+        action_content_type = ContentType.objects.get(app_label='actions', model='action')
         for at in attribute_types:
             prepopulated_attributes.setdefault(at.instance.format, {})
             for a in at.attributes.filter(content_type=action_content_type):
@@ -912,6 +915,9 @@ class ActionSerializer(
             self.fields['responsible_parties'].update(instance, responsible_parties)
         if contact_persons is not None:
             self.fields['contact_persons'].update(instance, contact_persons)
+        instance._prefetched_objects_cache = {}
+        if self.parent is None:
+            self.initialize_cache_context()
         return instance
 
     def update(self, instance, validated_data):
@@ -977,6 +983,24 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return plan.actions.all().prefetch_related(
             'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions'
         )
+
+    def get_plan(self):
+        plan_pk = self.kwargs.get('plan_pk')
+        if plan_pk is None:
+            return None
+        try:
+            return Plan.objects.get(pk=plan_pk)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        plan = self.get_plan()
+        if plan is None:
+            return context
+        context.update({'plan': plan})
+        return context
+
 
 
 plan_router.register(
