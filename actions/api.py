@@ -774,11 +774,17 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
             predecessor = left_sibling
 
         # Use instance cache for bulk update
-        self._cached_instances = {}
-        for node in instance.get_siblings():
-            self._cache_descendants(node)
-        instance = self._cached_instances[instance.id]
-
+        def init_cache(force_refresh=False):
+            self._cached_instances = {}
+            for node in instance.get_siblings(force_refresh=force_refresh):
+                self._cache_descendants(node)
+            return self._cached_instances[instance.id]
+        try:
+            instance = init_cache()
+        except KeyError:
+            # get_siblings is using a cache for performance reasons.  We need to clear the cache when adding new nodes because the cache was
+            # initially initialized when the new nodes where not in the database.
+            instance = init_cache(force_refresh=True)
         order = 0
         if left_sibling is None and parent is None:
             # instance gets order 0

@@ -625,7 +625,9 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
                         panels.append(field.get_panel())
         return (main_panels, reporting_panels, i18n_panels)
 
-    def get_siblings(self):
+    def get_siblings(self, force_refresh=False):
+        if force_refresh:
+            del self.plan.cached_actions
         return self.plan.cached_actions
 
     def get_prev_sibling(self):

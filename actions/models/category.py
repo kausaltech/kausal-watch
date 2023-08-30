@@ -517,7 +517,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                     main_panels.append(field.get_panel())
         return (main_panels, i18n_panels)
 
-    def get_siblings(self):
+    def get_siblings(self, force_refresh=False):
         return Category.objects.filter(type=self.type, parent=self.parent)
 
     def get_prev_sibling(self):
