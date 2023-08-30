@@ -6,10 +6,10 @@ from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList,
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
-from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.contrib.modeladmin.views import DeleteView
+from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
+from wagtail_modeladmin.menus import ModelAdminMenuItem
+from wagtail_modeladmin.options import modeladmin_register
+from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 from wagtailsvg.edit_handlers import SvgChooserPanel
 

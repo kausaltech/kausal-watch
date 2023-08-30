@@ -5,9 +5,9 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
-from wagtail.contrib.modeladmin.views import EditView
+from wagtail_modeladmin.helpers import PermissionHelper
+from wagtail_modeladmin.options import modeladmin_register, ModelAdminMenuItem
+from wagtail_modeladmin.views import EditView
 
 from aplans.types import WatchAdminRequest
 

@@ -8,10 +8,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
-from wagtail.contrib.modeladmin.menus import ModelAdminMenuItem
-from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.contrib.modeladmin.views import IndexView, DeleteView
+from wagtail_modeladmin.helpers import ButtonHelper
+from wagtail_modeladmin.menus import ModelAdminMenuItem
+from wagtail_modeladmin.options import modeladmin_register
+from wagtail_modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category

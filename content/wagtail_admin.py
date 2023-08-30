@@ -1,8 +1,8 @@
 from contextlib import contextmanager
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
-from wagtail.contrib.modeladmin.options import ModelAdmin, ModelAdminMenuItem, modeladmin_register
-from wagtail.contrib.modeladmin.views import EditView
+from wagtail_modeladmin.options import ModelAdmin, ModelAdminMenuItem, modeladmin_register
+from wagtail_modeladmin.views import EditView
 
 from .models import SiteGeneralContent
 from actions.wagtail_admin import ActivePlanPermissionHelper

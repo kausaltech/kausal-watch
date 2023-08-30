@@ -9,8 +9,8 @@ from generic_chooser.widgets import AdminChooser
 from wagtail.admin.panels import (
     FieldPanel, HelpPanel, InlinePanel, ObjectList, MultiFieldPanel
 )
-from wagtail.contrib.modeladmin.helpers import PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdminGroup
+from wagtail_modeladmin.helpers import PermissionHelper
+from wagtail_modeladmin.options import ModelAdminGroup
 from wagtail import hooks
 
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit

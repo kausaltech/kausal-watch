@@ -1,8 +1,8 @@
 from django.contrib.admin.utils import quote
 from django.urls import re_path
 from django.utils.translation import gettext_lazy as _
-from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper, AdminURLHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin, modeladmin_register
+from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper, AdminURLHelper
+from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
 
 from .models import UserFeedback
 from .views import SetUserFeedbackProcessedView

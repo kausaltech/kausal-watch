@@ -6,7 +6,7 @@ from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy
 from wagtail.admin import messages
-from wagtail.contrib.modeladmin.views import EditView, WMABaseView
+from wagtail_modeladmin.views import EditView, WMABaseView
 
 from admin_site.wagtail import SetInstanceMixin
 from admin_site.wagtail import AplansCreateView

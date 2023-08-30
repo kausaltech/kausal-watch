@@ -12,8 +12,8 @@ from wagtail.admin.panels import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
-from wagtail.contrib.modeladmin.options import ModelAdminMenuItem
-from wagtail.contrib.modeladmin.views import IndexView
+from wagtail_modeladmin.options import ModelAdminMenuItem
+from wagtail_modeladmin.views import IndexView
 
 from admin_site.wagtail import (
     AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,

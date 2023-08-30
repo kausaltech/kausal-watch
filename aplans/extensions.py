@@ -22,7 +22,7 @@ def should_register_modeladmin(cls):
 
 
 def modeladmin_register(cls):
-    from wagtail.contrib.modeladmin.options import modeladmin_register as wagtail_modeladmin_register
+    from wagtail_modeladmin.options import modeladmin_register as wagtail_modeladmin_register
 
     if not should_register_modeladmin(cls):
         return cls

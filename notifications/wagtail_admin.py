@@ -5,7 +5,7 @@ from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
-from wagtail.contrib.modeladmin.options import modeladmin_register, ModelAdminMenuItem
+from wagtail_modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail import hooks
 
 from .forms import NotificationPreferencesForm

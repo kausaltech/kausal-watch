@@ -27,7 +27,7 @@ from users.tests import factories as users_factories
 
 if typing.TYPE_CHECKING:
     from django.db.models import Model
-    from wagtail.contrib.modeladmin.options import ModelAdmin
+    from wagtail_modeladmin.options import ModelAdmin
     from users.models import User
     import django.test.client
 

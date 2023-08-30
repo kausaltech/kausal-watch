@@ -161,9 +161,10 @@ def _sync_group_page_perms(root_page, group):
     new_page_set = set(root_page.get_translations(inclusive=True))
     if perm_set != new_perm_set or page_set != new_page_set:
         current_perms.delete()
-        for perm in new_perm_set:
+        for codename in new_perm_set:
             for page in new_page_set:
-                GroupPagePermission.objects.create(page=page, group=group, permission_type=perm)
+                permission = Permission.objects.get(content_type__app_label='wagtailcore', codename=codename)
+                GroupPagePermission.objects.create(page=page, group=group, permission=permission)
 
 
 def _sync_contact_person_groups(user):

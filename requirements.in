@@ -69,4 +69,4 @@ unidecode  # for decoding non-ASCII characters nicely in slugs, used optionally 
 xlsxwriter
 Babel
 polars[xlsx2csv]
-
+wagtail-modeladmin

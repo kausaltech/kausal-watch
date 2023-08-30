@@ -6,9 +6,9 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import ClusterForm
 from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.mixins import ThumbnailMixin
-from wagtail.contrib.modeladmin.options import ModelAdmin
+from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
+from wagtail_modeladmin.mixins import ThumbnailMixin
+from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as WAGTAILGEOWIDGET_VERSION
 
 from .forms import NodeForm

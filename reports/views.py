@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
 from reversion.models import Version
-from wagtail.contrib.modeladmin.views import WMABaseView
+from wagtail_modeladmin.views import WMABaseView
 
 from .models import ActionSnapshot, Report
 from actions.models import Action

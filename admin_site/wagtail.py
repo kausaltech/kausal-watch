@@ -23,9 +23,9 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
-from wagtail.contrib.modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail.contrib.modeladmin.options import ModelAdmin
-from wagtail.contrib.modeladmin.views import CreateView, EditView, IndexView
+from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
+from wagtail_modeladmin.options import ModelAdmin
+from wagtail_modeladmin.views import CreateView, EditView, IndexView
 
 from reversion.revisions import (
     add_to_revision, create_revision, set_comment, set_user
@@ -41,7 +41,7 @@ from pages.models import ActionListPage
 
 
 if TYPE_CHECKING:
-    from wagtail.contrib.modeladmin.views import ModelFormView
+    from wagtail_modeladmin.views import ModelFormView
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:

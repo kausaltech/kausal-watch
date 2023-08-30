@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
 from wagtail.admin import messages
-from wagtail.contrib.modeladmin.views import WMABaseView
+from wagtail_modeladmin.views import WMABaseView
 
 from feedback.models import UserFeedback
 

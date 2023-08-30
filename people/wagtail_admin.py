@@ -14,9 +14,9 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-from wagtail.contrib.modeladmin.options import modeladmin_register
-from wagtail.contrib.modeladmin.helpers import ButtonHelper
-from wagtail.contrib.modeladmin.views import DeleteView
+from wagtail_modeladmin.options import modeladmin_register
+from wagtail_modeladmin.helpers import ButtonHelper
+from wagtail_modeladmin.views import DeleteView
 
 from actions.models import ActionContactPerson, Plan
 from admin_site.wagtail import (
