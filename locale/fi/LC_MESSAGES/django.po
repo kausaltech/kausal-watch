@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-11 12:23+0300\n"
+"POT-Creation-Date: 2023-08-30 14:30+0300\n"
 "PO-Revision-Date: 2023-08-25 10:18+0000\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
-">\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -148,6 +147,12 @@ msgid "Organization occurs multiple times as responsible party"
 msgstr "Sama organisaatio toistuu vastuutahona"
 
 #: actions/api.py
+#, fuzzy
+#| msgid "Organization occurs multiple times as responsible party"
+msgid "Person occurs multiple times as contact person"
+msgstr "Sama organisaatio toistuu vastuutahona"
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr "Tunniste pitää asettaa"
 
@@ -158,6 +163,10 @@ msgstr "Tunniste on jo olemassa"
 #: actions/api.py people/models.py
 msgid "Person with this email already exists"
 msgstr "Tällä sähköpostiosoitteella on jo henkilö"
+
+#: actions/api.py
+msgid "Not all objects have an email address"
+msgstr ""
 
 #: actions/api.py
 #, python-format
@@ -198,6 +207,12 @@ msgstr "Jos muoto on \"luokka\", luokan tyyppi on valittava"
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Jos muoto on 'numeerinen', yksikkö vaaditaan"
+
+#: actions/attribute_type_admin.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choice options"
+msgstr "ominaisuuden valintavaihtoehdot"
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
@@ -367,6 +382,12 @@ msgstr "Luokkien tyypit"
 #: actions/category_admin.py
 msgid "Action and indicator categorization"
 msgstr "Toimenpiteiden ja mittareiden luokittelu"
+
+#: actions/category_admin.py
+#, fuzzy
+#| msgid "category levels"
+msgid "Category levels"
+msgstr "luokan tasot"
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
@@ -555,7 +576,7 @@ msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
 msgid "Draft"
 msgstr "Luonnos"
 
-#: actions/models/action.py
+#: actions/models/action.py aplans/utils.py
 msgid "Public"
 msgstr "Julkaistu"
 
@@ -778,6 +799,18 @@ msgstr "toimenpiteen vastuutaho"
 #: actions/models/action.py
 msgid "action responsible parties"
 msgstr "toimenpiteen vastuutahot"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Edit"
+msgid "Editor"
+msgstr "Muokkaa"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "operational"
+msgid "Moderator"
+msgstr "toiminnallinen"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py people/models.py
@@ -1184,6 +1217,24 @@ msgid "Either SVG or image must be set"
 msgstr "Aseta joko SVG tai kuva"
 
 #: actions/models/features.py
+#, fuzzy
+#| msgid "Do not send to contact persons"
+msgid "Do not show contact persons publicly"
+msgstr "Älä lähetä yhteyshenkilöille"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Show only un-merged actions"
+msgid "Show only name, role and affiliation"
+msgstr "Ei yhdistettyjä toimenpiteitä"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Show all actions"
+msgid "Show all information"
+msgstr "Näytä kaikki toimenpiteet"
+
+#: actions/models/features.py
 msgid "Allow images for actions"
 msgstr "Salli toimenpiteille kuvat"
 
@@ -1200,11 +1251,15 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: actions/models/features.py
-msgid "Contact persons public"
-msgstr "Yhteyshenkilöt julkisia"
+#, fuzzy
+#| msgid "send to contact persons"
+msgid "Publicly visible data about contact persons"
+msgstr "lähetä yhteyshenkilöille"
 
 #: actions/models/features.py
-msgid "Set if the contact persons should be visible in the public UI"
+#, fuzzy
+#| msgid "Set if the contact persons should be visible in the public UI"
+msgid "Choose which information about contact persons is visible in the public UI"
 msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
@@ -1222,6 +1277,16 @@ msgstr "Näytä toimenpiteiden tunnisteet"
 #: actions/models/features.py
 msgid "Set if action identifiers should be visible in the public UI"
 msgstr "Aseta jos julkisessa sivustossa halutaan näyttää toimenpiteiden tunnisteet"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "action contact persons"
+msgid "Action contact persons have different roles"
+msgstr "toimenpiteen yhteyshenkilöt"
+
+#: actions/models/features.py
+msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
+msgstr ""
 
 #: actions/models/features.py
 msgid "Minimal statuses"
@@ -1567,6 +1632,12 @@ msgid "Plans"
 msgstr "Toimenpideohjelmat"
 
 #: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "general administrators"
+msgid "General administrators"
+msgstr "pääkäyttäjät"
+
+#: actions/wagtail_admin.py
 msgid "Domains"
 msgstr "Verkkotunnukset"
 
@@ -1631,6 +1702,10 @@ msgid "Google"
 msgstr "Google"
 
 #: admin_site/models.py
+msgid "Tunnistamo"
+msgstr ""
+
+#: admin_site/models.py
 msgid "login method"
 msgstr "kirjautumismenetelmä"
 
@@ -1680,6 +1755,10 @@ msgstr "Kirjaudu sisään Kausal Watch -ylläpitoon"
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr "Pahoittelut, palvelimella on väliaikaisia teknisiä ongelmia."
+
+#: admin_site/views.py
+msgid "Your account settings have been changed successfully!"
+msgstr ""
 
 #: admin_site/wagtail.py
 msgid "View live"
@@ -1799,44 +1878,58 @@ msgid "English (United States)"
 msgstr "englanti (Yhdysvallat)"
 
 #: aplans/settings.py
-msgid "English (United Kingdom)"
-msgstr "englanti (Yhdistynyt kuningaskunta)"
-
-#: aplans/settings.py
 msgid "English (Australia)"
 msgstr "englanti (Australia)"
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr "suomi"
+msgid "English (United Kingdom)"
+msgstr "englanti (Yhdistynyt kuningaskunta)"
 
 #: aplans/settings.py
-msgid "Swedish"
-msgstr "ruotsi"
+msgid "Spanish"
+msgstr "espanja"
 
 #: aplans/settings.py
 msgid "Spanish (United States)"
 msgstr "espanja (Yhdysvallat)"
 
 #: aplans/settings.py
-msgid "Spanish"
-msgstr "espanja"
+msgid "Finnish"
+msgstr "suomi"
+
+#: aplans/settings.py
+msgid "Latvian"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "ruotsi"
 
 #: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
 
 #: aplans/utils.py
-msgid "Not editable"
-msgstr "Ei muokattavissa"
+msgid "Authenticated users"
+msgstr ""
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Toimenpideohjelman ylläpitäjät"
 
 #: aplans/utils.py
+msgid "Not editable"
+msgstr "Ei muokattavissa"
+
+#: aplans/utils.py
 msgid "Edit rights"
 msgstr "Muokkausoikeudet"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "visibility"
+msgid "Visibility"
+msgstr "Näkyvyys"
 
 #: aplans/utils.py
 #, python-format
@@ -1922,6 +2015,10 @@ msgstr "sivuston yleisen sisältö"
 #: content/models.py
 msgid "site general contents"
 msgstr "sivuston yleiset sisällöt"
+
+#: content/wagtail_admin.py
+msgid "Site settings"
+msgstr "Sivuston asetukset"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -2225,9 +2322,7 @@ msgstr "maksimiarvo"
 
 #: indicators/models.py
 msgid "What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum."
-msgstr ""
-"Mikä on tämän mittarin suurin mahdollinen arvo? Tietoa käytetään mittarin "
-"visualisaatioiden Y-akselin maksimiarvona."
+msgstr "Mikä on tämän mittarin suurin mahdollinen arvo? Tietoa käytetään mittarin visualisaatioiden Y-akselin maksimiarvona."
 
 #: indicators/models.py
 msgid "time resolution"
@@ -2515,6 +2610,12 @@ msgid "none"
 msgstr "tyhjä"
 
 #: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "Dimensions"
+msgstr "mittarin dimensiot"
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
@@ -2525,6 +2626,14 @@ msgstr[1] "Jos muutat tämän mittarin dimensioita (nyt %(dimensions)s), kaikki 
 #, python-format
 msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Mittari on kytketty yleiseen mittariin, joten sen suuretta (%(quantity)s), yksikköä (%(unit)s) tai dimensioita (%(dimensions)s) ei voi muokata."
+
+#: indicators/wagtail_admin.py
+msgid "Effects"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Causes"
+msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Advanced options"
@@ -3281,6 +3390,10 @@ msgid "Category pages"
 msgstr "Luokkasivut"
 
 #: pages/models.py
+msgid "This category already has a page"
+msgstr ""
+
+#: pages/models.py
 msgid "lead content"
 msgstr "johdanto"
 
@@ -3791,6 +3904,9 @@ msgstr "Käyttäjät"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
 
+#~ msgid "Contact persons public"
+#~ msgstr "Yhteyshenkilöt julkisia"
+
 #~ msgctxt "hyphenated"
 #~ msgid "Plans"
 #~ msgstr "Toimenpideohjelmat"
@@ -3819,9 +3935,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Show only actions I can modify"
 #~ msgstr "Näytä vain toimenpiteet joita voin muokata"
-
-#~ msgid "Show all actions"
-#~ msgstr "Näytä kaikki toimenpiteet"
 
 #~ msgid "By last updated"
 #~ msgstr "Viimeisimmän päivityskerran mukaan"
@@ -3858,9 +3971,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Show all"
 #~ msgstr "Näytä kaikki"
-
-#~ msgid "Show only un-merged actions"
-#~ msgstr "Ei yhdistettyjä toimenpiteitä"
 
 #~ msgid "Show also merged actions"
 #~ msgstr "Näytä myös yhdistetyt toimenpiteet"
@@ -3941,9 +4051,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 #, python-format
 #~ msgid "New %(related_verbose_name)s"
 #~ msgstr "Uusi %(related_verbose_name)s"
-
-#~ msgid "Site settings"
-#~ msgstr "Sivuston asetukset"
 
 #~ msgid "Downstream indicator"
 #~ msgstr "Alavirran mittarit"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-11 12:23+0300\n"
+"POT-Creation-Date: 2023-08-30 14:30+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -142,6 +142,10 @@ msgid "Organization occurs multiple times as responsible party"
 msgstr ""
 
 #: actions/api.py
+msgid "Person occurs multiple times as contact person"
+msgstr ""
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr ""
 
@@ -151,6 +155,10 @@ msgstr ""
 
 #: actions/api.py people/models.py
 msgid "Person with this email already exists"
+msgstr ""
+
+#: actions/api.py
+msgid "Not all objects have an email address"
 msgstr ""
 
 #: actions/api.py
@@ -191,6 +199,10 @@ msgstr ""
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py
+msgid "Choice options"
 msgstr ""
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
@@ -363,6 +375,10 @@ msgstr ""
 #: actions/category_admin.py
 msgid "Action and indicator categorization"
 msgstr "Action and indicator categorisation"
+
+#: actions/category_admin.py
+msgid "Category levels"
+msgstr ""
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
@@ -553,7 +569,7 @@ msgstr ""
 msgid "Draft"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py aplans/utils.py
 msgid "Public"
 msgstr ""
 
@@ -777,6 +793,14 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "action responsible parties"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Editor"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Moderator"
 msgstr ""
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
@@ -1184,6 +1208,20 @@ msgid "Either SVG or image must be set"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Do not show contact persons publicly"
+msgstr ""
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Responsible organizations"
+msgid "Show only name, role and affiliation"
+msgstr "Responsible organisations"
+
+#: actions/models/features.py
+msgid "Show all information"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Allow images for actions"
 msgstr ""
 
@@ -1200,11 +1238,11 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Contact persons public"
+msgid "Publicly visible data about contact persons"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Set if the contact persons should be visible in the public UI"
+msgid "Choose which information about contact persons is visible in the public UI"
 msgstr ""
 
 #: actions/models/features.py
@@ -1221,6 +1259,14 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Set if action identifiers should be visible in the public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Action contact persons have different roles"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
 msgstr ""
 
 #: actions/models/features.py
@@ -1567,6 +1613,10 @@ msgid "Plans"
 msgstr ""
 
 #: actions/wagtail_admin.py
+msgid "General administrators"
+msgstr ""
+
+#: actions/wagtail_admin.py
 msgid "Domains"
 msgstr ""
 
@@ -1633,6 +1683,10 @@ msgid "Google"
 msgstr ""
 
 #: admin_site/models.py
+msgid "Tunnistamo"
+msgstr ""
+
+#: admin_site/models.py
 msgid "login method"
 msgstr ""
 
@@ -1681,6 +1735,10 @@ msgstr ""
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
+msgstr ""
+
+#: admin_site/views.py
+msgid "Your account settings have been changed successfully!"
 msgstr ""
 
 #: admin_site/wagtail.py
@@ -1801,19 +1859,15 @@ msgid "English (United States)"
 msgstr ""
 
 #: aplans/settings.py
-msgid "English (United Kingdom)"
-msgstr ""
-
-#: aplans/settings.py
 msgid "English (Australia)"
 msgstr ""
 
 #: aplans/settings.py
-msgid "Finnish"
+msgid "English (United Kingdom)"
 msgstr ""
 
 #: aplans/settings.py
-msgid "Swedish"
+msgid "Spanish"
 msgstr ""
 
 #: aplans/settings.py
@@ -1821,7 +1875,15 @@ msgid "Spanish (United States)"
 msgstr ""
 
 #: aplans/settings.py
-msgid "Spanish"
+msgid "Finnish"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Latvian"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Swedish"
 msgstr ""
 
 #: aplans/utils.py
@@ -1829,7 +1891,7 @@ msgid "order"
 msgstr ""
 
 #: aplans/utils.py
-msgid "Not editable"
+msgid "Authenticated users"
 msgstr ""
 
 #: aplans/utils.py orgs/wagtail_admin.py
@@ -1837,7 +1899,15 @@ msgid "Plan admins"
 msgstr ""
 
 #: aplans/utils.py
+msgid "Not editable"
+msgstr ""
+
+#: aplans/utils.py
 msgid "Edit rights"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Visibility"
 msgstr ""
 
 #: aplans/utils.py
@@ -1923,6 +1993,10 @@ msgstr ""
 
 #: content/models.py
 msgid "site general contents"
+msgstr ""
+
+#: content/wagtail_admin.py
+msgid "Site settings"
 msgstr ""
 
 #: documents/chooser.py
@@ -2509,6 +2583,10 @@ msgid "none"
 msgstr ""
 
 #: indicators/wagtail_admin.py
+msgid "Dimensions"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
@@ -2518,6 +2596,14 @@ msgstr[1] ""
 #: indicators/wagtail_admin.py
 #, python-format
 msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Effects"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Causes"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -3245,6 +3331,10 @@ msgstr ""
 
 #: pages/models.py
 msgid "Category pages"
+msgstr ""
+
+#: pages/models.py
+msgid "This category already has a page"
 msgstr ""
 
 #: pages/models.py

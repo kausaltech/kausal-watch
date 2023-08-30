@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-11 12:23+0300\n"
+"POT-Creation-Date: 2023-08-30 14:30+0300\n"
 "PO-Revision-Date: 2023-08-30 08:18+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -147,6 +146,12 @@ msgid "Organization occurs multiple times as responsible party"
 msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
 
 #: actions/api.py
+#, fuzzy
+#| msgid "Organization occurs multiple times as responsible party"
+msgid "Person occurs multiple times as contact person"
+msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
+
+#: actions/api.py
 msgid "Identifier must be set"
 msgstr "Kennung muss gesetzt sein"
 
@@ -157,6 +162,10 @@ msgstr "Kennung existiert bereits"
 #: actions/api.py people/models.py
 msgid "Person with this email already exists"
 msgstr "Person mit dieser E-Mail-Adresse existiert bereits"
+
+#: actions/api.py
+msgid "Not all objects have an email address"
+msgstr ""
 
 #: actions/api.py
 #, python-format
@@ -197,6 +206,12 @@ msgstr "Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt we
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werden"
+
+#: actions/attribute_type_admin.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choice options"
+msgstr "Attribut-Wahlmöglichkeiten"
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
@@ -366,6 +381,12 @@ msgstr "Kategorietypen"
 #: actions/category_admin.py
 msgid "Action and indicator categorization"
 msgstr "Maßnahmen- und Indikatorkategorisierung"
+
+#: actions/category_admin.py
+#, fuzzy
+#| msgid "category levels"
+msgid "Category levels"
+msgstr "Kategoriestufen"
 
 #: actions/category_admin.py
 msgid "There is already a category with this identifier."
@@ -554,7 +575,7 @@ msgstr "Eine zusätzliche Sprache des Plans darf nicht gleich sein wie seine Hau
 msgid "Draft"
 msgstr "Entwurf"
 
-#: actions/models/action.py
+#: actions/models/action.py aplans/utils.py
 msgid "Public"
 msgstr "Öffentlich"
 
@@ -777,6 +798,18 @@ msgstr "für Maßnahme zuständige Stelle"
 #: actions/models/action.py
 msgid "action responsible parties"
 msgstr "für Maßnahme zuständige Stellen"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Edit"
+msgid "Editor"
+msgstr "Bearbeiten"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "operational"
+msgid "Moderator"
+msgstr "operativ"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py people/models.py
@@ -1183,6 +1216,24 @@ msgid "Either SVG or image must be set"
 msgstr "Entweder SVG oder Bild muss gesetzt sein"
 
 #: actions/models/features.py
+#, fuzzy
+#| msgid "Do not send to contact persons"
+msgid "Do not show contact persons publicly"
+msgstr "Nicht an Ansprechpartner senden"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Show only editable organizations"
+msgid "Show only name, role and affiliation"
+msgstr "Zeige nur veränderbare Organisationen"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Basic information"
+msgid "Show all information"
+msgstr "Grunddaten"
+
+#: actions/models/features.py
 msgid "Allow images for actions"
 msgstr "Erlaube Bilder für Maßnahmen"
 
@@ -1199,11 +1250,15 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: actions/models/features.py
-msgid "Contact persons public"
-msgstr "Ansprechpartner öffentlich"
+#, fuzzy
+#| msgid "send to contact persons"
+msgid "Publicly visible data about contact persons"
+msgstr "an Ansprechpartner senden"
 
 #: actions/models/features.py
-msgid "Set if the contact persons should be visible in the public UI"
+#, fuzzy
+#| msgid "Set if the contact persons should be visible in the public UI"
+msgid "Choose which information about contact persons is visible in the public UI"
 msgstr "Setzen, wenn die Ansprechpartner in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: actions/models/features.py
@@ -1221,6 +1276,16 @@ msgstr "Zeige Maßnahmenkennungen"
 #: actions/models/features.py
 msgid "Set if action identifiers should be visible in the public UI"
 msgstr "Setzen, wenn die Maßnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "action contact persons"
+msgid "Action contact persons have different roles"
+msgstr "Maßnahmenansprechpartner"
+
+#: actions/models/features.py
+msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
+msgstr ""
 
 #: actions/models/features.py
 msgid "Minimal statuses"
@@ -1566,6 +1631,12 @@ msgid "Plans"
 msgstr "Pläne"
 
 #: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "general administrators"
+msgid "General administrators"
+msgstr "Allgemeine Administratoren"
+
+#: actions/wagtail_admin.py
 msgid "Domains"
 msgstr "Domänen"
 
@@ -1630,6 +1701,10 @@ msgid "Google"
 msgstr "Google"
 
 #: admin_site/models.py
+msgid "Tunnistamo"
+msgstr ""
+
+#: admin_site/models.py
 msgid "login method"
 msgstr "Login-Methode"
 
@@ -1679,6 +1754,10 @@ msgstr "Admin-Login für Kausal Watch"
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr "Wir bitten um Entschuldigung, der Server hat vorübergehend Schwierigkeiten."
+
+#: admin_site/views.py
+msgid "Your account settings have been changed successfully!"
+msgstr ""
 
 #: admin_site/wagtail.py
 msgid "View live"
@@ -1798,44 +1877,58 @@ msgid "English (United States)"
 msgstr "English (Vereinigte Staaten)"
 
 #: aplans/settings.py
-msgid "English (United Kingdom)"
-msgstr "Englisch (Vereinigtes Königreich)"
-
-#: aplans/settings.py
 msgid "English (Australia)"
 msgstr "Englisch (Australien)"
 
 #: aplans/settings.py
-msgid "Finnish"
-msgstr "Finnisch"
+msgid "English (United Kingdom)"
+msgstr "Englisch (Vereinigtes Königreich)"
 
 #: aplans/settings.py
-msgid "Swedish"
-msgstr "Schwedisch"
+msgid "Spanish"
+msgstr "Spanisch"
 
 #: aplans/settings.py
 msgid "Spanish (United States)"
 msgstr "Spanisch (Vereinigte Staaten)"
 
 #: aplans/settings.py
-msgid "Spanish"
-msgstr "Spanisch"
+msgid "Finnish"
+msgstr "Finnisch"
+
+#: aplans/settings.py
+msgid "Latvian"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "Schwedisch"
 
 #: aplans/utils.py
 msgid "order"
 msgstr "Sortierung"
 
 #: aplans/utils.py
-msgid "Not editable"
-msgstr "Nicht editierbar"
+msgid "Authenticated users"
+msgstr ""
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Plan-Admins"
 
 #: aplans/utils.py
+msgid "Not editable"
+msgstr "Nicht editierbar"
+
+#: aplans/utils.py
 msgid "Edit rights"
 msgstr "Bearbeitungsrechte"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "visibility"
+msgid "Visibility"
+msgstr "Sichtbarkeit"
 
 #: aplans/utils.py
 #, python-format
@@ -1921,6 +2014,12 @@ msgstr "Allgemeiner Seiteninhalt"
 #: content/models.py
 msgid "site general contents"
 msgstr "Allgemeine Seiteninhalte"
+
+#: content/wagtail_admin.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Site settings"
+msgstr "Benachrichtigungseinstellungen"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -2512,6 +2611,12 @@ msgid "none"
 msgstr "keine"
 
 #: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "Dimensions"
+msgstr "Dimensionen"
+
+#: indicators/wagtail_admin.py
 #, python-format
 msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
 msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
@@ -2522,6 +2627,14 @@ msgstr[1] "Wenn Sie die Dimensionen dieses Indikators (aktuell %(dimensions)s) v
 #, python-format
 msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Dieser Indikator ist mit einem Gemeinsamen Indikator verwunden, daher können Größe, Einheit und Dimensionen nicht bearbeitet werden. Aktuelle Größe: %(quantity)s; Einheit: %(unit)s; Dimensionen: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+msgid "Effects"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Causes"
+msgstr ""
 
 #: indicators/wagtail_admin.py
 msgid "Advanced options"
@@ -3239,6 +3352,10 @@ msgid "Category pages"
 msgstr "Ktaegorieseiten"
 
 #: pages/models.py
+msgid "This category already has a page"
+msgstr ""
+
+#: pages/models.py
 msgid "lead content"
 msgstr "Leitinhalt"
 
@@ -3748,6 +3865,9 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#~ msgid "Contact persons public"
+#~ msgstr "Ansprechpartner öffentlich"
 
 #~ msgctxt "hyphenated"
 #~ msgid "Plans"
