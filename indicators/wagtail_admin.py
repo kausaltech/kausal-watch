@@ -398,7 +398,7 @@ class IndicatorAdmin(AplansModelAdmin):
             if show_dimensions_section:
                 advanced_panels.append(CondensedInlinePanel('dimensions', panels=[
                     FieldPanel('dimension', widget=CondensedPanelSingleSelect)
-                ]))
+                ], heading=_("Dimensions")))
                 # If the indicator has values, show a warning that these would be deleted by changing dimensions
                 num_values = instance.values.count() if instance else 0
                 if num_values:
@@ -540,7 +540,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(2, FieldPanel('unit'))
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
                 FieldPanel('dimension', widget=CondensedPanelSingleSelect)
-            ]))
+            ], heading=_("Dimensions")))
         else:
             dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
             if not dimensions_str:

@@ -310,7 +310,7 @@ class ActionAdmin(AplansModelAdmin):
                 FieldPanel('url'),
                 FieldPanel('title')
             ],
-            heading=_('External links')
+            heading=_('External links'),
         ),
     ]
     basic_related_panels_general_admin = [

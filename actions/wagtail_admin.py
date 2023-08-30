@@ -76,7 +76,8 @@ class PlanAdmin(AplansModelAdmin):
             'general_admins_ordered',
             panels=[
                 FieldPanel('person', widget=PersonChooser),
-            ]
+            ],
+            heading=_("General administrators"),
         ),
         FieldPanel('image'),
         FieldPanel('superseded_by', widget=PlanChooser),
