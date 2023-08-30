@@ -119,19 +119,30 @@ class BulkListSerializer(serializers.ListSerializer):
     def update(self, queryset, all_validated_data):
         updated_data = []
         # TODO
-        self.child.enable_deferred_operations()
+        try:
+            self.child.enable_deferred_operations()
+            deferred = True
+        except AttributeError:
+            deferred = False
         for obj_id, obj_data in zip(self.obj_ids, all_validated_data):
             obj = self.objs_by_id[obj_id]
             updated_data.append(self.child.update(obj, obj_data))
-        ops = self.child.get_deferred_operations()
-        self._execute_deferred_operations(ops)
+        if deferred:
+            ops = self.child.get_deferred_operations()
+            self._execute_deferred_operations(ops)
         self._refresh_cache = True
         return updated_data
 
     def create(self, validated_data):
-        # TODO
-        self.child.enable_deferred_operations()
+        try:
+            self.child.enable_deferred_operations()
+            deferred = True
+        except AttributeError:
+            deferred = False
         result = [self.child.create(attrs) for attrs in validated_data]
+        if deferred:
+            ops = self.child.get_deferred_operations()
+            self._execute_deferred_operations(ops)
         self._refresh_cache = True
         return result
 
