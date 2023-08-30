@@ -1409,7 +1409,7 @@ class OrganizationSerializer(TreebeardModelSerializerMixin, serializers.ModelSer
 
 
 @register_view
-class OrganizationViewSet(BulkModelViewSet):
+class OrganizationViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     filterset_fields = {

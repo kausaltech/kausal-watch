@@ -231,7 +231,7 @@ class PlanRelatedModelSerializer(serializers.ModelSerializer):
 
 
 class ProtectedError(exceptions.APIException):
-    status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+    status_code = status.HTTP_400_BAD_REQUEST
     default_detail = _('Cannot delete instance because other objects reference it.')
     default_code = 'protected_error'
 
@@ -241,5 +241,12 @@ class HandleProtectedErrorMixin:
     def perform_destroy(self, instance):
         try:
             super().perform_destroy(instance)
-        except models.ProtectedError as e:
-            raise ProtectedError(detail=str(e))
+        except models.ProtectedError:
+            raise ProtectedError(
+                detail={
+                    'non_field_errors': _(
+                        'Cannot delete "%s" because it is connected to other objects '
+                        'such as plans, persons or actions. '
+                    ) % getattr(instance, 'name', str(instance))
+                }
+            )
