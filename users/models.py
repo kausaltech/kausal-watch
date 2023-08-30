@@ -291,7 +291,7 @@ class User(AbstractUser):
                 plan.is_active_admin = False
         return plans
 
-    def can_modify_action(self, action: Action = None, plan: Plan = None):
+    def can_modify_action(self, action: Action | None = None, plan: Plan | None = None):
         if self.is_superuser:
             return True
         if plan is None:

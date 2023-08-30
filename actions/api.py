@@ -4,7 +4,7 @@ import copy
 import rest_framework.fields
 import typing
 from collections import Counter
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
@@ -334,7 +334,7 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
     def get_queryset(self):
         raise NotImplementedError()
 
-    def set_instance_values(self, data):
+    def set_instance_values(self, instance, data):
         raise NotImplementedError()
 
     def get_multiple_error(self):
@@ -431,6 +431,8 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
 
 
 class AttributesSerializerMixin:
+    context: Dict[str, Any]
+
     # In the serializer, set `attribute_format` to a value from `AttributeType.AttributeFormat`
     def get_fields(self):
         fields = super().get_fields()
@@ -447,7 +449,7 @@ class AttributesSerializerMixin:
                 )
         return fields
 
-    def get_cached_values(self, instance_pk: Number | None = None):
+    def get_cached_values(self, instance_pk: int | None = None):
         if '_cache' not in self.context:
             return None
         if '_current_instance' not in self.context and instance_pk is None:
@@ -1010,7 +1012,6 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
             return context
         context.update({'plan': plan})
         return context
-
 
 
 plan_router.register(

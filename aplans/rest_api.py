@@ -95,7 +95,6 @@ class BulkListSerializer(serializers.ListSerializer):
             # TODO: actually batch this up
             for instance, field_name, related_ids in set_ops[model]:
                 setattr(instance, field_name, related_ids)
-                # TODO: is saved?
 
     def _execute_deferred_operations(self, ops):
         grouped_by_operation_and_model = dict()
@@ -107,8 +106,6 @@ class BulkListSerializer(serializers.ListSerializer):
             ).append(
                 tuple([obj] + rest)
             )
-        # import pprint
-        # pprint.pprint(grouped_by_operation_and_model)
         self._handle_updates(grouped_by_operation_and_model.get('update', {}))
         self._handle_deletes(grouped_by_operation_and_model.get('delete', {}))
         self._handle_creates(grouped_by_operation_and_model.get('create', {}))
@@ -118,7 +115,6 @@ class BulkListSerializer(serializers.ListSerializer):
 
     def update(self, queryset, all_validated_data):
         updated_data = []
-        # TODO
         try:
             self.child.enable_deferred_operations()
             deferred = True
