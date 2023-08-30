@@ -906,6 +906,10 @@ class ActionSerializer(
         if qs.exists():
             raise serializers.ValidationError(_('Identifier already exists'))
 
+        self.context.setdefault('seen_identifiers', [])
+        if value in self.context['seen_identifiers']:
+            raise serializers.ValidationError(_('Identifier already exists'))
+        self.context['seen_identifiers'].append(value)
         return value
 
     def create(self, validated_data: dict):
