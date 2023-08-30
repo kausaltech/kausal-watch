@@ -25,7 +25,7 @@ from actions.blocks import (
     RelatedPlanListBlock, ActionAsideContentBlock, ActionMainContentBlock, get_default_action_content_blocks,
     get_default_action_filter_blocks
 )
-from actions.chooser import CategoryChooser
+from actions.chooser import CategoryChooser, CategoryTypeChooser
 from actions.models import Category, CategoryType, Plan
 from aplans.extensions import get_body_blocks
 from indicators.blocks import (
@@ -223,6 +223,10 @@ class CategoryTypePage(StaticPage):
         related_name='category_type_pages',
     )
 
+    content_panels = StaticPage.content_panels + [
+        FieldPanel('category_type', widget=CategoryTypeChooser, read_only=True),
+    ]
+
     class Meta:
         verbose_name = _('Category type page')
         verbose_name_plural = _('Category type pages')
@@ -248,7 +252,7 @@ class CategoryPage(AplansPage):
     ], null=True, blank=True, use_json_field=True)
 
     content_panels = AplansPage.content_panels + [
-        FieldPanel('category', widget=CategoryChooser),
+        FieldPanel('category', widget=CategoryChooser, read_only=True),
         FieldPanel('body'),
     ]
 
