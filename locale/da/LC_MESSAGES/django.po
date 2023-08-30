@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-30 14:30+0300\n"
+"POT-Creation-Date: 2023-08-31 00:23+0300\n"
 "PO-Revision-Date: 2023-08-08 13:02+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -1906,6 +1906,11 @@ msgstr "Login mislykkedes."
 #: aplans/rest_api.py
 msgid "Cannot delete instance because other objects reference it."
 msgstr "Forekomsten kan ikke slettes, fordi andre objekter refererer til den."
+
+#: aplans/rest_api.py
+#, python-format
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgstr ""
 
 #: aplans/settings.py
 msgid "Danish"

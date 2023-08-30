@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-30 14:30+0300\n"
+"POT-Creation-Date: 2023-08-31 00:23+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1825,6 +1825,11 @@ msgstr ""
 
 #: aplans/rest_api.py
 msgid "Cannot delete instance because other objects reference it."
+msgstr ""
+
+#: aplans/rest_api.py
+#, python-format
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
 msgstr ""
 
 #: aplans/settings.py
