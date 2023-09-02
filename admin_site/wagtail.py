@@ -247,17 +247,6 @@ class AplansTabbedInterface(TabbedInterface):
 
         return super().get_bound_panel(instance, request, form, prefix)
 
-    def on_request_bound(self):
-        user = self.request.user
-        plan = user.get_active_admin_plan()
-
-        if not user.is_general_admin_for_plan(plan):
-            for child in list(self.children):
-                if isinstance(child, AdminOnlyPanel):
-                    self.children.remove(child)
-
-        super().on_request_bound()
-
 
 class PersistFiltersEditingMixin:
     def get_success_url(self):

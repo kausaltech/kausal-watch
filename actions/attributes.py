@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from html import unescape
 from typing import Any, Dict, List, Optional
 from wagtail.admin.panels import FieldPanel
+from wagtail.fields import RichTextField
+from wagtail.rich_text import RichText as WagtailRichText
 
 import actions.models.attributes as models
 
@@ -33,16 +35,7 @@ def html_to_plaintext(richtext):
 
 
 class AttributeFieldPanel(FieldPanel):
-    def on_form_bound(self):
-        super().on_form_bound()
-        user = self.request.user
-        attribute_types = self.instance.get_visible_attribute_types(user)
-        for attribute_type in attribute_types:
-            for field in attribute_type.get_form_fields(user, plan, self.instance):
-                if field.name == self.field_name:
-                    self.form.fields[self.field_name].initial = field.django_field.initial
-                    return
-        raise Exception(f"Unknown field {self.field_name}")
+    pass
 
 
 @dataclass
@@ -341,6 +334,10 @@ class TextAttributeTypeMixin:
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
+                # If this is a rich text field, wrap the pseudo-HTML in a RichTextObject
+                # https://docs.wagtail.org/en/v5.1.1/extending/rich_text_internals.html#data-format
+                if isinstance(attribute._meta.get_field(attribute_text_field_name), RichTextField):
+                    initial_text = WagtailRichText(initial_text)
             form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
