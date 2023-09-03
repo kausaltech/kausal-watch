@@ -1,1 +1,1 @@
-kausal-watch-extensions==0.1.88
+kausal-watch-extensions==0.1.89
