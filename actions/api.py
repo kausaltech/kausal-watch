@@ -70,7 +70,7 @@ class BulkSerializerValidationInstanceMixin:
     def run_validation(self, data: dict):
         if self.parent and self.instance is not None:
             assert isinstance(self.instance, models.query.QuerySet)
-            self._instance = self.instance.get(id=data['id'])
+            self._instance = self.parent.objs_by_id.get(data['id'])
         else:
             self._instance = self.instance
         return super().run_validation(data)
@@ -353,7 +353,7 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
         plan: Plan = s.plan
         if not isinstance(data, list):
             raise exceptions.ValidationError('expecting a list')
-        available_instances = {x for x in self.get_available_instances(plan).values_list('id', flat=True)}
+        available_instances = self.get_available_instances(plan)
         seen_instances = set()
         key = self.get_type_label()
 
@@ -373,7 +373,7 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
             if instance_id in seen_instances:
                 raise exceptions.ValidationError(self.get_multiple_error())
             seen_instances.add(instance_id)
-            val[key] = self.get_queryset().get(id=instance_id)
+            val[key] = self.get_instance_by_id(instance_id)
         return data
 
     def update(self, instance: Action, validated_data):
@@ -390,14 +390,20 @@ class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'organization'
 
-    def get_available_instances(self, plan) -> QuerySet:
-        return Organization.objects.available_for_plan(plan)
+    def get_available_instances(self, plan) -> Set[int]:
+        cache = self.context.get('_cache')
+        if cache is None or 'available_organization_ids' not in cache:
+            return Organization.objects.available_for_plan(plan)
+        return cache['available_organization_ids']
 
     def get_allowed_roles(self):
         return ActionResponsibleParty.Role.values
 
-    def get_queryset(self):
-        return Organization.objects.all()
+    def get_instance_by_id(self, pk):
+        cache = self.context.get('_cache')
+        if cache is None or 'organizations_by_id' not in cache:
+            return Organization.objects.get(id=pk)
+        return cache['organizations_by_id'][pk]
 
     def set_instance_values(self, instance, data):
         instance.set_responsible_parties(data)
@@ -414,14 +420,20 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'person'
 
-    def get_available_instances(self, plan) -> QuerySet:
-        return Person.objects.available_for_plan(plan)
+    def get_available_instances(self, plan) -> Set[int]:
+        cache = self.context.get('_cache')
+        if cache is None or 'available_person_ids' not in cache:
+            return Person.objects.available_for_plan(plan)
+        return cache['available_person_ids']
 
     def get_allowed_roles(self):
         return ActionContactPerson.Role.values
 
-    def get_queryset(self):
-        return Person.objects.all()
+    def get_instance_by_id(self, pk):
+        cache = self.context.get('_cache')
+        if cache is None or 'persons_by_id' not in cache:
+            return Person.objects.get(id=pk)
+        return cache['persons_by_id'][pk]
 
     def set_instance_values(self, instance, data):
         instance.set_contact_persons(data)
@@ -598,7 +610,7 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
 
 # Regarding the metaclass: https://stackoverflow.com/a/58304791/14595546
 class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
-    choice_attributes = ChoiceAttributesSerializer(required=False)  #HERE
+    choice_attributes = ChoiceAttributesSerializer(required=False)
     choice_with_text_attributes = ChoiceWithTextAttributesSerializer(required=False)
     numeric_value_attributes = NumericValueAttributesSerializer(required=False)
     text_attributes = TextAttributesSerializer(required=False)
@@ -856,10 +868,19 @@ class ActionSerializer(
             for a in at.attributes.filter(content_type=action_content_type):
                 prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
 
+        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
+        available_person_ids = set(Person.objects.available_for_plan(plan).values_list('id', flat=True))
+        persons_by_id = {p.pk: p for p in Person.objects.all()}
+        organizations_by_id = {o.pk: o for o in Organization.objects.all()}
+
         for field_name in self._attribute_fields:
             self.fields[field_name].context['_cache'] = {
                 'attribute_values': prepopulated_attributes,
-                'attribute_types': attribute_types_by_identifier
+                'attribute_types': attribute_types_by_identifier,
+                'available_organization_ids': available_organization_ids,
+                'available_person_ids':  available_person_ids,
+                'persons_by_id': persons_by_id,
+                'organizations_by_id': organizations_by_id
             }
 
     def get_fields(self):
