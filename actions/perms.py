@@ -155,7 +155,7 @@ def _sync_group_page_perms(root_page, group):
     qs.delete()
 
     current_perms = GroupPagePermission.objects.filter(group=group)
-    perm_set = {gpp.permission_type for gpp in current_perms}
+    perm_set = {gpp.permission.codename for gpp in current_perms}
     new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
     page_set = {gpp.page for gpp in current_perms}
     new_page_set = set(root_page.get_translations(inclusive=True))
