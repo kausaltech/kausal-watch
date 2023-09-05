@@ -115,7 +115,7 @@ class SetOrganizationRelatedToActivePlanView(WMABaseView):
             else:
                 self.remove_from_plan(plan)
         except ValueError as e:
-            messages.error(request, e)
+            messages.error(request, str(e))
             return redirect(self.index_url)
         if self.set_related:
             msg = _("Organization '%(org)s' has been included in plan '%(plan)s'.")

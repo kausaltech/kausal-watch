@@ -1504,6 +1504,11 @@ class PersonSerializer(
             raise exceptions.ValidationError(_("Duplicate email addresses: %s") % ', '.join(duplicates))
         return data
 
+    def update(self, instance, validated_data):
+        # FIXME: Allow changing emails again once we figure out how to avoid abuse
+        validated_data.pop('email', None)
+        return super().update(instance, validated_data)
+
     class Meta:
         model = Person
         list_serializer_class = BulkListSerializer

@@ -382,8 +382,9 @@ class Person(index.Indexed, ClusterableModel):
 
         user.first_name = self.first_name
         user.last_name = self.last_name
-        if user.email != email:
-            user.email = email
+        # FIXME: Allow changing emails again once we figure out how to avoid abuse
+        # if user.email != email:
+        #     user.email = email
         user.save()
         return user
 

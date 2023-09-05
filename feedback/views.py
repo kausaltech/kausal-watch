@@ -69,7 +69,7 @@ class SetUserFeedbackProcessedView(WMABaseView):
             else:
                 self.mark_unprocessed()
         except ValueError as e:
-            messages.error(request, e)
+            messages.error(request, str(e))
             return redirect(self.index_url)
         if self.set_processed:
             msg = _("User feedback '%(user_feedback)s' has been marked as processed.")
