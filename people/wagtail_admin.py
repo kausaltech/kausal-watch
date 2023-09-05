@@ -437,9 +437,6 @@ class PersonAdmin(AplansModelAdmin):
         request = ctx_request.get()
         instance = ctx_instance.get()
         basic_panels = list(self.basic_panels)
-        # FIXME: Allow changing emails again once we figure out how to avoid abuse
-        email_panel = next(iter(p for p in basic_panels if p.field_name == 'email'))
-        email_panel.read_only = instance.pk is not None
         user = request.user
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
