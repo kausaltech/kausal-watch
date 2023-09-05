@@ -12,10 +12,12 @@ class SiteGeneralContent(models.Model):
         # plural, `instance.get_action_term_display_plural()`.
         ACTION = 'action', _('Action')
         STRATEGY = 'strategy', _('Strategy')
+        CASE_STUDY = 'case_study', _('Case study')
 
     ACTION_TERM_PLURAL = {
         ActionTerm.ACTION: _('Actions'),
         ActionTerm.STRATEGY: _('Strategies'),
+        ActionTerm.CASE_STUDY: _('Case studies'),
     }
 
     plan = models.OneToOneField(
