@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-08-31 00:23+0300\n"
-"PO-Revision-Date: 2023-08-25 10:18+0000\n"
+"PO-Revision-Date: 2023-09-06 16:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
+"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/"
+">\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -165,7 +166,7 @@ msgstr "Personen med det här e-postmeddelandet finns redan"
 
 #: actions/api.py
 msgid "Not all objects have an email address"
-msgstr ""
+msgstr "Alla objekt har inte en e-postadress"
 
 #: actions/api.py
 #, python-format
@@ -1362,6 +1363,8 @@ msgstr "åtgärder kontaktpersoner"
 #: actions/models/features.py
 msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
 msgstr ""
+"Ange om det finns separata kontaktpersoner med utgivningsrätt och andra som "
+"endast kan föreslå ändringar"
 
 #: actions/models/features.py
 #, fuzzy
@@ -1895,7 +1898,7 @@ msgstr "Vi ber om ursäkt, servern har för tillfället problem."
 
 #: admin_site/views.py
 msgid "Your account settings have been changed successfully!"
-msgstr ""
+msgstr "Dina kontoinställningar har ändrats framgångsrikt!"
 
 #: admin_site/wagtail.py
 msgid "View live"
@@ -2008,6 +2011,8 @@ msgstr "Kan inte ta bort instans eftersom andra objekt refererar till den."
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
 msgstr ""
+"Kan inte ta bort \"%s\" eftersom det är kopplat till andra objekt som "
+"planer, personer eller åtgärder. "
 
 #: aplans/settings.py
 #, fuzzy
@@ -2049,7 +2054,7 @@ msgstr "Finska"
 
 #: aplans/settings.py
 msgid "Latvian"
-msgstr ""
+msgstr "Lettiska"
 
 #: aplans/settings.py
 msgid "Swedish"
@@ -2061,7 +2066,7 @@ msgstr "ordning"
 
 #: aplans/utils.py
 msgid "Authenticated users"
-msgstr ""
+msgstr "Autentiserade användare"
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
@@ -2816,11 +2821,11 @@ msgstr "Denna indikator är kopplad till en gemensam indikator, så kvantitet, e
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
-msgstr ""
+msgstr "Effekter"
 
 #: indicators/wagtail_admin.py
 msgid "Causes"
-msgstr ""
+msgstr "Orsaker"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3623,7 +3628,7 @@ msgstr "Kategorisidor"
 
 #: pages/models.py
 msgid "This category already has a page"
-msgstr ""
+msgstr "Denna kategori har redan en sida"
 
 #: pages/models.py
 msgid "lead content"
