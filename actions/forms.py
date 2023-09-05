@@ -57,13 +57,6 @@ class CreatePlanWithDefaultsForm(forms.Form):
         required=False,
         help_text=_('Name of the customer administering the plan')
     )
-    admin_client_id = forms.CharField(
-        label=_('Client subdomain for admin UI'),
-        max_length=100,
-        required=False,
-        help_text=_('A lowercase short name which becomes part of the admin UI address - '
-                    'for example, "sunnydale" in sunnydale.watch.kausal.tech')
-    )
 
     def clean_plan_identifier(self):
         identifier = self.cleaned_data['plan_identifier']

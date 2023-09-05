@@ -24,7 +24,6 @@ def create_plan_with_defaults(request):
                 data['plan_short_name'],
                 base_path=data['base_path'],
                 domain=data['domain'],
-                client_identifier=data['admin_client_id'],
                 client_name=data['client'],
             )
             return HttpResponseRedirect(

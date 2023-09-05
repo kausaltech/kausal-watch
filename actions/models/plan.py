@@ -604,18 +604,12 @@ class Plan(ClusterableModel):
                 obj.save()
 
         if client_name:
-            from admin_site.models import Client, ClientPlan, AdminHostname
+            from admin_site.models import Client, ClientPlan
 
             client = Client.objects.filter(name=client_name).first()
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-
-            if settings.ADMIN_WILDCARD_DOMAIN and client_identifier:
-                hostname = '%s.%s' % (client_identifier, settings.ADMIN_WILDCARD_DOMAIN)
-                hn_obj = AdminHostname.objects.filter(client=client, hostname=hostname).first()
-                if hn_obj is None:
-                    AdminHostname.objects.create(client=client, hostname=hostname)
 
         # Set up notifications
         management.call_command('initialize_notifications', plan=plan.identifier)
