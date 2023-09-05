@@ -291,6 +291,17 @@ class User(AbstractUser):
                 plan.is_active_admin = False
         return plans
 
+    def can_access_admin(self, plan: Plan | None = None) -> bool:
+        """Can the user access the admin interface in general or for a given plan."""
+
+        adminable_plans = {p.pk for p in self.get_adminable_plans()}
+        if plan is None:
+            if len(adminable_plans) == 0:
+                return False
+            return True
+        else:
+            return plan.pk in adminable_plans
+
     def can_modify_action(self, action: Action | None = None, plan: Plan | None = None):
         if self.is_superuser:
             return True
