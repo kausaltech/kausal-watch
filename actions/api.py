@@ -845,13 +845,8 @@ class ActionSerializer(
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def initialize_cache_context(self):
-        instance = self.instance
         if 'request' not in self.context:
             return
-        try:
-            instance = next(iter(instance))
-        except TypeError:
-            pass
         plan = self.context.get('plan')
         if plan is None:
             return
