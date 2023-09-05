@@ -37,6 +37,7 @@ def check_login_method(request):
         raise ValidationError(dict(detail=msg, code="no_user"))
 
     # Before we check for permissions, we may need to create them first
+    # TODO: Don't create permissions here; instead use User.can_access_admin()
     create_permissions(user)
     # Missing client also means no admin access
     try:

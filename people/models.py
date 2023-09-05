@@ -331,6 +331,7 @@ class Person(index.Indexed, ClusterableModel):
             if len(clients) == 1:
                 client = clients[0]
             else:
+                # TODO: Raise exception here instead
                 logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
                     self.email, self.id, len(clients)
                 ))
