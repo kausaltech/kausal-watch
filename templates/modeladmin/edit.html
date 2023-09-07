@@ -35,10 +35,14 @@
 {# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
 {% block footer %}
     <footer class="footer">
+        <nav aria-label="{% trans 'Actions' %}">
         <ul>
-            <li class="actions footer__container">
+            <li class="actions actions--primary footer__container">
                 {# This would be the form_actions block #}
-                <div class="dropdown dropup dropdown-button match-width">
+                <div class="dropdown dropup dropdown-button match-width {% if view.view_name == 'revisions_revert' %}warning{% endif %}">
+                    {% if action_menu %}
+                    {{ action_menu.render_html }}
+                    {% else %}
                     <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
                         <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
                     </button>
@@ -54,10 +58,12 @@
                         <li><a href="{{ view.delete_url }}" class="shortcut">{% trans "Delete" %}</a></li>
                         {% endif %}
                     </ul>
+                    {% endif %}
                 </div>
                 {# end of form_actions block #}
             </li>
             {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
         </ul>
+        </nav>
     </footer>
 {% endblock %}

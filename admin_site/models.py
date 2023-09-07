@@ -4,12 +4,13 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from sentry_sdk import capture_exception
 from wagtail.images.models import SourceImageIOError
+from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
 
 from aplans.fields import HostnameField
 from aplans.utils import OrderedModel
 
 
-class Client(ClusterableModel):
+class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, ClusterableModel):
     class AuthBackend(models.TextChoices):
         NONE = '', _('Only allow password login')
         # Values are social auth backend names

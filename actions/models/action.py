@@ -20,6 +20,7 @@ from modeltrans.fields import TranslationField
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
 from wagtail.fields import RichTextField
+from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -134,7 +135,10 @@ class DraftableModel(models.Model):
 
 
 @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties'])
-class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed):
+class Action(
+    WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin,
+    ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed
+):
     """One action/measure tracked in an action plan."""
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -144,7 +148,7 @@ class Action(ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedMod
     )
     primary_org = models.ForeignKey(
         'orgs.Organization', verbose_name=_('primary organization'),
-        null=True, on_delete=models.SET_NULL,
+        blank=True, null=True, on_delete=models.SET_NULL,
     )
     name = models.CharField(max_length=1000, verbose_name=_('name'))
     official_name = models.TextField(

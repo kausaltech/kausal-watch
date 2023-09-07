@@ -822,3 +822,7 @@ CELERY_BEAT_SCHEDULE = {
 # For configuration, see also another exporter: https://github.com/danihodovic/celery-exporter
 CELERY_WORKER_SEND_TASK_EVENTS = True
 # CELERY_TASK_SEND_SENT_EVENT = True  # required only for danihodovic/celery-exporter
+
+
+WAGTAIL_MODERATION_ENABLED = True
+WAGTAIL_WORKFLOW_ENABLED = True

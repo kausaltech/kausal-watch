@@ -8,6 +8,8 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, InlinePanel
 from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
 from wagtail.admin.ui.components import Component
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
 
@@ -216,9 +218,9 @@ def remove_default_site_summary_items(request, items: list):
     items.clear()
 
 
-class ClientAdmin(ModelAdmin):
+class ClientAdmin(SnippetViewSet):
     model = Client
-    menu_icon = 'globe'
+    icon = 'globe'
     menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
@@ -233,7 +235,7 @@ class ClientAdmin(ModelAdmin):
     ]
 
 
-modeladmin_register(ClientAdmin)
+register_snippet(ClientAdmin)
 
 
 @hooks.register("insert_global_admin_css")
@@ -302,7 +304,7 @@ def remove_settings_menu_items(request, items: list):
 
     item_classes_to_remove = (
         GroupsMenuItem, UsersMenuItem,
-        WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem,
+        # WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem,
         SitesMenuItem, LocalesMenuItem, RedirectsMenuItem
     )
     to_remove = []
