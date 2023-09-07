@@ -8,7 +8,6 @@ from wagtail.admin.site_summary import SummaryItem
 from aplans.types import WatchAdminRequest
 
 from . import wagtail_admin  # noqa
-from .views import create_plan_with_defaults
 
 
 class ActionsSummaryItem(SummaryItem):
@@ -34,10 +33,3 @@ def add_actions_summary_item(request, items):
 @hooks.register('insert_editor_js')
 def editor_js():
     return f'<script src="{static("actions/action-tasks-wagtail.js")}"></script>'
-
-
-@hooks.register('register_admin_urls')
-def register_create_plan_with_defaults_url():
-    return [
-        path('create_plan/', create_plan_with_defaults, name='create-plan')
-    ]

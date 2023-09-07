@@ -127,9 +127,24 @@ class Plan(ClusterableModel):
     DEFAULT_ACTION_UPDATE_ACCEPTABLE_INTERVAL = 60
     MAX_ACTION_DAYS_UNTIL_CONSIDERED_STALE = 730
 
-    name = models.CharField(max_length=100, verbose_name=_('name'))
-    identifier = IdentifierField(unique=True)
-    short_name = models.CharField(max_length=50, verbose_name=_('short name'), null=True, blank=True)
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_('name'),
+        help_text=_('The official plan name in full form')
+    )
+    identifier = IdentifierField(
+        unique=True,
+        help_text=_(
+            'A unique identifier for the plan used internally to distinguish between plans. '
+            'This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. '
+            'Use lowercase letters and dashes.'
+        )
+    )
+    short_name = models.CharField(
+        max_length=50, verbose_name=_('short name'),
+        null=True, blank=True,
+        help_text=_('A shorter version of the plan name')
+    )
     version_name = models.CharField(
         max_length=100, blank=True, verbose_name=_('version name'),
         help_text=_('If this plan has multiple versions, name of this version'),
@@ -545,7 +560,6 @@ class Plan(ClusterableModel):
             return url
 
     @classmethod
-    @transaction.atomic()
     def create_with_defaults(
         cls,
         identifier: str,
@@ -559,9 +573,6 @@ class Plan(ClusterableModel):
         client_identifier: Optional[str] = None,
         client_name: Optional[str] = None,
     ) -> Plan:
-        from ..defaults import (
-            DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
-        )
         plan = Plan(
             identifier=identifier,
             name=name,
@@ -569,21 +580,39 @@ class Plan(ClusterableModel):
             organization=organization,
             other_languages=other_languages
         )
+        if short_name:
+            plan.short_name = short_name
+        if client_name:
+            from admin_site.models import Client, ClientPlan
+            client = Client.objects.filter(name=client_name).first()
+            if client is None:
+                client = Client.objects.create(name=client_name)
+            ClientPlan.objects.create(plan=plan, client=client)
+        return cls.apply_defaults(plan, domain=domain, base_path=base_path)
+
+    @classmethod
+    @transaction.atomic()
+    def apply_defaults(
+            cls,
+            plan: Plan,
+            base_path: Optional[str] = None,
+            domain: Optional[str] = None
+    ):
+        from ..defaults import (
+            DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
+        )
+        plan.statuses_updated_manually = True
         default_domains = [x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost']
         if not domain:
             if not default_domains:
                 raise Exception("site_url not provided and no default domains configured")
             domain = default_domains[0]
-            site_url = 'https://%s.%s' % (identifier, domain)
+            site_url = 'https://%s.%s' % (plan.identifier, domain)
         else:
             site_url = 'https://%s' % domain
         if base_path:
             site_url += '/' + base_path.strip('/')
         plan.site_url = site_url
-        plan.statuses_updated_manually = True
-        if short_name:
-            plan.short_name = short_name
-
         plan.create_default_site()
         plan.save()
 
@@ -603,13 +632,6 @@ class Plan(ClusterableModel):
                 )
                 obj.save()
 
-        if client_name:
-            from admin_site.models import Client, ClientPlan
-
-            client = Client.objects.filter(name=client_name).first()
-            if client is None:
-                client = Client.objects.create(name=client_name)
-            ClientPlan.objects.create(plan=plan, client=client)
 
         # Set up notifications
         management.call_command('initialize_notifications', plan=plan.identifier)
@@ -740,10 +762,12 @@ class PlanDomain(models.Model):
     )
     hostname = models.CharField(
         max_length=200, verbose_name=_('host name'), db_index=True,
-        validators=[is_valid_hostname]
+        validators=[is_valid_hostname],
+        help_text=_('The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known.')
     )
     base_path = models.CharField(
         max_length=200, verbose_name=_('base path'), null=True, blank=True,
+        help_text=_('Fill this for a multi-plan site when the plan does not live in the root of the domain.'),
         validators=[RegexValidator(
             regex=r'^\/[a-z0-9_-]+',
             message=_("Base path must begin with a '/' and not end with '/'")

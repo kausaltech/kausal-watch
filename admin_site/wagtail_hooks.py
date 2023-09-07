@@ -15,6 +15,7 @@ from aplans.types import WatchAdminRequest
 
 from .models import Client
 from actions.models import CommonCategoryType
+from actions.wagtail_admin import PlanAdmin
 
 
 # FIXME: Refactor duplicated code for categories, common categories, attribute types and reports
@@ -157,10 +158,11 @@ class PlanChooserMenu(Menu):
                 icon_name = 'tick'
             item = PlanItem(plan.name, url, icon_name=icon_name)
             items.append(item)
+        url_helper = PlanAdmin().url_helper
         if request.user.is_superuser:
             items.append(AdminOnlyMenuItem(
                 _('Create plan'),
-                reverse('create-plan'),
+                url_helper.get_action_url('create'),
                 icon_name='plus-inverse',
                 #order=9100,
             ))

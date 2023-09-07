@@ -1,3 +1,5 @@
+import re
+
 from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
@@ -24,8 +26,10 @@ from admin_site.wagtail import (
 from aplans.context_vars import ctx_instance, ctx_request
 from notifications.models import NotificationSettings
 from orgs.models import Organization
+from orgs.chooser import OrganizationChooser
 from pages.models import PlanLink
 from people.chooser import PersonChooser
+from admin_site.chooser import ClientChooser
 
 
 class PlanEditHandler(TabbedInterface):
@@ -47,9 +51,43 @@ class PlanEditHandler(TabbedInterface):
 class PlanForm(AplansAdminModelForm):
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
-        if self.instance and primary_language != self.instance.primary_language:
+        if self.instance and self.instance.pk and primary_language != self.instance.primary_language:
             raise ValidationError("Changing the primary language is not supported yet.")
         return primary_language
+
+    def clean_identifier(self):
+        identifier = self.cleaned_data['identifier']
+        if Plan.objects.filter(identifier=identifier).count() > 0:
+            raise ValidationError(_('Identifier already in use'), code='identifier-taken')
+        if not re.fullmatch('([a-z]+-)*[a-z]+', identifier):
+            raise ValidationError(
+                _('For identifiers, use only lowercase letters from the English alphabet with dashes separating words')
+            )
+        return identifier
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if Plan.objects.filter(name=name).count() > 0:
+            raise ValidationError(_('Plan name already in use'), code='name-taken')
+        return name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data['primary_language'] in cleaned_data['other_languages']:
+            raise ValidationError(_(
+                'A plan\'s other language cannot be the same as its primary language'),
+                                  code='plan-language-duplicate'
+            )
+        return cleaned_data
+
+    def save(self, *args, **kwargs):
+        creating = False
+        if self.instance.pk is None:
+            creating = True
+        instance = super().save(*args, **kwargs)
+        if creating:
+            Plan.apply_defaults(instance)
+        return instance
 
 
 class PlanAdmin(AplansModelAdmin):
@@ -108,6 +146,26 @@ class PlanAdmin(AplansModelAdmin):
     def get_edit_handler(self):
         request = ctx_request.get()
         instance = ctx_instance.get()
+
+        creating = instance.pk is None
+        panels_enabled_when_creating = {
+            'name',
+            'identifier',
+            'primary_language',
+            'short_name',
+            'other_languages'
+        }
+
+        if creating:
+            create_panels = [
+                FieldPanel('organization', widget=OrganizationChooser),
+
+            ]
+            self.panels = create_panels + [
+                p for p in self.panels
+                if getattr(p, 'field_name', None) in panels_enabled_when_creating
+            ]
+
         action_status_panels = insert_model_translation_panels(
             ActionStatus, self.action_status_panels, request, instance
         )
@@ -125,6 +183,10 @@ class PlanAdmin(AplansModelAdmin):
             Plan, self.panels, request, instance
         )
         if request.user.is_superuser:
+            panels.append(InlinePanel('clients', min_num=1, panels=[
+                FieldPanel('client', widget=ClientChooser)
+                ], heading=_('Clients')))
+        if not creating and request.user.is_superuser:
             panels.append(FieldPanel('theme_identifier'))
             panels.append(InlinePanel('domains', panels=[
                 FieldPanel('hostname'),
@@ -142,31 +204,33 @@ class PlanAdmin(AplansModelAdmin):
             heading=_('External links')
         )
         links_panel.panels = insert_model_translation_panels(PlanLink, links_panel.panels, request, instance)
-        panels.append(links_panel)
-        panels.append(FieldPanel('external_feedback_url'))
+        if not creating:
+            panels.append(links_panel)
+            panels.append(FieldPanel('external_feedback_url'))
 
-        tabs = [
-            ObjectList(panels, heading=_('Basic information')),
-            ObjectList([
-                FieldPanel('primary_action_classification', widget=CategoryTypeChooser),
-                CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
-                CondensedInlinePanel(
-                    'action_implementation_phases',
-                    panels=action_implementation_phase_panels,
-                    heading=_('Action implementation phases')
-                ),
-                CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
-                CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
-                FieldPanel(
-                    'common_category_types',
-                    widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
-                ),
-                FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
-                FieldPanel('settings_action_update_target_interval'),
-                FieldPanel('settings_action_update_acceptable_interval'),
-                FieldPanel('action_days_until_considered_stale'),
-            ], heading=_('Action classifications')),
-        ]
+        tabs = [ObjectList(panels, heading=_('Basic information'))]
+        if not creating:
+            tabs.append(
+                ObjectList([
+                    FieldPanel('primary_action_classification', widget=CategoryTypeChooser),
+                    CondensedInlinePanel('action_statuses', panels=action_status_panels, heading=_('Action statuses')),
+                    CondensedInlinePanel(
+                        'action_implementation_phases',
+                        panels=action_implementation_phase_panels,
+                        heading=_('Action implementation phases')
+                    ),
+                    CondensedInlinePanel('action_impacts', panels=action_impact_panels, heading=_('Action impacts')),
+                    CondensedInlinePanel('action_schedules', panels=action_schedule_panels, heading=_('Action schedules')),
+                    FieldPanel(
+                        'common_category_types',
+                        widget=autocomplete.ModelSelect2Multiple(url='commoncategorytype-autocomplete'),
+                    ),
+                    FieldPanel('secondary_action_classification', widget=CategoryTypeChooser),
+                    FieldPanel('settings_action_update_target_interval'),
+                    FieldPanel('settings_action_update_acceptable_interval'),
+                    FieldPanel('action_days_until_considered_stale'),
+                ], heading=_('Action classifications')),
+            )
 
         handler = PlanEditHandler(tabs, base_form_class=PlanForm)
         return handler
@@ -180,7 +244,7 @@ class PlanAdmin(AplansModelAdmin):
         return qs
 
 
-# TBD: We might want to keep this for superusers.
+# TODO: Add this to superusers once quick autocomplete search is included and status of plans is shown on index view
 # modeladmin_register(PlanAdmin)
 
 
@@ -190,7 +254,7 @@ class ActivePlanPermissionHelper(PermissionHelper):
         return user.is_superuser
 
     def user_can_create(self, user):
-        return False
+        return user.is_superuser
 
     def user_can_inspect_obj(self, user, obj):
         return False

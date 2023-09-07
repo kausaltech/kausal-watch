@@ -17,7 +17,11 @@ class Client(ClusterableModel):
         GOOGLE = 'google-openidconnect', _('Google')
         TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
 
-    name = models.CharField(max_length=100)
+    name = models.CharField(
+        max_length=100,
+        verbose_name=_('Name'),
+        help_text=_('Name of the customer organization administering the plan')
+    )
     logo = models.ForeignKey(
         'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
     )
