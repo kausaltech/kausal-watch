@@ -620,22 +620,20 @@ class Plan(ClusterableModel):
             from actions.models import ActionStatus, ActionImplementationPhase
 
             for st in DEFAULT_ACTION_STATUSES:
-                obj = ActionStatus(
+                status = ActionStatus(
                     plan=plan, identifier=st['identifier'], name=st['name'],
                     is_completed=st.get('is_completed', False)
                 )
-                obj.save()
+                status.save()
 
             for idx, st in enumerate(DEFAULT_ACTION_IMPLEMENTATION_PHASES):
-                obj = ActionImplementationPhase(
+                phase = ActionImplementationPhase(
                     plan=plan, order=idx, identifier=st['identifier'], name=st['name'],
                 )
-                obj.save()
-
+                phase.save()
 
         # Set up notifications
         management.call_command('initialize_notifications', plan=plan.identifier)
-
         return plan
 
     def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
