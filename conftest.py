@@ -13,6 +13,7 @@ from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
 from pytest_factoryboy import LazyFixture, register
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
 from actions.tests import factories as actions_factories
 # from admin_site.tests import factories as admin_site_factories
@@ -33,6 +34,17 @@ if typing.TYPE_CHECKING:
 
 import logging
 logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARN)
+
+
+class JSONAPIClient(APIClient):
+    default_format = 'json'
+
+    def request(self, **kwargs):
+        if 'HTTP_ACCEPT' not in kwargs:
+            kwargs['HTTP_ACCEPT'] = 'application/json'
+        resp = super().request(**kwargs)
+        resp.json_data = json.loads(resp.content)
+        return resp
 
 
 register(actions_factories.ActionContactFactory, 'action_contact')
@@ -230,3 +242,9 @@ def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTes
         """
 
     return test_admin
+
+
+@pytest.fixture
+def api_client():
+    client = JSONAPIClient()
+    return client

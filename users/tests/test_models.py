@@ -1,9 +1,12 @@
+from django.urls import reverse
 import pytest
 
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
 from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
 from people.tests.factories import PersonFactory
 from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from admin_site.tests.factories import ClientPlanFactory, EmailDomainsFactory
+
 
 pytestmark = pytest.mark.django_db
 
@@ -155,3 +158,43 @@ def test_get_adminable_organizations_descendants(superuser):
 def test_get_adminable_organizations_organization_plan_admin():
     org_admin = OrganizationPlanAdminFactory()
     assert list(org_admin.person.user.get_adminable_organizations()) == [org_admin.organization]
+
+
+def test_new_user_password_login_preconditions_met(plan, api_client, client, person_factory):
+    cp = ClientPlanFactory(plan=plan)
+    EmailDomainsFactory(client=cp.client)
+    assert plan.clients.count() > 0
+    for cp in plan.clients.all():
+        assert cp.client.email_domains.count() > 0
+    person = person_factory(email='foo@bar.xyz')
+    assert person.email.split('@')[0] not in [eh.domain for eh in cp.client.email_domains.all()]
+    user = person.user
+    assert user.has_usable_password()
+    email = user.email.capitalize()
+    url = reverse('admin_check_login_method')
+    response = api_client.post(url, {'email': email})
+    assert response.status_code == 200
+    data = response.json_data
+    assert data is False
+    client.force_login(user)
+
+
+def test_new_user_social_auth_login_preconditions_met(plan, api_client, client, person_factory):
+    cp = ClientPlanFactory(plan=plan)
+    EmailDomainsFactory(client=cp.client)
+    assert plan.clients.count() > 0
+    for cp in plan.clients.all():
+        assert cp.client.email_domains.count() > 0
+    email = f'user@{cp.client.email_domains.first().domain}'
+    person = person_factory(email=email)
+    user = person.user
+    assert not user.has_usable_password()
+    email = user.email.capitalize()
+    print(email)
+    url = reverse('admin_check_login_method')
+    response = api_client.post(url, {'email': email})
+    assert response.status_code == 200
+    data = response.json_data
+    print(data)
+    assert data['method'] == 'azure_ad'
+    client.force_login(user)

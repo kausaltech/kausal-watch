@@ -1,6 +1,5 @@
 import json
 import pytest
-from rest_framework.test import APIClient
 from django.urls import reverse
 from pytest_factoryboy import register
 
@@ -20,17 +19,6 @@ register(PlanFactory)
 # register(UserFactory)
 
 
-class JSONAPIClient(APIClient):
-    default_format = 'json'
-
-    def request(self, **kwargs):
-        if 'HTTP_ACCEPT' not in kwargs:
-            kwargs['HTTP_ACCEPT'] = 'application/json'
-        resp = super().request(**kwargs)
-        resp.json_data = json.loads(resp.content)
-        return resp
-
-
 @pytest.fixture
 def action_list_url(plan):
     return reverse('action-list', args=(plan.pk,))
@@ -44,12 +32,6 @@ def action_detail_url(plan, action):
 @pytest.fixture
 def openapi_url():
     return reverse('schema')
-
-
-@pytest.fixture
-def api_client():
-    client = JSONAPIClient()
-    return client
 
 
 @pytest.fixture

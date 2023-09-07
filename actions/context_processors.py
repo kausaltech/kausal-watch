@@ -20,11 +20,12 @@ def current_plan(request: AdminContextRequest):
     if getattr(request, '_active_client', None):
         client = request._active_client
     else:
+        client = None
         person = request.user.get_corresponding_person()
         if person:
             client = person.get_admin_client()
-        else:
-            client = None
+        if client is None and plan is not None:
+            client = plan.clients.first().client
         request._active_client = client
 
     out['active_plan'] = plan

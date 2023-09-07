@@ -329,7 +329,6 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         from .recipients import EmailRecipient
         if not self.custom_email:
             return None
-        # FIXME: This sucks
         plan = self.base.plan
         client = plan.clients.first()
         if client:
