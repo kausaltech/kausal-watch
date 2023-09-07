@@ -83,6 +83,14 @@ class ClientPlan(OrderedModel):
         'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients'
     )
 
+    def get_sort_order_max(self):
+        qs = self.__class__.objects.filter(plan=self.plan)
+        return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
+
+    class Meta:
+        unique_together = (('plan', 'order'),)
+        ordering = ('plan', 'order')
+
     def __str__(self):
         return str(self.plan)
 
