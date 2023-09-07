@@ -17,6 +17,7 @@ from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
+from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
 from wagtail.fields import RichTextField
@@ -140,6 +141,19 @@ class Action(
     ModelWithAttributes, OrderedModel, ClusterableModel, PlanRelatedModel, DraftableModel, index.Indexed
 ):
     """One action/measure tracked in an action plan."""
+
+    def serializable_data(self, *args, **kwargs):
+        # Do not serialize translated virtual fields
+        i18n_field = get_i18n_field(self)
+        assert i18n_field
+        for field in i18n_field.get_translated_fields():
+            assert field.serialize is True
+            field.serialize = False
+        try:
+            return super().serializable_data(*args, **kwargs)
+        finally:
+            for field in i18n_field.get_translated_fields():
+                field.serialize = True
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     plan: Plan = ParentalKey(

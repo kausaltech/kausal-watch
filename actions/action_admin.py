@@ -2,7 +2,7 @@ import json
 import logging
 from dal import autocomplete, forward as dal_forward
 
-from django.contrib.admin.utils import quote, unquote
+from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path
 from django.utils import timezone
@@ -12,7 +12,6 @@ from wagtail.admin.panels import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.admin.views.generic import CreateEditViewOptionalFeaturesMixin
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.snippets.action_menu import SnippetActionMenu
 from wagtail_modeladmin.options import ModelAdminMenuItem
@@ -32,6 +31,7 @@ from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
 from orgs.models import Organization
 from people.chooser import PersonChooser
 
+from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models import Action, ActionTask
 from reports.views import MarkActionAsCompleteView
 
@@ -268,18 +268,7 @@ class ActionButtonHelper(AplansButtonHelper):
         return buttons
 
 
-class ActionEditView(CreateEditViewOptionalFeaturesMixin, SingleObjectMixin, AplansEditView):
-    view_name = 'edit'
-    pk_url_kwarg = 'instance_pk'
-
-    def get_object(self, queryset=None):
-        import pdb;pdb.set_trace()
-        # Copied and adapted from wagtail.admin.views.generic.models.EditView.get_object()
-        if 'instance_pk' not in self.kwargs:
-            self.kwargs['instance_pk'] = self.instance_pk
-        self.kwargs['instance_pk'] = unquote(str(self.kwargs['instance_pk']))
-        return super().get_object(queryset)
-
+class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['action_menu'] = SnippetActionMenu(self.request, view='TODO', model=self.model)  # TODO
