@@ -48,8 +48,4 @@ def change_admin_plan(request, plan_id=None):
         if url_is_safe:
             return HttpResponseRedirect(redirect_to)
 
-    admin_type = request.GET.get('admin', 'django')
-    if admin_type == 'wagtail':
-        return HttpResponseRedirect(reverse('wagtailadmin_home'))
-    else:
-        return HttpResponseRedirect(reverse('admin:index'))
+    return HttpResponseRedirect(reverse('wagtailadmin_home'))

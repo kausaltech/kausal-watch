@@ -4,6 +4,7 @@ from dal import autocomplete
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
+from django.urls import reverse
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
@@ -29,6 +30,7 @@ from orgs.models import Organization
 from orgs.chooser import OrganizationChooser
 from pages.models import PlanLink
 from people.chooser import PersonChooser
+from admin_site.wagtail import AplansCreateView
 from admin_site.chooser import ClientChooser
 
 
@@ -90,6 +92,12 @@ class PlanForm(AplansAdminModelForm):
         return instance
 
 
+class PlanCreateView(AplansCreateView):
+    def get_success_url(self):
+        return reverse('change-admin-plan', kwargs=dict(
+            plan_id=self.instance.id))
+
+
 class PlanAdmin(AplansModelAdmin):
     model = Plan
     menu_icon = 'fa-briefcase'
@@ -97,6 +105,7 @@ class PlanAdmin(AplansModelAdmin):
     menu_order = 500
     list_display = ('name',)
     search_fields = ('name',)
+    create_view_class = PlanCreateView
 
     panels = [
         FieldPanel('name'),
@@ -157,6 +166,7 @@ class PlanAdmin(AplansModelAdmin):
         }
 
         if creating:
+            # Accidentally changing a plan organization would be dangerous, so don't show this for existing plans
             create_panels = [
                 FieldPanel('organization', widget=OrganizationChooser),
 
