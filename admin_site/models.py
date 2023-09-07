@@ -75,7 +75,7 @@ class AdminHostname(OrderedModel, ClusterableModel):
         return self.hostname
 
 
-class ClientPlan(models.Model):
+class ClientPlan(OrderedModel):
     client = ParentalKey(
         Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans'
     )
