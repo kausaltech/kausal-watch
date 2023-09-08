@@ -327,7 +327,6 @@ class Person(index.Indexed, ClusterableModel):
             if len(clients) == 1:
                 client = clients[0]
             else:
-                # TODO: Raise exception here instead
                 logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
                     self.email, self.id, len(clients)
                 ))
@@ -363,11 +362,8 @@ class Person(index.Indexed, ClusterableModel):
                 email=email,
                 uuid=uuid.uuid4(),
             )
-            try:
-                client = self.get_admin_client()
-            except:
-                client = None
-            if client is None or client.auth_backend:
+            client = self.get_client_for_email_domain()
+            if client is not None and client.auth_backend:
                 user.set_unusable_password()
             else:
                 user.set_password(str(uuid.uuid4()))
