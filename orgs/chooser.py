@@ -1,21 +1,44 @@
+from django import forms
+
 from django.utils.translation import gettext_lazy as _
 
-from generic_chooser.views import ModelChooserViewSet
+from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
 from wagtail import hooks
 
-from actions.chooser import WatchModelChooserBase
 from aplans.types import WatchAdminRequest
 
 from .models import Organization
 
 
-class OrganizationChooserMixin(WatchModelChooserBase):
+class OrganizationChooserMixin(ModelChooserMixin):
+    """This chooser is currently intended only for choosing (and creating) top level organizations
+    by superusers creating new plans. That's why it only supports root level organizations
+    at the moment.
+    """
+
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
-        objects = Organization.objects.filter(depth=1)
-        return objects
+        return Organization.get_root_nodes()
+
+    def get_object_list(self, search_term=None, **kwargs):
+        objs = self.get_unfiltered_object_list()
+
+        if search_term:
+            objs = objs.filter(name__icontains=search_term)
+
+        return objs
+
+
+class OrgForm(forms.ModelForm):
+    def save(self, commit=True):
+        Organization.add_root(instance=self.instance)
+        return self.instance
+
+    class Meta:
+        model = Organization
+        fields = ['name']
 
 
 class OrganizationChooserViewSet(ModelChooserViewSet):
@@ -26,6 +49,7 @@ class OrganizationChooserViewSet(ModelChooserViewSet):
     page_title = _("Choose an organization")
     per_page = 30
     fields = ['name']
+    form_class = OrgForm
 
 
 class OrganizationChooser(AdminChooser):
