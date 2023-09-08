@@ -39,17 +39,20 @@ def check_login_method(request):
     # Before we check for permissions, we may need to create them first
     # TODO: Don't create permissions here; instead use User.can_access_admin()
     create_permissions(user)
-    # Missing client also means no admin access
     try:
         client = person.get_admin_client()
     except:
         client = None
-    if not user.has_perms(['wagtailadmin.access_admin']) or client is None:
-        msg = _("This user does not have access to admin.")
-        raise ValidationError(dict(detail=msg, code="no_admin_access"))
 
-    if user.has_usable_password() or not client.auth_backend:
-        method = 'password'
-    else:
-        method = client.auth_backend
-    return Response({"method": method})
+    msg = _("This user does not have access to admin.")
+    error = ValidationError(dict(detail=msg, code="no_admin_access"))
+
+    if not user.has_perm('wagtailadmin.access_admin'):
+        # TODO: distinguish this case to the user, indicating the login was succesful but the plan admins need to assign responsibilities to
+        # the person
+        raise error
+    if user.has_usable_password():
+        return Response({'method': 'password'})
+    if client is None or not client.auth_backend:
+        raise error
+    return Response({'method': client.auth_backend})

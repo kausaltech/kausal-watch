@@ -79,6 +79,7 @@ class EmailRecipient(NotificationRecipient):
         return obj.sent_notifications.create(email=self.email, **kwargs)
 
     def get_notification_context(self) -> Dict[str, Any]:
+        # TODO: not specific to client anymore
         context = {
             'admin_url': self.client.get_admin_url(),
         }
