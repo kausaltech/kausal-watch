@@ -17,7 +17,7 @@ class ClientChooserMixin(WatchModelChooserBase):
     request: WatchAdminRequest
 
     def get_unfiltered_object_list(self):
-        objects = Client.objects.all().order_by('-pk')
+        objects = Client.objects.all().order_by('name')
         return objects
 
 
