@@ -1,10 +1,12 @@
+from __future__ import annotations
+import typing
+
 import json
 import logging
 from dal import autocomplete, forward as dal_forward
-
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
-from django.urls import re_path
+from django.urls import path, re_path
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import SingleObjectMixin
@@ -14,6 +16,7 @@ from wagtail.admin.panels import (
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.snippets.action_menu import SnippetActionMenu
+from wagtail.snippets.views.snippets import CollectWorkflowActionDataView, UnpublishView, UsageView
 from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
@@ -34,6 +37,9 @@ from people.chooser import PersonChooser
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models import Action, ActionTask
 from reports.views import MarkActionAsCompleteView
+
+if typing.TYPE_CHECKING:
+    from users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +99,7 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 
         return user.is_general_admin_for_plan(plan)
 
-    def user_can_create(self, user):
+    def user_can_create(self, user: User):
         if not super().user_can_create(user):
             return False
 
@@ -271,7 +277,13 @@ class ActionButtonHelper(AplansButtonHelper):
 class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['action_menu'] = SnippetActionMenu(self.request, view='TODO', model=self.model)  # TODO
+        context['action_menu'] = SnippetActionMenu(
+            self.request,
+            view='edit',
+            model=self.model,
+            instance=self.instance,
+            locked_for_user=self.locked_for_user,
+        )
         return context
 
     def get_description(self):
@@ -301,6 +313,10 @@ class ActionAdmin(AplansModelAdmin):
     index_order_field = 'order'
 
     ordering = ['order']
+
+    usage_view_class = UsageView
+    unpublish_view_class = UnpublishView
+    collect_workflow_action_data_view_class = CollectWorkflowActionDataView
 
     basic_panels = [
         FieldPanel('identifier'),
@@ -378,6 +394,30 @@ class ActionAdmin(AplansModelAdmin):
         }
         getHeader(form);
     '''
+
+    def register_with_wagtail(self):
+        super().register_with_wagtail()
+
+        class FakeSnippetViewSet:
+            def __init__(self, modeladmin):
+                self.modeladmin = modeladmin
+
+            def get_url_name(self, view_name):
+                if view_name == 'list':
+                    view_name = 'index'
+                return self.modeladmin.get_url_name(view_name)
+
+            def get_menu_item_is_registered(self):
+                return False
+
+        Action.snippet_viewset = FakeSnippetViewSet(self)
+
+        from wagtail.snippets.models import SNIPPET_MODELS
+        SNIPPET_MODELS.append(Action)
+        SNIPPET_MODELS.sort(key=lambda x: x._meta.verbose_name)
+
+    def get_url_name(self, view_name):
+        return self.url_helper.get_action_url_name(view_name)
 
     def updated_at_delta(self, obj):
         if not obj.updated_at:
@@ -585,6 +625,44 @@ class ActionAdmin(AplansModelAdmin):
             complete=False,
         )(request)
 
+    @property
+    def usage_view(self):
+        return self.usage_view_class.as_view(
+            model=self.model,
+            # template_name=self.get_templates(
+            #     "usage", fallback=self.usage_view_class.template_name
+            # ),
+            template_name=self.usage_view_class.template_name,
+            # header_icon=self.icon,
+            # permission_policy=self.permission_policy,
+            index_url_name=self.get_url_name("list"),
+            edit_url_name=self.get_url_name("edit"),
+        )
+
+    @property
+    def unpublish_view(self):
+        return self.unpublish_view_class.as_view(
+            model=self.model,
+            # template_name=self.get_templates(
+            #     "unpublish", fallback=self.unpublish_view_class.template_name
+            # ),
+            template_name=self.unpublish_view_class.template_name,
+            # header_icon=self.icon,
+            # permission_policy=self.permission_policy,
+            index_url_name=self.get_url_name("list"),
+            edit_url_name=self.get_url_name("edit"),
+            unpublish_url_name=self.get_url_name("unpublish"),
+            usage_url_name=self.get_url_name("usage"),
+        )
+
+    @property
+    def collect_workflow_action_data_view(self):
+        return self.collect_workflow_action_data_view_class.as_view(
+            model=self.model,
+            redirect_url_name=self.get_url_name("edit"),
+            submit_url_name=self.get_url_name("collect_workflow_action_data"),
+        )
+
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
         mark_as_complete_url = re_path(
@@ -607,7 +685,20 @@ class ActionAdmin(AplansModelAdmin):
             self.undo_marking_action_as_complete_view,
             name=self.url_helper.get_action_url_name('undo_marking_action_as_complete')
         )
+        snippet_view_routes = {
+            'usage': '<str:pk>',
+            'unpublish': '<str:pk>',
+            'collect_workflow_action_data': '<str:pk>/<slug:action_name>/<int:task_state_id>'
+        }
+        snippet_view_urls = [
+            path(
+                f'{self.opts.app_label}/{self.opts.model_name}/{view_name}/{route}/',
+                getattr(self, f'{view_name}_view'),
+                name=self.url_helper.get_action_url_name(view_name)
+            ) for view_name, route in snippet_view_routes.items()
+        ]
         return urls + (
             mark_as_complete_url,
             undo_marking_as_complete_url,
+            *snippet_view_urls,
         )

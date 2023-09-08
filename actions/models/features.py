@@ -65,6 +65,10 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Enable indicator comparison'),
         help_text=_("Set to enable comparing indicators between organizations")
     )
+    enable_moderation_workflow = models.BooleanField(
+        default=False, verbose_name=_('Enable moderation workflow'),
+        help_text=_("Set to enable drafting and reviewing functionality")
+    )
 
     @property
     def public_contact_persons(self):

@@ -55,6 +55,7 @@
                             </button>
                         </li>
                         {% if user_can_delete %}
+                        {# TODO: Is there a reason this is a member of `view` instead of the context? #}
                         <li><a href="{{ view.delete_url }}" class="shortcut">{% trans "Delete" %}</a></li>
                         {% endif %}
                     </ul>
