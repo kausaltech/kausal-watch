@@ -288,7 +288,6 @@ class Person(index.Indexed, ClusterableModel):
             self.update_focal_point()
             if self.image_cropping != old_cropping:
                 super().save(update_fields=['image_cropping'])
-
         user = self.create_corresponding_user()
         if self.user != user:
             self.user = user
@@ -314,10 +313,7 @@ class Person(index.Indexed, ClusterableModel):
         plans = None
         if user is not None:
             # FIXME: Determine based on social_auth of last login
-
             plans = user.get_adminable_plans()
-            if len(plans) < 1:
-                raise Exception('No adminable plans for %s [Person-%d]' % (self.email, self.id))
         else:
             plans = set()
             plans.update(list(self.contact_for_actions.all().values_list('plan', flat=True).distinct()))
@@ -337,11 +333,6 @@ class Person(index.Indexed, ClusterableModel):
                 ))
         if not client:
             client = self.get_client_for_email_domain()
-            if not client:
-                raise Exception('Unable to find client for email %s [Person-%d]' % (
-                    self.email, self.id
-                ))
-
         return client
 
     def get_notification_context(self):
