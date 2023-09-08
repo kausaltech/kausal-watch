@@ -449,7 +449,9 @@ class Plan(ClusterableModel):
         from pages.models import (
             AccessibilityStatementPage, ActionListPage, IndicatorListPage, PlanRootPage, PrivacyPolicyPage
         )
-        # TODO: create locale (or report error) if Locale does not exist
+        for language_code in [self.primary_language] + self.other_languages:
+            if not Locale.objects.filter(language_code=language_code):
+                Locale.objects.create(language_code=language_code)
         primary_locale = Locale.objects.get(language_code=self.primary_language)
         other_locales = [Locale.objects.get(language_code=language) for language in self.other_languages]
         translation_creator = TranslationCreator(user=None, target_locales=other_locales)
