@@ -527,7 +527,20 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
     def resolve_categories(root: CategoryType, info, only_root: bool, only_with_actions: bool):
         qs = root.categories.all()
         if only_with_actions:
-            qs = qs.filter(actions__isnull=False).distinct()
+            with_actions = set()
+            categories = {cat.pk: cat for cat in qs.prefetch_related('actions')}
+            for cat in categories.values():
+                if cat.actions.count() == 0:
+                    continue
+                with_actions.add(cat)
+                parent_pk = cat.parent_id
+                while parent_pk is not None:
+                    parent = categories[parent_pk]
+                    with_actions.add(parent)
+                    parent_pk = parent.parent_id
+            if only_root:
+                return [c for c in with_actions if c.parent_id is None]
+            return list(with_actions)
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
