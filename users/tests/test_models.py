@@ -1,6 +1,7 @@
 from django.urls import reverse
 import pytest
 
+from admin_site.models import Client
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
 from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
 from people.tests.factories import PersonFactory
@@ -160,7 +161,7 @@ def test_get_adminable_organizations_organization_plan_admin():
     assert list(org_admin.person.user.get_adminable_organizations()) == [org_admin.organization]
 
 
-def test_new_user_password_login_preconditions_met(plan, api_client, client, person_factory):
+def test_new_user_password_login_preconditions_met(plan, api_client, client, person_factory, action_contact_factory):
     cp = ClientPlanFactory(plan=plan)
     EmailDomainsFactory(client=cp.client)
     assert plan.clients.count() > 0
@@ -172,15 +173,17 @@ def test_new_user_password_login_preconditions_met(plan, api_client, client, per
     assert user.has_usable_password()
     email = user.email.capitalize()
     url = reverse('admin_check_login_method')
+    action_contact_factory(person=person)
     response = api_client.post(url, {'email': email})
-    assert response.status_code == 200
     data = response.json_data
-    assert data is False
+    assert response.status_code == 200
+    assert data['method'] == 'password'
     client.force_login(user)
 
 
-def test_new_user_social_auth_login_preconditions_met(plan, api_client, client, person_factory):
+def test_new_user_social_auth_login_preconditions_met(plan, api_client, client, person_factory, action_contact_factory):
     cp = ClientPlanFactory(plan=plan)
+    assert cp.client.auth_backend == Client.AuthBackend.AZURE_AD
     EmailDomainsFactory(client=cp.client)
     assert plan.clients.count() > 0
     for cp in plan.clients.all():
@@ -190,11 +193,10 @@ def test_new_user_social_auth_login_preconditions_met(plan, api_client, client, 
     user = person.user
     assert not user.has_usable_password()
     email = user.email.capitalize()
-    print(email)
     url = reverse('admin_check_login_method')
+    action_contact_factory(person=person)
     response = api_client.post(url, {'email': email})
-    assert response.status_code == 200
     data = response.json_data
-    print(data)
+    assert response.status_code == 200
     assert data['method'] == 'azure_ad'
     client.force_login(user)
