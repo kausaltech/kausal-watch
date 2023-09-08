@@ -75,6 +75,7 @@ def test_cannot_list_plans(plan_admin_user, client):
 
 def test_superuser_can_list_plans(superuser, plan, client):
     # If the `plan` fixture is not included, the code will fail as there would be no plan, hence no active admin plan.
+    ClientPlanFactory(plan=plan)
     active_plan_admin = ActivePlanAdmin()
     url = active_plan_admin.url_helper.index_url
     client.force_login(superuser)
