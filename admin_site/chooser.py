@@ -30,7 +30,6 @@ class ClientForm(forms.ModelForm):
     )
 
     def save(self, commit=True):
-        print(self.cleaned_data)
         hostname = self.cleaned_data['default_email_hostname']
         result = super().save(commit=commit)
         EmailDomains.objects.create(client=self.instance, domain=hostname)
