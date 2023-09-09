@@ -226,6 +226,7 @@ class ClientAdmin(ModelAdmin):
     panels = [
         FieldPanel('name'),
         FieldPanel('logo'),
+        FieldPanel('auth_backend'),
         InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
         InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
         InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
@@ -241,6 +242,7 @@ def global_admin_css():
         '<link rel="stylesheet" href="{}">',
         static("css/admin-styles.css")
     )
+
 
 @hooks.register("construct_explorer_page_queryset")
 def restrict_pages_to_plan(parent_page, pages, request):
