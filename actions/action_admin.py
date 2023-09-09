@@ -15,6 +15,7 @@ from wagtail.admin.panels import (
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
+from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.action_menu import SnippetActionMenu
 from wagtail.snippets.views.snippets import CollectWorkflowActionDataView, UnpublishView, UsageView
 from wagtail_modeladmin.options import ModelAdminMenuItem
@@ -277,13 +278,14 @@ class ActionButtonHelper(AplansButtonHelper):
 class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['action_menu'] = SnippetActionMenu(
-            self.request,
-            view='edit',
-            model=self.model,
-            instance=self.instance,
-            locked_for_user=self.locked_for_user,
-        )
+        if self.instance.plan.features.enable_moderation_workflow:
+            context['action_menu'] = SnippetActionMenu(
+                self.request,
+                view='edit',
+                model=self.model,
+                instance=self.instance,
+                locked_for_user=self.locked_for_user,
+            )
         return context
 
     def get_description(self):
@@ -403,8 +405,6 @@ class ActionAdmin(AplansModelAdmin):
                 self.modeladmin = modeladmin
 
             def get_url_name(self, view_name):
-                if view_name == 'list':
-                    view_name = 'index'
                 return self.modeladmin.get_url_name(view_name)
 
             def get_menu_item_is_registered(self):
@@ -417,6 +417,8 @@ class ActionAdmin(AplansModelAdmin):
         SNIPPET_MODELS.sort(key=lambda x: x._meta.verbose_name)
 
     def get_url_name(self, view_name):
+        if view_name == 'list':
+            view_name = 'index'
         return self.url_helper.get_action_url_name(view_name)
 
     def updated_at_delta(self, obj):
@@ -626,6 +628,10 @@ class ActionAdmin(AplansModelAdmin):
         )(request)
 
     @property
+    def permission_policy(self):
+        return ModelPermissionPolicy(Action)
+
+    @property
     def usage_view(self):
         return self.usage_view_class.as_view(
             model=self.model,
@@ -634,7 +640,7 @@ class ActionAdmin(AplansModelAdmin):
             # ),
             template_name=self.usage_view_class.template_name,
             # header_icon=self.icon,
-            # permission_policy=self.permission_policy,
+            permission_policy=self.permission_policy,
             index_url_name=self.get_url_name("list"),
             edit_url_name=self.get_url_name("edit"),
         )
@@ -648,7 +654,7 @@ class ActionAdmin(AplansModelAdmin):
             # ),
             template_name=self.unpublish_view_class.template_name,
             # header_icon=self.icon,
-            # permission_policy=self.permission_policy,
+            permission_policy=self.permission_policy,
             index_url_name=self.get_url_name("list"),
             edit_url_name=self.get_url_name("edit"),
             unpublish_url_name=self.get_url_name("unpublish"),

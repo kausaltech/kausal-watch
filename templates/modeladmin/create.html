@@ -25,30 +25,48 @@
     </script>
 {% endblock %}
 
-{# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
-{% block footer %}
-    <footer class="footer">
-        <ul>
-            <li class="actions footer__container">
-                {# This would be the form_actions block #}
-                <div class="dropdown dropup dropdown-button match-width">
-                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
-                        <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
-                    </button>
+{# Copied from modeladmin/create.html. Actually we just would like to customize the footer block, but unfortunately #}
+{# we also have to add the attribute data-edit-form to the <form> (see comment in edit.html), so we'll have to copy #}
+{# the whole content block. #}
+{% block content %}
 
-                    <div class="dropdown-toggle icon icon-arrow-up"></div>
-                    <ul>
-                        <li>
-                            <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
-                                <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
+    {% block header %}
+        {% include "wagtailadmin/shared/header_with_locale_selector.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon merged=1 %}
+    {% endblock %}
+
+    <form action="{% block form_action %}{{ view.create_url }}{% endblock %}{% if locale %}?locale={{ locale.language_code }}{% endif %}"{% if is_multipart %} enctype="multipart/form-data"{% endif %} method="POST" novalidate data-edit-form>
+        {% csrf_token %}
+
+        <div class="nice-padding">
+            {% block form %}{{ edit_handler.render_form_content }}{% endblock %}
+        </div>
+
+        {% block footer %}
+            {# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
+            <footer class="footer">
+                <ul>
+                    <li class="actions footer__container">
+                        {# This would be the form_actions block #}
+                        <div class="dropdown dropup dropdown-button match-width">
+                            <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
+                                <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
                             </button>
-                        </li>
-                        {# TODO Moderation workflow actions like in edit.html #}
-                    </ul>
-                </div>
-                {# end of form_actions block #}
-            </li>
-            {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
-        </ul>
-    </footer>
+
+                            <div class="dropdown-toggle icon icon-arrow-up"></div>
+                            <ul>
+                                <li>
+                                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
+                                        <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
+                                    </button>
+                                </li>
+                                {# TODO Moderation workflow actions like in edit.html #}
+                            </ul>
+                        </div>
+                        {# end of form_actions block #}
+                    </li>
+                    {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
+                </ul>
+            </footer>
+        {% endblock %}
+    </form>
 {% endblock %}

@@ -30,6 +30,12 @@
             );
         });
     </script>
+    {% if workflow_enabled %}
+        {# The following include uses a selector that gets the <form> by looking for the attribute data-edit-form. #}
+        {# We add this attribute to the <form> in create.html, but unfortunately have to duplicate a lot of code from #}
+        {# modeladmin #}
+        {% include "wagtailadmin/shared/_workflow_init.html" %}
+    {% endif %}
 {% endblock %}
 
 {# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}

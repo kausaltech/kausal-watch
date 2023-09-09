@@ -641,6 +641,12 @@ class SnippetsEditViewCompatibilityMixin(
         # Our own hack
         super().setup(request, *args, **kwargs)
         self.instance = self.object
+        # Only use some of the hacks if the plan uses workflows
+        if not self.instance.plan.features.enable_moderation_workflow:
+            # FIXME: Some code in super().setup() already ran with other values for this. Hopefully nothing breaks.
+            self.revision_enabled = False
+            self.draftstate_enabled = False
+            self.locking_enabled = False
 
     def run_before_hook(self):
         return self.run_hook("before_edit_snippet", self.request, self.object)
