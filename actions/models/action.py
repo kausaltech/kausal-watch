@@ -142,16 +142,19 @@ class Action(
 ):
     """One action/measure tracked in an action plan."""
 
-    def apply_attributes(self, attributes):
-        for pk, val in attributes.get('text', {}).items():
-            for at in self.text_attributes.filter(type__pk=pk):
-                at.text = val.get('text')
-                at.save()
+    def commit_attributes(self, attributes, user):
+        """Called when the serialized draft contents of attribute values must be persisted to the actual Attribute models
+        when publishing an action from a draft"""
+        attribute_types = self.get_visible_attribute_types(user)
+        for attribute_type in attribute_types:
+            attribute_type.commit_value_from_serialized_data(
+                self, attributes
+            )
 
-    def publish(self, revision, **kwargs):
+    def publish(self, revision, user=None, **kwargs):
         attributes = revision.content.pop('attributes')
-        super().publish(revision, **kwargs)
-        self.apply_attributes(attributes)
+        super().publish(revision, user=user, **kwargs)
+        self.commit_attributes(attributes, user)
 
     def serializable_data(self, *args, **kwargs):
         # Do not serialize translated virtual fields
@@ -162,7 +165,7 @@ class Action(
             field.serialize = False
         try:
             result = super().serializable_data(*args, **kwargs)
-            result['attributes'] = self.serialize_attributes()
+            result['attributes'] = self.get_serialized_attribute_data()
             return result
         finally:
             for field in i18n_field.get_translated_fields():

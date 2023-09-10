@@ -111,7 +111,8 @@ class AttributeType:
     def instantiate_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL(type=self.instance, content_object=obj, **args)
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None,
+                        serialized_attributes: Dict | None = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()
 
@@ -136,6 +137,24 @@ class AttributeType:
         """Add a format for this attribute type to the given workbook."""
         return None
 
+    def get_from_serialized_attributes(self, serialized_attributes):
+        return serialized_attributes.get(self.instance.format, {}).get(str(self.instance.pk), {})
+
+    def set_into_serialized_attributes(self, obj, value):
+        obj.set_serialized_attribute_data_for_attribute(self.instance.format, str(self.instance.pk), value)
+
+    def commit_value_from_serialized_data(self, obj: models.ModelWithAttributes, data: Dict[str, Any]):
+        self.commit_attributes(obj, self.get_value_from_serialized_data(data))
+
+    def get_value_from_form_data(self, cleaned_data: Dict[str, Any]):
+        return cleaned_data.get(self.form_field_name)
+
+    def get_value_from_serialized_data(self, data: Dict[str, Any]):
+        raise NotImplementedError()
+
+    def commit_attributes(self, obj: models.ModelWithAttributes, value: Any):
+        raise NotImplementedError()
+
 
 class OrderedChoice(AttributeType):
     ATTRIBUTE_MODEL = models.AttributeChoice
@@ -144,12 +163,20 @@ class OrderedChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
+    def get_form_fields(
+            self,
+            user: User,
+            plan: Plan,
+            obj: Optional[models.ModelWithAttributes] = None,
+            serialized_attributes: Dict | None = None
+    ) -> List[FormField]:
         initial_choice = None
         if obj:
             c = self.get_attributes(obj).first()
             if c:
                 initial_choice = c.choice
+        if serialized_attributes:
+            initial_choice = self.get_value_from_serialized_data(serialized_attributes)
 
         choice_options = self.instance.choice_options.all()
         field = forms.ModelChoiceField(
@@ -160,12 +187,25 @@ class OrderedChoice(AttributeType):
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
+        value = self.get_value_from_form_data(cleaned_data)
+        if commit:
+            self.commit_attributes(obj, value)
+        else:
+            self.set_into_serialized_attributes(obj, value.pk if value else None)
+
+    def get_value_from_serialized_data(self, data):
+        choice = self.get_from_serialized_attributes(data)
+        initial_choice = models.AttributeTypeChoiceOption.objects.filter(pk=choice)
+        if initial_choice:
+            return initial_choice.get()
+        return None
+
+    def commit_attributes(self, obj: models.ModelWithAttributes, value: models.AttributeTypeChoiceOption):
         existing = self.get_attributes(obj)
         if existing:
             existing.delete()
-        val = cleaned_data.get(self.form_field_name)
-        if val is not None:
-            self.create_attribute(obj, choice=val)
+        if value is not None:
+            self.create_attribute(obj, choice=value)
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
@@ -184,15 +224,19 @@ class CategoryChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None,
+                        serialized_attributes: Dict | None = None) -> List[FormField]:
         from actions.models.category import Category
+        categories = Category.objects.filter(type=self.instance.attribute_category_type)
         initial_categories = None
-        if obj:
+        if serialized_attributes:
+            initial_category_ids = self.get_from_serialized_attributes(serialized_attributes)
+            initial_categories = list(Category.objects.filter(id__in=initial_category_ids))
+        elif obj:
             c = self.get_attributes(obj).first()
             if c:
                 initial_categories = c.categories.all()
 
-        categories = Category.objects.filter(type=self.instance.attribute_category_type)
         field = forms.ModelMultipleChoiceField(
             categories,
             initial=initial_categories,
@@ -209,14 +253,25 @@ class CategoryChoice(AttributeType):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
+    def get_value_from_serialized_data(self, data):
+        from actions.models.category import Category
+        category_ids = self.get_from_serialized_attributes(data)
+        return Category.objects.filter(id__in=category_ids)
+
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
+        value = self.get_value_from_form_data(cleaned_data)
+        if commit:
+            self.commit_attributes(obj, value)
+        else:
+            self.set_into_serialized_attributes(obj, [c.pk for c in value] if value else [])
+
+    def commit_attributes(self, obj, value):
         existing = self.get_attributes(obj)
         if existing:
             existing.delete()
-        val = cleaned_data.get(self.form_field_name)
-        if val is not None:
+        if value is not None:
             attribute = self.create_attribute(obj)
-            attribute.categories.set(val)
+            attribute.categories.set(value)
             # attribute is a ClusterableModel, or at least it probably should be, so we need to call save() to
             # persist the categories we just set
             attribute.save()
@@ -246,16 +301,23 @@ class OptionalChoiceWithText(AttributeType):
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None,
+                        serialized_attributes: Dict | None = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
         editable = self.instance.are_instances_editable_by(user, plan)
 
+        serialized_value = None
+        if serialized_attributes:
+            serialized_value = self.get_from_serialized_attributes(serialized_attributes)
         # Choice
         initial_choice = None
-        if attribute:
+        if serialized_value:
+            choice_pk = serialized_value['choice']
+            initial_choice = models.AttributeTypeChoiceOption.objects.get(pk=choice_pk) if choice_pk else None
+        elif attribute:
             initial_choice = attribute.choice
 
         choice_options = self.instance.choice_options.all()
@@ -275,7 +337,9 @@ class OptionalChoiceWithText(AttributeType):
         for language in ('', *self.instance.other_languages):
             initial_text = None
             attribute_text_field_name = f'text_{language}' if language else 'text'
-            if attribute:
+            if serialized_value:
+                initial_text = serialized_value[attribute_text_field_name].get('text')
+            elif attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
             form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
             if self.instance.max_length:
@@ -292,16 +356,39 @@ class OptionalChoiceWithText(AttributeType):
             ))
         return fields
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
-        existing = self.get_attributes(obj)
-        if existing:
-            existing.delete()
+    def get_value_from_form_data(self, cleaned_data):
         choice_val = cleaned_data.get(self.choice_form_field_name)
         text_vals = {}
         for language in ('', *self.instance.other_languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             text_form_field_name = self.get_text_form_field_name(language)
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
+        return choice_val, text_vals
+
+    def get_value_from_serialized_data(self, data):
+        wrapper = self.get_from_serialized_attributes(data)
+        choice_pk = wrapper.get('choice')
+        try:
+            choice_obj = models.AttributeTypeChoiceOption.objects.get(pk=choice_pk)
+        except models.AttributeTypeChoiceOption.DoesNotExist:
+            choice_obj = None
+        text_vals = wrapper.get('text', {})
+        return choice_obj, text_vals
+
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
+        choice_val, text_vals = self.get_value_from_form_data(cleaned_data)
+        if commit:
+            self.commit_attributes(obj, (choice_val, text_vals))
+        else:
+            has_text_in_some_language = any(v for v in text_vals.values())
+            if choice_val is not None or has_text_in_some_language:
+                self.set_into_serialized_attributes(obj, {'choice': choice_val.pk if choice_val else None, 'text': text_vals})
+
+    def commit_attributes(self, obj, value):
+        choice_val, text_vals = value
+        existing = self.get_attributes(obj)
+        if existing:
+            existing.delete()
         has_text_in_some_language = any(v for v in text_vals.values())
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
@@ -348,7 +435,7 @@ class TextAttributeTypeMixin:
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if serialized_attributes:
                 if self.ATTRIBUTE_MODEL == models.AttributeRichText:
-                    initial_text = serialized_attributes.get('rich_text', {}).get(str(self.instance.pk), {}).get('rich_text', None)
+                    initial_text = serialized_attributes.get('rich_text', {}).get(str(self.instance.pk), {}).get('text', None)
                 elif self.ATTRIBUTE_MODEL == models.AttributeText:
                     initial_text = serialized_attributes.get('text', {}).get(str(self.instance.pk), {}).get('text', None)
             elif attribute:
@@ -372,18 +459,27 @@ class TextAttributeTypeMixin:
             ))
         return fields
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
+    def get_value_from_form_data(self, cleaned_data):
         text_vals = {}
         for language in ('', *self.instance.other_languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             text_form_field_name = self.get_form_field_name(language)
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
-        has_text_in_some_language = any(v for v in text_vals.values())
-        if commit is False:
+        return text_vals
+
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
+        text_vals = self.get_value_from_form_data(cleaned_data)
+        if commit:
+            self.commit_attributes(obj, text_vals)
+        else:
             key = 'text' if self.ATTRIBUTE_MODEL == models.AttributeText else 'rich_text'
             obj.set_serialized_attribute_data_for_attribute(key, self.instance.pk, text_vals)
-            return
 
+    def get_value_from_serialized_data(self, attributes):
+        return self.get_from_serialized_attributes(attributes)
+
+    def commit_attributes(self, obj: models.ModelWithAttributes, text_vals):
+        has_text_in_some_language = any(v for v in text_vals.values())
         try:
             attribute = self.get_attributes(obj).get()
         except self.ATTRIBUTE_MODEL.DoesNotExist:
@@ -427,30 +523,42 @@ class Numeric(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None,
+                        serialized_attributes: Dict | None = None) -> List[FormField]:
         attribute = None
-        if obj:
+        if serialized_attributes:
+            initial_value = self.get_from_serialized_attributes(serialized_attributes)
+        elif obj:
             attribute = self.get_attributes(obj).first()
-        initial_value = None
-        if attribute:
-            initial_value = attribute.value
+            initial_value = None
+            if attribute:
+                initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
         if not self.instance.are_instances_editable_by(user, plan):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
+    def get_value_from_serialized_data(self, attributes):
+        return self.get_from_serialized_attributes(attributes)
+
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
-        val = cleaned_data.get(self.form_field_name)
+        val = self.get_value_from_form_data(cleaned_data)
+        if commit:
+            self.commit_attributes(obj, val)
+        else:
+            self.set_into_serialized_attributes(obj, val)
+
+    def commit_attributes(self, obj, value):
         try:
             attribute = self.get_attributes(obj).get()
         except self.ATTRIBUTE_MODEL.DoesNotExist:
-            if val is not None:
-                self.create_attribute(obj, value=val)
+            if value is not None:
+                self.create_attribute(obj, value=value)
         else:
-            if val is None:
+            if value is None:
                 attribute.delete()
             else:
-                attribute.value = val
+                attribute.value = value
                 attribute.save()
 
     def xlsx_column_labels(self) -> List[str]:
