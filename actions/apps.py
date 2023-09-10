@@ -2,6 +2,7 @@ import collections
 from django.apps import AppConfig
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
+from functools import lru_cache
 
 
 # FIXME: Monkey patch due to wagtail-admin-list-controls using a deprecated alias in collections package
@@ -13,6 +14,7 @@ _wagtailsvg_get_unfiltered_object_list = None
 _wagtailsvg_get_queryset = None
 _wagtailsvg_list_filter = None
 _wagtailsvg_get_edit_handler = None
+_wagtail_get_base_snippet_action_menu_items = None
 
 
 def _get_collections(request):
@@ -93,6 +95,58 @@ def monkeypatch_svg_chooser():
         SvgModelAdmin.get_edit_handler = get_edit_handler
 
 
+@lru_cache(maxsize=None)
+def get_base_snippet_action_menu_items(model):
+    from actions.models.action import Action
+    if model == Action:
+        from wagtail.models import DraftStateMixin, LockableMixin, WorkflowMixin
+        from wagtail.snippets.action_menu import (
+            CancelWorkflowMenuItem, DeleteMenuItem, LockedMenuItem, RestartWorkflowMenuItem,  PublishMenuItem, SaveMenuItem,
+            SubmitForModerationMenuItem, UnpublishMenuItem,
+        )
+
+        class PublishActionMenuItem(PublishMenuItem):
+            def is_shown(self, context):
+                user = context["request"].user
+                return super().is_shown(context) and user.can_publish_action(context['instance'])
+
+        class UnpublishActionMenuItem(UnpublishMenuItem):
+            def is_shown(self, context):
+                user = context["request"].user
+                return super().is_shown(context) and user.can_publish_action(context['instance'])
+
+        menu_items = [
+            SaveMenuItem(order=0),
+            DeleteMenuItem(order=10),
+        ]
+        if issubclass(model, DraftStateMixin):
+            menu_items += [
+                UnpublishActionMenuItem(order=20),
+                PublishActionMenuItem(order=30),
+            ]
+        if issubclass(model, WorkflowMixin):
+            menu_items += [
+                CancelWorkflowMenuItem(order=40),
+                RestartWorkflowMenuItem(order=50),
+                SubmitForModerationMenuItem(order=60),
+            ]
+        if issubclass(model, LockableMixin):
+            menu_items.append(LockedMenuItem(order=10000))
+
+        return menu_items
+    else:
+        return _wagtail_get_base_snippet_action_menu_items(model)
+
+
+def monkeypatch_snippet_action_menu():
+    from wagtail.snippets import action_menu
+    global _wagtail_get_base_snippet_action_menu_items
+
+    if _wagtail_get_base_snippet_action_menu_items is None:
+        _wagtail_get_base_snippet_action_menu_items = action_menu.get_base_snippet_action_menu_items
+        action_menu.get_base_snippet_action_menu_items = get_base_snippet_action_menu_items
+
+
 class ActionsConfig(AppConfig):
     name = 'actions'
     verbose_name = _('Actions')
@@ -100,4 +154,5 @@ class ActionsConfig(AppConfig):
     def ready(self):
         # monkeypatch filtering of Collections
         monkeypatch_svg_chooser()
+        monkeypatch_snippet_action_menu()
         import actions.signals

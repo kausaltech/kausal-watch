@@ -26,7 +26,7 @@ User = get_user_model()
 
 ACTIONS_APP = 'actions'
 
-ALL_PERMS = ('view', 'change', 'delete', 'add')
+ALL_PERMS = ('view', 'change', 'publish', 'delete', 'add')
 
 
 def _get_perm_objs(model, perms):
@@ -71,7 +71,7 @@ def get_action_contact_person_perms():
     new_perms = []
 
     # Add general permissions
-    new_perms += _get_perm_objs(Action, ('view', 'change'))
+    new_perms += _get_perm_objs(Action, ('view', 'change', 'publish'))
     new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
     new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
     new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)

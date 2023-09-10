@@ -21,7 +21,7 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
+from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -1112,3 +1112,19 @@ class ImpactGroupAction(models.Model):
 
     def __str__(self):
         return "%s ➜ %s" % (self.action, self.group)
+
+
+class ActionModeratorApprovalTask(Task):
+    def locked_for_user(self, obj: Action, user: User):
+        return not user.can_publish_action(obj)
+
+    def get_actions(self, obj: Action, user: User):
+        if user.can_publish_action(obj):
+            return [
+                ("reject", _("Request changes"), True),
+                ("approve", _("Approve"), False),
+                ("approve", _("Approve with comment"), True),
+
+            ]
+        else:
+            return []

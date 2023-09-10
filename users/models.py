@@ -331,6 +331,17 @@ class User(AbstractUser):
     def can_delete_action(self, plan: Plan, action: Action = None):
         return self.can_create_action(plan)
 
+    def can_publish_action(self, action: Action):
+        from actions.models.action import ActionContactPerson
+        if self.is_superuser:
+            return True
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+        # TODO: Cache?
+        return (self.is_general_admin_for_plan(action.plan)
+                or action.contact_persons.filter(role=ActionContactPerson.Role.MODERATOR, person=person).exists())
+
     def can_create_indicator(self, plan):
         if self.is_superuser:
             return True
