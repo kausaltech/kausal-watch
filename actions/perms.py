@@ -258,7 +258,7 @@ PLAN_ADMIN_PERMS = (
 
 
 def get_plan_admin_perms():
-    all_perms = get_action_contact_person_perms()
+    all_perms = list(get_action_contact_person_perms())
     all_perms += get_indicator_contact_person_perms()
     for model, perms in PLAN_ADMIN_PERMS:
         all_perms += _get_perm_objs(model, perms)
