@@ -4,6 +4,7 @@ import typing
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
+from django.db.models import Model
 from django.contrib.contenttypes.models import ContentType
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
@@ -60,6 +61,7 @@ class FormField:
 class AttributeType:
     # In subclasses, define ATTRIBUTE_MODEL to be the model of the attributes of that type. It needs to have a foreign
     # key to actions.models.attributes.AttributeType called `type` with a defined `related_name`.
+    ATTRIBUTE_MODEL: Model
 
     @classmethod
     def from_model_instance(cls, instance: models.AttributeType):
