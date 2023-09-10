@@ -142,6 +142,17 @@ class Action(
 ):
     """One action/measure tracked in an action plan."""
 
+    def apply_attributes(self, attributes):
+        for pk, val in attributes.get('text', {}).items():
+            for at in self.text_attributes.filter(type__pk=pk):
+                at.text = val.get('text')
+                at.save()
+
+    def publish(self, revision, **kwargs):
+        attributes = revision.content.pop('attributes')
+        super().publish(revision, **kwargs)
+        self.apply_attributes(attributes)
+
     def serializable_data(self, *args, **kwargs):
         # Do not serialize translated virtual fields
         i18n_field = get_i18n_field(self)
@@ -150,10 +161,19 @@ class Action(
             assert field.serialize is True
             field.serialize = False
         try:
-            return super().serializable_data(*args, **kwargs)
+            result = super().serializable_data(*args, **kwargs)
+            result['attributes'] = self.serialize_attributes()
+            return result
         finally:
             for field in i18n_field.get_translated_fields():
                 field.serialize = True
+
+    @classmethod
+    def from_serializable_data(cls, data, check_fks=True, strict_fks=False):
+        attribute_data = data.pop('attributes', {})
+        result: Action = super().from_serializable_data(data, check_fks=check_fks, strict_fks=strict_fks)
+        result.set_serialized_attribute_data(attribute_data)
+        return result
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     plan: Plan = ParentalKey(
@@ -623,7 +643,7 @@ class Action(
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
-    def get_attribute_panels(self, user):
+    def get_attribute_panels(self, user, serialized_attributes=None):
         # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be
         # put on the main tab, `reporting_panels` is a list of panels to be put on the reporting tab, and `i18n_panels`
         # is a dict mapping a non-primary language to a list of panels to be put on the tab for that language.
@@ -635,7 +655,7 @@ class Action(
                                (reporting_panels, {'only_in_reporting_tab': True})]:
             attribute_types = self.get_visible_attribute_types(user, **kwargs)
             for attribute_type in attribute_types:
-                fields = attribute_type.get_form_fields(user, plan, self)
+                fields = attribute_type.get_form_fields(user, plan, self, serialized_attributes=serialized_attributes)
                 for field in fields:
                     if field.language:
                         i18n_panels.setdefault(field.language, []).append(field.get_panel())

@@ -136,11 +136,20 @@ class ActionAdminForm(WagtailAdminModelForm):
         user = self._user
         attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_type.set_attributes(obj, self.cleaned_data)
+            attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
 
 
 class ActionEditHandler(AplansTabbedInterface):
+    def __init__(self, *args, serialized_attributes=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.serialized_attributes = serialized_attributes
+
+    def clone_kwargs(self):
+        result = super().clone_kwargs()
+        result['serialized_attributes'] = self.serialized_attributes
+        return result
+
     def get_form_class(self):
         request = ctx_request.get()
         instance = ctx_instance.get()
@@ -155,7 +164,9 @@ class ActionEditHandler(AplansTabbedInterface):
             attribute_types = instance.get_visible_attribute_types(user)
             attribute_fields = {field.name: field.django_field
                                 for attribute_type in attribute_types
-                                for field in attribute_type.get_form_fields(user, plan, instance)}
+                                for field in attribute_type.get_form_fields(
+                                        user, plan, instance, serialized_attributes=self.serialized_attributes
+                                )}
         else:
             attribute_fields = {}
 
@@ -297,6 +308,13 @@ class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, Apla
         if not category:
             return ''
         return str(category.first())
+
+    def get_edit_handler(self):
+        # We need to inject this view's instance to be accessible to the edit handler
+        # since it needs to know whether we are editing a draft or a live
+        # object (there is a difference in how the form panels are constructed)
+        edit_handler = self.model_admin.get_edit_handler(instance_being_edited=self.object)
+        return edit_handler.bind_to_model(self.model_admin.model)
 
 
 @modeladmin_register
@@ -477,12 +495,20 @@ class ActionAdmin(AplansModelAdmin):
         out = self.task_header_from_js % dict(state_map=json.dumps(states))
         return out
 
-    def get_edit_handler(self):
+    def get_edit_handler(self, instance_being_edited: Action | None = None):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance: Action = ctx_instance.get()
+        # TODO: find out how to include the relevant draftable mixin state
+        # to the context instance so no separate instance_being_edited would
+        # be needed.
+
         plan = request.user.get_active_admin_plan()
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
-        attribute_panels = instance.get_attribute_panels(request.user)
+        serialized_attributes = instance_being_edited.get_serialized_attribute_data() if instance_being_edited else None
+        attribute_panels = instance.get_attribute_panels(
+            request.user,
+            serialized_attributes=serialized_attributes
+        )
         main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
 
         all_tabs = []
@@ -597,7 +623,7 @@ class ActionAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
-        return ActionEditHandler(all_tabs)
+        return ActionEditHandler(all_tabs, serialized_attributes=serialized_attributes)
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

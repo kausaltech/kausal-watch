@@ -23,8 +23,6 @@ register(ReportTypeFactory)
 register(ReportFactory)
 
 
-
-
 @pytest.fixture
 def report_type_with_all_attributes(
         plan,
@@ -33,6 +31,7 @@ def report_type_with_all_attributes(
         action_attribute_type__text,
         action_attribute_type__rich_text,
         action_attribute_type__ordered_choice,
+        action_attribute_type__unordered_choice,
         action_attribute_type__optional_choice,
         action_attribute_type__numeric,
         action_attribute_type__category_choice
@@ -47,7 +46,8 @@ def report_type_with_all_attributes(
         fields__5__attribute_type__attribute_type=action_attribute_type__optional_choice,
         fields__6__attribute_type__attribute_type=action_attribute_type__numeric,
         fields__7__attribute_type__attribute_type=action_attribute_type__category_choice,
-        fields__8__category__category_type=category_type
+        fields__8__category__category_type=category_type,
+        fields__9__attribute_type__attribute_type=action_attribute_type__unordered_choice
     )
 
 

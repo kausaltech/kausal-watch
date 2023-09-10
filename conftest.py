@@ -317,6 +317,7 @@ def actions_having_attributes(
         action_attribute_type__text,
         action_attribute_type__rich_text,
         action_attribute_type__ordered_choice,
+        action_attribute_type__unordered_choice,
         action_attribute_type__optional_choice,
         action_attribute_type__numeric,
         action_attribute_type__category_choice,
@@ -330,7 +331,7 @@ def actions_having_attributes(
         attribute_choice_factory,
         attribute_choice_with_text_factory,
         attribute_category_choice_factory,
-        attribute_type_choice_option,
+        attribute_type_choice_option_factory,
         attribute_type_choice_option__optional,
 ):
 
@@ -345,6 +346,10 @@ def actions_having_attributes(
 
     for o in organizations:
         o.related_plans.add(plan)
+
+    choices_ordered = [attribute_type_choice_option_factory(type=action_attribute_type__ordered_choice) for i in range(0,3)]
+    choices_unordered = [attribute_type_choice_option_factory(type=action_attribute_type__unordered_choice) for i in range(0,3)]
+    choices_optional = [attribute_type_choice_option_factory(type=action_attribute_type__optional_choice) for i in range(0,3)]
 
     def decorated_action(i: int):
         # Create less implementation phases than actions
@@ -364,12 +369,17 @@ def actions_having_attributes(
         attribute_choice_factory(
             type=action_attribute_type__ordered_choice,
             content_object=action,
-            choice=attribute_type_choice_option,
+            choice=choices_ordered[0],
+        )
+        attribute_choice_factory(
+            type=action_attribute_type__unordered_choice,
+            content_object=action,
+            choice=choices_unordered[1],
         )
         attribute_choice_with_text_factory(
             type=action_attribute_type__optional_choice,
             content_object=action,
-            choice=attribute_type_choice_option__optional
+            choice=choices_optional[2]
         )
         attribute_numeric_value_factory(
             type=action_attribute_type__numeric,

@@ -111,11 +111,11 @@ class AttributeType:
     def instantiate_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL(type=self.instance, content_object=obj, **args)
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
         # Implement in subclass
         raise NotImplementedError()
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         """Set the attribute(s) of this type for the given object using cleaned data from a form.
 
         This may create new attribute model instances as well as change or delete existing ones.
@@ -144,7 +144,7 @@ class OrderedChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
         initial_choice = None
         if obj:
             c = self.get_attributes(obj).first()
@@ -159,7 +159,7 @@ class OrderedChoice(AttributeType):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         existing = self.get_attributes(obj)
         if existing:
             existing.delete()
@@ -184,7 +184,7 @@ class CategoryChoice(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
         from actions.models.category import Category
         initial_categories = None
         if obj:
@@ -209,7 +209,7 @@ class CategoryChoice(AttributeType):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         existing = self.get_attributes(obj)
         if existing:
             existing.delete()
@@ -246,7 +246,7 @@ class OptionalChoiceWithText(AttributeType):
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -292,7 +292,7 @@ class OptionalChoiceWithText(AttributeType):
             ))
         return fields
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         existing = self.get_attributes(obj)
         if existing:
             existing.delete()
@@ -330,7 +330,13 @@ class TextAttributeTypeMixin:
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(
+            self,
+            user: User,
+            plan: Plan,
+            obj: models.ModelWithAttributes | None = None,
+            serialized_attributes: Dict | None = None
+    ) -> List[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -340,12 +346,18 @@ class TextAttributeTypeMixin:
         for language in ('', *self.instance.other_languages):
             initial_text = None
             attribute_text_field_name = f'text_{language}' if language else 'text'
-            if attribute:
+            if serialized_attributes:
+                if self.ATTRIBUTE_MODEL == models.AttributeRichText:
+                    initial_text = serialized_attributes.get('rich_text', {}).get(str(self.instance.pk), {}).get('rich_text', None)
+                elif self.ATTRIBUTE_MODEL == models.AttributeText:
+                    initial_text = serialized_attributes.get('text', {}).get(str(self.instance.pk), {}).get('text', None)
+            elif attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
                 # If this is a rich text field, wrap the pseudo-HTML in a RichTextObject
                 # https://docs.wagtail.org/en/v5.1.1/extending/rich_text_internals.html#data-format
                 if isinstance(attribute._meta.get_field(attribute_text_field_name), RichTextField):
                     initial_text = WagtailRichText(initial_text)
+
             form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
@@ -360,13 +372,18 @@ class TextAttributeTypeMixin:
             ))
         return fields
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         text_vals = {}
         for language in ('', *self.instance.other_languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
             text_form_field_name = self.get_form_field_name(language)
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
         has_text_in_some_language = any(v for v in text_vals.values())
+        if commit is False:
+            key = 'text' if self.ATTRIBUTE_MODEL == models.AttributeText else 'rich_text'
+            obj.set_serialized_attribute_data_for_attribute(key, self.instance.pk, text_vals)
+            return
+
         try:
             attribute = self.get_attributes(obj).get()
         except self.ATTRIBUTE_MODEL.DoesNotExist:
@@ -410,7 +427,7 @@ class Numeric(AttributeType):
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None) -> List[FormField]:
+    def get_form_fields(self, user: User, plan: Plan, obj: Optional[models.ModelWithAttributes] = None, serialized_attributes: Dict | None = None) -> List[FormField]:
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
@@ -422,7 +439,7 @@ class Numeric(AttributeType):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
-    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any]):
+    def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         val = cleaned_data.get(self.form_field_name)
         try:
             attribute = self.get_attributes(obj).get()

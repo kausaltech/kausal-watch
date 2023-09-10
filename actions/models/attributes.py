@@ -306,6 +306,11 @@ class AttributeText(Attribute, models.Model):
 
     public_fields = ['id', 'type', 'text']
 
+    def serializable_data(self, *args, **kwargs):
+        return {
+            'text': self.text
+        }
+
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
@@ -387,6 +392,30 @@ class ModelWithAttributes(models.Model):
         'choice_attributes', 'choice_with_text_attributes', 'text_attributes', 'rich_text_attributes',
         'numeric_value_attributes', 'category_choice_attributes',
     ]
+
+    serialized_attribute_data: Dict
+
+    def serialize_attributes(self):
+        attr = self.get_serialized_attribute_data()
+        if attr:
+            return attr
+        result = {
+            'text': {}
+        }
+        for attribute in self.text_attributes.all():
+            result['text'][attribute.type.pk] = attribute.serializable_data()
+        return result
+
+    def get_serialized_attribute_data(self):
+        return getattr(self, 'serialized_attribute_data', None)
+
+    def set_serialized_attribute_data(self, attributes):
+        self.serialized_attribute_data = attributes
+
+    def set_serialized_attribute_data_for_attribute(self, key, pk, data):
+        if not hasattr(self, 'serialized_attribute_data'):
+            self.serialized_attribute_data = {}
+        self.serialized_attribute_data.setdefault(key, {})[pk] = data
 
     def _value_is_empty(self, value):
         return len([v for v in value.values() if v is not None or v == '' or v == []]) == 0
