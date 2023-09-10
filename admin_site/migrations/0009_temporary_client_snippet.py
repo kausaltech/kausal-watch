@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('wagtailcore', '0089_log_entry_data_json_null_to_object'),
-        ('admin_site', '0006_force_light_mode_for_all_users'),
+        ('admin_site', '0008_ensure_plan_clients_unique_ordering'),
     ]
 
     operations = [

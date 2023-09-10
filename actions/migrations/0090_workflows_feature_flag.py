@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('orgs', '0019_alter_organization_primary_language'),
-        ('actions', '0088_wagtail_workflows'),
+        ('actions', '0089_wagtail_workflows'),
     ]
 
     operations = [

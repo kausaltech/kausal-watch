@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ('wagtailcore', '0089_log_entry_data_json_null_to_object'),
-        ('actions', '0087_fix_category_type_editable_by'),
+        ('actions', '0088_auto_20230907_1400'),
     ]
 
     operations = [
