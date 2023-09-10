@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.contrib.admin.utils import quote, unquote
-from django.core.exceptions import ImproperlyConfigured
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -624,13 +624,55 @@ class GenericModelEditViewMixin(BeforeAfterHookMixin):
         return reverse(self.edit_url_name, args=(quote(self.object.pk),))
 
 
+class PermissionCheckedMixin:
+    # Source: wagtail.admin.views.generic.permissions.PermissionCheckedMixin
+    """
+    Mixin for class-based views to enforce permission checks according to
+    a permission policy (see wagtail.permission_policies).
+
+    To take advantage of this, subclasses should set the class property:
+    * permission_policy (a policy object)
+    and either of:
+    * permission_required (an action name such as 'add', 'change' or 'delete')
+    * any_permission_required (a list of action names - the user must have
+      one or more of those permissions)
+    """
+
+    permission_policy = None
+    permission_required = None
+    any_permission_required = None
+
+    def dispatch(self, request, *args, **kwargs):
+        if self.permission_policy is not None:
+
+            if self.permission_required is not None:
+                if not self.user_has_permission(self.permission_required):
+                    raise PermissionDenied
+
+            if self.any_permission_required is not None:
+                if not self.user_has_any_permission(self.any_permission_required):
+                    raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def user_has_permission(self, permission):
+        return self.permission_policy.user_has_permission(self.request.user, permission)
+
+    def user_has_any_permission(self, permissions):
+        return self.permission_policy.user_has_any_permission(
+            self.request.user, permissions
+        )
+
+
 class SnippetsEditViewCompatibilityMixin(
     CreateEditViewOptionalFeaturesMixin,
     GenericModelEditViewMixin,
+    PermissionCheckedMixin,
 ):
     # Source: wagtail.snippets.views.snippets.EditView and other classes
     view_name = "edit"
     pk_url_kwarg = 'instance_pk'
+    permission_required = 'change'
 
     def __init__(self, *args, **kwargs):
         # Our own hack
