@@ -1,7 +1,5 @@
 import pytest
 
-from actions import models
-
 from actions.models import AttributeType
 
 from actions.tests.factories import (
@@ -131,8 +129,5 @@ def actions_with_relations_factory():
 
 
 @pytest.fixture
-def plan_with_actions_with_attributes(plan, attribute_type_factory):
-    attribute_types = list()
-    for format in models.AttributeType.AttributeFormat:
-        at = attribute_type_factory(scope=plan, format=format, name=str(format.label))
-        attribute_types.append((at.format, at))
+def plan_with_actions_with_attributes(plan, actions_having_attributes):
+    return plan
