@@ -49,6 +49,8 @@ class AttributeType(
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
         OPTIONAL_CHOICE_WITH_TEXT = 'optional_choice', _('Optional choice with optional text')
+        # TODO: combine the different choice attributes under one format
+        UNORDERED_CHOICE = 'unordered_choice', _('Choice')
         TEXT = 'text', _('Text')
         RICH_TEXT = 'rich_text', _('Rich text')
         NUMERIC = 'numeric', _('Numeric')

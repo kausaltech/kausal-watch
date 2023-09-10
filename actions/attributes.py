@@ -65,6 +65,12 @@ class AttributeType:
     def from_model_instance(cls, instance: models.AttributeType):
         if instance.format == models.AttributeType.AttributeFormat.ORDERED_CHOICE:
             return OrderedChoice(instance)
+        if instance.format == models.AttributeType.AttributeFormat.UNORDERED_CHOICE:
+            # We reuse the ordered choice implementation and simply
+            # render differently in the UI according to format
+            # TODO: combine different choice attributes under same implementation
+            # with additional metadata configuring the concrete behavior
+            return OrderedChoice(instance)
         elif instance.format == models.AttributeType.AttributeFormat.CATEGORY_CHOICE:
             return CategoryChoice(instance)
         elif instance.format == models.AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
