@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-31 00:23+0300\n"
+"POT-Creation-Date: 2023-09-10 12:05+0300\n"
 "PO-Revision-Date: 2023-08-25 10:18+0000\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -55,6 +55,7 @@ msgid "Last updated"
 msgstr "Viimeksi päivitetty"
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -488,90 +489,6 @@ msgstr "muut mittarit"
 msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
-#: actions/forms.py
-msgid "Plan name"
-msgstr "Toimenpideohjelman nimi"
-
-#: actions/forms.py
-msgid "The official plan name in full form"
-msgstr "Toimenpideohjelman virallinen nimi kokonaisuudessaan"
-
-#: actions/forms.py
-msgid "Plan identifier"
-msgstr "Toimenpideohjelman tunniste"
-
-#: actions/forms.py
-msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
-msgstr "Yksikäsitteinen tunniste, jolla toimenpideohjelma yksilöidään teknisesti. Tästä muodostetaan testisivuston osoite: https://&lt;plan-identifier&gt;.test.kausal.tech. Käytä pieniä kirjaimia ja yhdysmerkkejä."
-
-#: actions/forms.py
-msgid "Primary language"
-msgstr "Ensisijainen kieli"
-
-#: actions/forms.py
-msgid "Main organization"
-msgstr "Pääorganisaatio"
-
-#: actions/forms.py
-msgid "Short name of plan"
-msgstr "Toimenpideohjelman lyhyt nimi"
-
-#: actions/forms.py
-msgid "A shorter version of the plan name"
-msgstr "Lyhyt versio toimenpideohjelman nimestä"
-
-#: actions/forms.py
-msgid "Other languages"
-msgstr "Muut kielet"
-
-#: actions/forms.py
-msgid "Domain name"
-msgstr "Domain-nimi"
-
-#: actions/forms.py
-msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr "Toimenpideohjelman julkinen ja kokonainen domain-nimi, esimerkiksi climate.cityname.gov. Jätä tyhjäksi, jos ei vielä tiedossa."
-
-#: actions/forms.py
-msgid "Base path"
-msgstr "Peruspolku"
-
-#: actions/forms.py
-msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr "Täytä tämä usean toimenpideohjelman sivustolle, jos tämä toimenpideohjelma ei sijaitse juuriosoitteessa."
-
-#: actions/forms.py
-msgid "Name of client"
-msgstr "Asiakkaan nimi"
-
-#: actions/forms.py
-msgid "Name of the customer administering the plan"
-msgstr "Toimenpideohjelmaa hallinnoivan asiiakkaan nimi"
-
-#: actions/forms.py
-msgid "Client subdomain for admin UI"
-msgstr "Asiakkaan alidomaini ylläpitokäyttöliittymässä"
-
-#: actions/forms.py
-msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
-msgstr "Pienellä kirjoitettu lyhyt nimi, josta tulee osa ylläpitokäyttöliittymän kirjautumisosoitetta - esimerkiksi \"sunnydale\" osoitteessa sunnydale.watch.kausal.tech"
-
-#: actions/forms.py
-msgid "Identifier already in use"
-msgstr "Tunniste on jo olemassa"
-
-#: actions/forms.py
-msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
-msgstr "Käytä tunnisteisiin vain pieniä kirjaimia englannin kielen aakkosista, ja tarvittaessa yhdysmerkkejä (-) sanojen välissä"
-
-#: actions/forms.py
-msgid "Plan name already in use"
-msgstr "Toimenpideohjelman nimi on jo käytössä"
-
-#: actions/forms.py
-msgid "A plan's other language cannot be the same as its primary language"
-msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
-
 #: actions/models/action.py
 msgid "Draft"
 msgstr "Luonnos"
@@ -1003,6 +920,12 @@ msgstr "Järjestetty valinta"
 msgid "Optional choice with optional text"
 msgstr "Valinnainen vaihtoehto ja valinnainen seliteteksti"
 
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choice"
+msgstr "ominaisuuden valintavaihtoehdot"
+
 #: actions/models/attributes.py pages/models.py
 msgid "Text"
 msgstr "Teksti"
@@ -1348,9 +1271,23 @@ msgstr "toimenpiteen ominaisuudet"
 msgid "If you leave this blank the application will use the default value"
 msgstr "Jos jätät tämän tyhjäksi, käytetään oletusarvoa"
 
+#: actions/models/plan.py
+msgid "The official plan name in full form"
+msgstr "Toimenpideohjelman virallinen nimi kokonaisuudessaan"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgstr "Yksikäsitteinen tunniste, jolla toimenpideohjelma yksilöidään teknisesti. Tästä muodostetaan testisivuston osoite: https://&lt;plan-identifier&gt;.test.kausal.tech. Käytä pieniä kirjaimia ja yhdysmerkkejä."
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr "lyhenne"
+
+#: actions/models/plan.py
+msgid "A shorter version of the plan name"
+msgstr "Lyhyt versio toimenpideohjelman nimestä"
 
 #: actions/models/plan.py
 msgid "version name"
@@ -1520,8 +1457,16 @@ msgid "host name"
 msgstr "domain-osoite"
 
 #: actions/models/plan.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
+msgstr "Toimenpideohjelman julkinen ja kokonainen domain-nimi, esimerkiksi climate.cityname.gov. Jätä tyhjäksi, jos ei vielä tiedossa."
+
+#: actions/models/plan.py
 msgid "base path"
 msgstr "peruspolku"
+
+#: actions/models/plan.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
+msgstr "Täytä tämä usean toimenpideohjelman sivustolle, jos tämä toimenpideohjelma ei sijaitse juuriosoitteessa."
 
 #: actions/models/plan.py
 msgid "Base path must begin with a '/' and not end with '/'"
@@ -1596,18 +1541,6 @@ msgstr "seurannan laatupisteet"
 msgid "Plan"
 msgstr "Toimenpideohjelma"
 
-#: actions/templates/create_plan/plan_form.html
-msgid "Create a new plan"
-msgstr "Luo uusi toimenpideohjelma"
-
-#: actions/templates/create_plan/plan_form.html
-msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
-msgstr "Tällä lomakkeella pääkäyttäjät voivat luoda uusia toimenpideohjelmia. Jos olet epävarma lomakkeen alaosan teknisistä kentistä, ne voi jättää tyhjäksi. Yritä antaa toimenpideohjelmalle samanlainen tunniste kuin muilla vastaavilla ohjelmilla."
-
-#: actions/templates/create_plan/plan_form.html
-msgid "Create"
-msgstr "Tallenna"
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -1627,6 +1560,24 @@ msgstr[1] ""
 "        <span>%(total)s</span> toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
 
+#: actions/wagtail_admin.py
+msgid "Identifier already in use"
+msgstr "Tunniste on jo olemassa"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
+msgstr "Käytä tunnisteisiin vain pieniä kirjaimia englannin kielen aakkosista, ja tarvittaessa yhdysmerkkejä (-) sanojen välissä"
+
+#: actions/wagtail_admin.py
+msgid "Plan name already in use"
+msgstr "Toimenpideohjelman nimi on jo käytössä"
+
+#: actions/wagtail_admin.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr "Toimenpideohjelman ensisijainen kieli ei voi esiintyä muissa kielissä"
+
 #: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Toimenpideohjelmat"
@@ -1636,6 +1587,10 @@ msgstr "Toimenpideohjelmat"
 #| msgid "general administrators"
 msgid "General administrators"
 msgstr "pääkäyttäjät"
+
+#: actions/wagtail_admin.py
+msgid "Clients"
+msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -1681,6 +1636,22 @@ msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä yllä
 msgid "This user does not have access to admin."
 msgstr "Tällä käyttäjällä ei ole pääsyä ylläpitoon."
 
+#: admin_site/chooser.py
+msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
+msgstr ""
+
+#: admin_site/chooser.py
+#, fuzzy
+#| msgid "Choose a plan"
+msgid "Choose a client"
+msgstr "Valitse ohjelma"
+
+#: admin_site/chooser.py
+#, fuzzy
+#| msgid "Choose another action"
+msgid "Choose another client"
+msgstr "Valitse toinen toimenpide"
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr "Syötä salasana"
@@ -1704,6 +1675,12 @@ msgstr "Google"
 #: admin_site/models.py
 msgid "Tunnistamo"
 msgstr ""
+
+#: admin_site/models.py
+#, fuzzy
+#| msgid "Name of the customer administering the plan"
+msgid "Name of the customer organization administering the plan"
+msgstr "Toimenpideohjelmaa hallinnoivan asiiakkaan nimi"
 
 #: admin_site/models.py
 msgid "login method"
@@ -1962,8 +1939,16 @@ msgid "Strategy"
 msgstr "Strategia"
 
 #: content/models.py
+msgid "Case study"
+msgstr ""
+
+#: content/models.py
 msgid "Strategies"
 msgstr "Strategiat"
+
+#: content/models.py
+msgid "Case studies"
+msgstr ""
 
 #: content/models.py
 msgid "site title"
@@ -3014,6 +2999,18 @@ msgstr "Heräteasetukset"
 msgid "Organizations"
 msgstr "Organisaatiot"
 
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "Choose an action"
+msgid "Choose an organization"
+msgstr "Valitse toimenpide"
+
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "Choose another action"
+msgid "Choose another organization"
+msgstr "Valitse toinen toimenpide"
+
 #: orgs/forms.py
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
@@ -3908,6 +3905,48 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgid "Plan name"
+#~ msgstr "Toimenpideohjelman nimi"
+
+#~ msgid "Plan identifier"
+#~ msgstr "Toimenpideohjelman tunniste"
+
+#~ msgid "Primary language"
+#~ msgstr "Ensisijainen kieli"
+
+#~ msgid "Main organization"
+#~ msgstr "Pääorganisaatio"
+
+#~ msgid "Short name of plan"
+#~ msgstr "Toimenpideohjelman lyhyt nimi"
+
+#~ msgid "Other languages"
+#~ msgstr "Muut kielet"
+
+#~ msgid "Domain name"
+#~ msgstr "Domain-nimi"
+
+#~ msgid "Base path"
+#~ msgstr "Peruspolku"
+
+#~ msgid "Name of client"
+#~ msgstr "Asiakkaan nimi"
+
+#~ msgid "Client subdomain for admin UI"
+#~ msgstr "Asiakkaan alidomaini ylläpitokäyttöliittymässä"
+
+#~ msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
+#~ msgstr "Pienellä kirjoitettu lyhyt nimi, josta tulee osa ylläpitokäyttöliittymän kirjautumisosoitetta - esimerkiksi \"sunnydale\" osoitteessa sunnydale.watch.kausal.tech"
+
+#~ msgid "Create a new plan"
+#~ msgstr "Luo uusi toimenpideohjelma"
+
+#~ msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
+#~ msgstr "Tällä lomakkeella pääkäyttäjät voivat luoda uusia toimenpideohjelmia. Jos olet epävarma lomakkeen alaosan teknisistä kentistä, ne voi jättää tyhjäksi. Yritä antaa toimenpideohjelmalle samanlainen tunniste kuin muilla vastaavilla ohjelmilla."
+
+#~ msgid "Create"
+#~ msgstr "Tallenna"
 
 #~ msgid "Contact persons public"
 #~ msgstr "Yhteyshenkilöt julkisia"

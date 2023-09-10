@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-31 00:23+0300\n"
+"POT-Creation-Date: 2023-09-10 12:05+0300\n"
 "PO-Revision-Date: 2023-08-08 13:02+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -55,6 +55,7 @@ msgid "Last updated"
 msgstr "Sidst opdateret"
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -510,90 +511,6 @@ msgstr "andre indikatorer"
 msgid "contact persons"
 msgstr "kontaktpersoner"
 
-#: actions/forms.py
-msgid "Plan name"
-msgstr "Plannavn"
-
-#: actions/forms.py
-msgid "The official plan name in full form"
-msgstr "Det officielle plannavn i fuld form"
-
-#: actions/forms.py
-msgid "Plan identifier"
-msgstr "Planidentifikator"
-
-#: actions/forms.py
-msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
-msgstr "En unik identifikator for planen, der bruges internt til at skelne mellem planer. Dette bliver en del af testwebstedets URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Brug små bogstaver og bindestreger."
-
-#: actions/forms.py
-msgid "Primary language"
-msgstr "Primære sprog"
-
-#: actions/forms.py
-msgid "Main organization"
-msgstr "Hovedorganisation"
-
-#: actions/forms.py
-msgid "Short name of plan"
-msgstr "Kort navn på planen"
-
-#: actions/forms.py
-msgid "A shorter version of the plan name"
-msgstr "En kortere version af planens navn"
-
-#: actions/forms.py
-msgid "Other languages"
-msgstr "Andre sprog"
-
-#: actions/forms.py
-msgid "Domain name"
-msgstr "Domænenavn"
-
-#: actions/forms.py
-msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr "Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad det være tomt, hvis det endnu ikke er kendt."
-
-#: actions/forms.py
-msgid "Base path"
-msgstr "Grundsti"
-
-#: actions/forms.py
-msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr "Udfyld dette for et websted med flere planer, når planen ikke findes i roden af domænet."
-
-#: actions/forms.py
-msgid "Name of client"
-msgstr "Navn på klient"
-
-#: actions/forms.py
-msgid "Name of the customer administering the plan"
-msgstr "Navn på den kunde, der administrerer planen"
-
-#: actions/forms.py
-msgid "Client subdomain for admin UI"
-msgstr "Klientunderdomæne til admin UI"
-
-#: actions/forms.py
-msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
-msgstr "Et kort navn med små bogstaver, som bliver en del af admin UI-adressen - for eksempel \"sunnydale\" i sunnydale.watch.kausal.tech"
-
-#: actions/forms.py
-msgid "Identifier already in use"
-msgstr "Identifikator er allerede i brug"
-
-#: actions/forms.py
-msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
-msgstr "For identifikatorer, brug kun små bogstaver fra det engelske alfabet med bindestreger, der adskiller ord"
-
-#: actions/forms.py
-msgid "Plan name already in use"
-msgstr "Plannavnet er allerede i brug"
-
-#: actions/forms.py
-msgid "A plan's other language cannot be the same as its primary language"
-msgstr "En plans andet sprog kan ikke være det samme som dets primære sprog"
-
 #: actions/models/action.py
 msgid "Draft"
 msgstr ""
@@ -1029,6 +946,12 @@ msgstr "Bestilt valg"
 msgid "Optional choice with optional text"
 msgstr "Valgfrit valg med valgfri tekst"
 
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choice"
+msgstr "valgmuligheder for attributter"
+
 #: actions/models/attributes.py pages/models.py
 msgid "Text"
 msgstr "Tekst"
@@ -1386,9 +1309,23 @@ msgstr "planens funktioner"
 msgid "If you leave this blank the application will use the default value"
 msgstr "Hvis du lader dette stå tomt, vil applikationen bruge standardværdien"
 
+#: actions/models/plan.py
+msgid "The official plan name in full form"
+msgstr "Det officielle plannavn i fuld form"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgstr "En unik identifikator for planen, der bruges internt til at skelne mellem planer. Dette bliver en del af testwebstedets URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Brug små bogstaver og bindestreger."
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
 msgstr "kort navn"
+
+#: actions/models/plan.py
+msgid "A shorter version of the plan name"
+msgstr "En kortere version af planens navn"
 
 #: actions/models/plan.py
 msgid "version name"
@@ -1560,8 +1497,16 @@ msgid "host name"
 msgstr "værtsnavn"
 
 #: actions/models/plan.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
+msgstr "Det fuldt kvalificerede domænenavn, for eksempel. climate.cityname.gov. Lad det være tomt, hvis det endnu ikke er kendt."
+
+#: actions/models/plan.py
 msgid "base path"
 msgstr "basissti"
+
+#: actions/models/plan.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
+msgstr "Udfyld dette for et websted med flere planer, når planen ikke findes i roden af domænet."
 
 #: actions/models/plan.py
 msgid "Base path must begin with a '/' and not end with '/'"
@@ -1636,18 +1581,6 @@ msgstr "overvågning af kvalitetspunkter"
 msgid "Plan"
 msgstr "Plan"
 
-#: actions/templates/create_plan/plan_form.html
-msgid "Create a new plan"
-msgstr "Opret en ny plan"
-
-#: actions/templates/create_plan/plan_form.html
-msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
-msgstr "Denne formular er til superadministratorer til at lave en helt ny handlingsplan. Hvis du er usikker på nogle af de tekniske felter nær bunden, kan de stå tomme. Prøv at følge eksisterende konventioner for plan-id'et."
-
-#: actions/templates/create_plan/plan_form.html
-msgid "Create"
-msgstr "Skab"
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -1667,6 +1600,24 @@ msgstr[1] ""
 "         <span> %(total)s </span> handlinger <span class=\"visuallyhidden\"> overvåget i %(plan.name)s </span>\n"
 "    "
 
+#: actions/wagtail_admin.py
+msgid "Identifier already in use"
+msgstr "Identifikator er allerede i brug"
+
+#: actions/wagtail_admin.py
+#, fuzzy
+#| msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
+msgstr "For identifikatorer, brug kun små bogstaver fra det engelske alfabet med bindestreger, der adskiller ord"
+
+#: actions/wagtail_admin.py
+msgid "Plan name already in use"
+msgstr "Plannavnet er allerede i brug"
+
+#: actions/wagtail_admin.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr "En plans andet sprog kan ikke være det samme som dets primære sprog"
+
 #: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr "Planer"
@@ -1676,6 +1627,10 @@ msgstr "Planer"
 #| msgid "general administrators"
 msgid "General administrators"
 msgstr "generelle administratorer"
+
+#: actions/wagtail_admin.py
+msgid "Clients"
+msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -1725,6 +1680,22 @@ msgstr ""
 msgid "This user does not have access to admin."
 msgstr ""
 
+#: admin_site/chooser.py
+msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
+msgstr ""
+
+#: admin_site/chooser.py
+#, fuzzy
+#| msgid "Choose a plan"
+msgid "Choose a client"
+msgstr "Vælg en plan"
+
+#: admin_site/chooser.py
+#, fuzzy
+#| msgid "Choose another action"
+msgid "Choose another client"
+msgstr "Vælg en anden handling"
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr "Indtast adgangskode"
@@ -1748,6 +1719,12 @@ msgstr ""
 #: admin_site/models.py
 msgid "Tunnistamo"
 msgstr ""
+
+#: admin_site/models.py
+#, fuzzy
+#| msgid "Name of the customer administering the plan"
+msgid "Name of the customer organization administering the plan"
+msgstr "Navn på den kunde, der administrerer planen"
 
 #: admin_site/models.py
 msgid "login method"
@@ -2012,8 +1989,16 @@ msgid "Strategy"
 msgstr "Strategi"
 
 #: content/models.py
+msgid "Case study"
+msgstr ""
+
+#: content/models.py
 msgid "Strategies"
 msgstr "Strategier"
+
+#: content/models.py
+msgid "Case studies"
+msgstr ""
 
 #: content/models.py
 msgid "site title"
@@ -3068,6 +3053,18 @@ msgstr "Notifikationspræferencer"
 msgid "Organizations"
 msgstr "Organisationer"
 
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "Choose an action"
+msgid "Choose an organization"
+msgstr "Vælg en handling"
+
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "Choose another action"
+msgid "Choose another organization"
+msgstr "Vælg en anden handling"
+
 #: orgs/forms.py
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "En node kan ikke flyttes under sig selv i hierarkiet."
@@ -4035,6 +4032,48 @@ msgstr "Brugere"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
+
+#~ msgid "Plan name"
+#~ msgstr "Plannavn"
+
+#~ msgid "Plan identifier"
+#~ msgstr "Planidentifikator"
+
+#~ msgid "Primary language"
+#~ msgstr "Primære sprog"
+
+#~ msgid "Main organization"
+#~ msgstr "Hovedorganisation"
+
+#~ msgid "Short name of plan"
+#~ msgstr "Kort navn på planen"
+
+#~ msgid "Other languages"
+#~ msgstr "Andre sprog"
+
+#~ msgid "Domain name"
+#~ msgstr "Domænenavn"
+
+#~ msgid "Base path"
+#~ msgstr "Grundsti"
+
+#~ msgid "Name of client"
+#~ msgstr "Navn på klient"
+
+#~ msgid "Client subdomain for admin UI"
+#~ msgstr "Klientunderdomæne til admin UI"
+
+#~ msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
+#~ msgstr "Et kort navn med små bogstaver, som bliver en del af admin UI-adressen - for eksempel \"sunnydale\" i sunnydale.watch.kausal.tech"
+
+#~ msgid "Create a new plan"
+#~ msgstr "Opret en ny plan"
+
+#~ msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
+#~ msgstr "Denne formular er til superadministratorer til at lave en helt ny handlingsplan. Hvis du er usikker på nogle af de tekniske felter nær bunden, kan de stå tomme. Prøv at følge eksisterende konventioner for plan-id'et."
+
+#~ msgid "Create"
+#~ msgstr "Skab"
 
 #~ msgid "Contact persons public"
 #~ msgstr "Offentlige kontaktpersoner"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-08-30 14:30+0300\n"
+"POT-Creation-Date: 2023-09-10 12:05+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -50,6 +50,7 @@ msgid "Last updated"
 msgstr ""
 
 #: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -477,92 +478,6 @@ msgstr ""
 
 #: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
-msgstr ""
-
-#: actions/forms.py
-msgid "Plan name"
-msgstr ""
-
-#: actions/forms.py
-msgid "The official plan name in full form"
-msgstr ""
-
-#: actions/forms.py
-msgid "Plan identifier"
-msgstr ""
-
-#: actions/forms.py
-msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
-msgstr ""
-
-#: actions/forms.py
-msgid "Primary language"
-msgstr ""
-
-#: actions/forms.py
-#, fuzzy
-#| msgid "organization"
-msgid "Main organization"
-msgstr "organisation"
-
-#: actions/forms.py
-msgid "Short name of plan"
-msgstr ""
-
-#: actions/forms.py
-msgid "A shorter version of the plan name"
-msgstr ""
-
-#: actions/forms.py
-msgid "Other languages"
-msgstr ""
-
-#: actions/forms.py
-msgid "Domain name"
-msgstr ""
-
-#: actions/forms.py
-msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
-msgstr ""
-
-#: actions/forms.py
-msgid "Base path"
-msgstr ""
-
-#: actions/forms.py
-msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
-msgstr ""
-
-#: actions/forms.py
-msgid "Name of client"
-msgstr ""
-
-#: actions/forms.py
-msgid "Name of the customer administering the plan"
-msgstr ""
-
-#: actions/forms.py
-msgid "Client subdomain for admin UI"
-msgstr ""
-
-#: actions/forms.py
-msgid "A lowercase short name which becomes part of the admin UI address - for example, \"sunnydale\" in sunnydale.watch.kausal.tech"
-msgstr ""
-
-#: actions/forms.py
-msgid "Identifier already in use"
-msgstr ""
-
-#: actions/forms.py
-msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
-msgstr ""
-
-#: actions/forms.py
-msgid "Plan name already in use"
-msgstr ""
-
-#: actions/forms.py
-msgid "A plan's other language cannot be the same as its primary language"
 msgstr ""
 
 #: actions/models/action.py
@@ -994,6 +909,10 @@ msgstr ""
 msgid "Optional choice with optional text"
 msgstr ""
 
+#: actions/models/attributes.py
+msgid "Choice"
+msgstr ""
+
 #: actions/models/attributes.py pages/models.py
 msgid "Text"
 msgstr ""
@@ -1335,8 +1254,20 @@ msgstr ""
 msgid "If you leave this blank the application will use the default value"
 msgstr ""
 
+#: actions/models/plan.py
+msgid "The official plan name in full form"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A shorter version of the plan name"
 msgstr ""
 
 #: actions/models/plan.py
@@ -1507,7 +1438,15 @@ msgid "host name"
 msgstr ""
 
 #: actions/models/plan.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
+msgstr ""
+
+#: actions/models/plan.py
 msgid "base path"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
 msgstr ""
 
 #: actions/models/plan.py
@@ -1583,18 +1522,6 @@ msgstr ""
 msgid "Plan"
 msgstr ""
 
-#: actions/templates/create_plan/plan_form.html
-msgid "Create a new plan"
-msgstr ""
-
-#: actions/templates/create_plan/plan_form.html
-msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
-msgstr ""
-
-#: actions/templates/create_plan/plan_form.html
-msgid "Create"
-msgstr ""
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -1608,12 +1535,32 @@ msgid_plural ""
 msgstr[0] ""
 msgstr[1] ""
 
+#: actions/wagtail_admin.py
+msgid "Identifier already in use"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Plan name already in use"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr ""
+
 #: actions/wagtail_admin.py admin_site/wagtail_hooks.py
 msgid "Plans"
 msgstr ""
 
 #: actions/wagtail_admin.py
 msgid "General administrators"
+msgstr ""
+
+#: actions/wagtail_admin.py
+msgid "Clients"
 msgstr ""
 
 #: actions/wagtail_admin.py
@@ -1662,6 +1609,18 @@ msgstr ""
 msgid "This user does not have access to admin."
 msgstr ""
 
+#: admin_site/chooser.py
+msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
+msgstr ""
+
+#: admin_site/chooser.py
+msgid "Choose a client"
+msgstr ""
+
+#: admin_site/chooser.py
+msgid "Choose another client"
+msgstr ""
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr ""
@@ -1685,6 +1644,12 @@ msgstr ""
 #: admin_site/models.py
 msgid "Tunnistamo"
 msgstr ""
+
+#: admin_site/models.py
+#, fuzzy
+#| msgid "main organization for the plan"
+msgid "Name of the customer organization administering the plan"
+msgstr "main organisation for the plan"
 
 #: admin_site/models.py
 msgid "login method"
@@ -1842,6 +1807,11 @@ msgstr ""
 msgid "Cannot delete instance because other objects reference it."
 msgstr ""
 
+#: aplans/rest_api.py
+#, python-format
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgstr ""
+
 #: aplans/settings.py
 msgid "Danish"
 msgstr ""
@@ -1936,7 +1906,15 @@ msgid "Strategy"
 msgstr ""
 
 #: content/models.py
+msgid "Case study"
+msgstr ""
+
+#: content/models.py
 msgid "Strategies"
+msgstr ""
+
+#: content/models.py
+msgid "Case studies"
 msgstr ""
 
 #: content/models.py
@@ -2934,6 +2912,18 @@ msgstr ""
 #: orgs/apps.py orgs/wagtail_admin.py
 msgid "Organizations"
 msgstr "Organisations"
+
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "organization"
+msgid "Choose an organization"
+msgstr "organisation"
+
+#: orgs/chooser.py
+#, fuzzy
+#| msgid "organization"
+msgid "Choose another organization"
+msgstr "organisation"
 
 #: orgs/forms.py
 msgid "A node cannot be moved under itself in the hierarchy."
