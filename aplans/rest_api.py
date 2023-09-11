@@ -242,7 +242,7 @@ class HandleProtectedErrorMixin:
                 detail={
                     'non_field_errors': _(
                         'Cannot delete "%s" because it is connected to other objects '
-                        'such as plans, persons or actions. '
+                        'such as plans, persons or actions.'
                     ) % getattr(instance, 'name', str(instance))
                 }
             )

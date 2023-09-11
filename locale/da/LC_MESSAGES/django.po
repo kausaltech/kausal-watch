@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-10 12:05+0300\n"
+"POT-Creation-Date: 2023-09-12 00:24+0300\n"
 "PO-Revision-Date: 2023-08-08 13:02+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -92,6 +92,84 @@ msgstr "Opgaver"
 #: actions/action_admin.py
 msgid "Reporting"
 msgstr "Rapportering"
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "Blocks"
+msgid "Unlock"
+msgstr "Blokke"
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Cancel scheduled publish"
+msgstr "handlingsplaner"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr "Redigere"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
@@ -187,8 +265,21 @@ msgstr "email adresse"
 msgid "collection"
 msgstr "kollektion"
 
+#: actions/apps.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Resubmit for moderation"
+msgstr "redigerbar til handlinger"
+
+#: actions/apps.py
+#, fuzzy
+#| msgid "Cancelled or postponed"
+msgid "Cancel moderation"
+msgstr "Aflyst eller udskudt"
+
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#: templates/modeladmin/edit.html
 msgid "Actions"
 msgstr "Handlinger"
 
@@ -938,6 +1029,16 @@ msgstr "påvirke gruppehandlinger"
 msgid "impact group actions"
 msgstr "påvirke gruppehandlinger"
 
+#: actions/models/action.py
+msgid "Approve"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Save changes"
+msgid "Request changes"
+msgstr "Gem ændringer"
+
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Bestilt valg"
@@ -1296,6 +1397,14 @@ msgstr "Aktiver indikatorsammenligning"
 #: actions/models/features.py
 msgid "Set to enable comparing indicators between organizations"
 msgstr "Indstil til at muliggøre sammenligning af indikatorer mellem organisationer"
+
+#: actions/models/features.py
+msgid "Enable moderation workflow"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality"
+msgstr ""
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1751,11 +1860,6 @@ msgid "Edit this indicator"
 msgstr "Rediger denne indikator"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: admin_site/wagtail.py
-msgid "Edit"
-msgstr "Redigere"
-
-#: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Rediger data"
 
@@ -1886,7 +1990,7 @@ msgstr "Forekomsten kan ikke slettes, fordi andre objekter refererer til den."
 
 #: aplans/rest_api.py
 #, python-format
-msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 msgstr ""
 
 #: aplans/settings.py

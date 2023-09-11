@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-10 12:05+0300\n"
+"POT-Creation-Date: 2023-09-12 00:24+0300\n"
 "PO-Revision-Date: 2023-09-06 16:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -91,6 +91,94 @@ msgstr "Uppgifter"
 #: actions/action_admin.py
 msgid "Reporting"
 msgstr "Rapportering"
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr "%(model_name)s '%(object)s' borttagen."
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "Blocks"
+msgid "Unlock"
+msgstr "Block"
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Cancel scheduled publish"
+msgstr "åtgärdsscheman"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr "Redigera"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
@@ -177,8 +265,21 @@ msgstr "Duplicera e-postadresser:%s"
 msgid "collection"
 msgstr "samling"
 
+#: actions/apps.py
+#, fuzzy
+#| msgid "admins for organization"
+msgid "Resubmit for moderation"
+msgstr "administratörer för organisation"
+
+#: actions/apps.py
+#, fuzzy
+#| msgid "Cancelled or postponed"
+msgid "Cancel moderation"
+msgstr "Inställt eller uppskjutet"
+
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#: templates/modeladmin/edit.html
 msgid "Actions"
 msgstr "Åtgärder"
 
@@ -937,6 +1038,16 @@ msgstr "påverkan på gruppåtgärder"
 msgid "impact group actions"
 msgstr "påverkan på gruppåtgärder"
 
+#: actions/models/action.py
+msgid "Approve"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Save changes"
+msgid "Request changes"
+msgstr "Spara ändringar"
+
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Beställt val"
@@ -1333,6 +1444,14 @@ msgstr "användbar för kategorisering av indikatorer"
 #| msgid "usable for indicator categorization"
 msgid "Set to enable comparing indicators between organizations"
 msgstr "användbar för kategorisering av indikatorer"
+
+#: actions/models/features.py
+msgid "Enable moderation workflow"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality"
+msgstr ""
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1824,11 +1943,6 @@ msgid "Edit this indicator"
 msgstr "Redigera denna indikator"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: admin_site/wagtail.py
-msgid "Edit"
-msgstr "Redigera"
-
-#: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Redigera data"
 
@@ -1964,8 +2078,9 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr "Kan inte ta bort instans eftersom andra objekt refererar till den."
 
 #: aplans/rest_api.py
-#, python-format
-msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+#, fuzzy, python-format
+#| msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 msgstr "Kan inte ta bort \"%s\" eftersom det är kopplat till andra objekt som planer, personer eller åtgärder. "
 
 #: aplans/settings.py
@@ -4492,6 +4607,3 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Log out"
 #~ msgstr "Logga ut"
-
-#~ msgid "admins for organization"
-#~ msgstr "administratörer för organisation"

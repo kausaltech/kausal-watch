@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-10 12:05+0300\n"
+"POT-Creation-Date: 2023-09-12 00:24+0300\n"
 "PO-Revision-Date: 2023-09-11 21:23+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -92,6 +91,94 @@ msgstr "Aufgaben"
 #: actions/action_admin.py
 msgid "Reporting"
 msgstr "Berichterstattung"
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr "%(model_name)s '%(object)s' gelöscht."
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "Blocks"
+msgid "Unlock"
+msgstr "Blocks"
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Cancel scheduled publish"
+msgstr "Maßnahmenzeitpläne"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr "Bearbeiten"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
@@ -176,8 +263,21 @@ msgstr "Doppelte E-Mail-Adressen: %s"
 msgid "collection"
 msgstr "Sammlung"
 
+#: actions/apps.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Resubmit for moderation"
+msgstr "veränderbar für Maßnahmen"
+
+#: actions/apps.py
+#, fuzzy
+#| msgid "Cancelled or postponed"
+msgid "Cancel moderation"
+msgstr "Gestrichen oder verschoben"
+
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#: templates/modeladmin/edit.html
 msgid "Actions"
 msgstr "Maßnahmen"
 
@@ -902,6 +1002,16 @@ msgstr "Auswirkungsgruppenmaßnahme"
 msgid "impact group actions"
 msgstr "Auswirkungsgruppenmaßnahmen"
 
+#: actions/models/action.py
+msgid "Approve"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Save changes"
+msgid "Request changes"
+msgstr "Änderungen speichern"
+
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Geordnete Auswahl"
@@ -1161,9 +1271,7 @@ msgstr "Öffentlich sichtbare Daten über Ansprechpartner"
 
 #: actions/models/features.py
 msgid "Choose which information about contact persons is visible in the public UI"
-msgstr ""
-"Wählen Sie aus, welche Informationen über Ansprechpartner in der "
-"öffentlichen Benutzeroberfläche sichtbar sind"
+msgstr "Wählen Sie aus, welche Informationen über Ansprechpartner in der öffentlichen Benutzeroberfläche sichtbar sind"
 
 #: actions/models/features.py
 msgid "Has action identifiers"
@@ -1238,6 +1346,14 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Setzen, um den Vergleich von Indikatoren zwischen Organisationen zu ermöglichen"
 
 #: actions/models/features.py
+msgid "Enable moderation workflow"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality"
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "Plan-Feature"
 
@@ -1255,11 +1371,7 @@ msgstr "Der offizielle Name des Plans in vollständiger Form"
 
 #: actions/models/plan.py
 msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
-msgstr ""
-"Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung "
-"zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: "
-"https://[kennung].watch-test.kausal.tech. Benutzen Sie Kleinbuchstaben und "
-"Bindestriche."
+msgstr "Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: https://[kennung].watch-test.kausal.tech. Benutzen Sie Kleinbuchstaben und Bindestriche."
 
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
@@ -1546,9 +1658,7 @@ msgstr "Kennung wird bereits verwendet"
 
 #: actions/wagtail_admin.py
 msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
-msgstr ""
-"Verwenden Sie für Kennungen nur Kleinbuchstaben ohne Umlaute mit "
-"Bindestrichen, um Wörter zu trennen. Ziffern sind nur am Ende erlaubt."
+msgstr "Verwenden Sie für Kennungen nur Kleinbuchstaben ohne Umlaute mit Bindestrichen, um Wörter zu trennen. Ziffern sind nur am Ende erlaubt."
 
 #: actions/wagtail_admin.py
 msgid "Plan name already in use"
@@ -1616,9 +1726,7 @@ msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
-msgstr ""
-"Wie lautet der Teil nach @ in der E-Mail-Adresse der Mitarbeiter der "
-"Organisation, die hauptsächlich für den Plan verantwortlich ist?"
+msgstr "Wie lautet der Teil nach @ in der E-Mail-Adresse der Mitarbeiter der Organisation, die hauptsächlich für den Plan verantwortlich ist?"
 
 #: admin_site/chooser.py
 msgid "Choose a client"
@@ -1679,11 +1787,6 @@ msgstr "Letzter Datenpunkt"
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit this indicator"
 msgstr "Bearbeite diesen Indikator"
-
-#: admin_site/templates/admin_site/own_indicators_panel.html
-#: admin_site/wagtail.py
-msgid "Edit"
-msgstr "Bearbeiten"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
@@ -1813,11 +1916,10 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr "Instanz kann nicht gelöscht werden, da andere Objekte darauf verweisen."
 
 #: aplans/rest_api.py
-#, python-format
-msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
-msgstr ""
-"Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten "
-"wie Plänen, Personen oder Maßnahmen verbunden ist. "
+#, fuzzy, python-format
+#| msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
+msgstr "Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten wie Plänen, Personen oder Maßnahmen verbunden ist. "
 
 #: aplans/settings.py
 msgid "Danish"

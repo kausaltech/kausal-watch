@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-10 12:05+0300\n"
+"POT-Creation-Date: 2023-09-12 00:24+0300\n"
 "PO-Revision-Date: 2023-08-25 10:18+0000\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -92,6 +92,94 @@ msgstr "Tehtävät"
 #: actions/action_admin.py
 msgid "Reporting"
 msgstr "Raportointi"
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' deleted."
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr "%(model_name)s '%(object)s' poistettu."
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "Blocks"
+msgid "Unlock"
+msgstr "Lohkot"
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Cancel scheduled publish"
+msgstr "toimenpiteiden aikataulut"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr "Muokkaa"
 
 #: actions/action_status_summary.py actions/defaults.py
 msgid "Completed"
@@ -178,8 +266,21 @@ msgstr "Sama sähköpostiosoite toistuu: %s"
 msgid "collection"
 msgstr "kokoelma"
 
+#: actions/apps.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Resubmit for moderation"
+msgstr "muokattavissa toimenpiteille"
+
+#: actions/apps.py
+#, fuzzy
+#| msgid "Cancelled or postponed"
+msgid "Cancel moderation"
+msgstr "Ei toteuteta tässä vaiheessa"
+
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#: templates/modeladmin/edit.html
 msgid "Actions"
 msgstr "Toimenpiteet"
 
@@ -912,6 +1013,16 @@ msgstr "toimenpiteen vaikuttavuusryhmä"
 msgid "impact group actions"
 msgstr "toimenpiteen vaikuttavuusryhmät"
 
+#: actions/models/action.py
+msgid "Approve"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Save changes"
+msgid "Request changes"
+msgstr "Tallenna muutokset"
+
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr "Järjestetty valinta"
@@ -1258,6 +1369,14 @@ msgstr "Ota mittareiden vertailu käyttöön"
 #: actions/models/features.py
 msgid "Set to enable comparing indicators between organizations"
 msgstr "Mahdollistaa mittareiden vertailun eri organisaatioiden kesken"
+
+#: actions/models/features.py
+msgid "Enable moderation workflow"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality"
+msgstr ""
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1707,11 +1826,6 @@ msgid "Edit this indicator"
 msgstr "Muokkaa tätä mittaria"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: admin_site/wagtail.py
-msgid "Edit"
-msgstr "Muokkaa"
-
-#: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr "Muokkaa dataa"
 
@@ -1840,7 +1954,7 @@ msgstr "Kohdetta ei voida poistaa koska muut oliot viittaavat siihen."
 
 #: aplans/rest_api.py
 #, python-format
-msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 msgstr ""
 
 #: aplans/settings.py

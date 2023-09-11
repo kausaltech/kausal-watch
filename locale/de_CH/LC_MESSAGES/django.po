@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-10 12:05+0300\n"
+"POT-Creation-Date: 2023-09-12 00:24+0300\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -90,6 +90,82 @@ msgstr ""
 
 #: actions/action_admin.py
 msgid "Reporting"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr ""
+
+#: actions/action_admin_mixins.py
+msgid "Unlock"
+msgstr ""
+
+#: actions/action_admin_mixins.py
+#, fuzzy
+#| msgid "action schedules"
+msgid "Cancel scheduled publish"
+msgstr "Massnahmenzeitpläne"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
 msgstr ""
 
 #: actions/action_status_summary.py actions/defaults.py
@@ -175,8 +251,19 @@ msgstr ""
 msgid "collection"
 msgstr ""
 
+#: actions/apps.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Resubmit for moderation"
+msgstr "veränderbar für Massnahmen"
+
+#: actions/apps.py
+msgid "Cancel moderation"
+msgstr ""
+
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
+#: templates/modeladmin/edit.html
 msgid "Actions"
 msgstr "Massnahmen"
 
@@ -903,6 +990,14 @@ msgstr "Auswirkungsgruppenmassnahme"
 msgid "impact group actions"
 msgstr "Auswirkungsgruppenmassnahmen"
 
+#: actions/models/action.py
+msgid "Approve"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Request changes"
+msgstr ""
+
 #: actions/models/attributes.py
 msgid "Ordered choice"
 msgstr ""
@@ -1242,6 +1337,14 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Set to enable comparing indicators between organizations"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Enable moderation workflow"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality"
 msgstr ""
 
 #: actions/models/features.py
@@ -1688,11 +1791,6 @@ msgid "Edit this indicator"
 msgstr ""
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
-#: admin_site/wagtail.py
-msgid "Edit"
-msgstr ""
-
-#: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Edit data"
 msgstr ""
 
@@ -1821,7 +1919,7 @@ msgstr ""
 
 #: aplans/rest_api.py
 #, python-format
-msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 msgstr ""
 
 #: aplans/settings.py
