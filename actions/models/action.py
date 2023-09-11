@@ -5,7 +5,7 @@ import typing
 import uuid
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import IntegerField, Max, Q
@@ -15,8 +15,8 @@ from django.utils import timezone, translation
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import pgettext_lazy
 from modelcluster.fields import ParentalKey
-from modelcluster.models import ClusterableModel
-from modeltrans.fields import TranslationField
+from modelcluster.models import ClusterableModel, model_from_serializable_data
+from modeltrans.fields import TranslationField, TranslatedVirtualField
 from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from typing import Literal, Optional, TypedDict
@@ -982,6 +982,25 @@ class ActionTask(models.Model):
         # today = self.action.plan.now_in_local_timezone().date()
         # if self.completed_at is not None and self.completed_at > today:
         #     raise ValidationError({'completed_at': _("Date can't be in the future")})
+
+    @classmethod
+    def from_serializable_data(cls, data, check_fks=True, strict_fks=True):
+        if 'i18n' in data:
+            del data['i18n']
+        kwargs = {}
+        to_delete = set()
+        for field_name, value in data.items():
+            field = None
+            try:
+                field = cls._meta.get_field(field_name)
+            except FieldDoesNotExist:
+                kwargs[field_name] = value
+            if isinstance(field, TranslatedVirtualField):
+                to_delete.add(field_name)
+        for f in to_delete:
+            del data[f]
+        del data['action']
+        return model_from_serializable_data(cls, data, check_fks=check_fks, strict_fks=strict_fks)
 
     def get_notification_context(self, plan=None):
         if plan is None:
