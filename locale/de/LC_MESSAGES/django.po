@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-12 00:24+0300\n"
-"PO-Revision-Date: 2023-09-11 21:23+0000\n"
+"PO-Revision-Date: 2023-09-11 21:36+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -95,84 +96,73 @@ msgstr "Berichterstattung"
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "The %(model_name)s could not be saved as it is locked"
-msgstr ""
+msgstr "%(model_name)s ist gesperrt und konnte deshalb nicht gespeichert werden"
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' updated."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' aktualisiert."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' created."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' erstellt."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' wurde zur Veröffentlichung vorgesehen."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr ""
+"%(model_name)s '%(object)s' erstellt und für die Veröffentlichung vorgesehen."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
 msgstr ""
+"%(model_name)s '%(object)s' ist live und diese Version ist für die "
+"Veröffentlichung vorgesehen."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' updated and published."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' aktualisiert und veröffentlicht."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' created and published."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' erstellt und veröffentlicht."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s%(object)s ' wurde zur Moderation eingereicht."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "%(model_name)s '%(object)s' created and submitted for moderation."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "%(model_name)s '%(object)s' erstellt und zur Moderation eingereicht."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "Der Workflow auf %(model_name)s '%(object)s' wurde neu gestartet."
 
 #: actions/action_admin_mixins.py
-#, fuzzy, python-format
-#| msgid "%(model_name)s '%(object)s' deleted."
+#, python-format
 msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
-msgstr "%(model_name)s '%(object)s' gelöscht."
+msgstr "Der Workflow auf %(model_name)s '%(object)s' wurde abgebrochen."
 
 #: actions/action_admin_mixins.py
-#, fuzzy
-#| msgid "Blocks"
 msgid "Unlock"
-msgstr "Blocks"
+msgstr "Entsperren"
 
 #: actions/action_admin_mixins.py
-#, fuzzy
-#| msgid "action schedules"
 msgid "Cancel scheduled publish"
-msgstr "Maßnahmenzeitpläne"
+msgstr "Geplante Veröffentlichung abbrechen"
 
 #: actions/action_admin_mixins.py
 #: admin_site/templates/admin_site/own_indicators_panel.html
@@ -264,16 +254,12 @@ msgid "collection"
 msgstr "Sammlung"
 
 #: actions/apps.py
-#, fuzzy
-#| msgid "editable for actions"
 msgid "Resubmit for moderation"
-msgstr "veränderbar für Maßnahmen"
+msgstr "Erneut zur Moderation vorlegen"
 
 #: actions/apps.py
-#, fuzzy
-#| msgid "Cancelled or postponed"
 msgid "Cancel moderation"
-msgstr "Gestrichen oder verschoben"
+msgstr "Moderation abbrechen"
 
 #: actions/apps.py actions/models/plan.py content/models.py
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
@@ -1004,13 +990,11 @@ msgstr "Auswirkungsgruppenmaßnahmen"
 
 #: actions/models/action.py
 msgid "Approve"
-msgstr ""
+msgstr "Genehmigen"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Save changes"
 msgid "Request changes"
-msgstr "Änderungen speichern"
+msgstr "Änderungen anfordern"
 
 #: actions/models/attributes.py
 msgid "Ordered choice"
@@ -1347,11 +1331,11 @@ msgstr "Setzen, um den Vergleich von Indikatoren zwischen Organisationen zu erm�
 
 #: actions/models/features.py
 msgid "Enable moderation workflow"
-msgstr ""
+msgstr "Moderationsworkflow aktivieren"
 
 #: actions/models/features.py
 msgid "Set to enable drafting and reviewing functionality"
-msgstr ""
+msgstr "Einstellen, um die Entwurfs- und Überprüfungsfunktion zu aktivieren"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1916,10 +1900,11 @@ msgid "Cannot delete instance because other objects reference it."
 msgstr "Instanz kann nicht gelöscht werden, da andere Objekte darauf verweisen."
 
 #: aplans/rest_api.py
-#, fuzzy, python-format
-#| msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
+#, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
-msgstr "Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten wie Plänen, Personen oder Maßnahmen verbunden ist. "
+msgstr ""
+"Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten "
+"wie Plänen, Personen oder Aktionen verbunden ist."
 
 #: aplans/settings.py
 msgid "Danish"
