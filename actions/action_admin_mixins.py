@@ -395,7 +395,15 @@ class CreateEditViewOptionalFeaturesMixin:
             # Refresh the lock object as now WorkflowLock no longer applies
             self.lock = self.get_lock()
             self.locked_for_user = self.lock and self.lock.for_user(self.request.user)
-        return super().form_invalid(form)
+        # return super().form_invalid(form)
+        # Kausal hack: super().form_invalid() in ModelAdmin views would display errors if there is an error "None".
+        # Instead, we replicate  what the generic Wagtail EditView does.
+        self.form = form
+        error_message = self.get_error_message()
+        if error_message is not None:
+            messages.validation_error(self.request, error_message, form)
+        return self.render_to_response(self.get_context_data(form=form))
+
 
     def get_live_last_updated_info(self):
         # Create view doesn't have last updated info
