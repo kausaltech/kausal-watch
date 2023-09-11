@@ -218,9 +218,9 @@ def remove_default_site_summary_items(request, items: list):
     items.clear()
 
 
-class ClientAdmin(SnippetViewSet):
+class ClientAdmin(ModelAdmin):
     model = Client
-    icon = 'globe'
+    menu_icon = 'globe'
     menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
@@ -235,7 +235,7 @@ class ClientAdmin(SnippetViewSet):
     ]
 
 
-register_snippet(ClientAdmin)
+modeladmin_register(ClientAdmin)
 
 
 @hooks.register("insert_global_admin_css")
