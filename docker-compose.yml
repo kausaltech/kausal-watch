@@ -35,6 +35,7 @@ x-django-environment: &django-environment
   - ALLOWED_SENDER_EMAILS
   - SERVER_EMAIL
   - DEFAULT_FROM_EMAIL
+  - ADMIN_BASE_URL
 
 x-django-build: &django-build
   context: .
