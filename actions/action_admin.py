@@ -17,7 +17,9 @@ from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.action_menu import SnippetActionMenu
-from wagtail.snippets.views.snippets import CollectWorkflowActionDataView, UnpublishView, UsageView
+from wagtail.snippets.views.snippets import (
+    CollectWorkflowActionDataView, ConfirmWorkflowCancellationView, UnpublishView, UsageView,
+)
 from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
@@ -337,6 +339,7 @@ class ActionAdmin(AplansModelAdmin):
     usage_view_class = UsageView
     unpublish_view_class = UnpublishView
     collect_workflow_action_data_view_class = CollectWorkflowActionDataView
+    confirm_workflow_cancellation_view_class = ConfirmWorkflowCancellationView
 
     basic_panels = [
         FieldPanel('identifier'),
@@ -695,6 +698,10 @@ class ActionAdmin(AplansModelAdmin):
             submit_url_name=self.get_url_name("collect_workflow_action_data"),
         )
 
+    @property
+    def confirm_workflow_cancellation_view(self):
+        return self.confirm_workflow_cancellation_view_class.as_view(model=self.model)
+
     def get_admin_urls_for_registration(self):
         urls = super().get_admin_urls_for_registration()
         mark_as_complete_url = re_path(
@@ -720,7 +727,8 @@ class ActionAdmin(AplansModelAdmin):
         snippet_view_routes = {
             'usage': '<str:pk>',
             'unpublish': '<str:pk>',
-            'collect_workflow_action_data': '<str:pk>/<slug:action_name>/<int:task_state_id>'
+            'collect_workflow_action_data': '<str:pk>/<slug:action_name>/<int:task_state_id>',
+            'confirm_workflow_cancellation': '<str:pk>',
         }
         snippet_view_urls = [
             path(

@@ -678,6 +678,7 @@ class SnippetsEditViewCompatibilityMixin(
         # Our own hack
         super().__init__(*args, **kwargs)
         self.edit_url_name = self.url_helper.get_action_url_name('edit')
+        self.confirm_workflow_cancellation_url_name = self.url_helper.get_action_url_name('confirm_workflow_cancellation')
 
     def setup(self, request, *args, **kwargs):
         # Our own hack

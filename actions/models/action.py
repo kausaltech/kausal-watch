@@ -1160,10 +1160,9 @@ class ActionModeratorApprovalTask(Task):
     def get_actions(self, obj: Action, user: User):
         if user.can_publish_action(obj):
             return [
-                ("reject", _("Request changes"), True),
                 ("approve", _("Approve"), False),
-                ("approve", _("Approve with comment"), True),
-
+                # ("approve", _("Approve with comment"), True),
+                ("reject", _("Request changes"), True),
             ]
         else:
             return []

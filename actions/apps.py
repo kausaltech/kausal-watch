@@ -101,28 +101,44 @@ def get_base_snippet_action_menu_items(model):
     if model == Action:
         from wagtail.models import DraftStateMixin, LockableMixin, WorkflowMixin
         from wagtail.snippets.action_menu import (
-            CancelWorkflowMenuItem, DeleteMenuItem, LockedMenuItem, RestartWorkflowMenuItem,  PublishMenuItem, SaveMenuItem,
-            SubmitForModerationMenuItem, UnpublishMenuItem,
+            CancelWorkflowMenuItem, DeleteMenuItem, LockedMenuItem, PublishMenuItem as WagtailPublishMenuItem,
+            RestartWorkflowMenuItem, SaveMenuItem, SubmitForModerationMenuItem as WagtailSubmitForModerationMenuItem,
+            # UnpublishMenuItem as WagtailUnpublishMenuItem,
         )
 
-        class PublishActionMenuItem(PublishMenuItem):
+        class PublishMenuItem(WagtailPublishMenuItem):
             def is_shown(self, context):
-                user = context["request"].user
-                return super().is_shown(context) and user.can_publish_action(context['instance'])
+                user = context['request'].user
+                instance = context['instance']
+                return (super().is_shown(context)
+                        and user.can_publish_action(instance)
+                        and not instance.workflow_in_progress)  # If a workflow is in progress, use "approve" instead
 
-        class UnpublishActionMenuItem(UnpublishMenuItem):
+
+        class SubmitForModerationMenuItem(WagtailSubmitForModerationMenuItem):
             def is_shown(self, context):
-                user = context["request"].user
-                return super().is_shown(context) and user.can_publish_action(context['instance'])
+                # Don't show "submit for moderation" if we are moderators ourselves
+                user = context['request'].user
+                instance = context['instance']
+                return super().is_shown(context) and not user.can_publish_action(instance)
 
-        menu_items = [
-            SaveMenuItem(order=0),
-            DeleteMenuItem(order=10),
+
+        # class UnpublishMenuItem(WagtailUnpublishMenuItem):
+        #     def is_shown(self, context):
+        #         user = context["request"].user
+        #         return super().is_shown(context) and user.can_publish_action(context['instance'])
+
+        menu_items = []
+        # WorkflowMenuItem instances are inserted with order 100
+        menu_items += [
+            SaveMenuItem(order=101),  # We want "Publish" (below) or "Approve" (100) as the default action (if shown)
+            DeleteMenuItem(order=102),
         ]
         if issubclass(model, DraftStateMixin):
             menu_items += [
-                UnpublishActionMenuItem(order=20),
-                PublishActionMenuItem(order=30),
+                # UnpublishMenuItem(order=20),
+                # PublishMenuItem(order=30),
+                PublishMenuItem(order=5),
             ]
         if issubclass(model, WorkflowMixin):
             menu_items += [
