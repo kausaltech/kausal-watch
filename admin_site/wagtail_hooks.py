@@ -284,13 +284,19 @@ def enable_superscript_feature(features):
     features.default_features.append('subscript')
 
 
+def remove_menu_items(items, item_classes_to_remove):
+    to_remove = []
+    for item in items:
+        if isinstance(item, item_classes_to_remove):
+            to_remove.append(item)
+    for item in to_remove:
+        items.remove(item)
+
+
 @hooks.register('construct_settings_menu')
 def remove_settings_menu_items(request, items: list):
     from wagtail.users.wagtail_hooks import (
         GroupsMenuItem, UsersMenuItem
-    )
-    from wagtail.admin.wagtail_hooks import (
-        WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem
     )
     from wagtail.sites.wagtail_hooks import (
         SitesMenuItem
@@ -303,16 +309,21 @@ def remove_settings_menu_items(request, items: list):
     )
 
     item_classes_to_remove = (
-        GroupsMenuItem, UsersMenuItem,
-        # WorkflowsMenuItem, WorkflowReportMenuItem, WorkflowTasksMenuItem,
-        SitesMenuItem, LocalesMenuItem, RedirectsMenuItem
+        GroupsMenuItem, UsersMenuItem, SitesMenuItem, LocalesMenuItem, RedirectsMenuItem
     )
-    to_remove = []
-    for item in items:
-        if isinstance(item, item_classes_to_remove):
-            to_remove.append(item)
-    for item in to_remove:
-        items.remove(item)
+    remove_menu_items(items, item_classes_to_remove)
+
+
+@hooks.register('construct_main_menu')
+def remove_main_menu_items(request, items: list):
+    from wagtail.snippets.wagtail_hooks import (
+        SnippetsMenuItem
+    )
+
+    item_classes_to_remove = (
+        SnippetsMenuItem,
+    )
+    remove_menu_items(items, item_classes_to_remove)
 
 
 @hooks.register('register_help_menu_item')
