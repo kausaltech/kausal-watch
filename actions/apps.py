@@ -101,10 +101,21 @@ def get_base_snippet_action_menu_items(model):
     if model == Action:
         from wagtail.models import DraftStateMixin, LockableMixin, WorkflowMixin
         from wagtail.snippets.action_menu import (
-            CancelWorkflowMenuItem, DeleteMenuItem, LockedMenuItem, PublishMenuItem as WagtailPublishMenuItem,
-            RestartWorkflowMenuItem, SaveMenuItem, SubmitForModerationMenuItem as WagtailSubmitForModerationMenuItem,
+            CancelWorkflowMenuItem as WagtailCancelWorkflowMenuItem,
+            DeleteMenuItem,
+            LockedMenuItem,
+            PublishMenuItem as WagtailPublishMenuItem,
+            RestartWorkflowMenuItem as WagtailRestartWorkflowMenuItem,
+            SaveMenuItem,
+            SubmitForModerationMenuItem as WagtailSubmitForModerationMenuItem,
             # UnpublishMenuItem as WagtailUnpublishMenuItem,
         )
+
+        class RestartWorkflowMenuItem(WagtailRestartWorkflowMenuItem):
+            label = _("Resubmit for moderation")
+
+        class CancelWorkflowMenuItem(WagtailCancelWorkflowMenuItem):
+            label = _("Cancel moderation")
 
         class PublishMenuItem(WagtailPublishMenuItem):
             def is_shown(self, context):
@@ -117,10 +128,15 @@ def get_base_snippet_action_menu_items(model):
 
         class SubmitForModerationMenuItem(WagtailSubmitForModerationMenuItem):
             def is_shown(self, context):
-                # Don't show "submit for moderation" if we are moderators ourselves
+                # Don't show "submit for moderation" if we are moderators ourselves. Also don't show "Resubmit" because
+                # then "Restart workflow" is what we probably want as it sends notifications to the reviewers again.
                 user = context['request'].user
                 instance = context['instance']
-                return super().is_shown(context) and not user.can_publish_action(instance)
+                workflow_state = instance.current_workflow_state if instance else None
+                in_moderation = workflow_state and workflow_state.status == workflow_state.STATUS_NEEDS_CHANGES
+                return (super().is_shown(context)
+                        and not user.can_publish_action(instance)
+                        and not in_moderation)
 
 
         # class UnpublishMenuItem(WagtailUnpublishMenuItem):
@@ -142,9 +158,9 @@ def get_base_snippet_action_menu_items(model):
             ]
         if issubclass(model, WorkflowMixin):
             menu_items += [
-                CancelWorkflowMenuItem(order=40),
+                SubmitForModerationMenuItem(order=40),
                 RestartWorkflowMenuItem(order=50),
-                SubmitForModerationMenuItem(order=60),
+                CancelWorkflowMenuItem(order=60),
             ]
         if issubclass(model, LockableMixin):
             menu_items.append(LockedMenuItem(order=10000))
