@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-10 12:05+0300\n"
-"PO-Revision-Date: 2023-09-10 12:06+0300\n"
+"PO-Revision-Date: 2023-09-11 21:23+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -147,9 +148,8 @@ msgid "Organization occurs multiple times as responsible party"
 msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
 
 #: actions/api.py
-#, fuzzy
 msgid "Person occurs multiple times as contact person"
-msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
+msgstr "Person tritt mehrfach als Ansprechpartner auf"
 
 #: actions/api.py
 msgid "Identifier must be set"
@@ -208,9 +208,8 @@ msgid "If format is 'Numeric', a unit must be set"
 msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werden"
 
 #: actions/attribute_type_admin.py
-#, fuzzy
 msgid "Choice options"
-msgstr "Attribut-Wahlmöglichkeiten"
+msgstr "Wahlmöglichkeiten"
 
 #: actions/attribute_type_admin.py actions/blocks/category_list.py
 #: actions/blocks/filters.py actions/category_admin.py pages/models.py
@@ -382,7 +381,6 @@ msgid "Action and indicator categorization"
 msgstr "Maßnahmen- und Indikatorkategorisierung"
 
 #: actions/category_admin.py
-#, fuzzy
 msgid "Category levels"
 msgstr "Kategoriestufen"
 
@@ -714,14 +712,12 @@ msgid "action responsible parties"
 msgstr "für Maßnahme zuständige Stellen"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "Editor"
-msgstr "Bearbeiten"
+msgstr "Bearbeiter*in"
 
 #: actions/models/action.py
-#, fuzzy
 msgid "Moderator"
-msgstr "operativ"
+msgstr "Moderator*in"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py people/models.py
@@ -1132,19 +1128,16 @@ msgid "Either SVG or image must be set"
 msgstr "Entweder SVG oder Bild muss gesetzt sein"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Do not show contact persons publicly"
-msgstr "Nicht an Ansprechpartner senden"
+msgstr "Ansprechpartner nicht öffentlich anzeigen"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Show only name, role and affiliation"
-msgstr "Zeige nur veränderbare Organisationen"
+msgstr "Nur Name, Funktion und Zugehörigkeit anzeigen"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Show all information"
-msgstr "Grunddaten"
+msgstr "Alle Informationen anzeigen"
 
 #: actions/models/features.py
 msgid "Allow images for actions"
@@ -1163,14 +1156,14 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Publicly visible data about contact persons"
-msgstr "an Ansprechpartner senden"
+msgstr "Öffentlich sichtbare Daten über Ansprechpartner"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Choose which information about contact persons is visible in the public UI"
-msgstr "Setzen, wenn die Ansprechpartner in der öffentlichen Oberfläche sichtbar sein sollen"
+msgstr ""
+"Wählen Sie aus, welche Informationen über Ansprechpartner in der "
+"öffentlichen Benutzeroberfläche sichtbar sind"
 
 #: actions/models/features.py
 msgid "Has action identifiers"
@@ -1189,9 +1182,8 @@ msgid "Set if action identifiers should be visible in the public UI"
 msgstr "Setzen, wenn die Maßnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: actions/models/features.py
-#, fuzzy
 msgid "Action contact persons have different roles"
-msgstr "Maßnahmenansprechpartner"
+msgstr "Maßnahmenansprechpartner haben unterschiedliche Rollen"
 
 #: actions/models/features.py
 msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
@@ -1262,10 +1254,12 @@ msgid "The official plan name in full form"
 msgstr "Der offizielle Name des Plans in vollständiger Form"
 
 #: actions/models/plan.py
-#, fuzzy
-#| msgid "An unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://&lt;plan-identifier&gt;.test.kausal.tech. Use lowercase letters and dashes."
 msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
-msgstr "Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: https://&lt;plan-kennung&gt;.test.kausal.tech. Benutzen Sie Kleinbuchstaben und Bindestriche."
+msgstr ""
+"Eine eindeutige Kennung für den Plan, welche intern zur Unterscheidung "
+"zwischen Plänen verwendet wird. Dies wird Teil der Seiten-URL: "
+"https://[kennung].watch-test.kausal.tech. Benutzen Sie Kleinbuchstaben und "
+"Bindestriche."
 
 #: actions/models/plan.py indicators/models.py
 msgid "short name"
@@ -1551,10 +1545,10 @@ msgid "Identifier already in use"
 msgstr "Kennung wird bereits verwendet"
 
 #: actions/wagtail_admin.py
-#, fuzzy
-#| msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words"
 msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
-msgstr "Verwenden Sie für Kennungen nur Kleinbuchstaben ohne Umlaute mit Bindestrichen, um Wörter zu trennen"
+msgstr ""
+"Verwenden Sie für Kennungen nur Kleinbuchstaben ohne Umlaute mit "
+"Bindestrichen, um Wörter zu trennen. Ziffern sind nur am Ende erlaubt."
 
 #: actions/wagtail_admin.py
 msgid "Plan name already in use"
@@ -1569,13 +1563,12 @@ msgid "Plans"
 msgstr "Pläne"
 
 #: actions/wagtail_admin.py
-#, fuzzy
 msgid "General administrators"
 msgstr "Allgemeine Administratoren"
 
 #: actions/wagtail_admin.py
 msgid "Clients"
-msgstr ""
+msgstr "Kunden"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -1624,18 +1617,16 @@ msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr ""
+"Wie lautet der Teil nach @ in der E-Mail-Adresse der Mitarbeiter der "
+"Organisation, die hauptsächlich für den Plan verantwortlich ist?"
 
 #: admin_site/chooser.py
-#, fuzzy
-#| msgid "Choose a plan"
 msgid "Choose a client"
-msgstr "Wähle einen Plan"
+msgstr "Wähle einen Kunden"
 
 #: admin_site/chooser.py
-#, fuzzy
-#| msgid "Choose another action"
 msgid "Choose another client"
-msgstr "Wähle eine andere Maßnahme"
+msgstr "Wähle einen anderen Kunden"
 
 #: admin_site/forms.py
 msgid "Enter password"
@@ -1662,10 +1653,8 @@ msgid "Tunnistamo"
 msgstr "Tunnistamo"
 
 #: admin_site/models.py
-#, fuzzy
-#| msgid "Name of the customer administering the plan"
 msgid "Name of the customer organization administering the plan"
-msgstr "Name des Kunden, der den Plan verwaltet"
+msgstr "Name der Kundenorganisation, die den Plan verwaltet"
 
 #: admin_site/models.py
 msgid "login method"
@@ -1827,6 +1816,8 @@ msgstr "Instanz kann nicht gelöscht werden, da andere Objekte darauf verweisen.
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions. "
 msgstr ""
+"Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten "
+"wie Plänen, Personen oder Maßnahmen verbunden ist. "
 
 #: aplans/settings.py
 msgid "Danish"
@@ -1893,7 +1884,6 @@ msgid "Edit rights"
 msgstr "Bearbeitungsrechte"
 
 #: aplans/utils.py
-#, fuzzy
 msgid "Visibility"
 msgstr "Sichtbarkeit"
 
@@ -1924,7 +1914,7 @@ msgstr "Strategie"
 
 #: content/models.py
 msgid "Case study"
-msgstr ""
+msgstr "Fallstudie"
 
 #: content/models.py
 msgid "Strategies"
@@ -1932,7 +1922,7 @@ msgstr "Strategien"
 
 #: content/models.py
 msgid "Case studies"
-msgstr ""
+msgstr "Fallstudien"
 
 #: content/models.py
 msgid "site title"
@@ -1991,9 +1981,8 @@ msgid "site general contents"
 msgstr "Allgemeine Seiteninhalte"
 
 #: content/wagtail_admin.py
-#, fuzzy
 msgid "Site settings"
-msgstr "Benachrichtigungseinstellungen"
+msgstr "Site-Einstellungen"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -2585,7 +2574,6 @@ msgid "none"
 msgstr "keine"
 
 #: indicators/wagtail_admin.py
-#, fuzzy
 msgid "Dimensions"
 msgstr "Dimensionen"
 
@@ -2945,16 +2933,12 @@ msgid "Organizations"
 msgstr "Organisationen"
 
 #: orgs/chooser.py
-#, fuzzy
-#| msgid "Choose an action"
 msgid "Choose an organization"
-msgstr "Wähle eine Maßnahme"
+msgstr "Wähle eine Organisation"
 
 #: orgs/chooser.py
-#, fuzzy
-#| msgid "Choose another action"
 msgid "Choose another organization"
-msgstr "Wähle eine andere Maßnahme"
+msgstr "Wähle eine andere Organisation"
 
 #: orgs/forms.py
 msgid "A node cannot be moved under itself in the hierarchy."
