@@ -2,7 +2,7 @@ import json
 
 from django.conf import settings
 from django.contrib.admin.utils import quote, unquote
-from django.core.exceptions import ImproperlyConfigured, PermissionDenied
+from django.core.exceptions import ImproperlyConfigured, PermissionDenied, ValidationError
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -333,7 +333,11 @@ class CreateEditViewOptionalFeaturesMixin:
             self.workflow_state.resume(self.request.user)
         else:
             # Otherwise start a new workflow
-            self.workflow.start(self.object, self.request.user)
+            try:
+                self.workflow.start(self.object, self.request.user)
+            except ValidationError as e:
+                messages.validation_error(self.request, " ".join(e.messages), self.form)
+                return redirect(self.get_edit_url())
 
         return None
 
