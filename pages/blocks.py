@@ -97,8 +97,8 @@ class FrontPageHeroBlock(blocks.StructBlock):
         ('small_image', _('Small image')),
     ])
     image = ImageChooserBlock()
-    heading = blocks.CharBlock(classname='full title', label=_('Heading'))
-    lead = blocks.RichTextBlock(label=_('Lead'))
+    heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
+    lead = blocks.RichTextBlock(label=_('Lead'), required=False)
 
     graphql_fields = [
         GraphQLString('layout'),
