@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-12 00:24+0300\n"
-"PO-Revision-Date: 2023-09-06 16:18+0000\n"
+"PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
+"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/"
+">\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -95,7 +96,7 @@ msgstr "Rapportering"
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "The %(model_name)s could not be saved as it is locked"
-msgstr ""
+msgstr "%(model_name)s kunde inte sparas eftersom den är låst"
 
 #: actions/action_admin_mixins.py
 #, fuzzy, python-format
@@ -125,6 +126,8 @@ msgstr "%(model_name)s '%(object)s' borttagen."
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
 msgstr ""
+"%(model_name)s '%(object)s' är live och denna version har planerats för "
+"publicering."
 
 #: actions/action_admin_mixins.py
 #, fuzzy, python-format
@@ -1040,7 +1043,7 @@ msgstr "påverkan på gruppåtgärder"
 
 #: actions/models/action.py
 msgid "Approve"
-msgstr ""
+msgstr "Godkänn"
 
 #: actions/models/action.py
 #, fuzzy
@@ -1447,11 +1450,11 @@ msgstr "användbar för kategorisering av indikatorer"
 
 #: actions/models/features.py
 msgid "Enable moderation workflow"
-msgstr ""
+msgstr "Aktivera arbetsflöde för moderering"
 
 #: actions/models/features.py
 msgid "Set to enable drafting and reviewing functionality"
-msgstr ""
+msgstr "Ställ in för att aktivera utkast- och granskningsfunktionalitet"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1816,7 +1819,7 @@ msgstr "allmänna administratörer"
 
 #: actions/wagtail_admin.py
 msgid "Clients"
-msgstr ""
+msgstr "Kunder"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -1875,6 +1878,8 @@ msgstr "Denna användare har inte tillgång till admin."
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr ""
+"Vad är delen efter @ i personalens e-postadress till den organisation som "
+"huvudsakligen ansvarar för planen?"
 
 #: admin_site/chooser.py
 #, fuzzy
@@ -1910,7 +1915,7 @@ msgstr "Google"
 
 #: admin_site/models.py
 msgid "Tunnistamo"
-msgstr ""
+msgstr "Tunnistamo"
 
 #: admin_site/models.py
 #, fuzzy
@@ -2194,7 +2199,7 @@ msgstr "strategisk"
 
 #: content/models.py
 msgid "Case study"
-msgstr ""
+msgstr "Handling"
 
 #: content/models.py
 #, fuzzy
@@ -2204,7 +2209,7 @@ msgstr "strategisk"
 
 #: content/models.py
 msgid "Case studies"
-msgstr ""
+msgstr "Handlingar"
 
 #: content/models.py
 msgid "site title"
