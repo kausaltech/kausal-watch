@@ -4,7 +4,7 @@ import copy
 import rest_framework.fields
 import typing
 from collections import Counter
-from typing import Optional, Dict, Any, Set
+from typing import Optional, Dict, Any, Set, Tuple
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
@@ -444,15 +444,17 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
 
 class AttributesSerializerMixin:
     context: Dict[str, Any]
+    attribute_formats: Tuple[AttributeType.AttributeFormat, ...]
 
-    # In the serializer, set `attribute_format` to a value from `AttributeType.AttributeFormat`
+    # In the serializer, set `attribute_formats` to a tuple of values from `AttributeType.AttributeFormat`
+    # (usually just one element)
     def get_fields(self):
         fields = super().get_fields()
         request = self.context.get('request')
         if request is not None and request.user and request.user.is_authenticated:
             user = request.user
             plan = user.get_active_admin_plan()
-            attribute_types = plan.action_attribute_types.filter(format=self.attribute_format)
+            attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
             for attribute_type in attribute_types:
                 instances_editable = attribute_type.are_instances_editable_by(user, plan)
                 fields[attribute_type.identifier] = rest_framework.fields.FloatField(
@@ -470,7 +472,10 @@ class AttributesSerializerMixin:
         # listserializer. Hence, the need to store the instance in the context
         if instance_pk is None:
             instance_pk = self.context['_current_instance'].pk
-        attributes = self.context['_cache']['attribute_values'].get(self.attribute_format, {})
+        attributes = {}
+        for format in self.attribute_formats:
+            for action_pk, attribute_vals in self.context['_cache']['attribute_values'].get(format, {}).items():
+                attributes.setdefault(action_pk, []).extend(attribute_vals)
         return attributes.get(instance_pk, [])
 
     def get_cached_attribute_type(self, attribute_type_identifier: str):
@@ -508,7 +513,7 @@ class AttributesSerializerMixin:
 
 
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.ORDERED_CHOICE
+    attribute_formats = (AttributeType.AttributeFormat.ORDERED_CHOICE, AttributeType.AttributeFormat.UNORDERED_CHOICE)
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -523,7 +528,7 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
 
 
 class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT
+    attribute_formats = (AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT, )
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -541,7 +546,7 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
 
 
 class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.NUMERIC
+    attribute_formats = (AttributeType.AttributeFormat.NUMERIC, )
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -558,7 +563,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
 
 
 class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.TEXT
+    attribute_formats = (AttributeType.AttributeFormat.TEXT, )
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -575,7 +580,7 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
 
 
 class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.RICH_TEXT
+    attribute_formats = (AttributeType.AttributeFormat.RICH_TEXT, )
 
     def to_representation(self, value):
         cached = self.get_cached_values()
@@ -592,7 +597,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
 
 
 class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
-    attribute_format = AttributeType.AttributeFormat.CATEGORY_CHOICE
+    attribute_formats = (AttributeType.AttributeFormat.CATEGORY_CHOICE, )
 
     def to_representation(self, value):
         cached = self.get_cached_values()
