@@ -64,7 +64,7 @@ class PlanForm(AplansAdminModelForm):
             qs = qs.exclude(pk=self.instance.pk)
         if qs.count() > 0:
             raise ValidationError(_('Identifier already in use'), code='identifier-taken')
-        if not re.fullmatch('([a-z]+-)*[a-z]+[0-9]+', identifier):
+        if not re.fullmatch('([a-z]+-)*[a-z]+[0-9]*', identifier):
             raise ValidationError(
                 _('For identifiers, use only lowercase letters from the English alphabet with dashes separating words. '
                   'Numbers are allowed only in the end.')
