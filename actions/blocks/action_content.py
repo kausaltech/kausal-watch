@@ -21,6 +21,15 @@ from reports.blocks.action_content import ReportComparisonBlock
 # ActionResponsiblePartiesBlock
 
 
+class StaticBlockToStructBlockWorkaroundMixin:
+    # Workaround for migration from StaticBlock to StructBlock
+    def bulk_to_python(self, values):
+        li = list(values)
+        if len(li) == 1 and li[0] is None:
+            values = [{}]
+        return super().bulk_to_python(values)
+
+
 def get_field_label(model: Type[models.Model], field_name: str) -> str | None:
     if not apps.ready:
         return 'label'
@@ -95,8 +104,6 @@ def generate_stream_block(
     return block_class
 
 
-
-
 @register_streamfield_block
 class ActionContentAttributeTypeBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
@@ -124,13 +131,24 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
+class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+    heading = blocks.CharBlock(
+        required=False, help_text=_("Heading to show instead of the default"), default='',
+    )
+
+    graphql_fields = [
+        GraphQLString('heading')
+    ]
+
+
+@register_streamfield_block
 class ActionContactFormBlock(blocks.StaticBlock):
     class Meta:
         label = _("contact form")
 
 
 @register_streamfield_block
-class ActionOfficialNameBlock(blocks.StructBlock):
+class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
     field_label = blocks.CharBlock(
         required=False,
         help_text=_("What label should be used in the public UI for the official name?"),
@@ -145,13 +163,6 @@ class ActionOfficialNameBlock(blocks.StructBlock):
         GraphQLString('caption'),
     ]
 
-    def bulk_to_python(self, values):
-        # Workaround for migration from StaticBlock to StructBlock
-        li = list(values)
-        if len(li) == 1 and li[0] is None:
-            values = [{}]
-        return super().bulk_to_python(values)
-
 
 class ActionListContentBlock(blocks.StaticBlock):
     block_label: str
@@ -161,16 +172,15 @@ class ActionListContentBlock(blocks.StaticBlock):
 
 
 action_attribute_blocks = generate_blocks_for_fields(Action, [
-    'lead_paragraph',
+    ('lead_paragraph', {'label': _('Lead paragraph')}),
     'description',
     'schedule',
     'links',
     'tasks',
-    ('merged_actions', dict(label=_('Merged actions'))),
-    'related_actions',
+    ('merged_actions', {'label': _('Merged actions')}),
+    ('related_actions', {'label': _('Related actions')}),
     'related_indicators',
     'contact_persons',
-    'responsible_parties',
 ])
 
 
@@ -239,7 +249,7 @@ ActionAsideContentBlock = generate_stream_block(
     fields=[
         'schedule',
         'contact_persons',
-        'responsible_parties',
+        ('responsible_parties', ActionResponsiblePartiesBlock(required=True, label=_('Responsible parties'))),
         ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
         ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
     ],
