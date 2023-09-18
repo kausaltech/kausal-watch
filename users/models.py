@@ -7,6 +7,7 @@ from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from wagtail.users.models import UserProfile
 
 from users.managers import UserManager
 from orgs.models import Organization, OrganizationMetadataAdmin
@@ -45,6 +46,13 @@ class User(AbstractUser):
     _adminable_plans: 'PlanQuerySet'
 
     autocomplete_search_field = 'email'
+
+    def save(self, *args, **kwargs):
+        result = super().save(*args, **kwargs)
+        # Create Wagtail user profile in order to force the light color theme
+        # FIXME: Remove this and fix dark mode support
+        UserProfile.objects.get_or_create(user=self, defaults={'theme': UserProfile.AdminThemes.LIGHT})
+        return result
 
     def autocomplete_label(self):
         return self.email
