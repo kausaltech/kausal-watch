@@ -57,7 +57,8 @@ class EmbedHTMLValue(graphene.ObjectType):
     def resolve_html(parent, info):
         height_key = parent['height']
         url = parent['url']
-        embed = get_embed(url, max_height=HEIGHTS.get(height_key, list(HEIGHTS.values())[0]))
+        size = HEIGHTS.get(height_key, list(HEIGHTS.values())[0])
+        embed = get_embed(url, max_height=size, max_width=size)
         return embed.html
 
 
