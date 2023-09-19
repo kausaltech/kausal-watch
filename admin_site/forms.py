@@ -20,3 +20,6 @@ class LoginForm(AuthenticationForm):
         for field_name, field in self.fields.items():
             if field_name not in ['username', 'password']:
                 yield field_name, field
+
+    def clean_username(self):
+        return self.cleaned_data['username'].lower()
