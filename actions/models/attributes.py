@@ -19,7 +19,7 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any
 if typing.TYPE_CHECKING:
     from .plan import Plan
     from users.models import User
@@ -396,10 +396,10 @@ class ModelWithAttributes(models.Model):
     def set_serialized_attribute_data(self, attributes):
         self.serialized_attribute_data = attributes
 
-    def set_serialized_attribute_data_for_attribute(self, key, pk, data):
+    def set_serialized_attribute_data_for_attribute(self, key: str, pk: Any, data: Any):
         if not hasattr(self, 'serialized_attribute_data'):
             self.serialized_attribute_data = {}
-        self.serialized_attribute_data.setdefault(key, {})[pk] = data
+        self.serialized_attribute_data.setdefault(key, {})[str(pk)] = data
 
     def _value_is_empty(self, value):
         return len([v for v in value.values() if v is not None or v == '' or v == []]) == 0

@@ -141,7 +141,7 @@ class AttributeType:
         return serialized_attributes.get(self.instance.format, {}).get(str(self.instance.pk), {})
 
     def set_into_serialized_attributes(self, obj, value):
-        obj.set_serialized_attribute_data_for_attribute(self.instance.format, str(self.instance.pk), value)
+        obj.set_serialized_attribute_data_for_attribute(self.instance.format, self.instance.pk, value)
 
     def commit_value_from_serialized_data(self, obj: models.ModelWithAttributes, data: Dict[str, Any]):
         self.commit_attributes(obj, self.get_value_from_serialized_data(data))
@@ -411,6 +411,8 @@ class OptionalChoiceWithText(AttributeType):
 
 
 class TextAttributeTypeMixin:
+    instance: models.ModelWithAttributes
+
     def get_form_field_name(self, language):
         name = f'attribute_type_{self.instance.identifier}'
         if language:
