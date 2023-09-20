@@ -246,7 +246,7 @@ class CategoryLevel(OrderedModel):
 class CategoryBase(OrderedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     identifier = IdentifierField()
-    name = models.CharField(max_length=100, verbose_name=_('name'))
+    name = models.CharField(max_length=200, verbose_name=_('name'))
     lead_paragraph = models.TextField(
         max_length=300, blank=True, verbose_name=_('lead paragraph')
     )
