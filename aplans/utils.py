@@ -234,7 +234,7 @@ class InstancesEditableByMixin(models.Model):
             return is_contact_person or is_plan_admin
         if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
             return user.is_authenticated
-        assert False, "Unexpected value for instances_editable_by"
+        assert False, f"Unexpected value for instances_editable_by {self.instances_editable_by}"
 
     class Meta:
         abstract = True
@@ -262,16 +262,16 @@ class InstancesVisibleForMixin(models.Model):
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
             return is_plan_admin
         # FIXME: The user should probably be a contact person for the instance, not for *anything* in the plan.
-        # Also, generally, `are_instances_editable_by` may not be very meaningful because it should depend on the
+        # Also, generally, `are_instances_visible_for` may not be very meaningful because it should depend on the
         # instance.
         is_contact_person = user.is_contact_person_in_plan(instance_plan)
         if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
             return is_contact_person or is_plan_admin
-        if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
+        if self.instances_visible_for == self.VisibleFor.AUTHENTICATED:
             return user.is_authenticated
         if self.instances_visible_for == self.VisibleFor.PUBLIC:
             return True
-        assert False, "Unexpected value for instances_visible_for"
+        assert False, f"Unexpected value for instances_visible_for: {self.instances_visible_for}"
 
     class Meta:
         abstract = True
