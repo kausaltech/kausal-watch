@@ -188,3 +188,4 @@ class ActionsConfig(AppConfig):
         monkeypatch_svg_chooser()
         monkeypatch_snippet_action_menu()
         import actions.signals
+        actions.signals.register_signal_handlers()
