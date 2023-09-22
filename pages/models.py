@@ -275,6 +275,11 @@ def category_type_page_level_layout_streamfield_node_getter(field_name):
 
 
 class CategoryTypePageLevelLayout(ClusterableModel):
+    class IconSize(models.TextChoices):
+        SMALL = 'S', _('Small')
+        MEDIUM = 'M', _('Medium')
+        LARGE = 'L', _('Large')
+
     page: 'models.ForeignKey[CategoryTypePage]' = ParentalKey(
         CategoryTypePage, on_delete=models.CASCADE, related_name='level_layouts'
     )
@@ -285,11 +290,15 @@ class CategoryTypePageLevelLayout(ClusterableModel):
     layout_main_top = StreamField(block_types=CategoryPageMainTopBlock(), null=True, blank=True, use_json_field=True)
     layout_main_bottom = StreamField(block_types=CategoryPageMainBottomBlock(), null=True, blank=True, use_json_field=True)
     layout_aside = StreamField(block_types=CategoryPageAsideBlock(), null=True, blank=True, use_json_field=True)
+    icon_size = models.CharField(
+        max_length=4, choices=IconSize.choices, default=IconSize.MEDIUM, verbose_name=_('icon size')
+    )
 
     graphql_fields = [
         category_type_page_level_layout_streamfield_node_getter('layout_main_top'),
         category_type_page_level_layout_streamfield_node_getter('layout_main_bottom'),
         category_type_page_level_layout_streamfield_node_getter('layout_aside'),
+        GraphQLString('icon_size'),
     ]
 
     class Meta:
