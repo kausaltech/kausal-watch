@@ -47,3 +47,12 @@
 .page-explorer .w-breadcrumb li:only-child a, .page-explorer .w-breadcrumb li[hidden]~li:last-child a {
     font-weight: 600;
 }
+
+.chooser__preview {
+    padding: 2px;
+}
+
+.chooser__preview svg {
+    max-width: 100%;
+    max-height: 100%;
+}
