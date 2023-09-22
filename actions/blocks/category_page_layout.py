@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey
+from grapple.models import GraphQLForeignKey, GraphQLString
 from wagtail import blocks
 
 from actions.blocks.choosers import CategoryAttributeTypeChooserBlock
@@ -32,7 +32,13 @@ class CategoryPageCategoryListBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class CategoryPageContactFormBlock(blocks.StructBlock):
-    pass
+    heading = blocks.CharBlock(required=False)
+    description = blocks.CharBlock(required=False)
+
+    graphql_fields = [
+        GraphQLString('heading'),
+        GraphQLString('description'),
+    ]
 
 
 @register_streamfield_block
