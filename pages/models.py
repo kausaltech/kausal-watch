@@ -13,8 +13,9 @@ from grapple.models import (
     GraphQLInt, GraphQLString, GraphQLField
 )
 from modelcluster.fields import ParentalKey
+from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from wagtail.admin.panels import FieldPanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Site
@@ -25,7 +26,10 @@ from actions.blocks import (
     RelatedPlanListBlock, ActionAsideContentBlock, ActionMainContentBlock, get_default_action_content_blocks,
     get_default_action_filter_blocks
 )
-from actions.chooser import CategoryChooser, CategoryTypeChooser
+from actions.blocks.category_page_layout import (
+    CategoryPageMainBottomBlock, CategoryPageMainTopBlock, CategoryPageAsideBlock
+)
+from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
 from actions.models import Category, CategoryType, Plan
 from aplans.extensions import get_body_blocks
 from indicators.blocks import (
@@ -217,6 +221,15 @@ class StaticPage(AplansPage):
         verbose_name_plural = _('Content pages')
 
 
+class ReadOnlyFieldPanelWithRawValueId(FieldPanel):
+    """Variant of FieldPanel where `raw_value.id` is added as a hidden <input> element to be used by JS code."""
+    def __init__(self, *args, **kwargs):
+        kwargs['read_only'] = True
+        super().__init__(*args, **kwargs)
+
+    read_only_output_template_name = "aplans/panels/read_only_output_with_raw_value_id.html"
+
+
 class CategoryTypePage(StaticPage):
     category_type = models.ForeignKey(
         CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
@@ -224,7 +237,18 @@ class CategoryTypePage(StaticPage):
     )
 
     content_panels = StaticPage.content_panels + [
-        FieldPanel('category_type', widget=CategoryTypeChooser, read_only=True),
+        # We use a version of FieldPanel with a hacked read-only template to provide the ID of the selected category
+        # type as a hidden <input> element.
+        ReadOnlyFieldPanelWithRawValueId('category_type', widget=CategoryTypeChooser),
+        InlinePanel('level_layouts', heading=_('Level layouts'), panels=[
+            FieldPanel('level', widget=CategoryLevelChooser(linked_fields={
+                # ID of the hidden <input> element with the category type ID
+                'type': '#panel-child-content-child-category_type-raw-value-id',
+            })),
+            FieldPanel('layout_main_top'),
+            FieldPanel('layout_main_bottom'),
+            FieldPanel('layout_aside'),
+        ]),
     ]
 
     class Meta:
@@ -234,6 +258,49 @@ class CategoryTypePage(StaticPage):
     @property
     def remove_sort_menu_order_button(self):
         return self.category_type.synchronize_with_pages
+
+
+# FIXME: Duplicated code (see action_list_page_streamfield_node_getter)
+def category_type_page_level_layout_streamfield_node_getter(field_name):
+    def get_node() -> GraphQLField:
+        from grapple.registry import registry
+
+        field = CategoryTypePageLevelLayout._meta.get_field(field_name)
+        assert isinstance(field, StreamField)
+        node = registry.streamfield_blocks[type(field.stream_block)]
+        field_type = graphene.List(graphene.NonNull(node))
+        return GraphQLField(field_name, field_type, required=False)  # type: ignore
+
+    return get_node
+
+
+class CategoryTypePageLevelLayout(ClusterableModel):
+    page: 'models.ForeignKey[CategoryTypePage]' = ParentalKey(
+        CategoryTypePage, on_delete=models.CASCADE, related_name='level_layouts'
+    )
+    level = models.ForeignKey(
+        'actions.CategoryLevel', on_delete=models.CASCADE, related_name='level_layouts',
+        null=True, blank=True
+    )
+    layout_main_top = StreamField(block_types=CategoryPageMainTopBlock(), null=True, blank=True, use_json_field=True)
+    layout_main_bottom = StreamField(block_types=CategoryPageMainBottomBlock(), null=True, blank=True, use_json_field=True)
+    layout_aside = StreamField(block_types=CategoryPageAsideBlock(), null=True, blank=True, use_json_field=True)
+
+    graphql_fields = [
+        category_type_page_level_layout_streamfield_node_getter('layout_main_top'),
+        category_type_page_level_layout_streamfield_node_getter('layout_main_bottom'),
+        category_type_page_level_layout_streamfield_node_getter('layout_aside'),
+    ]
+
+    class Meta:
+        unique_together = (('page', 'level'),)
+
+    def clean(self) -> None:
+        super().clean()
+        # FIXME: There is no page since it's a clusterable model
+        # category_type = self.page.category_type
+        # if self.level is not None and self.level not in category_type.levels.all():
+        #     raise ValidationError({'level': "Invalid level"})
 
 
 class CategoryPage(AplansPage):
@@ -262,6 +329,7 @@ class CategoryPage(AplansPage):
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLForeignKey('category', Category),
         GraphQLStreamfield('body'),
+        GraphQLForeignKey('layout', CategoryTypePageLevelLayout),
     ]
 
     search_fields = AplansPage.search_fields + [
@@ -292,6 +360,28 @@ class CategoryPage(AplansPage):
             raise ValidationError({
                 'category': _('This category already has a page')
             })
+
+    def get_layout(self) -> Optional[CategoryTypePageLevelLayout]:
+        type_page = self.get_ancestors().type(CategoryTypePage).specific().last()
+        if not type_page:
+            return None
+        # First try to get layout for the specific level; if this fails, get layout where `level` is NULL
+        level = self.category.get_level()
+        if level:
+            try:
+                return type_page.level_layouts.get(level=level)
+            except CategoryTypePageLevelLayout.DoesNotExist:
+                pass
+        try:
+            return type_page.level_layouts.get(level__isnull=True)
+        except CategoryTypePageLevelLayout.DoesNotExist:
+            return None
+
+    # FIXME
+    @property
+    def layout(self):
+        return self.get_layout()
+
 
 
 class FixedSlugPage(AplansPage):
@@ -330,7 +420,7 @@ class FixedSlugPage(AplansPage):
     ]
 
 
-def streamfield_node_getter(field_name):
+def action_list_page_streamfield_node_getter(field_name):
     def get_node() -> GraphQLField:
         from grapple.registry import registry
 
@@ -416,12 +506,12 @@ class ActionListPage(FixedSlugPage):
         GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
         GraphQLInt(field_name='heading_hierarchy_depth', required=True),
         GraphQLBoolean('include_related_plans'),
-        streamfield_node_getter('primary_filters'),
-        streamfield_node_getter('main_filters'),
-        streamfield_node_getter('advanced_filters'),
-        streamfield_node_getter('details_main_top'),
-        streamfield_node_getter('details_main_bottom'),
-        streamfield_node_getter('details_aside'),
+        action_list_page_streamfield_node_getter('primary_filters'),
+        action_list_page_streamfield_node_getter('main_filters'),
+        action_list_page_streamfield_node_getter('advanced_filters'),
+        action_list_page_streamfield_node_getter('details_main_top'),
+        action_list_page_streamfield_node_getter('details_main_bottom'),
+        action_list_page_streamfield_node_getter('details_aside'),
     ]
 
     def set_default_content_blocks(self):

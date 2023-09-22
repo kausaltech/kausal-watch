@@ -1,12 +1,12 @@
 from typing import Literal
 
 from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
-from generic_chooser.widgets import AdminChooser
+from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
 from django.utils.translation import gettext_lazy as _
 from wagtail.search.backends import get_search_backend
 from wagtail import hooks
 
-from .models import Action, AttributeType, Category, CategoryType, Plan
+from .models import Action, AttributeType, Category, CategoryLevel, CategoryType, Plan
 from aplans.types import WatchAdminRequest
 
 
@@ -84,6 +84,41 @@ class CategoryTypeChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_category_type_chooser_viewset():
     return CategoryTypeChooserViewSet('category_type_chooser', url_prefix='category-type-chooser')
+
+
+class CategoryLevelChooserMixin(ModelChooserMixin):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        objects = CategoryLevel.objects.filter(type__plan=plan)
+        type = self.request.GET.get('type')
+        if type:
+            objects = objects.filter(type=type)
+        return objects
+
+    def user_can_create(self, user):
+        return False
+
+
+class CategoryLevelChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = CategoryLevelChooserMixin
+
+    icon = 'fa-cubes'
+    model = CategoryLevel
+    page_title = _("Choose a category level")
+    fields = ['order', 'name']
+
+
+class CategoryLevelChooser(LinkedFieldMixin, AdminChooser):
+    chooser_mixin_class = CategoryLevelChooserMixin
+    model = CategoryLevel
+    choose_modal_url_name = 'category_level_chooser:choose'
+
+
+@hooks.register('register_admin_viewset')
+def register_category_level_chooser_viewset():
+    return CategoryLevelChooserViewSet('category_level_chooser', url_prefix='category-level-chooser')
 
 
 class ActionChooserMixin(WatchModelChooserBase):

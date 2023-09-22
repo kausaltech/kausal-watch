@@ -227,6 +227,7 @@ class CategoryLevel(OrderedModel):
     )
     name = models.CharField(max_length=100, verbose_name=_('name'))
     name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
+
     i18n = TranslationField(fields=('name',), default_language_field='type__plan__primary_language')
 
     public_fields = [
@@ -528,6 +529,14 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 return previous_sibling
             previous_sibling = sibling
         assert False  # should have returned above at some point
+
+    def get_level(self) -> typing.Optional[CategoryLevel]:
+        level = 0
+        c = self
+        while c.parent:
+            level += 1
+            c = self.parent
+        return self.type.levels.filter(order=level).first()
 
 
 class Icon(models.Model):

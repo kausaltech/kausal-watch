@@ -1,0 +1,3 @@
+{% include "wagtailadmin/panels/read_only_output.html" %}
+{# Add this hidden field just for linked_fields of generic_chooser or whatever else might need it in JS code; there is no "name" attribute as we neither want nor need the field in POST data #}
+<input type="hidden" value="{{ raw_value.id }}" id="{{ id_for_label }}-raw-value-id">
