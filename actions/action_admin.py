@@ -309,7 +309,13 @@ class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, Apla
         category = action.categories.filter(type=primary_action_classification)
         if not category:
             return ''
-        return str(category.first())
+        category = category.first()
+        crumb = [category]
+        parent = category.parent
+        while parent is not None:
+            crumb.append(parent)
+            parent = parent.parent
+        return " / ".join([str(c) for c in reversed(crumb)])
 
     def get_edit_handler(self):
         # We need to inject this view's instance to be accessible to the edit handler
