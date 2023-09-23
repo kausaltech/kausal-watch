@@ -394,6 +394,8 @@ class ModelWithAttributes(models.Model):
         return getattr(self, 'serialized_attribute_data', None)
 
     def set_serialized_attribute_data(self, attributes):
+        if attributes is None:
+            attributes = {}
         self.serialized_attribute_data = attributes
 
     def set_serialized_attribute_data_for_attribute(self, key: str, pk: Any, data: Any):
