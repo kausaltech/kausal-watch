@@ -142,6 +142,24 @@ class Action(
 ):
     """One action/measure tracked in an action plan."""
 
+    def revision_enabled(self):
+        return self.plan.features.enable_moderation_workflow
+
+    def save_revision(self, *args, **kwargs):
+        # This method has been overridden temporarily.
+        #
+        # The reason is that for plans without the moderation workflow enabled, RevisionMixin.save_revision is still called for all
+        # subclasses of RevisionMixin.
+        #
+        # This results in newly created actions to have has_unpublished_changes == True and a revision to be created for them. This in turn
+        # results in the action edit form not showing the actual saved action data but the data of a "draft" revision (which itself cannot
+        # be edited in a plan with workflows disabled currently).
+        #
+        # In the future we will probably want to have drafting enabled by default for all plans and we can remove this.
+        if not self.revision_enabled():
+            return None
+        return super().save_revision(*args, **kwargs)
+
     def commit_attributes(self, attributes, user):
         """Called when the serialized draft contents of attribute values must be persisted to the actual Attribute models
         when publishing an action from a draft"""
