@@ -30,6 +30,7 @@ from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_a
 import willow
 from aplans.types import WatchRequest
 
+from actions.models import ActionContactPerson
 from orgs.models import Organization
 
 from admin_site.models import Client
@@ -84,7 +85,7 @@ class PersonQuerySet(models.QuerySet):
         for org in related:
             q |= Q(organization__path__startswith=org.path)
         if include_contact_persons:
-            q |= Q(contact_for_actions__plan=plan)
+            q |= Q(id__in=ActionContactPerson.objects.filter(action__plan=plan).values_list('person'))
         return self.filter(q)
 
     def is_action_contact_person(self, plan):
