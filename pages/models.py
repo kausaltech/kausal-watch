@@ -392,7 +392,6 @@ class CategoryPage(AplansPage):
         return self.get_layout()
 
 
-
 class FixedSlugPage(AplansPage):
     """
     Page with fixed slug
@@ -559,6 +558,20 @@ class IndicatorListPage(FixedSlugPage):
     force_slug = 'indicators'
     is_creatable = False  # Only let this be created programmatically
     parent_page_type = [PlanRootPage]
+
+    display_insights = models.BooleanField(
+        default=True,
+        help_text=_('Should insight network be shown for indicators'),
+        verbose_name=_('Display insights')
+    )
+
+    content_panels = FixedSlugPage.content_panels + [
+        FieldPanel('display_insights')
+    ]
+
+    graphql_fields = FixedSlugPage.graphql_fields + [
+        GraphQLBoolean('display_insights')
+    ]
 
     class Meta:
         verbose_name = _('Indicator list page')
