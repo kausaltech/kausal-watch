@@ -12,7 +12,7 @@ from users.perms import create_permissions
 
 
 class LoginMethodThrottle(UserRateThrottle):
-    rate = '5/m'
+    rate = '60/m'
 
 
 @api_view(['POST'])
