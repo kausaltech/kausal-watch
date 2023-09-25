@@ -1,5 +1,7 @@
+from datetime import timedelta
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 from users.models import User
 
@@ -16,8 +18,8 @@ class LoggedRequest(models.Model):
 
     def save(self, *args, **kwargs):
         result = super().save(*args, **kwargs)
-        if LoggedRequest.objects.count() > settings.REQUEST_LOG_LIMIT:
-            LoggedRequest.objects.first().delete()
+        date_cutoff = timezone.now() - timedelta(days=settings.REQUEST_LOG_MAX_DAYS)
+        LoggedRequest.objects.filter(created_at__lt=date_cutoff).delete()
         return result
 
     def __str__(self):
