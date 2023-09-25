@@ -100,6 +100,12 @@ class PersonForm(AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
         self.user = kwargs.pop('user')
+        instance = kwargs['instance']  # should be a model instance (perhaps with pk None) due to ModelFormView
+        initial = kwargs.setdefault('initial', {})
+        if instance.pk is None:
+            initial.setdefault('organization', self.plan.organization)
+        else:
+            initial['is_admin_for_active_plan'] = self.plan in instance.general_admin_plans.all()
         super().__init__(*args, **kwargs)
         if self.instance.pk is None:
             self.instance.created_by = self.user
@@ -118,15 +124,18 @@ class PersonFormForGeneralAdmin(PersonForm):
     )
 
     def __init__(self, *args, **kwargs):
+        plan = kwargs['plan']
+        instance = kwargs['instance']  # should be a model instance (perhaps with pk None) due to ModelFormView
+        initial = kwargs.setdefault('initial', {})
+        if instance.pk is not None:
+            initial['organization_plan_admin_orgs'] = (
+                instance.organization_plan_admins.filter(plan=plan).values_list('organization', flat=True)
+            )
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
         self.fields['organization_plan_admin_orgs'].queryset = (
             Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
         )
-        if self.instance.pk is not None:
-            self.fields['organization_plan_admin_orgs'].initial = (
-                self.instance.organization_plan_admins.filter(plan=self.plan).values_list('organization', flat=True)
-            )
 
     def save(self, commit=True):
         instance = super().save(commit)
@@ -143,17 +152,6 @@ class PersonFormForGeneralAdmin(PersonForm):
                 for org in organization_plan_admin_orgs:
                     OrganizationPlanAdmin.objects.create(organization=org, plan=self.plan, person=instance)
         return instance
-
-
-class PersonEditHandler(TabbedInterface):
-    def on_form_bound(self):
-        if self.request:
-            plan = self.request.user.get_active_admin_plan()
-            if self.form.initial.get('organization') is None:
-                self.form.initial['organization'] = plan.organization
-            if self.instance.pk is not None:
-                self.form.initial['is_admin_for_active_plan'] = plan in self.instance.general_admin_plans.all()
-        super().on_form_bound()
 
 
 class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView):
@@ -466,7 +464,7 @@ class PersonAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request)
         tabs += i18n_tabs
 
-        return PersonEditHandler(tabs, base_form_class=form_class)
+        return TabbedInterface(tabs, base_form_class=form_class)
 
 
 modeladmin_register(PersonAdmin)
