@@ -77,12 +77,14 @@ def image_upload_path(instance, filename):
 
 
 class PersonQuerySet(models.QuerySet):
-    def available_for_plan(self, plan):
+    def available_for_plan(self, plan, include_contact_persons=False):
         """Return persons from an organization related to the plan."""
         related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
         q = Q()
         for org in related:
             q |= Q(organization__path__startswith=org.path)
+        if include_contact_persons:
+            q |= Q(contact_for_actions__plan=plan)
         return self.filter(q)
 
     def is_action_contact_person(self, plan):

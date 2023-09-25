@@ -1615,7 +1615,7 @@ class PersonViewSet(ModelWithImageViewMixin, BulkModelViewSet):
             return queryset
         if not self.user_is_authorized_for_plan(plan):
             raise exceptions.PermissionDenied(detail="Not authorized")
-        return queryset.available_for_plan(plan)
+        return queryset.available_for_plan(plan, include_contact_persons=True)
 
 
 class ActionTaskSerializer(serializers.HyperlinkedModelSerializer):
