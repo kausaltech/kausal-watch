@@ -3,7 +3,7 @@ from __future__ import annotations
 import functools
 import typing
 import uuid
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Sequence
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.db import models
@@ -120,6 +120,12 @@ class OrganizationQuerySet(MP_NodeQuerySet):
             all_related |= plan.organization.get_descendants()
         return self.filter(id__in=all_related)
 
+    def available_for_plans(self, plans: Sequence[Plan] | models.QuerySet[Plan]):
+        qs = self
+        for pl in plans:
+            qs |= self.available_for_plan(pl)
+        return qs
+
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         person = user.get_corresponding_person()
         adm_objs = OrganizationPlanAdmin.objects.filter(person=person)
@@ -166,6 +172,9 @@ class OrganizationManager(gis_models.Manager):
 
     def available_for_plan(self, plan: Plan):
         return self.get_queryset().available_for_plan(plan)
+
+    def available_for_plans(self, plans: Sequence[Plan]):
+        return self.get_queryset().available_for_plans(plans)
 
 
 class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
@@ -240,7 +249,7 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
 
     i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
 
-    objects = OrganizationManager()
+    objects: OrganizationManager = OrganizationManager()
 
     public_fields = ['id', 'uuid', 'name', 'abbreviation', 'internal_abbreviation', 'parent']
 

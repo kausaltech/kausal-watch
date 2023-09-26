@@ -9,6 +9,8 @@ from graphql.type import (
 )
 from grapple.registry import registry as grapple_registry
 
+from actions.models.action import Action
+
 from . import graphql_gis  # noqa
 
 from actions import schema as actions_schema
@@ -27,7 +29,7 @@ from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, get_plan_from_context, graphene_registry
+from .graphql_types import DjangoNode, GQLInfo, get_plan_from_context, graphene_registry
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -72,24 +74,31 @@ class Query(
         with_ancestors=graphene.Boolean(default_value=False),
         for_responsible_parties=graphene.Boolean(default_value=True),
         for_contact_persons=graphene.Boolean(default_value=False),
+        include_related_plans=graphene.Boolean(default_value=False),
     )
     person = graphene.Field(people_schema.PersonNode, id=graphene.ID(required=True))
 
     def resolve_plan_organizations(
-        self, info, plan, with_ancestors, for_responsible_parties, for_contact_persons,
-        **kwargs
+        self, info: GQLInfo, plan: str | None, with_ancestors: bool, for_responsible_parties: bool, for_contact_persons: bool,
+        include_related_plans: bool, **kwargs
     ):
         plan_obj: Plan | None = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
-        qs = Organization.objects.available_for_plan(plan_obj)
+        if include_related_plans:
+            plans = list(plan_obj.get_all_related_plans(inclusive=True))
+        else:
+            plans = [plan_obj]
+
+        visible_actions = Action.objects.visible_for_user(info.context.user).filter(plan__in=plans)
+        qs = Organization.objects.available_for_plans(plans)
         if plan is not None:
             query = Q()
             if for_responsible_parties:
-                query |= Q(responsible_actions__action__plan=plan_obj)
+                query |= Q(responsible_actions__action__in=visible_actions)
             if for_contact_persons:
-                query |= Q(people__contact_for_actions__plan=plan_obj)
+                query |= Q(people__contact_for_actions__in=visible_actions)
             if not query and not info.context.user.is_authenticated:
                 raise GraphQLError("Unfiltered organization list only available when authenticated")
             qs = qs.filter(query)
@@ -102,18 +111,13 @@ class Query(
 
         selections = get_fields(info)
         if 'actionCount' in selections:
-            if plan_obj is not None:
-                annotate_filter = Q(responsible_actions__action__plan=plan_obj)
-            else:
-                annotate_filter = None
+            annotate_filter = Q(responsible_actions__action__in=visible_actions)
             qs = qs.annotate(action_count=Count(
                 'responsible_actions__action', distinct=True, filter=annotate_filter
             ))
         if 'contactPersonCount' in selections and plan_obj.features.public_contact_persons:
-            if plan_obj is not None:
-                annotate_filter = Q(people__contact_for_actions__plan=plan_obj)
-            else:
-                annotate_filter = None
+            # FIXME: Check visibility of related plans, too
+            annotate_filter = Q(people__contact_for_actions__in=visible_actions)
             qs = qs.annotate(contact_person_count=Count(
                 'people', distinct=True, filter=annotate_filter
             ))
