@@ -13,12 +13,11 @@ collections.Mapping = collections.abc.Mapping
 _wagtailsvg_get_unfiltered_object_list = None
 _wagtailsvg_get_queryset = None
 _wagtailsvg_list_filter = None
-_wagtailsvg_get_edit_handler = None
 _wagtail_get_base_snippet_action_menu_items = None
 
 
-def _get_collections(request):
-    plan = request.user.get_active_admin_plan()
+def _get_collections(user):
+    plan = user.get_active_admin_plan()
     if plan.root_collection is None:
         return []
     return plan.root_collection.get_descendants(inclusive=True)
@@ -29,7 +28,7 @@ class CollectionFilter(SimpleListFilter):
     parameter_name = 'collection'
 
     def lookups(self, request, model_admin):
-        collections = _get_collections(request)
+        collections = _get_collections(request.user)
         return [(collection.id, str(collection)) for collection in collections]
 
     def queryset(self, request, queryset):
@@ -38,45 +37,31 @@ class CollectionFilter(SimpleListFilter):
 
 
 def get_unfiltered_object_list(self):
-    collections = _get_collections(self.request)
+    collections = _get_collections(self.request.user)
     return self.model.objects.filter(collection__in=collections)
 
 
 def get_queryset(self, request):
     from wagtailsvg.wagtail_hooks import SvgModelAdmin
     qs = super(SvgModelAdmin, self).get_queryset(request)
-    collections = _get_collections(request)
+    collections = _get_collections(request.user)
     return qs.filter(collection__in=collections)
 
 
-def get_edit_handler(self, *args, **kwargs):
-    # If we import this on the top level, there will be an error that apps aren't loaded yet
-    from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-
-    class CollectionFieldPanel(FieldPanel):
-        def on_form_bound(self):
-            super().on_form_bound()
-            field = self.bound_field.field
-            collections = _get_collections(self.request)
-            field.queryset = field.queryset.filter(pk__in=collections)
-
-    return TabbedInterface([
-            ObjectList([
-                CollectionFieldPanel('collection'),
-                FieldPanel('title'),
-                FieldPanel('file'),
-                FieldPanel('tags'),
-            ], heading="General"),
-        ])
-
-
 def monkeypatch_svg_chooser():
+    from wagtail.admin.forms.models import WagtailAdminModelForm
     from wagtailsvg.views import SvgModelChooserMixin
+    from wagtailsvg.models import Svg
     from wagtailsvg.wagtail_hooks import SvgModelAdmin
     global _wagtailsvg_get_unfiltered_object_list
     global _wagtailsvg_get_queryset
     global _wagtailsvg_list_filter
-    global _wagtailsvg_get_edit_handler
+
+    class SvgForm(WagtailAdminModelForm):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            collections = _get_collections(kwargs['for_user'])
+            self.fields['collection'].queryset = self.fields['collection'].queryset.filter(pk__in=collections)
 
     if _wagtailsvg_get_unfiltered_object_list is None:
         _wagtailsvg_get_unfiltered_object_list = SvgModelChooserMixin.get_unfiltered_object_list
@@ -90,9 +75,7 @@ def monkeypatch_svg_chooser():
         _wagtailsvg_list_filter = SvgModelAdmin.list_filter
         SvgModelAdmin.list_filter = (CollectionFilter,)
 
-    if _wagtailsvg_get_edit_handler is None:
-        _wagtailsvg_get_edit_handler = SvgModelAdmin.get_edit_handler
-        SvgModelAdmin.get_edit_handler = get_edit_handler
+    Svg.base_form_class = SvgForm
 
 
 @lru_cache(maxsize=None)
