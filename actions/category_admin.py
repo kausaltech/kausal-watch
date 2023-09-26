@@ -160,6 +160,11 @@ class CategoryTypeAdmin(AplansModelAdmin):
 
 
 class CategoryAdminForm(WagtailAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # For the parent field, only show categories of the same type
+        self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type=self.instance.type)
+
     def clean_identifier(self):
         # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
         # `type`, in which case the unique_together constraints of Category will not be checked. We do it manually here.
@@ -309,15 +314,6 @@ class CategoryAdminButtonHelper(ButtonHelper):
         return data
 
 
-class CategoryOfSameTypePanel(PlanFilteredFieldPanel):
-    """Only show categories of the same category type as the current category instance."""
-
-    def on_form_bound(self):
-        super().on_form_bound()
-        field = self.bound_field.field
-        field.queryset = field.queryset.filter(type=self.instance.type)
-
-
 class CategoryAdminMenuItem(ModelAdminMenuItem):
     def is_shown(self, request):
         # Hide it because we will have menu items for listing categories of specific types.
@@ -344,7 +340,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     model = Category
 
     panels = [
-        CategoryOfSameTypePanel('parent'),
+        PlanFilteredFieldPanel('parent'),
         FieldPanel('name'),
         FieldPanel('identifier'),
         FieldPanel('lead_paragraph'),
