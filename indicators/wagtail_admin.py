@@ -21,7 +21,7 @@ from admin_site.wagtail import (
 )
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
-from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
+from aplans.wagtail_utils import _get_category_fields
 from orgs.models import Organization
 from people.chooser import PersonChooser
 from users.models import User
@@ -447,7 +447,7 @@ class IndicatorAdmin(AplansModelAdmin):
         cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
         cat_panels = []
         for key, field in cat_fields.items():
-            cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+            cat_panels.append(FieldPanel(key, heading=field.label))
         if cat_panels:
             basic_panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
 

@@ -33,7 +33,7 @@ from aplans.extensions import modeladmin_register
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
-from aplans.wagtail_utils import _get_category_fields, CategoryFieldPanel
+from aplans.wagtail_utils import _get_category_fields
 from orgs.models import Organization
 from people.chooser import PersonChooser
 
@@ -45,38 +45,6 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 logger = logging.getLogger(__name__)
-
-
-"""
-class CategoryFieldPanel(MultiFieldPanel):
-    def __init__(self, field_name, *args, **kwargs):
-        if 'children' not in kwargs:
-            kwargs['children'] = []
-        self._field_name = field_name
-        if 'heading' not in kwargs:
-            kwargs['heading'] = _('Categories')
-        super().__init__(*args, **kwargs)
-
-    def clone_kwargs(self):
-        kwargs = super().clone_kwargs()
-        kwargs['field_name'] = self._field_name
-        return kwargs
-
-    def bind_to(self, model=None, instance=None, request=None, form=None):
-        bound_request = request if request is not None else getattr(self, 'request')
-        bound_model = model if model is not None else getattr(self, 'model')
-        if bound_request is not None and bound_model is not None:
-            plan = bound_request.user.get_active_admin_plan()
-            cat_fields = _get_category_fields(plan, bound_model, instance, with_initial=True)
-            self.children = [FieldPanel(name, heading=field.label) for name, field in cat_fields.items()]
-        return super().bind_to(model, instance, request, form)
-
-    def required_fields(self):
-        fields = []
-        for handler in self.children:
-            fields.extend(handler.required_fields())
-        return fields
-"""
 
 
 class ActionPermissionHelper(PlanRelatedPermissionHelper):
@@ -541,7 +509,7 @@ class ActionAdmin(AplansModelAdmin):
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
             cat_panels = []
             for key, field in cat_fields.items():
-                cat_panels.append(CategoryFieldPanel(key, heading=field.label))
+                cat_panels.append(FieldPanel(key, heading=field.label))
             if cat_panels:
                 panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
 

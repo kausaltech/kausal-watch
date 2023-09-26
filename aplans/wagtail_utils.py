@@ -2,26 +2,9 @@ from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.db.models import Model
 from typing import Type
-from wagtail.admin.panels import FieldPanel
 
 from actions.models import Action, CategoryType, Plan
 from indicators.models import Indicator
-
-
-class CategoryFieldPanel(FieldPanel):
-    instance: Action | Indicator
-
-    def on_form_bound(self):
-        super().on_form_bound()
-        request = getattr(self, 'request')
-        plan = request.user.get_active_admin_plan()
-        cat_fields = _get_category_fields(
-            plan,
-            self.instance.__class__,
-            self.instance,
-            with_initial=True
-        )
-        self.form.fields[self.field_name].initial = cat_fields[self.field_name].initial
 
 
 class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
