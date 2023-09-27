@@ -111,20 +111,24 @@ class OrganizationQuerySet(MP_NodeQuerySet):
             q |= Q(pk__in=available_orgs)
         return self.filter(q)
 
-    def available_for_plan(self, plan: Plan):
+    @classmethod
+    def _available_for_plan(cls, plan: Plan):
         all_related = plan.related_organizations.all()
         for org in plan.related_organizations.all():
             all_related |= org.get_descendants()
         if plan.organization:
             all_related |= Organization.objects.filter(id=plan.organization.id)
             all_related |= plan.organization.get_descendants()
-        return self.filter(id__in=all_related)
+        return all_related
+
+    def available_for_plan(self, plan: Plan):
+        return self.filter(id__in=self._available_for_plan(plan))
 
     def available_for_plans(self, plans: Sequence[Plan] | models.QuerySet[Plan]):
-        qs = self
+        query = Q()
         for pl in plans:
-            qs |= self.available_for_plan(pl)
-        return qs
+            query |= Q(id__in=self._available_for_plan(pl))
+        return self.filter(query)
 
     def user_is_plan_admin_for(self, user: User, plan: Optional[Plan] = None):
         person = user.get_corresponding_person()
