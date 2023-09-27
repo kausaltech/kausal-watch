@@ -43,11 +43,10 @@ class QuestionBlock(blocks.StructBlock):
         GraphQLString('answer'),
     ]
 
-
-HEIGHTS = {
-    'l': 800,
-    'm': 600,
-    's': 400
+RESPONSIVE_STYLES = {
+    's': 'responsive-object-small',
+    'm': 'responsive-object-medium',
+    'l': 'responsive-object-large'
 }
 
 
@@ -57,9 +56,11 @@ class EmbedHTMLValue(graphene.ObjectType):
     def resolve_html(parent, info):
         height_key = parent['height']
         url = parent['url']
-        size = HEIGHTS.get(height_key, list(HEIGHTS.values())[0])
-        embed = get_embed(url, max_height=size, max_width=size)
-        return embed.html
+        css_class = RESPONSIVE_STYLES.get(height_key, list(RESPONSIVE_STYLES.values())[0])
+        embed = get_embed(url)
+        return "<div class='responsive-object {css_class}'>{html}</div>".format(
+            html=embed.html, css_class=css_class
+        )
 
 
 @register_streamfield_block
