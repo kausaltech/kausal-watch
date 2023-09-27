@@ -10,6 +10,7 @@ from functools import lru_cache
 collections.Iterable = collections.abc.Iterable
 collections.Mapping = collections.abc.Mapping
 
+_wagtail_image_chooser_viewset_permission_policy = None
 _wagtailsvg_get_unfiltered_object_list = None
 _wagtailsvg_get_queryset = None
 _wagtailsvg_list_filter = None
@@ -76,6 +77,16 @@ def monkeypatch_svg_chooser():
         SvgModelAdmin.list_filter = (CollectionFilter,)
 
     Svg.base_form_class = SvgForm
+
+
+def monkeypatch_image_chooser_viewset():
+    from wagtail.images.views.chooser import ImageChooserViewSet
+    from images.permissions import permission_policy
+    global _wagtail_image_chooser_viewset_permission_policy
+
+    if _wagtail_image_chooser_viewset_permission_policy is None:
+        _wagtail_image_chooser_viewset_permission_policy  = ImageChooserViewSet.permission_policy
+        ImageChooserViewSet.permission_policy = permission_policy
 
 
 @lru_cache(maxsize=None)
@@ -169,6 +180,7 @@ class ActionsConfig(AppConfig):
     def ready(self):
         # monkeypatch filtering of Collections
         monkeypatch_svg_chooser()
+        monkeypatch_image_chooser_viewset()
         monkeypatch_snippet_action_menu()
         import actions.signals
         actions.signals.register_signal_handlers()

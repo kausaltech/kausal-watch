@@ -34,22 +34,6 @@ from admin_site.wagtail import AplansCreateView
 from admin_site.chooser import ClientChooser
 
 
-class PlanEditHandler(TabbedInterface):
-    instance: Plan
-    form: ModelForm
-
-    def on_form_bound(self):
-        super().on_form_bound()
-        plan = self.instance
-        f = self.form.fields['image']
-        if plan.root_collection is None:
-            f.queryset = f.queryset.none()
-        else:
-            f.queryset = f.queryset.model.objects.filter(
-                collection__in=plan.root_collection.get_descendants(inclusive=True)
-            )
-
-
 class PlanForm(AplansAdminModelForm):
     def clean_primary_language(self):
         primary_language = self.cleaned_data['primary_language']
@@ -249,7 +233,7 @@ class PlanAdmin(AplansModelAdmin):
                 ], heading=_('Action classifications')),
             )
 
-        handler = PlanEditHandler(tabs, base_form_class=PlanForm)
+        handler = TabbedInterface(tabs, base_form_class=PlanForm)
         return handler
 
     def get_queryset(self, request):
