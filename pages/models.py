@@ -248,6 +248,7 @@ class CategoryTypePage(StaticPage):
             FieldPanel('layout_main_top'),
             FieldPanel('layout_main_bottom'),
             FieldPanel('layout_aside'),
+            FieldPanel('icon_size'),
         ]),
     ]
 
