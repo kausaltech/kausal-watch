@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-28 23:44+0300\n"
-"PO-Revision-Date: 2023-09-11 21:36+0000\n"
+"PO-Revision-Date: 2023-09-28 21:01+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -312,7 +313,7 @@ msgstr "%(attribute_type)s (Text)"
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
-msgstr ""
+msgstr "Überschrift, die anstelle der Standardüberschrift angezeigt wird"
 
 #: actions/blocks/action_content.py
 msgid "contact form"
@@ -340,10 +341,8 @@ msgid "Merged actions"
 msgstr "Zusammengeführte Maßnahmen"
 
 #: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "related actions"
 msgid "Related actions"
-msgstr "verbundene Maßnahmen"
+msgstr "Verbundene Maßnahmen"
 
 #: actions/blocks/action_content.py
 msgid "Attribute"
@@ -409,14 +408,10 @@ msgid "Value attribute"
 msgstr "Wertattribut"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "implementation phase"
 msgid "Implementation phase"
 msgstr "Umsetzungsphase"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "status"
 msgid "Status"
 msgstr "Status"
 
@@ -521,10 +516,8 @@ msgid "Choose another category type"
 msgstr "Wähle einen anderen Kategorietype"
 
 #: actions/chooser.py
-#, fuzzy
-#| msgid "Choose a category"
 msgid "Choose a category level"
-msgstr "Wähle eine Kategorie"
+msgstr "Wähle eine Kategoriestufe"
 
 #: actions/chooser.py
 msgid "Choose an action"
@@ -2030,14 +2023,12 @@ msgid "Case studies"
 msgstr "Fallstudien"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Tasks"
 msgid "Task"
-msgstr "Aufgaben"
+msgstr "Aufgabe"
 
 #: content/models.py
 msgid "Milestone"
-msgstr ""
+msgstr "Meilenstein"
 
 #: content/models.py
 msgid "Tasks"
@@ -2045,7 +2036,7 @@ msgstr "Aufgaben"
 
 #: content/models.py
 msgid "Milestones"
-msgstr ""
+msgstr "Meilensteine"
 
 #: content/models.py
 msgid "site title"
@@ -2096,10 +2087,8 @@ msgid "Term to use for 'action'"
 msgstr "Für 'Maßnahme' zu verwendender Begriff"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Term to use for 'action'"
 msgid "Term to use for 'task'"
-msgstr "Für 'Maßnahme' zu verwendender Begriff"
+msgstr "Für 'Aufgabe' zu verwendender Begriff"
 
 #: content/models.py
 msgid "site general content"
@@ -3431,7 +3420,7 @@ msgstr "Inhaltseiten"
 
 #: pages/models.py
 msgid "Level layouts"
-msgstr ""
+msgstr "Stufen-Layouts"
 
 #: pages/models.py
 msgid "Category type page"
@@ -3442,26 +3431,20 @@ msgid "Category type pages"
 msgstr "Kategorietypenseiten"
 
 #: pages/models.py
-#, fuzzy
-#| msgid "small"
 msgid "Small"
-msgstr "klein"
+msgstr "Klein"
 
 #: pages/models.py
-#, fuzzy
-#| msgid "medium"
 msgid "Medium"
-msgstr "mittel"
+msgstr "Mittel"
 
 #: pages/models.py
-#, fuzzy
-#| msgid "large"
 msgid "Large"
-msgstr "groß"
+msgstr "Groß"
 
 #: pages/models.py
 msgid "icon size"
-msgstr ""
+msgstr "Symbolgröße"
 
 #: pages/models.py
 msgid "Action list"
@@ -3553,11 +3536,11 @@ msgstr "Maßnahmenlistenseiten"
 
 #: pages/models.py
 msgid "Should insight network be shown for indicators"
-msgstr ""
+msgstr "Soll ein Überblicksnetz für Indikatoren angezeigt werden?"
 
 #: pages/models.py
 msgid "Display insights"
-msgstr ""
+msgstr "Überblick anzeigen"
 
 #: pages/models.py
 msgid "Indicator list page"
