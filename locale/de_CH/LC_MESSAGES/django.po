@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-12 00:24+0300\n"
+"POT-Creation-Date: 2023-09-28 23:44+0300\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -80,12 +80,8 @@ msgstr ""
 msgid "Contact persons"
 msgstr ""
 
-#: actions/action_admin.py actions/api.py
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 msgid "Responsible parties"
-msgstr ""
-
-#: actions/action_admin.py
-msgid "Tasks"
 msgstr ""
 
 #: actions/action_admin.py
@@ -321,6 +317,10 @@ msgid "%(attribute_type)s (text)"
 msgstr ""
 
 #: actions/blocks/action_content.py
+msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "contact form"
 msgstr ""
 
@@ -337,9 +337,19 @@ msgstr ""
 msgid "Content block: %(label)s"
 msgstr ""
 
+#: actions/blocks/action_content.py actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr ""
+
 #: actions/blocks/action_content.py
 msgid "Merged actions"
 msgstr "Zusammengeführte Massnahmen"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Related actions"
+msgstr "verbundene Massnahmen"
 
 #: actions/blocks/action_content.py
 msgid "Attribute"
@@ -402,6 +412,16 @@ msgstr ""
 
 #: actions/blocks/category_list.py
 msgid "Value attribute"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "action implementation phase"
+msgid "Implementation phase"
+msgstr "Massnahmenumsetzungsphase"
+
+#: actions/blocks/category_page_layout.py
+msgid "Status"
 msgstr ""
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
@@ -505,6 +525,12 @@ msgid "Choose another category type"
 msgstr ""
 
 #: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another action"
+msgid "Choose a category level"
+msgstr "Wähle eine andere Massnahme"
+
+#: actions/chooser.py
 msgid "Choose an action"
 msgstr "Wähle eine Massnahme"
 
@@ -593,10 +619,6 @@ msgstr "Die Kennung für diese Massnahme (z. B. Nummer)"
 
 #: actions/models/action.py
 msgid "Image"
-msgstr ""
-
-#: actions/models/action.py pages/models.py
-msgid "Lead paragraph"
 msgstr ""
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
@@ -2028,6 +2050,22 @@ msgid "Case studies"
 msgstr ""
 
 #: content/models.py
+msgid "Task"
+msgstr ""
+
+#: content/models.py
+msgid "Milestone"
+msgstr ""
+
+#: content/models.py
+msgid "Tasks"
+msgstr ""
+
+#: content/models.py
+msgid "Milestones"
+msgstr ""
+
+#: content/models.py
 msgid "site title"
 msgstr ""
 
@@ -2073,6 +2111,12 @@ msgstr ""
 
 #: content/models.py
 msgid "Term to use for 'action'"
+msgstr "Für 'Massnahme' zu verwendender Begriff"
+
+#: content/models.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Term to use for 'task'"
 msgstr "Für 'Massnahme' zu verwendender Begriff"
 
 #: content/models.py
@@ -3414,11 +3458,33 @@ msgid "Content pages"
 msgstr ""
 
 #: pages/models.py
+msgid "Level layouts"
+msgstr ""
+
+#: pages/models.py
 msgid "Category type page"
 msgstr ""
 
 #: pages/models.py
 msgid "Category type pages"
+msgstr ""
+
+#: pages/models.py
+msgid "Small"
+msgstr ""
+
+#: pages/models.py
+msgid "Medium"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "large"
+msgid "Large"
+msgstr "gross"
+
+#: pages/models.py
+msgid "icon size"
 msgstr ""
 
 #: pages/models.py
@@ -3508,6 +3574,14 @@ msgstr "Massnahmenlistenseite"
 #: pages/models.py
 msgid "Action list pages"
 msgstr "Massnahmenlistenseiten"
+
+#: pages/models.py
+msgid "Should insight network be shown for indicators"
+msgstr ""
+
+#: pages/models.py
+msgid "Display insights"
+msgstr ""
 
 #: pages/models.py
 msgid "Indicator list page"

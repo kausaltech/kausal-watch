@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-12 00:24+0300\n"
+"POT-Creation-Date: 2023-09-28 23:44+0300\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
-"\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -82,13 +81,9 @@ msgstr "Fremskridt"
 msgid "Contact persons"
 msgstr "Kontaktpersoner"
 
-#: actions/action_admin.py actions/api.py
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 msgid "Responsible parties"
 msgstr "Ansvarlige parter"
-
-#: actions/action_admin.py
-msgid "Tasks"
-msgstr "Opgaver"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -122,9 +117,7 @@ msgstr "%(model_name)s '%(object)s' oprettet og planlagt til udgivelse."
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr ""
-"%(model_name)s '%(object)s' er live, og denne version er planlagt til "
-"udgivelse."
+msgstr "%(model_name)s '%(object)s' er live, og denne version er planlagt til udgivelse."
 
 #: actions/action_admin_mixins.py
 #, python-format
@@ -345,6 +338,10 @@ msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (text)"
 
 #: actions/blocks/action_content.py
+msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "contact form"
 msgstr "kontaktformular"
 
@@ -363,9 +360,19 @@ msgstr "Beskrivelse, der skal vises efter feltets indhold"
 msgid "Content block: %(label)s"
 msgstr "Indholdsblok: %(label)s"
 
+#: actions/blocks/action_content.py actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Hovedafsnit"
+
 #: actions/blocks/action_content.py
 msgid "Merged actions"
 msgstr "Sammenkoblede handlinger"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Related actions"
+msgstr "relaterede handlinger"
 
 #: actions/blocks/action_content.py
 msgid "Attribute"
@@ -429,6 +436,16 @@ msgstr "Bord"
 #: actions/blocks/category_list.py
 msgid "Value attribute"
 msgstr "Værdiattribut"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Implementation phase"
+msgstr "implementeringsfasen"
+
+#: actions/blocks/category_page_layout.py
+msgid "Status"
+msgstr "Status"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
 #, fuzzy
@@ -535,6 +552,12 @@ msgid "Choose another category type"
 msgstr "Vælg en anden kategoritype"
 
 #: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category"
+msgid "Choose a category level"
+msgstr "Vælg en kategori"
+
+#: actions/chooser.py
 msgid "Choose an action"
 msgstr "Vælg en handling"
 
@@ -632,10 +655,6 @@ msgstr "Id'et for denne handling (f.eks. nummer)"
 #: actions/models/action.py
 msgid "Image"
 msgstr "Billede"
-
-#: actions/models/action.py pages/models.py
-msgid "Lead paragraph"
-msgstr "Hovedafsnit"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py
@@ -793,15 +812,12 @@ msgstr "Markerede handling '%(action)s' som fuldført for rapport '%(report)s'"
 #: actions/models/action.py
 #, python-format
 msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr ""
-"Kan ikke fortryde markering af handling som fuldført, da der er %s snapshots"
+msgstr "Kan ikke fortryde markering af handling som fuldført, da der er %s snapshots"
 
 #: actions/models/action.py
 #, python-format
 msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
-msgstr ""
-"Fortryder markering af handling '%(action)s' som fuldført for rapport "
-"'%(report)s'"
+msgstr "Fortryder markering af handling '%(action)s' som fuldført for rapport '%(report)s'"
 
 #: actions/models/action.py
 msgid "Primary responsible party"
@@ -1348,9 +1364,7 @@ msgstr "handling kontaktpersoner"
 
 #: actions/models/features.py
 msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
-msgstr ""
-"Indstil, om der er separate kontaktpersoner med udgivelsesrettigheder og "
-"andre, der kun kan foreslå ændringer"
+msgstr "Indstil, om der er separate kontaktpersoner med udgivelsesrettigheder og andre, der kun kan foreslå ændringer"
 
 #: actions/models/features.py
 #, fuzzy
@@ -1360,9 +1374,7 @@ msgstr "handlingsstatusser"
 
 #: actions/models/features.py
 msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
-msgstr ""
-"Indstillet til at forhindre visning af statusspecifikke grafer og andre "
-"elementer, hvis statusser ikke bruges systematisk i denne handlingsplan"
+msgstr "Indstillet til at forhindre visning af statusspecifikke grafer og andre elementer, hvis statusser ikke bruges systematisk i denne handlingsplan"
 
 #: actions/models/features.py
 msgid "Has action official name field"
@@ -1498,10 +1510,7 @@ msgstr "Link til ekstern feedbackformular"
 
 #: actions/models/plan.py
 msgid "If not empty, the system's built-in user feedback feature will be replaced by a link to an external feedback form available at this web address."
-msgstr ""
-"Hvis den ikke er tom, vil systemets indbyggede brugerfeedbackfunktion blive "
-"erstattet af et link til en ekstern feedbackformular, der findes på denne "
-"webadresse."
+msgstr "Hvis den ikke er tom, vil systemets indbyggede brugerfeedbackfunktion blive erstattet af et link til en ekstern feedbackformular, der findes på denne webadresse."
 
 #: actions/models/plan.py
 msgid "Theme identifier"
@@ -1796,9 +1805,7 @@ msgstr "email adresse"
 
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
-msgstr ""
-"Ingen bruger fundet med denne e-mailadresse. Bed din administrator om at "
-"oprette en konto til dig."
+msgstr "Ingen bruger fundet med denne e-mailadresse. Bed din administrator om at oprette en konto til dig."
 
 #: admin_site/api.py
 msgid "This user does not have access to admin."
@@ -1806,9 +1813,7 @@ msgstr "Denne bruger har ikke adgang til admin."
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
-msgstr ""
-"Hvad står der efter @ i medarbejdernes e-mailadresse i den organisation, der "
-"er hovedansvarlig for planen?"
+msgstr "Hvad står der efter @ i medarbejdernes e-mailadresse i den organisation, der er hovedansvarlig for planen?"
 
 #: admin_site/chooser.py
 #, fuzzy
@@ -2008,9 +2013,7 @@ msgstr "Forekomsten kan ikke slettes, fordi andre objekter refererer til den."
 #: aplans/rest_api.py
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
-msgstr ""
-"Du kan ikke slette \"%s\", fordi det er forbundet med andre objekter som "
-"planer, personer eller handlinger."
+msgstr "Du kan ikke slette \"%s\", fordi det er forbundet med andre objekter som planer, personer eller handlinger."
 
 #: aplans/settings.py
 msgid "Danish"
@@ -2124,6 +2127,24 @@ msgid "Case studies"
 msgstr "Casestudier"
 
 #: content/models.py
+#, fuzzy
+#| msgid "Tasks"
+msgid "Task"
+msgstr "Opgaver"
+
+#: content/models.py
+msgid "Milestone"
+msgstr ""
+
+#: content/models.py
+msgid "Tasks"
+msgstr "Opgaver"
+
+#: content/models.py
+msgid "Milestones"
+msgstr ""
+
+#: content/models.py
 msgid "site title"
 msgstr "webstedets titel"
 
@@ -2169,6 +2190,12 @@ msgstr "Link til GitHub-lager til brugergrænseflade"
 
 #: content/models.py
 msgid "Term to use for 'action'"
+msgstr "Udtryk, der skal bruges for \"handling\""
+
+#: content/models.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Term to use for 'task'"
 msgstr "Udtryk, der skal bruges for \"handling\""
 
 #: content/models.py
@@ -2987,9 +3014,7 @@ msgstr "meddelelsesindstillinger"
 
 #: notifications/models.py
 msgid "Set if the notification was sent to an email address instead of a person"
-msgstr ""
-"Indstilles, hvis meddelelsen blev sendt til en e-mailadresse i stedet for en "
-"person"
+msgstr "Indstilles, hvis meddelelsen blev sendt til en e-mailadresse i stedet for en person"
 
 #: notifications/models.py
 msgid "Email From name"
@@ -3054,9 +3079,7 @@ msgstr "email adresse"
 
 #: notifications/models.py
 msgid "Email address used when \"send to custom email address\" is checked"
-msgstr ""
-"E-mailadresse, der bruges, når \"send til brugerdefineret e-mailadresse\" er "
-"markeret"
+msgstr "E-mailadresse, der bruges, når \"send til brugerdefineret e-mailadresse\" er markeret"
 
 #: notifications/models.py
 #, fuzzy
@@ -3106,14 +3129,11 @@ msgstr "meddelelsesskabeloner"
 
 #: notifications/models.py
 msgid "This can only be set if a custom email address is defined"
-msgstr ""
-"Dette kan kun indstilles, hvis der er defineret en brugerdefineret "
-"e-mailadresse"
+msgstr "Dette kan kun indstilles, hvis der er defineret en brugerdefineret e-mailadresse"
 
 #: notifications/models.py
 msgid "If a custom email address is defined, this must be set"
-msgstr ""
-"Hvis der er defineret en brugerdefineret e-mailadresse, skal denne angives"
+msgstr "Hvis der er defineret en brugerdefineret e-mailadresse, skal denne angives"
 
 #: notifications/models.py
 msgid "Notifications of this type cannot be sent to contact persons"
@@ -3314,15 +3334,12 @@ msgstr "Bekræft, at %(org)s er med i planen %(plan)s"
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
-msgstr ""
-"Ønsker du virkelig at inkludere organisationen '%(org)s' i planen '%(plan)s'?"
+msgstr "Ønsker du virkelig at inkludere organisationen '%(org)s' i planen '%(plan)s'?"
 
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
-msgstr ""
-"Ønsker du virkelig at udelukke organisationen '%(org)s' fra planen "
-"'%(plan)s'?"
+msgstr "Ønsker du virkelig at udelukke organisationen '%(org)s' fra planen '%(plan)s'?"
 
 #: orgs/views.py
 #, fuzzy
@@ -3412,9 +3429,7 @@ msgstr "Forælder"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit plan-specific content related to this organization"
-msgstr ""
-"Personer, der kan redigere planspecifikt indhold relateret til denne "
-"organisation"
+msgstr "Personer, der kan redigere planspecifikt indhold relateret til denne organisation"
 
 #: orgs/wagtail_admin.py
 #, fuzzy
@@ -3424,9 +3439,7 @@ msgstr "metadata administratorer"
 
 #: orgs/wagtail_admin.py
 msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
-msgstr ""
-"Personer, der kan redigere data for denne organisation og "
-"underorganisationer, men ikke plan-specifikt indhold"
+msgstr "Personer, der kan redigere data for denne organisation og underorganisationer, men ikke plan-specifikt indhold"
 
 #: orgs/wagtail_admin.py
 #, fuzzy
@@ -3597,12 +3610,38 @@ msgid "Content pages"
 msgstr "Indholdssider"
 
 #: pages/models.py
+msgid "Level layouts"
+msgstr ""
+
+#: pages/models.py
 msgid "Category type page"
 msgstr "Kategoritype side"
 
 #: pages/models.py
 msgid "Category type pages"
 msgstr "Kategoritype sider"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "small"
+msgid "Small"
+msgstr "lille"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "medium"
+msgid "Medium"
+msgstr "medium"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "large"
+msgid "Large"
+msgstr "stor"
+
+#: pages/models.py
+msgid "icon size"
+msgstr ""
 
 #: pages/models.py
 msgid "Action list"
@@ -3652,9 +3691,7 @@ msgstr "Relaterede planer"
 
 #: pages/models.py
 msgid "Enable to make this page include actions from related plans."
-msgstr ""
-"Aktiver for at få denne side til at inkludere handlinger fra relaterede "
-"planer."
+msgstr "Aktiver for at få denne side til at inkludere handlinger fra relaterede planer."
 
 #: pages/models.py
 msgid "Primary filters"
@@ -3695,6 +3732,14 @@ msgstr "Handlingslisteside"
 #: pages/models.py
 msgid "Action list pages"
 msgstr "Sider med handlingsliste"
+
+#: pages/models.py
+msgid "Should insight network be shown for indicators"
+msgstr ""
+
+#: pages/models.py
+msgid "Display insights"
+msgstr ""
 
 #: pages/models.py
 msgid "Indicator list page"
@@ -3826,9 +3871,7 @@ msgstr "Bekræft sletning af %(model_name)s"
 #: people/templates/people/delete.html
 #, python-format
 msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
-msgstr ""
-"'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft "
-"venligst sletning:"
+msgstr "'%(instance_name)s' er i øjeblikket forbundet med følgende emner. Bekræft venligst sletning:"
 
 #: people/templates/people/delete.html
 msgid "Yes, delete"
@@ -3915,13 +3958,7 @@ msgstr "Hovedorganisation"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
-msgstr ""
-"Ud over selve organisationen er en organisatorisk enhed, der indeholder "
-"organisationen, inkluderet i rapporten. Hvilket niveau i "
-"organisationshierarkiet skal bruges til at finde denne indeholdende "
-"organisation, når man tæller fra den øverste rodorganisation på niveau 1? "
-"Hvis det er tomt, skal du ikke tilføje den indeholdende organisation til "
-"rapporten."
+msgstr "Ud over selve organisationen er en organisatorisk enhed, der indeholder organisationen, inkluderet i rapporten. Hvilket niveau i organisationshierarkiet skal bruges til at finde denne indeholdende organisation, når man tæller fra den øverste rodorganisation på niveau 1? Hvis det er tomt, skal du ikke tilføje den indeholdende organisation til rapporten."
 
 #: reports/chooser.py
 #, fuzzy
@@ -4054,14 +4091,12 @@ msgstr "Fortryd markering af handling som fuldført"
 #: reports/views.py
 #, python-format
 msgid "Confirm marking action %(action)s as complete for report %(report)s"
-msgstr ""
-"Bekræft markering af handling %(action)s som afsluttet til rapport %(report)s"
+msgstr "Bekræft markering af handling %(action)s som afsluttet til rapport %(report)s"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgstr ""
-"Bekræft markering af handling %(action)s som afsluttet til rapport %(report)s"
+msgstr "Bekræft markering af handling %(action)s som afsluttet til rapport %(report)s"
 
 #: reports/views.py
 #, fuzzy, python-format
@@ -4072,23 +4107,17 @@ msgstr "Vil du virkelig markere brugerfeedbacken '%(user_feedback)s' som behandl
 #: reports/views.py
 #, python-format
 msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr ""
-"Ønsker du virkelig at fortryde markeringen af handlingen '%(action)s' som "
-"fuldført for rapporten '%(report)s'?"
+msgstr "Ønsker du virkelig at fortryde markeringen af handlingen '%(action)s' som fuldført for rapporten '%(report)s'?"
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
-msgstr ""
-"Handling '%(action)s' er blevet markeret som fuldført for rapport "
-"'%(report)s'."
+msgstr "Handling '%(action)s' er blevet markeret som fuldført for rapport '%(report)s'."
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr ""
-"Handling '%(action)s' er ikke længere markeret som fuldført for rapport "
-"'%(report)s'."
+msgstr "Handling '%(action)s' er ikke længere markeret som fuldført for rapport '%(report)s'."
 
 #: reports/views.py
 msgid "Mark report as complete"
@@ -4186,9 +4215,7 @@ msgstr "Brugere"
 
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
-msgstr ""
-"Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke "
-"administrerer."
+msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
 
 #~ msgid "Plan name"
 #~ msgstr "Plannavn"
@@ -4412,9 +4439,6 @@ msgstr ""
 
 #~ msgid "None available"
 #~ msgstr "Ingen tilgængelig"
-
-#~ msgid "Status"
-#~ msgstr "Status"
 
 #~ msgid "Edit this action"
 #~ msgstr "Rediger denne handling"

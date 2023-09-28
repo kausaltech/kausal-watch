@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-12 00:24+0300\n"
+"POT-Creation-Date: 2023-09-28 23:44+0300\n"
 "PO-Revision-Date: 2023-08-25 10:18+0000\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -81,13 +81,9 @@ msgstr "Eteneminen"
 msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
-#: actions/action_admin.py actions/api.py
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 msgid "Responsible parties"
 msgstr "Toimenpiteen vastuutahot"
-
-#: actions/action_admin.py
-msgid "Tasks"
-msgstr "Tehtävät"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -338,6 +334,10 @@ msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (teksti)"
 
 #: actions/blocks/action_content.py
+msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "contact form"
 msgstr "yhteydenottolomake"
 
@@ -354,9 +354,19 @@ msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
 
+#: actions/blocks/action_content.py actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Ingressi"
+
 #: actions/blocks/action_content.py
 msgid "Merged actions"
 msgstr "Yhdistetyt toimenpiteet"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Related actions"
+msgstr "liittyvät toimenpiteet"
 
 #: actions/blocks/action_content.py
 msgid "Attribute"
@@ -420,6 +430,16 @@ msgstr "Taulukko"
 #: actions/blocks/category_list.py
 msgid "Value attribute"
 msgstr "Arvo-ominaisuus"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Implementation phase"
+msgstr "toteutusvaihe"
+
+#: actions/blocks/category_page_layout.py
+msgid "Status"
+msgstr "Tila"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "Field"
@@ -524,6 +544,12 @@ msgid "Choose another category type"
 msgstr "Valitse toinen luokan tyyppi"
 
 #: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category"
+msgid "Choose a category level"
+msgstr "Valitse luokka"
+
+#: actions/chooser.py
 msgid "Choose an action"
 msgstr "Valitse toimenpide"
 
@@ -613,10 +639,6 @@ msgstr "Toimenpiteen tunniste (esim. numero)"
 #: actions/models/action.py
 msgid "Image"
 msgstr "Kuva"
-
-#: actions/models/action.py pages/models.py
-msgid "Lead paragraph"
-msgstr "Ingressi"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py
@@ -2065,6 +2087,24 @@ msgid "Case studies"
 msgstr ""
 
 #: content/models.py
+#, fuzzy
+#| msgid "Tasks"
+msgid "Task"
+msgstr "Tehtävät"
+
+#: content/models.py
+msgid "Milestone"
+msgstr ""
+
+#: content/models.py
+msgid "Tasks"
+msgstr "Tehtävät"
+
+#: content/models.py
+msgid "Milestones"
+msgstr ""
+
+#: content/models.py
 msgid "site title"
 msgstr "sivuston otsikko"
 
@@ -2110,6 +2150,12 @@ msgstr "Linkki käyttöliittymäprojektin GitHubiin"
 
 #: content/models.py
 msgid "Term to use for 'action'"
+msgstr "Nimi, jolla kutsutaan toimenpiteitä"
+
+#: content/models.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Term to use for 'task'"
 msgstr "Nimi, jolla kutsutaan toimenpiteitä"
 
 #: content/models.py
@@ -3486,12 +3532,38 @@ msgid "Content pages"
 msgstr "Sisältösivut"
 
 #: pages/models.py
+msgid "Level layouts"
+msgstr ""
+
+#: pages/models.py
 msgid "Category type page"
 msgstr "Luokkatyyppisivu"
 
 #: pages/models.py
 msgid "Category type pages"
 msgstr "Luokkatyyppisivut"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "small"
+msgid "Small"
+msgstr "pieni"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "medium"
+msgid "Medium"
+msgstr "keskitaso"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "large"
+msgid "Large"
+msgstr "suuri"
+
+#: pages/models.py
+msgid "icon size"
+msgstr ""
 
 #: pages/models.py
 msgid "Action list"
@@ -3580,6 +3652,14 @@ msgstr "Toimenpideluettelosivu"
 #: pages/models.py
 msgid "Action list pages"
 msgstr "Toimenpideluettelosivut"
+
+#: pages/models.py
+msgid "Should insight network be shown for indicators"
+msgstr ""
+
+#: pages/models.py
+msgid "Display insights"
+msgstr ""
 
 #: pages/models.py
 msgid "Indicator list page"
@@ -4248,9 +4328,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Unknown content"
 #~ msgstr "Tuntematon sisältö"
-
-#~ msgid "Status"
-#~ msgstr "Tila"
 
 #~ msgid "Edit this action"
 #~ msgstr "Muokkaa tätä toimenpidettä"

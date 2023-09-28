@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-12 00:24+0300\n"
+"POT-Creation-Date: 2023-09-28 23:44+0300\n"
 "PO-Revision-Date: 2023-09-11 21:36+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -81,13 +80,9 @@ msgstr "Fortschritt"
 msgid "Contact persons"
 msgstr "Ansprechpartner"
 
-#: actions/action_admin.py actions/api.py
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 msgid "Responsible parties"
 msgstr "Zuständige Stellen"
-
-#: actions/action_admin.py
-msgid "Tasks"
-msgstr "Aufgaben"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -116,15 +111,12 @@ msgstr "%(model_name)s '%(object)s' wurde zur Veröffentlichung vorgesehen."
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
-msgstr ""
-"%(model_name)s '%(object)s' erstellt und für die Veröffentlichung vorgesehen."
+msgstr "%(model_name)s '%(object)s' erstellt und für die Veröffentlichung vorgesehen."
 
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
-msgstr ""
-"%(model_name)s '%(object)s' ist live und diese Version ist für die "
-"Veröffentlichung vorgesehen."
+msgstr "%(model_name)s '%(object)s' ist live und diese Version ist für die Veröffentlichung vorgesehen."
 
 #: actions/action_admin_mixins.py
 #, python-format
@@ -319,6 +311,10 @@ msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (Text)"
 
 #: actions/blocks/action_content.py
+msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "contact form"
 msgstr "Kontaktformular"
 
@@ -335,9 +331,19 @@ msgstr "Beschreibung, die nach dem Feldinhalt angezeigt werden soll"
 msgid "Content block: %(label)s"
 msgstr "Inhaltsblock: %(label)s"
 
+#: actions/blocks/action_content.py actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Lead-Absatz"
+
 #: actions/blocks/action_content.py
 msgid "Merged actions"
 msgstr "Zusammengeführte Maßnahmen"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Related actions"
+msgstr "verbundene Maßnahmen"
 
 #: actions/blocks/action_content.py
 msgid "Attribute"
@@ -401,6 +407,18 @@ msgstr "Tabelle"
 #: actions/blocks/category_list.py
 msgid "Value attribute"
 msgstr "Wertattribut"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Implementation phase"
+msgstr "Umsetzungsphase"
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "status"
+msgid "Status"
+msgstr "Status"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
 msgid "Field"
@@ -503,6 +521,12 @@ msgid "Choose another category type"
 msgstr "Wähle einen anderen Kategorietype"
 
 #: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category"
+msgid "Choose a category level"
+msgstr "Wähle eine Kategorie"
+
+#: actions/chooser.py
 msgid "Choose an action"
 msgstr "Wähle eine Maßnahme"
 
@@ -592,10 +616,6 @@ msgstr "Die Kennung für diese Maßnahme (z. B. Nummer)"
 #: actions/models/action.py
 msgid "Image"
 msgstr "Bild"
-
-#: actions/models/action.py pages/models.py
-msgid "Lead paragraph"
-msgstr "Lead-Absatz"
 
 #: actions/models/action.py actions/models/plan.py indicators/models.py
 #: orgs/models.py
@@ -1902,9 +1922,7 @@ msgstr "Instanz kann nicht gelöscht werden, da andere Objekte darauf verweisen.
 #: aplans/rest_api.py
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
-msgstr ""
-"Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten "
-"wie Plänen, Personen oder Aktionen verbunden ist."
+msgstr "Der Eintrag \"%s\" kann nicht gelöscht werden, da er mit anderen Objekten wie Plänen, Personen oder Aktionen verbunden ist."
 
 #: aplans/settings.py
 msgid "Danish"
@@ -2012,6 +2030,24 @@ msgid "Case studies"
 msgstr "Fallstudien"
 
 #: content/models.py
+#, fuzzy
+#| msgid "Tasks"
+msgid "Task"
+msgstr "Aufgaben"
+
+#: content/models.py
+msgid "Milestone"
+msgstr ""
+
+#: content/models.py
+msgid "Tasks"
+msgstr "Aufgaben"
+
+#: content/models.py
+msgid "Milestones"
+msgstr ""
+
+#: content/models.py
 msgid "site title"
 msgstr "Seitentitel"
 
@@ -2057,6 +2093,12 @@ msgstr "Link zum Github-Repository für UI"
 
 #: content/models.py
 msgid "Term to use for 'action'"
+msgstr "Für 'Maßnahme' zu verwendender Begriff"
+
+#: content/models.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Term to use for 'task'"
 msgstr "Für 'Maßnahme' zu verwendender Begriff"
 
 #: content/models.py
@@ -3388,12 +3430,38 @@ msgid "Content pages"
 msgstr "Inhaltseiten"
 
 #: pages/models.py
+msgid "Level layouts"
+msgstr ""
+
+#: pages/models.py
 msgid "Category type page"
 msgstr "Kategorietypenseite"
 
 #: pages/models.py
 msgid "Category type pages"
 msgstr "Kategorietypenseiten"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "small"
+msgid "Small"
+msgstr "klein"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "medium"
+msgid "Medium"
+msgstr "mittel"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "large"
+msgid "Large"
+msgstr "groß"
+
+#: pages/models.py
+msgid "icon size"
+msgstr ""
 
 #: pages/models.py
 msgid "Action list"
@@ -3482,6 +3550,14 @@ msgstr "Maßnahmenlistenseite"
 #: pages/models.py
 msgid "Action list pages"
 msgstr "Maßnahmenlistenseiten"
+
+#: pages/models.py
+msgid "Should insight network be shown for indicators"
+msgstr ""
+
+#: pages/models.py
+msgid "Display insights"
+msgstr ""
 
 #: pages/models.py
 msgid "Indicator list page"
