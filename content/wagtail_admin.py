@@ -67,6 +67,7 @@ class SiteGeneralContentAdmin(ModelAdmin):
         FieldPanel('github_api_repository'),
         FieldPanel('github_ui_repository'),
         FieldPanel('action_term'),
+        FieldPanel('action_task_term'),
     ]
 
     def get_queryset(self, request):

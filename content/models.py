@@ -20,6 +20,18 @@ class SiteGeneralContent(models.Model):
         ActionTerm.CASE_STUDY: _('Case studies'),
     }
 
+    class ActionTaskTerm(models.TextChoices):
+        # When changing terms, make sure to also change ACTION_TASK_TERM_PLURAL below.
+        # Get a printable SiteGeneralContent instance's action term with `instance.get_action_task_term_display()` and, for
+        # plural, `instance.get_action_task_term_display_plural()`.
+        TASK = 'task', _('Task')
+        MILESTONE = 'milestone', _('Milestone')
+
+    ACTION_TASK_TERM_PLURAL = {
+        ActionTaskTerm.TASK: _('Tasks'),
+        ActionTaskTerm.MILESTONE: _('Milestones'),
+    }
+
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
         unique=True
@@ -44,6 +56,10 @@ class SiteGeneralContent(models.Model):
     action_term = models.CharField(
         max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION
     )
+    action_task_term = models.CharField(
+        max_length=30, choices=ActionTaskTerm.choices, verbose_name=_("Term to use for 'task'"),
+        default=ActionTaskTerm.TASK
+    )
 
     i18n = TranslationField(
         fields=[
@@ -55,6 +71,7 @@ class SiteGeneralContent(models.Model):
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
         'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
+        'action_task_term',
     ]
 
     class Meta:
@@ -70,3 +87,7 @@ class SiteGeneralContent(models.Model):
     def get_action_term_display_plural(self):
         # Analogous to get_action_term_display, which Django automatically generates
         return SiteGeneralContent.ACTION_TERM_PLURAL[SiteGeneralContent.ActionTerm(self.action_term)]
+
+    def get_action_task_term_display_plural(self):
+        # Analogous to get_action_task_term_display, which Django automatically generates
+        return SiteGeneralContent.ACTION_TASK_TERM_PLURAL[SiteGeneralContent.ActionTaskTerm(self.action_task_term)]

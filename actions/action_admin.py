@@ -573,7 +573,7 @@ class ActionAdmin(AplansModelAdmin):
                     'tasks',
                     panels=task_panels,
                 )
-            ], heading=_('Tasks')),
+            ], heading=plan.general_content.get_action_task_term_display_plural()),
         ]
 
         reporting_panels = reporting_attribute_panels
