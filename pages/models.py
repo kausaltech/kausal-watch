@@ -562,7 +562,7 @@ class IndicatorListPage(FixedSlugPage):
 
     display_insights = models.BooleanField(
         default=True,
-        help_text=_('Should insight network be shown for indicators'),
+        help_text=_('Should insight network be shown for indicators?'),
         verbose_name=_('Display insights')
     )
 
