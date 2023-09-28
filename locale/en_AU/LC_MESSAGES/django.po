@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-28 23:44+0300\n"
+"POT-Creation-Date: 2023-09-29 00:05+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -3552,7 +3552,7 @@ msgid "Action list pages"
 msgstr "synchronise with pages"
 
 #: pages/models.py
-msgid "Should insight network be shown for indicators"
+msgid "Should insight network be shown for indicators?"
 msgstr ""
 
 #: pages/models.py

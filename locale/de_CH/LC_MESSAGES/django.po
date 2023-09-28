@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-28 23:44+0300\n"
+"POT-Creation-Date: 2023-09-29 00:05+0300\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -3576,8 +3576,10 @@ msgid "Action list pages"
 msgstr "Massnahmenlistenseiten"
 
 #: pages/models.py
-msgid "Should insight network be shown for indicators"
-msgstr ""
+#, fuzzy
+#| msgid "Should the page be shown in the footer?"
+msgid "Should insight network be shown for indicators?"
+msgstr "Soll die Seite in der Fussleiste angezeigt werden?"
 
 #: pages/models.py
 msgid "Display insights"

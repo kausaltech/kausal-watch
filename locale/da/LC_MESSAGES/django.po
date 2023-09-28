@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-28 23:44+0300\n"
+"POT-Creation-Date: 2023-09-29 00:05+0300\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -3734,8 +3734,10 @@ msgid "Action list pages"
 msgstr "Sider med handlingsliste"
 
 #: pages/models.py
-msgid "Should insight network be shown for indicators"
-msgstr ""
+#, fuzzy
+#| msgid "Should the page be shown in the footer?"
+msgid "Should insight network be shown for indicators?"
+msgstr "Skal siden vises i sidefoden?"
 
 #: pages/models.py
 msgid "Display insights"
