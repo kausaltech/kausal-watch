@@ -11,6 +11,9 @@ from actions.models.attributes import AttributeType
 class CategoryPageAttributeTypeBlock(blocks.StructBlock):
     attribute_type = CategoryAttributeTypeChooserBlock(required=True)
 
+    class Meta:
+        label = _('Field')
+
     model_instance_container_blocks = {
         AttributeType: 'attribute_type',
     }
@@ -22,18 +25,23 @@ class CategoryPageAttributeTypeBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class CategoryPageBodyBlock(blocks.StructBlock):
-    pass
+    class Meta:
+        label = _('Body')
 
 
 @register_streamfield_block
 class CategoryPageCategoryListBlock(blocks.StructBlock):
-    pass
+    class Meta:
+        label = _('Category list')
 
 
 @register_streamfield_block
 class CategoryPageContactFormBlock(blocks.StructBlock):
-    heading = blocks.CharBlock(required=False)
-    description = blocks.CharBlock(required=False)
+    heading = blocks.CharBlock(required=False, label=_('Heading'))
+    description = blocks.CharBlock(required=False, label=_('Description'))
+
+    class Meta:
+        label = _('Contact form')
 
     graphql_fields = [
         GraphQLString('heading'),
@@ -43,10 +51,13 @@ class CategoryPageContactFormBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class CategoryPageProgressBlock(blocks.StructBlock):
-    basis = blocks.ChoiceBlock(choices=[
+    basis = blocks.ChoiceBlock(label=_('Basis'), choices=[
         ('implementation_phase', _('Implementation phase')),
         ('status', _('Status')),
     ])
+
+    class Meta:
+        label = _('Progress')
 
 
 @register_streamfield_block

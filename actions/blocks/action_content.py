@@ -108,6 +108,9 @@ def generate_stream_block(
 class ActionContentAttributeTypeBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
 
+    class Meta:
+        label = _('Field')
+
     model_instance_container_blocks = {
         AttributeType: 'attribute_type',
     }
@@ -121,6 +124,9 @@ class ActionContentAttributeTypeBlock(blocks.StructBlock):
 class ActionContentCategoryTypeBlock(blocks.StructBlock):
     category_type = CategoryTypeChooserBlock(required=True)
 
+    class Meta:
+        label = _('Category')
+
     model_instance_container_blocks = {
         CategoryType: 'category_type',
     }
@@ -132,6 +138,9 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+    class Meta:
+        label = _('Responsible parties')
+
     heading = blocks.CharBlock(
         required=False, help_text=_("Heading to show instead of the default"), default='',
     )
@@ -144,7 +153,7 @@ class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blo
 @register_streamfield_block
 class ActionContactFormBlock(blocks.StaticBlock):
     class Meta:
-        label = _("contact form")
+        label = _("Contact form")
 
 
 @register_streamfield_block
@@ -153,10 +162,17 @@ class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.St
         required=False,
         help_text=_("What label should be used in the public UI for the official name?"),
         default='',
+        label=_("Field label"),
     )
     caption = blocks.CharBlock(
-        required=False, help_text=_("Description to show after the field content"), default='',
+        required=False,
+        help_text=_("Description to show after the field content"),
+        default='',
+        label=_("Caption"),
     )
+
+    class Meta:
+        label = _('Official name')
 
     graphql_fields = [
         GraphQLString('field_label'),
@@ -195,8 +211,8 @@ ActionContentSectionElementBlock = generate_stream_block(
     'ActionMainContentSectionElementBlock',
     action_attribute_blocks,
     fields = [
-        ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
-        ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
+        ('attribute', ActionContentAttributeTypeBlock()),
+        ('categories', ActionContentCategoryTypeBlock()),
     ]
 )
 
@@ -211,6 +227,9 @@ class ActionContentSectionBlock(blocks.StructBlock):
     help_text = blocks.CharBlock(label=_('Help text'), required=False)
     blocks = ActionContentSectionElementBlock(label=_('Blocks'))
 
+    class Meta:
+        label = _('Section')
+
     graphql_fields = [
         GraphQLString('layout'),
         GraphQLString('heading'),
@@ -223,18 +242,18 @@ ActionMainContentBlock = generate_stream_block(
     'ActionMainContentBlock',
     action_attribute_blocks,
     fields=[
-        ('section', ActionContentSectionBlock(required=True, label=_('Section'))),
+        ('section', ActionContentSectionBlock(required=True)),
         'lead_paragraph',
         'description',
-        ('official_name', ActionOfficialNameBlock(label=_('official name'))),
-        ('attribute', ActionContentAttributeTypeBlock(label=_('Attribute'))),
-        ('categories', ActionContentCategoryTypeBlock(label=_('Category'))),
+        ('official_name', ActionOfficialNameBlock()),
+        ('attribute', ActionContentAttributeTypeBlock()),
+        ('categories', ActionContentCategoryTypeBlock()),
         'links',
         'tasks',
         'merged_actions',
         'related_actions',
         'related_indicators',
-        ('contact_form', ActionContactFormBlock(required=True, label=_('Contact form'))),
+        ('contact_form', ActionContactFormBlock(required=True)),
         ('report_comparison', ReportComparisonBlock()),
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
@@ -249,9 +268,9 @@ ActionAsideContentBlock = generate_stream_block(
     fields=[
         'schedule',
         'contact_persons',
-        ('responsible_parties', ActionResponsiblePartiesBlock(required=True, label=_('Responsible parties'))),
-        ('attribute', ActionContentAttributeTypeBlock(required=True, label=_('Attribute'))),
-        ('categories', ActionContentCategoryTypeBlock(required=True, label=_('Category'))),
+        ('responsible_parties', ActionResponsiblePartiesBlock(required=True)),
+        ('attribute', ActionContentAttributeTypeBlock(required=True)),
+        ('categories', ActionContentCategoryTypeBlock(required=True)),
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={

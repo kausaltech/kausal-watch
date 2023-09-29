@@ -104,7 +104,8 @@ def get_default_action_filter_blocks(plan: Plan):
 
 @register_streamfield_block
 class RelatedPlanListBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Related plans')
 
 
 __all__ = [

@@ -131,18 +131,18 @@ class AplansPage(Page):
 
 class PlanRootPage(AplansPage):
     body = StreamField([
-        ('front_page_hero', FrontPageHeroBlock(label=_('Front page hero block'))),
-        ('category_list', CategoryListBlock(label=_('Category list'))),
+        ('front_page_hero', FrontPageHeroBlock()),
+        ('category_list', CategoryListBlock()),
         ('indicator_group', IndicatorGroupBlock()),
-        ('indicator_highlights', IndicatorHighlightsBlock(label=_('Indicator highlights'))),
+        ('indicator_highlights', IndicatorHighlightsBlock()),
         ('indicator_showcase', IndicatorShowcaseBlock()),
-        ('action_highlights', ActionHighlightsBlock(label=_('Action highlights'))),
-        ('related_plans', RelatedPlanListBlock(label=_('Related plans'))),
+        ('action_highlights', ActionHighlightsBlock()),
+        ('related_plans', RelatedPlanListBlock()),
         ('cards', CardListBlock()),
         ('action_links', ActionCategoryFilterCardsBlock(label=_('Links to actions in specific category'))),
         ('text', blocks.RichTextBlock(label=_('Text'))),
-        ('action_status_graphs', ActionStatusGraphsBlock(label=_('Action status pie charts'))),
-        ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
+        ('action_status_graphs', ActionStatusGraphsBlock()),
+        ('category_tree_map', CategoryTreeMapBlock()),
     ], use_json_field=True)
 
     content_panels = [
@@ -190,10 +190,10 @@ class StaticPage(AplansPage):
     )
     body = StreamField([
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
-        ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
-        ('category_list', CategoryListBlock(label=_('Category list'))),
+        ('qa_section', QuestionAnswerBlock(icon='help')),
+        ('category_list', CategoryListBlock()),
         ('embed', AdaptiveEmbedBlock()),
-        ('category_tree_map', CategoryTreeMapBlock(label=_('Category tree map'))),
+        ('category_tree_map', CategoryTreeMapBlock()),
         *get_body_blocks('StaticPage')
     ], null=True, blank=True, use_json_field=True)
 
@@ -282,15 +282,24 @@ class CategoryTypePageLevelLayout(ClusterableModel):
         LARGE = 'L', _('Large')
 
     page: 'models.ForeignKey[CategoryTypePage]' = ParentalKey(
-        CategoryTypePage, on_delete=models.CASCADE, related_name='level_layouts'
+        CategoryTypePage, on_delete=models.CASCADE, related_name='level_layouts', verbose_name=('page')
     )
     level = models.ForeignKey(
         'actions.CategoryLevel', on_delete=models.CASCADE, related_name='level_layouts',
-        null=True, blank=True
+        null=True, blank=True, verbose_name=_('level')
     )
-    layout_main_top = StreamField(block_types=CategoryPageMainTopBlock(), null=True, blank=True, use_json_field=True)
-    layout_main_bottom = StreamField(block_types=CategoryPageMainBottomBlock(), null=True, blank=True, use_json_field=True)
-    layout_aside = StreamField(block_types=CategoryPageAsideBlock(), null=True, blank=True, use_json_field=True)
+    layout_main_top = StreamField(
+        block_types=CategoryPageMainTopBlock(), null=True, blank=True, use_json_field=True,
+        verbose_name=_('layout main top')
+    )
+    layout_main_bottom = StreamField(
+        block_types=CategoryPageMainBottomBlock(), null=True, blank=True, use_json_field=True,
+        verbose_name=_('layout main bottom')
+    )
+    layout_aside = StreamField(
+        block_types=CategoryPageAsideBlock(), null=True, blank=True, use_json_field=True,
+        verbose_name=_('layout aside')
+    )
     icon_size = models.CharField(
         max_length=4, choices=IconSize.choices, default=IconSize.MEDIUM, verbose_name=_('icon size')
     )
@@ -320,11 +329,11 @@ class CategoryPage(AplansPage):
     )
     body = StreamField([
         ('text', blocks.RichTextBlock(label=_('Text'))),
-        ('qa_section', QuestionAnswerBlock(label=_('Questions & Answers'), icon='help')),
+        ('qa_section', QuestionAnswerBlock(icon='help')),
         ('indicator_group', IndicatorGroupBlock()),
         ('related_indicators', RelatedIndicatorsBlock()),
-        ('category_list', CategoryListBlock(label=_('Category list'))),
-        ('action_list', ActionListBlock(label=_('Action list'))),
+        ('category_list', CategoryListBlock()),
+        ('action_list', ActionListBlock()),
         ('embed', AdaptiveEmbedBlock()),
     ], null=True, blank=True, use_json_field=True)
 

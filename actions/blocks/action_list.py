@@ -9,12 +9,16 @@ from actions.models.category import Category
 
 @register_streamfield_block
 class ActionHighlightsBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Action highlights')
 
 
 @register_streamfield_block
 class ActionListBlock(blocks.StructBlock):
     category_filter = CategoryChooserBlock(label=_('Filter on category'))
+
+    class Meta:
+        label = _('Action list')
 
     graphql_fields = [
         GraphQLForeignKey('category_filter', Category),

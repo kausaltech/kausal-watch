@@ -1,4 +1,5 @@
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from actions.models.attributes import AttributeType
@@ -6,6 +7,9 @@ from actions.models.category import Category, CategoryType
 
 
 class CategoryChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Category')
+
     @cached_property
     def target_model(self):
         return Category
@@ -20,6 +24,9 @@ class CategoryChooserBlock(blocks.ChooserBlock):
 
 
 class CategoryTypeChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Category type')
+
     @cached_property
     def target_model(self):
         return CategoryType
@@ -34,6 +41,9 @@ class CategoryTypeChooserBlock(blocks.ChooserBlock):
 
 
 class AttributeTypeChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Field')
+
     @cached_property
     def target_model(self):
         return AttributeType
@@ -56,7 +66,6 @@ class ActionAttributeTypeChooserBlock(AttributeTypeChooserBlock):
 
 class CategoryAttributeTypeChooserBlock(AttributeTypeChooserBlock):
     # FIXME: Add support for limiting to one CategoryType
-
     @cached_property
     def widget(self):
         from actions.chooser import AttributeTypeChooser

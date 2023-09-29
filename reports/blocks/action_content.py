@@ -38,8 +38,11 @@ from reports.utils import get_attribute_for_type_from_related_objects
 
 @register_streamfield_block
 class ReportComparisonBlock(blocks.StructBlock):
-    report_type = ReportTypeChooserBlock(label=_('Report type'), required=True)
+    report_type = ReportTypeChooserBlock(required=True)
     report_field = ReportTypeFieldChooserBlock(label=_('UUID of report field'), required=True)
+
+    class Meta:
+        label = _('Report comparison')
 
     def reports_to_compare(self, values):
         num_compare = 2  # TODO: Make this configurable in block
@@ -97,7 +100,7 @@ ReportFieldBlockInterface.register(FieldBlockWithHelpPanel)
 
 @register_streamfield_block
 class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    attribute_type = ActionAttributeTypeChooserBlock(required=True, label=_("Field"))
+    attribute_type = ActionAttributeTypeChooserBlock(required=True)
 
     class Meta:
         label = _("Action field")
@@ -158,7 +161,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
 
 @register_streamfield_block
 class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    category_type = CategoryTypeChooserBlock(required=True, label=_("Category type"))
+    category_type = CategoryTypeChooserBlock(required=True)
 
     class Meta:
         label = _("Action category")
@@ -214,7 +217,7 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
 @register_streamfield_block
 class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
     class Meta:
-        label = _("implementation phase")
+        label = _("Implementation phase")
 
     @register_graphene_node
     class Value(graphene.ObjectType):
@@ -252,7 +255,7 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock, FieldBlockWi
 @register_streamfield_block
 class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
     class Meta:
-        label = _("status")
+        label = _("Status")
 
     @register_graphene_node
     class Value(graphene.ObjectType):
@@ -304,7 +307,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
     )
 
     class Meta:
-        label = _("responsible party")
+        label = _("Responsible party")
 
     @register_graphene_node
     class Value(graphene.ObjectType):

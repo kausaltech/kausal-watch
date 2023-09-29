@@ -29,12 +29,14 @@ class IndicatorChooserBlock(ChooserBlock):
 
 @register_streamfield_block
 class IndicatorHighlightsBlock(StaticBlock):
-    pass
+    class Meta:
+        label = _('Indicator highlights')
+
 
 
 @register_streamfield_block
 class IndicatorBlock(StructBlock):
-    indicator = IndicatorChooserBlock(label=_('Indicator'))
+    indicator = IndicatorChooserBlock()
     style = ChoiceBlock(choices=[
         ('graph', _('Graph')),
         ('progress', _('Progress')),
@@ -68,6 +70,9 @@ class IndicatorShowcaseBlock(StructBlock):
     # FIXME: I'd like to make `link_button` optional, but the argument `required` has no effect here. See comment in
     # PageLinkBlock.
     indicator_is_normalized = BooleanBlock(required=False)
+
+    class Meta:
+        label = _('Indicator showcase')
 
     graphql_fields = [
         GraphQLString('title'),

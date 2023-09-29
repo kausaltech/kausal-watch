@@ -1,9 +1,13 @@
 from wagtail import blocks
 from django.utils.functional import cached_property
+from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
 
 
 class ReportTypeChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Report type')
+
     @cached_property
     def target_model(self):
         from reports.models import ReportType
@@ -22,4 +26,5 @@ class ReportTypeChooserBlock(blocks.ChooserBlock):
 class ReportTypeFieldChooserBlock(blocks.CharBlock):
     # TODO: Write proper chooser block instead of extending CharBlock
     # Idea: Override CharBlock.__init__(), plug in widget to call of CharField.__init__(), set it to autocomplete widget. However, there are some issues with that regarding serialization to JSON.
-    pass
+    class Meta:
+        label = _('Report type field')

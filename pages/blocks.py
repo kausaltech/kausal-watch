@@ -38,6 +38,9 @@ class QuestionBlock(blocks.StructBlock):
     question = blocks.CharBlock(heading=_('Question'))
     answer = blocks.RichTextBlock(heading=_('Answer'))
 
+    class Meta:
+        label = _('Question')
+
     graphql_fields = [
         GraphQLString('question'),
         GraphQLString('answer'),
@@ -70,11 +73,15 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
     # The extra inner field is just to enable the custom
     # resolve_html method
     embed = blocks.StructBlock(
-        [('url', blocks.CharBlock()),
+        [('url', blocks.CharBlock(label=_('URL'))),
          ('height', blocks.ChoiceBlock(
-             choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))]
+             choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))],
+             label=_('Height'),
          ))]
     )
+
+    class Meta:
+        label = _('Embed')
 
     graphql_fields = [
         GraphQLField('embed', EmbedHTMLValue)
@@ -85,6 +92,9 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
 class QuestionAnswerBlock(blocks.StructBlock):
     heading = blocks.CharBlock(classname='title', heading=_('Title'), required=False)
     questions = blocks.ListBlock(QuestionBlock())
+
+    class Meta:
+        label = _('Questions & Answers')
 
     graphql_fields = [
         GraphQLString('heading'),
@@ -101,6 +111,9 @@ class FrontPageHeroBlock(blocks.StructBlock):
     image = ImageChooserBlock()
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
+
+    class Meta:
+        label = _('Front page hero block')
 
     graphql_fields = [
         GraphQLString('layout'),
@@ -146,6 +159,9 @@ class CardListBlock(blocks.StructBlock):
     lead = blocks.CharBlock(required=False)
     cards = blocks.ListBlock(CardBlock())
 
+    class Meta:
+        label = _('Cards')
+
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('lead'),
@@ -157,7 +173,8 @@ class CardListBlock(blocks.StructBlock):
 class ActionCategoryFilterCardBlock(blocks.StructBlock):
     heading = blocks.CharBlock(label=_('Heading'))
     lead = blocks.CharBlock(label=_('Lead'))
-    category = CategoryChooserBlock(label=_('Category'))
+    category = CategoryChooserBlock()
+
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('lead'),
@@ -168,6 +185,7 @@ class ActionCategoryFilterCardBlock(blocks.StructBlock):
 @register_streamfield_block
 class ActionCategoryFilterCardsBlock(blocks.StructBlock):
     cards = blocks.ListBlock(ActionCategoryFilterCardBlock(), label=_('Links'))
+
     graphql_fields = [
         GraphQLStreamfield('cards')
     ]
@@ -200,4 +218,5 @@ class AccessibilityStatementContactFormBlock(blocks.StaticBlock):
 
 @register_streamfield_block
 class ActionStatusGraphsBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Action status pie charts')

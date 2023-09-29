@@ -10,14 +10,17 @@ from actions.models.category import Category, CategoryType
 
 @register_streamfield_block
 class CategoryListBlock(blocks.StructBlock):
-    category_type = CategoryTypeChooserBlock(label=_('Category type'), required=False)
-    category = CategoryChooserBlock(label=_('Category'), required=False)
+    category_type = CategoryTypeChooserBlock(required=False)
+    category = CategoryChooserBlock(required=False)
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
-    style = blocks.ChoiceBlock(choices=[
+    style = blocks.ChoiceBlock(label=_('Style'), choices=[
         ('cards', _('Cards')),
         ('table', _('Table')),
     ])
+
+    class Meta:
+        label = _('Category list')
 
     graphql_fields = [
         GraphQLForeignKey('category_type', CategoryType),
@@ -33,8 +36,11 @@ class CategoryTreeMapBlock(blocks.StructBlock):
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
 
-    category_type = CategoryTypeChooserBlock(label=_('Category type'), required=True)
-    value_attribute = CategoryAttributeTypeChooserBlock(label=_('Value attribute'), required=True)
+    category_type = CategoryTypeChooserBlock(required=True)
+    value_attribute = CategoryAttributeTypeChooserBlock(label=_('Value field'), required=True)
+
+    class Meta:
+        label = _('Category tree map')
 
     graphql_fields = [
         GraphQLForeignKey('category_type', CategoryType),
