@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 00:05+0300\n"
+"POT-Creation-Date: 2023-09-29 23:30+0300\n"
 "PO-Revision-Date: 2023-08-25 10:18+0000\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -72,7 +72,8 @@ msgstr "Luokat"
 msgid "Basic information"
 msgstr "Perustiedot"
 
-#: actions/action_admin.py indicators/blocks.py
+#: actions/action_admin.py actions/blocks/category_page_layout.py
+#: indicators/blocks.py
 msgid "Progress"
 msgstr "Eteneminen"
 
@@ -312,9 +313,8 @@ msgstr "Jos muoto on 'numeerinen', yksikkö vaaditaan"
 msgid "Choice options"
 msgstr "ominaisuuden valintavaihtoehdot"
 
-#: actions/attribute_type_admin.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/category_admin.py pages/models.py
-#: reports/blocks/action_content.py
+#: actions/attribute_type_admin.py actions/blocks/choosers.py
+#: actions/category_admin.py pages/models.py
 msgid "Category type"
 msgstr "Luokan tyyppi"
 
@@ -333,21 +333,53 @@ msgstr "%(attribute_type)s (valinta)"
 msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (teksti)"
 
+#: actions/blocks/__init__.py
+msgid "Related plans"
+msgstr "Liittyvät toimenpideohjelmat"
+
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+#: actions/blocks/choosers.py actions/blocks/filters.py
+msgid "Field"
+msgstr "kentät"
+
+#: actions/blocks/action_content.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+msgid "Category"
+msgstr "Luokka"
+
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
 msgstr ""
 
-#: actions/blocks/action_content.py
-msgid "contact form"
-msgstr "yhteydenottolomake"
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+msgid "Contact form"
+msgstr "Yhteydenottolomake"
 
 #: actions/blocks/action_content.py
 msgid "What label should be used in the public UI for the official name?"
 msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
 
 #: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field"
+msgid "Field label"
+msgstr "kentät"
+
+#: actions/blocks/action_content.py
 msgid "Description to show after the field content"
 msgstr "Kuvaus joka näytetään kentän sisällön jälkeen"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "action"
+msgid "Caption"
+msgstr "toimenpide"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "official name"
+msgid "Official name"
+msgstr "virallinen nimi"
 
 #: actions/blocks/action_content.py
 #, python-format
@@ -369,16 +401,6 @@ msgid "Related actions"
 msgstr "liittyvät toimenpiteet"
 
 #: actions/blocks/action_content.py
-msgid "Attribute"
-msgstr "Ominaisuus"
-
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
-msgstr "Luokka"
-
-#: actions/blocks/action_content.py
 msgid "Full width"
 msgstr "Täysi leveys"
 
@@ -387,7 +409,7 @@ msgid "Grid"
 msgstr "Ruudukko (grid)"
 
 #: actions/blocks/action_content.py actions/blocks/category_list.py
-#: pages/blocks.py
+#: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Otsikko"
 
@@ -403,23 +425,27 @@ msgstr "Lohkot"
 msgid "Section"
 msgstr "Osio"
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr "virallinen nimi"
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
-msgstr "Yhteydenottolomake"
+#: actions/blocks/action_list.py
+msgid "Action highlights"
+msgstr "Toimenpidenostot"
 
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
 
+#: actions/blocks/action_list.py
+msgid "Action list"
+msgstr "Toimenpideluettelo"
+
 #: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Johdanto"
 
-#: actions/blocks/category_list.py pages/models.py
+#: actions/blocks/category_list.py actions/blocks/filters.py
+msgid "Style"
+msgstr "Tyyli"
+
+#: actions/blocks/category_list.py pages/blocks.py pages/models.py
 msgid "Cards"
 msgstr "Kortit"
 
@@ -427,23 +453,45 @@ msgstr "Kortit"
 msgid "Table"
 msgstr "Taulukko"
 
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
+msgid "Category list"
+msgstr "Luokkaluettelo"
+
 #: actions/blocks/category_list.py
-msgid "Value attribute"
-msgstr "Arvo-ominaisuus"
+#, fuzzy
+#| msgid "field"
+msgid "Value field"
+msgstr "kentät"
+
+#: actions/blocks/category_list.py
+msgid "Category tree map"
+msgstr "Luokkien puuvisualisaatio"
 
 #: actions/blocks/category_page_layout.py
+msgid "Body"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "description"
+msgid "Description"
+msgstr "kuvaus"
+
+#: actions/blocks/category_page_layout.py
+msgid "Basis"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 #, fuzzy
 #| msgid "implementation phase"
 msgid "Implementation phase"
 msgstr "toteutusvaihe"
 
-#: actions/blocks/category_page_layout.py
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 msgid "Status"
 msgstr "Tila"
-
-#: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "Field"
-msgstr "kentät"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -458,12 +506,12 @@ msgid "Buttons"
 msgstr "Nappulat"
 
 #: actions/blocks/filters.py
-msgid "Style"
-msgstr "Tyyli"
-
-#: actions/blocks/filters.py
 msgid "How many levels of category hierarchy to show"
 msgstr "Montako tasoa kategorihierarkiasta näytetään"
+
+#: actions/blocks/filters.py
+msgid "Depth"
+msgstr ""
 
 #: actions/blocks/filters.py
 #, python-format
@@ -471,27 +519,27 @@ msgid "Filter: %(filter_label)s"
 msgstr "Suodatin: %(filter_label)s"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "responsible party"
+#, fuzzy
+#| msgid "responsible party"
+msgid "Responsible party"
 msgstr "vastuutaho"
 
-#: actions/blocks/filters.py actions/models/action.py
-msgid "primary organization"
+#: actions/blocks/filters.py
+#, fuzzy
+#| msgid "primary organization"
+msgid "Primary organization"
 msgstr "pääorganisaatio"
 
-#: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py reports/spreadsheets.py
-msgid "implementation phase"
-msgstr "toteutusvaihe"
+#: actions/blocks/filters.py actions/templates/actions/chooser_results.html
+#: actions/wagtail_admin.py
+msgid "Plan"
+msgstr "Toimenpideohjelma"
 
-#: actions/blocks/filters.py actions/models/action.py actions/models/plan.py
-#: content/models.py feedback/models.py indicators/models.py
-#: notifications/models.py orgs/models.py pages/models.py
-msgid "plan"
-msgstr "toimenpideohjelma"
-
-#: actions/blocks/filters.py actions/models/action.py
-msgid "schedule"
-msgstr "aikajänne"
+#: actions/blocks/filters.py
+#, fuzzy
+#| msgid "Scheduled"
+msgid "Schedule"
+msgstr "Julkaisu ajastettu"
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -599,8 +647,7 @@ msgstr "nimi"
 msgid "impact"
 msgstr "vaikuttavuus"
 
-#: actions/export.py actions/models/action.py reports/blocks/action_content.py
-#: reports/spreadsheets.py
+#: actions/export.py actions/models/action.py reports/spreadsheets.py
 msgid "status"
 msgstr "tila"
 
@@ -627,6 +674,20 @@ msgstr "Julkaistu"
 #: actions/models/action.py
 msgid "visibility"
 msgstr "Näkyvyys"
+
+#: actions/models/action.py actions/models/plan.py content/models.py
+#: feedback/models.py indicators/models.py notifications/models.py
+#: orgs/models.py pages/models.py
+msgid "plan"
+msgstr "toimenpideohjelma"
+
+#: actions/models/action.py
+msgid "primary organization"
+msgstr "pääorganisaatio"
+
+#: actions/models/action.py
+msgid "official name"
+msgstr "virallinen nimi"
 
 #: actions/models/action.py
 msgid "The name as approved by an official party"
@@ -665,6 +726,10 @@ msgstr "sisäiset muistiinpanot pääkäyttäjille"
 msgid "internal notes"
 msgstr "sisäiset muistiinpanot"
 
+#: actions/models/action.py reports/spreadsheets.py
+msgid "implementation phase"
+msgstr "toteutusvaihe"
+
 #: actions/models/action.py
 msgid "override status manually"
 msgstr "määritä toimenpiteen tila käsin"
@@ -696,6 +761,10 @@ msgstr "toteutumisaste"
 #: actions/models/action.py
 msgid "The completion percentage for this action"
 msgstr "Toimenpiteen toteutumisaste prosenteissa"
+
+#: actions/models/action.py
+msgid "schedule"
+msgstr "aikajänne"
 
 #: actions/models/action.py
 msgid "continuous action"
@@ -987,7 +1056,7 @@ msgid "action impact classes"
 msgstr "toimenpiteen vaikuttavuusluokat"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
-#: orgs/models.py pages/models.py
+#: orgs/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -1678,10 +1747,6 @@ msgstr "seurannan laatupiste"
 msgid "monitoring quality points"
 msgstr "seurannan laatupisteet"
 
-#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
-msgid "Plan"
-msgstr "Toimenpideohjelma"
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -2293,12 +2358,22 @@ msgid "Indicator"
 msgstr "Mittari"
 
 #: indicators/blocks.py
+msgid "Indicator highlights"
+msgstr "Mittarinostot"
+
+#: indicators/blocks.py
 msgid "Graph"
 msgstr "Graafi"
 
 #: indicators/blocks.py
 msgid "Animated"
 msgstr "Animoitu"
+
+#: indicators/blocks.py
+#, fuzzy
+#| msgid "indicator goals"
+msgid "Indicator showcase"
+msgstr "mittarin tavoitteet"
 
 #: indicators/chooser.py
 msgid "Choose an indicator"
@@ -2548,7 +2623,7 @@ msgstr "yleisen mittarin dimensio"
 msgid "common indicator dimensions"
 msgstr "yleisen mittarin dimensiot"
 
-#: indicators/models.py
+#: indicators/models.py pages/models.py
 msgid "level"
 msgstr "taso"
 
@@ -3396,8 +3471,22 @@ msgid "large"
 msgstr "suuri"
 
 #: pages/blocks.py
+#, fuzzy
+#| msgid "weight"
+msgid "Height"
+msgstr "paino"
+
+#: pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: pages/blocks.py
 msgid "Title"
 msgstr "Otsikko"
+
+#: pages/blocks.py
+msgid "Questions & Answers"
+msgstr "Kysymykset & vastaukset"
 
 #: pages/blocks.py
 msgid "Big image"
@@ -3406,6 +3495,10 @@ msgstr "Iso kuva"
 #: pages/blocks.py
 msgid "Small image"
 msgstr "Pieni kuva"
+
+#: pages/blocks.py
+msgid "Front page hero block"
+msgstr "Etusivun nosto"
 
 #: pages/blocks.py
 msgid "Links"
@@ -3426,6 +3519,10 @@ msgstr "Jos kuvauskappale on täytetty, se näytetään tekstin \"Tämän palvel
 #: pages/blocks.py
 msgid "Email address"
 msgstr "Sähköpostiosoite"
+
+#: pages/blocks.py
+msgid "Action status pie charts"
+msgstr "Ympyräkaaviot toimenpiteiden tilanteesta"
 
 #: pages/models.py
 msgid "show in footer"
@@ -3456,36 +3553,8 @@ msgid "Common page configuration"
 msgstr "Yleiset sivuasetukset"
 
 #: pages/models.py
-msgid "Front page hero block"
-msgstr "Etusivun nosto"
-
-#: pages/models.py
-msgid "Category list"
-msgstr "Luokkaluettelo"
-
-#: pages/models.py
-msgid "Indicator highlights"
-msgstr "Mittarinostot"
-
-#: pages/models.py
-msgid "Action highlights"
-msgstr "Toimenpidenostot"
-
-#: pages/models.py
-msgid "Related plans"
-msgstr "Liittyvät toimenpideohjelmat"
-
-#: pages/models.py
 msgid "Links to actions in specific category"
 msgstr "Linkitä valittujen luokkien toimenpiteisiin"
-
-#: pages/models.py
-msgid "Action status pie charts"
-msgstr "Ympyräkaaviot toimenpiteiden tilanteesta"
-
-#: pages/models.py
-msgid "Category tree map"
-msgstr "Luokkien puuvisualisaatio"
 
 #: pages/models.py
 msgid "Front page"
@@ -3518,10 +3587,6 @@ msgstr "Johdantokappale otsikon alapuolella"
 #: pages/models.py
 msgid "Paragraph"
 msgstr "Kappale"
-
-#: pages/models.py
-msgid "Questions & Answers"
-msgstr "Kysymykset & vastaukset"
 
 #: pages/models.py
 msgid "Content page"
@@ -3562,12 +3627,20 @@ msgid "Large"
 msgstr "suuri"
 
 #: pages/models.py
-msgid "icon size"
+msgid "layout main top"
 msgstr ""
 
 #: pages/models.py
-msgid "Action list"
-msgstr "Toimenpideluettelo"
+msgid "layout main bottom"
+msgstr ""
+
+#: pages/models.py
+msgid "layout aside"
+msgstr ""
+
+#: pages/models.py
+msgid "icon size"
+msgstr ""
 
 #: pages/models.py
 msgid "Category page"
@@ -3848,13 +3921,15 @@ msgstr "kirjautunut viimeksi"
 msgid "contact for indicators"
 msgstr "yhteyshenkilönä mittareille"
 
-#: reports/blocks/action_content.py reports/wagtail_admin.py
-msgid "Report type"
-msgstr "Raporttityyppi"
-
 #: reports/blocks/action_content.py
 msgid "UUID of report field"
 msgstr "Raporttikentän UUID"
+
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "Enable indicator comparison"
+msgid "Report comparison"
+msgstr "Ota mittareiden vertailu käyttöön"
 
 #: reports/blocks/action_content.py
 msgid "Action field"
@@ -3871,6 +3946,16 @@ msgstr "Organisaatiohierarkian taso"
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Raporttiin tulostetaan organisaation itsensä lisäksi sen yläorganisaatio. Laskien ylimmästä organisaatiosta (1), miltä tasolta organisaatiohierarkiaa tämä yläorganisaatio pitäisi poimia? Jos tyhjä, yläorganisaatiota ei lisätä raporttiin."
+
+#: reports/blocks/choosers.py reports/wagtail_admin.py
+msgid "Report type"
+msgstr "Raporttityyppi"
+
+#: reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type"
+msgid "Report type field"
+msgstr "Raporttityyppi"
 
 #: reports/chooser.py
 msgid "Choose a report type"
@@ -4101,6 +4186,15 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgid "contact form"
+#~ msgstr "yhteydenottolomake"
+
+#~ msgid "Attribute"
+#~ msgstr "Ominaisuus"
+
+#~ msgid "Value attribute"
+#~ msgstr "Arvo-ominaisuus"
 
 #~ msgid "Plan name"
 #~ msgstr "Toimenpideohjelman nimi"

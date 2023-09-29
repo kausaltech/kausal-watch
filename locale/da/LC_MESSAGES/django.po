@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 00:05+0300\n"
+"POT-Creation-Date: 2023-09-29 23:30+0300\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -72,7 +72,8 @@ msgstr "Kategorier"
 msgid "Basic information"
 msgstr "Grundlæggende oplysninger"
 
-#: actions/action_admin.py indicators/blocks.py
+#: actions/action_admin.py actions/blocks/category_page_layout.py
+#: indicators/blocks.py
 msgid "Progress"
 msgstr "Fremskridt"
 
@@ -316,9 +317,8 @@ msgstr "Hvis formatet er 'Numerisk', skal der angives en enhed"
 msgid "Choice options"
 msgstr "valgmuligheder for attributter"
 
-#: actions/attribute_type_admin.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/category_admin.py pages/models.py
-#: reports/blocks/action_content.py
+#: actions/attribute_type_admin.py actions/blocks/choosers.py
+#: actions/category_admin.py pages/models.py
 msgid "Category type"
 msgstr "Kategoritype"
 
@@ -337,13 +337,29 @@ msgstr "%(attribute_type)s (valg)"
 msgid "%(attribute_type)s (text)"
 msgstr "%(attribute_type)s (text)"
 
+#: actions/blocks/__init__.py
+msgid "Related plans"
+msgstr "Relaterede planer"
+
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+#: actions/blocks/choosers.py actions/blocks/filters.py
+#, fuzzy
+#| msgid "fields"
+msgid "Field"
+msgstr "felter"
+
+#: actions/blocks/action_content.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+msgid "Category"
+msgstr "Kategori"
+
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
 msgstr ""
 
-#: actions/blocks/action_content.py
-msgid "contact form"
-msgstr "kontaktformular"
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+msgid "Contact form"
+msgstr "Kontaktformular"
 
 #: actions/blocks/action_content.py
 #, fuzzy
@@ -352,8 +368,26 @@ msgid "What label should be used in the public UI for the official name?"
 msgstr "Hvilken etiket skal bruges i den offentlige brugergrænseflade til det officielle navn"
 
 #: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "fields"
+msgid "Field label"
+msgstr "felter"
+
+#: actions/blocks/action_content.py
 msgid "Description to show after the field content"
 msgstr "Beskrivelse, der skal vises efter feltets indhold"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "action"
+msgid "Caption"
+msgstr "handling"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "official name"
+msgid "Official name"
+msgstr "officielt navn"
 
 #: actions/blocks/action_content.py
 #, python-format
@@ -375,16 +409,6 @@ msgid "Related actions"
 msgstr "relaterede handlinger"
 
 #: actions/blocks/action_content.py
-msgid "Attribute"
-msgstr "Attribut"
-
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
-msgstr "Kategori"
-
-#: actions/blocks/action_content.py
 msgid "Full width"
 msgstr "Fuld bredde"
 
@@ -393,7 +417,7 @@ msgid "Grid"
 msgstr "Grid"
 
 #: actions/blocks/action_content.py actions/blocks/category_list.py
-#: pages/blocks.py
+#: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Overskrift"
 
@@ -409,23 +433,27 @@ msgstr "Blokke"
 msgid "Section"
 msgstr "Afsnit"
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr "officielt navn"
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
-msgstr "Kontaktformular"
+#: actions/blocks/action_list.py
+msgid "Action highlights"
+msgstr "Handlingshøjdepunkter"
 
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Filtrer på kategori"
 
+#: actions/blocks/action_list.py
+msgid "Action list"
+msgstr "Handlingsliste"
+
 #: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr "Ledende"
 
-#: actions/blocks/category_list.py pages/models.py
+#: actions/blocks/category_list.py actions/blocks/filters.py
+msgid "Style"
+msgstr "Stil"
+
+#: actions/blocks/category_list.py pages/blocks.py pages/models.py
 msgid "Cards"
 msgstr "Kort"
 
@@ -433,25 +461,45 @@ msgstr "Kort"
 msgid "Table"
 msgstr "Bord"
 
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
+msgid "Category list"
+msgstr "Kategoriliste"
+
 #: actions/blocks/category_list.py
-msgid "Value attribute"
-msgstr "Værdiattribut"
+#, fuzzy
+#| msgid "fields"
+msgid "Value field"
+msgstr "felter"
+
+#: actions/blocks/category_list.py
+msgid "Category tree map"
+msgstr "Kategori trækort"
 
 #: actions/blocks/category_page_layout.py
+msgid "Body"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+#, fuzzy
+#| msgid "description"
+msgid "Description"
+msgstr "beskrivelse"
+
+#: actions/blocks/category_page_layout.py
+msgid "Basis"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 #, fuzzy
 #| msgid "implementation phase"
 msgid "Implementation phase"
 msgstr "implementeringsfasen"
 
-#: actions/blocks/category_page_layout.py
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 msgid "Status"
 msgstr "Status"
-
-#: actions/blocks/filters.py reports/blocks/action_content.py
-#, fuzzy
-#| msgid "fields"
-msgid "Field"
-msgstr "felter"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -466,12 +514,12 @@ msgid "Buttons"
 msgstr "Knapper"
 
 #: actions/blocks/filters.py
-msgid "Style"
-msgstr "Stil"
-
-#: actions/blocks/filters.py
 msgid "How many levels of category hierarchy to show"
 msgstr "Hvor mange niveauer af kategorihierarki der skal vises"
+
+#: actions/blocks/filters.py
+msgid "Depth"
+msgstr ""
 
 #: actions/blocks/filters.py
 #, python-format
@@ -479,27 +527,27 @@ msgid "Filter: %(filter_label)s"
 msgstr "Filter: %(filter_label)s"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "responsible party"
+#, fuzzy
+#| msgid "responsible party"
+msgid "Responsible party"
 msgstr "ansvarlig part"
 
-#: actions/blocks/filters.py actions/models/action.py
-msgid "primary organization"
+#: actions/blocks/filters.py
+#, fuzzy
+#| msgid "primary organization"
+msgid "Primary organization"
 msgstr "primær organisation"
 
-#: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py reports/spreadsheets.py
-msgid "implementation phase"
-msgstr "implementeringsfasen"
+#: actions/blocks/filters.py actions/templates/actions/chooser_results.html
+#: actions/wagtail_admin.py
+msgid "Plan"
+msgstr "Plan"
 
-#: actions/blocks/filters.py actions/models/action.py actions/models/plan.py
-#: content/models.py feedback/models.py indicators/models.py
-#: notifications/models.py orgs/models.py pages/models.py
-msgid "plan"
-msgstr "plan"
-
-#: actions/blocks/filters.py actions/models/action.py
-msgid "schedule"
-msgstr "tidsplan"
+#: actions/blocks/filters.py
+#, fuzzy
+#| msgid "Scheduled"
+msgid "Schedule"
+msgstr "Planlagt"
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -611,8 +659,7 @@ msgstr "navn"
 msgid "impact"
 msgstr "indvirkning"
 
-#: actions/export.py actions/models/action.py reports/blocks/action_content.py
-#: reports/spreadsheets.py
+#: actions/export.py actions/models/action.py reports/spreadsheets.py
 msgid "status"
 msgstr "status"
 
@@ -643,6 +690,20 @@ msgstr "Publiceret"
 #| msgid "Accessibility"
 msgid "visibility"
 msgstr "Tilgængelighed"
+
+#: actions/models/action.py actions/models/plan.py content/models.py
+#: feedback/models.py indicators/models.py notifications/models.py
+#: orgs/models.py pages/models.py
+msgid "plan"
+msgstr "plan"
+
+#: actions/models/action.py
+msgid "primary organization"
+msgstr "primær organisation"
+
+#: actions/models/action.py
+msgid "official name"
+msgstr "officielt navn"
 
 #: actions/models/action.py
 msgid "The name as approved by an official party"
@@ -681,6 +742,10 @@ msgstr "interne notater til planadministratorer"
 msgid "internal notes"
 msgstr "interne noter"
 
+#: actions/models/action.py reports/spreadsheets.py
+msgid "implementation phase"
+msgstr "implementeringsfasen"
+
 #: actions/models/action.py
 msgid "override status manually"
 msgstr "tilsidesætte status manuelt"
@@ -712,6 +777,10 @@ msgstr "færdiggørelse"
 #: actions/models/action.py
 msgid "The completion percentage for this action"
 msgstr "Fuldførelsesprocenten for denne handling"
+
+#: actions/models/action.py
+msgid "schedule"
+msgstr "tidsplan"
 
 #: actions/models/action.py
 msgid "continuous action"
@@ -1003,7 +1072,7 @@ msgid "action impact classes"
 msgstr "handlingsindvirkningsklasser"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
-#: orgs/models.py pages/models.py
+#: orgs/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr "URL"
 
@@ -1708,10 +1777,6 @@ msgstr "overvågningskvalitetspunkt"
 msgid "monitoring quality points"
 msgstr "overvågning af kvalitetspunkter"
 
-#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
-msgid "Plan"
-msgstr "Plan"
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -2335,12 +2400,22 @@ msgid "Indicator"
 msgstr "Indikator"
 
 #: indicators/blocks.py
+msgid "Indicator highlights"
+msgstr "Indikatorhøjdepunkter"
+
+#: indicators/blocks.py
 msgid "Graph"
 msgstr "Kurve"
 
 #: indicators/blocks.py
 msgid "Animated"
 msgstr "Animeret"
+
+#: indicators/blocks.py
+#, fuzzy
+#| msgid "indicator goals"
+msgid "Indicator showcase"
+msgstr "indikator mål"
 
 #: indicators/chooser.py
 msgid "Choose an indicator"
@@ -2590,7 +2665,7 @@ msgstr "fælles indikatordimension"
 msgid "common indicator dimensions"
 msgstr "almindelige indikatordimensioner"
 
-#: indicators/models.py
+#: indicators/models.py pages/models.py
 msgid "level"
 msgstr "niveau"
 
@@ -3470,8 +3545,22 @@ msgid "large"
 msgstr "stor"
 
 #: pages/blocks.py
+#, fuzzy
+#| msgid "weight"
+msgid "Height"
+msgstr "vægt"
+
+#: pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: pages/blocks.py
 msgid "Title"
 msgstr "Titel"
+
+#: pages/blocks.py
+msgid "Questions & Answers"
+msgstr "Spørgsmål & svar"
 
 #: pages/blocks.py
 msgid "Big image"
@@ -3480,6 +3569,10 @@ msgstr "Stort billede"
 #: pages/blocks.py
 msgid "Small image"
 msgstr "Lille billede"
+
+#: pages/blocks.py
+msgid "Front page hero block"
+msgstr "Forside helteblok"
 
 #: pages/blocks.py
 msgid "Links"
@@ -3502,6 +3595,12 @@ msgstr "Hvis dette er indstillet, vil det blive vist i stedet for \"Denne tjenes
 #: pages/blocks.py
 msgid "Email address"
 msgstr "Email adresse"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Action statuses"
+msgid "Action status pie charts"
+msgstr "Handlingsstatusser"
 
 #: pages/models.py
 msgid "show in footer"
@@ -3532,38 +3631,8 @@ msgid "Common page configuration"
 msgstr "Fælles sidekonfiguration"
 
 #: pages/models.py
-msgid "Front page hero block"
-msgstr "Forside helteblok"
-
-#: pages/models.py
-msgid "Category list"
-msgstr "Kategoriliste"
-
-#: pages/models.py
-msgid "Indicator highlights"
-msgstr "Indikatorhøjdepunkter"
-
-#: pages/models.py
-msgid "Action highlights"
-msgstr "Handlingshøjdepunkter"
-
-#: pages/models.py
-msgid "Related plans"
-msgstr "Relaterede planer"
-
-#: pages/models.py
 msgid "Links to actions in specific category"
 msgstr "Links til handlinger i en bestemt kategori"
-
-#: pages/models.py
-#, fuzzy
-#| msgid "Action statuses"
-msgid "Action status pie charts"
-msgstr "Handlingsstatusser"
-
-#: pages/models.py
-msgid "Category tree map"
-msgstr "Kategori trækort"
 
 #: pages/models.py
 msgid "Front page"
@@ -3596,10 +3665,6 @@ msgstr "Hovedafsnit lige under overskriften"
 #: pages/models.py
 msgid "Paragraph"
 msgstr "Afsnit"
-
-#: pages/models.py
-msgid "Questions & Answers"
-msgstr "Spørgsmål & svar"
 
 #: pages/models.py
 msgid "Content page"
@@ -3640,12 +3705,20 @@ msgid "Large"
 msgstr "stor"
 
 #: pages/models.py
-msgid "icon size"
+msgid "layout main top"
 msgstr ""
 
 #: pages/models.py
-msgid "Action list"
-msgstr "Handlingsliste"
+msgid "layout main bottom"
+msgstr ""
+
+#: pages/models.py
+msgid "layout aside"
+msgstr ""
+
+#: pages/models.py
+msgid "icon size"
+msgstr ""
 
 #: pages/models.py
 msgid "Category page"
@@ -3932,13 +4005,15 @@ msgstr "sidste login"
 msgid "contact for indicators"
 msgstr "kontakt for indikatorer"
 
-#: reports/blocks/action_content.py reports/wagtail_admin.py
-msgid "Report type"
-msgstr "Rapporttype"
-
 #: reports/blocks/action_content.py
 msgid "UUID of report field"
 msgstr "UUID for rapportfelt"
+
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "Enable indicator comparison"
+msgid "Report comparison"
+msgstr "Aktiver indikatorsammenligning"
 
 #: reports/blocks/action_content.py
 #, fuzzy
@@ -3961,6 +4036,16 @@ msgstr "Hovedorganisation"
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
 msgstr "Ud over selve organisationen er en organisatorisk enhed, der indeholder organisationen, inkluderet i rapporten. Hvilket niveau i organisationshierarkiet skal bruges til at finde denne indeholdende organisation, når man tæller fra den øverste rodorganisation på niveau 1? Hvis det er tomt, skal du ikke tilføje den indeholdende organisation til rapporten."
+
+#: reports/blocks/choosers.py reports/wagtail_admin.py
+msgid "Report type"
+msgstr "Rapporttype"
+
+#: reports/blocks/choosers.py
+#, fuzzy
+#| msgid "Report type"
+msgid "Report type field"
+msgstr "Rapporttype"
 
 #: reports/chooser.py
 #, fuzzy
@@ -4218,6 +4303,15 @@ msgstr "Brugere"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
+
+#~ msgid "contact form"
+#~ msgstr "kontaktformular"
+
+#~ msgid "Attribute"
+#~ msgstr "Attribut"
+
+#~ msgid "Value attribute"
+#~ msgstr "Værdiattribut"
 
 #~ msgid "Plan name"
 #~ msgstr "Plannavn"

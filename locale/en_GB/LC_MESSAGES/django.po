@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 00:05+0300\n"
+"POT-Creation-Date: 2023-09-29 23:30+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Bernhard Bliem, 2022\n"
 "Language-Team: English (United Kingdom) (https://www.transifex.com/kausal-tech/teams/113123/en_GB/)\n"
@@ -71,7 +71,8 @@ msgstr ""
 msgid "Basic information"
 msgstr ""
 
-#: actions/action_admin.py indicators/blocks.py
+#: actions/action_admin.py actions/blocks/category_page_layout.py
+#: indicators/blocks.py
 msgid "Progress"
 msgstr ""
 
@@ -289,9 +290,8 @@ msgstr ""
 msgid "Choice options"
 msgstr ""
 
-#: actions/attribute_type_admin.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/category_admin.py pages/models.py
-#: reports/blocks/action_content.py
+#: actions/attribute_type_admin.py actions/blocks/choosers.py
+#: actions/category_admin.py pages/models.py
 msgid "Category type"
 msgstr ""
 
@@ -310,12 +310,26 @@ msgstr ""
 msgid "%(attribute_type)s (text)"
 msgstr ""
 
+#: actions/blocks/__init__.py
+msgid "Related plans"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+#: actions/blocks/choosers.py actions/blocks/filters.py
+msgid "Field"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+msgid "Category"
+msgstr ""
+
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
 msgstr ""
 
-#: actions/blocks/action_content.py
-msgid "contact form"
+#: actions/blocks/action_content.py actions/blocks/category_page_layout.py
+msgid "Contact form"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -323,7 +337,19 @@ msgid "What label should be used in the public UI for the official name?"
 msgstr ""
 
 #: actions/blocks/action_content.py
+msgid "Field label"
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Description to show after the field content"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Caption"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Official name"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -344,16 +370,6 @@ msgid "Related actions"
 msgstr ""
 
 #: actions/blocks/action_content.py
-msgid "Attribute"
-msgstr ""
-
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/blocks.py
-#: pages/models.py
-msgid "Category"
-msgstr ""
-
-#: actions/blocks/action_content.py
 msgid "Full width"
 msgstr ""
 
@@ -362,7 +378,7 @@ msgid "Grid"
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_list.py
-#: pages/blocks.py
+#: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr ""
 
@@ -378,23 +394,27 @@ msgstr ""
 msgid "Section"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/models/action.py
-msgid "official name"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Contact form"
+#: actions/blocks/action_list.py
+msgid "Action highlights"
 msgstr ""
 
 #: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr ""
 
+#: actions/blocks/action_list.py
+msgid "Action list"
+msgstr ""
+
 #: actions/blocks/category_list.py pages/blocks.py reports/spreadsheets.py
 msgid "Lead"
 msgstr ""
 
-#: actions/blocks/category_list.py pages/models.py
+#: actions/blocks/category_list.py actions/blocks/filters.py
+msgid "Style"
+msgstr ""
+
+#: actions/blocks/category_list.py pages/blocks.py pages/models.py
 msgid "Cards"
 msgstr ""
 
@@ -402,20 +422,38 @@ msgstr ""
 msgid "Table"
 msgstr ""
 
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
+msgid "Category list"
+msgstr ""
+
 #: actions/blocks/category_list.py
-msgid "Value attribute"
+msgid "Value field"
+msgstr ""
+
+#: actions/blocks/category_list.py
+msgid "Category tree map"
 msgstr ""
 
 #: actions/blocks/category_page_layout.py
+msgid "Body"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+msgid "Description"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py
+msgid "Basis"
+msgstr ""
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 msgid "Implementation phase"
 msgstr ""
 
-#: actions/blocks/category_page_layout.py
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
 msgid "Status"
-msgstr ""
-
-#: actions/blocks/filters.py reports/blocks/action_content.py
-msgid "Field"
 msgstr ""
 
 #: actions/blocks/filters.py
@@ -431,11 +469,11 @@ msgid "Buttons"
 msgstr ""
 
 #: actions/blocks/filters.py
-msgid "Style"
+msgid "How many levels of category hierarchy to show"
 msgstr ""
 
 #: actions/blocks/filters.py
-msgid "How many levels of category hierarchy to show"
+msgid "Depth"
 msgstr ""
 
 #: actions/blocks/filters.py
@@ -446,26 +484,22 @@ msgstr ""
 #: actions/blocks/filters.py reports/blocks/action_content.py
 #, fuzzy
 #| msgid "responsible organizations"
-msgid "responsible party"
+msgid "Responsible party"
 msgstr "responsible organisations"
 
-#: actions/blocks/filters.py actions/models/action.py
-msgid "primary organization"
+#: actions/blocks/filters.py
+#, fuzzy
+#| msgid "primary organization"
+msgid "Primary organization"
 msgstr "primary organisation"
 
-#: actions/blocks/filters.py actions/models/action.py
-#: reports/blocks/action_content.py reports/spreadsheets.py
-msgid "implementation phase"
+#: actions/blocks/filters.py actions/templates/actions/chooser_results.html
+#: actions/wagtail_admin.py
+msgid "Plan"
 msgstr ""
 
-#: actions/blocks/filters.py actions/models/action.py actions/models/plan.py
-#: content/models.py feedback/models.py indicators/models.py
-#: notifications/models.py orgs/models.py pages/models.py
-msgid "plan"
-msgstr ""
-
-#: actions/blocks/filters.py actions/models/action.py
-msgid "schedule"
+#: actions/blocks/filters.py
+msgid "Schedule"
 msgstr ""
 
 #: actions/category_admin.py
@@ -570,8 +604,7 @@ msgstr ""
 msgid "impact"
 msgstr ""
 
-#: actions/export.py actions/models/action.py reports/blocks/action_content.py
-#: reports/spreadsheets.py
+#: actions/export.py actions/models/action.py reports/spreadsheets.py
 msgid "status"
 msgstr ""
 
@@ -597,6 +630,20 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "visibility"
+msgstr ""
+
+#: actions/models/action.py actions/models/plan.py content/models.py
+#: feedback/models.py indicators/models.py notifications/models.py
+#: orgs/models.py pages/models.py
+msgid "plan"
+msgstr ""
+
+#: actions/models/action.py
+msgid "primary organization"
+msgstr "primary organisation"
+
+#: actions/models/action.py
+msgid "official name"
 msgstr ""
 
 #: actions/models/action.py
@@ -636,6 +683,10 @@ msgstr ""
 msgid "internal notes"
 msgstr ""
 
+#: actions/models/action.py reports/spreadsheets.py
+msgid "implementation phase"
+msgstr ""
+
 #: actions/models/action.py
 msgid "override status manually"
 msgstr ""
@@ -666,6 +717,10 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "The completion percentage for this action"
+msgstr ""
+
+#: actions/models/action.py
+msgid "schedule"
 msgstr ""
 
 #: actions/models/action.py
@@ -956,7 +1011,7 @@ msgid "action impact classes"
 msgstr ""
 
 #: actions/models/action.py feedback/models.py indicators/models.py
-#: orgs/models.py pages/models.py
+#: orgs/models.py pages/blocks.py pages/models.py
 msgid "URL"
 msgstr ""
 
@@ -1641,10 +1696,6 @@ msgstr ""
 msgid "monitoring quality points"
 msgstr ""
 
-#: actions/templates/actions/chooser_results.html actions/wagtail_admin.py
-msgid "Plan"
-msgstr ""
-
 #: actions/templates/site_summary/actions.html
 #, python-format
 msgid ""
@@ -2238,11 +2289,19 @@ msgid "Indicator"
 msgstr ""
 
 #: indicators/blocks.py
+msgid "Indicator highlights"
+msgstr ""
+
+#: indicators/blocks.py
 msgid "Graph"
 msgstr ""
 
 #: indicators/blocks.py
 msgid "Animated"
+msgstr ""
+
+#: indicators/blocks.py
+msgid "Indicator showcase"
 msgstr ""
 
 #: indicators/chooser.py
@@ -2493,7 +2552,7 @@ msgstr ""
 msgid "common indicator dimensions"
 msgstr ""
 
-#: indicators/models.py
+#: indicators/models.py pages/models.py
 msgid "level"
 msgstr ""
 
@@ -3306,7 +3365,19 @@ msgid "large"
 msgstr ""
 
 #: pages/blocks.py
+msgid "Height"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: pages/blocks.py
 msgid "Title"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Questions & Answers"
 msgstr ""
 
 #: pages/blocks.py
@@ -3315,6 +3386,10 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Small image"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Front page hero block"
 msgstr ""
 
 #: pages/blocks.py
@@ -3335,6 +3410,10 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Email address"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Action status pie charts"
 msgstr ""
 
 #: pages/models.py
@@ -3366,35 +3445,7 @@ msgid "Common page configuration"
 msgstr ""
 
 #: pages/models.py
-msgid "Front page hero block"
-msgstr ""
-
-#: pages/models.py
-msgid "Category list"
-msgstr ""
-
-#: pages/models.py
-msgid "Indicator highlights"
-msgstr ""
-
-#: pages/models.py
-msgid "Action highlights"
-msgstr ""
-
-#: pages/models.py
-msgid "Related plans"
-msgstr ""
-
-#: pages/models.py
 msgid "Links to actions in specific category"
-msgstr ""
-
-#: pages/models.py
-msgid "Action status pie charts"
-msgstr ""
-
-#: pages/models.py
-msgid "Category tree map"
 msgstr ""
 
 #: pages/models.py
@@ -3430,10 +3481,6 @@ msgid "Paragraph"
 msgstr ""
 
 #: pages/models.py
-msgid "Questions & Answers"
-msgstr ""
-
-#: pages/models.py
 msgid "Content page"
 msgstr ""
 
@@ -3466,11 +3513,19 @@ msgid "Large"
 msgstr ""
 
 #: pages/models.py
-msgid "icon size"
+msgid "layout main top"
 msgstr ""
 
 #: pages/models.py
-msgid "Action list"
+msgid "layout main bottom"
+msgstr ""
+
+#: pages/models.py
+msgid "layout aside"
+msgstr ""
+
+#: pages/models.py
+msgid "icon size"
 msgstr ""
 
 #: pages/models.py
@@ -3754,13 +3809,15 @@ msgstr ""
 msgid "contact for indicators"
 msgstr ""
 
-#: reports/blocks/action_content.py reports/wagtail_admin.py
-msgid "Report type"
-msgstr ""
-
 #: reports/blocks/action_content.py
 msgid "UUID of report field"
 msgstr ""
+
+#: reports/blocks/action_content.py
+#, fuzzy
+#| msgid "usable for indicator categorization"
+msgid "Report comparison"
+msgstr "usable for indicator categorisation"
 
 #: reports/blocks/action_content.py
 msgid "Action field"
@@ -3778,6 +3835,14 @@ msgstr "organisation"
 
 #: reports/blocks/action_content.py
 msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr ""
+
+#: reports/blocks/choosers.py reports/wagtail_admin.py
+msgid "Report type"
+msgstr ""
+
+#: reports/blocks/choosers.py
+msgid "Report type field"
 msgstr ""
 
 #: reports/chooser.py
