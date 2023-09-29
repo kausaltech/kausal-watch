@@ -118,6 +118,6 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
 
     graphql_types = [
         ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
-        ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock,
+        ActionStatusFilterBlock, ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock,
         PlanFilterBlock
     ]
