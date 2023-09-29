@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-29 23:30+0300\n"
-"PO-Revision-Date: 2023-09-28 21:07+0000\n"
+"PO-Revision-Date: 2023-09-29 20:43+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -337,24 +338,18 @@ msgid "What label should be used in the public UI for the official name?"
 msgstr "Welche Bezeichnung sollte in der öffentlichen Benutzeroberfläche für den offiziellen Namen verwendet werden?"
 
 #: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "Field"
 msgid "Field label"
-msgstr "Feld"
+msgstr "Feldbeschriftung"
 
 #: actions/blocks/action_content.py
 msgid "Description to show after the field content"
 msgstr "Beschreibung, die nach dem Feldinhalt angezeigt werden soll"
 
 #: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "action"
 msgid "Caption"
-msgstr "Maßnahme"
+msgstr "Beschriftung"
 
 #: actions/blocks/action_content.py
-#, fuzzy
-#| msgid "official name"
 msgid "Official name"
 msgstr "Offizieller Name"
 
@@ -433,10 +428,8 @@ msgid "Category list"
 msgstr "Kategorieliste"
 
 #: actions/blocks/category_list.py
-#, fuzzy
-#| msgid "field"
 msgid "Value field"
-msgstr "Feld"
+msgstr "Wertfeld"
 
 #: actions/blocks/category_list.py
 msgid "Category tree map"
@@ -444,17 +437,15 @@ msgstr "Kategorie-Baumkarte"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
-msgstr ""
+msgstr "Textkörper"
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "description"
 msgid "Description"
 msgstr "Beschreibung"
 
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
-msgstr ""
+msgstr "Basis"
 
 #: actions/blocks/category_page_layout.py actions/blocks/filters.py
 #: reports/blocks/action_content.py
@@ -484,7 +475,7 @@ msgstr "Wie viele Ebenen der Kategoriehierarchie angezeigt werden sollen"
 
 #: actions/blocks/filters.py
 msgid "Depth"
-msgstr ""
+msgstr "Tiefe"
 
 #: actions/blocks/filters.py
 #, python-format
@@ -492,14 +483,10 @@ msgid "Filter: %(filter_label)s"
 msgstr "Filter: %(filter_label)s"
 
 #: actions/blocks/filters.py reports/blocks/action_content.py
-#, fuzzy
-#| msgid "responsible party"
 msgid "Responsible party"
 msgstr "Zuständige Stelle"
 
 #: actions/blocks/filters.py
-#, fuzzy
-#| msgid "primary organization"
 msgid "Primary organization"
 msgstr "Primärorganisation"
 
@@ -509,10 +496,8 @@ msgid "Plan"
 msgstr "Plan"
 
 #: actions/blocks/filters.py
-#, fuzzy
-#| msgid "Scheduled"
 msgid "Schedule"
-msgstr "Geplant"
+msgstr "Zeitplan"
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -2301,10 +2286,8 @@ msgid "Animated"
 msgstr "Animiert"
 
 #: indicators/blocks.py
-#, fuzzy
-#| msgid "indicator goals"
 msgid "Indicator showcase"
-msgstr "Indikatorziele"
+msgstr "Vorzeigeindikator"
 
 #: indicators/chooser.py
 msgid "Choose an indicator"
@@ -3357,14 +3340,12 @@ msgid "large"
 msgstr "groß"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "weight"
 msgid "Height"
-msgstr "Gewicht"
+msgstr "Höhe"
 
 #: pages/blocks.py
 msgid "Embed"
-msgstr ""
+msgstr "Einbettung"
 
 #: pages/blocks.py
 msgid "Title"
@@ -3508,15 +3489,15 @@ msgstr "Groß"
 
 #: pages/models.py
 msgid "layout main top"
-msgstr ""
+msgstr "Layout Hauptteil oben"
 
 #: pages/models.py
 msgid "layout main bottom"
-msgstr ""
+msgstr "Layout Hauptteil unten"
 
 #: pages/models.py
 msgid "layout aside"
-msgstr ""
+msgstr "Layout seitlich"
 
 #: pages/models.py
 msgid "icon size"
@@ -3804,10 +3785,8 @@ msgid "UUID of report field"
 msgstr "UUID des Berichtfelds"
 
 #: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "Enable indicator comparison"
 msgid "Report comparison"
-msgstr "Indikatorenvergleich ermöglichen"
+msgstr "Berichtevergleich"
 
 #: reports/blocks/action_content.py
 msgid "Action field"
@@ -3830,10 +3809,8 @@ msgid "Report type"
 msgstr "Berichtstyp"
 
 #: reports/blocks/choosers.py
-#, fuzzy
-#| msgid "Report type"
 msgid "Report type field"
-msgstr "Berichtstyp"
+msgstr "Berichtstypfeld"
 
 #: reports/chooser.py
 msgid "Choose a report type"
