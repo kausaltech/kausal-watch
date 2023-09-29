@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-09-29 23:30+0300\n"
-"PO-Revision-Date: 2023-09-29 20:43+0000\n"
+"PO-Revision-Date: 2023-09-30 21:19+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
 "\n"
@@ -20,7 +20,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.0.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -3233,7 +3233,9 @@ msgstr "Wollen Sie die Organisation '%(org)s' wirklich in den Plan '%(plan)s' au
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
-msgstr "Wollen Sie die Organisation '%(org)s' wirklich aus dem Plan '%(plan)s' ausschließen?"
+msgstr ""
+"Wollen Sie die Organisation '%(org)s' wirklich aus dem Plan '%(plan)s' "
+"ausschließen?"
 
 #: orgs/views.py
 msgid "The organization is already included in the plan"
