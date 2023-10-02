@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import SingleObjectMixin
 from wagtail.admin.panels import (
-    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList
+    FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, Panel
 )
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.admin.widgets import AdminAutoHeightTextInput
@@ -45,6 +45,36 @@ if typing.TYPE_CHECKING:
     from users.models import User
 
 logger = logging.getLogger(__name__)
+
+
+class ReadOnlyInlinePanel(Panel):
+    """Variant of InlinePanel where no form inputs are output."""
+    def __init__(self, relation_name=None, *args, **kwargs):
+        self.relation_name = relation_name
+        super().__init__(*args, **kwargs)
+
+    def clone_kwargs(self):
+        """
+        Return a dictionary of keyword arguments that can be used to create a clone of this panel definition.
+        """
+        result = super().clone_kwargs()
+        result['relation_name'] = self.relation_name
+        return result
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = "aplans/panels/read_only_inline_panel.html"
+
+        def get_context_data(self, parent_context=None):
+            context = super().get_context_data(parent_context)
+            relation_name = self.panel.relation_name
+            context['items'] = [
+                {
+                    'label': el.get_label() if hasattr(el, 'get_label') else '',
+                    'value': el.get_value() if hasattr(el, 'get_value') else str(el)
+                }
+                for el in getattr(self.instance, relation_name).all()
+            ]
+            return context
 
 
 class ActionPermissionHelper(PlanRelatedPermissionHelper):
@@ -556,18 +586,30 @@ class ActionAdmin(AplansModelAdmin):
         else:
             all_tabs.append(ObjectList([contact_person_inline_panel], heading=_('Contact persons')))
 
+        if is_general_admin:
+            all_tabs.append(
+                ObjectList([
+                    InlinePanel(
+                        'responsible_parties',
+                        heading=_('Responsible parties'),
+                        panels=[
+                            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+                            FieldPanel('role'),
+                            FieldPanel('specifier'),
+                        ]
+                    )
+                ], heading=_('Responsible parties'))
+            )
+        else:
+            all_tabs.append(
+                ObjectList([
+                    ReadOnlyInlinePanel(
+                        heading=_('Responsible parties'),
+                        relation_name='responsible_parties')
+                ], heading=_('Responsible parties')),
+            )
+
         all_tabs += [
-            AdminOnlyPanel([
-                InlinePanel(
-                    'responsible_parties',
-                    heading=_('Responsible parties'),
-                    panels=[
-                        FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-                        FieldPanel('role'),
-                        FieldPanel('specifier'),
-                    ]
-                )
-            ], heading=_('Responsible parties')),
             ObjectList([
                 CondensedInlinePanel(
                     'tasks',

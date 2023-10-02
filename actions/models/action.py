@@ -804,6 +804,17 @@ class ActionResponsibleParty(OrderedModel):
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
 
+    def get_label(self):
+        label = ''
+        if self.role:
+            label += self.get_role_display()
+        if self.specifier:
+            label += f' ({self.specifier})'
+        return label
+
+    def get_value(self):
+        return self.organization.name
+
     def __str__(self):
         return str(self.organization)
 
