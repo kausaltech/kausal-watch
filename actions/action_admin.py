@@ -603,8 +603,9 @@ class ActionAdmin(AplansModelAdmin):
         else:
             all_tabs.append(
                 ObjectList([
-                    ReadOnlyInlinePanel(heading=_('Responsible parties'),
-                                        relation_name='responsible_parties')
+                    ReadOnlyInlinePanel(
+                        heading=_('Responsible parties'),
+                        relation_name='responsible_parties')
                 ], heading=_('Responsible parties')),
             )
 
