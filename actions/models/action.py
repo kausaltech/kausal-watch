@@ -807,7 +807,7 @@ class ActionResponsibleParty(OrderedModel):
     def get_label(self):
         label = ''
         if self.role:
-            label += self.Role[self.role.upper()].label
+            label += self.get_role_display()
         if self.specifier:
             label += f' ({self.specifier})'
         return label
