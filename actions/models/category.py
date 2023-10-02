@@ -535,6 +535,8 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         c = self
         while c.parent:
             level += 1
+            if level > 50:
+                raise Exception("Maximum category hierarchy depth exceeded")
             c = self.parent
         return self.type.levels.filter(order=level).first()
 
