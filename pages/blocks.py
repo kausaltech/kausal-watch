@@ -61,8 +61,10 @@ class EmbedHTMLValue(graphene.ObjectType):
         url = parent['url']
         css_class = RESPONSIVE_STYLES.get(height_key, list(RESPONSIVE_STYLES.values())[0])
         embed = get_embed(url)
-        return "<div class='responsive-object {css_class}'>{html}</div>".format(
-            html=embed.html, css_class=css_class
+        return "<div data-embed-provider='{provider}' class='responsive-object {css_class}'>{html}</div>".format(
+            html=embed.html,
+            css_class=css_class,
+            provider=embed.provider_name
         )
 
 
