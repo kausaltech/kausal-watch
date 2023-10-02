@@ -533,11 +533,11 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def get_level(self) -> typing.Optional[CategoryLevel]:
         level = 0
         c = self
-        while c.parent:
+        while c.parent is not None:
             level += 1
             if level > 50:
                 raise Exception("Maximum category hierarchy depth exceeded")
-            c = self.parent
+            c = c.parent
         return self.type.levels.filter(order=level).first()
 
 
