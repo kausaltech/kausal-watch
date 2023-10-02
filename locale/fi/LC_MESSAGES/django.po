@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 23:30+0300\n"
-"PO-Revision-Date: 2023-08-25 10:18+0000\n"
+"POT-Creation-Date: 2023-10-02 16:43+0300\n"
+"PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
@@ -3330,18 +3330,6 @@ msgstr "perustietojen ylläpitäjä"
 msgid "metadata admins"
 msgstr "perustietojen ylläpitäjät"
 
-#: orgs/org_admin_legacy.py
-msgid "Show only organizations in active plan"
-msgstr "Näytä vain valitun toimenpideohjelman organisaatiot"
-
-#: orgs/org_admin_legacy.py
-msgid "Show only editable organizations"
-msgstr "Näytä vain muokattavissa olevat organisaatiot"
-
-#: orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr "Toteuta suodatukset"
-
 #: orgs/views.py
 msgid "Add organization to active plan"
 msgstr "Lisää organisaatio toimenpideohjelmaan"
@@ -3471,14 +3459,12 @@ msgid "large"
 msgstr "suuri"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "weight"
-msgid "Height"
-msgstr "paino"
+msgid "Size"
+msgstr "Koko"
 
 #: pages/blocks.py
 msgid "Embed"
-msgstr ""
+msgstr "Upotus"
 
 #: pages/blocks.py
 msgid "Title"
@@ -4186,6 +4172,20 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgid "Show only organizations in active plan"
+#~ msgstr "Näytä vain valitun toimenpideohjelman organisaatiot"
+
+#~ msgid "Show only editable organizations"
+#~ msgstr "Näytä vain muokattavissa olevat organisaatiot"
+
+#~ msgid "Apply filters"
+#~ msgstr "Toteuta suodatukset"
+
+#, fuzzy
+#~| msgid "weight"
+#~ msgid "Height"
+#~ msgstr "paino"
 
 #~ msgid "contact form"
 #~ msgstr "yhteydenottolomake"

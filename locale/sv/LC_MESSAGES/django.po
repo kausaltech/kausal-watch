@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 23:30+0300\n"
+"POT-Creation-Date: 2023-10-02 16:43+0300\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -3524,18 +3524,6 @@ msgstr "Metadata"
 msgid "metadata admins"
 msgstr "metadata_choices"
 
-#: orgs/org_admin_legacy.py
-msgid "Show only organizations in active plan"
-msgstr "Visa endast organisationer i aktiv plan"
-
-#: orgs/org_admin_legacy.py
-msgid "Show only editable organizations"
-msgstr "Visa endast redigerbara organisationer"
-
-#: orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr "Applicera filter"
-
 #: orgs/views.py
 msgid "Add organization to active plan"
 msgstr "Lägg till organisation i aktiv plan"
@@ -3665,10 +3653,8 @@ msgid "large"
 msgstr "stor"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "weight"
-msgid "Height"
-msgstr "vikt"
+msgid "Size"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Embed"
@@ -4466,6 +4452,20 @@ msgstr "Användare"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
+
+#~ msgid "Show only organizations in active plan"
+#~ msgstr "Visa endast organisationer i aktiv plan"
+
+#~ msgid "Show only editable organizations"
+#~ msgstr "Visa endast redigerbara organisationer"
+
+#~ msgid "Apply filters"
+#~ msgstr "Applicera filter"
+
+#, fuzzy
+#~| msgid "weight"
+#~ msgid "Height"
+#~ msgstr "vikt"
 
 #~ msgid "contact form"
 #~ msgstr "kontaktformulär"

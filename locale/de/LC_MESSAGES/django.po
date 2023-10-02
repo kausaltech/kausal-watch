@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 23:30+0300\n"
+"POT-Creation-Date: 2023-10-02 16:43+0300\n"
 "PO-Revision-Date: 2023-09-30 21:19+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -3199,18 +3198,6 @@ msgstr "Metadaten-Admin"
 msgid "metadata admins"
 msgstr "Metadaten-Admins"
 
-#: orgs/org_admin_legacy.py
-msgid "Show only organizations in active plan"
-msgstr "Zeige nur Organisationen in aktivem Plan"
-
-#: orgs/org_admin_legacy.py
-msgid "Show only editable organizations"
-msgstr "Zeige nur veränderbare Organisationen"
-
-#: orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr "Filter anwenden"
-
 #: orgs/views.py
 msgid "Add organization to active plan"
 msgstr "Füge Organisation aktivem Plan hinzu"
@@ -3233,9 +3220,7 @@ msgstr "Wollen Sie die Organisation '%(org)s' wirklich in den Plan '%(plan)s' au
 #: orgs/views.py
 #, python-format
 msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
-msgstr ""
-"Wollen Sie die Organisation '%(org)s' wirklich aus dem Plan '%(plan)s' "
-"ausschließen?"
+msgstr "Wollen Sie die Organisation '%(org)s' wirklich aus dem Plan '%(plan)s' ausschließen?"
 
 #: orgs/views.py
 msgid "The organization is already included in the plan"
@@ -3342,8 +3327,8 @@ msgid "large"
 msgstr "groß"
 
 #: pages/blocks.py
-msgid "Height"
-msgstr "Höhe"
+msgid "Size"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Embed"
@@ -4043,6 +4028,18 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#~ msgid "Show only organizations in active plan"
+#~ msgstr "Zeige nur Organisationen in aktivem Plan"
+
+#~ msgid "Show only editable organizations"
+#~ msgstr "Zeige nur veränderbare Organisationen"
+
+#~ msgid "Apply filters"
+#~ msgstr "Filter anwenden"
+
+#~ msgid "Height"
+#~ msgstr "Höhe"
 
 #~ msgid "contact form"
 #~ msgstr "Kontaktformular"

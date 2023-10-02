@@ -46,6 +46,7 @@ class QuestionBlock(blocks.StructBlock):
         GraphQLString('answer'),
     ]
 
+
 RESPONSIVE_STYLES = {
     's': 'responsive-object-small',
     'm': 'responsive-object-medium',
@@ -71,14 +72,15 @@ class EmbedHTMLValue(graphene.ObjectType):
 @register_streamfield_block
 class AdaptiveEmbedBlock(blocks.StructBlock):
     # Note: Do not try to use Wagtail's EmbedBlock here.
-    # It doesn't support dynamic, configurable heights.
+    # It doesn't support dynamic, configurable sizes.
     # The extra inner field is just to enable the custom
     # resolve_html method
     embed = blocks.StructBlock(
         [('url', blocks.CharBlock(label=_('URL'))),
+         # The height value is actually used as a generic size parameter whose interpretation dependends on the type of embed (the provider)
          ('height', blocks.ChoiceBlock(
              choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))],
-             label=_('Height'),
+             label=_('Size'),
          ))]
     )
 

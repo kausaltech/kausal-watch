@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 23:30+0300\n"
+"POT-Creation-Date: 2023-10-02 16:43+0300\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -3248,18 +3248,6 @@ msgstr ""
 msgid "metadata admins"
 msgstr ""
 
-#: orgs/org_admin_legacy.py
-msgid "Show only organizations in active plan"
-msgstr ""
-
-#: orgs/org_admin_legacy.py
-msgid "Show only editable organizations"
-msgstr ""
-
-#: orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr ""
-
 #: orgs/views.py
 msgid "Add organization to active plan"
 msgstr ""
@@ -3389,7 +3377,7 @@ msgid "large"
 msgstr "gross"
 
 #: pages/blocks.py
-msgid "Height"
+msgid "Size"
 msgstr ""
 
 #: pages/blocks.py

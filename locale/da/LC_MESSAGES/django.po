@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-09-29 23:30+0300\n"
+"POT-Creation-Date: 2023-10-02 16:43+0300\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -3374,22 +3374,6 @@ msgstr "metadata admin"
 msgid "metadata admins"
 msgstr "metadata administratorer"
 
-#: orgs/org_admin_legacy.py
-#, fuzzy
-#| msgid "main organization for the plan"
-msgid "Show only organizations in active plan"
-msgstr "hovedorganisation for planen"
-
-#: orgs/org_admin_legacy.py
-#, fuzzy
-#| msgid "Responsible organizations"
-msgid "Show only editable organizations"
-msgstr "Ansvarlige organisationer"
-
-#: orgs/org_admin_legacy.py
-msgid "Apply filters"
-msgstr "Anvend filtre"
-
 #: orgs/views.py
 #, fuzzy
 #| msgid "main organization for the plan"
@@ -3545,10 +3529,8 @@ msgid "large"
 msgstr "stor"
 
 #: pages/blocks.py
-#, fuzzy
-#| msgid "weight"
-msgid "Height"
-msgstr "vægt"
+msgid "Size"
+msgstr ""
 
 #: pages/blocks.py
 msgid "Embed"
@@ -4303,6 +4285,24 @@ msgstr "Brugere"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
+
+#, fuzzy
+#~| msgid "main organization for the plan"
+#~ msgid "Show only organizations in active plan"
+#~ msgstr "hovedorganisation for planen"
+
+#, fuzzy
+#~| msgid "Responsible organizations"
+#~ msgid "Show only editable organizations"
+#~ msgstr "Ansvarlige organisationer"
+
+#~ msgid "Apply filters"
+#~ msgstr "Anvend filtre"
+
+#, fuzzy
+#~| msgid "weight"
+#~ msgid "Height"
+#~ msgstr "vægt"
 
 #~ msgid "contact form"
 #~ msgstr "kontaktformular"
