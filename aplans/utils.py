@@ -132,6 +132,7 @@ class IdentifierField(models.CharField):
 
 
 class OrderedModel(models.Model):
+    """Implement filter_siblings() if appropriate."""
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
 
@@ -198,6 +199,7 @@ class PlanRelatedModel(PlanDefaultsModel):
         self.plan = plan
 
     def filter_siblings(self, qs):
+        # Used by OrderedModel
         plans = self.get_plans()
         assert len(plans) == 1
         return self.filter_by_plan(plans[0], qs)

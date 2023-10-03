@@ -243,6 +243,10 @@ class CategoryLevel(OrderedModel):
     def __str__(self):
         return self.name
 
+    def filter_siblings(self, qs):
+        # Used by OrderedModel to make sure order starts at 0 for each category type
+        return qs.filter(type=self.type)
+
 
 class CategoryBase(OrderedModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
