@@ -320,7 +320,7 @@ class Action(
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action')
 
     i18n = TranslationField(
-        fields=('name', 'official_name', 'description', 'manual_status_reason'),
+        fields=('name', 'official_name', 'description', 'manual_status_reason', 'lead_paragraph'),
         default_language_field='plan__primary_language',
     )
 

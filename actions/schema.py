@@ -873,6 +873,12 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         return RichText(description)
 
     @gql_optimizer.resolver_hints(
+        model_field=('lead_paragraph', 'i18n', 'plan__primary_language'),
+    )
+    def resolve_lead_paragraph(self: Action, info):
+        return self.lead_paragraph_i18n
+
+    @gql_optimizer.resolver_hints(
         model_field=('plan', 'identifier')
     )
     def resolve_view_url(self: Action, info, client_url: Optional[str] = None):
