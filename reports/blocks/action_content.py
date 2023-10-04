@@ -44,7 +44,7 @@ class ReportComparisonBlock(blocks.StructBlock):
     class Meta:
         label = _('Report comparison')
 
-    def reports_to_compare(self, values):
+    def reports_to_compare(self, info, values):
         num_compare = 2  # TODO: Make this configurable in block
         report_type = values['report_type']
         reports = report_type.reports.order_by('-start_date')[:num_compare]
