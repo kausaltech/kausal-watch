@@ -417,7 +417,7 @@ wagtail-generic-chooser==0.5.1
     # via
     #   -r requirements.in
     #   wagtailsvg
-wagtail-grapple @ https://github.com/torchbox/wagtail-grapple/archive/b4e256c97548ab742aec8eec908ca3ed5f7b3f48.zip
+wagtail-grapple==0.23.0
     # via -r requirements.in
 wagtail-headless-preview==0.4.0
     # via wagtail-grapple

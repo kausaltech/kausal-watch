@@ -47,9 +47,7 @@ coreapi
 pyyaml
 django_redis
 uritemplate
-#wagtail-grapple
-# The current wagtail-grapple release does not support Wagtail 5. Once it does, unpin this.
-https://github.com/torchbox/wagtail-grapple/archive/b4e256c97548ab742aec8eec908ca3ed5f7b3f48.zip
+wagtail-grapple
 tinycss2
 humanize
 elasticsearch>=7.0.0,<8.0.0
