@@ -26,6 +26,7 @@ from actions.blocks import (
     RelatedPlanListBlock, ActionAsideContentBlock, ActionMainContentBlock, get_default_action_content_blocks,
     get_default_action_filter_blocks
 )
+from actions.blocks.action_dashboard import ActionDashboardColumnBlock
 from actions.blocks.category_page_layout import (
     CategoryPageMainBottomBlock, CategoryPageMainTopBlock, CategoryPageAsideBlock
 )
@@ -473,6 +474,8 @@ class ActionListPage(FixedSlugPage):
     main_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True, use_json_field=True)
     advanced_filters = StreamField(block_types=ActionListFilterBlock(), null=True, blank=True, use_json_field=True)
 
+    dashboard_columns = StreamField(block_types=ActionDashboardColumnBlock(), null=True, blank=True, use_json_field=True)
+
     details_main_top = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True, use_json_field=True)
     details_main_bottom = StreamField(block_types=ActionMainContentBlock(), null=True, blank=True, use_json_field=True)
     details_aside = StreamField(block_types=ActionAsideContentBlock(), null=True, blank=True, use_json_field=True)
@@ -515,6 +518,7 @@ class ActionListPage(FixedSlugPage):
             FieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
             FieldPanel('details_aside', heading=_("Side column")),
         ], heading=_("Action details page"), classname="collapsible collapsed"),
+        FieldPanel('dashboard_columns', heading=_("Action dashboard columns")),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
@@ -530,6 +534,7 @@ class ActionListPage(FixedSlugPage):
         action_list_page_streamfield_node_getter('details_main_top'),
         action_list_page_streamfield_node_getter('details_main_bottom'),
         action_list_page_streamfield_node_getter('details_aside'),
+        action_list_page_streamfield_node_getter('dashboard_columns'),
     ]
 
     def set_default_content_blocks(self):

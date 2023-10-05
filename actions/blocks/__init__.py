@@ -10,6 +10,11 @@ from actions.blocks.action_content import (
     ActionOfficialNameBlock, ActionRelatedActionsBlock, ActionRelatedIndicatorsBlock, ActionResponsiblePartiesBlock,
     ActionScheduleBlock, ActionTasksBlock,
 )
+from actions.blocks.action_dashboard import (
+    IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
+    ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, OrganizationColumnBlock,
+    ImpactColumnBlock, ActionDashboardColumnBlock
+)
 from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
 from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, AttributeTypeChooserBlock
@@ -116,4 +121,7 @@ __all__ = [
     'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
     'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeChooserBlock', 'PrimaryOrganizationFilterBlock',
     'ResponsiblePartyFilterBlock',
+    'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
+    'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
+    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock'
 ]
