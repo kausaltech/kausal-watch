@@ -576,14 +576,18 @@ class ActionAdmin(AplansModelAdmin):
             FieldPanel('primary_contact')
         ]
 
-        contact_person_inline_panel = CondensedInlinePanel(
-            'contact_persons',
-            panels=contact_persons_panels
-        )
-        if plan.features.has_action_contact_person_roles:
+        if plan.features.has_action_contact_person_roles and not is_general_admin:
             contact_persons_panels.append(FieldPanel('role'))
-            all_tabs.append(AdminOnlyPanel([contact_person_inline_panel], heading=_('Contact persons')))
+            contact_person_inline_panel = ReadOnlyInlinePanel(
+                relation_name='contact_persons',
+                heading=_('Contact persons')
+            )
+            all_tabs.append(ObjectList([contact_person_inline_panel], heading=_('Contact persons')))
         else:
+            contact_person_inline_panel = CondensedInlinePanel(
+                'contact_persons',
+                panels=contact_persons_panels
+            )
             all_tabs.append(ObjectList([contact_person_inline_panel], heading=_('Contact persons')))
 
         if is_general_admin:
