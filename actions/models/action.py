@@ -853,6 +853,14 @@ class ActionContactPerson(OrderedModel):
     def __str__(self):
         return f'{str(self.person)}: {str(self.action)}'
 
+    def get_label(self):
+        if self.role:
+            return self.get_role_display()
+        return ''
+
+    def get_value(self):
+        return str(self.person)
+
 
 class ActionSchedule(models.Model, PlanRelatedModel):
     """A schedule for an action with begin and end dates."""
