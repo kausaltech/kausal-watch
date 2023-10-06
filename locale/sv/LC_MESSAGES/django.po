@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-02 16:43+0300\n"
+"POT-Creation-Date: 2023-10-06 16:37+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -53,8 +53,8 @@ msgstr "Länk till externa webbplats"
 msgid "Last updated"
 msgstr "Senast uppdaterad"
 
-#: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: admin_site/models.py
+#: actions/action_admin.py actions/blocks/action_dashboard.py
+#: actions/templates/actions/chooser_results.html admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -82,6 +82,7 @@ msgid "Contact persons"
 msgstr "Kontaktpersoner"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
 msgid "Responsible parties"
 msgstr "Ansvariga parter"
 
@@ -426,6 +427,57 @@ msgstr "Block"
 msgid "Section"
 msgstr "Sektion"
 
+#: actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Label for the column to be used instead of the default"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py reports/spreadsheets.py
+#, fuzzy
+#| msgid "identifier"
+msgid "Identifier"
+msgstr "identifierare"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Implementation phase"
+msgstr "genomförandefas"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+msgid "Status"
+msgstr "Status"
+
+#: actions/blocks/action_dashboard.py content/models.py
+msgid "Tasks"
+msgstr "Uppgifter"
+
+#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
+#: indicators/blocks.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr "Indikatorer"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Updated at"
+msgstr "uppdaterad kl"
+
+#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisation"
+
+#: actions/blocks/action_dashboard.py
+msgid "Impact"
+msgstr "Påverkan"
+
 #: actions/blocks/action_list.py
 msgid "Action highlights"
 msgstr "Actionhöjdpunkter"
@@ -483,18 +535,6 @@ msgstr "beskrivning"
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr ""
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "implementation phase"
-msgid "Implementation phase"
-msgstr "genomförandefas"
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-msgid "Status"
-msgstr "Status"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -1730,11 +1770,6 @@ msgstr "Du måste skapa och välja en primär kategorityp för att klassificera 
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Primär och sekundär klassificering kan inte vara samma"
 
-#: actions/models/plan.py indicators/apps.py indicators/blocks.py
-#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr "Indikatorer"
-
 #: actions/models/plan.py
 msgid "Privacy"
 msgstr "Integritet"
@@ -2306,10 +2341,6 @@ msgstr "Uppgifter"
 #: content/models.py
 msgid "Milestone"
 msgstr ""
-
-#: content/models.py
-msgid "Tasks"
-msgstr "Uppgifter"
 
 #: content/models.py
 msgid "Milestones"
@@ -2988,12 +3019,12 @@ msgid "[not in active plan]"
 msgstr "[finns inte i aktiv plan]"
 
 #: indicators/wagtail_admin.py
+msgid "Changing the organization to one with a different primary language is currently not supported"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
 msgstr "Mått måste vara samma som i gemensam indikator"
-
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr "Organisation"
 
 #: indicators/wagtail_admin.py
 msgid "Indicator for actions"
@@ -3496,6 +3527,12 @@ msgstr "tidsupplösning"
 
 #: orgs/models.py
 #, fuzzy
+#| msgid "Primary language must not be selected"
+msgid "primary language"
+msgstr "Primärspråk får inte väljas"
+
+#: orgs/models.py
+#, fuzzy
 #| msgid "action"
 msgid "Location"
 msgstr "åtgärd"
@@ -3924,6 +3961,12 @@ msgstr "åtgärdsuppdatering"
 
 #: pages/models.py
 #, fuzzy
+#| msgid "in side column"
+msgid "Action dashboard columns"
+msgstr "i sidokolumn"
+
+#: pages/models.py
+#, fuzzy
 #| msgid "Action list"
 msgid "Action list page"
 msgstr "Åtgärdslista"
@@ -4291,12 +4334,6 @@ msgstr "fullgjord av"
 msgid "Marked as complete at"
 msgstr "är klart"
 
-#: reports/spreadsheets.py
-#, fuzzy
-#| msgid "identifier"
-msgid "Identifier"
-msgstr "identifierare"
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -4487,11 +4524,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 #~ msgstr "identifierare"
 
 #, fuzzy
-#~| msgid "Primary language must not be selected"
-#~ msgid "Primary language"
-#~ msgstr "Primärspråk får inte väljas"
-
-#, fuzzy
 #~| msgid "organization"
 #~ msgid "Main organization"
 #~ msgstr "organisation"
@@ -4606,9 +4638,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Show also merged actions"
 #~ msgstr "Visa också sammanslagna åtgärder"
-
-#~ msgid "Impact"
-#~ msgstr "Påverkan"
 
 #~ msgid "Completion"
 #~ msgstr "Komplettering"

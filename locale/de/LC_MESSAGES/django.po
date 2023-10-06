@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-02 16:43+0300\n"
+"POT-Creation-Date: 2023-10-06 16:37+0200\n"
 "PO-Revision-Date: 2023-09-30 21:19+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -53,8 +53,8 @@ msgstr "Externe links"
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
 
-#: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: admin_site/models.py
+#: actions/action_admin.py actions/blocks/action_dashboard.py
+#: actions/templates/actions/chooser_results.html admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -82,6 +82,7 @@ msgid "Contact persons"
 msgstr "Ansprechpartner"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
 msgid "Responsible parties"
 msgstr "Zuständige Stellen"
 
@@ -394,6 +395,57 @@ msgstr "Blocks"
 msgid "Section"
 msgstr "Abschnitt"
 
+#: actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "Heading to show instead of the default"
+msgid "Label for the column to be used instead of the default"
+msgstr "Überschrift, die anstelle der Standardüberschrift angezeigt wird"
+
+#: actions/blocks/action_dashboard.py reports/spreadsheets.py
+msgid "Identifier"
+msgstr "Kennung"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+msgid "Implementation phase"
+msgstr "Umsetzungsphase"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+msgid "Status"
+msgstr "Status"
+
+#: actions/blocks/action_dashboard.py content/models.py
+msgid "Tasks"
+msgstr "Aufgaben"
+
+#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
+#: indicators/blocks.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr "Indikatoren"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Updated at"
+msgstr "aktualisiert am"
+
+#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisation"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "impact"
+msgid "Impact"
+msgstr "Auswirkung"
+
 #: actions/blocks/action_list.py
 msgid "Action highlights"
 msgstr "Maßnahmen-Highlights"
@@ -445,16 +497,6 @@ msgstr "Beschreibung"
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr "Basis"
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-msgid "Implementation phase"
-msgstr "Umsetzungsphase"
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-msgid "Status"
-msgstr "Status"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -1560,11 +1602,6 @@ msgstr "Sie müssen einen primären Kategorietyp zum Klassifizieren von Maßnahm
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Primäre und sekundäre Klassifizierung können nicht identisch sein"
 
-#: actions/models/plan.py indicators/apps.py indicators/blocks.py
-#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr "Indikatoren"
-
 #: actions/models/plan.py
 msgid "Privacy"
 msgstr "Datenschutz"
@@ -2077,10 +2114,6 @@ msgstr "Aufgabe"
 #: content/models.py
 msgid "Milestone"
 msgstr "Meilenstein"
-
-#: content/models.py
-msgid "Tasks"
-msgstr "Aufgaben"
 
 #: content/models.py
 msgid "Milestones"
@@ -2732,12 +2765,12 @@ msgid "[not in active plan]"
 msgstr "[nicht in aktivem Plan]"
 
 #: indicators/wagtail_admin.py
+msgid "Changing the organization to one with a different primary language is currently not supported"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensionen müssen gleich wie im Gemeinsamen Indikator sein"
-
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr "Organisation"
 
 #: indicators/wagtail_admin.py
 msgid "Indicator for actions"
@@ -3179,6 +3212,12 @@ msgid "A date of dissolution"
 msgstr "Ein Auflösungsdatum"
 
 #: orgs/models.py
+#, fuzzy
+#| msgid "Primary language"
+msgid "primary language"
+msgstr "Hauptsprache"
+
+#: orgs/models.py
 msgid "Location"
 msgstr "Standort"
 
@@ -3567,6 +3606,12 @@ msgid "Action details page"
 msgstr "Maßnahmendetailseite"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "in side column"
+msgid "Action dashboard columns"
+msgstr "in Seitenspalte"
+
+#: pages/models.py
 msgid "Action list page"
 msgstr "Maßnahmenlistenseite"
 
@@ -3877,10 +3922,6 @@ msgstr "Als abgeschlossen markiert von"
 msgid "Marked as complete at"
 msgstr "Als abgeschlossen markiert am"
 
-#: reports/spreadsheets.py
-msgid "Identifier"
-msgstr "Kennung"
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -4055,9 +4096,6 @@ msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören,
 
 #~ msgid "Plan identifier"
 #~ msgstr "Kennung des Plans"
-
-#~ msgid "Primary language"
-#~ msgstr "Hauptsprache"
 
 #~ msgid "Main organization"
 #~ msgstr "Hauptorganisation"

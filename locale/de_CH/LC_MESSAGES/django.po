@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-02 16:43+0300\n"
+"POT-Creation-Date: 2023-10-06 16:37+0200\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -53,8 +53,8 @@ msgstr ""
 msgid "Last updated"
 msgstr ""
 
-#: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: admin_site/models.py
+#: actions/action_admin.py actions/blocks/action_dashboard.py
+#: actions/templates/actions/chooser_results.html admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -82,6 +82,7 @@ msgid "Contact persons"
 msgstr ""
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
 msgid "Responsible parties"
 msgstr ""
 
@@ -404,6 +405,53 @@ msgstr ""
 msgid "Section"
 msgstr ""
 
+#: actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Label for the column to be used instead of the default"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py reports/spreadsheets.py
+msgid "Identifier"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+#, fuzzy
+#| msgid "action implementation phase"
+msgid "Implementation phase"
+msgstr "Massnahmenumsetzungsphase"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+msgid "Status"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py content/models.py
+msgid "Tasks"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
+#: indicators/blocks.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Updated at"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Impact"
+msgstr ""
+
 #: actions/blocks/action_list.py
 msgid "Action highlights"
 msgstr "Massnahmen-Highlights"
@@ -454,18 +502,6 @@ msgstr ""
 
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
-msgstr ""
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "action implementation phase"
-msgid "Implementation phase"
-msgstr "Massnahmenumsetzungsphase"
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-msgid "Status"
 msgstr ""
 
 #: actions/blocks/filters.py
@@ -1588,11 +1624,6 @@ msgstr "Sie müssen einen primären Kategorietyp zum Klassifizieren von Massnahm
 msgid "Primary and secondary classification cannot be the same"
 msgstr ""
 
-#: actions/models/plan.py indicators/apps.py indicators/blocks.py
-#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr ""
-
 #: actions/models/plan.py
 msgid "Privacy"
 msgstr ""
@@ -2112,10 +2143,6 @@ msgstr ""
 
 #: content/models.py
 msgid "Milestone"
-msgstr ""
-
-#: content/models.py
-msgid "Tasks"
 msgstr ""
 
 #: content/models.py
@@ -2768,11 +2795,11 @@ msgid "[not in active plan]"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "Dimensions must be the same as in common indicator"
+msgid "Changing the organization to one with a different primary language is currently not supported"
 msgstr ""
 
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
+#: indicators/wagtail_admin.py
+msgid "Dimensions must be the same as in common indicator"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -3229,6 +3256,10 @@ msgid "A date of dissolution"
 msgstr ""
 
 #: orgs/models.py
+msgid "primary language"
+msgstr ""
+
+#: orgs/models.py
 msgid "Location"
 msgstr ""
 
@@ -3619,6 +3650,12 @@ msgid "Action details page"
 msgstr "Massnahmendetailseite"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "Action schedules"
+msgid "Action dashboard columns"
+msgstr "Massnahmenzeitpläne"
+
+#: pages/models.py
 msgid "Action list page"
 msgstr "Massnahmenlistenseite"
 
@@ -3931,10 +3968,6 @@ msgstr ""
 
 #: reports/spreadsheets.py reports/tests/test_excel_roundtrip.py
 msgid "Marked as complete at"
-msgstr ""
-
-#: reports/spreadsheets.py
-msgid "Identifier"
 msgstr ""
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html

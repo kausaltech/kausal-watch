@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-02 16:43+0300\n"
+"POT-Creation-Date: 2023-10-06 16:37+0200\n"
 "PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -54,8 +54,8 @@ msgstr "Ulkopuoliset linkit"
 msgid "Last updated"
 msgstr "Viimeksi päivitetty"
 
-#: actions/action_admin.py actions/templates/actions/chooser_results.html
-#: admin_site/models.py
+#: actions/action_admin.py actions/blocks/action_dashboard.py
+#: actions/templates/actions/chooser_results.html admin_site/models.py
 #: admin_site/templates/admin_site/own_indicators_panel.html orgs/models.py
 #: orgs/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Name"
@@ -83,6 +83,7 @@ msgid "Contact persons"
 msgstr "Yhteyshenkilöt"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
 msgid "Responsible parties"
 msgstr "Toimenpiteen vastuutahot"
 
@@ -425,6 +426,55 @@ msgstr "Lohkot"
 msgid "Section"
 msgstr "Osio"
 
+#: actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Label for the column to be used instead of the default"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py reports/spreadsheets.py
+msgid "Identifier"
+msgstr "Tunniste"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Implementation phase"
+msgstr "toteutusvaihe"
+
+#: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
+#: actions/blocks/filters.py reports/blocks/action_content.py
+msgid "Status"
+msgstr "Tila"
+
+#: actions/blocks/action_dashboard.py content/models.py
+msgid "Tasks"
+msgstr "Tehtävät"
+
+#: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
+#: indicators/blocks.py indicators/templates/indicators/edit_values.html
+#: indicators/wagtail_admin.py
+msgid "Indicators"
+msgstr "Mittarit"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Updated at"
+msgstr "päivitysaika"
+
+#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Organisaatio"
+
+#: actions/blocks/action_dashboard.py
+msgid "Impact"
+msgstr "Vaikuttavuus"
+
 #: actions/blocks/action_list.py
 msgid "Action highlights"
 msgstr "Toimenpidenostot"
@@ -480,18 +530,6 @@ msgstr "kuvaus"
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr ""
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-#, fuzzy
-#| msgid "implementation phase"
-msgid "Implementation phase"
-msgstr "toteutusvaihe"
-
-#: actions/blocks/category_page_layout.py actions/blocks/filters.py
-#: reports/blocks/action_content.py
-msgid "Status"
-msgstr "Tila"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -1629,11 +1667,6 @@ msgstr "Toimenpiteiden pääluokitteluun on valittava luokan tyyppi"
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
 
-#: actions/models/plan.py indicators/apps.py indicators/blocks.py
-#: indicators/templates/indicators/edit_values.html indicators/wagtail_admin.py
-msgid "Indicators"
-msgstr "Mittarit"
-
 #: actions/models/plan.py
 msgid "Privacy"
 msgstr "Tietosuoja"
@@ -2160,10 +2193,6 @@ msgstr "Tehtävät"
 #: content/models.py
 msgid "Milestone"
 msgstr ""
-
-#: content/models.py
-msgid "Tasks"
-msgstr "Tehtävät"
 
 #: content/models.py
 msgid "Milestones"
@@ -2819,12 +2848,12 @@ msgid "[not in active plan]"
 msgstr "[ei mukana toimenpideohjelmassa]"
 
 #: indicators/wagtail_admin.py
+msgid "Changing the organization to one with a different primary language is currently not supported"
+msgstr ""
+
+#: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensioiden täytyy olla samat kuin yleisessä mittarissa"
-
-#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
-msgid "Organization"
-msgstr "Organisaatio"
 
 #: indicators/wagtail_admin.py
 msgid "Indicator for actions"
@@ -3311,6 +3340,12 @@ msgid "A date of dissolution"
 msgstr "Lakkauttamispäivämäärä"
 
 #: orgs/models.py
+#, fuzzy
+#| msgid "Primary language"
+msgid "primary language"
+msgstr "Ensisijainen kieli"
+
+#: orgs/models.py
 msgid "Location"
 msgstr "Sijainti"
 
@@ -3705,6 +3740,12 @@ msgid "Action details page"
 msgstr "Toimenpiteen sivu"
 
 #: pages/models.py
+#, fuzzy
+#| msgid "in side column"
+msgid "Action dashboard columns"
+msgstr "sivupalstalla"
+
+#: pages/models.py
 msgid "Action list page"
 msgstr "Toimenpideluettelosivu"
 
@@ -4021,10 +4062,6 @@ msgstr "Merkinnyt valmiiksi"
 msgid "Marked as complete at"
 msgstr "Merkitty valmiiksi"
 
-#: reports/spreadsheets.py
-msgid "Identifier"
-msgstr "Tunniste"
-
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 #, python-format
 msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
@@ -4202,9 +4239,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 #~ msgid "Plan identifier"
 #~ msgstr "Toimenpideohjelman tunniste"
 
-#~ msgid "Primary language"
-#~ msgstr "Ensisijainen kieli"
-
 #~ msgid "Main organization"
 #~ msgstr "Pääorganisaatio"
 
@@ -4308,9 +4342,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Show also merged actions"
 #~ msgstr "Näytä myös yhdistetyt toimenpiteet"
-
-#~ msgid "Impact"
-#~ msgstr "Vaikuttavuus"
 
 #~ msgid "Completion"
 #~ msgstr "Toteutuminen"
