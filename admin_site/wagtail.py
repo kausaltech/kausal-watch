@@ -95,10 +95,13 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
             default_language = get_instance_field_value(instance, i18n_field.default_language_field)
         else:
             default_language = settings.LANGUAGE_CODE
+        if default_language:
+            default_language = default_language.lower()
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
-        languages = plan.other_languages
-    for lang_code in (language.lower() for language in languages):
+        languages = [lang.lower() for lang in plan.other_languages]
+    for lang_code in languages:
+        assert lang_code == lang_code.lower()
         panels = []
         for field in i18n_field.get_translated_fields():
             if field.language != lang_code:
