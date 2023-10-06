@@ -308,6 +308,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         FieldPanel('description'),
         FieldPanel('url'),
         FieldPanel('email'),
+        FieldPanel('primary_language', read_only=True),  # read-only for now because changes could cause trouble
     ]
 
     permissions_panels = [

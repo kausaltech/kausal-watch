@@ -248,7 +248,9 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
                                              through='orgs.OrganizationMetadataAdmin',
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages())
+    primary_language = models.CharField(
+        max_length=8, choices=get_supported_languages(), verbose_name=_('primary language'),
+    )
     location = gis_models.PointField(verbose_name=_('Location'), srid=4326, null=True, blank=True)
 
     i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
