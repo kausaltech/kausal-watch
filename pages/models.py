@@ -518,7 +518,7 @@ class ActionListPage(FixedSlugPage):
             FieldPanel('details_main_bottom', heading=_("Main column (bottom part on mobile)")),
             FieldPanel('details_aside', heading=_("Side column")),
         ], heading=_("Action details page"), classname="collapsible collapsed"),
-        FieldPanel('dashboard_columns', heading=_("Action dashboard columns")),
+        FieldPanel('dashboard_columns', heading=_("Action dashboard columns"), classname="collapsible collapsed"),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
