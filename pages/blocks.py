@@ -112,7 +112,7 @@ class FrontPageHeroBlock(blocks.StructBlock):
         ('big_image', _('Big image')),
         ('small_image', _('Small image')),
     ])
-    image = ImageChooserBlock()
+    image = ImageChooserBlock(label=_('Image'))
     heading = blocks.CharBlock(classname='full title', label=_('Heading'), required=False)
     lead = blocks.RichTextBlock(label=_('Lead'), required=False)
 
@@ -135,6 +135,9 @@ class PageLinkBlock(blocks.StructBlock):
     # the entire PageLinkBlock should be optional. It is, however, not easily possible to make a StructBlock optional:
     # https://github.com/wagtail/wagtail/issues/2665
 
+    class Meta:
+        label = _('Page link')
+
     graphql_fields = [
         GraphQLString('text'),
         GraphQLPage('page'),
@@ -148,6 +151,9 @@ class CardBlock(blocks.StructBlock):
     content = blocks.CharBlock(required=False)
     # FIXME: We should also be able to choose internal pages
     link = blocks.CharBlock(required=False)
+
+    class Meta:
+        label = _('Card')
 
     graphql_fields = [
         GraphQLImage('image'),
@@ -179,6 +185,9 @@ class ActionCategoryFilterCardBlock(blocks.StructBlock):
     lead = blocks.CharBlock(label=_('Lead'))
     category = CategoryChooserBlock()
 
+    class Meta:
+        label = _('Action category filter card')
+
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('lead'),
@@ -190,6 +199,9 @@ class ActionCategoryFilterCardBlock(blocks.StructBlock):
 class ActionCategoryFilterCardsBlock(blocks.StructBlock):
     cards = blocks.ListBlock(ActionCategoryFilterCardBlock(), label=_('Links'))
 
+    class Meta:
+        label = _('Action category filter cards')
+
     graphql_fields = [
         GraphQLStreamfield('cards')
     ]
@@ -197,12 +209,14 @@ class ActionCategoryFilterCardsBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class AccessibilityStatementComplianceStatusBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Accessibility statement compliance status')
 
 
 @register_streamfield_block
 class AccessibilityStatementPreparationInformationBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Accessibility statement preparation information')
 
 
 @register_streamfield_block
@@ -214,10 +228,14 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
     )
     email = blocks.CharBlock(label=_('Email address'))
 
+    class Meta:
+        label = _('Accessibility statement contact information')
+
 
 @register_streamfield_block
 class AccessibilityStatementContactFormBlock(blocks.StaticBlock):
-    pass
+    class Meta:
+        label = _('Accessibility statement contact form')
 
 
 @register_streamfield_block
