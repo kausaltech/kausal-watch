@@ -13,6 +13,7 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+          cache: 'pip'
       - uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest # Optional. [latest,nightly,v.X.Y.Z]
@@ -22,5 +23,5 @@ jobs:
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          reviewdog -reporter=github-pr-review
+          reviewdog -reporter=github-pr-review -runners ruff
 
