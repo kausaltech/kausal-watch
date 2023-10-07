@@ -511,6 +511,7 @@ CKEDITOR_CONFIGS = {
 
 WAGTAILDOCS_DOCUMENT_MODEL = 'documents.AplansDocument'
 WAGTAILIMAGES_IMAGE_MODEL = 'images.AplansImage'
+WAGTAILIMAGES_EXTENSIONS = ['gif', 'jpg', 'jpeg', 'png', 'webp', 'svg']
 WAGTAILEMBEDS_FINDERS = [
     {
         'class': 'wagtail.embeds.finders.oembed'
