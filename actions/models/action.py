@@ -56,6 +56,7 @@ from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelin
 from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
+from .features import PlanFeatures
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -65,7 +66,7 @@ if typing.TYPE_CHECKING:
 
     from kausal_common.models.types import FK, M2M, GetDisplayMethod, RevMany
 
-    from aplans.cache import WatchObjectCache
+    from aplans.cache import PlanSpecificCache, WatchObjectCache
     from aplans.graphql_types import WorkflowStateEnum
     from aplans.types import UserOrAnon
 
@@ -896,6 +897,40 @@ class Action(
         # No plan context needed just to get the color
         summary = ActionStatusSummaryIdentifier.for_action(self)
         return summary.value.color
+
+    def get_redacted_contact_persons(
+        self,
+        user: UserOrAnon,
+        show_all_contact_persons: bool,  # TODO: clarify what this means
+        cache: PlanSpecificCache | None = None,
+    ):
+        """Get contact persons but redact data that should not be revealed according to plan features."""
+        if self.plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
+            return self.contact_persons.none()
+
+        visible_contact_persons = []
+        for acp in self.contact_persons.all():
+            if cache is None:
+                person = acp.person
+            else:
+                person = cache.get_person(acp.person_id) or acp.person
+            if not person.visible_for_user(user=user, plan=self.plan):
+                continue
+            visible_contact_persons.append(acp)
+        if self.plan.features.contact_persons_hide_moderators and (
+            not show_all_contact_persons or not user.is_authenticated or not user.can_access_admin(self.plan)
+        ):
+            visible_contact_persons = [acp for acp in visible_contact_persons if not acp.is_moderator()]
+
+        if self.plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.ALL:
+            return visible_contact_persons
+
+        # Need to redact due to setting of self.plan.features.contact_persons_public_data
+        for cp in visible_contact_persons:
+            cp.person = cp.person.get_redacted_copy(self.plan)
+        return visible_contact_persons
+
+
 
     def get_workflow(self):
         return self.plan.features.moderation_workflow
