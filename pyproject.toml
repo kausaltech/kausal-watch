@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kausal-watch"
+dynamic = ["version"]
+
+[tool.ruff]
+line-length = 140
+exclude = [
+    "node_modules",
+    "*/migrations",
+    "Attic",
+]
+
+
+[tool.isort]
+atomic = true
+combine_as_imports = true
+indent = 4
+sections = ['FUTURE', 'STDLIB', 'DJANGO', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
+known_django = [
+    'django', 'rest_framework', 'graphene', 'graphql', 'graphene_django', 'modelcluster', 'modeltrans', 'wagtail'
+]
+line_length = 80
+multi_line_output = 5
+skip = "migrations"
+wrap_length = 80
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "aplans.settings"
+norecursedirs = ["node_modules", "data", ".git", "venv", "Attic", ".direnv"]
+addopts = "--cov aplans --cov actions --cov indicators --cov users --cov insight --cov  people --pyargs"
+filterwarnings = [
+    "ignore::DeprecationWarning:graphene",
+    "ignore::django.utils.deprecation.RemovedInDjango41Warning",
+    "ignore::DeprecationWarning:easy_thumbnails",
+    "ignore::DeprecationWarning:graphene",
+    "ignore::PendingDeprecationWarning:graphene",
+]
+
+[tool.mypy]
+plugins = [
+    "mypy_django_plugin.main",
+]
+mypy_path = "typings"
+exclude = [
+    '^Attic/',
+    '^typings/',
+    '^local_settings\.py',
+]
+check_untyped_defs = true
+
+
+[[tool.mypy.overrides]]
+module = [
+    "colored.*", "dvc_pandas.*", "factory.*", "pint.*", "pint_pandas.*", "oauth2_provider.*", "modelcluster.*",
+    "modeltrans.*", "wagtail.*", "networkx.*", "plotext.*", "graphene_django.*", "grapple.*", "willow.*",
+    "reversion.*", "wagtail_modeladmin.*", "rest_framework_nested.*", "dal_admin_filters.*", "social_core.*",
+    "taggit.*", "dal.*", "social_django.*", "easy_thumbnails.*", "graphene_django_optimizer.*"
+]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "aplans.settings"
+
+[tool.setuptools]
+include-package-data = false

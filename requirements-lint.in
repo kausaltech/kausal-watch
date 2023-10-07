@@ -1,0 +1,9 @@
+-c requirements.txt
+ruff
+isort
+mypy
+django-stubs
+graphene-stubs
+djangorestframework-stubs
+celery-stubs
+types-python-dateutil
