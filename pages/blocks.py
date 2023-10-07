@@ -242,3 +242,24 @@ class AccessibilityStatementContactFormBlock(blocks.StaticBlock):
 class ActionStatusGraphsBlock(blocks.StaticBlock):
     class Meta:
         label = _('Action status pie charts')
+
+
+@register_streamfield_block
+class LargeImageBlock(blocks.StructBlock):
+    image = ImageChooserBlock(label=_('Image'))
+    width = blocks.ChoiceBlock(
+        label=_('Width'),
+        choices=[
+            ('maximum', _('Maximum')),
+            ('fit_to_column', _('Fit to column')),
+        ],
+        default='maximum',
+    )
+
+    class Meta:
+        label = _('Large image')
+
+    graphql_fields = [
+        GraphQLImage('image'),
+        GraphQLString('width'),
+    ]

@@ -41,7 +41,7 @@ from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
     AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
     FrontPageHeroBlock, QuestionAnswerBlock, ActionCategoryFilterCardsBlock,
-    ActionStatusGraphsBlock, AdaptiveEmbedBlock
+    ActionStatusGraphsBlock, AdaptiveEmbedBlock, LargeImageBlock
 )
 
 
@@ -144,6 +144,7 @@ class PlanRootPage(AplansPage):
         ('text', blocks.RichTextBlock(label=_('Text'))),
         ('action_status_graphs', ActionStatusGraphsBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
+        ('large_image', LargeImageBlock()),
     ], use_json_field=True)
 
     content_panels = [
@@ -195,6 +196,7 @@ class StaticPage(AplansPage):
         ('category_list', CategoryListBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
+        ('large_image', LargeImageBlock()),
         *get_body_blocks('StaticPage')
     ], null=True, blank=True, use_json_field=True)
 
