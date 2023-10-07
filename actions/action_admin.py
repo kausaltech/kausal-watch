@@ -1,5 +1,6 @@
 from __future__ import annotations
 import typing
+import io
 
 import json
 import logging
@@ -36,6 +37,7 @@ from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
 from orgs.models import Organization
 from people.chooser import PersonChooser
+from reports.models import ReportType
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models import Action, ActionTask
@@ -231,6 +233,8 @@ class ActionCreateView(AplansCreateView):
 
 
 class ActionIndexView(IndexView):
+    request: WatchAdminRequest
+
     def get_page_title(self):
         plan = self.request.user.get_active_admin_plan()
         return plan.general_content.get_action_term_display_plural()
@@ -246,7 +250,15 @@ class ActionMenuItem(ModelAdminMenuItem):
 
 
 class ActionButtonHelper(AplansButtonHelper):
-    mark_as_complete_button_classnames = []
+    mark_as_complete_button_classnames: list[str] = []
+
+    def __init__(self, view, request: WatchAdminRequest):
+        super().__init__(view, request)
+        plan = request.get_active_admin_plan()
+        if not hasattr(request, '_report_types'):
+            request._report_types = list(plan.report_types.all().prefetch_related('reports'))
+            for rt in request._report_types:
+                rt._latest_report = rt.reports.last()
 
     def mark_as_complete_button(self, action_pk, report, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
@@ -272,12 +284,19 @@ class ActionButtonHelper(AplansButtonHelper):
             'title': _("Undo marking this action as complete for the report %s") % str(report),
         }
 
-    def get_buttons_for_obj(self, obj, *args, **kwargs):
+    def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
         if self.permission_helper.user_can_edit_obj(self.request.user, obj):
+            report_types: list[ReportType] = getattr(self.request, '_report_types', None)
+            if report_types is None:
+                report_types = list(obj.plan.report_types.all())
+
             # For each report type, display one button for the latest report of that type
-            for report_type in obj.plan.report_types.all():
-                latest_report = report_type.reports.last()
+            for report_type in report_types:
+                if hasattr(report_type, '_latest_report'):
+                    latest_report = report_type._latest_report
+                else:
+                    latest_report = report_type.reports.last()
                 if latest_report and not latest_report.is_complete:
                     if obj.is_complete_for_report(latest_report):
                         buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
@@ -509,7 +528,10 @@ class ActionAdmin(AplansModelAdmin):
         # to the context instance so no separate instance_being_edited would
         # be needed.
 
+        assert isinstance(instance, Action)
         plan = request.user.get_active_admin_plan()
+        assert plan is not None
+
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
         serialized_attributes = instance_being_edited.get_serialized_attribute_data() if instance_being_edited else None
         attribute_panels = instance.get_attribute_panels(
