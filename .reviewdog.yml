@@ -1,0 +1,7 @@
+runner:
+  ruff:
+    cmd: ruff check . --output-format text
+    format: flake8
+  mypy:
+    cmd: mypy .
+    format: mypy
