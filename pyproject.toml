@@ -30,14 +30,15 @@ wrap_length = 80
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "aplans.settings"
-norecursedirs = ["node_modules", "data", ".git", "venv", "Attic", ".direnv"]
-addopts = "--cov aplans --cov actions --cov indicators --cov users --cov insight --cov  people --pyargs"
+norecursedirs = [
+    ".*", "node_modules", "data", ".git", "venv", "Attic", ".direnv", ".mypy_cache",
+    "**/static", "**/templates", "**/media",
+]
 filterwarnings = [
-    "ignore::DeprecationWarning:graphene",
-    "ignore::django.utils.deprecation.RemovedInDjango41Warning",
     "ignore::DeprecationWarning:easy_thumbnails",
-    "ignore::DeprecationWarning:graphene",
-    "ignore::PendingDeprecationWarning:graphene",
+]
+testpaths = [
+    "*/tests"
 ]
 
 [tool.mypy]
