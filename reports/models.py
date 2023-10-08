@@ -175,7 +175,7 @@ class ActionSnapshot(models.Model):
         verbose_name_plural = _('action snapshots')
         get_latest_by = 'action_version__revision__date_created'
 
-    def __init__(self, *args, action=None, **kwargs):
+    def __init__(self, *args, action: Action | None = None, **kwargs):
         if 'action_version' not in kwargs and action is not None:
             kwargs['action_version'] = Version.objects.get_for_object(action).first()
         super().__init__(*args, **kwargs)

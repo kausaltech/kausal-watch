@@ -23,14 +23,13 @@ from django_countries.fields import CountryField
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from typing import Optional, Tuple, Type, Union
+from typing import ClassVar, Optional, Tuple, Type, Union
 from urllib.parse import urlparse
 from wagtail.models import Collection, Page, Site
 from wagtail.models.i18n import Locale
-# In future versions of wagtail_localize, this will be in wagtail_localize.operations
-from wagtail_localize.operations import TranslationCreator
+from wagtail_localize.operations import TranslationCreator  # type: ignore
 
-from aplans.types import WatchRequest
+from aplans.types import UserOrAnon, WatchRequest
 from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
@@ -46,7 +45,7 @@ from people.models import Person
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
     from users.models import User
-    from .action import ActionStatus, ActionImplementationPhase, Action
+    from .action import ActionStatus, ActionImplementationPhase, ActionManager
     from .category import CategoryType
     from .features import PlanFeatures
     from reports.models import ReportType
@@ -86,10 +85,11 @@ class PlanQuerySet(models.QuerySet['Plan']):
         # FIXME later: support for logged-in users
         return self.live()
 
-    def user_has_staff_role_for(self, user: User):
+    def user_has_staff_role_for(self, user: UserOrAnon):
+        from actions.models.action import Action
+
         if not user.is_authenticated or not user.is_staff:
             return self.none()
-        Action = Plan.objects.model.actions.field.model
         staff_actions = Action.objects.user_has_staff_role_for(user).values_list('plan').distinct()
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
@@ -278,7 +278,7 @@ class Plan(ClusterableModel):
         object_id_field='scope_id',
     )
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'name', 'short_name', 'version_name', 'identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
@@ -290,13 +290,13 @@ class Plan(ClusterableModel):
         'report_types', 'external_feedback_url'
     ]
 
-    objects: models.Manager[Plan] = models.Manager.from_queryset(PlanQuerySet)()
+    objects = PlanQuerySet.as_manager()
     _site_created: bool
     wagtail_reference_index_ignore = True
 
     # Type annotations for related models
     features: PlanFeatures
-    actions: RelatedManager[Action]
+    actions: ActionManager
     action_statuses: RelatedManager[ActionStatus]
     action_implementation_phases: RelatedManager[ActionImplementationPhase]
     category_types: RelatedManager[CategoryType]
@@ -305,6 +305,8 @@ class Plan(ClusterableModel):
     report_types: RelatedManager[ReportType]
     user_feedbacks: RelatedManager[UserFeedback]
     organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
+    organization_id: int
+    id: int
 
     class Meta:
         verbose_name = _('plan')
@@ -347,16 +349,17 @@ class Plan(ClusterableModel):
                 'Primary and secondary classification cannot be the same')})
 
     @property
-    def root_page(self) -> Page | None:
-        if self.site_id is None:
+    def root_page(self) -> Page:
+        if self.site_id is None or self.site is None:
             return None
-        return self.site.root_page
+        page: Page = self.site.root_page
+        return page
 
     def get_translated_root_page(self, fallback=True) -> Optional[Page]:
         """Return root page in activated language, fall back to default language by default."""
-        root = self.root_page
-        if root is None:
+        if self.site_id is None:
             return None
+        root = self.root_page
         language = translation.get_language()
         try:
             locale = Locale.objects.get(language_code__iexact=language)
@@ -376,8 +379,6 @@ class Plan(ClusterableModel):
         self.site = site
 
     def save(self, *args, **kwargs):
-        PlanFeatures: Type[PlanFeatures] = apps.get_model('actions', 'PlanFeatures')
-
         ret = super().save(*args, **kwargs)
 
         update_fields = []
@@ -488,7 +489,7 @@ class Plan(ClusterableModel):
                 primary_subpage = primary_root_page.get_children().type(PageModel).get().specific
             except Page.DoesNotExist:
                 with translation.override(self.primary_language):
-                    primary_subpage = PageModel(title=_(title_en), locale=primary_locale, **kwargs)
+                    primary_subpage = PageModel(title=gettext(title_en), locale=primary_locale, **kwargs)
                     primary_root_page.add_child(instance=primary_subpage)
 
             # Create translations
@@ -555,6 +556,7 @@ class Plan(ClusterableModel):
                 port_str = ''
             return '%s://%s%s%s' % (scheme, hostname, port_str, base_path)
         else:
+            assert self.site_url is not None
             if self.site_url.startswith('http'):
                 url = self.site_url.rstrip('/')
             else:
@@ -794,7 +796,7 @@ class PlanDomain(models.Model):
     @property
     def status(self) -> PublicationStatus:
         if self.publication_status_override is not None:
-            return self.publication_status_override
+            return PublicationStatus(self.publication_status_override)
         published_at = self.plan.published_at
         if published_at is None:
             return PublicationStatus.UNPUBLISHED
@@ -806,10 +808,11 @@ class PlanDomain(models.Model):
         return PublicationStatus.UNPUBLISHED
 
     @property
-    def status_message(self) -> str:
+    def status_message(self) -> str | None:
         if self.status != PublicationStatus.PUBLISHED:
             with translation.override(self.plan.primary_language):
                 return gettext('The site is not public at this time.')
+        return None
 
     def validate_hostname(self):
         dn = self.hostname
@@ -850,7 +853,7 @@ class Scenario(models.Model, PlanRelatedModel):
     identifier = IdentifierField()
     description = models.TextField(null=True, blank=True, verbose_name=_('description'))
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'plan', 'name', 'identifier', 'description',
     ]
 
@@ -882,7 +885,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
 
     i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
     ]
 
@@ -896,7 +899,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
         return self.name
 
 
-class MonitoringQualityPoint(OrderedModel, PlanRelatedModel):
+class MonitoringQualityPoint(PlanRelatedModel, OrderedModel):  # type: ignore[django-manager-missing]
     name = models.CharField(max_length=100, verbose_name=_('name'))
     description_yes = models.CharField(
         max_length=200,

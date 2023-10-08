@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import ClassVar, Self
 import typing
 
 from django.apps import apps
@@ -17,11 +18,13 @@ from .base import AbstractUser
 if typing.TYPE_CHECKING:
     from actions.models import Plan, Action
     from people.models import Person
-    from actions.models.plan import PlanQuerySet
+    from aplans.utils import InstancesVisibleForMixin, InstancesEditableByMixin
+    from rest_framework.authtoken.models import Token
+    from django.db.models.fields.related import ReverseOneToOneDescriptor
 
 
-class User(AbstractUser):
-    objects = UserManager()  # type: ignore
+class User(AbstractUser):  # type: ignore[django-manager-missing]
+    objects: ClassVar[UserManager] = UserManager()  # type: ignore[assignment]
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -40,14 +43,18 @@ class User(AbstractUser):
         null=True
     )
 
+    auth_token: Token
     person: Person
     _corresponding_person: Person
     _active_admin_plan: Plan
-    _adminable_plans: 'PlanQuerySet'
+    _adminable_plans: 'models.QuerySet[Plan]'
+    _instance_visibility_perms: set[InstancesVisibleForMixin.VisibleFor]
+    _instance_editable_perms: set[InstancesEditableByMixin.EditableBy]
+    _org_admin_for_actions: 'models.QuerySet[Action]'
 
     autocomplete_search_field = 'email'
 
-    def save(self, *args, **kwargs):
+    def save(self: User, *args, **kwargs):
         result = super().save(*args, **kwargs)
         # Create Wagtail user profile in order to force the light color theme
         # FIXME: Remove this and fix dark mode support
@@ -183,7 +190,7 @@ class User(AbstractUser):
         else:
             return plan.pk in plans
 
-    def _get_admin_orgs(self):
+    def _get_admin_orgs(self) -> models.QuerySet[Organization]:
         person = self.get_corresponding_person()
         if not person:
             return Organization.objects.none()
@@ -191,13 +198,12 @@ class User(AbstractUser):
         orgs = person.organization_plan_admins.values_list('organization')
         return Organization.objects.filter(id__in=orgs)
 
-    def is_organization_admin_for_action(self, action=None):
-        actions = None
+    def is_organization_admin_for_action(self, action: Action | None = None):
         if hasattr(self, '_org_admin_for_actions'):
             actions = self._org_admin_for_actions
         else:
-            Action = apps.get_model('actions', 'Action')
-            actions = Action.objects.user_is_org_admin_for(self)
+            from actions.models import Action
+            actions = Action.objects.user_is_org_admin_for(self)  # pyright: ignore
             self._org_admin_for_actions = actions
         # Ensure below that the actions queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
@@ -289,16 +295,6 @@ class User(AbstractUser):
         self._adminable_plans = plans
         return plans
 
-    def get_adminable_plans_mark_selected(self) -> models.QuerySet[Plan]:
-        plans = self.get_adminable_plans()
-        active_plan = self.get_active_admin_plan(plans)
-        for plan in plans:
-            if plan == active_plan:
-                plan.is_active_admin = True
-            else:
-                plan.is_active_admin = False
-        return plans
-
     def can_access_admin(self, plan: Plan | None = None) -> bool:
         """Can the user access the admin interface in general or for a given plan."""
 
@@ -336,7 +332,7 @@ class User(AbstractUser):
             return True
         return self.is_general_admin_for_plan(plan)
 
-    def can_delete_action(self, plan: Plan, action: Action = None):
+    def can_delete_action(self, plan: Plan, action: Action | None = None):
         return self.can_create_action(plan)
 
     def can_publish_action(self, action: Action):
@@ -448,7 +444,8 @@ class User(AbstractUser):
         return True
 
     def can_edit_or_delete_person_within_plan(
-            self, person: Person, plan: Plan = None, orgs: dict = None) -> bool:
+        self, person: Person, plan: Plan | None = None, orgs: dict | None = None
+    ) -> bool:
         # orgs is a performance optimization, a pre-populated
         # dict for cases where this function is called from within a loop
 
@@ -456,7 +453,7 @@ class User(AbstractUser):
             return True
 
         # The creating user has edit rights until the created user first logs in
-        if person.created_by_id == self.id and person.user and not person.user.last_login:
+        if person.created_by_id == self.id and person.user and not person.user.last_login:  # pyright: ignore
             return True
 
         if plan is not None and self.is_general_admin_for_plan(plan):

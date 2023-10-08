@@ -10,6 +10,7 @@ from actions.action_admin import ActionAdmin
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.wagtail_admin import ActivePlanAdmin
 from admin_site.tests.factories import ClientPlanFactory
+from aplans.types import WatchAdminRequest
 from conftest import ModelAdminEditTest
 
 if typing.TYPE_CHECKING:
@@ -58,7 +59,7 @@ def test_active_plan_menu_item_shown_to_plan_admin(plan_admin_user, rf):
 
 
 def test_active_plan_menu_item_shown_to_superuser(superuser, rf):
-    request = get_request(rf, superuser)
+    request: WatchAdminRequest = get_request(rf, superuser)
     active_plan_admin = ActivePlanAdmin()
     assert active_plan_admin.get_menu_item().is_shown(request)
 

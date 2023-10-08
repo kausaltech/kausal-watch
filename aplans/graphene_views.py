@@ -7,14 +7,18 @@ from django.utils import translation
 from django.core.cache import cache
 
 import sentry_sdk
+from sentry_sdk import tracing as sentry_tracing
 from actions.models import Plan
 from django.core.exceptions import ValidationError
 from graphene_django.views import GraphQLView
 from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
 from graphql.error import GraphQLError
-from graphql.language.ast import VariableNode
+from graphql.language.ast import VariableNode, StringValueNode
 from rich.console import Console
 from rich.syntax import Syntax
+from actions.models.plan import PlanQuerySet
+
+from aplans.types import WatchAPIRequest
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import AuthenticatedUserNode
@@ -38,6 +42,8 @@ class APITokenMiddleware:
                 if isinstance(arg.value, VariableNode):
                     val = variable_vals.get(arg.value.name.value)
                 else:
+                    if not isinstance(arg.value, StringValueNode):
+                        raise GraphQLError("Invalid type: %s" % str(type(arg.value)), [arg])
                     val = arg.value.value
                 try:
                     user = User.objects.get(uuid=val)
@@ -50,6 +56,8 @@ class APITokenMiddleware:
                 if isinstance(arg.value, VariableNode):
                     val = variable_vals.get(arg.value.name.value)
                 else:
+                    if not isinstance(arg.value, StringValueNode):
+                        raise GraphQLError("Invalid type: %s" % str(type(arg.value)), [arg])
                     val = arg.value.value
                 token = val
 
@@ -61,7 +69,7 @@ class APITokenMiddleware:
         try:
             if user.auth_token.key != token:
                 raise GraphQLAuthFailedError("Invalid token", [directive])
-        except User.auth_token.RelatedObjectDoesNotExist:
+        except User.auth_token.RelatedObjectDoesNotExist:  # type: ignore
             raise GraphQLAuthFailedError("Invalid token", [directive])
 
         info.context.user = user
@@ -132,7 +140,7 @@ class SentryGraphQLView(GraphQLView):
         if not plan_identifier and not plan_domain:
             return None
 
-        qs = Plan.objects
+        qs: PlanQuerySet = Plan.objects.all()
         if plan_identifier:
             qs = qs.filter(identifier=plan_identifier)
         if plan_domain:
@@ -155,7 +163,9 @@ class SentryGraphQLView(GraphQLView):
     def store_to_cache(self, key, result):
         return cache.set(key, result, timeout=600)
 
-    def caching_execute_graphql_request(self, span, request, data, query, variables, operation_name, *args, **kwargs) -> ExecutionResult:
+    def caching_execute_graphql_request(
+            self, span, request: WatchAPIRequest, data, query, variables, operation_name, *args, **kwargs
+        ) -> ExecutionResult:
         key = self.get_cache_key(request, data, query, variables)
         span.set_tag('cache_key', key)
         if key:
@@ -171,10 +181,10 @@ class SentryGraphQLView(GraphQLView):
 
         return result
 
-    def execute_graphql_request(self, request, data, query, variables, operation_name, *args, **kwargs):
+    def execute_graphql_request(self, request: WatchAPIRequest, data, query, variables, operation_name, *args, **kwargs):
         """Execute GraphQL request, cache results and send exceptions to Sentry"""
         request._referer = self.request.META.get('HTTP_REFERER')
-        transaction = sentry_sdk.Hub.current.scope.transaction
+        transaction: sentry_tracing.Transaction | None = sentry_sdk.Hub.current.scope.transaction
         logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
         debug_logging = settings.DEBUG and logger.isEnabledFor(logging.DEBUG)
         if debug_logging and query:
@@ -199,7 +209,7 @@ class SentryGraphQLView(GraphQLView):
                 span.set_tag('referer', request._referer)
             else:
                 # No tracing activated, use an inert Span
-                span = sentry_sdk.tracing.Span()
+                span = sentry_tracing.Span()
 
             with span:
                 result = self.caching_execute_graphql_request(

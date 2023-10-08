@@ -1,23 +1,34 @@
+from __future__ import annotations
+import abc
+
 import humanize
-import libvoikko
+import libvoikko  # type: ignore
 import logging
 import random
 import re
+from typing import Any, Callable, ClassVar, Generic, Iterable, List, Protocol, Self, Sequence, Type, TYPE_CHECKING, TypeVar
+
 import sentry_sdk
 from datetime import datetime, timedelta
 from django import forms
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField
+from django.core import checks
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+from django.db.models.base import ModelBase
 from django.utils.translation import get_language, gettext_lazy as _
 from enum import Enum
-from tinycss2.color3 import parse_color
-from typing import Iterable, List, Type
+from tinycss2.color3 import parse_color  # type: ignore
 from wagtail.fields import StreamField
 from wagtail.models import Page, ReferenceIndex
+
+from aplans.types import UserOrAnon
+
+if TYPE_CHECKING:
+    from actions.models.plan import Plan
+    from users.models import User
 
 
 logger = logging.getLogger(__name__)
@@ -29,7 +40,7 @@ try:
 except OSError:
     voikko_fi = None
 
-_hyphenation_cache = {}
+_hyphenation_cache: dict[str, str] = {}
 
 
 def hyphenate(s):
@@ -61,7 +72,7 @@ def naturaltime(dt: datetime | timedelta) -> str:
 
     try:
         # This should be fast
-        humanize.activate(lang)
+        humanize.activate(lang)  # type: ignore
     except FileNotFoundError as e:
         logger.warning(e)
 
@@ -83,12 +94,16 @@ def underscore_to_camelcase(value: str) -> str:
     return output
 
 
+class HasPublicFields(Protocol):
+    public_fields: Sequence[str]
+
+
 def public_fields(
-    model: Type[models.Model],
-    add_fields: Iterable[str] = None,
-    remove_fields: Iterable[str] = None
+    model: HasPublicFields,
+    add_fields: Iterable[str] | None = None,
+    remove_fields: Iterable[str] | None = None
 ) -> List[str]:
-    fields = model.public_fields
+    fields = list(model.public_fields)
     if remove_fields is not None:
         fields = [f for f in fields if f not in remove_fields]
     if add_fields is not None:
@@ -132,11 +147,11 @@ class IdentifierField(models.CharField):
 
 
 class OrderedModel(models.Model):
-    """Implement filter_siblings() if appropriate."""
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
+    order_on_create: int | None
 
-    def __init__(self, *args, order_on_create=None, **kwargs):
+    def __init__(self, *args, order_on_create: int | None = None, **kwargs):
         """
         Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
         None, the order will instead be set to <maximum existing order> + 1.
@@ -144,9 +159,20 @@ class OrderedModel(models.Model):
         super().__init__(*args, **kwargs)
         self.order_on_create = order_on_create
 
+    @classmethod
+    def check(cls, **kwargs):
+        errors = super().check(**kwargs)
+        if not getattr(cls.filter_siblings, '__isabstractmethod__', False):
+            errors.append(checks.Warning("filter_siblings() not defined", hint="Implement filter_siblings() method", obj=cls))
+        return errors
+
     @property
     def sort_order(self):
         return self.order
+
+    @abc.abstractmethod
+    def filter_siblings(self, qs: models.QuerySet[Self]) -> models.QuerySet[Self]:
+        raise NotImplementedError("Implement in subclass")
 
     def get_sort_order_max(self):
         """
@@ -159,16 +185,17 @@ class OrderedModel(models.Model):
             return qs.aggregate(Max(self.sort_order_field))['sort_order__max'] or 0
         ```
         """
-        qs = self.__class__.objects.all()
-        if hasattr(self, 'filter_siblings'):
+        qs = self.__class__.objects.all()  # type: ignore
+        if not getattr(self.filter_siblings, '__isabstractmethod__', False):
             qs = self.filter_siblings(qs)
 
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
 
     def save(self, *args, **kwargs):
         if self.pk is None:
-            if getattr(self, 'order_on_create', None) is not None:
-                self.order = self.order_on_create
+            order_on_create = getattr(self, 'order_on_create', None)
+            if order_on_create is not None:
+                self.order = order_on_create
             else:
                 self.order = self.get_sort_order_max() + 1
         super().save(*args, **kwargs)
@@ -183,22 +210,27 @@ class PlanDefaultsModel:
     must be set when creating new instances
     in the admin.
     '''
-    def initialize_plan_defaults(self, plan):
+    def initialize_plan_defaults(self, plan: Plan):
         raise NotImplementedError()
 
+M = TypeVar('M', bound=models.Model)
 
-class PlanRelatedModel(PlanDefaultsModel):
+
+class PlanRelatedModel(PlanDefaultsModel, Generic[M]):
+    wagtail_reference_index_ignore = False
+
     @classmethod
-    def filter_by_plan(cls, plan, qs):
+    def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[M]) -> models.QuerySet[M]:
         return qs.filter(plan=plan)
 
     def get_plans(self):
         return [self.plan]
 
-    def initialize_plan_defaults(self, plan):
-        self.plan = plan
+    def initialize_plan_defaults(self, plan: Plan):
+        # Using setattr() here to avoid type pollution in subclasses
+        setattr(self, 'plan', plan)
 
-    def filter_siblings(self, qs):
+    def filter_siblings(self, qs: models.QuerySet[M]) -> models.QuerySet[M]:
         # Used by OrderedModel
         plans = self.get_plans()
         assert len(plans) == 1
@@ -280,8 +312,9 @@ class InstancesVisibleForMixin(models.Model):
 
 
 class ReferenceIndexedModelMixin:
-    def delete(self,*args, **kwargs):
+    def delete(self, *args, **kwargs):
         """Remove referencing StreamField blocks before deleting."""
+
         references = ReferenceIndex.get_references_to(self)
         for ref in references:
             logger.debug(f"Removing referencing block '{ref.describe_source_field()}' from {ref.model_name} "
@@ -300,7 +333,7 @@ class ReferenceIndexedModelMixin:
                            "expected to be StreamField)")
                 logger.warning(message)
                 sentry_sdk.capture_message(message)
-        super().delete(*args, **kwargs)
+        super().delete(*args, **kwargs)  # type: ignore
 
 
 class ChoiceArrayField(ArrayField):
@@ -344,8 +377,12 @@ def validate_css_color(s):
         )
 
 
+class HasI18n(Protocol):
+    i18n: dict
+
+
 class TranslatedModelMixin:
-    def get_i18n_value(self, field_name: str, language: str = None, default_language: str = None):
+    def get_i18n_value(self: HasI18n, field_name: str, language: str | None = None, default_language: str | None = None):
         if language is None:
             language = get_language()
         key = '%s_%s' % (field_name, language)
@@ -364,9 +401,6 @@ def get_default_language():
     return settings.LANGUAGES[0][0]
 
 
-User = get_user_model()
-
-
 class ModificationTracking(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True, editable=False, verbose_name=_('updated at')
@@ -375,12 +409,12 @@ class ModificationTracking(models.Model):
         auto_now_add=True, editable=False, verbose_name=_('created at')
     )
     updated_by = models.ForeignKey(
-        User, blank=True, null=True, on_delete=models.SET_NULL,
+        'users.User', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('updated by'),
         related_name="%(app_label)s_updated_%(class)s",
     )
     created_by = models.ForeignKey(
-        User, blank=True, null=True, on_delete=models.SET_NULL,
+        'users.User', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'),
         related_name="%(app_label)s_created_%(class)s",
     )

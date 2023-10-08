@@ -8,10 +8,13 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.constraints import Deferrable
 from django.utils.translation import gettext_lazy as _
 from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToManyField
 from modeltrans.fields import TranslationField
+from modeltrans.manager import MultilingualManager
 from wagtail.fields import RichTextField
+from aplans.types import UserOrAnon
 
 from aplans.utils import (
     ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, ReferenceIndexedModelMixin,
@@ -19,10 +22,10 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
-from typing import Dict, Any
+from typing import ClassVar, Dict, Any, Protocol
 if typing.TYPE_CHECKING:
     from .plan import Plan
-    from users.models import User
+    from .category import CategoryType
 
 
 class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
@@ -43,7 +46,7 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
 
 
 @reversion.register(follow=['choice_options'])
-class AttributeType(
+class AttributeType(  # type: ignore[django-manager-missing]
     InstancesEditableByMixin, InstancesVisibleForMixin, ReferenceIndexedModelMixin, ClusterableModel, OrderedModel
 ):
     class AttributeFormat(models.TextChoices):
@@ -65,9 +68,13 @@ class AttributeType(
     # TODO: Enforce Plan or CategoryType
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
-    scope = GenericForeignKey('scope_content_type', 'scope_id')
+    scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(
+        'scope_content_type', 'scope_id'
+    ) #type: ignore
 
     name = models.CharField(max_length=100, verbose_name=_('name'))
+    name_i18n: str
+
     identifier = AutoSlugField(
         always_update=True,
         populate_from='name',
@@ -111,7 +118,7 @@ class AttributeType(
         default_language_field='primary_language',
     )
 
-    public_fields = [
+    public_fields: ClassVar = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'attribute_category_type', 'show_choice_names',
         'has_zero_option', 'choice_options',
     ]
@@ -136,8 +143,12 @@ class AttributeType(
             scope_app_label = self.scope_content_type.app_label
             scope_model = self.scope_content_type.model
             if scope_app_label == 'actions' and scope_model == 'plan':
+                from .plan import Plan
+                assert isinstance(self.scope, Plan)
                 plan = self.scope
             elif scope_app_label == 'actions' and scope_model == 'categorytype':
+                from .category import CategoryType
+                assert isinstance(self.scope, CategoryType)
                 plan = self.scope.plan
             else:
                 raise Exception(f"Unexpected AttributeType scope content type {scope_app_label}:{scope_model}")
@@ -185,7 +196,9 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
         default_language_field='type__primary_language',
     )
 
-    public_fields = ['id', 'identifier', 'name']
+    objects: models.Manager[AttributeTypeChoiceOption] = MultilingualManager()
+
+    public_fields: ClassVar = ['id', 'identifier', 'name']
 
     class Meta:
         constraints = [
@@ -196,7 +209,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
             models.UniqueConstraint(
                 fields=['type', 'order'],
                 name='unique_order_per_type',
-                deferrable=models.Deferrable.DEFERRED,
+                deferrable=Deferrable.DEFERRED,
             ),
         ]
         ordering = ('type', 'order')
@@ -209,7 +222,9 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
 
 @reversion.register(follow=['categories'])
 class AttributeCategoryChoice(Attribute, ClusterableModel):
-    type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes')
+    type = ParentalKey(
+        AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes'
+    )
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
@@ -218,7 +233,7 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
 
-    public_fields = ['id', 'categories']
+    public_fields: ClassVar = ['id', 'categories']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -241,7 +256,7 @@ class AttributeChoice(Attribute, models.Model):
         AttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='choice_attributes'
     )
 
-    objects = models.Manager.from_queryset(AttributeQuerySet)()
+    objects: models.Manager[AttributeChoice] = models.Manager.from_queryset(AttributeQuerySet)()
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -252,8 +267,9 @@ class AttributeChoice(Attribute, models.Model):
 
 @reversion.register(follow=['choice'])
 class AttributeChoiceWithText(Attribute, models.Model):
-    type = ParentalKey(AttributeType, on_delete=models.CASCADE,
-                       related_name='choice_with_text_attributes')
+    type = ParentalKey(
+        AttributeType, on_delete=models.CASCADE, related_name='choice_with_text_attributes'
+    )
 
     # `content_object` must fit `type`
     # TODO: Enforce this
@@ -296,6 +312,7 @@ class AttributeText(Attribute, models.Model):
     content_object = GenericForeignKey()
 
     text = models.TextField(verbose_name=_('Text'))
+    text_i18n: str
 
     i18n = TranslationField(
         fields=('text',),
@@ -304,7 +321,7 @@ class AttributeText(Attribute, models.Model):
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
 
-    public_fields = ['id', 'type', 'text']
+    public_fields: ClassVar = ['id', 'type', 'text']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -328,6 +345,7 @@ class AttributeRichText(Attribute, models.Model):
     content_object = GenericForeignKey()
 
     text = RichTextField(verbose_name=_('Text'))
+    text_i18n: str
 
     i18n = TranslationField(
         fields=('text',),
@@ -336,7 +354,7 @@ class AttributeRichText(Attribute, models.Model):
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
 
-    public_fields = ['id', 'type', 'text']
+    public_fields: ClassVar = ['id', 'type', 'text']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
@@ -359,13 +377,19 @@ class AttributeNumericValue(Attribute, models.Model):
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
 
-    public_fields = ['id', 'type', 'value']
+    public_fields: ClassVar = ['id', 'type', 'value']
 
     class Meta:
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
         return str(self.value)
+
+
+AttributeUnion: typing.TypeAlias = typing.Union[
+    AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText, AttributeText,
+    AttributeRichText, AttributeNumericValue
+]
 
 
 class ModelWithAttributes(models.Model):
@@ -381,14 +405,17 @@ class ModelWithAttributes(models.Model):
     numeric_value_attributes = GenericRelation(to='actions.AttributeNumericValue')
     category_choice_attributes = GenericRelation(to='actions.AttributeCategoryChoice')
 
-    # Register models inheriting from this one using:
-    # @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
-    REVERSION_FOLLOW = [
+    ATTRIBUTE_RELATIONS = [
         'choice_attributes', 'choice_with_text_attributes', 'text_attributes', 'rich_text_attributes',
         'numeric_value_attributes', 'category_choice_attributes',
     ]
 
+    # Register models inheriting from this one using:
+    # @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
+    REVERSION_FOLLOW = ATTRIBUTE_RELATIONS
+
     serialized_attribute_data: Dict
+    id: int
 
     def get_serialized_attribute_data(self):
         return getattr(self, 'serialized_attribute_data', None)

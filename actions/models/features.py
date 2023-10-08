@@ -1,3 +1,4 @@
+from typing import ClassVar
 import reversion
 from django.utils.translation import gettext_lazy as _
 from django.db import models
@@ -74,7 +75,7 @@ class PlanFeatures(models.Model):
     def public_contact_persons(self):
         return self.contact_persons_public_data != self.ContactPersonsPublicData.NONE
 
-    public_fields = [
+    public_fields: ClassVar = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
         'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',

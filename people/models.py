@@ -19,8 +19,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db.models import Q
 
-from easy_thumbnails.files import get_thumbnailer
-from image_cropping import ImageRatioField
+from easy_thumbnails.files import get_thumbnailer  # type: ignore
+from image_cropping import ImageRatioField  # type: ignore
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from sentry_sdk import capture_exception
@@ -28,7 +28,7 @@ from wagtail.search import index
 from wagtail.images.rect import Rect
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 import willow
-from aplans.types import WatchRequest
+from aplans.types import UserOrAnon, WatchRequest
 
 from actions.models import ActionContactPerson
 from orgs.models import Organization
@@ -36,10 +36,14 @@ from orgs.models import Organization
 from admin_site.models import Client
 if typing.TYPE_CHECKING:
     from users.models import User as UserModel
+    from django.db.models.manager import RelatedManager
+    from actions.models import Action, Plan
+    from indicators.models import Indicator
+    from orgs.models import OrganizationPlanAdmin
 
 
 logger = logging.getLogger(__name__)
-User: typing.Type[UserModel] = get_user_model()
+User: typing.Type[UserModel] = get_user_model()  # type: ignore
 
 DEFAULT_AVATAR_SIZE = 360
 
@@ -77,8 +81,8 @@ def image_upload_path(instance, filename):
     return 'images/%s/%s%s' % (instance._meta.model_name, instance.id, file_extension)
 
 
-class PersonQuerySet(models.QuerySet):
-    def available_for_plan(self, plan, include_contact_persons=False):
+class PersonQuerySet(models.QuerySet['Person']):
+    def available_for_plan(self, plan: Plan, include_contact_persons=False):
         """Return persons from an organization related to the plan."""
         related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
         q = Q()
@@ -90,6 +94,12 @@ class PersonQuerySet(models.QuerySet):
 
     def is_action_contact_person(self, plan):
         return self.filter(contact_for_actions__plan=plan).distinct()
+
+    def visible_for_user(self, user: UserModel | None, plan: Plan):
+        if not plan.features.public_contact_persons:
+            if user is None or not user.is_authenticated or not user.can_access_admin(plan):
+                return self.none()
+        return self
 
 
 @reversion.register()
@@ -122,7 +132,7 @@ class Person(index.Indexed, ClusterableModel):
         blank=True, upload_to=image_upload_path, verbose_name=_('image'),
         height_field='image_height', width_field='image_width'
     )
-    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))
+    image_cropping = ImageRatioField('image', '1280x720', verbose_name=_('image cropping'))  # pyright: ignore
     image_height = models.PositiveIntegerField(null=True, editable=False)
     image_width = models.PositiveIntegerField(null=True, editable=False)
     avatar_updated_at = models.DateTimeField(null=True, editable=False)
@@ -140,7 +150,7 @@ class Person(index.Indexed, ClusterableModel):
 
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
 
-    objects = models.Manager.from_queryset(PersonQuerySet)()
+    objects = PersonQuerySet.as_manager()
 
     search_fields = [
         index.FilterField('id'),
@@ -157,6 +167,14 @@ class Person(index.Indexed, ClusterableModel):
         'id', 'uuid', 'first_name', 'last_name', 'email', 'title', 'organization', 'participated_in_training',
     ]
 
+    # Type annotations for related models etc.
+    contact_for_actions: RelatedManager[Action]
+    contact_for_indicators: RelatedManager[Indicator]
+    organization_plan_admins: RelatedManager[OrganizationPlanAdmin]
+    general_admin_plans: RelatedManager[Plan]
+    organization_id: int
+    created_by_id: int
+
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')
@@ -165,7 +183,7 @@ class Person(index.Indexed, ClusterableModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # FIXME: This is hacky
-        field = self._meta.get_field('image_cropping')
+        field: ImageRatioField = self._meta.get_field('image_cropping')  # type: ignore
         field.width = DEFAULT_AVATAR_SIZE
         field.height = DEFAULT_AVATAR_SIZE
 
@@ -185,7 +203,7 @@ class Person(index.Indexed, ClusterableModel):
         update_fields = ['avatar_updated_at']
         try:
             if not self.image or self.image.read() != photo:
-                self.image.save('avatar.jpg', io.BytesIO(photo))
+                self.image.save('avatar.jpg', io.BytesIO(photo))  # type: ignore
                 update_fields += ['image', 'image_height', 'image_width', 'image_cropping']
         except ValueError:
             pass
@@ -268,7 +286,7 @@ class Person(index.Indexed, ClusterableModel):
 
             dim = determine_image_dim(self.image_width, self.image_height, width, height)
 
-            tn_args = {
+            tn_args: dict = {
                 'size': dim,
             }
             if self.image_cropping:
@@ -310,7 +328,7 @@ class Person(index.Indexed, ClusterableModel):
                 return clients[0]
         return None
 
-    def get_admin_client(self):
+    def get_admin_client(self) -> Client | None:
         user = self.get_corresponding_user()
 
         plans = None
@@ -331,7 +349,7 @@ class Person(index.Indexed, ClusterableModel):
                 client = clients[0]
             else:
                 logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
-                    self.email, self.id, len(clients)
+                    self.email, self.id, len(clients)  # pyright: ignore
                 ))
         if not client:
             client = self.get_client_for_email_domain()
@@ -339,6 +357,7 @@ class Person(index.Indexed, ClusterableModel):
 
     def get_notification_context(self):
         client = self.get_admin_client()
+        assert client is not None
         context = {
             'person': {
                 'first_name': self.first_name,
@@ -383,6 +402,12 @@ class Person(index.Indexed, ClusterableModel):
         if target_user:
             target_user.deactivate(acting_admin_user)
         self.delete()
+
+    def visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
+        if not plan.features.public_contact_persons:
+            if user is None or not user.is_authenticated or not user.can_access_admin(plan):
+                return False
+        return True
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

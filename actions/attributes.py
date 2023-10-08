@@ -4,12 +4,12 @@ import typing
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
-from django.db.models import Model
+from django.db.models import Model, ForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.utils.html import strip_tags
 from django.utils.translation import gettext_lazy as _
 from html import unescape
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, Generic, List, Optional, TypeVar
 from wagtail.admin.panels import FieldPanel
 from wagtail.fields import RichTextField
 from wagtail.rich_text import RichText as WagtailRichText
@@ -17,7 +17,7 @@ from wagtail.rich_text import RichText as WagtailRichText
 import actions.models.attributes as models
 
 if typing.TYPE_CHECKING:
-    from actions.models import Plan
+    from actions.models import Plan, Action, Category
     from users.models import User
 
 
@@ -58,10 +58,14 @@ class FormField:
         return AttributeFieldPanel(self.name, heading=heading)
 
 
-class AttributeType:
+T = TypeVar('T', bound=Model)
+
+class AttributeType(Generic[T]):
     # In subclasses, define ATTRIBUTE_MODEL to be the model of the attributes of that type. It needs to have a foreign
     # key to actions.models.attributes.AttributeType called `type` with a defined `related_name`.
-    ATTRIBUTE_MODEL: Model
+    ATTRIBUTE_MODEL: type[T]
+    form_field_name: ClassVar[str]
+    instance: models.AttributeType
 
     @classmethod
     def from_model_instance(cls, instance: models.AttributeType):
@@ -90,7 +94,10 @@ class AttributeType:
 
     @property
     def attributes(self):
-        related_name = self.ATTRIBUTE_MODEL._meta.get_field('type').remote_field.related_name
+        type_field = self.ATTRIBUTE_MODEL._meta.get_field('type')
+        assert isinstance(type_field, ForeignKey)
+        related_name = type_field.remote_field.related_name
+        assert isinstance(related_name, str)
         return getattr(self.instance, related_name)
 
     def get_attributes(self, obj: models.ModelWithAttributes):
@@ -98,15 +105,18 @@ class AttributeType:
         content_type = ContentType.objects.get_for_model(obj)
         assert content_type.app_label == 'actions'
         if content_type.model == 'action':
+            from actions.models import Action
+            assert isinstance(obj, Action)
             assert self.instance.scope == obj.plan
         elif content_type.model == 'category':
+            assert isinstance(obj, Category)
             assert self.instance.scope == obj.type
         else:
             raise ValueError(f"Invalid content type {content_type.app_label}.{content_type.model} of object {obj}")
         return self.attributes.filter(content_type=content_type, object_id=obj.id)
 
     def create_attribute(self, obj: models.ModelWithAttributes, **args):
-        return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)
+        return self.ATTRIBUTE_MODEL.objects.create(type=self.instance, content_object=obj, **args)  # type: ignore[attr-defined]
 
     def instantiate_attribute(self, obj: models.ModelWithAttributes, **args):
         return self.ATTRIBUTE_MODEL(type=self.instance, content_object=obj, **args)
@@ -137,7 +147,7 @@ class AttributeType:
         """Add a format for this attribute type to the given workbook."""
         return None
 
-    def get_from_serialized_attributes(self, serialized_attributes):
+    def get_from_serialized_attributes(self, serialized_attributes: dict[str, Any]) -> Any:
         return serialized_attributes.get(self.instance.format, {}).get(str(self.instance.pk), {})
 
     def set_into_serialized_attributes(self, obj, value):
@@ -245,7 +255,7 @@ class CategoryChoice(AttributeType):
             widget=autocomplete.ModelSelect2Multiple(
                 url='category-autocomplete',
                 forward=(
-                    dal_forward.Const(self.instance.attribute_category_type.id, 'type'),
+                    dal_forward.Const(self.instance.attribute_category_type.id, 'type'),  # type: ignore[union-attr]
                 )
             ),
         )
@@ -344,7 +354,7 @@ class OptionalChoiceWithText(AttributeType):
             form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
-            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
+            text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)  # type: ignore[union-attr]
             if not editable:
                 text_field.disabled = True
             fields.append(FormField(
@@ -410,9 +420,7 @@ class OptionalChoiceWithText(AttributeType):
         ]
 
 
-class TextAttributeTypeMixin:
-    instance: models.ModelWithAttributes
-
+class GenericTextAttributeType(AttributeType):
     def get_form_field_name(self, language):
         name = f'attribute_type_{self.instance.identifier}'
         if language:
@@ -496,7 +504,7 @@ class TextAttributeTypeMixin:
                 attribute.save()
 
 
-class Text(TextAttributeTypeMixin, AttributeType):
+class Text(GenericTextAttributeType):
     ATTRIBUTE_MODEL = models.AttributeText
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
@@ -507,7 +515,7 @@ class Text(TextAttributeTypeMixin, AttributeType):
         return [text]
 
 
-class RichText(TextAttributeTypeMixin, AttributeType):
+class RichText(GenericTextAttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:

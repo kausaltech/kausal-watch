@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import functools
 import typing
+from typing import Any, Type, TypeVar, Generic
 import graphene
 import re
 
+from django.db.models import Model
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
 import graphene_django_optimizer as gql_optimizer
@@ -53,14 +55,17 @@ def resolve_i18n_field(field_name, obj, info):
     return value
 
 
+M = TypeVar('M', bound=Model)
+
 class DjangoNode(DjangoObjectType):
     @classmethod
-    def __init_subclass_with_meta__(cls, **kwargs):
+    def __init_subclass_with_meta__(cls, **kwargs: Any):
         if 'name' not in kwargs:
             # Remove the trailing 'Node' from the object types
             kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
 
-        model = kwargs['model']
+        model: Type[M] = kwargs['model']
+        assert model.__doc__ is not None
         is_autogen = re.match(r'^\w+\([\w_, ]+\)$', model.__doc__)
         if 'description' not in kwargs and not cls.__doc__ and not is_autogen:
             kwargs['description'] = trim_docstring(model.__doc__)

@@ -7,9 +7,9 @@ import uuid
 
 from dateutil.relativedelta import relativedelta
 from django.apps import apps
+from django.contrib.admin import display
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.fields import GenericRelation
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -20,7 +20,7 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
-from typing import Optional
+from typing import Optional, Protocol
 from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
@@ -31,7 +31,7 @@ from orgs.models import Organization
 if typing.TYPE_CHECKING:
     from actions.models.category import CategoryType
     from django.db.models.manager import RelatedManager
-    from .plan import Plan
+    from actions.models import Action, Plan
 
 
 User = get_user_model()
@@ -56,6 +56,10 @@ class Quantity(ClusterableModel, TranslatedModelMixin, ModificationTracking):
     autocomplete_search_field = 'name'
 
     objects = MultilingualManager()
+
+    # type annotations
+    indicators: RelatedManager[Indicator]
+    common_indicators: RelatedManager[CommonIndicator]
 
     class Meta:
         verbose_name = pgettext_lazy('physical', 'quantity')
@@ -91,6 +95,10 @@ class Unit(ClusterableModel, ModificationTracking):
 
     autocomplete_search_field = 'name'
 
+    # type annotations
+    indicators: RelatedManager[Indicator]
+    common_indicators: RelatedManager[CommonIndicator]
+
     class Meta:
         verbose_name = _('unit')
         verbose_name_plural = _('units')
@@ -103,7 +111,7 @@ class Unit(ClusterableModel, ModificationTracking):
         return str(self)
 
 
-class DatasetLicense(models.Model):
+class DatasetLicense(models.Model):  # type: ignore[django-manager-missing]
     name = models.CharField(max_length=50, verbose_name=_('name'), unique=True)
 
     class Meta:
@@ -177,7 +185,7 @@ class IndicatorRelationship(models.Model):
         abstract = True
 
     def __str__(self):
-        return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
+        return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)  # type: ignore
 
 
 @reversion.register()
@@ -368,9 +376,6 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language')
 
-    levels: RelatedManager[IndicatorLevel]
-    values: RelatedManager[IndicatorValue]
-
     search_fields = [
         index.SearchField('name', boost=10),
         index.AutocompleteField('name'),
@@ -386,6 +391,12 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     ]
 
     objects = IndicatorQuerySet.as_manager()
+
+    # type annotations
+    id: int
+    levels: RelatedManager[IndicatorLevel]
+    values: RelatedManager[IndicatorValue]
+    actions: RelatedManager[Action]
 
     class Meta:
         verbose_name = _('indicator')
@@ -428,7 +439,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         if self.updated_values_due_at is not None:
             # If latest_value is newer than updated_values_due_at - 1 year, add 1 year to updated_values_due_at
             reporting_period_start = self.updated_values_due_at - relativedelta(years=1)
-            if latest_value.date >= reporting_period_start:
+            if latest_value is not None and latest_value.date >= reporting_period_start:
                 self.updated_values_due_at += relativedelta(years=1)
                 update_fields.append('updated_values_due_at')
 
@@ -462,20 +473,17 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         now = timezone.now()
         return self.goals.filter(date__gte=now).exists()
 
+    @display(boolean=True, description=_('Has datasets'))
     def has_datasets(self):
         return self.datasets.exists()
-    has_datasets.short_description = _('Has datasets')
-    has_datasets.boolean = True
 
+    @display(boolean=True, description=_('Has data'))
     def has_data(self):
         return self.latest_value_id is not None
-    has_data.short_description = _('Has data')
-    has_data.boolean = True
 
+    @display(boolean=True, description=_('Has a graph'))
     def has_graph(self):
         return self.latest_graph_id is not None
-    has_graph.short_description = _('Has a graph')
-    has_graph.boolean = True
 
     def get_notification_context(self, plan):
         edit_values_url = reverse('indicators_indicator_modeladmin_edit_values', kwargs=dict(instance_pk=self.id))
@@ -491,6 +499,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None) -> str:
         if plan is None:
             plan = self.plans.first()
+        assert plan is not None
         return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url), self.id)
 
     def clean(self):
@@ -541,7 +550,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         vals = list(self.values.filter(categories__isnull=True))
         for v in vals:
-            nvals = {}
+            nvals: dict[str, float] = {}
             niv = ni_vals_by_date.get(v.date)
             if niv and niv.value:
                 val = v.value / niv.value
@@ -564,7 +573,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         ni_goals_by_date = {g.date: g for g in ni.goals.all()}
 
         for g in self.goals.all():
-            nvals = {}
+            nvals: dict[str, float] = {}
             nig = ni_goals_by_date.get(g.date)
             if nig and nig.value:
                 val = g.value / nig.value
@@ -632,6 +641,9 @@ class DimensionCategory(OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
     public_fields = ['id', 'dimension', 'name', 'order']
+
+    # type annotations
+    values: RelatedManager[IndicatorValue]
 
     class Meta:
         verbose_name = _('dimension category')
@@ -705,7 +717,7 @@ class IndicatorLevel(ClusterableModel):
 
 class IndicatorGraph(models.Model):
     indicator = models.ForeignKey(Indicator, related_name='graphs', on_delete=models.CASCADE)
-    data = JSONField()
+    data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

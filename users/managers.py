@@ -4,11 +4,16 @@ User manager with email as username.
 Django's default user manager treats usernames and emails separately and causes
 the `createsuperuser` command to fail.
 """
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from django.contrib.auth.base_user import BaseUserManager
 
+if TYPE_CHECKING:
+    from .models import User
 
-class UserManager(BaseUserManager):
+
+class UserManager(BaseUserManager['User']):
     use_in_migrations = True
 
     def _create_user(self, email, password=None, **extra_fields):
