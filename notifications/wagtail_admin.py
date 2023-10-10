@@ -11,7 +11,7 @@ from wagtail import hooks
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
 from admin_site.wagtail import (
-    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CondensedPanelSingleSelect,
+    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
     PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
 )
 from aplans.context_vars import ctx_request
@@ -52,8 +52,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
     block_panels = [
         FieldPanel('content'),
-        PlanFilteredFieldPanel('template', widget=CondensedPanelSingleSelect),
-        FieldPanel('identifier', widget=CondensedPanelSingleSelect)
+        PlanFilteredFieldPanel('template'),
+        FieldPanel('identifier')
     ]
 
     def get_queryset(self, request):

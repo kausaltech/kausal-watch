@@ -302,7 +302,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         FieldPanel('internal_abbreviation'),
         # Don't allow editing identifiers at this point
         # CondensedInlinePanel('identifiers', panels=[
-        #     FieldPanel('namespace', widget=CondensedPanelSingleSelect),
+        #     FieldPanel('namespace'),
         #     FieldPanel('identifier'),
         # ]),
         FieldPanel('description'),

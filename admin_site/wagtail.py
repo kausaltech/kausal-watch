@@ -9,7 +9,6 @@ from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
 from django.db import transaction
 from django.db.models import ProtectedError
-from django.forms.widgets import Select
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls.base import reverse
@@ -512,13 +511,6 @@ class AutocompletePanel(WagtailAutocompletePanel):
 
         self.widget.get_context = get_context
         self.widget.render_js_init = render_js_init
-
-
-class CondensedPanelSingleSelect(Select):
-    def format_value(self, value):
-        if value is None:
-            return ''
-        return str(value)
 
 
 class InitializeFormWithPlanMixin:

@@ -25,7 +25,7 @@ from wagtail_modeladmin.views import IndexView
 
 from admin_site.wagtail import (
     AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
+    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
     get_translation_tabs
 )
 from actions.chooser import ActionChooser
@@ -394,7 +394,7 @@ class ActionAdmin(AplansModelAdmin):
     task_panels = [
         FieldPanel('name'),
         FieldPanel('due_at'),
-        FieldPanel('state', widget=CondensedPanelSingleSelect),
+        FieldPanel('state'),
         FieldPanel('completed_at'),
         FieldPanel('comment'),
     ]
