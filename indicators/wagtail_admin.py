@@ -17,7 +17,7 @@ from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quant
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansCreateView, AplansEditView,
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    CondensedPanelSingleSelect, InitializeFormWithPlanMixin, get_translation_tabs
+    InitializeFormWithPlanMixin, get_translation_tabs
 )
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
@@ -407,7 +407,7 @@ class IndicatorAdmin(AplansModelAdmin):
             )
             if show_dimensions_section:
                 advanced_panels.append(CondensedInlinePanel('dimensions', panels=[
-                    FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+                    FieldPanel('dimension')
                 ], heading=_("Dimensions")))
                 # If the indicator has values, show a warning that these would be deleted by changing dimensions
                 num_values = instance.values.count() if instance else 0
@@ -549,7 +549,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(1, FieldPanel('quantity'))
             basic_panels.insert(2, FieldPanel('unit'))
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
-                FieldPanel('dimension', widget=CondensedPanelSingleSelect)
+                FieldPanel('dimension')
             ], heading=_("Dimensions")))
         else:
             dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
