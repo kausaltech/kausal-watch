@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 11:51+0200\n"
+"POT-Creation-Date: 2023-10-11 22:25+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -25,6 +25,10 @@ msgstr ""
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
 msgstr "Der er allerede en handling med denne identifikator."
+
+#: actions/action_admin.py
+msgid "Only plan admins may change the moderators of an action."
+msgstr ""
 
 #: actions/action_admin.py
 #, python-format
