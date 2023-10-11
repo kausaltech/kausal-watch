@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-06 16:37+0200\n"
+"POT-Creation-Date: 2023-10-11 11:25+0200\n"
 "PO-Revision-Date: 2023-09-30 21:19+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -692,7 +692,7 @@ msgstr "Name wie durch offizielle Stelle genehmigt"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Die Kennung für diese Maßnahme (z. B. Nummer)"
 
-#: actions/models/action.py
+#: actions/models/action.py pages/blocks.py
 msgid "Image"
 msgstr "Bild"
 
@@ -1803,8 +1803,16 @@ msgid "No user found with this email address. Ask your administrator to create a
 msgstr "Es wurde kein Benutzer mit dieser E-Mail-Adresse gefunden. Bitten Sie Ihren Administrator, ein Konto für Sie zu erstellen."
 
 #: admin_site/api.py
-msgid "This user does not have access to admin."
-msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Cannot determine authorization method. The email address domain may be unknown."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Password authentication is required, but the user has no password."
+msgstr ""
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
@@ -3394,8 +3402,44 @@ msgid "Front page hero block"
 msgstr "Hero-Block auf Titelseite"
 
 #: pages/blocks.py
+#, fuzzy
+#| msgid "action link"
+msgid "Page link"
+msgstr "Maßnahmenlink"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Cards"
+msgid "Card"
+msgstr "Karten"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Action category"
+msgid "Action category filter card"
+msgstr "Maßnahmenkategorie"
+
+#: pages/blocks.py
 msgid "Links"
 msgstr "Links"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Action category"
+msgid "Action category filter cards"
+msgstr "Maßnahmenkategorie"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement pages"
+msgid "Accessibility statement compliance status"
+msgstr "Barrierefreiheitsseiten"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement preparation information"
+msgstr "Barrierefreiheitsseite"
 
 #: pages/blocks.py
 msgid "Publisher name"
@@ -3414,8 +3458,42 @@ msgid "Email address"
 msgstr "E-Mail-Adresse"
 
 #: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement contact information"
+msgstr "Barrierefreiheitsseite"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement contact form"
+msgstr "Barrierefreiheitsseite"
+
+#: pages/blocks.py
 msgid "Action status pie charts"
 msgstr "Maßnahmenstatus-Kuchendiagramme"
+
+#: pages/blocks.py
+msgid "Width"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "maximum value"
+msgid "Maximum"
+msgstr "Höchstwert"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "in side column"
+msgid "Fit to column"
+msgstr "in Seitenspalte"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Big image"
+msgid "Large image"
+msgstr "Großes Bild"
 
 #: pages/models.py
 msgid "show in footer"
@@ -4069,6 +4147,9 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#~ msgid "This user does not have access to admin."
+#~ msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
 
 #~ msgid "Show only organizations in active plan"
 #~ msgstr "Zeige nur Organisationen in aktivem Plan"

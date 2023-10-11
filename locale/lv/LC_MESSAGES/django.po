@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-06 16:37+0200\n"
+"POT-Creation-Date: 2023-10-11 11:25+0200\n"
 "PO-Revision-Date: 2023-09-10 12:07+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -682,7 +682,7 @@ msgstr ""
 msgid "The identifier for this action (e.g. number)"
 msgstr ""
 
-#: actions/models/action.py
+#: actions/models/action.py pages/blocks.py
 msgid "Image"
 msgstr ""
 
@@ -1787,7 +1787,15 @@ msgid "No user found with this email address. Ask your administrator to create a
 msgstr ""
 
 #: admin_site/api.py
-msgid "This user does not have access to admin."
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Cannot determine authorization method. The email address domain may be unknown."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Password authentication is required, but the user has no password."
 msgstr ""
 
 #: admin_site/chooser.py
@@ -3364,7 +3372,31 @@ msgid "Front page hero block"
 msgstr ""
 
 #: pages/blocks.py
+msgid "Page link"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Card"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Action category filter card"
+msgstr ""
+
+#: pages/blocks.py
 msgid "Links"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Action category filter cards"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Accessibility statement compliance status"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Accessibility statement preparation information"
 msgstr ""
 
 #: pages/blocks.py
@@ -3384,7 +3416,31 @@ msgid "Email address"
 msgstr ""
 
 #: pages/blocks.py
+msgid "Accessibility statement contact information"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Accessibility statement contact form"
+msgstr ""
+
+#: pages/blocks.py
 msgid "Action status pie charts"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Width"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Maximum"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Fit to column"
+msgstr ""
+
+#: pages/blocks.py
+msgid "Large image"
 msgstr ""
 
 #: pages/models.py

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-06 16:37+0200\n"
+"POT-Creation-Date: 2023-10-11 11:25+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -751,7 +751,7 @@ msgstr "Navnet som godkendt af en officiel part"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Id'et for denne handling (f.eks. nummer)"
 
-#: actions/models/action.py
+#: actions/models/action.py pages/blocks.py
 msgid "Image"
 msgstr "Billede"
 
@@ -1906,8 +1906,16 @@ msgid "No user found with this email address. Ask your administrator to create a
 msgstr "Ingen bruger fundet med denne e-mailadresse. Bed din administrator om at oprette en konto til dig."
 
 #: admin_site/api.py
-msgid "This user does not have access to admin."
-msgstr "Denne bruger har ikke adgang til admin."
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Cannot determine authorization method. The email address domain may be unknown."
+msgstr ""
+
+#: admin_site/api.py
+msgid "Password authentication is required, but the user has no password."
+msgstr ""
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
@@ -3592,8 +3600,44 @@ msgid "Front page hero block"
 msgstr "Forside helteblok"
 
 #: pages/blocks.py
+#, fuzzy
+#| msgid "action link"
+msgid "Page link"
+msgstr "handlingslink"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Cards"
+msgid "Card"
+msgstr "Kort"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "common category"
+msgid "Action category filter card"
+msgstr "fælles kategori"
+
+#: pages/blocks.py
 msgid "Links"
 msgstr "Links"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "common category"
+msgid "Action category filter cards"
+msgstr "fælles kategori"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement pages"
+msgid "Accessibility statement compliance status"
+msgstr "Tilgængelighedserklæringssider"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement preparation information"
+msgstr "Side med erklæring om tilgængelighed"
 
 #: pages/blocks.py
 msgid "Publisher name"
@@ -3615,9 +3659,43 @@ msgstr "Email adresse"
 
 #: pages/blocks.py
 #, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement contact information"
+msgstr "Side med erklæring om tilgængelighed"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Accessibility statement page"
+msgid "Accessibility statement contact form"
+msgstr "Side med erklæring om tilgængelighed"
+
+#: pages/blocks.py
+#, fuzzy
 #| msgid "Action statuses"
 msgid "Action status pie charts"
 msgstr "Handlingsstatusser"
+
+#: pages/blocks.py
+msgid "Width"
+msgstr ""
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "maximum value"
+msgid "Maximum"
+msgstr "maksimal værdi"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "in side column"
+msgid "Fit to column"
+msgstr "i sidesøjle"
+
+#: pages/blocks.py
+#, fuzzy
+#| msgid "Big image"
+msgid "Large image"
+msgstr "Stort billede"
 
 #: pages/models.py
 msgid "show in footer"
@@ -4322,6 +4400,9 @@ msgstr "Brugere"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
+
+#~ msgid "This user does not have access to admin."
+#~ msgstr "Denne bruger har ikke adgang til admin."
 
 #, fuzzy
 #~| msgid "main organization for the plan"
