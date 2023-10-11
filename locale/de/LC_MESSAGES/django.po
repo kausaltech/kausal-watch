@@ -11,10 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-10-11 11:51+0200\n"
-"PO-Revision-Date: 2023-09-30 21:19+0000\n"
+"PO-Revision-Date: 2023-10-11 10:06+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/"
-">\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1937,10 +1937,14 @@ msgid ""
 "Cannot determine authentication method. The email address domain may be "
 "unknown."
 msgstr ""
+"Authentifizierungsmethode kann nicht festgestellt werden. Die Domäne der E"
+"-Mail-Adresse ist möglicherweise unbekannt."
 
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
 msgstr ""
+"Passwortauthentifizierung ist erforderlich, aber der Benutzer hat kein "
+"Passwort."
 
 #: admin_site/chooser.py
 msgid ""
@@ -2960,6 +2964,8 @@ msgid ""
 "Changing the organization to one with a different primary language is "
 "currently not supported"
 msgstr ""
+"Das Ändern der Organisation zu einer Organisation mit einer anderen "
+"Hauptsprache wird derzeit nicht unterstützt"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
@@ -3515,7 +3521,6 @@ msgid "A date of dissolution"
 msgstr "Ein Auflösungsdatum"
 
 #: orgs/models.py
-#, fuzzy
 msgid "primary language"
 msgstr "Hauptsprache"
 
@@ -3684,7 +3689,7 @@ msgstr "groß"
 
 #: pages/blocks.py
 msgid "Size"
-msgstr ""
+msgstr "Größe"
 
 #: pages/blocks.py
 msgid "Embed"
@@ -3711,38 +3716,32 @@ msgid "Front page hero block"
 msgstr "Hero-Block auf Titelseite"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Page link"
-msgstr "Maßnahmenlink"
+msgstr "Link zur Seite"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Card"
-msgstr "Karten"
+msgstr "Karte"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Action category filter card"
-msgstr "Maßnahmenkategorie"
+msgstr "Maßnahmenkategoriefilterkarte"
 
 #: pages/blocks.py
 msgid "Links"
 msgstr "Links"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Action category filter cards"
-msgstr "Maßnahmenkategorie"
+msgstr "Maßnahmenkategoriefilterkarten"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Accessibility statement compliance status"
-msgstr "Barrierefreiheitsseiten"
+msgstr "Konformitätsstatus der Erklärung zur Barrierefreiheit"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Accessibility statement preparation information"
-msgstr "Barrierefreiheitsseite"
+msgstr "Informationen zur Erstellung der Erklärung zur Barrierefreiheit"
 
 #: pages/blocks.py
 msgid "Publisher name"
@@ -3765,14 +3764,12 @@ msgid "Email address"
 msgstr "E-Mail-Adresse"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Accessibility statement contact information"
-msgstr "Barrierefreiheitsseite"
+msgstr "Kontaktinformationen zur Erklärung zur Barrierefreiheit"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Accessibility statement contact form"
-msgstr "Barrierefreiheitsseite"
+msgstr "Kontaktformular für die Erklärung zur Barrierefreiheit"
 
 #: pages/blocks.py
 msgid "Action status pie charts"
@@ -3780,20 +3777,17 @@ msgstr "Maßnahmenstatus-Kuchendiagramme"
 
 #: pages/blocks.py
 msgid "Width"
-msgstr ""
+msgstr "Breite"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Maximum"
-msgstr "Höchstwert"
+msgstr "Maximum"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Fit to column"
-msgstr "in Seitenspalte"
+msgstr "An Spalte anpassen"
 
 #: pages/blocks.py
-#, fuzzy
 msgid "Large image"
 msgstr "Großes Bild"
 
@@ -3990,9 +3984,8 @@ msgid "Action details page"
 msgstr "Maßnahmendetailseite"
 
 #: pages/models.py
-#, fuzzy
 msgid "Action dashboard columns"
-msgstr "in Seitenspalte"
+msgstr "Maßnahmen-Dashboard-Spalten"
 
 #: pages/models.py
 msgid "Action list page"
