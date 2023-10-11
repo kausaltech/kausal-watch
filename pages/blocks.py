@@ -186,6 +186,7 @@ class ActionCategoryFilterCardBlock(blocks.StructBlock):
     category = CategoryChooserBlock()
 
     class Meta:
+        # FIXME: The label (and class name) is probably misleading
         label = _('Action category filter card')
 
     graphql_fields = [
@@ -200,6 +201,7 @@ class ActionCategoryFilterCardsBlock(blocks.StructBlock):
     cards = blocks.ListBlock(ActionCategoryFilterCardBlock(), label=_('Links'))
 
     class Meta:
+        # FIXME: The label (and class name) is probably misleading
         label = _('Action category filter cards')
 
     graphql_fields = [
