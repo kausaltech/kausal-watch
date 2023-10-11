@@ -38,7 +38,7 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
-from .models import Action, ActionTask
+from .models import Action, ActionContactPerson, ActionTask
 from reports.views import MarkActionAsCompleteView
 
 if typing.TYPE_CHECKING:
@@ -117,6 +117,23 @@ class ActionAdminForm(WagtailAdminModelForm):
         if Action.objects.filter(plan=plan, identifier=identifier).exclude(pk=self.instance.pk).exists():
             raise ValidationError(_("There is already an action with this identifier."))
         return identifier
+
+    def clean(self):
+        # Only plan admins may change the moderators of an action
+        plan = self.instance.plan
+        is_plan_admin = self._user.is_general_admin_for_plan(plan)
+        if self.instance.pk is not None and not is_plan_admin:
+            old_moderators = list(
+                self.instance.contact_persons
+                .filter(role=ActionContactPerson.Role.MODERATOR)
+                .values_list('person_id', flat=True)
+            )
+            new_moderators = [
+                d['person'].id for d in self.formsets['contact_persons'].cleaned_data
+                if not d['DELETE'] and d['role'] == ActionContactPerson.Role.MODERATOR
+            ]
+            if old_moderators != new_moderators:
+                raise ValidationError(_("Only plan admins may change the moderators of an action."))
 
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
@@ -571,9 +588,18 @@ class ActionAdmin(AplansModelAdmin):
 
         all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
+        if is_general_admin:
+            contact_persons_read_only = False
+        else:
+            person = request.user.get_corresponding_person()
+            is_moderator = person is not None and instance.contact_persons.filter(
+                role=ActionContactPerson.Role.MODERATOR,
+                person_id=person.id,
+            ).exists()
+            contact_persons_read_only = not is_moderator
         contact_persons_panels = self.get_contact_persons_panels(
             distinguish_roles=plan.features.has_action_contact_person_roles,
-            is_general_admin=is_general_admin,
+            read_only=contact_persons_read_only,
         )
         all_tabs.append(ObjectList(contact_persons_panels, heading=_('Contact persons')))
 
@@ -751,9 +777,14 @@ class ActionAdmin(AplansModelAdmin):
             *snippet_view_urls,
         )
 
-    def get_contact_persons_panels(self, distinguish_roles, is_general_admin):
+    def get_contact_persons_panels(self, distinguish_roles, read_only):
         panels = []
-        if is_general_admin:
+        if read_only:
+            panels.append(ReadOnlyInlinePanel(
+                relation_name='contact_persons',
+                heading=_('Contact persons')
+            ))
+        else:
             contact_person_panels = [
                 FieldPanel('person', widget=PersonChooser),
                 FieldPanel('primary_contact')
@@ -763,10 +794,5 @@ class ActionAdmin(AplansModelAdmin):
             panels.append(CondensedInlinePanel(
                 'contact_persons',
                 panels=contact_person_panels
-            ))
-        else:
-            panels.append(ReadOnlyInlinePanel(
-                relation_name='contact_persons',
-                heading=_('Contact persons')
             ))
         return panels
