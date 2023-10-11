@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 11:25+0200\n"
+"POT-Creation-Date: 2023-10-11 11:51+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1792,7 +1792,7 @@ msgid "You do not have admin access. Your administrator may need to assign you a
 msgstr ""
 
 #: admin_site/api.py
-msgid "Cannot determine authorization method. The email address domain may be unknown."
+msgid "Cannot determine authentication method. The email address domain may be unknown."
 msgstr ""
 
 #: admin_site/api.py
