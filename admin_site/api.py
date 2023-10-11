@@ -54,7 +54,7 @@ def check_login_method(request):
         client = None
 
     if client is None:
-        msg = _("Cannot determine authorization method. The email address domain may be unknown.")
+        msg = _("Cannot determine authentication method. The email address domain may be unknown.")
         raise ValidationError({'detail': msg, 'code': 'no_client'})
 
     if not client.auth_backend:
