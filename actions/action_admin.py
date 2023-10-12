@@ -612,7 +612,7 @@ class ActionAdmin(AplansModelAdmin):
         reporting_panels = reporting_attribute_panels
         help_panels_for_field = {}
         for snapshot in instance.get_snapshots():
-            for field in snapshot.report.fields:
+            for field in snapshot.report.type.fields:
                 help_panel = field.block.get_help_panel(field.value, snapshot)
                 if help_panel:
                     help_panels_for_field.setdefault(field.id, []).append(help_panel)
