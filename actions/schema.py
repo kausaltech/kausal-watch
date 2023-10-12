@@ -286,7 +286,7 @@ class PlanNode(DjangoNode):
         root: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None, first: int | None = None
     ):
         user = info.context.user
-        qs: ActionQuerySet = root.actions.all()
+        qs = root.actions.get_queryset()
         qs = qs.visible_for_user(user).filter(plan=root)
         if identifier:
             qs = qs.filter(identifier=identifier)
@@ -581,35 +581,32 @@ def get_translated_category_page(info, **kwargs) -> Prefetch:
 class AttributesMixin:
     attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False), required=True)
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
-        prefetch_related=(
-            'text_attributes', 'rich_text_attributes', 'rich_text_attributes__type',
-            'choice_attributes', 'choice_attributes__type', 'choice_attributes__choice',
-            'choice_with_text_attributes', 'choice_with_text_attributes__type', 'choice_with_text_attributes__choice',
-            'numeric_value_attributes', 'numeric_value_attributes__type',
-            'category_choice_attributes', 'category_choice_attributes__type'
-        )
+        prefetch_related=[
+            *chain(*[('%s' % rel, '%s__type' % rel) for rel in ModelWithAttributes.ATTRIBUTE_RELATIONS]),
+            *['choice_attributes__choice', 'choice_with_text_attributes__choice']
+        ]
     )
-    def resolve_attributes(self, info, id=None):
-        query = Q()
-        if id is not None:
-            query = Q(type__identifier=id)
-
-        def filter_attrs(qs):
-            if not query:
-                return qs.all()
-            else:
-                return qs.filter(query)
-
+    def resolve_attributes(root: Category | Action, info: GQLInfo, id: str | None = None):
+        request = info.context
         plan = get_plan_from_context(info)
-        attributes = chain(
-            filter_attrs(self.text_attributes.visible_for_user(info.context.user, plan)),
-            filter_attrs(self.rich_text_attributes.visible_for_user(info.context.user, plan)),
-            filter_attrs(self.choice_attributes.visible_for_user(info.context.user, plan)),
-            filter_attrs(self.choice_with_text_attributes.visible_for_user(info.context.user, plan)),
-            filter_attrs(self.numeric_value_attributes.visible_for_user(info.context.user, plan)),
-            filter_attrs(self.category_choice_attributes.visible_for_user(info.context.user, plan)),
-        )
+
+        def filter_attrs(qs: QuerySet[AttributeUnion]) -> List[AttributeUnion]:
+            out = []
+            for attr in qs:
+                if id is not None:
+                    if attr.type.identifier != id:
+                        continue
+                if not attr.is_visible_for_user(request.user, plan):  # pyright: ignore
+                    continue
+                out.append(attr)
+            return out
+
+        attributes: List[AttributeUnion] = []
+        for attr_type_name in ModelWithAttributes.ATTRIBUTE_RELATIONS:
+            attributes += filter_attrs(getattr(root, attr_type_name).all())
+
         return sorted(attributes, key=lambda a: a.type.order)
 
 
@@ -651,8 +648,8 @@ class CategoryNode(ResolveShortDescriptionFromLeadParagraphShim, AttributesMixin
         return levels[depth]
 
     @staticmethod
-    def resolve_actions(root: Category, info):
-        return root.actions.visible_for_user(info.context.user)
+    def resolve_actions(root: Category, info) -> ActionQuerySet:
+        return root.actions.get_queryset().visible_for_user(info.context.user)
 
     @gql_optimizer.resolver_hints(
         prefetch_related=get_translated_category_page
@@ -813,7 +810,7 @@ def _get_visible_action(root, field_name, user: Optional[User]):
     if action_id is None:
         return None
     try:
-        retval = Action.objects.visible_for_user(user).get(id=action_id)
+        retval = Action.objects.get_queryset().visible_for_user(user).get(id=action_id)
     except Action.DoesNotExist:
         return None
     return retval
@@ -952,8 +949,12 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         return []
 
     @staticmethod
-    def resolve_status_summary(root: Action, info):
-        return root.get_status_summary()
+    @gql_optimizer.resolver_hints(
+        model_field=('merged_with',),
+        select_related=('status', 'implementation_phase',),
+    )
+    def resolve_status_summary(root: Action, info: GQLInfo):
+        return root.get_status_summary(cache=info.context.watch_cache)
 
     @staticmethod
     def resolve_timeliness(root: Action, info):
@@ -1011,7 +1012,7 @@ class ActionLinkNode(DjangoNode):
 
 
 def plans_actions_queryset(plans, category, first, order_by, user):
-    qs = Action.objects.visible_for_user(user).filter(plan__in=plans)
+    qs = Action.objects.get_queryset().visible_for_user(user).filter(plan__in=plans)
     if category is not None:
         # FIXME: This is sucky, maybe convert Category to a proper tree model?
         f = (
@@ -1119,7 +1120,7 @@ class Query:
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
-        qs = Action.objects.visible_for_user(info.context.user).all()
+        qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
         if obj_id:
             qs = qs.filter(id=obj_id)
         if identifier:

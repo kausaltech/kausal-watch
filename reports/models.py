@@ -1,21 +1,30 @@
-from autoslug.fields import AutoSlugField
+from __future__ import annotations
+
+import typing
+from typing import TYPE_CHECKING
 from contextlib import contextmanager
+
+import reversion
+from autoslug.fields import AutoSlugField
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
+from reversion.revisions import _current_frame, add_to_revision, create_revision
 from wagtail.fields import StreamField
-from reversion.revisions import create_revision, add_to_revision, _current_frame
-import reversion
 
 from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
 from reports.blocks.action_content import ReportFieldBlock
-from .spreadsheets import ExcelReport
-from .utils import prepare_serialized_model_version, group_by_model
 
+from .spreadsheets import ExcelReport
+from .utils import group_by_model, prepare_serialized_model_version
+
+if TYPE_CHECKING:
+    from actions.models import AttributeType
+    from users.models import User
 
 class NoRevisionSave(Exception):
     pass
@@ -134,14 +143,14 @@ class Report(models.Model, PlanRelatedModel):
                             'completed_by': None}))
         return result
 
-    def mark_as_complete(self, user):
+    def mark_as_complete(self, user: User):
         """Mark this report as complete, as well as all actions that are not yet complete.
 
         The snapshots for actions that are marked as complete by this will have `created_explicitly` set to False.
         """
         if self.is_complete:
             self._raise_complete()
-        actions_to_snapshot = self.type.plan.actions.exclude(id__in=Action.objects.complete_for_report(self))
+        actions_to_snapshot = self.type.plan.actions.exclude(id__in=Action.objects.get_queryset().complete_for_report(self))
         with reversion.create_revision():
             reversion.set_comment(_("Marked report '%s' as complete") % self)
             reversion.set_user(user)
@@ -151,12 +160,13 @@ class Report(models.Model, PlanRelatedModel):
             for action in actions_to_snapshot:
                 # Create snapshot for this action after revision is created to get the resulting version
                 reversion.add_to_revision(action)
+
         for action in actions_to_snapshot:
-            ActionSnapshot.objects.create(
+            ActionSnapshot.for_action(
                 report=self,
                 action=action,
                 created_explicitly=False,
-            )
+            ).save()
 
     def undo_marking_as_complete(self, user):
         if not self.is_complete:
@@ -179,10 +189,10 @@ class ActionSnapshot(models.Model):
         verbose_name_plural = _('action snapshots')
         get_latest_by = 'action_version__revision__date_created'
 
-    def __init__(self, *args, action: Action | None = None, **kwargs):
-        if 'action_version' not in kwargs and action is not None:
-            kwargs['action_version'] = Version.objects.get_for_object(action).first()
-        super().__init__(*args, **kwargs)
+    @classmethod
+    def for_action(cls, report: Report, action: Action, created_explicitly: bool = True) -> ActionSnapshot:
+        action_version: Version = Version.objects.get_for_object(action).first()
+        return cls(report=report, action_version=action_version, created_explicitly=created_explicitly)
 
     class _RollbackRevision(Exception):
         pass
@@ -201,10 +211,12 @@ class ActionSnapshot(models.Model):
         except ActionSnapshot._RollbackRevision:
             pass
 
-    def get_related_versions(self, ct):
+    def get_related_versions(self, ct) -> models.QuerySet[Version]:
         return self.action_version.revision.version_set.exclude(content_type=ct).select_related('content_type')
 
-    def get_attribute_for_type_from_versions(self, attribute_type, versions, ct):
+    def get_attribute_for_type_from_versions(
+        self, attribute_type: AttributeType, versions: typing.Iterable[Version], ct: ContentType
+    ) -> models.Model | None:
         pattern = {
             'type_id': attribute_type.id,
             'content_type_id': ct.id,
@@ -223,7 +235,7 @@ class ActionSnapshot(models.Model):
                     if isinstance(field, ParentalManyToManyDescriptor):
                         # value should be a list of PKs of the related model; transform it to a list of instances
                         related_model = field.rel.model
-                        value = [related_model.objects.get(pk=pk) for pk in value]
+                        value = [related_model.objects.get(pk=pk) for pk in value]  # type: ignore[attr-defined]
                     field_dict[field_name] = value
                 # This does not work for model fields that are a ManyToManyDescriptor. In such cases, you may want
                 # to make the model a ClusterableModel and use, e.g., ParentalManyToManyField instead of

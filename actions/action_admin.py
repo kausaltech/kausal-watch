@@ -141,7 +141,7 @@ class ActionAdminForm(WagtailAdminModelForm):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
-        obj = super().save(commit)
+        obj: Action = super().save(commit)
 
         # Update categories
         plan = obj.plan
@@ -250,6 +250,8 @@ class ActionCreateView(AplansCreateView):
 
 
 class ActionIndexView(IndexView):
+    request: WatchAdminRequest
+
     def get_page_title(self):
         plan = self.request.user.get_active_admin_plan()
         return plan.general_content.get_action_term_display_plural()
@@ -265,7 +267,7 @@ class ActionMenuItem(ModelAdminMenuItem):
 
 
 class ActionButtonHelper(AplansButtonHelper):
-    mark_as_complete_button_classnames = []
+    mark_as_complete_button_classnames: list[str] = []
 
     def mark_as_complete_button(self, action_pk, report, **kwargs):
         classnames_add = kwargs.get('classnames_add', [])
@@ -291,17 +293,20 @@ class ActionButtonHelper(AplansButtonHelper):
             'title': _("Undo marking this action as complete for the report %s") % str(report),
         }
 
-    def get_buttons_for_obj(self, obj, *args, **kwargs):
+    def get_buttons_for_obj(self, obj: Action, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
-        if self.permission_helper.user_can_edit_obj(self.request.user, obj):
-            # For each report type, display one button for the latest report of that type
-            for report_type in obj.plan.report_types.all():
-                latest_report = report_type.reports.last()
-                if latest_report and not latest_report.is_complete:
-                    if obj.is_complete_for_report(latest_report):
-                        buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
-                    else:
-                        buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
+        if not self.permission_helper.user_can_edit_obj(self.request.user, obj):
+            return buttons
+
+        latest_reports = self.request.admin_cache.latest_reports
+        # For each report type, display one button for the latest report of that type
+        for latest_report in latest_reports:
+            if latest_report.is_complete:
+                continue
+            if obj.is_complete_for_report(latest_report):
+                buttons.append(self.undo_marking_as_complete_button(obj.pk, latest_report, **kwargs))
+            else:
+                buttons.append(self.mark_as_complete_button(obj.pk, latest_report, **kwargs))
         return buttons
 
 
@@ -528,7 +533,10 @@ class ActionAdmin(AplansModelAdmin):
         # to the context instance so no separate instance_being_edited would
         # be needed.
 
+        assert isinstance(instance, Action)
         plan = request.user.get_active_admin_plan()
+        assert plan is not None
+
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
         serialized_attributes = instance_being_edited.get_serialized_attribute_data() if instance_being_edited else None
         attribute_panels = instance.get_attribute_panels(

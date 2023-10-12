@@ -1,23 +1,27 @@
+from __future__ import annotations
+
 import datetime
 from enum import Enum
-import typing
+from typing import Callable, NotRequired, TypedDict, TYPE_CHECKING
 
-from aplans.utils import MetadataEnum, ConstantMetadata
-
-if typing.TYPE_CHECKING:
-    from actions.models import Action, Plan
-from typing import Callable
-
-
-from django.core.exceptions import ObjectDoesNotExist
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
+from aplans.utils import ConstantMetadata, MetadataEnum
+
+if TYPE_CHECKING:
+    from actions.models import Action, Plan
+    from aplans.cache import WatchObjectCache
 
 Sentiment = Enum('Sentiment', names='POSITIVE NEGATIVE NEUTRAL')
 
 
-class ActionStatusSummary(ConstantMetadata):
+class SummaryContext(TypedDict):
+    plan: Plan
+    cache: NotRequired[WatchObjectCache]
+
+
+class ActionStatusSummary(ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]):
     default_label: str
     color: str
     is_completed: bool
@@ -37,19 +41,23 @@ class ActionStatusSummary(ConstantMetadata):
         self.is_active = is_active
         self.sentiment = sentiment
 
-    def with_context(self, context):
+    def with_context(self, context: SummaryContext):  # type: ignore[override]
         if context is None:
             raise ValueError('Context with plan required to resolve status label')
         if 'plan' not in context:
             raise KeyError('Action status values depend on the plan')
         if self.identifier is None:
             raise ValueError('with_identifier must be called before with_context')
-        plan: Plan = context['plan']
-        identifier: ActionStatusSummaryIdentifier = self.identifier
-        try:
-            status = plan.action_statuses.get(plan=plan, identifier=identifier.name.lower())
+        plan = context['plan']
+        identifier: str = self.identifier.name.lower()
+        cache = context.get('cache')
+        if cache is not None:
+            status = context['cache'].for_plan(plan).get_action_status(identifier=identifier)
+        else:
+            status = plan.action_statuses.filter(plan=plan, identifier=identifier).first()
+        if status is not None:
             self.label = status.name
-        except ObjectDoesNotExist:
+        else:
             self.label = self.default_label
         return self
 
@@ -135,7 +143,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
 
     @classmethod
     def for_action(cls, action: 'Action'):
-        # Some plans in production have inconsistent Capitalized identifiers
+        # FIXME: Some plans in production have inconsistent Capitalized identifiers
         # Once the db has been cleaned up, this match logic
         # should be revisited
         status = action.status.identifier.lower() if action.status else None
@@ -151,7 +159,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         if status is None:
             return cls.UNDEFINED
         try:
-            return next(a for a in cls if a.name.lower() == action.status.identifier)
+            return next(a for a in cls if a.name.lower() == status)
         except StopIteration:
             return cls.UNDEFINED
 
@@ -159,22 +167,22 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
 Comparison = Enum('Comparison', names='LTE GT')
 
 
-class ActionTimeliness(ConstantMetadata):
-    color: str
-    sentiment: Sentiment
-    label: str
+class ActionTimeliness(ConstantMetadata['ActionTimelinessIdentifier', SummaryContext]):
+    color: str | None
+    sentiment: Sentiment | None
+    label: str | None
     boundary: Callable[['Plan'], int]
-    comparison: Comparison
+    comparison: Comparison | None
     identifier: 'ActionTimelinessIdentifier'
     days: int
 
     def __init__(self,
-                 boundary: Callable[['Plan'], int],
-                 color: str = None,
-                 sentiment: Sentiment = None,
-                 label: str = None,
-                 comparison: Comparison = None,
-                 ):
+        boundary: Callable[['Plan'], int],
+        color: str | None = None,
+        sentiment: Sentiment | None = None,
+        label: str | None = None,
+        comparison: Comparison | None = None,
+    ):
         self.color = color
         self.sentiment = sentiment
         self.label = label
@@ -189,7 +197,7 @@ class ActionTimeliness(ConstantMetadata):
     def _get_days(self, plan: 'Plan'):
         return self.boundary(plan)
 
-    def with_context(self, context):
+    def with_context(self, context: SummaryContext):
         if context is None:
             raise ValueError('Context with plan required to resolve timeliness')
         if 'plan' not in context:

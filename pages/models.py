@@ -1,5 +1,5 @@
 import functools
-from typing import Optional
+from typing import ClassVar, Optional, Sequence, Type
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator, MinValueValidator
@@ -15,7 +15,7 @@ from grapple.models import (
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail import blocks
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Site
@@ -84,7 +84,7 @@ class AplansPage(Page):
         index.FilterField('plan'),
     ]
 
-    promote_panels = []
+    promote_panels: list[Panel] = []
 
     graphql_fields = [
         GraphQLField('plan', 'actions.schema.PlanNode', required=False),
@@ -151,7 +151,7 @@ class PlanRootPage(AplansPage):
         FieldPanel('body'),
     ]
 
-    parent_page_types = []
+    parent_page_types: Sequence[Type[Page] | str] = []
 
     graphql_fields = AplansPage.graphql_fields + [
         GraphQLStreamfield('body'),
@@ -284,7 +284,7 @@ class CategoryTypePageLevelLayout(ClusterableModel):
         MEDIUM = 'M', _('Medium')
         LARGE = 'L', _('Large')
 
-    page: 'models.ForeignKey[CategoryTypePage]' = ParentalKey(
+    page = ParentalKey(
         CategoryTypePage, on_delete=models.CASCADE, related_name='level_layouts', verbose_name=('page')
     )
     level = models.ForeignKey(
@@ -363,7 +363,7 @@ class CategoryPage(AplansPage):
         verbose_name = _('Category page')
         verbose_name_plural = _('Category pages')
 
-    def set_url_path(self, parent):
+    def set_url_path(self, parent: Page):
         if self.category.type.hide_category_identifiers:
             path = f'{self.slug}/'
         else:
@@ -414,12 +414,15 @@ class FixedSlugPage(AplansPage):
 
     Since the slug is fixed, there can be at most one child page of the respective type.
     """
+    force_slug: ClassVar[str]
+
     class Meta:
         abstract = True
 
     def __init__(self, *args, **kwargs):
-        kwargs['slug'] = self.__class__.force_slug
         super().__init__(*args, **kwargs)
+        if not self.slug:  # type: ignore[has-type]
+            self.slug = self.__class__.force_slug
 
     restrict_more_button_permissions_very_much = True
     remove_page_action_menu_items_except_publish = True
@@ -464,7 +467,7 @@ def graphql_type_from_enum(enum, name=None):
         "deprecation_reason": None,
     }
     meta_class = type("Meta", (object,), meta_dict)
-    return type(meta_class.enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})
+    return type(meta_class.enum.__name__, (graphene.types.Enum,), {"Meta": meta_class})  # type: ignore[attr-defined]
 
 
 class ActionListPage(FixedSlugPage):

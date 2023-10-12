@@ -8,19 +8,21 @@ from django.contrib.auth.models import AnonymousUser
 if typing.TYPE_CHECKING:
     from actions.models import Plan
     from users.models import User
+    from .cache import WatchObjectCache, PlanSpecificCache
 
 
 UserOrAnon: typing.TypeAlias = 'User | AnonymousUser'
 
 class WatchRequest(HttpRequest):
-    pass
+    watch_cache: WatchObjectCache
 
 
-class AuthenticatedWatchRequest(HttpRequest):
+class AuthenticatedWatchRequest(WatchRequest):
     user: User
 
 
 class WatchAdminRequest(AuthenticatedWatchRequest):
+    admin_cache: PlanSpecificCache
     def get_active_admin_plan(self) -> Plan: ...  # type: ignore[empty-body]
 
 

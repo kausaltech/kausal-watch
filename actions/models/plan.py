@@ -6,7 +6,6 @@ import reversion
 import typing
 import zoneinfo
 from datetime import datetime, timedelta
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.contenttypes.fields import GenericRelation
@@ -23,7 +22,7 @@ from django_countries.fields import CountryField
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from typing import ClassVar, Optional, Tuple, Type, Union
+from typing import ClassVar, Optional, Tuple, Union
 from urllib.parse import urlparse
 from wagtail.models import Collection, Page, Site
 from wagtail.models.i18n import Locale
@@ -44,7 +43,6 @@ from people.models import Person
 
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
-    from users.models import User
     from .action import ActionStatus, ActionImplementationPhase, ActionManager
     from .category import CategoryType
     from .features import PlanFeatures
@@ -90,7 +88,7 @@ class PlanQuerySet(models.QuerySet['Plan']):
 
         if not user.is_authenticated or not user.is_staff:
             return self.none()
-        staff_actions = Action.objects.user_has_staff_role_for(user).values_list('plan').distinct()
+        staff_actions = Action.objects.get_queryset().user_has_staff_role_for(user).values_list('plan').distinct()
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
 
@@ -260,7 +258,7 @@ class Plan(ClusterableModel):
         )
     )
 
-    superseded_by = models.ForeignKey(
+    superseded_by: models.ForeignKey['Plan' | None, 'Plan' | None] = models.ForeignKey(  # type: ignore[assignment]
         'self', verbose_name=pgettext_lazy('plan', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan')
     )

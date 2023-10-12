@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import functools
 import typing
-from typing import Any, Type, TypeVar, Generic
+from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
 import graphene
 import re
 
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
 import graphene_django_optimizer as gql_optimizer
@@ -20,7 +20,7 @@ from actions.models import Plan
 from aplans.types import WatchAPIRequest
 
 
-graphene_registry = []
+graphene_registry: list[Type[graphene.ObjectType]] = []
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -57,7 +57,7 @@ def resolve_i18n_field(field_name, obj, info):
 
 M = TypeVar('M', bound=Model)
 
-class DjangoNode(DjangoObjectType):
+class DjangoNode(DjangoObjectType, Generic[M]):
     @classmethod
     def __init_subclass_with_meta__(cls, **kwargs: Any):
         if 'name' not in kwargs:
@@ -119,7 +119,13 @@ def get_plan_from_context(info: GQLInfo, plan_identifier: str | None = None) -> 
     return plan
 
 
-def order_queryset(qs, node_class, order_by):
+class SupportsOrderable(Protocol):
+    ORDERABLE_FIELDS: ClassVar[Sequence[str]]
+
+
+Q = TypeVar('Q', bound=QuerySet)
+
+def order_queryset(qs: Q, node_class: Type[SupportsOrderable], order_by: str | None) -> Q:
     if order_by is None:
         return qs
 
@@ -134,17 +140,20 @@ def order_queryset(qs, node_class, order_by):
         raise ValueError('Only orderable fields are: %s' % ', '.join(
             [to_camel_case(x) for x in orderable_fields]
         ))
+    assert order_by is not None
     qs = qs.order_by(desc + order_by)
     return qs
 
 
-def register_graphene_node(cls):
+OT = TypeVar('OT', bound=graphene.ObjectType)
+
+def register_graphene_node(cls: Type[OT]) -> Type[OT]:
     global graphene_registry
     graphene_registry.append(cls)
     return cls
 
 
-def register_django_node(cls):
+def register_django_node(cls: Type[M]) -> Type[M]:
     model = cls._meta.model
     grapple_registry.django_models[model] = cls
     return cls

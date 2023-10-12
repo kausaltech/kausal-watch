@@ -6,7 +6,7 @@ import libvoikko  # type: ignore
 import logging
 import random
 import re
-from typing import Any, Callable, ClassVar, Generic, Iterable, List, Protocol, Self, Sequence, Type, TYPE_CHECKING, TypeVar
+from typing import Generic, Iterable, List, Protocol, Self, Sequence, TYPE_CHECKING, TypeVar
 
 import sentry_sdk
 from datetime import datetime, timedelta
@@ -17,7 +17,6 @@ from django.core import checks
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.db.models.base import ModelBase
 from django.utils.translation import get_language, gettext_lazy as _
 from enum import Enum
 from tinycss2.color3 import parse_color  # type: ignore
@@ -224,7 +223,7 @@ class PlanRelatedModel(PlanDefaultsModel, Generic[M]):
         return qs.filter(plan=plan)
 
     def get_plans(self):
-        return [self.plan]
+        return [self.plan]  # type: ignore[attr-defined]
 
     def initialize_plan_defaults(self, plan: Plan):
         # Using setattr() here to avoid type pollution in subclasses
@@ -289,7 +288,28 @@ class InstancesVisibleForMixin(models.Model):
         verbose_name=_('Visibility'),
     )
 
-    def are_instances_visible_for(self, user, instance_plan):
+    @classmethod
+    def get_visibility_permissions_for_user(cls, user: UserOrAnon, plan: Plan | None) -> set[VisibleFor]:
+        if hasattr(user, '_instance_visibility_perms'):
+            return user._instance_visibility_perms
+        permissions = [InstancesVisibleForMixin.VisibleFor.PUBLIC]
+        if not user.is_authenticated:
+            return set(permissions)
+
+        permissions.append(InstancesVisibleForMixin.VisibleFor.AUTHENTICATED)
+        is_plan_admin = plan is not None and user.is_general_admin_for_plan(plan)
+        if is_plan_admin:
+            permissions.append(InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS)
+        # FIXME: Check if the user is a contact person for the object, not for *anything* in the plan.
+        is_contact_person = plan is not None and user.is_contact_person_in_plan(plan)
+        if is_contact_person or is_plan_admin:
+            permissions.append(InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS)
+        user._instance_visibility_perms = set(permissions)
+        return user._instance_visibility_perms
+
+    def are_instances_visible_for(self, user: User, instance_plan: Plan):
+        # FIXME: Use the method above here instead for consistency
+
         if user.is_superuser:
             return True
         is_plan_admin = user.is_general_admin_for_plan(instance_plan)
@@ -442,15 +462,21 @@ def append_query_parameter(request, url, parameter):
     return url
 
 
-class ConstantMetadata:
-    identifier: 'MetadataEnum'
+E = TypeVar('E', bound='MetadataEnum')
+C = TypeVar('C')
 
-    def with_identifier(self, identifier: 'MetadataEnum'):
+class ConstantMetadata(Generic[E, C]):
+    identifier: E
+
+    def with_identifier(self, identifier: E):
         self.identifier = identifier
         return self
 
-    def with_context(self, context: dict):
+    def with_context(self, context: C):
         return self
+
+
+CM = TypeVar('CM', bound=ConstantMetadata)
 
 
 class MetadataEnum(Enum):

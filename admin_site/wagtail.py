@@ -199,6 +199,7 @@ class PlanFilteredFieldPanel(FieldPanel):
 
 
 class AplansButtonHelper(ButtonHelper):
+    request: WatchAdminRequest
     edit_button_classnames = ['button-primary', 'icon', 'icon-edit']
 
     def view_live_button(self, obj, classnames_add=None, classnames_exclude=None):
