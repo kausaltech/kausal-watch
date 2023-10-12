@@ -42,7 +42,6 @@ class ReportCreateView(ReportTypeQueryParameterMixin, AplansCreateView):
         if report_type and not self.instance.pk:
             assert not hasattr(self.instance, 'type')
             self.instance.type = ReportType.objects.get(pk=int(report_type))
-            self.instance.fields = self.instance.type.fields
 
 
 class ReportEditView(ReportTypeQueryParameterMixin, AplansEditView):

@@ -50,7 +50,6 @@ class Report(models.Model, PlanRelatedModel):
     )
     start_date = models.DateField(verbose_name=_('start date'))
     end_date = models.DateField(verbose_name=_('end date'))
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
     is_complete = models.BooleanField(
         default=False, verbose_name=_('complete'),
         help_text=_('Set if report cannot be changed anymore'),
@@ -59,6 +58,10 @@ class Report(models.Model, PlanRelatedModel):
         default=False, verbose_name=_('public'),
         help_text=_('Set if report can be shown to the public'),
     )
+
+    # The fields are copied from the report type at the time of completion of this report. These are not currently used anywhere but we
+    # might need them in the future to take care of certain edge cases wrt. schema changes
+    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
 
     public_fields = [
         'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
@@ -143,6 +146,7 @@ class Report(models.Model, PlanRelatedModel):
             reversion.set_comment(_("Marked report '%s' as complete") % self)
             reversion.set_user(user)
             self.is_complete = True
+            self.fields = self.type.fields
             self.save()
             for action in actions_to_snapshot:
                 # Create snapshot for this action after revision is created to get the resulting version

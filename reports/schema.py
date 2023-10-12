@@ -38,7 +38,7 @@ class ReportNode(DjangoNode):
             return None
         return [
             field.block.graphql_value_for_action_snapshot(field, snapshot)
-            for field in root.fields
+            for field in root.type.fields
             if hasattr(field.block, 'graphql_value_for_action_snapshot')
         ]
 
