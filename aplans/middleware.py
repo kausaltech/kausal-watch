@@ -11,9 +11,10 @@ import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
 from wagtail.admin import messages
 from wagtail.users.models import UserProfile
+from aplans.cache import WatchObjectCache
 
 from aplans.context_vars import set_request
-from aplans.types import WatchAdminRequest
+from aplans.types import WatchAdminRequest, WatchRequest
 from actions.models import Plan
 
 
@@ -44,12 +45,16 @@ def get_active_admin_plan(self):
 
 class AdminMiddleware(MiddlewareMixin):
     def process_view(self, request: WatchAdminRequest, *args, **kwargs):
+        request.watch_cache = WatchObjectCache()
+
         user = request.user
         if not user or not user.is_authenticated or not user.is_staff:
             return
 
         profile = UserProfile.get_for_user(user)
         plan = request.user.get_active_admin_plan()
+        if plan is not None:
+            request.admin_cache = request.watch_cache.for_plan(plan)
 
         # If the user has already set the UI language, use that one.
         # Otherwise, default to the primary language of the plan.
@@ -60,11 +65,11 @@ class AdminMiddleware(MiddlewareMixin):
             profile.save(update_fields=['preferred_language'])
 
         # Inject the helper function into the request object
-        request.get_active_admin_plan = get_active_admin_plan.__get__(request, WatchAdminRequest)
+        request.get_active_admin_plan = get_active_admin_plan.__get__(request, WatchAdminRequest)  # type: ignore[method-assign]
 
         if not plan.site_id:
             return
-        request._wagtail_site = plan.site
+        request._wagtail_site = plan.site  # type: ignore[attr-defined]
 
         # If it's an admin method that changes something, invalidate Plan-related
         # GraphQL cache.
@@ -85,6 +90,6 @@ class RequestMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
-    def __call__(self, request):
+    def __call__(self, request: WatchRequest):
         with set_request(request):
             return self.get_response(request)

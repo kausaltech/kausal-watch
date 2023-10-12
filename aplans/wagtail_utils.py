@@ -1,7 +1,7 @@
 from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.db.models import Model
-from typing import Type
+from typing import Type, TypeVar
 
 from actions.models import Action, CategoryType, Plan
 from indicators.models import Indicator
@@ -24,7 +24,9 @@ class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
         return super().prepare_value(value)
 
 
-def _get_category_fields(plan: Plan, model: Type[Model], obj, with_initial: bool = False) -> dict:
+M = TypeVar('M', bound=Model)
+
+def _get_category_fields(plan: Plan, model: Type[M], obj: M | None, with_initial: bool = False) -> dict:
     fields = {}
     if model == Action:
         filter_name = 'editable_for_actions'
@@ -32,6 +34,8 @@ def _get_category_fields(plan: Plan, model: Type[Model], obj, with_initial: bool
         filter_name = 'editable_for_indicators'
     else:
         raise Exception()
+
+    assert isinstance(obj, (Action | Indicator))
 
     for cat_type in plan.category_types.filter(**{filter_name: True}):
         qs = cat_type.categories.all()

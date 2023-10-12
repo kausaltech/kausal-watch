@@ -21,4 +21,4 @@ __pycache__/
 /.direnv/
 tags
 /docker-compose.override.yml
-/kausal_watch_extensions/
+/kausal_watch_extensions

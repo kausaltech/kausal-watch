@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import logging
 import reversion
 import typing
+from typing import TYPE_CHECKING, ClassVar, Literal, Optional, Protocol, Self, TypedDict
 import uuid
+
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.admin import display
@@ -20,13 +23,12 @@ from modelcluster.models import ClusterableModel, model_from_serializable_data
 from modeltrans.fields import TranslationField, TranslatedVirtualField
 from modeltrans.translator import get_i18n_field
 from reversion.models import Version
-from typing import ClassVar, Literal, Optional, Protocol, Self, TypedDict
 from wagtail.fields import RichTextField
 from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
-from aplans.types import UserOrAnon
 
+from aplans.types import UserOrAnon
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
 )
@@ -34,15 +36,16 @@ from orgs.models import Organization
 from users.models import User
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
-from ..attributes import AttributeType
+from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
-    from .plan import Plan
-    from people.models import Person
     from django.db.models.manager import RelatedManager
     from django.db.models.expressions import Combinable
+    from aplans.cache import WatchObjectCache
+    from people.models import Person
+    from .plan import Plan
 
 
 logger = logging.getLogger(__name__)
@@ -141,6 +144,13 @@ class DraftableModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+if TYPE_CHECKING:
+    class ActionManager(models.Manager['Action']):
+        def get_queryset(self) -> ActionQuerySet: ...
+else:
+    ActionManager = models.Manager.from_queryset(ActionQuerySet)
 
 
 @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties'])
@@ -332,7 +342,7 @@ class Action(  # type: ignore[django-manager-missing]
         default_language_field='plan__primary_language',
     )
 
-    objects = ActionQuerySet.as_manager()
+    objects: ActionManager = ActionManager()
 
     search_fields = [
         index.SearchField('name', boost=10),
@@ -415,7 +425,7 @@ class Action(  # type: ignore[django-manager-missing]
 
     def get_next_action(self, user: User):
         return (
-            Action.objects
+            Action.objects.get_queryset()
             .visible_for_user(user)
             .filter(plan=self.plan_id, order__gt=self.order)
             .unmerged()
@@ -424,7 +434,7 @@ class Action(  # type: ignore[django-manager-missing]
 
     def get_previous_action(self, user: User) -> Action | None:
         return (
-            Action.objects
+            Action.objects.get_queryset()
             .visible_for_user(user)
             .filter(plan=self.plan_id, order__lt=self.order)
             .unmerged()
@@ -664,16 +674,16 @@ class Action(  # type: ignore[django-manager-missing]
     def get_visible_attribute_types_for_plan(cls, user, plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(plan)
-        attribute_types = AttributeTypeModel.objects.filter(
+        at_qs = AttributeTypeModel.objects.filter(
             object_content_type=action_ct,
             scope_content_type=plan_ct,
             scope_id=plan.id,
         )
         if only_in_reporting_tab:
-            attribute_types = attribute_types.filter(show_in_reporting_tab=True)
+            at_qs = at_qs.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
-            attribute_types = attribute_types.filter(show_in_reporting_tab=False)
-        attribute_types = (at for at in attribute_types if at.are_instances_visible_for(user, plan))
+            at_qs = at_qs.filter(show_in_reporting_tab=False)
+        attribute_types = (at for at in at_qs if at.are_instances_visible_for(user, plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
@@ -681,9 +691,9 @@ class Action(  # type: ignore[django-manager-missing]
         # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be
         # put on the main tab, `reporting_panels` is a list of panels to be put on the reporting tab, and `i18n_panels`
         # is a dict mapping a non-primary language to a list of panels to be put on the tab for that language.
-        main_panels = []
-        reporting_panels = []
-        i18n_panels = {}
+        main_panels: list[AttributeFieldPanel] = []
+        reporting_panels: list[AttributeFieldPanel] = []
+        i18n_panels: dict[str, list[AttributeFieldPanel]] = {}
         plan = user.get_active_admin_plan()  # not sure if this is reasonable...
         for panels, kwargs in [(main_panels, {'unless_in_reporting_tab': True}),
                                (reporting_panels, {'only_in_reporting_tab': True})]:
@@ -745,10 +755,10 @@ class Action(  # type: ignore[django-manager-missing]
                 _("Marked action '%(action)s' as complete for report '%(report)s'") % {
                     'action': self, 'report': report})
             reversion.set_user(user)
-        ActionSnapshot.objects.create(
+        ActionSnapshot.for_action(
             report=report,
             action=self,
-        )
+        ).save()
 
     def undo_marking_as_complete_for_report(self, report, user):
         from reports.models import ActionSnapshot
@@ -767,11 +777,11 @@ class Action(  # type: ignore[django-manager-missing]
             reversion.set_user(user)
         snapshots.delete()
 
-    def get_status_summary(self):
-        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan})
+    def get_status_summary(self, cache: WatchObjectCache | None = None):
+        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
 
-    def get_timeliness(self):
-        return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan})
+    def get_timeliness(self, cache: WatchObjectCache | None = None):
+        return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
 
     def get_color(self):
         if self.status and self.status.color:

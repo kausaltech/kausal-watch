@@ -160,29 +160,29 @@ class AttributeType(  # type: ignore[django-manager-missing]
         return self.name_i18n
 
 
+class HasAttributeType(Protocol):
+    type: AttributeType
+
+
 class Attribute:
-    pass
+    def is_visible_for_user(self: HasAttributeType, user: UserOrAnon, plan: Plan):
+        assert plan is not None
+        user_perms = set(AttributeType.get_visibility_permissions_for_user(user, plan))
+        if self.type.instances_visible_for in user_perms:
+            return True
+        return False
 
 
 class AttributeQuerySet(models.QuerySet):
-    def visible_for_user(self, user: User, plan: typing.Optional[Plan]):
+    def visible_for_user(self, user: UserOrAnon, plan: typing.Optional[Plan]):
         if user.is_superuser:
             return self
-        permissions = [InstancesVisibleForMixin.VisibleFor.PUBLIC]
-        if user.is_authenticated:
-            permissions.append(InstancesVisibleForMixin.VisibleFor.AUTHENTICATED)
-            is_plan_admin = plan is not None and user.is_general_admin_for_plan(plan)
-            if is_plan_admin:
-                permissions.append(InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS)
-            # FIXME: Check if the user is a contact person for the object, not for *anything* in the plan.
-            is_contact_person = plan is not None and user.is_contact_person_in_plan(plan)
-            if is_contact_person or is_plan_admin:
-                permissions.append(InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS)
-        return self.filter(type__instances_visible_for__in=permissions)
+        user_perms = AttributeType.get_visibility_permissions_for_user(user, plan)
+        return self.filter(type__instances_visible_for__in=user_perms)
 
 
 @reversion.register()
-class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):
+class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):  # type: ignore[django-manager-missing]
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_options')
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
