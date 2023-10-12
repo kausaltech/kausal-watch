@@ -357,7 +357,7 @@ class ExcelReport:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier)
             append_to_key(_('Action'), action_name)
-            for field in self.report.fields:
+            for field in self.report.type.fields:
                 labels = [label for label in field.block.xlsx_column_labels(field.value)]
                 values = field.block.extract_action_values(
                     self, field.value, action['data'],
