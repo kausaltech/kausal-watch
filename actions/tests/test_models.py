@@ -1,5 +1,6 @@
-import pytest
 from datetime import date, datetime, timedelta
+
+import pytest
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.models import Locale
@@ -7,6 +8,8 @@ from wagtail.models import Locale
 from actions.models import Action
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
 from pages.models import CategoryPage, CategoryTypePage
+
+from .fixtures import *
 
 pytestmark = pytest.mark.django_db
 
@@ -146,6 +149,24 @@ def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
     cat1.save()
     assert (cat2.category_pages.filter(locale=locale).get().get_next_sibling().specific ==
             cat1.category_pages.filter(locale=locale).get())
+
+
+def test_categories_projected_by_level(category_type_with_category_hierarchy):
+    ct = category_type_with_category_hierarchy
+    level_projections = ct.categories_projected_by_level()
+    for i, level in enumerate(ct.levels.all()):
+        mapping = level_projections[level.pk]
+        for category in ct.categories.all():
+            path = []
+            c = category
+            while c:
+                path.append(c)
+                c = c.parent
+            path.reverse()
+            if category.pk not in mapping:
+               assert len(path) < i + 1
+            else:
+                assert mapping[category.pk] == path[i]
 
 
 def test_plan_action_staleness_returns_default(plan):

@@ -1,3 +1,4 @@
+import math
 import pytest
 
 from actions.models import AttributeType
@@ -22,6 +23,27 @@ from people.tests.factories import (
 @pytest.fixture
 def category_type(plan):
     return CategoryTypeFactory(plan=plan)
+
+
+@pytest.fixture(params=[0, 1, 2, 3])
+def category_type_with_category_hierarchy(request, category_type, category_level_factory, category_factory):
+    NUM_LEVELS = request.param
+    LEVEL_CATEGORY_COUNT_MULTIPLIER = 3
+    ROOT_CATEGORY_COUNT = 2
+    all(category_level_factory(type=category_type) for _ in range(0, NUM_LEVELS))
+    assert category_type.levels.count() == NUM_LEVELS
+    level_category_count = ROOT_CATEGORY_COUNT
+    parent_categories = []
+    for _ in range(0, NUM_LEVELS):
+        categories = [category_factory(type=category_type) for _ in range(0, level_category_count)]
+        if len(parent_categories):
+            for i, c in enumerate(categories):
+                idx = math.floor(i/LEVEL_CATEGORY_COUNT_MULTIPLIER)
+                c.parent = parent_categories[idx]
+                c.save()
+        level_category_count *= LEVEL_CATEGORY_COUNT_MULTIPLIER
+        parent_categories = categories
+    return category_type
 
 
 @pytest.fixture
