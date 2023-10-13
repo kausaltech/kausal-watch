@@ -392,6 +392,8 @@ LANGUAGES = (
     ('fi', _('Finnish')),
     ('lv', _('Latvian')),
     ('sv', _('Swedish')),
+    ('pt', _('Portuguese')),  # Use Brazilian Portuguese only for now
+    ('pt-BR', _('Portuguese (Brazil)')),
 )
 # For languages that Django has no translations for, we need to manually specify what the language is called in that
 # language. We use this for displaying the list of available languages in the user settings.
