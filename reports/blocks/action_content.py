@@ -30,7 +30,6 @@ from aplans.graphql_types import register_graphene_node
 
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
 import typing
-from typing import Sequence
 if typing.TYPE_CHECKING:
     from reports.spreadsheets import ExcelReport
     from reports.models import ActionSnapshot

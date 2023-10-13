@@ -9,7 +9,7 @@ from actions.models import Action
 from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
 from pages.models import CategoryPage, CategoryTypePage
 
-from .fixtures import *
+from .fixtures import *  # noqa
 
 pytestmark = pytest.mark.django_db
 
