@@ -123,14 +123,15 @@ class ActionAdminForm(WagtailAdminModelForm):
         plan = self.instance.plan
         plan_uses_roles = plan.features.has_action_contact_person_roles
         is_plan_admin = self._user.is_general_admin_for_plan(plan)
-        if plan_uses_roles and self.instance.pk is not None and not is_plan_admin:
+        contact_persons_formset = self.formsets.get('contact_persons')
+        if plan_uses_roles and contact_persons_formset and self.instance.pk is not None and not is_plan_admin:
             old_moderators = list(
                 self.instance.contact_persons
                 .filter(role=ActionContactPerson.Role.MODERATOR)
                 .values_list('person_id', flat=True)
             )
             new_moderators = [
-                d['person'].id for d in self.formsets['contact_persons'].cleaned_data
+                d['person'].id for d in contact_persons_formset.cleaned_data
                 if not d['DELETE'] and d['role'] == ActionContactPerson.Role.MODERATOR
             ]
             if old_moderators != new_moderators:
