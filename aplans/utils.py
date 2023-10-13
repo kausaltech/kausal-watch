@@ -162,7 +162,7 @@ class OrderedModel(models.Model):
     @classmethod
     def check(cls, **kwargs):
         errors = super().check(**kwargs)
-        if not getattr(cls.filter_siblings, '__isabstractmethod__', False):
+        if getattr(cls.filter_siblings, '__isabstractmethod__', False):
             errors.append(checks.Warning("filter_siblings() not defined", hint="Implement filter_siblings() method", obj=cls))
         return errors
 
@@ -186,7 +186,7 @@ class OrderedModel(models.Model):
         ```
         """
         qs = self.__class__.objects.all()  # type: ignore
-        if getattr(self.filter_siblings, '__isabstractmethod__', False):
+        if not getattr(self.filter_siblings, '__isabstractmethod__', False):
             qs = self.filter_siblings(qs)
 
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
