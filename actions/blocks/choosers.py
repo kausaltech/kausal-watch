@@ -51,7 +51,13 @@ class CategoryLevelChooserBlock(blocks.ChooserBlock):
     @cached_property
     def widget(self):
         from actions.chooser import CategoryLevelChooser
-        return CategoryLevelChooser()
+        linked_fields = {
+            'type': {
+                'match': r'^fields-\d+-value-',
+                'append': 'category_type'
+            }
+        }
+        return CategoryLevelChooser(linked_fields=linked_fields)
 
     def get_form_state(self, value):
         return self.widget.get_value_data(value)
