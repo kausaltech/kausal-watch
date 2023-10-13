@@ -186,7 +186,7 @@ class OrderedModel(models.Model):
         ```
         """
         qs = self.__class__.objects.all()  # type: ignore
-        if not getattr(self.filter_siblings, '__isabstractmethod__', False):
+        if getattr(self.filter_siblings, '__isabstractmethod__', False):
             qs = self.filter_siblings(qs)
 
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
