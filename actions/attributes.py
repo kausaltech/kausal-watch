@@ -109,6 +109,7 @@ class AttributeType(Generic[T]):
             assert isinstance(obj, Action)
             assert self.instance.scope == obj.plan
         elif content_type.model == 'category':
+            from actions.models.category import Category
             assert isinstance(obj, Category)
             assert self.instance.scope == obj.type
         else:
