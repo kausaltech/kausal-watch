@@ -121,8 +121,9 @@ class ActionAdminForm(WagtailAdminModelForm):
     def clean(self):
         # Only plan admins may change the moderators of an action
         plan = self.instance.plan
+        plan_uses_roles = plan.features.has_action_contact_person_roles
         is_plan_admin = self._user.is_general_admin_for_plan(plan)
-        if self.instance.pk is not None and not is_plan_admin:
+        if plan_uses_roles and self.instance.pk is not None and not is_plan_admin:
             old_moderators = list(
                 self.instance.contact_persons
                 .filter(role=ActionContactPerson.Role.MODERATOR)
