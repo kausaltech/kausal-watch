@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
@@ -36,11 +37,7 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
         return self.name
 
     def get_admin_url(self):
-        hostnames = self.admin_hostnames.all()
-        if not len(hostnames):
-            raise Exception('No hostnames for client %s' % self)
-
-        return 'https://%s' % hostnames.first()
+        return settings.ADMIN_BASE_URL
 
     def get_notification_logo_rendition(self):
         """Return the rendition of the logo to be used for notifications, or None."""
@@ -65,19 +62,6 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
                 'alt': self.logo.title,
             }
         return None
-
-
-class AdminHostname(OrderedModel, ClusterableModel):
-    client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='admin_hostnames'
-    )
-    hostname = HostnameField(unique=True)
-
-    class Meta:
-        ordering = ('client', 'order')
-
-    def __str__(self):
-        return self.hostname
 
 
 class ClientPlan(OrderedModel):

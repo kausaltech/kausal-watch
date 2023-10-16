@@ -1,5 +1,6 @@
 import json
 import pytest
+from django.conf import settings
 
 from actions.models import AttributeType
 from pages.models import StaticPage
@@ -130,7 +131,7 @@ def test_plan_admin_url(graphql_client_query_data, plan, show_admin_link):
         variables=dict(plan=plan.identifier)
     )
     if show_admin_link:
-        admin_url = f'https://{client_plan.client.admin_hostnames.first().hostname}'
+        admin_url = settings.ADMIN_BASE_URL
         assert data == {'plan': {'adminUrl': admin_url}}
     else:
         assert data == {'plan': {'adminUrl': None}}

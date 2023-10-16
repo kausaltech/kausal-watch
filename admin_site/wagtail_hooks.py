@@ -229,7 +229,6 @@ class ClientAdmin(ModelAdmin):
         FieldPanel('name'),
         FieldPanel('logo'),
         FieldPanel('auth_backend'),
-        InlinePanel('admin_hostnames', panels=[FieldPanel('hostname')], heading=_('Admin hostnames')),
         InlinePanel('email_domains', panels=[FieldPanel('domain')], heading=_('Email domains')),
         InlinePanel('plans', panels=[FieldPanel('plan')], heading=_('Plans')),
     ]
