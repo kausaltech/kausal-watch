@@ -1,3 +1,5 @@
+from django.utils.translation import override
+
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
@@ -17,6 +19,13 @@ def register_view(klass, *args, **kwargs):
 
 class InsightViewSet(viewsets.ViewSet):
     def list(self, request):
+        language = request.query_params.get('language')
+        if language is None:
+            return self._list(request)
+        with override(language):
+            return self._list(request)
+
+    def _list(self, request):
         params = request.query_params
         object_type = params.get('type', 'action').strip().lower()
         if object_type == 'organization':
