@@ -256,7 +256,7 @@ class CategoryType(  # type: ignore[django-manager-missing]
         category_paths = self.expand_category_paths(qs)
         pks_by_level = {}
 
-        for idx, level in enumerate(self.levels.order_by('order').all()):
+        for idx, level in enumerate(self.levels.all()):
             categories_for_this_level = dict()
             for path in category_paths:
                 try:
