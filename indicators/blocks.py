@@ -53,9 +53,14 @@ class IndicatorBlock(StructBlock):
 
 
 @register_streamfield_block
-class IndicatorGroupBlock(ListBlock):
-    def __init__(self, **kwargs):
-        super().__init__(IndicatorBlock, **kwargs)
+class IndicatorGroupBlock(StructBlock):
+    title = CharBlock(required=False)
+    indicators = ListBlock(IndicatorBlock())
+
+    graphql_fields = [
+        GraphQLString('title'),
+        GraphQLStreamfield('indicators'),
+    ]
 
     class Meta:
         label = _('Indicators')
