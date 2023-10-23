@@ -260,10 +260,9 @@ class CategoryType(  # type: ignore[django-manager-missing]
             categories_for_this_level = dict()
             for path in category_paths:
                 try:
-                    category = path[idx]
-                    categories_for_this_level[category.pk] = category
-                    for child in path[idx + 1:]:
-                        categories_for_this_level[child.pk] = category
+                    target_category = path[idx]
+                    for category in path[idx:]:
+                        categories_for_this_level[category.pk] = target_category
                 except IndexError:
                     pass
             pks_by_level[level.pk] = categories_for_this_level
