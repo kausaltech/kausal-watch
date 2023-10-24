@@ -1,4 +1,3 @@
-import math
 import pytest
 
 from actions.models import AttributeType
@@ -39,7 +38,7 @@ def category_type_with_category_hierarchy(request, category_type, category_level
         categories = [category_factory(type=category_type) for _ in range(0, level_category_count)]
         if len(parent_categories):
             for i, c in enumerate(categories):
-                idx = math.floor(i/LEVEL_CATEGORY_COUNT_MULTIPLIER)
+                idx = int(i/LEVEL_CATEGORY_COUNT_MULTIPLIER)
                 c.parent = parent_categories[idx]
                 c.save()
         level_category_count *= LEVEL_CATEGORY_COUNT_MULTIPLIER
