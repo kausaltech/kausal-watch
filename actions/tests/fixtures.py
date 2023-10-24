@@ -30,7 +30,8 @@ def category_type_with_category_hierarchy(request, category_type, category_level
     NUM_LEVELS = request.param
     LEVEL_CATEGORY_COUNT_MULTIPLIER = 3
     ROOT_CATEGORY_COUNT = 2
-    all(category_level_factory(type=category_type) for _ in range(0, NUM_LEVELS))
+    for _ in range(0, NUM_LEVELS):
+        category_level_factory(type=category_type)
     assert category_type.levels.count() == NUM_LEVELS
     level_category_count = ROOT_CATEGORY_COUNT
     parent_categories = []
