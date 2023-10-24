@@ -359,11 +359,14 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             related_objects['actions.models.action.ActionResponsibleParty'],
             action['id']
         )
-        if organization_id is None:
-            return [None, None]
-        organization = report.plan_current_related_objects.organizations.get(organization_id)
         target_depth = block_value.get('target_ancestor_depth')
-        if not target_depth:
+        value_length = 1
+        if target_depth is not None:
+            value_length += 1
+        if organization_id is None:
+            return [None] * value_length
+        organization = report.plan_current_related_objects.organizations.get(organization_id)
+        if target_depth is None:
             return [organization.name]
         ancestors = organization.get_ancestors()
         depth = len(ancestors)
@@ -380,7 +383,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
     def xlsx_column_labels(self, value: dict) -> List[str]:
         labels = [str(self.label).capitalize()]
-        if 'target_ancestor_depth' not in value:
+        target_depth = value.get('target_ancestor_depth')
+        if target_depth is None:
             return labels
         return labels + [gettext('Parent')]
 
