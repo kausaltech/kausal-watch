@@ -56,7 +56,7 @@ class ActionStatusSummary(ConstantMetadata['ActionStatusSummaryIdentifier', Summ
         else:
             status = plan.action_statuses.filter(plan=plan, identifier=identifier).first()
         if status is not None:
-            self.label = status.name
+            self.label = status.name_i18n
         else:
             self.label = self.default_label
         return self
