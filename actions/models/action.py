@@ -1129,6 +1129,8 @@ class ActionLink(OrderedModel):
     url = models.URLField(max_length=400, verbose_name=_('URL'), validators=[URLValidator(('http', 'https'))])
     title = models.CharField(max_length=254, verbose_name=_('title'), blank=True)
 
+    i18n = TranslationField(fields=('url', 'title'), default_language_field='action__plan__primary_language')
+
     public_fields: ClassVar = [
         'id', 'action', 'url', 'title', 'order'
     ]

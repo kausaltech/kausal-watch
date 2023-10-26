@@ -1010,6 +1010,14 @@ class ActionLinkNode(DjangoNode):
         model = ActionLink
         fields = public_fields(ActionLink)
 
+        @staticmethod
+        def resolve_url(root: ActionLink, info):
+            return root.url_i18n
+
+        @staticmethod
+        def resolve_title(root: ActionLink, info):
+            return root.title_i18n
+
 
 def plans_actions_queryset(plans, category, first, order_by, user):
     qs = Action.objects.get_queryset().visible_for_user(user).filter(plan__in=plans)
