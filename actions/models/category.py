@@ -104,7 +104,7 @@ class CommonCategoryType(CategoryTypeBase):
     )
 
     primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
-    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='primary_language')
 
     # type annotations
     objects: MultilingualManager[Self]
@@ -181,7 +181,7 @@ class CategoryType(  # type: ignore[django-manager-missing]
         default=False, verbose_name=_("synchronize with pages"),
         help_text=_("Set if categories of this type should be synchronized with pages")
     )
-    i18n = TranslationField(fields=('name', 'lead_paragraph'), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='plan__primary_language')
 
     attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -619,4 +619,3 @@ class CategoryIcon(Icon):
 
     def __str__(self):
         return '%s [%s]' % (self.category, self.language)
-
