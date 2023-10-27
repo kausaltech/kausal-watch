@@ -10,10 +10,12 @@ from django.urls import path, re_path
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import SingleObjectMixin
+from modelcluster.forms import childformset_factory
+from typing import Iterable
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, Panel
 )
-from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.admin.forms.models import WagtailAdminModelForm, formfield_for_dbfield
 from wagtail.admin.widgets import AdminAutoHeightTextInput
 from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.action_menu import SnippetActionMenu
@@ -109,6 +111,15 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
 
 
 class ActionAdminForm(WagtailAdminModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # There is a corresponding formset for a role if and only if we can edit contact persons of that role. If, for
+        # example, the plan does not use contact person roles at all, no such formset will exist anyway.
+        for role in ActionContactPerson.Role:
+            formset = self.formsets.get(f'contact_persons_{role}')
+            if formset:
+                formset.queryset = formset.queryset.filter(role=role)
+
     def clean_identifier(self):
         # Since we hide the plan in the form, `validate_unique()` will be called with `exclude` containing `plan`, in
         # which case the unique_together constraints of Action will not be checked. We do it manually here.
@@ -137,11 +148,36 @@ class ActionAdminForm(WagtailAdminModelForm):
             if old_moderators != new_moderators:
                 raise ValidationError(_("Only plan admins may change the moderators of an action."))
 
+        # Persons can only have at most one role as a contact person.
+        seen_contact_persons = set()
+        # There is a corresponding formset for a role if and only if we can edit contact persons of that role. If, for
+        # example, the plan does not use contact person roles at all, no such formset will exist anyway.
+        for role in ActionContactPerson.Role:
+            formset = self.formsets.get(f'contact_persons_{role}')
+            if formset:
+                for data in formset.cleaned_data:
+                    if not data['DELETE']:
+                        person = data['person']
+                        if person.id in seen_contact_persons:
+                            raise ValidationError(
+                                _("%s is listed multiple times as a contact person.") % person
+                            )
+                        seen_contact_persons.add(person.id)
+
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
+        contact_persons_formsets = {}
+        # There is a corresponding formset for a role if and only if we can edit contact persons of that role. If, for
+        # example, the plan does not use contact person roles at all, no such formset will exist anyway.
+        for role in ActionContactPerson.Role:
+            formset = self.formsets.pop(f'contact_persons_{role}', None)
+            if formset:
+                contact_persons_formsets[role] = formset
+        original_contact_persons = self.instance.contact_persons.get_object_list().copy()
         obj: Action = super().save(commit)
+        self.save_contact_persons(contact_persons_formsets, original_contact_persons, commit)
 
         # Update categories
         plan = obj.plan
@@ -157,6 +193,114 @@ class ActionAdminForm(WagtailAdminModelForm):
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
+
+    def save_contact_persons(self, contact_persons_formsets, original_contact_persons, commit=True):
+        manager = self.instance.contact_persons
+        saved_contact_persons = []  # but not yet committed
+        deleted_contact_persons = []
+        order = 0
+        for role, formset in contact_persons_formsets.items():
+            saved_instances = formset.save(commit=False)
+            for instance in saved_instances:
+                instance.role = str(role)
+            # Each call of `formset.save()` changes the object list in the manager. We reset it to the original state,
+            # and after all formsets have been processed, we'll manually set it to all objects from all formsets.
+            manager.set(original_contact_persons)
+            saved_contact_persons += saved_instances
+            deleted_contact_persons += formset.deleted_objects
+
+            # Since we used `formset.save(commit=False)`, we won't touch the database, but the deferring related manager
+            # will now have the wrong data because `BaseChildFormSet.save()` removes `no_id_instances` from it. Let's
+            # not care about that and be happy with the saved instances we got as the return value of
+            # `BaseChildFormSet.save()`. We have to be careful not to call the manager's `commit()` method as this would
+            # remove items that are not in the current formset even though they are in a different one.
+
+            # Fix order (see modelcluster's forms.py:105)
+            # FIXME: When an instance changes order but is otherwise unchanged, the order set here will be ignored
+            for i, form in enumerate(formset.ordered_forms):
+                assert form.instance.order == i  # I guess?
+                form.instance.order = order
+                order += 1
+
+        # Update object list of manager like BaseChildFormSet.save() does
+        manager.add(*saved_contact_persons)
+        manager.remove(*deleted_contact_persons)
+
+        # The formsets have only been called with commit=False so far, so if we really should commit, we need to save
+        # the instances with commit=True.
+        if commit:
+            manager.commit()
+
+
+class ContactPersonsRestrictedToRoleInlinePanel(InlinePanel):
+    def __init__(self, *args, **kwargs):
+        panels = kwargs.get('panels')
+        if panels is None:
+            panels = [
+                FieldPanel('person', widget=PersonChooser),
+                FieldPanel('primary_contact')
+            ]
+        kwargs['panels'] = panels
+        super().__init__(*args, **kwargs)
+
+    def on_model_bound(self):
+        manager = getattr(self.model, 'contact_persons')
+        self.db_field = manager.rel
+
+
+# FIXME: Duplicates stuff from ReadOnlyInlinePanel
+class ContactPersonsRestrictedToRoleReadOnlyInlinePanel(Panel):
+    def __init__(self, role: ActionContactPerson.Role, *args, **kwargs):
+        self.role = role
+        super().__init__(*args, **kwargs)
+
+    def clone_kwargs(self):
+        result = super().clone_kwargs()
+        result['role'] = self.role
+        return result
+
+    class BoundPanel(Panel.BoundPanel):
+        template_name = "aplans/panels/read_only_inline_panel.html"
+
+        def get_context_data(self, parent_context=None):
+            context = super().get_context_data(parent_context)
+            role = self.panel.role
+            context['items'] = [
+                {
+                    'label': el.get_label() if hasattr(el, 'get_label') else '',
+                    'value': el.get_value() if hasattr(el, 'get_value') else str(el)
+                }
+                for el in self.instance.contact_persons.filter(role=role)
+            ]
+            return context
+
+
+class RoleSpecificContactPersonsPanel(MultiFieldPanel):
+    def __init__(self, *args, editable_roles: Iterable[ActionContactPerson.Role] | None = None, **kwargs):
+        """If `editable_roles` is None, allow editing of all roles, otherwise just the ones specified."""
+        self.editable_roles = editable_roles
+        if editable_roles is None:
+            editable_roles = {role for role in ActionContactPerson.Role}
+
+        children = []
+        for role in ActionContactPerson.Role:
+            if role in editable_roles:
+                panel = ContactPersonsRestrictedToRoleInlinePanel(
+                    f'contact_persons_{role}',
+                    # heading=_('Contact persons (%s)') % role.label,
+                    heading=role.label,  # We display this panel in the "contact persons" tab, so this should be enough
+                )
+            else:
+                panel = ContactPersonsRestrictedToRoleReadOnlyInlinePanel(role)
+            children.append(panel)
+        super().__init__(children=children, *args, **kwargs)
+
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        # children are statically set in __init__
+        kwargs.pop('children')
+        kwargs['editable_roles'] = self.editable_roles
+        return kwargs
 
 
 class ActionEditHandler(AplansTabbedInterface):
@@ -225,6 +369,24 @@ class ActionEditHandler(AplansTabbedInterface):
         field = form_class.base_fields.get('status')
         if field is not None:
             field.queryset = field.queryset.filter(plan=plan)
+
+        # Manually add a formset for each contact person role whose contact persons we may edit.
+        # There is a corresponding formset in the form options if and only if we can edit contact persons of a
+        # certain role. If, for example, the plan does not use contact person roles at all, no such formset will be in
+        # the form options anyway.
+        for role in ActionContactPerson.Role:
+            form_options = self.get_form_options()
+            formset_name = f'contact_persons_{role}'
+            formset_options = form_options['formsets'].get(formset_name)
+            if formset_options:
+                kwargs = {
+                    'extra': 0,
+                    'fk_name': 'action',
+                    'form': WagtailAdminModelForm,
+                    'formfield_callback': formfield_for_dbfield,
+                    **form_options['formsets'][formset_name],
+                }
+                form_class.formsets[formset_name] = childformset_factory(Action, ActionContactPerson, **kwargs)
 
         return form_class
 
@@ -598,19 +760,18 @@ class ActionAdmin(AplansModelAdmin):
 
         all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
-        if is_general_admin:
-            contact_persons_read_only = False
-        else:
+        # We may only be able to edit contact persons having a certain role
+        editable_contact_person_roles = {role for role in ActionContactPerson.Role}
+        if not is_general_admin:
             person = request.user.get_corresponding_person()
             is_moderator = person is not None and instance.contact_persons.filter(
                 role=ActionContactPerson.Role.MODERATOR,
                 person_id=person.id,
             ).exists()
-            contact_persons_read_only = not is_moderator
-        contact_persons_panels = self.get_contact_persons_panels(
-            distinguish_roles=plan.features.has_action_contact_person_roles,
-            read_only=contact_persons_read_only,
-        )
+            if not is_moderator:
+                editable_contact_person_roles.remove(ActionContactPerson.Role.MODERATOR)
+
+        contact_persons_panels = self.get_contact_persons_panels(request, instance)
         all_tabs.append(ObjectList(contact_persons_panels, heading=_('Contact persons')))
 
         if is_general_admin:
@@ -670,7 +831,10 @@ class ActionAdmin(AplansModelAdmin):
         i18n_tabs = get_translation_tabs(instance, request, extra_panels=i18n_attribute_panels)
         all_tabs += i18n_tabs
 
-        return ActionEditHandler(all_tabs, serialized_attributes=serialized_attributes)
+        return ActionEditHandler(
+            all_tabs,
+            serialized_attributes=serialized_attributes,
+        )
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -787,22 +951,42 @@ class ActionAdmin(AplansModelAdmin):
             *snippet_view_urls,
         )
 
-    def get_contact_persons_panels(self, distinguish_roles, read_only):
-        panels = []
-        if read_only:
-            panels.append(ReadOnlyInlinePanel(
-                relation_name='contact_persons',
-                heading=_('Contact persons')
-            ))
+    def get_contact_persons_panels(self, request, instance: Action):
+        plan = request.user.get_active_admin_plan()
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
+        if is_general_admin:
+            has_moderator_rights = True
         else:
+            person = request.user.get_corresponding_person()
+            has_moderator_rights = person is not None and instance.contact_persons.filter(
+                role=ActionContactPerson.Role.MODERATOR,
+                person_id=person.id,
+            ).exists()
+
+        # If the plan uses contact person roles, display a single RoleSpecificContactPersonsPanel
+        if plan.features.has_action_contact_person_roles:
+            editable_contact_person_roles = {role for role in ActionContactPerson.Role}
+            if not has_moderator_rights:
+                editable_contact_person_roles.remove(ActionContactPerson.Role.MODERATOR)
+            return [RoleSpecificContactPersonsPanel(editable_roles=editable_contact_person_roles)]
+
+        # Plan does not use contact person roles, so display panels not separating different roles
+        panels = []
+        if has_moderator_rights:
             contact_person_panels = [
                 FieldPanel('person', widget=PersonChooser),
                 FieldPanel('primary_contact')
             ]
-            if distinguish_roles:
-                contact_person_panels.append(FieldPanel('role'))
+            # if plan.features.has_action_contact_person_roles:  # handled separately now above
+            #     contact_person_panels.append(FieldPanel('role'))
             panels.append(CondensedInlinePanel(
                 'contact_persons',
-                panels=contact_person_panels
+                panels=contact_person_panels,
+                heading=_('Contact persons'),
+            ))
+        else:
+            panels.append(ReadOnlyInlinePanel(
+                relation_name='contact_persons',
+                heading=_('Contact persons')
             ))
         return panels
