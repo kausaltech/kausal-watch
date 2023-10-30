@@ -3,6 +3,7 @@ from wagtail import blocks
 
 from actions.tests.factories import ActionListBlockFactory
 from indicators.blocks import IndicatorBlock
+from indicators.tests.factories import IndicatorGroupBlockFactory
 from pages.blocks import CardBlock, QuestionBlock
 from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFactory
 
@@ -149,17 +150,19 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
     assert indicator.latest_value is None
     unit = indicator.unit
 
+    indicators = blocks.list_block.ListValue(blocks.list_block.ListBlock(IndicatorBlock), [indicator_block])
+    indicator_group_block = IndicatorGroupBlockFactory(indicators=indicators)
     page = plan.root_page
-    indicator_group = blocks.list_block.ListValue(blocks.list_block.ListBlock(IndicatorBlock), [indicator_block])
     page.body = [
-        ('indicator_group', indicator_group),
+        ('indicator_group', indicator_group_block),
     ]
     page.save()
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
         block_fields='''
-            items {
+            title
+            indicators {
               ... on IndicatorBlock {
                 style
                 indicator {
@@ -191,7 +194,8 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
             }
         ''',
         expected={
-            'items': [{
+            'title': indicator_group_block['title'],
+            'indicators': [{
                 'style': 'graph',
                 'indicator': {
                     'id': str(indicator.id),

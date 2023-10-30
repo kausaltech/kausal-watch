@@ -2,7 +2,7 @@ import datetime
 from factory import SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 from wagtail.rich_text import RichText
-from wagtail.test.utils.wagtail_factories import StructBlockFactory
+from wagtail.test.utils.wagtail_factories import ListBlockFactory, StructBlockFactory
 
 import indicators
 from actions.tests.factories import ActionFactory, OrganizationFactory, PlanFactory
@@ -97,6 +97,14 @@ class IndicatorBlockFactory(StructBlockFactory):
 
     indicator = SubFactory(IndicatorFactory)
     style = 'graph'
+
+
+class IndicatorGroupBlockFactory(StructBlockFactory):
+    class Meta:
+        model = indicators.blocks.IndicatorGroupBlock
+
+    title = "Indicator group block title"
+    indicators = ListBlockFactory(IndicatorBlockFactory)
 
 
 class IndicatorShowcaseBlockFactory(StructBlockFactory):
