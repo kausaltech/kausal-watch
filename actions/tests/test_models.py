@@ -1,5 +1,6 @@
-import pytest
 from datetime import date, datetime, timedelta
+
+import pytest
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.models import Locale
@@ -146,6 +147,78 @@ def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
     cat1.save()
     assert (cat2.category_pages.filter(locale=locale).get().get_next_sibling().specific ==
             cat1.category_pages.filter(locale=locale).get())
+
+
+@pytest.fixture
+def category_type_with_category_hierarchy(category_type, category_level_factory, category_factory):
+    """
+    Constructs a three level category hierarchy with a balanced structure,
+    with the category identifiers matching the hierarchy structure
+    """
+    ct_id = category_type
+    for _ in range(0, 3):
+        category_level_factory(type=category_type)
+
+    p1 = category_factory(type=ct_id, identifier="C1", parent_id=None)
+
+    p1_1 = category_factory(type=ct_id, identifier="C1.1", parent=p1)
+    category_factory(type=ct_id, identifier="C1.1.1", parent=p1_1)
+    category_factory(type=ct_id, identifier="C1.1.2", parent=p1_1)
+    category_factory(type=ct_id, identifier="C1.1.3", parent=p1_1)
+
+    p1_2 = category_factory(type=ct_id, identifier="C1.2", parent=p1)
+    category_factory(type=ct_id, identifier="C1.2.1", parent=p1_2)
+    category_factory(type=ct_id, identifier="C1.2.2", parent=p1_2)
+    category_factory(type=ct_id, identifier="C1.2.3", parent=p1_2)
+
+    p1_3 = category_factory(type=ct_id, identifier="C1.3", parent=p1)
+    category_factory(type=ct_id, identifier="C1.3.1", parent=p1_3)
+    category_factory(type=ct_id, identifier="C1.3.2", parent=p1_3)
+    category_factory(type=ct_id, identifier="C1.3.3", parent=p1_3)
+
+    p2 = category_factory(type=ct_id, identifier="C2", parent_id=None)
+
+    p2_1 = category_factory(type=ct_id, identifier="C2.1", parent=p2)
+    category_factory(type=ct_id, identifier="C2.1.1", parent=p2_1)
+    category_factory(type=ct_id, identifier="C2.1.2", parent=p2_1)
+    category_factory(type=ct_id, identifier="C2.1.3", parent=p2_1)
+
+    p2_2 = category_factory(type=ct_id, identifier="C2.2", parent=p2)
+    category_factory(type=ct_id, identifier="C2.2.1", parent=p2_2)
+    category_factory(type=ct_id, identifier="C2.2.2", parent=p2_2)
+    category_factory(type=ct_id, identifier="C2.2.3", parent=p2_2)
+
+    p2_3 = category_factory(type=ct_id, identifier="C2.3", parent=p2)
+    category_factory(type=ct_id, identifier="C2.3.1", parent=p2_3)
+    category_factory(type=ct_id, identifier="C2.3.2", parent=p2_3)
+    category_factory(type=ct_id, identifier="C2.3.3", parent=p2_3)
+
+    return category_type
+
+
+def test_categories_projected_by_level(category_type_with_category_hierarchy):
+    ct = category_type_with_category_hierarchy
+    cat_by_pk = {c.pk: c for c in ct.categories.all()}
+    level_projections = ct.categories_projected_by_level()
+    levels = ct.levels.all()
+
+    for depth in range(0, 3):
+        level_proj = level_projections[levels[depth].pk]
+        for cat in cat_by_pk.values():
+            identifier_prefix = cat.identifier[0:(2*(depth+1))]
+            try:
+                map_target = level_proj[cat.pk]
+                assert map_target.identifier == identifier_prefix
+            except KeyError:
+                cat_depth = 0
+                c = cat
+                while c.parent is not None:
+                    c = c.parent
+                    cat_depth += 1
+                # No levels deeper than the level of category x
+                # contain a mapping for category x --
+                # for these the key error is as expected
+                assert cat_depth < depth
 
 
 def test_plan_action_staleness_returns_default(plan):

@@ -183,12 +183,15 @@ class ExcelReport:
 
         def __init__(self, report: 'Report'):
             plan = report.type.plan
-            self.category_types = self._keyed_dict(report.type.plan.category_types.all())
+            self.category_types = self._keyed_dict(plan.category_types.all())
             self.categories = self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()])
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
             self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
             self.action_content_type = ContentType.objects.get_for_model(Action)
+            self.category_level_category_mappings = {
+                ct.pk: ct.categories_projected_by_level() for ct in self.category_types.values()
+            }
 
         @staticmethod
         def _keyed_dict(seq, key='pk'):

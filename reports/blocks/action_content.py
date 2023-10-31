@@ -18,13 +18,14 @@ from actions.models import (
     ActionImplementationPhase,
     AttributeType as AttributeTypeModel,
     ActionResponsibleParty,
+    CategoryLevel,
     CategoryType,
     ActionStatus,
     Category,
     Action
 )
 from orgs.models import Organization
-from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
+from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, CategoryLevelChooserBlock
 from aplans.graphql_types import register_graphene_node
 
 from reports.blocks.choosers import ReportTypeChooserBlock, ReportTypeFieldChooserBlock
@@ -162,6 +163,7 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
 @register_streamfield_block
 class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
     category_type = CategoryTypeChooserBlock(required=True)
+    category_level = CategoryLevelChooserBlock(required=False)
 
     class Meta:
         label = _("Action category")
@@ -179,32 +181,42 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
         category = graphene.Field('actions.schema.CategoryNode')
 
     def extract_action_values(
-            self,
-            report: 'ExcelReport',
-            block_value: dict,
-            action: dict,
-            related_objects: list[dict]
+        self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]
     ) -> Optional[Any]:
+        category_type: CategoryType = block_value['category_type']
+
+        def filter_by_type(categories: Iterable[Category | None]) -> Iterable[Category]:
+            return [c for c in categories if c and c.type == category_type]
+        def map_by_level(categories: Iterable[Category], level: CategoryLevel) -> Iterable[Category]:
+            mappings = report.plan_current_related_objects.category_level_category_mappings.get(category_type.pk)
+            if mappings is None:
+                return categories
+            return [mappings.get(level.pk, {}).get(c.pk) for c in categories]
+
         category_pks = action.get('categories', [])
-        categories = [
-            report.plan_current_related_objects.categories.get(int(pk))
-            for pk in category_pks
-        ]
-        category_names = "; ".join(
-            c.name for c in categories
-            if c and c.type == block_value.get('category_type')
-        )
+        categories = filter_by_type([
+            report.plan_current_related_objects.categories.get(int(pk)) for pk in category_pks
+        ])
+
+        level = block_value.get('category_level')
+        if level is not None:
+            categories = map_by_level(categories, level)
+
+        category_names = "; ".join(c.name for c in categories if c)
         if len(category_names) == 0:
             return [None]
         return [category_names]
 
     def xlsx_column_labels(self, block_value) -> List[str]:
-        return [block_value.get('category_type').name]
+        return [self.get_help_label(block_value)]
 
     def get_xlsx_cell_format(self, block_value):
         return None
 
     def get_help_label(self, block_value):
+        level = block_value.get('category_level')
+        if level:
+            return level.name
         return block_value.get('category_type').name
 
     def value_for_action_snapshot(self, block_value, snapshot):

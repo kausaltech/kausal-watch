@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import reversion
 import typing
-from typing import Any, Self, Tuple
+from typing import Any, Self, Tuple, Iterable, Sequence
 import uuid
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
@@ -172,7 +172,9 @@ class CategoryType(  # type: ignore[django-manager-missing]
     category types.
     """
 
-    plan: models.ForeignKey[Plan | Combinable, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='category_types')
+    plan: models.ForeignKey[Plan | Combinable, Plan] = models.ForeignKey(
+        'actions.Plan', on_delete=models.CASCADE, related_name='category_types'
+    )
     common = models.ForeignKey(
         CommonCategoryType, blank=True, null=True, on_delete=models.PROTECT,
         verbose_name=_('common category type'), related_name='category_type_instances'
@@ -191,6 +193,7 @@ class CategoryType(  # type: ignore[django-manager-missing]
     )
 
     categories: models.QuerySet[Category]
+    levels: models.QuerySet[CategoryLevel]
 
     public_fields: typing.ClassVar = CategoryTypeBase.public_fields + [
         'id', 'plan', 'common', 'levels', 'categories', 'hide_category_identifiers'
@@ -227,6 +230,44 @@ class CategoryType(  # type: ignore[django-manager-missing]
             for category in self.categories.filter(parent__isnull=True):
                 category.synchronize_pages(ct_page)
 
+    @staticmethod
+    def expand_category_paths(qs: models.QuerySet[Category]) -> Iterable[Sequence[Category]]:
+        category_paths = []
+        for category in qs:
+            path = []
+            c = category
+            while c is not None:
+                path.append(c)
+                c = c.parent
+            path.reverse()
+            category_paths.append(path)
+        return category_paths
+
+    def categories_projected_by_level(self) -> dict[int, dict[int, Category]]:
+        """
+        Returns a dict which can be used to map a category to its parent
+        from any desired CategoryLevel in the category hierarchy.
+
+        For example, in a two-level hierarchy, for the root level,
+        all of the leaf level categories get mapped to their parents
+        in the root level.
+        """
+        qs = self.categories.all()
+        category_paths = self.expand_category_paths(qs)
+        pks_by_level = {}
+
+        for idx, level in enumerate(self.levels.all()):
+            categories_for_this_level = dict()
+            for path in category_paths:
+                try:
+                    target_category = path[idx]
+                    for category in path[idx:]:
+                        categories_for_this_level[category.pk] = target_category
+                except IndexError:
+                    pass
+            pks_by_level[level.pk] = categories_for_this_level
+        return pks_by_level
+
 
 @reversion.register()
 class CategoryLevel(OrderedModel):
@@ -234,7 +275,7 @@ class CategoryLevel(OrderedModel):
 
     Root level has order=0, first child level order=1 and so on.
     """
-    type = ParentalKey(
+    type: ParentalKey[CategoryType | Combinable, CategoryType] = ParentalKey(
         CategoryType, on_delete=models.CASCADE, related_name='levels',
         verbose_name=_('type')
     )
