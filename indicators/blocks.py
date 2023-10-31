@@ -57,9 +57,20 @@ class IndicatorGroupBlock(StructBlock):
     title = CharBlock(required=False)
     indicators = ListBlock(IndicatorBlock())
 
+    def items(self, info, values, **kwargs):
+        result = []
+        # Our queries from the UI unfortunately want a field `id` there that probably shouldn't exist, but let's just
+        # put some crap in our response to avoid raising an error and breaking the UI.
+        for value in values['indicators']:
+            assert not hasattr(value, 'id')
+            value.id = value['indicator'].id
+            result.append(value)
+        return result
+
     graphql_fields = [
         GraphQLString('title'),
         GraphQLStreamfield('indicators'),
+        GraphQLStreamfield('items', deprecation_reason="Use 'indicators' instead"),
     ]
 
     class Meta:
