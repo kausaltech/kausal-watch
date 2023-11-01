@@ -499,9 +499,9 @@ class Plan(ClusterableModel):
         return self.published_at is not None and self.archived_at is None
 
     def get_optional_locale_prefix(self, locale: str):
-        if locale.lower() != self.primary_language.lower():
-            return f'/{locale}'
-        return ''
+        if locale.lower() == self.primary_language.lower():
+            return ''
+        return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
 
     def get_view_url(self, client_url: Optional[str] = None, active_locale: str | None = None) -> str:
         """Return an URL for the homepage of the plan.
