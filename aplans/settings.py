@@ -48,6 +48,9 @@ env = environ.FileAwareEnv(
     AZURE_AD_CLIENT_SECRET=(str, ''),
     GOOGLE_CLIENT_ID=(str, ''),
     GOOGLE_CLIENT_SECRET=(str, ''),
+    OKTA_CLIENT_ID=(str, ''),
+    OKTA_CLIENT_SECRET=(str, ''),
+    OKTA_API_URL=(str, ''),
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
@@ -268,7 +271,8 @@ AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
     'django.contrib.auth.backends.ModelBackend',
-    'social_core.backends.google_openidconnect.GoogleOpenIdConnect'
+    'social_core.backends.google_openidconnect.GoogleOpenIdConnect',
+    'social_core.backends.okta_openidconnect.OktaOpenIdConnect'
 )
 
 AUTH_USER_MODEL = 'users.User'
@@ -289,6 +293,10 @@ SOCIAL_AUTH_AZURE_AD_SECRET = env.str('AZURE_AD_CLIENT_SECRET')
 
 SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_KEY = env.str('GOOGLE_CLIENT_ID')
 SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_SECRET = env.str('GOOGLE_CLIENT_SECRET')
+
+SOCIAL_AUTH_OKTA_OPENIDCONNECT_KEY = env.str('OKTA_CLIENT_ID')
+SOCIAL_AUTH_OKTA_OPENIDCONNECT_SECRET = env.str('OKTA_CLIENT_SECRET')
+SOCIAL_AUTH_OKTA_OPENIDCONNECT_API_URL = env.str('OKTA_API_URL')
 
 SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.log_login_attempt',

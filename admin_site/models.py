@@ -18,6 +18,7 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
         AZURE_AD = 'azure_ad', _('Microsoft Azure AD')
         GOOGLE = 'google-openidconnect', _('Google')
         TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
+        OKTA = 'okta-openidconnect', _('OKTA')
 
     name = models.CharField(
         max_length=100,
