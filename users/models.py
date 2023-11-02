@@ -16,7 +16,7 @@ from orgs.models import Organization, OrganizationMetadataAdmin
 from .base import AbstractUser
 
 if typing.TYPE_CHECKING:
-    from actions.models import Plan, Action
+    from actions.models import Action, ActionContactPerson, Plan
     from people.models import Person
     from aplans.utils import InstancesVisibleForMixin, InstancesEditableByMixin
     from rest_framework.authtoken.models import Token
@@ -189,6 +189,20 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
             return bool(plans)
         else:
             return plan.pk in plans
+
+    def get_editable_contact_person_roles(self, action: Action) -> typing.Iterable[ActionContactPerson.Role]:
+        """Return a list of roles so that this user can edit contact persons with those roles for the given action."""
+        from actions.models import ActionContactPerson
+        if self.is_general_admin_for_plan(action.plan):
+            return {role for role in ActionContactPerson.Role}
+        person = self.get_corresponding_person()
+        is_moderator = person is not None and action.contact_persons.filter(
+            role=ActionContactPerson.Role.MODERATOR,
+            person_id=person.id,
+        ).exists()
+        if is_moderator:
+            return {ActionContactPerson.Role.EDITOR}
+        return set()
 
     def _get_admin_orgs(self) -> models.QuerySet[Organization]:
         person = self.get_corresponding_person()
