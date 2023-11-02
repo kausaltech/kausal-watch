@@ -645,7 +645,7 @@ class Action(  # type: ignore[django-manager-missing]
     def get_view_url(self, plan: Optional[Plan] = None, client_url: Optional[str] = None) -> str:
         if plan is None:
             plan = self.plan
-        return '%s/actions/%s' % (plan.get_view_url(client_url=client_url), self.identifier)
+        return '%s/actions/%s' % (plan.get_view_url(client_url=client_url, active_locale=translation.get_language()), self.identifier)
 
     @classmethod
     def get_indexed_objects(cls):

@@ -498,7 +498,12 @@ class Plan(ClusterableModel):
     def is_live(self):
         return self.published_at is not None and self.archived_at is None
 
-    def get_view_url(self, client_url: Optional[str] = None) -> str:
+    def get_optional_locale_prefix(self, locale: str):
+        if locale.lower() == self.primary_language.lower():
+            return ''
+        return next((f'/{lang}' for lang in self.other_languages if lang.lower() == locale.lower()), '')
+
+    def get_view_url(self, client_url: Optional[str] = None, active_locale: str | None = None) -> str:
         """Return an URL for the homepage of the plan.
 
         If `client_url` is given, try to return the URL that matches the supplied
@@ -541,6 +546,10 @@ class Plan(ClusterableModel):
                 else:
                     hostname = None
 
+        locale_prefix = ''
+        if active_locale:
+            locale_prefix = self.get_optional_locale_prefix(active_locale)
+
         if hostname:
             if not scheme:
                 scheme = 'https'
@@ -552,14 +561,14 @@ class Plan(ClusterableModel):
                 port_str = ':%s' % port
             else:
                 port_str = ''
-            return '%s://%s%s%s' % (scheme, hostname, port_str, base_path)
+            return '%s://%s%s%s%s' % (scheme, hostname, port_str, base_path, locale_prefix)
         else:
             assert self.site_url is not None
             if self.site_url.startswith('http'):
                 url = self.site_url.rstrip('/')
             else:
                 url = 'https://%s' % self.site_url
-            return url
+            return f'{url}{locale_prefix}'
 
     @classmethod
     def create_with_defaults(
