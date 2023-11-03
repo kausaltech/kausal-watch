@@ -833,3 +833,8 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 WAGTAIL_MODERATION_ENABLED = True
 WAGTAIL_WORKFLOW_ENABLED = True
 WAGTAILEMBEDS_RESPONSIVE_HTML = True
+
+# Workaround until https://github.com/wagtail/wagtail/pull/11075 is merged
+WAGTAILADMIN_RICH_TEXT_EDITORS = {
+    "default": {"WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations"}
+}
