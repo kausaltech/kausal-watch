@@ -25,4 +25,14 @@
         }
     </script>
     {% endif %}
+    {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
+    <script>
+      $(document).ready(function () {
+        const dropdownButton = document.querySelector('form footer .dropdown-toggle');
+        if (dropdownButton != null) {
+          dropdownButton.tabIndex = 0;
+          dropdownButton.addEventListener('keydown', (e) => (e.code === "Space" || e.code === "Enter") && dropdownButton.click());
+        }
+      });
+    </script>
 {% endblock %}
