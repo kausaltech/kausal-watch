@@ -65,7 +65,7 @@ env = environ.FileAwareEnv(
     GOOGLE_MAPS_V3_APIKEY=(str, ''),
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
-    LOG_GRAPHQL_QUERIES=(bool, True),
+    LOG_GRAPHQL_QUERIES=(bool, False),
     AWS_S3_ENDPOINT_URL=(str, ''),
     AWS_STORAGE_BUCKET_NAME=(str, ''),
     AWS_ACCESS_KEY_ID=(str, ''),
@@ -208,8 +208,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'aplans.middleware.SocialAuthExceptionMiddleware',
-    'aplans.middleware.AdminMiddleware',
     'aplans.middleware.RequestMiddleware',
+    'aplans.middleware.AdminMiddleware',
     'request_log.middleware.LogUnsafeRequestMiddleware',
 ]
 
@@ -733,9 +733,16 @@ if DEBUG:
     from rich.traceback import install
     install()
 
+LOG_SQL_QUERIES = env('LOG_SQL_QUERIES') and DEBUG
+LOG_GRAPHQL_QUERIES = env('LOG_GRAPHQL_QUERIES') and DEBUG
 
 # Logging
 if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
+    from loguru import logger
+    from .log_handler import LogHandler
+
+    logger.configure(handlers=[dict(sink=LogHandler(), format="{message}")])
+
     def level(level: Literal['DEBUG', 'INFO', 'WARNING']):
         return dict(
             handlers=['rich' if DEBUG else 'console'],
@@ -775,8 +782,8 @@ if env('CONFIGURE_LOGGING') and 'LOGGING' not in locals():
             },
         },
         'loggers': {
-            'django.db': level('DEBUG' if env('LOG_SQL_QUERIES') else 'INFO'),
-            'aplans.graphene_views': level('DEBUG' if env('LOG_GRAPHQL_QUERIES') else 'INFO'),
+            'django.db': level('DEBUG' if LOG_SQL_QUERIES else 'INFO'),
+            'aplans.graphene_views': level('INFO'),
             'django.template': level('WARNING'),
             'django.utils.autoreload': level('INFO'),
             'django': level('DEBUG'),

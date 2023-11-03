@@ -7,6 +7,7 @@ from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate
 from django.utils.translation import gettext_lazy as _
 
+from loguru import logger
 import sentry_sdk
 from social_core.exceptions import SocialAuthBaseException
 from wagtail.admin import messages
@@ -55,7 +56,6 @@ class AdminMiddleware(MiddlewareMixin):
         plan = request.user.get_active_admin_plan()
         if plan is not None:
             request.admin_cache = request.watch_cache.for_plan(plan)
-
         # If the user has already set the UI language, use that one.
         # Otherwise, default to the primary language of the plan.
         if profile.preferred_language and profile.preferred_language in (x[0] for x in settings.LANGUAGES):
@@ -91,5 +91,8 @@ class RequestMiddleware:
         self.get_response = get_response
 
     def __call__(self, request: WatchRequest):
-        with set_request(request):
+        log_context = {}
+        if request.session and request.session.session_key:
+            log_context['session'] = str(request.session.session_key)
+        with set_request(request), logger.contextualize(**log_context):
             return self.get_response(request)

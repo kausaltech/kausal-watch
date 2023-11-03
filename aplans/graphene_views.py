@@ -1,6 +1,6 @@
 import hashlib
 import json
-import logging
+from loguru import logger
 
 from django.conf import settings
 from django.utils import translation
@@ -17,6 +17,7 @@ from graphql.language.ast import VariableNode, StringValueNode
 from rich.console import Console
 from rich.syntax import Syntax
 from actions.models.plan import PlanQuerySet
+from aplans.settings import LOG_SQL_QUERIES
 
 from aplans.types import WatchAPIRequest
 
@@ -26,7 +27,9 @@ from .code_rev import REVISION
 from users.models import User
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
-logger = logging.getLogger(__name__)
+
+PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
+PLAN_DOMAIN_HEADER = 'x-cache-plan-domain'
 
 
 class APITokenMiddleware:
@@ -135,8 +138,8 @@ class SentryGraphQLView(GraphQLView):
         super().__init__(*args, **kwargs)
 
     def get_cache_key(self, request, data, query, variables):
-        plan_identifier = request.headers.get('x-cache-plan-identifier')
-        plan_domain = request.headers.get('x-cache-plan-domain')
+        plan_identifier = request.headers.get(PLAN_IDENTIFIER_HEADER)
+        plan_domain = request.headers.get(PLAN_DOMAIN_HEADER)
         if not plan_identifier and not plan_domain:
             return None
 
@@ -181,23 +184,31 @@ class SentryGraphQLView(GraphQLView):
 
         return result
 
+    def log_request(self, request: WatchAPIRequest, query, variables, operation_name):
+        logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
+        debug_logging = settings.LOG_SQL_QUERIES
+        if not debug_logging or not query:
+            return
+        console = Console()
+        syntax = Syntax(query, "graphql")
+        console.print(syntax)
+        if variables:
+            console.print('# Variables:')
+            console.print(
+                json.dumps(variables, indent=4, ensure_ascii=False)
+            )
+
     def execute_graphql_request(self, request: WatchAPIRequest, data, query, variables, operation_name, *args, **kwargs):
         """Execute GraphQL request, cache results and send exceptions to Sentry"""
         request._referer = self.request.META.get('HTTP_REFERER')
         transaction: sentry_tracing.Transaction | None = sentry_sdk.Hub.current.scope.transaction
-        logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
-        debug_logging = settings.DEBUG and logger.isEnabledFor(logging.DEBUG)
-        if debug_logging and query:
-            console = Console()
-            syntax = Syntax(query, "graphql")
-            console.print(syntax)
-            if variables:
-                console.print('# Variables:')
-                console.print(
-                    json.dumps(variables, indent=4, ensure_ascii=False)
-                )
 
-        with sentry_sdk.push_scope() as scope:
+        log_context = {}
+        tenant_id = request.headers.get(PLAN_IDENTIFIER_HEADER)
+        if tenant_id:
+            log_context['tenant'] = tenant_id
+        with sentry_sdk.push_scope() as scope, logger.contextualize(**log_context):
+            self.log_request(request, query, variables, operation_name)
             scope.set_context('graphql_variables', variables)
             scope.set_tag('graphql_operation_name', operation_name)
             scope.set_tag('referer', request._referer)
@@ -218,7 +229,7 @@ class SentryGraphQLView(GraphQLView):
 
             # If 'invalid' is set, it's a bad request
             if result and result.errors:
-                if debug_logging:
+                if settings.LOG_SQL_QUERIES:
                     from rich.traceback import Traceback
                     console = Console()
 

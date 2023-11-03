@@ -68,3 +68,4 @@ xlsxwriter
 Babel
 polars[xlsx2csv]
 wagtail-modeladmin
+loguru

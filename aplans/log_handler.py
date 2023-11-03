@@ -1,15 +1,17 @@
 from datetime import datetime
 from pathlib import Path
 from logging import LogRecord
-from typing import Iterable, List, Optional, TYPE_CHECKING, Union, Callable
+from typing import Any, List, Optional, TYPE_CHECKING, Sequence, Union, Callable
+from rich.console import ConsoleRenderable
 
 from rich.logging import RichHandler
 from rich.text import Text, TextType
 from rich.traceback import Traceback
+from rich.containers import Renderables
+
 
 if TYPE_CHECKING:
-    from rich.console import Console, ConsoleRenderable, RenderableType
-    from rich.table import Table
+    from rich.console import Console, RenderableType
 
 FormatTimeCallable = Callable[[datetime], Text]
 
@@ -35,7 +37,7 @@ class LogRender:
     def __call__(
         self,
         console: "Console",
-        renderables: Iterable["ConsoleRenderable"],
+        renderables: Sequence["ConsoleRenderable"],
         name: str,
         log_time: Optional[datetime] = None,
         time_format: Optional[Union[str, FormatTimeCallable]] = None,
@@ -43,8 +45,7 @@ class LogRender:
         path: Optional[str] = None,
         line_no: Optional[int] = None,
         link_path: Optional[str] = None,
-    ) -> "Table":
-        from rich.containers import Renderables
+    ) -> Renderables:
         from rich.table import Table
 
         output = Table.grid(padding=(0, 1))
@@ -87,10 +88,12 @@ class LogRender:
 
         output.add_row(*row)
 
-        return Renderables([output] + renderables)
+        return Renderables([output] + renderables)  # type: ignore
 
 
 class LogHandler(RichHandler):
+    _log_render: LogRender  # type: ignore[assignment]
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         lr = self._log_render
@@ -98,10 +101,20 @@ class LogHandler(RichHandler):
             show_time=lr.show_time,
             show_level=lr.show_level,
             show_path=lr.show_path,
-            time_format=lr.time_format,
+            time_format='%Y-%m-%d %H:%M:%S.%f',
             omit_repeated_times=lr.omit_repeated_times,
             level_width=None,
         )
+
+    def render_message(self, record: LogRecord, message: str) -> ConsoleRenderable:
+        extra: dict[str, Any] = getattr(record, 'extra', {})
+        tenant_id = extra.get('tenant', None)
+        if tenant_id:
+            message = '[%s] %s' % (extra['tenant'], message)
+        if 'session' in extra:
+            message = '<%s> %s' % (extra['session'], message)
+        ret = super().render_message(record, message)
+        return ret
 
     def render(
         self,
