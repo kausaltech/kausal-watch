@@ -1,11 +1,12 @@
 import re
 from copy import deepcopy
-from django.utils.translation import gettext
+from django.utils.translation import gettext, get_language
 from wagtail.admin.rich_text import DraftailRichTextArea
 
 # Workaround until https://github.com/wagtail/wagtail/pull/11075 is merged
 class DraftailRichTextAreaWithFixedTranslations(DraftailRichTextArea):
     def get_context(self, name, value, attrs):
+        _ = get_language()
         old_options = self.options
         self.options = deepcopy(old_options)
         for option in self.options.values():
