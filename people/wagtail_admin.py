@@ -296,7 +296,7 @@ class PersonAdmin(AplansModelAdmin):
     menu_label = _('People')
     menu_order = 210
     exclude_from_explorer = False
-    search_fields = ('first_name', 'last_name', 'title')
+    search_fields = ('first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation')
     list_filter = (IsContactPersonFilter,)
     button_helper_class = PersonButtonHelper
 
@@ -372,6 +372,7 @@ class PersonAdmin(AplansModelAdmin):
                 org = obj.organization
             return org.get_fully_qualified_name(orgs_by_path=orgs_by_path)
         organization.short_description = _('organization')
+        organization.admin_order_field = 'organization__name'
 
         fields = [avatar, first_name, last_name, 'title', organization]
 
