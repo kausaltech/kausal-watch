@@ -38,6 +38,7 @@ from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
 from orgs.models import Organization
 from people.chooser import PersonChooser
+from people.models import Person
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models import Action, ActionContactPerson, ActionTask
@@ -128,22 +129,27 @@ class ActionAdminForm(WagtailAdminModelForm):
             raise ValidationError(_("There is already an action with this identifier."))
         return identifier
 
+    def get_contact_persons(self, role: ActionContactPerson.Role):
+        """Return the contact persons with the given role according to the respective formset if it exists; if it
+        does not exist, return the contact persons with the given role according to the existing instance.
+        """
+        formset = self.formsets.get(f'contact_persons_{role}')
+        # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
+        if formset:
+            return [data['person'] for data in formset.cleaned_data if not data['DELETE']]
+        person_ids = self.instance.contact_persons.filter(role=role).values_list('person', flat=True)
+        return Person.objects.filter(id__in=person_ids)
+
     def clean(self):
         # Persons can only have at most one role as a contact person.
         seen_contact_persons = set()
-        # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
         for role in ActionContactPerson.Role:
-            formset = self.formsets.get(f'contact_persons_{role}')
-            if not formset:
-                continue
-            for data in formset.cleaned_data:
-                if not data['DELETE']:
-                    person = data['person']
-                    if person.id in seen_contact_persons:
-                        raise ValidationError(
-                            _("%s is listed multiple times as a contact person.") % person
-                        )
-                    seen_contact_persons.add(person.id)
+            for person in self.get_contact_persons(role):
+                if person.id in seen_contact_persons:
+                    raise ValidationError(
+                        _("%s is listed multiple times as a contact person.") % person
+                    )
+                seen_contact_persons.add(person.id)
 
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
