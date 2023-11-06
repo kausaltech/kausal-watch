@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 22:25+0200\n"
+"POT-Creation-Date: 2023-11-06 15:31+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -26,8 +26,15 @@ msgid "There is already an action with this identifier."
 msgstr "Det finns redan en handling med denna identifieraren."
 
 #: actions/action_admin.py
-msgid "Only plan admins may change the moderators of an action."
-msgstr ""
+#, fuzzy, python-format
+#| msgid "Organization occurs multiple times as responsible party"
+msgid "%s is listed multiple times as a contact person."
+msgstr "Organisation förekommer flera gånger som ansvarig part"
+
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Kontaktpersoner"
 
 #: actions/action_admin.py
 #, python-format
@@ -79,11 +86,6 @@ msgstr "Grundläggande information"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Framsteg"
-
-#: actions/action_admin.py actions/api.py aplans/utils.py
-#: indicators/wagtail_admin.py
-msgid "Contact persons"
-msgstr "Kontaktpersoner"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -756,7 +758,8 @@ msgstr "Namnet som godkänt av en officiell part"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Identifieraren för denna åtgärd (t.ex. nummer)"
 
-#: actions/models/action.py pages/blocks.py
+#: actions/models/action.py admin_site/draftail_rich_text_area.py
+#: pages/blocks.py
 msgid "Image"
 msgstr "Bild"
 
@@ -2026,6 +2029,55 @@ msgstr "Välj ett dokument"
 msgid "Choose another client"
 msgstr "Välj en annan åtgärd"
 
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "Links"
+msgid "Link"
+msgstr "Länkar"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "document"
+msgid "Document"
+msgstr "dokumentera"
+
+#: admin_site/draftail_rich_text_area.py pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bold"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Italic"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Superscript"
+msgstr "beskrivning"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Subscript"
+msgstr "beskrivning"
+
+#: admin_site/draftail_rich_text_area.py
+#, python-format
+msgid "Heading %(level)d"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Numbered list"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bulleted list"
+msgstr ""
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr "Skriv in lösenord"
@@ -2049,6 +2101,10 @@ msgstr "Google"
 #: admin_site/models.py
 msgid "Tunnistamo"
 msgstr "Tunnistamo"
+
+#: admin_site/models.py
+msgid "OKTA"
+msgstr ""
 
 #: admin_site/models.py
 #, fuzzy
@@ -2184,10 +2240,6 @@ msgid "Choose plan"
 msgstr "Välj plan"
 
 #: admin_site/wagtail_hooks.py
-msgid "Admin hostnames"
-msgstr "Admin värdnamn"
-
-#: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "E -postdomäner"
 
@@ -2266,6 +2318,14 @@ msgstr "Lettiska"
 #: aplans/settings.py
 msgid "Swedish"
 msgstr "svenska"
+
+#: aplans/settings.py
+msgid "Portuguese"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Portuguese (Brazil)"
+msgstr ""
 
 #: aplans/utils.py
 msgid "order"
@@ -3706,10 +3766,6 @@ msgid "Size"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Embed"
-msgstr ""
-
-#: pages/blocks.py
 msgid "Title"
 msgstr "Titel"
 
@@ -4571,6 +4627,9 @@ msgstr "Användare"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
+
+#~ msgid "Admin hostnames"
+#~ msgstr "Admin värdnamn"
 
 #~ msgid "This user does not have access to admin."
 #~ msgstr "Denna användare har inte tillgång till admin."

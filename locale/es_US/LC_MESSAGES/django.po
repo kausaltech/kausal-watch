@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 22:25+0200\n"
+"POT-Creation-Date: 2023-11-06 15:31+0100\n"
 "PO-Revision-Date: 2023-10-25 12:21+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/"
-"watch/django/es_US/>\n"
+"Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/watch/django/es_US/>\n"
 "Language: es_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -24,7 +23,13 @@ msgid "There is already an action with this identifier."
 msgstr ""
 
 #: actions/action_admin.py
-msgid "Only plan admins may change the moderators of an action."
+#, python-format
+msgid "%s is listed multiple times as a contact person."
+msgstr ""
+
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
+msgid "Contact persons"
 msgstr ""
 
 #: actions/action_admin.py
@@ -76,11 +81,6 @@ msgstr ""
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
-msgstr ""
-
-#: actions/action_admin.py actions/api.py aplans/utils.py
-#: indicators/wagtail_admin.py
-msgid "Contact persons"
 msgstr ""
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
@@ -688,7 +688,8 @@ msgstr ""
 msgid "The identifier for this action (e.g. number)"
 msgstr ""
 
-#: actions/models/action.py pages/blocks.py
+#: actions/models/action.py admin_site/draftail_rich_text_area.py
+#: pages/blocks.py
 msgid "Image"
 msgstr ""
 
@@ -1816,6 +1817,47 @@ msgstr ""
 msgid "Choose another client"
 msgstr ""
 
+#: admin_site/draftail_rich_text_area.py
+msgid "Link"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Document"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bold"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Italic"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Superscript"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Subscript"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+#, python-format
+msgid "Heading %(level)d"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Numbered list"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bulleted list"
+msgstr ""
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr ""
@@ -1838,6 +1880,10 @@ msgstr ""
 
 #: admin_site/models.py
 msgid "Tunnistamo"
+msgstr ""
+
+#: admin_site/models.py
+msgid "OKTA"
 msgstr ""
 
 #: admin_site/models.py
@@ -1964,10 +2010,6 @@ msgid "Choose plan"
 msgstr ""
 
 #: admin_site/wagtail_hooks.py
-msgid "Admin hostnames"
-msgstr ""
-
-#: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr ""
 
@@ -2042,6 +2084,14 @@ msgstr ""
 
 #: aplans/settings.py
 msgid "Swedish"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Portuguese"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Portuguese (Brazil)"
 msgstr ""
 
 #: aplans/utils.py
@@ -3351,10 +3401,6 @@ msgstr ""
 
 #: pages/blocks.py
 msgid "Size"
-msgstr ""
-
-#: pages/blocks.py
-msgid "Embed"
 msgstr ""
 
 #: pages/blocks.py

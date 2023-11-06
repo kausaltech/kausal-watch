@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 22:25+0200\n"
+"POT-Creation-Date: 2023-11-06 15:31+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -27,8 +27,15 @@ msgid "There is already an action with this identifier."
 msgstr "Der er allerede en handling med denne identifikator."
 
 #: actions/action_admin.py
-msgid "Only plan admins may change the moderators of an action."
-msgstr ""
+#, fuzzy, python-format
+#| msgid "Organization occurs multiple times as responsible party"
+msgid "%s is listed multiple times as a contact person."
+msgstr "Organisation optræder flere gange som ansvarlig part"
+
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Kontaktpersoner"
 
 #: actions/action_admin.py
 #, python-format
@@ -80,11 +87,6 @@ msgstr "Grundlæggende oplysninger"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Fremskridt"
-
-#: actions/action_admin.py actions/api.py aplans/utils.py
-#: indicators/wagtail_admin.py
-msgid "Contact persons"
-msgstr "Kontaktpersoner"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -755,7 +757,8 @@ msgstr "Navnet som godkendt af en officiel part"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Id'et for denne handling (f.eks. nummer)"
 
-#: actions/models/action.py pages/blocks.py
+#: actions/models/action.py admin_site/draftail_rich_text_area.py
+#: pages/blocks.py
 msgid "Image"
 msgstr "Billede"
 
@@ -1937,6 +1940,55 @@ msgstr "Vælg en plan"
 msgid "Choose another client"
 msgstr "Vælg en anden handling"
 
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "Links"
+msgid "Link"
+msgstr "Links"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "document"
+msgid "Document"
+msgstr "dokument"
+
+#: admin_site/draftail_rich_text_area.py pages/blocks.py
+msgid "Embed"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bold"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Italic"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Superscript"
+msgstr "beskrivelse"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Subscript"
+msgstr "beskrivelse"
+
+#: admin_site/draftail_rich_text_area.py
+#, python-format
+msgid "Heading %(level)d"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Numbered list"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bulleted list"
+msgstr ""
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr "Indtast adgangskode"
@@ -1960,6 +2012,10 @@ msgstr "Google"
 #: admin_site/models.py
 msgid "Tunnistamo"
 msgstr "Tunnistamo"
+
+#: admin_site/models.py
+msgid "OKTA"
+msgstr ""
 
 #: admin_site/models.py
 #, fuzzy
@@ -2089,10 +2145,6 @@ msgid "Choose plan"
 msgstr "Vælg plan"
 
 #: admin_site/wagtail_hooks.py
-msgid "Admin hostnames"
-msgstr "Administrator værtsnavne"
-
-#: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "E-mail domæner"
 
@@ -2172,6 +2224,14 @@ msgstr "Lettisk"
 #: aplans/settings.py
 msgid "Swedish"
 msgstr "svensk"
+
+#: aplans/settings.py
+msgid "Portuguese"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Portuguese (Brazil)"
+msgstr ""
 
 #: aplans/utils.py
 msgid "order"
@@ -3580,10 +3640,6 @@ msgid "Size"
 msgstr ""
 
 #: pages/blocks.py
-msgid "Embed"
-msgstr ""
-
-#: pages/blocks.py
 msgid "Title"
 msgstr "Titel"
 
@@ -4404,6 +4460,9 @@ msgstr "Brugere"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
+
+#~ msgid "Admin hostnames"
+#~ msgstr "Administrator værtsnavne"
 
 #~ msgid "This user does not have access to admin."
 #~ msgstr "Denne bruger har ikke adgang til admin."

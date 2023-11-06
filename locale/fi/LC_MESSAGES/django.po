@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-11 22:25+0200\n"
+"POT-Creation-Date: 2023-11-06 15:31+0100\n"
 "PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -27,8 +27,15 @@ msgid "There is already an action with this identifier."
 msgstr "Tällä tunnisteella on jo toimenpide."
 
 #: actions/action_admin.py
-msgid "Only plan admins may change the moderators of an action."
-msgstr ""
+#, fuzzy, python-format
+#| msgid "Organization occurs multiple times as responsible party"
+msgid "%s is listed multiple times as a contact person."
+msgstr "Sama organisaatio toistuu vastuutahona"
+
+#: actions/action_admin.py actions/api.py aplans/utils.py
+#: indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Yhteyshenkilöt"
 
 #: actions/action_admin.py
 #, python-format
@@ -80,11 +87,6 @@ msgstr "Perustiedot"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Eteneminen"
-
-#: actions/action_admin.py actions/api.py aplans/utils.py
-#: indicators/wagtail_admin.py
-msgid "Contact persons"
-msgstr "Yhteyshenkilöt"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -739,7 +741,8 @@ msgstr "Virallisen tahon hyväksymä nimi"
 msgid "The identifier for this action (e.g. number)"
 msgstr "Toimenpiteen tunniste (esim. numero)"
 
-#: actions/models/action.py pages/blocks.py
+#: actions/models/action.py admin_site/draftail_rich_text_area.py
+#: pages/blocks.py
 msgid "Image"
 msgstr "Kuva"
 
@@ -1903,6 +1906,55 @@ msgstr "Valitse ohjelma"
 msgid "Choose another client"
 msgstr "Valitse toinen toimenpide"
 
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "Links"
+msgid "Link"
+msgstr "Linkit"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "document"
+msgid "Document"
+msgstr "asiakirja"
+
+#: admin_site/draftail_rich_text_area.py pages/blocks.py
+msgid "Embed"
+msgstr "Upotus"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bold"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Italic"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Superscript"
+msgstr "kuvaus"
+
+#: admin_site/draftail_rich_text_area.py
+#, fuzzy
+#| msgid "description"
+msgid "Subscript"
+msgstr "kuvaus"
+
+#: admin_site/draftail_rich_text_area.py
+#, python-format
+msgid "Heading %(level)d"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Numbered list"
+msgstr ""
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bulleted list"
+msgstr ""
+
 #: admin_site/forms.py
 msgid "Enter password"
 msgstr "Syötä salasana"
@@ -1925,6 +1977,10 @@ msgstr "Google"
 
 #: admin_site/models.py
 msgid "Tunnistamo"
+msgstr ""
+
+#: admin_site/models.py
+msgid "OKTA"
 msgstr ""
 
 #: admin_site/models.py
@@ -2053,10 +2109,6 @@ msgid "Choose plan"
 msgstr "Valitse ohjelma"
 
 #: admin_site/wagtail_hooks.py
-msgid "Admin hostnames"
-msgstr "Ylläpidon palvelinnimet"
-
-#: admin_site/wagtail_hooks.py
 msgid "Email domains"
 msgstr "Sähköpostiosoitteet"
 
@@ -2132,6 +2184,14 @@ msgstr ""
 #: aplans/settings.py
 msgid "Swedish"
 msgstr "ruotsi"
+
+#: aplans/settings.py
+msgid "Portuguese"
+msgstr ""
+
+#: aplans/settings.py
+msgid "Portuguese (Brazil)"
+msgstr ""
 
 #: aplans/utils.py
 msgid "order"
@@ -3510,10 +3570,6 @@ msgid "Size"
 msgstr "Koko"
 
 #: pages/blocks.py
-msgid "Embed"
-msgstr "Upotus"
-
-#: pages/blocks.py
 msgid "Title"
 msgstr "Otsikko"
 
@@ -4291,6 +4347,9 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgid "Admin hostnames"
+#~ msgstr "Ylläpidon palvelinnimet"
 
 #~ msgid "This user does not have access to admin."
 #~ msgstr "Tällä käyttäjällä ei ole pääsyä ylläpitoon."
