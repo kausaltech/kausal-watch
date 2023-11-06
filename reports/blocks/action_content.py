@@ -378,6 +378,9 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
         if organization_id is None:
             return [None] * value_length
         organization = report.plan_current_related_objects.organizations.get(organization_id)
+        if organization is None:
+            # The organization does not exist anymore in the plan
+            return [None] * value_length
         if target_depth is None:
             return [organization.name]
         ancestors = organization.get_ancestors()
