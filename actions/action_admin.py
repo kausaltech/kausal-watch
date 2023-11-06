@@ -215,6 +215,13 @@ class ActionAdminForm(WagtailAdminModelForm):
                 form.instance.order = order
                 order += 1
 
+        # Remove `no_id_instances` like in `BaseChildFormSet.save()`; otherwise, with a draft action that has an
+        # ActionContactPerson without an `id`, you could remove the form for that draft ActionContactPerson and but
+        # we'd still try to create an ActionContactPerson instance.
+        no_id_instances = [obj for obj in manager.all() if obj.pk is None]
+        if no_id_instances:
+            manager.remove(*no_id_instances)
+
         # Update object list of manager like BaseChildFormSet.save() does
         manager.add(*saved_contact_persons)
         manager.remove(*deleted_contact_persons)
