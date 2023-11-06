@@ -11,10 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-11-06 15:31+0100\n"
-"PO-Revision-Date: 2023-10-11 10:06+0000\n"
+"PO-Revision-Date: 2023-11-06 14:36+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/"
-">\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -27,9 +27,9 @@ msgid "There is already an action with this identifier."
 msgstr "Es gibt bereits eine Maßnahme mit dieser Kennung."
 
 #: actions/action_admin.py
-#, fuzzy, python-format
+#, python-format
 msgid "%s is listed multiple times as a contact person."
-msgstr "Person tritt mehrfach als Ansprechpartner auf"
+msgstr "%s tritt mehrfach als Ansprechpartner*in auf."
 
 #: actions/action_admin.py actions/api.py aplans/utils.py
 #: indicators/wagtail_admin.py
@@ -1969,12 +1969,10 @@ msgid "Choose another client"
 msgstr "Wähle einen anderen Kunden"
 
 #: admin_site/draftail_rich_text_area.py
-#, fuzzy
 msgid "Link"
-msgstr "Links"
+msgstr "Link"
 
 #: admin_site/draftail_rich_text_area.py
-#, fuzzy
 msgid "Document"
 msgstr "Dokument"
 
@@ -1984,34 +1982,32 @@ msgstr "Einbettung"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bold"
-msgstr ""
+msgstr "Fett"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Italic"
-msgstr ""
+msgstr "Kursiv"
 
 #: admin_site/draftail_rich_text_area.py
-#, fuzzy
 msgid "Superscript"
-msgstr "Beschreibung"
+msgstr "Hochgestellt"
 
 #: admin_site/draftail_rich_text_area.py
-#, fuzzy
 msgid "Subscript"
-msgstr "Beschreibung"
+msgstr "Tiefgestellt"
 
 #: admin_site/draftail_rich_text_area.py
 #, python-format
 msgid "Heading %(level)d"
-msgstr ""
+msgstr "Überschrift %(level)d"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Numbered list"
-msgstr ""
+msgstr "Nummerierte Liste"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bulleted list"
-msgstr ""
+msgstr "Aufzählungsliste"
 
 #: admin_site/forms.py
 msgid "Enter password"
@@ -2039,7 +2035,7 @@ msgstr "Tunnistamo"
 
 #: admin_site/models.py
 msgid "OKTA"
-msgstr ""
+msgstr "OKTA"
 
 #: admin_site/models.py
 msgid "Name of the customer organization administering the plan"
@@ -2258,11 +2254,11 @@ msgstr "Schwedisch"
 
 #: aplans/settings.py
 msgid "Portuguese"
-msgstr ""
+msgstr "Portugiesisch"
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
-msgstr ""
+msgstr "Portugiesisch (Brasilien)"
 
 #: aplans/utils.py
 msgid "order"
