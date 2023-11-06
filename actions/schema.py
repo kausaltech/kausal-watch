@@ -904,12 +904,13 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_view_url(self: Action, info, client_url: Optional[str] = None):
         return self.get_view_url(client_url=client_url)
 
+    @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('status', 'implementation_phase'),
         only=('status__color', 'implementation_phase__color'),
     )
-    def resolve_color(self: Action, info):
-        return self.get_color()
+    def resolve_color(root: Action, info):
+        return root.get_color()
 
     def resolve_edit_url(self: Action, info):
         client_plan = self.plan.clients.first()
