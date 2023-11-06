@@ -136,6 +136,8 @@ class ActionAdminForm(WagtailAdminModelForm):
         formset = self.formsets.get(f'contact_persons_{role}')
         # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
         if formset:
+            if not formset.is_valid():
+                return []  # Help! But apparently if the formset is invalid, there won't be `cleaned_data` in it!?
             return [data['person'] for data in formset.cleaned_data if not data['DELETE']]
         person_ids = self.instance.contact_persons.filter(role=role).values_list('person', flat=True)
         return Person.objects.filter(id__in=person_ids)
