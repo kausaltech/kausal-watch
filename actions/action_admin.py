@@ -5,6 +5,7 @@ import json
 import logging
 from dal import autocomplete, forward as dal_forward
 from django.contrib.admin.utils import quote
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import path, re_path
 from django.utils import timezone
@@ -535,6 +536,31 @@ class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, Apla
         return edit_handler.bind_to_model(self.model_admin.model)
 
 
+class CustomizableBuiltInFieldPanel(FieldPanel):
+    """FieldPanel that can be customized using the BuiltInFieldCustomization model."""
+
+    class BoundPanel(FieldPanel.BoundPanel):
+        request: WatchAdminRequest
+
+        def __init__(self, **kwargs):
+            from actions.models.built_in_fields import BuiltInFieldCustomization
+            super().__init__(**kwargs)
+            plan = self.request.get_active_admin_plan()
+            try:
+                customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
+                    plan=plan,
+                    content_type=ContentType.objects.get_for_model(Action),
+                    field_name=self.field_name,
+                )
+            except BuiltInFieldCustomization.DoesNotExist:
+                pass
+            else:
+                if customization.help_text_override:
+                    self.help_text = customization.help_text_override
+                if customization.label_override:
+                    self.heading = customization.label_override
+
+
 @modeladmin_register
 class ActionAdmin(AplansModelAdmin):
     model = Action
@@ -558,7 +584,8 @@ class ActionAdmin(AplansModelAdmin):
     confirm_workflow_cancellation_view_class = ConfirmWorkflowCancellationView
 
     basic_panels = [
-        FieldPanel('identifier'),
+        CustomizableBuiltInFieldPanel('identifier'),
+        # TODO: Also make other fields customizable
         FieldPanel('official_name'),
         FieldPanel('name'),
         FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),

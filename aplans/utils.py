@@ -241,6 +241,8 @@ class InstancesEditableByMixin(models.Model):
     class EditableBy(models.TextChoices):
         AUTHENTICATED = 'authenticated', _('Authenticated users')  # practically you also need access to the edit page
         CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # plan admins also can edit
+        EDITORS = 'editors', _('Contact persons with "editor" role')
+        MODERATORS = 'moderators', _('Contact persons with "moderator" role')
         PLAN_ADMINS = 'plan_admins', _('Plan admins')
         NOT_EDITABLE = 'not_editable', _('Not editable')
 
@@ -279,6 +281,8 @@ class InstancesVisibleForMixin(models.Model):
         PUBLIC = 'public', _('Public')
         AUTHENTICATED = 'authenticated', _('Authenticated users')
         CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # also visible for plan admins
+        EDITORS = 'editors', _('Contact persons with "editor" role')
+        MODERATORS = 'moderators', _('Contact persons with "moderator" role')
         PLAN_ADMINS = 'plan_admins', _('Plan admins')
 
     instances_visible_for = models.CharField(

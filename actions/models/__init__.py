@@ -7,6 +7,7 @@ from .attributes import (
     AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText,
     AttributeRichText, AttributeText, AttributeNumericValue
 )
+from .built_in_fields import BuiltInFieldCustomization
 from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
@@ -35,6 +36,7 @@ __all__ = [
     'AttributeType',
     'AttributeType',
     'AttributeTypeChoiceOption',
+    'BuiltInFieldCustomization',
     'Category',
     'CategoryIcon',
     'CategoryLevel',
