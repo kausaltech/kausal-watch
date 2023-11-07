@@ -31,7 +31,8 @@ from actions.blocks.category_page_layout import (
     CategoryPageMainBottomBlock, CategoryPageMainTopBlock, CategoryPageAsideBlock
 )
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
-from actions.models import Category, CategoryType, Plan
+from actions.models.category import Category, CategoryType
+from actions.models.plan import Plan
 from aplans.extensions import get_body_blocks
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock

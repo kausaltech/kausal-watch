@@ -16,7 +16,7 @@ from graphene_django import DjangoObjectType
 from grapple.registry import registry as grapple_registry
 from modeltrans.translator import get_i18n_field
 
-from actions.models import Plan
+from actions.models.plan import Plan
 from aplans.types import WatchAPIRequest
 
 

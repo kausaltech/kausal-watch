@@ -6,8 +6,8 @@ from django.utils import translation
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
-from actions.models import Action, Category, ActionImplementationPhase, ActionStatus
-from actions.models.category import CategoryType
+from actions.models.action import Action, ActionImplementationPhase, ActionStatus
+from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
 from io import BytesIO

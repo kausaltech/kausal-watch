@@ -3,7 +3,9 @@ from django import forms
 from django.db.models import Model
 from typing import Type, TypeVar
 
-from actions.models import Action, CategoryType, Plan
+from actions.models.action import Action
+from actions.models.category import CategoryType
+from actions.models.plan import Plan
 from indicators.models import Indicator
 
 

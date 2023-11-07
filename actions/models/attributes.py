@@ -14,8 +14,8 @@ from modelcluster.models import ClusterableModel, ParentalKey, ParentalManyToMan
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
 from wagtail.fields import RichTextField
-from aplans.types import UserOrAnon
 
+from aplans.types import UserOrAnon
 from aplans.utils import (
     ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, ReferenceIndexedModelMixin,
     get_supported_languages

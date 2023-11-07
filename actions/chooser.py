@@ -6,7 +6,10 @@ from django.utils.translation import gettext_lazy as _
 from wagtail.search.backends import get_search_backend
 from wagtail import hooks
 
-from .models import Action, AttributeType, Category, CategoryLevel, CategoryType, Plan
+from .models.action import Action
+from .models.attributes import AttributeType
+from .models.category import Category, CategoryLevel, CategoryType
+from .models.plan import Plan
 from aplans.types import WatchAdminRequest
 
 

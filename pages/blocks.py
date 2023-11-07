@@ -10,7 +10,7 @@ from wagtail.images.blocks import ImageChooserBlock
 from wagtail.embeds.embeds import get_embed
 
 from actions.blocks import CategoryChooserBlock
-from actions.models import Category
+from actions.models.category import Category
 
 
 class ListBlockWithIncrementingChildIds(GrappleListBlock):

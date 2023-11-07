@@ -32,7 +32,7 @@ from reversion.revisions import (
 from wagtailautocomplete.edit_handlers import \
     AutocompletePanel as WagtailAutocompletePanel
 
-from actions.models import Plan
+from actions.models.plan import Plan
 from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanDefaultsModel, PlanRelatedModel

@@ -14,15 +14,19 @@ from wagtail.admin.panels import HelpPanel
 from wagtail import blocks
 
 from actions.attributes import AttributeType
-from actions.models import (
+from actions.models.action import (
+    Action,
     ActionImplementationPhase,
-    AttributeType as AttributeTypeModel,
     ActionResponsibleParty,
+    ActionStatus,
+)
+from actions.models.attributes import (
+    AttributeType as AttributeTypeModel,
+)
+from actions.models.category import (
+    Category,
     CategoryLevel,
     CategoryType,
-    ActionStatus,
-    Category,
-    Action
 )
 from orgs.models import Organization
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, CategoryLevelChooserBlock
