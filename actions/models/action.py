@@ -683,7 +683,7 @@ class Action(  # type: ignore[django-manager-missing]
             at_qs = at_qs.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
             at_qs = at_qs.filter(show_in_reporting_tab=False)
-        attribute_types = (at for at in at_qs if at.are_instances_visible_for(user, plan))
+        attribute_types = (at for at in at_qs if at.is_instance_editable_by(None, user, plan))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 

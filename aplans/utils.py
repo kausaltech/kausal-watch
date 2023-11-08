@@ -253,29 +253,9 @@ class InstancesEditableByMixin(models.Model):
         verbose_name=_('Edit rights'),
     )
 
-    def are_instances_editable_by(self, user, instance_plan):
-        # FIXME: Get rid of this one in favor of is_instance_editable_by()
-        if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
-            return False
-        if user.is_superuser:
-            return True
-        if self.instances_editable_by == self.EditableBy.NOT_EDITABLE:
-            return False
-        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
-        if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
-            return is_plan_admin
-        # FIXME: The user should probably be a contact person for the instance, not for *anything* in the plan.
-        # Also, generally, `are_instances_editable_by` may not be very meaningful because it should depend on the
-        # instance.
-        is_contact_person = user.is_contact_person_in_plan(instance_plan)
-        if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
-            return is_contact_person or is_plan_admin
-        if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
-            assert user.is_authenticated  # checked above
-            return True
-        assert False, f"Unexpected value for instances_editable_by: {self.instances_editable_by}"
-
     def is_instance_editable_by(self, instance, user: UserOrAnon, instance_plan: Plan):
+        # Note that for some models we call this with instance=None. Hopefully in these cases we really don't access
+        # the instance!
         from actions.models.action import Action, ActionContactPerson
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return False
@@ -322,6 +302,7 @@ class InstancesVisibleForMixin(models.Model):
 
     @classmethod
     def get_visibility_permissions_for_user(cls, user: UserOrAnon, plan: Plan | None) -> set[VisibleFor]:
+        # FIXME: Use the method above here instead for consistency
         if hasattr(user, '_instance_visibility_perms'):
             return user._instance_visibility_perms
         permissions = [InstancesVisibleForMixin.VisibleFor.PUBLIC]
@@ -339,34 +320,9 @@ class InstancesVisibleForMixin(models.Model):
         user._instance_visibility_perms = set(permissions)
         return user._instance_visibility_perms
 
-    def are_instances_visible_for(self, user: UserOrAnon, instance_plan: Plan):
-        # FIXME: Use the method above here instead for consistency
-        # FIXME: Get rid of this one in favor of is_instance_visible_for()
-        from actions.models.action import Action, ActionContactPerson
-        if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
-            return self.instances_visible_for == self.VisibleFor.PUBLIC
-        if user.is_superuser:
-            return True
-        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
-        if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
-            return is_plan_admin
-        # FIXME: The user should probably be a contact person for the instance, not for *anything* in the plan.
-        # Also, generally, `are_instances_visible_for` may not be very meaningful because it should depend on the
-        # instance.
-        if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
-            is_contact_person = user.is_contact_person_in_plan(instance_plan)
-            return is_contact_person or is_plan_admin
-        if self.instances_visible_for == self.VisibleFor.MODERATORS:
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR)
-            return is_moderator or is_plan_admin
-        if self.instances_visible_for == self.VisibleFor.PUBLIC:
-            return True
-        if self.instances_visible_for == self.VisibleFor.AUTHENTICATED:
-            assert user.is_authenticated  # checked above
-            return True
-        assert False, f"Unexpected value for instances_visible_for: {self.instances_visible_for}"
-
     def is_instance_visible_for(self, instance, user: UserOrAnon, instance_plan: Plan):
+        # Note that for some models we call this with instance=None. Hopefully in these cases we really don't access
+        # the instance!
         from actions.models.action import Action, ActionContactPerson
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return self.instances_visible_for == self.VisibleFor.PUBLIC

@@ -456,7 +456,7 @@ class AttributesSerializerMixin:
             plan = user.get_active_admin_plan()
             attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
             for attribute_type in attribute_types:
-                instances_editable = attribute_type.are_instances_editable_by(user, plan)
+                instances_editable = attribute_type.is_instance_editable_by(None, user, plan)
                 fields[attribute_type.identifier] = rest_framework.fields.FloatField(
                     label=attribute_type.name,
                     read_only=not instances_editable,

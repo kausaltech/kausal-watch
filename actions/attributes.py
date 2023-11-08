@@ -193,7 +193,7 @@ class OrderedChoice(AttributeType):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.instance.is_instance_editable_by(None, user, plan):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
@@ -260,7 +260,7 @@ class CategoryChoice(AttributeType):
                 )
             ),
         )
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.instance.is_instance_editable_by(None, user, plan):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
@@ -318,7 +318,7 @@ class OptionalChoiceWithText(AttributeType):
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
-        editable = self.instance.are_instances_editable_by(user, plan)
+        editable = self.instance.is_instance_editable_by(None, user, plan)
 
         serialized_value = None
         if serialized_attributes:
@@ -439,7 +439,7 @@ class GenericTextAttributeType(AttributeType):
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
-        editable = self.instance.are_instances_editable_by(user, plan)
+        editable = self.instance.is_instance_editable_by(None, user, plan)
 
         for language in ('', *self.instance.other_languages):
             initial_text = None
@@ -545,7 +545,7 @@ class Numeric(AttributeType):
             if attribute:
                 initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.instance.is_instance_editable_by(None, user, plan):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
