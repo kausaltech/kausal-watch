@@ -1,12 +1,13 @@
-from datetime import date, datetime, timedelta
-
 import pytest
+from datetime import date, datetime, timedelta
+from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.models import Locale
 
-from actions.models import Action
-from actions.tests.factories import ActionFactory, CategoryFactory, CategoryTypeFactory
+from actions.models import Action, ActionContactPerson
+from actions.tests.factories import ActionFactory, ActionContactFactory, CategoryFactory, CategoryTypeFactory
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 from pages.models import CategoryPage, CategoryTypePage
 
 pytestmark = pytest.mark.django_db
@@ -272,3 +273,56 @@ def test_plan_should_trigger_daily_notifications_due(plan):
     plan.daily_notifications_triggered_at = datetime.combine(date(2000, 1, 1), send_at_time, plan.tzinfo)
     now = plan.daily_notifications_triggered_at + timedelta(days=1)
     assert plan.should_trigger_daily_notifications(now)
+
+
+@pytest.mark.parametrize(
+    'built_in_field_customization__instances_editable_by,'
+    'expect_unprivileged,expect_editor,expect_moderator,expect_admin', [
+        (InstancesEditableByMixin.EditableBy.AUTHENTICATED, True, True, True, True),
+        (InstancesEditableByMixin.EditableBy.CONTACT_PERSONS, False, True, True, True),
+        (InstancesEditableByMixin.EditableBy.MODERATORS, False, False, True, True),
+        (InstancesEditableByMixin.EditableBy.PLAN_ADMINS, False, False, False, True),
+        (InstancesEditableByMixin.EditableBy.NOT_EDITABLE, False, False, False, False),
+    ]
+)
+def test_built_in_field_customization_is_action_field_editable_by(
+    expect_unprivileged, expect_editor, expect_moderator, expect_admin, built_in_field_customization, action,
+    plan_admin_user
+):
+    unauthenticated = AnonymousUser()
+    # Create an authenticated user that's unprivileged for this action because they are a contact for another action
+    unprivileged = ActionContactFactory().person.user
+    editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
+    moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
+    assert not built_in_field_customization.is_instance_editable_by(action, unauthenticated, action.plan)
+    assert built_in_field_customization.is_instance_editable_by(action, unprivileged, action.plan) == expect_unprivileged
+    assert built_in_field_customization.is_instance_editable_by(action, editor, action.plan) == expect_editor
+    assert built_in_field_customization.is_instance_editable_by(action, moderator, action.plan) == expect_moderator
+    assert built_in_field_customization.is_instance_editable_by(action, plan_admin_user, action.plan) == expect_admin
+
+
+@pytest.mark.parametrize(
+    'built_in_field_customization__instances_visible_for,'
+    'expect_unauthenticated,expect_unprivileged,expect_editor,expect_moderator,expect_admin', [
+        # TODO: Also test visibility via GraphQL API somewhere
+        (InstancesVisibleForMixin.VisibleFor.PUBLIC, True, True, True, True, True),
+        (InstancesVisibleForMixin.VisibleFor.AUTHENTICATED, False, True, True, True, True),
+        (InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, False, False, True, True, True),
+        (InstancesVisibleForMixin.VisibleFor.MODERATORS, False, False, False, True, True),
+        (InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS, False, False, False, False, True),
+    ]
+)
+def test_built_in_field_customization_is_action_field_visible_for(
+    expect_unauthenticated, expect_unprivileged, expect_editor, expect_moderator, expect_admin,
+    built_in_field_customization, action, plan_admin_user
+):
+    unauthenticated = AnonymousUser()
+    # Create an authenticated user that's unprivileged for this action because they are a contact for another action
+    unprivileged = ActionContactFactory().person.user
+    editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
+    moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
+    assert built_in_field_customization.is_instance_visible_for(action, unauthenticated, action.plan) == expect_unauthenticated
+    assert built_in_field_customization.is_instance_visible_for(action, unprivileged, action.plan) == expect_unprivileged
+    assert built_in_field_customization.is_instance_visible_for(action, editor, action.plan) == expect_editor
+    assert built_in_field_customization.is_instance_visible_for(action, moderator, action.plan) == expect_moderator
+    assert built_in_field_customization.is_instance_visible_for(action, plan_admin_user, action.plan) == expect_admin

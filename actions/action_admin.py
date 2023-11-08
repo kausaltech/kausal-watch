@@ -42,7 +42,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
-from .models import Action, ActionContactPerson, ActionTask
+from .models.action import Action, ActionContactPerson, ActionTask
 from reports.views import MarkActionAsCompleteView
 
 if typing.TYPE_CHECKING:
@@ -342,6 +342,8 @@ class ActionEditHandler(AplansTabbedInterface):
         return result
 
     def get_form_class(self):
+        from .models.built_in_fields import BuiltInFieldCustomization
+
         request = ctx_request.get()
         instance = ctx_instance.get()
         user = request.user
@@ -369,14 +371,29 @@ class ActionEditHandler(AplansTabbedInterface):
 
         form_class = super().get_form_class()
 
-        if not plan.features.has_action_identifiers or plan.actions_locked:
+        if (not plan.features.has_action_identifiers or plan.actions_locked) and 'identifier' in form_class.base_fields:
+            # 'identifier' may not be in the fields due to built-in field customizations
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
 
         if plan.actions_locked and 'official_name' in form_class.base_fields:
-            # 'official_name' may not be in the fields if the plan has official names disabled
+            # 'official_name' may not be in the fields if the plan has official names disabled or due to built-in field
+            # customizations
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
+
+        # Disable built-in fields that are not editable due to customization
+        customizations_qs = BuiltInFieldCustomization.objects.filter(
+            plan=plan,
+            content_type=ContentType.objects.get_for_model(Action),
+        )
+        customizations: dict[str, BuiltInFieldCustomization] = {c.field_name: c for c in customizations_qs}
+        for field_name in form_class.base_fields:
+            customization = customizations.get(field_name)
+            if customization:
+                if not customization.is_instance_editable_by(instance, user, plan):
+                    form_class.base_fields[field_name].disabled = True
+                    form_class.base_fields[field_name].required = False
 
         if not user.is_general_admin_for_plan(plan):
             for panel in list(self.children):
@@ -585,15 +602,15 @@ class ActionAdmin(AplansModelAdmin):
 
     basic_panels = [
         CustomizableBuiltInFieldPanel('identifier'),
-        # TODO: Also make other fields customizable
-        FieldPanel('official_name'),
-        FieldPanel('name'),
-        FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        FieldPanel('lead_paragraph'),
-        FieldPanel('description'),
+        CustomizableBuiltInFieldPanel('official_name'),
+        CustomizableBuiltInFieldPanel('name'),
+        CustomizableBuiltInFieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+        CustomizableBuiltInFieldPanel('lead_paragraph'),
+        CustomizableBuiltInFieldPanel('description'),
+        # TODO: Other panels should be customizable as well
     ]
     basic_related_panels = [
-        FieldPanel('image'),
+        CustomizableBuiltInFieldPanel('image'),
         CondensedInlinePanel(
             'links',
             panels=[
@@ -604,7 +621,7 @@ class ActionAdmin(AplansModelAdmin):
         ),
     ]
     basic_related_panels_general_admin = [
-        FieldPanel(
+        CustomizableBuiltInFieldPanel(
             'related_actions',
             widget=autocomplete.ModelSelect2Multiple(
                 url='action-autocomplete',
@@ -613,8 +630,8 @@ class ActionAdmin(AplansModelAdmin):
                 )
             )
         ),
-        FieldPanel('merged_with', widget=ActionChooser),
-        FieldPanel('visibility'),
+        CustomizableBuiltInFieldPanel('merged_with', widget=ActionChooser),
+        CustomizableBuiltInFieldPanel('visibility'),
     ]
 
     progress_panels = [
@@ -742,6 +759,8 @@ class ActionAdmin(AplansModelAdmin):
         return out
 
     def get_edit_handler(self, instance_being_edited: Action | None = None):
+        from actions.models.built_in_fields import BuiltInFieldCustomization
+
         request = ctx_request.get()
         instance: Action = ctx_instance.get()
         # TODO: find out how to include the relevant draftable mixin state
@@ -798,6 +817,22 @@ class ActionAdmin(AplansModelAdmin):
                         dal_forward.Const(plan.superseded_by.id, 'plan'),
                     )
                 )))
+
+        # Remove panels for fields that are not visible due to built-in field customizations
+        for panel in (p for p in panels if isinstance(p, CustomizableBuiltInFieldPanel)):
+            try:
+                # FIXME: This will trigger an SQL query for each panel; should be optimized; see, e.g., how we do it in
+                # ActionEditHandler.get_form_class()
+                customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
+                    plan=plan,
+                    content_type=ContentType.objects.get_for_model(Action),
+                    field_name=panel.field_name,
+                )
+            except BuiltInFieldCustomization.DoesNotExist:
+                pass
+            else:
+                if customization.is_instance_editable_by(instance, request.user, plan):
+                    panels.remove(panel)
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
