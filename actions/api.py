@@ -423,7 +423,7 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
     def get_available_instances(self, plan) -> Set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_person_ids' not in cache:
-            return Person.objects.available_for_plan(plan)
+            return Person.objects.available_for_plan(plan, include_contact_persons=True)
         return cache['available_person_ids']
 
     def get_allowed_roles(self):
@@ -869,7 +869,7 @@ class ActionSerializer(
                 prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
 
         available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
-        available_person_ids = set(Person.objects.available_for_plan(plan).values_list('id', flat=True))
+        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
         persons_by_id = {p.pk: p for p in Person.objects.all()}
         organizations_by_id = {o.pk: o for o in Organization.objects.all()}
 
