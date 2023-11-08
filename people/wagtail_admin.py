@@ -8,7 +8,7 @@ from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import F, ManyToManyField, OneToOneRel, Prefetch
+from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField
 from django.utils import timezone
 from django.utils.html import format_html
@@ -57,13 +57,15 @@ class IsContactPersonFilter(SimpleListFilter):
             action_filters = [('action', _('For an action'))]
         choices = [
             *action_filters,
+            ('peer_contact_persons', _('For same actions or indicators as I am')),
             ('indicator', _('For an indicator')),
             ('none', _('Not a contact person')),
         ]
         return choices
 
     def queryset(self, request, queryset):
-        plan = request.user.get_active_admin_plan()
+        user = request.user
+        plan = user.get_active_admin_plan()
         queryset = queryset.prefetch_related(
             Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
         )
@@ -79,6 +81,14 @@ class IsContactPersonFilter(SimpleListFilter):
             queryset = queryset.filter(contact_for_actions__plan=plan_pk)
         elif self.value() == 'indicator':
             queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
+        elif self.value() == 'peer_contact_persons':
+            person = user.person
+            my_actions = plan.actions.filter(contact_persons__person=person)
+            my_indicators = plan.indicators.filter(contact_persons__person=person)
+            queryset = queryset.filter(
+                Q(contact_for_actions__pk__in=my_actions) |
+                Q(contact_for_indicators__pk__in=my_indicators)
+            )
         else:
             queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
                 .exclude(contact_for_indicators__in=plan.indicators.all())
