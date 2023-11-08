@@ -12,9 +12,8 @@ from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
 
 import actions
-from aplans.factories import ModelFactory
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 from actions.models import ActionContactPerson, AttributeType, Plan, PlanFeatures
+from aplans.factories import ModelFactory
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
@@ -427,16 +426,3 @@ class CategoryListBlockFactory(StructBlockFactory):
     heading = "Category list heading"
     lead = RichText("<p>Category list lead</p>")
     style = 'cards'
-
-
-class BuiltInFieldCustomizationFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.BuiltInFieldCustomization'
-
-    plan = SubFactory(PlanFactory)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action'))
-    field_name = 'identifier'
-    help_text_override = 'overridden help text'
-    label_override = 'overridden label'
-    instances_editable_by = InstancesEditableByMixin.EditableBy.AUTHENTICATED
-    instances_visible_for = InstancesVisibleForMixin.VisibleFor.PUBLIC

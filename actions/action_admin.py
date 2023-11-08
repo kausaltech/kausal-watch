@@ -27,9 +27,9 @@ from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
-    get_translation_tabs
+    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
+    CondensedInlinePanel, CustomizableBuiltInFieldPanel, CustomizableBuiltInPlanFilteredFieldPanel,
+    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
 from aplans.extensions import modeladmin_register
@@ -342,7 +342,7 @@ class ActionEditHandler(AplansTabbedInterface):
         return result
 
     def get_form_class(self):
-        from .models.built_in_fields import BuiltInFieldCustomization
+        from admin_site.models import BuiltInFieldCustomization
 
         request = ctx_request.get()
         instance = ctx_instance.get()
@@ -382,15 +382,18 @@ class ActionEditHandler(AplansTabbedInterface):
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
 
-        # Disable built-in fields that are not editable due to customization
+        # Disable / remove built-in fields that are not editable / visible due to customization
         customizations_qs = BuiltInFieldCustomization.objects.filter(
             plan=plan,
             content_type=ContentType.objects.get_for_model(Action),
         )
         customizations: dict[str, BuiltInFieldCustomization] = {c.field_name: c for c in customizations_qs}
-        for field_name in form_class.base_fields:
+        for field_name in list(form_class.base_fields.keys()):
             customization = customizations.get(field_name)
             if customization:
+                if not customization.is_instance_visible_for(instance, user, plan):
+                    del form_class.base_fields[field_name]
+                    continue
                 if not customization.is_instance_editable_by(instance, user, plan):
                     form_class.base_fields[field_name].disabled = True
                     form_class.base_fields[field_name].required = False
@@ -553,31 +556,6 @@ class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, Apla
         return edit_handler.bind_to_model(self.model_admin.model)
 
 
-class CustomizableBuiltInFieldPanel(FieldPanel):
-    """FieldPanel that can be customized using the BuiltInFieldCustomization model."""
-
-    class BoundPanel(FieldPanel.BoundPanel):
-        request: WatchAdminRequest
-
-        def __init__(self, **kwargs):
-            from actions.models.built_in_fields import BuiltInFieldCustomization
-            super().__init__(**kwargs)
-            plan = self.request.get_active_admin_plan()
-            try:
-                customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
-                    plan=plan,
-                    content_type=ContentType.objects.get_for_model(Action),
-                    field_name=self.field_name,
-                )
-            except BuiltInFieldCustomization.DoesNotExist:
-                pass
-            else:
-                if customization.help_text_override:
-                    self.help_text = customization.help_text_override
-                if customization.label_override:
-                    self.heading = customization.label_override
-
-
 @modeladmin_register
 class ActionAdmin(AplansModelAdmin):
     model = Action
@@ -607,7 +585,6 @@ class ActionAdmin(AplansModelAdmin):
         CustomizableBuiltInFieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
         CustomizableBuiltInFieldPanel('lead_paragraph'),
         CustomizableBuiltInFieldPanel('description'),
-        # TODO: Other panels should be customizable as well
     ]
     basic_related_panels = [
         CustomizableBuiltInFieldPanel('image'),
@@ -635,16 +612,16 @@ class ActionAdmin(AplansModelAdmin):
     ]
 
     progress_panels = [
-        PlanFilteredFieldPanel('implementation_phase'),
-        PlanFilteredFieldPanel('status'),
-        FieldPanel('manual_status'),
-        FieldPanel('manual_status_reason'),
-        FieldPanel('schedule_continuous'),
-        FieldPanel('start_date'),
-        FieldPanel('end_date'),
+        CustomizableBuiltInPlanFilteredFieldPanel('implementation_phase'),
+        CustomizableBuiltInPlanFilteredFieldPanel('status'),
+        CustomizableBuiltInFieldPanel('manual_status'),
+        CustomizableBuiltInFieldPanel('manual_status_reason'),
+        CustomizableBuiltInFieldPanel('schedule_continuous'),
+        CustomizableBuiltInFieldPanel('start_date'),
+        CustomizableBuiltInFieldPanel('end_date'),
     ]
     reporting_panels = [
-        FieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
+        CustomizableBuiltInFieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
     ]
 
     task_panels = [
@@ -759,8 +736,6 @@ class ActionAdmin(AplansModelAdmin):
         return out
 
     def get_edit_handler(self, instance_being_edited: Action | None = None):
-        from actions.models.built_in_fields import BuiltInFieldCustomization
-
         request = ctx_request.get()
         instance: Action = ctx_instance.get()
         # TODO: find out how to include the relevant draftable mixin state
@@ -817,22 +792,6 @@ class ActionAdmin(AplansModelAdmin):
                         dal_forward.Const(plan.superseded_by.id, 'plan'),
                     )
                 )))
-
-        # Remove panels for fields that are not visible due to built-in field customizations
-        for panel in (p for p in panels if isinstance(p, CustomizableBuiltInFieldPanel)):
-            try:
-                # FIXME: This will trigger an SQL query for each panel; should be optimized; see, e.g., how we do it in
-                # ActionEditHandler.get_form_class()
-                customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
-                    plan=plan,
-                    content_type=ContentType.objects.get_for_model(Action),
-                    field_name=panel.field_name,
-                )
-            except BuiltInFieldCustomization.DoesNotExist:
-                pass
-            else:
-                if customization.is_instance_editable_by(instance, request.user, plan):
-                    panels.remove(panel)
 
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 

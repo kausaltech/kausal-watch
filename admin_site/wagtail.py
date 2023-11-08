@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.admin.utils import quote
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
+from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.http.request import QueryDict
@@ -183,19 +184,56 @@ class AplansAdminModelForm(WagtailAdminModelForm):
     pass
 
 
+class BoundPlanFilteredFieldPanelMixin:
+    """Mixin for bound panels to filter the related model queryset based on the active plan."""
+    request: WatchAdminRequest
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        field = self.bound_field.field
+        plan = self.request.get_active_admin_plan()
+        related_model = field.queryset.model
+        assert issubclass(related_model, PlanRelatedModel)
+        field.queryset = related_model.filter_by_plan(plan, field.queryset)
+
+
 class PlanFilteredFieldPanel(FieldPanel):
-    """Filters the related model queryset based on the active plan."""
+    class BoundPanel(BoundPlanFilteredFieldPanelMixin, FieldPanel.BoundPanel):
+        pass
 
-    class BoundPanel(FieldPanel.BoundPanel):
-        request: WatchAdminRequest
 
-        def __init__(self, **kwargs):
-            super().__init__(**kwargs)
-            field = self.bound_field.field
-            plan = self.request.get_active_admin_plan()
-            related_model = field.queryset.model
-            assert issubclass(related_model, PlanRelatedModel)
-            field.queryset = related_model.filter_by_plan(plan, field.queryset)
+class BoundCustomizableBuiltInFieldPanelMixin:
+    """Mixin for bound panels for built-in fields to enable customizations by BuiltInFieldCustomization."""
+    request: WatchAdminRequest
+
+    def __init__(self, **kwargs):
+        from actions.models.action import Action
+        from admin_site.models import BuiltInFieldCustomization
+        super().__init__(**kwargs)
+        plan = self.request.get_active_admin_plan()
+        try:
+            customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
+                plan=plan,
+                content_type=ContentType.objects.get_for_model(Action),
+                field_name=self.field_name,
+            )
+        except BuiltInFieldCustomization.DoesNotExist:
+            pass
+        else:
+            if customization.help_text_override:
+                self.help_text = customization.help_text_override
+            if customization.label_override:
+                self.heading = customization.label_override
+
+
+class CustomizableBuiltInFieldPanel(FieldPanel):
+    class BoundPanel(BoundCustomizableBuiltInFieldPanelMixin, FieldPanel.BoundPanel):
+        pass
+
+
+class CustomizableBuiltInPlanFilteredFieldPanel(FieldPanel):  # Ugh...
+    class BoundPanel(BoundCustomizableBuiltInFieldPanelMixin, BoundPlanFilteredFieldPanelMixin, FieldPanel.BoundPanel):
+        pass
 
 
 class AplansButtonHelper(ButtonHelper):

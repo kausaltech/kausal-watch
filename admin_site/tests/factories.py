@@ -1,6 +1,10 @@
-from factory import RelatedFactory, Sequence, SubFactory
+from factory import LazyAttribute, Sequence, SubFactory
 from factory.django import DjangoModelFactory
 from admin_site.models import Client
+from django.contrib.contenttypes.models import ContentType
+
+from actions.tests.factories import PlanFactory
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
 
 class EmailDomainsFactory(DjangoModelFactory):
@@ -25,3 +29,16 @@ class ClientPlanFactory(DjangoModelFactory):
 
     client = SubFactory(ClientFactory)
     plan = SubFactory('actions.tests.factories.PlanFactory')
+
+
+class BuiltInFieldCustomizationFactory(DjangoModelFactory):
+    class Meta:
+        model = 'admin_site.BuiltInFieldCustomization'
+
+    plan = SubFactory(PlanFactory)
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action'))
+    field_name = 'identifier'
+    help_text_override = 'overridden help text'
+    label_override = 'overridden label'
+    instances_editable_by = InstancesEditableByMixin.EditableBy.AUTHENTICATED
+    instances_visible_for = InstancesVisibleForMixin.VisibleFor.PUBLIC
