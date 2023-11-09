@@ -135,14 +135,14 @@ class AttributeType(  # type: ignore[django-manager-missing]
         from actions.models.action import Action
         super().clean()
         if self.unit is not None and self.format != self.AttributeFormat.NUMERIC:
-            raise ValidationError({'unit': _('Unit must only be used for numeric attribute types')})
+            raise ValidationError({'unit': _('Unit must only be used for numeric fields')})
         if not self.primary_language and self.other_languages:
             raise ValidationError(_('If no primary language is set, there must not be other languages'))
         action_ct = ContentType.objects.get_for_model(Action)
         if self.instance_editability_is_action_specific and self.object_content_type != action_ct:
-            raise ValidationError({'instances_editable_by': _("This value is only allowed for action attribute types")})
+            raise ValidationError({'instances_editable_by': _('This value is only allowed for action fields')})
         if self.instance_visibility_is_action_specific and self.object_content_type != action_ct:
-            raise ValidationError({'instances_visible_for': _("This value is only allowed for action attribute types")})
+            raise ValidationError({'instances_visible_for': _('This value is only allowed for action fields')})
 
     def save(self, *args, **kwargs):
         if not self.primary_language:

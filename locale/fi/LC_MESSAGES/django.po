@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:49+0100\n"
+"POT-Creation-Date: 2023-11-10 00:57+0100\n"
 "PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1238,7 +1238,9 @@ msgid "fields"
 msgstr "kentät"
 
 #: actions/models/attributes.py
-msgid "Unit must only be used for numeric attribute types"
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "Unit must only be used for numeric fields"
 msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
 
 #: actions/models/attributes.py
@@ -1248,7 +1250,7 @@ msgstr "Jos ensisijaista kieltä ei ole asetettu, muitakaan kieliä ei voi asett
 #: actions/models/attributes.py
 #, fuzzy
 #| msgid "Unit must only be used for numeric attribute types"
-msgid "This value is only allowed for action attribute types"
+msgid "This value is only allowed for action fields"
 msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
 
 #: actions/models/attributes.py

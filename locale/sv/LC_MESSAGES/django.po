@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:49+0100\n"
+"POT-Creation-Date: 2023-11-10 00:57+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1273,7 +1273,9 @@ msgid "fields"
 msgstr "fält"
 
 #: actions/models/attributes.py
-msgid "Unit must only be used for numeric attribute types"
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "Unit must only be used for numeric fields"
 msgstr "Enhet får endast användas för numeriska attributtyper"
 
 #: actions/models/attributes.py
@@ -1285,7 +1287,7 @@ msgstr "Primärspråk får inte väljas"
 #: actions/models/attributes.py
 #, fuzzy
 #| msgid "Unit must only be used for numeric attribute types"
-msgid "This value is only allowed for action attribute types"
+msgid "This value is only allowed for action fields"
 msgstr "Enhet får endast användas för numeriska attributtyper"
 
 #: actions/models/attributes.py

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:49+0100\n"
+"POT-Creation-Date: 2023-11-10 00:57+0100\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -1202,7 +1202,7 @@ msgid "fields"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "Unit must only be used for numeric attribute types"
+msgid "Unit must only be used for numeric fields"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1210,7 +1210,7 @@ msgid "If no primary language is set, there must not be other languages"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "This value is only allowed for action attribute types"
+msgid "This value is only allowed for action fields"
 msgstr ""
 
 #: actions/models/attributes.py

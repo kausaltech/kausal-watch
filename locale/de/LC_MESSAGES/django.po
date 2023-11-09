@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:49+0100\n"
+"POT-Creation-Date: 2023-11-10 00:57+0100\n"
 "PO-Revision-Date: 2023-11-06 14:36+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
@@ -1180,7 +1180,9 @@ msgid "fields"
 msgstr "Felder"
 
 #: actions/models/attributes.py
-msgid "Unit must only be used for numeric attribute types"
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "Unit must only be used for numeric fields"
 msgstr "Einheit darf nur für numerische Attributtypen verwendet werden"
 
 #: actions/models/attributes.py
@@ -1190,7 +1192,7 @@ msgstr "Wenn keine Hauptsprache eingestellt ist, dürfen keine weiteren Sprachen
 #: actions/models/attributes.py
 #, fuzzy
 #| msgid "Unit must only be used for numeric attribute types"
-msgid "This value is only allowed for action attribute types"
+msgid "This value is only allowed for action fields"
 msgstr "Einheit darf nur für numerische Attributtypen verwendet werden"
 
 #: actions/models/attributes.py

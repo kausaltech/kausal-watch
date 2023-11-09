@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:49+0100\n"
+"POT-Creation-Date: 2023-11-10 00:57+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1176,7 +1176,7 @@ msgid "fields"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "Unit must only be used for numeric attribute types"
+msgid "Unit must only be used for numeric fields"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1184,7 +1184,7 @@ msgid "If no primary language is set, there must not be other languages"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "This value is only allowed for action attribute types"
+msgid "This value is only allowed for action fields"
 msgstr ""
 
 #: actions/models/attributes.py
