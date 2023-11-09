@@ -16,7 +16,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from actions.tests import factories as actions_factories
-# from admin_site.tests import factories as admin_site_factories
+from admin_site.tests import factories as admin_site_factories
 from content.tests import factories as content_factories
 from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
@@ -86,6 +86,7 @@ register(actions_factories.PlanDomainFactory)
 # https://github.com/pytest-dev/pytest-factoryboy/issues/91
 # register(admin_site_factories.ClientFactory, 'admin_site_client')
 # register(admin_site_factories.ClientPlanFactory)
+register(admin_site_factories.BuiltInFieldCustomizationFactory)
 register(content_factories.SiteGeneralContentFactory)
 register(images_factories.AplansImageFactory)
 register(indicators_factories.CommonIndicatorFactory)

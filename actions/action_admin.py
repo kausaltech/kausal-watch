@@ -5,6 +5,7 @@ import json
 import logging
 from dal import autocomplete, forward as dal_forward
 from django.contrib.admin.utils import quote
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.urls import path, re_path
 from django.utils import timezone
@@ -26,9 +27,9 @@ from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
 from admin_site.wagtail import (
-    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels,
-    get_translation_tabs
+    AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
+    CondensedInlinePanel, CustomizableBuiltInFieldPanel, CustomizableBuiltInPlanFilteredFieldPanel,
+    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
 from aplans.extensions import modeladmin_register
@@ -41,7 +42,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
-from .models import Action, ActionContactPerson, ActionTask
+from .models.action import Action, ActionContactPerson, ActionTask
 from reports.views import MarkActionAsCompleteView
 
 if typing.TYPE_CHECKING:
@@ -177,7 +178,12 @@ class ActionAdminForm(WagtailAdminModelForm):
             obj.set_categories(cat_type, field_data)
 
         user = self._user
-        attribute_types = obj.get_visible_attribute_types(user)
+        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
+        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
+        if commit:
+            attribute_types = obj.get_editable_attribute_types(user)
+        else:
+            attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
@@ -341,8 +347,11 @@ class ActionEditHandler(AplansTabbedInterface):
         return result
 
     def get_form_class(self):
+        from admin_site.models import BuiltInFieldCustomization
+
         request = ctx_request.get()
         instance = ctx_instance.get()
+        assert isinstance(instance, Action)
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
@@ -368,14 +377,32 @@ class ActionEditHandler(AplansTabbedInterface):
 
         form_class = super().get_form_class()
 
-        if not plan.features.has_action_identifiers or plan.actions_locked:
+        if (not plan.features.has_action_identifiers or plan.actions_locked) and 'identifier' in form_class.base_fields:
+            # 'identifier' may not be in the fields due to built-in field customizations
             form_class.base_fields['identifier'].disabled = True
             form_class.base_fields['identifier'].required = False
 
         if plan.actions_locked and 'official_name' in form_class.base_fields:
-            # 'official_name' may not be in the fields if the plan has official names disabled
+            # 'official_name' may not be in the fields if the plan has official names disabled or due to built-in field
+            # customizations
             form_class.base_fields['official_name'].disabled = True
             form_class.base_fields['official_name'].required = False
+
+        # Disable / remove built-in fields that are not editable / visible due to customization
+        customizations_qs = BuiltInFieldCustomization.objects.filter(
+            plan=plan,
+            content_type=ContentType.objects.get_for_model(Action),
+        )
+        customizations: dict[str, BuiltInFieldCustomization] = {c.field_name: c for c in customizations_qs}
+        for field_name in list(form_class.base_fields.keys()):
+            customization = customizations.get(field_name)
+            if customization:
+                if not customization.is_instance_visible_for(user, plan, instance):
+                    del form_class.base_fields[field_name]
+                    continue
+                if not customization.is_instance_editable_by(user, plan, instance):
+                    form_class.base_fields[field_name].disabled = True
+                    form_class.base_fields[field_name].required = False
 
         if not user.is_general_admin_for_plan(plan):
             for panel in list(self.children):
@@ -558,15 +585,15 @@ class ActionAdmin(AplansModelAdmin):
     confirm_workflow_cancellation_view_class = ConfirmWorkflowCancellationView
 
     basic_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('official_name'),
-        FieldPanel('name'),
-        FieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        FieldPanel('lead_paragraph'),
-        FieldPanel('description'),
+        CustomizableBuiltInFieldPanel('identifier'),
+        CustomizableBuiltInFieldPanel('official_name'),
+        CustomizableBuiltInFieldPanel('name'),
+        CustomizableBuiltInFieldPanel('primary_org', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+        CustomizableBuiltInFieldPanel('lead_paragraph'),
+        CustomizableBuiltInFieldPanel('description'),
     ]
     basic_related_panels = [
-        FieldPanel('image'),
+        CustomizableBuiltInFieldPanel('image'),
         CondensedInlinePanel(
             'links',
             panels=[
@@ -577,7 +604,7 @@ class ActionAdmin(AplansModelAdmin):
         ),
     ]
     basic_related_panels_general_admin = [
-        FieldPanel(
+        CustomizableBuiltInFieldPanel(
             'related_actions',
             widget=autocomplete.ModelSelect2Multiple(
                 url='action-autocomplete',
@@ -586,21 +613,21 @@ class ActionAdmin(AplansModelAdmin):
                 )
             )
         ),
-        FieldPanel('merged_with', widget=ActionChooser),
-        FieldPanel('visibility'),
+        CustomizableBuiltInFieldPanel('merged_with', widget=ActionChooser),
+        CustomizableBuiltInFieldPanel('visibility'),
     ]
 
     progress_panels = [
-        PlanFilteredFieldPanel('implementation_phase'),
-        PlanFilteredFieldPanel('status'),
-        FieldPanel('manual_status'),
-        FieldPanel('manual_status_reason'),
-        FieldPanel('schedule_continuous'),
-        FieldPanel('start_date'),
-        FieldPanel('end_date'),
+        CustomizableBuiltInPlanFilteredFieldPanel('implementation_phase'),
+        CustomizableBuiltInPlanFilteredFieldPanel('status'),
+        CustomizableBuiltInFieldPanel('manual_status'),
+        CustomizableBuiltInFieldPanel('manual_status_reason'),
+        CustomizableBuiltInFieldPanel('schedule_continuous'),
+        CustomizableBuiltInFieldPanel('start_date'),
+        CustomizableBuiltInFieldPanel('end_date'),
     ]
     reporting_panels = [
-        FieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
+        CustomizableBuiltInFieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
     ]
 
     task_panels = [

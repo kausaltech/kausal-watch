@@ -103,6 +103,28 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         else:
             return action.pk in actions
 
+    def has_contact_person_role_for_action(self, role: ActionContactPerson.Role, action=None):
+        from actions.models import ActionContactPerson
+        # Cache the contact person role status
+        if hasattr(self, '_contact_for_actions_by_role'):
+            actions = self._contact_for_actions_by_role
+            if action is None:
+                return bool(actions)
+            return action.pk in actions[role]
+
+        actions = {r: set() for r in ActionContactPerson.Role}
+        self._contact_for_actions_by_role = actions
+        person = self.get_corresponding_person()
+        if not person:
+            return False
+
+        for r in ActionContactPerson.Role:
+            actions[r].update(person.actioncontactperson_set.filter(role=r).values_list('action', flat=True))
+        if action is None:
+            return bool(actions[role])
+        else:
+            return action.pk in actions[role]
+
     def is_contact_person_for_indicator(self, indicator=None):
         if hasattr(self, '_contact_for_indicators'):
             indicators = self._contact_for_indicators

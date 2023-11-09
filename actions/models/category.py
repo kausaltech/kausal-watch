@@ -208,6 +208,11 @@ class CategoryType(  # type: ignore[django-manager-missing]
     def __str__(self):
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
+    def clean(self):
+        super().clean()
+        if self.instance_editability_is_action_specific:
+            raise ValidationError({'instances_editable_by': _("This value is not allowed for category types")})
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -562,6 +567,18 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     def get_attribute_type_by_identifier(self, identifier):
         return self.type.attribute_types.get(identifier=identifier)
 
+    def get_editable_attribute_types(self, user):
+        category_ct = ContentType.objects.get_for_model(Category)
+        category_type_ct = ContentType.objects.get_for_model(self.type)
+        at_qs = AttributeTypeModel.objects.filter(
+            object_content_type=category_ct,
+            scope_content_type=category_type_ct,
+            scope_id=self.type.id,
+        )
+        attribute_types = (at for at in at_qs if at.is_instance_editable_for(user, self.type.plan, None))
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in attribute_types]
+
     def get_visible_attribute_types(self, user):
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
@@ -570,7 +587,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             scope_content_type=category_type_ct,
             scope_id=self.type.id,
         )
-        attribute_types = (at for at in at_qs if at.are_instances_visible_for(user, self.type.plan))
+        attribute_types = (at for at in at_qs if at.is_instance_visible_for(user, self.type.plan, None))
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 

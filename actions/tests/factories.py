@@ -11,10 +11,9 @@ from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
 
-
-from aplans.factories import ModelFactory
 import actions
-from actions.models import AttributeType, Plan, PlanFeatures
+from actions.models import ActionContactPerson, AttributeType, Plan, PlanFeatures
+from aplans.factories import ModelFactory
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
 from people.tests.factories import PersonFactory
@@ -410,6 +409,7 @@ class ActionContactFactory(DjangoModelFactory):
 
     action = SubFactory(ActionFactory)
     person = SubFactory(PersonFactory, organization=SelfAttribute('..action.plan.organization'))
+    role = ActionContactPerson.Role.MODERATOR
 
 
 class ActionListBlockFactory(StructBlockFactory):

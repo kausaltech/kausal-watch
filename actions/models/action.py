@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import reversion
 import typing
-from typing import TYPE_CHECKING, ClassVar, Literal, Optional, Protocol, Self, TypedDict
+from typing import TYPE_CHECKING, ClassVar, Iterable, Literal, Optional, Protocol, Self, TypedDict
 import uuid
 
 from django.contrib.contenttypes.fields import GenericRelation
@@ -181,7 +181,7 @@ class Action(  # type: ignore[django-manager-missing]
     def commit_attributes(self, attributes, user):
         """Called when the serialized draft contents of attribute values must be persisted to the actual Attribute models
         when publishing an action from a draft"""
-        attribute_types = self.get_visible_attribute_types(user)
+        attribute_types = self.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.commit_value_from_serialized_data(
                 self, attributes
@@ -660,21 +660,31 @@ class Action(  # type: ignore[django-manager-missing]
     def get_attribute_type_by_identifier(self, identifier):
         return self.plan.action_attribute_types.get(identifier=identifier)
 
-    def get_visible_attribute_types(
+    def get_editable_attribute_types(
             self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
         ):
-        return self.__class__.get_visible_attribute_types_for_plan(
-            user,
+        attribute_types = self.__class__.get_attribute_types_for_plan(
             self.plan,
             only_in_reporting_tab=only_in_reporting_tab,
             unless_in_reporting_tab=unless_in_reporting_tab
         )
+        return [at for at in attribute_types if at.instance.is_instance_editable_by(user, self.plan, self)]
+
+    def get_visible_attribute_types(
+            self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
+        ):
+        attribute_types = self.__class__.get_attribute_types_for_plan(
+            self.plan,
+            only_in_reporting_tab=only_in_reporting_tab,
+            unless_in_reporting_tab=unless_in_reporting_tab
+        )
+        return [at for at in attribute_types if at.instance.is_instance_visible_for(user, self.plan, self)]
 
     @classmethod
-    def get_visible_attribute_types_for_plan(cls, user, plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+    def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(plan)
-        at_qs = AttributeTypeModel.objects.filter(
+        at_qs: Iterable[AttributeTypeModel] = AttributeTypeModel.objects.filter(
             object_content_type=action_ct,
             scope_content_type=plan_ct,
             scope_id=plan.id,
@@ -683,9 +693,8 @@ class Action(  # type: ignore[django-manager-missing]
             at_qs = at_qs.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
             at_qs = at_qs.filter(show_in_reporting_tab=False)
-        attribute_types = (at for at in at_qs if at.are_instances_visible_for(user, plan))
         # Convert to wrapper objects
-        return [AttributeType.from_model_instance(at) for at in attribute_types]
+        return [AttributeType.from_model_instance(at) for at in at_qs]
 
     def get_attribute_panels(self, user: User, serialized_attributes=None):
         # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be

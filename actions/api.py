@@ -456,7 +456,12 @@ class AttributesSerializerMixin:
             plan = user.get_active_admin_plan()
             attribute_types = plan.action_attribute_types.filter(format__in=self.attribute_formats)
             for attribute_type in attribute_types:
-                instances_editable = attribute_type.are_instances_editable_by(user, plan)
+                if attribute_type.instance_editability_is_action_specific:
+                    # Editability is specific to an action and we don't have one here
+                    instances_editable = True
+                else:
+                    # Editability is not action-specific, so it's safe to call this
+                    instances_editable = attribute_type.is_instance_editable_by(user, plan, None)
                 fields[attribute_type.identifier] = rest_framework.fields.FloatField(
                     label=attribute_type.name,
                     read_only=not instances_editable,
@@ -850,14 +855,10 @@ class ActionSerializer(
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def initialize_cache_context(self):
-        if 'request' not in self.context:
-            return
         plan = self.context.get('plan')
         if plan is None:
             return
-        request = self.context['request']
-        user = request.user
-        attribute_types = Action.get_visible_attribute_types_for_plan(user, plan)
+        attribute_types = Action.get_attribute_types_for_plan(plan)
         attribute_types_by_identifier = {
             at.instance.identifier: at for at in attribute_types
         }

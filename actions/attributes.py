@@ -17,7 +17,7 @@ from wagtail.rich_text import RichText as WagtailRichText
 import actions.models.attributes as models
 
 if typing.TYPE_CHECKING:
-    from actions.models import Plan, Action, Category
+    from actions.models import Plan
     from users.models import User
 
 
@@ -166,6 +166,21 @@ class AttributeType(Generic[T]):
     def commit_attributes(self, obj: models.ModelWithAttributes, value: Any):
         raise NotImplementedError()
 
+    def is_editable(self, user: User, plan: Plan, obj: models.ModelWithAttributes | None):
+        from actions.models.action import Action
+        if obj is None:
+            # Probably we're not editing but creating an instance of a model with attributes?
+            return True
+        # Depending on the object content type of the attribute type, `obj` may or may not be an action. If it is,
+        # editability might depend on it, so we pass it to AttributeType.is_instance_editable_by().
+        action_ct = ContentType.objects.get_for_model(Action)
+        if self.instance.object_content_type == action_ct:
+            assert isinstance(obj, Action)
+            action = obj
+        else:
+            action = None
+        return self.instance.is_instance_editable_by(user, plan, action)
+
 
 class OrderedChoice(AttributeType):
     ATTRIBUTE_MODEL = models.AttributeChoice
@@ -193,7 +208,7 @@ class OrderedChoice(AttributeType):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n
         )
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.is_editable(user, plan, obj):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
@@ -260,7 +275,7 @@ class CategoryChoice(AttributeType):
                 )
             ),
         )
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.is_editable(user, plan, obj):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
@@ -318,7 +333,7 @@ class OptionalChoiceWithText(AttributeType):
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
-        editable = self.instance.are_instances_editable_by(user, plan)
+        editable = self.is_editable(user, plan, obj)
 
         serialized_value = None
         if serialized_attributes:
@@ -439,7 +454,7 @@ class GenericTextAttributeType(AttributeType):
         attribute = None
         if obj:
             attribute = self.get_attributes(obj).first()
-        editable = self.instance.are_instances_editable_by(user, plan)
+        editable = self.is_editable(user, plan, obj)
 
         for language in ('', *self.instance.other_languages):
             initial_text = None
@@ -545,7 +560,7 @@ class Numeric(AttributeType):
             if attribute:
                 initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
-        if not self.instance.are_instances_editable_by(user, plan):
+        if not self.is_editable(user, plan, obj):
             field.disabled = True
         return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
 
