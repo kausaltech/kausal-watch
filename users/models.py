@@ -16,7 +16,7 @@ from orgs.models import Organization, OrganizationMetadataAdmin
 from .base import AbstractUser
 
 if typing.TYPE_CHECKING:
-    from actions.models import Action, ActionContactPerson, Plan
+    from actions.models import Action, ActionContactPerson, Plan, ActionResponsibleParty, ModelWithRole
     from people.models import Person
     from aplans.utils import InstancesVisibleForMixin, InstancesEditableByMixin
     from rest_framework.authtoken.models import Token
@@ -212,19 +212,20 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         else:
             return plan.pk in plans
 
+    def _get_editable_roles(self, action: Action, _class: ModelWithRole) -> typing.Iterable[ModelWithRole.Role]:
+        if self.is_general_admin_for_plan(action.plan):
+            return {role for role in _class.Role}
+        person = self.get_corresponding_person()
+        return _class.get_roles_editable_in_action_by(action, person)
+
     def get_editable_contact_person_roles(self, action: Action) -> typing.Iterable[ActionContactPerson.Role]:
         """Return a list of roles so that this user can edit contact persons with those roles for the given action."""
         from actions.models import ActionContactPerson
-        if self.is_general_admin_for_plan(action.plan):
-            return {role for role in ActionContactPerson.Role}
-        person = self.get_corresponding_person()
-        is_moderator = person is not None and action.contact_persons.filter(
-            role=ActionContactPerson.Role.MODERATOR,
-            person_id=person.id,
-        ).exists()
-        if is_moderator:
-            return {ActionContactPerson.Role.EDITOR}
-        return set()
+        return self._get_editable_roles(action, ActionContactPerson)
+
+    def get_editable_responsible_party_roles(self, action: Action) -> typing.Iterable[ActionResponsibleParty.Role|None]:
+        from actions.models import ActionResponsibleParty
+        return self._get_editable_roles(action, ActionResponsibleParty)
 
     def _get_admin_orgs(self) -> models.QuerySet[Organization]:
         person = self.get_corresponding_person()
