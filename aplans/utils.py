@@ -265,13 +265,16 @@ class InstancesEditableByMixin(models.Model):
         verbose_name=_('Edit rights'),
     )
 
+    @property
+    def instance_editability_is_action_specific(self):
+        ACTION_SPECIFIC_VALUES = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
+        return self.instances_editable_by in ACTION_SPECIFIC_VALUES
+
     def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, action: Action | None):
         from actions.models.action import Action, ActionContactPerson
         # `action` may only be None if `self.instances_editable_by` is not action-specific
         if __debug__:
-            ACTION_SPECIFIC_VALUES = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
-            is_action_specific = self.instances_editable_by in ACTION_SPECIFIC_VALUES
-            if is_action_specific and action is None:
+            if self.instance_editability_is_action_specific and action is None:
                 raise AssertionError(f"instances_editable_by has action-specific value '{self.instances_editable_by}', "
                                      "but no action has been supplied.")
 
@@ -331,6 +334,11 @@ class InstancesVisibleForMixin(models.Model):
         verbose_name=_('Visibility'),
     )
 
+    @property
+    def instance_visibility_is_action_specific(self):
+        ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
+        return self.instances_visible_for in ACTION_SPECIFIC_VALUES
+
     @classmethod
     def get_visibility_permissions_for_user(cls, user: UserOrAnon, plan: Plan | None) -> set[VisibleFor]:
         # FIXME: Use the method above here instead for consistency
@@ -353,11 +361,9 @@ class InstancesVisibleForMixin(models.Model):
 
     def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None):
         from actions.models.action import Action, ActionContactPerson
-        # `action` may only be None if `self.instances_editable_by` is not action-specific
+        # `action` may only be None if `self.instances_visible_for` is not action-specific
         if __debug__:
-            ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
-            is_action_specific = self.instances_visible_for in ACTION_SPECIFIC_VALUES
-            if is_action_specific and action is None:
+            if self.instance_visibility_is_action_specific and action is None:
                 raise AssertionError(f"instances_visible_for has action-specific value '{self.instances_visible_for}', "
                                      "but no action has been supplied.")
 
