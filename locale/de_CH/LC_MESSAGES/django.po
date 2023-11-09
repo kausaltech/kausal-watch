@@ -3942,10 +3942,8 @@ msgid "For an action"
 msgstr "Für eine Massnahme"
 
 #: people/wagtail_admin.py
-#, fuzzy
-#| msgid "action indicators"
 msgid "For same actions or indicators as me"
-msgstr "Massnahmenindikatoren"
+msgstr "Für die gleichen Massnahmen oder Indikatoren wie ich"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"
