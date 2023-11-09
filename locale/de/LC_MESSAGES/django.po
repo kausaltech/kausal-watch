@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-11-10 00:57+0100\n"
-"PO-Revision-Date: 2023-11-06 14:36+0000\n"
+"PO-Revision-Date: 2023-11-10 00:01+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1180,20 +1181,16 @@ msgid "fields"
 msgstr "Felder"
 
 #: actions/models/attributes.py
-#, fuzzy
-#| msgid "Unit must only be used for numeric attribute types"
 msgid "Unit must only be used for numeric fields"
-msgstr "Einheit darf nur für numerische Attributtypen verwendet werden"
+msgstr "Einheit darf nur für numerische Felder verwendet werden"
 
 #: actions/models/attributes.py
 msgid "If no primary language is set, there must not be other languages"
 msgstr "Wenn keine Hauptsprache eingestellt ist, dürfen keine weiteren Sprachen vorhanden sein"
 
 #: actions/models/attributes.py
-#, fuzzy
-#| msgid "Unit must only be used for numeric attribute types"
 msgid "This value is only allowed for action fields"
-msgstr "Einheit darf nur für numerische Attributtypen verwendet werden"
+msgstr "Dieser Wert ist nur für Maßnahmenfelder zulässig"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1281,10 +1278,8 @@ msgid "category types"
 msgstr "Kategorietypen"
 
 #: actions/models/category.py
-#, fuzzy
-#| msgid "Choose another category type"
 msgid "This value is not allowed for category types"
-msgstr "Wähle einen anderen Kategorietype"
+msgstr "Dieser Wert ist für Kategorietypen nicht zulässig"
 
 #: actions/models/category.py feedback/models.py notifications/models.py
 msgid "type"
@@ -1922,20 +1917,18 @@ msgid "Login method that will be used for users that don't have a password set"
 msgstr "Anmeldemethode, die für Benutzer verwendet wird, die kein Passwort festgelegt haben"
 
 #: admin_site/models.py
-#, fuzzy
-#| msgid "Label"
 msgid "label"
 msgstr "Beschriftung"
 
 #: admin_site/models.py
 #, python-format
 msgid "%(field)s is not a valid field in the model '%(model)s'"
-msgstr ""
+msgstr "%(field)s ist kein gültiges Feld im Modell '%(model)s'"
 
 #: admin_site/models.py
 #, python-format
 msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
-msgstr ""
+msgstr "Feld '%(field)s' im Modell '%(model)s' des Plans '%(plan)s'"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
@@ -2143,7 +2136,7 @@ msgstr "Authentifizierte Benutzer"
 
 #: aplans/utils.py
 msgid "Contact persons with moderator permissions"
-msgstr ""
+msgstr "Ansprechpartner mit Moderatorenberechtigung"
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
@@ -2158,10 +2151,8 @@ msgid "Edit rights"
 msgstr "Bearbeitungsrechte"
 
 #: aplans/utils.py
-#, fuzzy
-#| msgid "Action contact persons have different roles"
 msgid "Contact persons with \"moderator\" role"
-msgstr "Maßnahmenansprechpartner haben unterschiedliche Rollen"
+msgstr "Ansprechpartner mit \"Moderatoren\"-Rolle"
 
 #: aplans/utils.py
 msgid "Visibility"
