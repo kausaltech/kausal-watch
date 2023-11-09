@@ -3,11 +3,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from itertools import chain
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from sentry_sdk import capture_exception
-from wagtail.admin.panels import FieldPanel
 from wagtail.images.models import SourceImageIOError
 from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
 
