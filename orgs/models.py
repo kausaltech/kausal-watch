@@ -310,7 +310,7 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
 
         return name
 
-    def user_can_edit(self, user):
+    def user_can_edit(self, user: User):
         if user.is_superuser:
             return True
         person = user.get_corresponding_person()
@@ -322,6 +322,8 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
 
         # For now, for general plan admins, we allow editing all organizations related to the plan
         # FIXME: We may want to remove this again and rely on OrganizationMetadataAdmin using the code above
+        if not user.is_general_admin_for_plan():
+            return False
         for plan in user.get_adminable_plans():
             available_orgs = Organization.objects.available_for_plan(plan)
             if available_orgs.filter(pk=self.pk).exists():
