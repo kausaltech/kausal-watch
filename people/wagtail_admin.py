@@ -164,7 +164,9 @@ class PersonFormForGeneralAdmin(PersonForm):
         return instance
 
 
-class PersonCreateView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView):
+class PersonCreateView(
+        ActivatePermissionHelperPlanContextMixin, InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView
+):
     def form_valid(self, form, *args, **kwargs):
         # Make sure form only contains is_admin_for_active_plan
         # TODO: Also do this for organization_plan_admin_orgs?
@@ -239,11 +241,16 @@ class PersonPermissionHelper(PlanContextPermissionHelper):
             obj, plan=self.plan, orgs=self._org_map
         )
 
-    def user_can_create(self, user):
-        if not super().user_can_create(user):
+    def user_can_create(self, user: 'User'):
+        if user.is_general_admin_for_plan(self.plan):
+            return True
+        person = user.get_corresponding_person()
+        # FIXME: there is some hardcoding of assumptions about contact person roles here.  These should be moved to a role-based system.
+        if not ActionContactPerson.objects\
+                                  .filter(action__plan=self.plan).filter(person=person).exclude(role=ActionContactPerson.Role.EDITOR):
+            # Only persons with role other than editor can add persons
             return False
-        return True
-
+        return super().user_can_create(user)
 
 class PersonButtonHelper(ButtonHelper):
     def delete_button(self, *args, **kwargs):
