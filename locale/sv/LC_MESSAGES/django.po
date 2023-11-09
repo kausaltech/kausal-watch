@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-06 15:31+0100\n"
+"POT-Creation-Date: 2023-11-09 10:10+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -4295,6 +4295,12 @@ msgid "For an action"
 msgstr "För en handling"
 
 #: people/wagtail_admin.py
+#, fuzzy
+#| msgid "Short description for what indicators are"
+msgid "For same actions or indicators as me"
+msgstr "Kort beskrivning för vad indikatorer är"
+
+#: people/wagtail_admin.py
 msgid "For an indicator"
 msgstr "För en indikator"
 
@@ -4910,9 +4916,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Short description for what actions are"
 #~ msgstr "Kort beskrivning för vad åtgärder är"
-
-#~ msgid "Short description for what indicators are"
-#~ msgstr "Kort beskrivning för vad indikatorer är"
 
 #~ msgid "Recent actions"
 #~ msgstr "Senaste åtgärder"
