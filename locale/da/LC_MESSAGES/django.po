@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-09 10:10+0200\n"
+"POT-Creation-Date: 2023-11-10 00:49+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -1201,7 +1201,7 @@ msgstr "Rig tekst"
 msgid "Numeric"
 msgstr "Numerisk"
 
-#: actions/models/attributes.py actions/models/category.py
+#: actions/models/attributes.py actions/models/category.py admin_site/models.py
 msgid "help text"
 msgstr "hjælpetekst"
 
@@ -1247,7 +1247,7 @@ msgstr "tegngrænse for tekstfelter"
 msgid "show in reporting tab"
 msgstr "vis i rapporteringsfanen"
 
-#: actions/models/attributes.py
+#: actions/models/attributes.py admin_site/models.py
 #, fuzzy
 #| msgid "fields"
 msgid "field"
@@ -1264,6 +1264,12 @@ msgstr "Enhed må kun bruges til numeriske attributtyper"
 #: actions/models/attributes.py
 msgid "If no primary language is set, there must not be other languages"
 msgstr "Hvis der ikke er angivet et primært sprog, må der ikke være andre sprog"
+
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "This value is only allowed for action attribute types"
+msgstr "Enhed må kun bruges til numeriske attributtyper"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1349,6 +1355,12 @@ msgstr "kategoritype"
 #: actions/models/category.py
 msgid "category types"
 msgstr "kategorityper"
+
+#: actions/models/category.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "This value is not allowed for category types"
+msgstr "Vælg en anden kategoritype"
 
 #: actions/models/category.py feedback/models.py notifications/models.py
 msgid "type"
@@ -2031,6 +2043,22 @@ msgstr "login-metode"
 msgid "Login method that will be used for users that don't have a password set"
 msgstr "Login-metode, der bruges til brugere, som ikke har en adgangskode"
 
+#: admin_site/models.py
+#, fuzzy
+#| msgid "fields"
+msgid "label"
+msgstr "felter"
+
+#: admin_site/models.py
+#, python-format
+msgid "%(field)s is not a valid field in the model '%(model)s'"
+msgstr ""
+
+#: admin_site/models.py
+#, python-format
+msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
+msgstr ""
+
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
 msgstr "Egne indikatorer"
@@ -2241,6 +2269,10 @@ msgstr "bestille"
 msgid "Authenticated users"
 msgstr "Autentificerede brugere"
 
+#: aplans/utils.py
+msgid "Contact persons with moderator permissions"
+msgstr ""
+
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Plan administratorer"
@@ -2252,6 +2284,12 @@ msgstr "Kan ikke redigeres"
 #: aplans/utils.py
 msgid "Edit rights"
 msgstr "Rediger rettigheder"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "action contact persons"
+msgid "Contact persons with \"moderator\" role"
+msgstr "handling kontaktpersoner"
 
 #: aplans/utils.py
 #, fuzzy

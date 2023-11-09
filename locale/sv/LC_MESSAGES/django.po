@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-09 10:10+0200\n"
+"POT-Creation-Date: 2023-11-10 00:49+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1216,7 +1216,7 @@ msgstr "Rik text"
 msgid "Numeric"
 msgstr "Numerisk"
 
-#: actions/models/attributes.py actions/models/category.py
+#: actions/models/attributes.py actions/models/category.py admin_site/models.py
 #, fuzzy
 #| msgid "Alt text"
 msgid "help text"
@@ -1264,7 +1264,7 @@ msgstr "teckengräns för textfält"
 msgid "show in reporting tab"
 msgstr "Visa i fliken Rapportering"
 
-#: actions/models/attributes.py
+#: actions/models/attributes.py admin_site/models.py
 msgid "field"
 msgstr "fält"
 
@@ -1281,6 +1281,12 @@ msgstr "Enhet får endast användas för numeriska attributtyper"
 #| msgid "Primary language must not be selected"
 msgid "If no primary language is set, there must not be other languages"
 msgstr "Primärspråk får inte väljas"
+
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "This value is only allowed for action attribute types"
+msgstr "Enhet får endast användas för numeriska attributtyper"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1378,6 +1384,12 @@ msgstr "kategorityp"
 #: actions/models/category.py
 msgid "category types"
 msgstr "kategorityper"
+
+#: actions/models/category.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "This value is not allowed for category types"
+msgstr "Välj en annan typ av kategori"
 
 #: actions/models/category.py feedback/models.py notifications/models.py
 msgid "type"
@@ -2120,6 +2132,22 @@ msgstr "inloggningsmetod"
 msgid "Login method that will be used for users that don't have a password set"
 msgstr "Inloggningsmetod som ska användas för användare som inte har ett lösenord"
 
+#: admin_site/models.py
+#, fuzzy
+#| msgid "Field"
+msgid "label"
+msgstr "Fält"
+
+#: admin_site/models.py
+#, python-format
+msgid "%(field)s is not a valid field in the model '%(model)s'"
+msgstr ""
+
+#: admin_site/models.py
+#, python-format
+msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
+msgstr ""
+
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
 msgstr "Egna indikatorer"
@@ -2335,6 +2363,12 @@ msgstr "ordning"
 msgid "Authenticated users"
 msgstr "Autentiserade användare"
 
+#: aplans/utils.py
+#, fuzzy
+#| msgid "Contact persons private"
+msgid "Contact persons with moderator permissions"
+msgstr "Kontaktpersoner privata"
+
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Administratörer av planer"
@@ -2350,6 +2384,12 @@ msgstr "Ingen tillgänglig"
 #| msgid "Edit data"
 msgid "Edit rights"
 msgstr "Redigera data"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "Contact persons private"
+msgid "Contact persons with \"moderator\" role"
+msgstr "Kontaktpersoner privata"
 
 #: aplans/utils.py
 #, fuzzy
@@ -4803,9 +4843,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Category metadata"
 #~ msgstr "Kategorimetadata"
-
-#~ msgid "Contact persons private"
-#~ msgstr "Kontaktpersoner privata"
 
 #~ msgid "Date can't be in the future"
 #~ msgstr "Datum kan inte vara i framtiden"

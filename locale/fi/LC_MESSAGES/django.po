@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-09 10:10+0200\n"
+"POT-Creation-Date: 2023-11-10 00:49+0100\n"
 "PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -1185,7 +1185,7 @@ msgstr "Sisältöteksti"
 msgid "Numeric"
 msgstr "Numero"
 
-#: actions/models/attributes.py actions/models/category.py
+#: actions/models/attributes.py actions/models/category.py admin_site/models.py
 msgid "help text"
 msgstr "ohjeteksti"
 
@@ -1229,7 +1229,7 @@ msgstr "merkkimäärärajoitus tekstikentille"
 msgid "show in reporting tab"
 msgstr "näytä raportointi-välilehdessä"
 
-#: actions/models/attributes.py
+#: actions/models/attributes.py admin_site/models.py
 msgid "field"
 msgstr "kentät"
 
@@ -1244,6 +1244,12 @@ msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
 #: actions/models/attributes.py
 msgid "If no primary language is set, there must not be other languages"
 msgstr "Jos ensisijaista kieltä ei ole asetettu, muitakaan kieliä ei voi asettaa"
+
+#: actions/models/attributes.py
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "This value is only allowed for action attribute types"
+msgstr "Vain numeerisilla ominaisuustyypillä voi olla yksikkö"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1329,6 +1335,12 @@ msgstr "luokan tyyppi"
 #: actions/models/category.py
 msgid "category types"
 msgstr "luokan tyypit"
+
+#: actions/models/category.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "This value is not allowed for category types"
+msgstr "Valitse toinen luokan tyyppi"
 
 #: actions/models/category.py feedback/models.py notifications/models.py
 msgid "type"
@@ -1997,6 +2009,22 @@ msgstr "kirjautumismenetelmä"
 msgid "Login method that will be used for users that don't have a password set"
 msgstr "Kirjautumismenetelmä käyttäjille joille ei ole asetettu salasanaa"
 
+#: admin_site/models.py
+#, fuzzy
+#| msgid "Field"
+msgid "label"
+msgstr "kentät"
+
+#: admin_site/models.py
+#, python-format
+msgid "%(field)s is not a valid field in the model '%(model)s'"
+msgstr ""
+
+#: admin_site/models.py
+#, python-format
+msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
+msgstr ""
+
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
 msgstr "Omat mittarit"
@@ -2201,6 +2229,10 @@ msgstr "järjestys"
 msgid "Authenticated users"
 msgstr ""
 
+#: aplans/utils.py
+msgid "Contact persons with moderator permissions"
+msgstr ""
+
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr "Toimenpideohjelman ylläpitäjät"
@@ -2212,6 +2244,12 @@ msgstr "Ei muokattavissa"
 #: aplans/utils.py
 msgid "Edit rights"
 msgstr "Muokkausoikeudet"
+
+#: aplans/utils.py
+#, fuzzy
+#| msgid "action contact persons"
+msgid "Contact persons with \"moderator\" role"
+msgstr "toimenpiteen yhteyshenkilöt"
 
 #: aplans/utils.py
 #, fuzzy

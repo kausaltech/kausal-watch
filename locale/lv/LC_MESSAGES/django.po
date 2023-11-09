@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-09 10:10+0200\n"
+"POT-Creation-Date: 2023-11-10 00:49+0100\n"
 "PO-Revision-Date: 2023-09-10 12:07+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1123,7 +1123,7 @@ msgstr ""
 msgid "Numeric"
 msgstr ""
 
-#: actions/models/attributes.py actions/models/category.py
+#: actions/models/attributes.py actions/models/category.py admin_site/models.py
 msgid "help text"
 msgstr ""
 
@@ -1167,7 +1167,7 @@ msgstr ""
 msgid "show in reporting tab"
 msgstr ""
 
-#: actions/models/attributes.py
+#: actions/models/attributes.py admin_site/models.py
 msgid "field"
 msgstr ""
 
@@ -1181,6 +1181,10 @@ msgstr ""
 
 #: actions/models/attributes.py
 msgid "If no primary language is set, there must not be other languages"
+msgstr ""
+
+#: actions/models/attributes.py
+msgid "This value is only allowed for action attribute types"
 msgstr ""
 
 #: actions/models/attributes.py
@@ -1266,6 +1270,10 @@ msgstr ""
 
 #: actions/models/category.py
 msgid "category types"
+msgstr ""
+
+#: actions/models/category.py
+msgid "This value is not allowed for category types"
 msgstr ""
 
 #: actions/models/category.py feedback/models.py notifications/models.py
@@ -1897,6 +1905,20 @@ msgstr ""
 msgid "Login method that will be used for users that don't have a password set"
 msgstr ""
 
+#: admin_site/models.py
+msgid "label"
+msgstr ""
+
+#: admin_site/models.py
+#, python-format
+msgid "%(field)s is not a valid field in the model '%(model)s'"
+msgstr ""
+
+#: admin_site/models.py
+#, python-format
+msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
+msgstr ""
+
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
 msgstr ""
@@ -2101,6 +2123,10 @@ msgstr ""
 msgid "Authenticated users"
 msgstr ""
 
+#: aplans/utils.py
+msgid "Contact persons with moderator permissions"
+msgstr ""
+
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
 msgstr ""
@@ -2111,6 +2137,10 @@ msgstr ""
 
 #: aplans/utils.py
 msgid "Edit rights"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Contact persons with \"moderator\" role"
 msgstr ""
 
 #: aplans/utils.py
