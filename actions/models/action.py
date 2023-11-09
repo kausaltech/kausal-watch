@@ -663,29 +663,25 @@ class Action(  # type: ignore[django-manager-missing]
     def get_editable_attribute_types(
             self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
         ):
-        at_qs = self.__class__.get_attribute_types_for_plan(
+        attribute_types = self.__class__.get_attribute_types_for_plan(
             self.plan,
             only_in_reporting_tab=only_in_reporting_tab,
             unless_in_reporting_tab=unless_in_reporting_tab
         )
-        attribute_types = (at for at in at_qs if at.is_instance_editable_by(user, self.plan, self))
-        # Convert to wrapper objects
-        return [AttributeType.from_model_instance(at) for at in attribute_types]
+        return [at for at in attribute_types if at.instance.is_instance_editable_by(user, self.plan, self)]
 
     def get_visible_attribute_types(
             self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
         ):
-        at_qs = self.__class__.get_attribute_types_for_plan(
+        attribute_types = self.__class__.get_attribute_types_for_plan(
             self.plan,
             only_in_reporting_tab=only_in_reporting_tab,
             unless_in_reporting_tab=unless_in_reporting_tab
         )
-        attribute_types = (at for at in at_qs if at.is_instance_visible_for(user, self.plan, self))
-        # Convert to wrapper objects
-        return [AttributeType.from_model_instance(at) for at in attribute_types]
+        return [at for at in attribute_types if at.instance.is_instance_visible_for(user, self.plan, self)]
 
     @classmethod
-    def get_attribute_types_for_plan(cls, plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+    def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(plan)
         at_qs: Iterable[AttributeTypeModel] = AttributeTypeModel.objects.filter(
@@ -697,7 +693,8 @@ class Action(  # type: ignore[django-manager-missing]
             at_qs = at_qs.filter(show_in_reporting_tab=True)
         if unless_in_reporting_tab:
             at_qs = at_qs.filter(show_in_reporting_tab=False)
-        return at_qs
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in at_qs]
 
     def get_attribute_panels(self, user: User, serialized_attributes=None):
         # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be

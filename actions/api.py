@@ -851,17 +851,10 @@ class ActionSerializer(
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
 
     def initialize_cache_context(self):
-        if 'request' not in self.context:
-            return
         plan = self.context.get('plan')
         if plan is None:
             return
-        request = self.context['request']
-        user = request.user
-        # FIXME: we removed filtering by editability from Action.get_visible_attribute_types_for_plan() and renamed it
-        # to Action.get_attribute_types_for_plan(); needs fixing
-        # attribute_types = Action.get_visible_attribute_types_for_plan(user, plan)
-        attribute_types = Action.get_attribute_types_for_plan(user, plan)
+        attribute_types = Action.get_attribute_types_for_plan(plan)
         attribute_types_by_identifier = {
             at.instance.identifier: at for at in attribute_types
         }
