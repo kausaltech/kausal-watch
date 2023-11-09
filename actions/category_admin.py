@@ -180,6 +180,14 @@ class CategoryAdminForm(WagtailAdminModelForm):
         obj = super().save(commit)
         user = self._user
         attribute_types = obj.get_editable_attribute_types(user)
+        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
+        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
+        # (I copied that from ActionAdminForm, where, in contrast to categories at the moment, we indeed can have
+        # drafts, but who knows, maybe we'll soon have draft categories... Anyway, good to be consistent.)
+        if commit:
+            attribute_types = obj.get_editable_attribute_types(user)
+        else:
+            attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data)
         return obj
@@ -325,10 +333,10 @@ class CategoryPermissionHelper(PermissionHelper):
     # Does not handle instance creation because we'd need the category type for that, for which we need the request. We
     # check these permissions in CategoryCreateView.
     def user_can_edit_obj(self, user, obj):
-        return obj.type.is_instance_editable_by(user, obj.type.plan, obj) and super().user_can_edit_obj(user, obj)
+        return obj.type.is_instance_editable_by(user, obj.type.plan, None) and super().user_can_edit_obj(user, obj)
 
     def user_can_delete_obj(self, user, obj):
-        return obj.type.is_instance_editable_by(user, obj.type.plan, obj) and super().user_can_delete_obj(user, obj)
+        return obj.type.is_instance_editable_by(user, obj.type.plan, None) and super().user_can_delete_obj(user, obj)
 
 
 @modeladmin_register

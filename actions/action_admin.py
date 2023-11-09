@@ -178,7 +178,12 @@ class ActionAdminForm(WagtailAdminModelForm):
             obj.set_categories(cat_type, field_data)
 
         user = self._user
-        attribute_types = obj.get_editable_attribute_types(user)
+        # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
+        # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
+        if commit:
+            attribute_types = obj.get_editable_attribute_types(user)
+        else:
+            attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
