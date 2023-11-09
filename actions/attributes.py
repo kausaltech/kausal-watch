@@ -17,7 +17,7 @@ from wagtail.rich_text import RichText as WagtailRichText
 import actions.models.attributes as models
 
 if typing.TYPE_CHECKING:
-    from actions.models import Plan, Action, Category
+    from actions.models import Plan
     from users.models import User
 
 

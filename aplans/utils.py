@@ -29,7 +29,6 @@ from aplans.types import UserOrAnon
 if TYPE_CHECKING:
     from actions.models.action import Action, Plan
     from actions.models.plan import Plan
-    from users.models import User
 
 
 logger = logging.getLogger(__name__)
