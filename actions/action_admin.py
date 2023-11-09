@@ -7,12 +7,13 @@ from dal import autocomplete, forward as dal_forward
 from django.contrib.admin.utils import quote
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.db.models import Model
 from django.urls import path, re_path
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import SingleObjectMixin
 from modelcluster.forms import childformset_factory
-from typing import Iterable
+from typing import Iterable, Type
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, MultiFieldPanel, ObjectList, Panel
 )
@@ -42,7 +43,7 @@ from people.chooser import PersonChooser
 from people.models import Person
 
 from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
-from .models.action import Action, ActionContactPerson, ActionTask
+from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask, ModelWithRole
 from reports.views import MarkActionAsCompleteView
 
 if typing.TYPE_CHECKING:
@@ -112,14 +113,23 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
         return user.can_create_action(plan)
 
 
+MODELS_WITH_ROLES: list[tuple[Type[ModelWithRole], str, Type[Model], str]] = [
+    (ActionContactPerson, 'contact_persons',
+     Person, 'person'),
+    (ActionResponsibleParty, 'responsible_parties',
+     Organization, 'organization')
+]
+
+
 class ActionAdminForm(WagtailAdminModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
-        for role in ActionContactPerson.Role:
-            formset = self.formsets.get(f'contact_persons_{role}')
-            if formset:
-                formset.queryset = formset.queryset.filter(role=role)
+        for cls, relation_name, __, __ in MODELS_WITH_ROLES:
+            for role in cls.Role:
+                formset = self.formsets.get(f'{relation_name}_{role}')
+                if formset:
+                    formset.queryset = formset.queryset.filter(role=role)
 
     def clean_identifier(self):
         # Since we hide the plan in the form, `validate_unique()` will be called with `exclude` containing `plan`, in
@@ -130,43 +140,56 @@ class ActionAdminForm(WagtailAdminModelForm):
             raise ValidationError(_("There is already an action with this identifier."))
         return identifier
 
-    def get_contact_persons(self, role: ActionContactPerson.Role):
-        """Return the contact persons with the given role according to the respective formset if it exists; if it
-        does not exist, return the contact persons with the given role according to the existing instance.
-        """
-        formset = self.formsets.get(f'contact_persons_{role}')
-        # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
+    def get_related_objects_with_role(
+            self, _cls: Type[ModelWithRole], role: str,
+            relation_name: str, wrapped_cls: Type[Model], wrapped_object_attr: str
+    ) -> typing.Iterable[Model]:
+        formset = self.formsets.get(f'{relation_name}_{role}')
+        # There is a corresponding formset for a role if and only if we can edit the relations of that role.
         if formset:
             if not formset.is_valid():
                 return []  # Help! But apparently if the formset is invalid, there won't be `cleaned_data` in it!?
-            return [data['person'] for data in formset.cleaned_data if not data['DELETE']]
-        person_ids = self.instance.contact_persons.filter(role=role).values_list('person', flat=True)
-        return Person.objects.filter(id__in=person_ids)
+            return [data[wrapped_object_attr] for data in formset.cleaned_data if not data['DELETE']]
+        obj_ids = getattr(self.instance, relation_name).filter(role=role).values_list(wrapped_object_attr, flat=True)
+        return wrapped_cls.objects.filter(id__in=obj_ids)
+
+    def _validate_unique_relations_with_roles(
+            self, _cls: Type[ModelWithRole], relation_name: str, wrapped_object_cls: Type[Model], wrapped_object_attr: str
+    ):
+        seen_related_objects = set()
+        for role in _cls.Role:
+            if role is None:
+                role = 'None'
+            for obj in self.get_related_objects_with_role(
+                _cls, role, relation_name, wrapped_object_cls, wrapped_object_attr
+            ):
+                if obj.pk in seen_related_objects:
+                    raise ValidationError(
+                        _("%s is listed multiple times in the action.") % obj
+                    )
+                seen_related_objects.add(obj.pk)
 
     def clean(self):
-        # Persons can only have at most one role as a contact person.
-        seen_contact_persons = set()
-        for role in ActionContactPerson.Role:
-            for person in self.get_contact_persons(role):
-                if person.id in seen_contact_persons:
-                    raise ValidationError(
-                        _("%s is listed multiple times as a contact person.") % person
-                    )
-                seen_contact_persons.add(person.id)
+        for _cls, relation_name, wrapped_object_cls, wrapped_object_attr in MODELS_WITH_ROLES:
+            self._validate_unique_relations_with_roles(_cls, relation_name, wrapped_object_cls, wrapped_object_attr)
+            # Persons can only have at most one role as a contact person.
+            # Organizations can only have at most one role as a responsible party
 
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
-        contact_persons_formsets = {}
-        # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
-        for role in ActionContactPerson.Role:
-            formset = self.formsets.pop(f'contact_persons_{role}', None)
-            if formset:
-                contact_persons_formsets[role] = formset
-        original_contact_persons = self.instance.contact_persons.get_object_list().copy()
-        obj: Action = super().save(commit)
-        self.save_contact_persons(contact_persons_formsets, original_contact_persons, commit)
+        for _cls, relation_name, __, __ in MODELS_WITH_ROLES:
+            formsets = {}
+            # There is a corresponding formset for a role if and only if we can edit objects of that role.
+            for role in _cls.Role:
+                formset = self.formsets.pop(f'{relation_name}_{role}', None)
+                if formset:
+                    formsets[role] = formset
+            manager = getattr(self.instance, relation_name)
+            original_objects = manager.get_object_list().copy()
+            obj: Action = super().save(commit)
+            self.save_related_objects_with_role(manager, formsets, original_objects, commit)
 
         # Update categories
         plan = obj.plan
@@ -188,25 +211,24 @@ class ActionAdminForm(WagtailAdminModelForm):
             attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
 
-    def save_contact_persons(self, contact_persons_formsets, original_contact_persons, commit=True):
-        """Saves the contact persons from the given role-specific formsets.
+    def save_related_objects_with_role(self, manager, formsets, original_objects, commit=True):
+        """Saves the related objects from the given role-specific formsets.
 
-        If the plan does not distinguish contact persons by role, then there are no role-specific formsets and the
+        For contact persons: If the plan does not distinguish contact persons by role, then there are no role-specific formsets and the
         contact persons (in the formset `contact_persons`) are saved in `super().save()`.
         """
-        manager = self.instance.contact_persons
-        saved_contact_persons = []  # but not yet committed
-        deleted_contact_persons = []
+        saved_objects = []  # but not yet committed
+        deleted_objects = []
         order = 0
-        for role, formset in contact_persons_formsets.items():
+        for role, formset in formsets.items():
             saved_instances = formset.save(commit=False)
             for instance in saved_instances:
                 instance.role = str(role)
             # Each call of `formset.save()` changes the object list in the manager. We reset it to the original state,
             # and after all formsets have been processed, we'll manually set it to all objects from all formsets.
-            manager.set(original_contact_persons)
-            saved_contact_persons += saved_instances
-            deleted_contact_persons += formset.deleted_objects
+            manager.set(original_objects)
+            saved_objects += saved_instances
+            deleted_objects += formset.deleted_objects
 
             # Since we used `formset.save(commit=False)`, we won't touch the database, but the deferring related manager
             # will now have the wrong data because `BaseChildFormSet.save()` removes `no_id_instances` from it. Let's
@@ -222,15 +244,15 @@ class ActionAdminForm(WagtailAdminModelForm):
                 order += 1
 
         # Remove `no_id_instances` like in `BaseChildFormSet.save()`; otherwise, with a draft action that has an
-        # ActionContactPerson without an `id`, you could remove the form for that draft ActionContactPerson and but
-        # we'd still try to create an ActionContactPerson instance.
+        # ModelWithRole without an `id`, you could remove the form for that draft ModelWithRole and but
+        # we'd still try to create an ModelWithRole instance.
         no_id_instances = [obj for obj in manager.all() if obj.pk is None]
         if no_id_instances:
             manager.remove(*no_id_instances)
 
         # Update object list of manager like BaseChildFormSet.save() does
-        manager.add(*saved_contact_persons)
-        manager.remove(*deleted_contact_persons)
+        manager.add(*saved_objects)
+        manager.remove(*deleted_objects)
 
         # The formsets have only been called with commit=False so far, so if we really should commit, we need to save
         # the instances with commit=True.
@@ -238,25 +260,44 @@ class ActionAdminForm(WagtailAdminModelForm):
             manager.commit()
 
 
-class ContactPersonsInlinePanel(InlinePanel):
-    def __init__(self, role: ActionContactPerson.Role | None = None, *args, **kwargs):
+class ModelWithRoleInlinePanel(InlinePanel):
+    @staticmethod
+    def create_for_model_class(_cls: Type[ModelWithRole], *args, **kwargs):
+        if _cls == ActionResponsibleParty:
+            return ResponsiblePartiesInlinePanel(*args, **kwargs)
+        if _cls == ActionContactPerson:
+            return ContactPersonsInlinePanel(*args, **kwargs)
+
+    def __init__(self, role: str | None = None, *args, **kwargs):
         """If `role` is None, we show all contact persons in this panel, otherwise only the ones with that role.
 
         For the latter to work, make sure that your form contains formsets `contact_persons_<role>` whose querysets are
         filtered accordingly.
         """
         self.role = role
-        kwargs.setdefault('panels', [
-            FieldPanel('person', widget=PersonChooser),
-            FieldPanel('primary_contact')
-        ])
+        kwargs.setdefault('panels', self.get_panels())
         if role:
-            kwargs['relation_name'] = f'contact_persons_{role}'
+            kwargs['relation_name'] = self.get_relation_name(role=role)
             kwargs.setdefault('heading', role.label)
         else:
-            kwargs['relation_name'] = 'contact_persons'
-            kwargs.setdefault('heading', _('Contact persons'))
+            kwargs['relation_name'] = self.get_relation_name()
+            kwargs.setdefault('heading', self.get_heading())
         super().__init__(*args, **kwargs)
+
+    def get_base_relation_name(self) -> str:
+        raise NotImplementedError
+
+    def get_panels(self) -> list:
+        raise NotImplementedError
+
+    def get_heading(self) -> str:
+        raise NotImplementedError
+
+    def get_relation_name(self, role: str | None = None) -> str:
+        base = self.get_base_relation_name()
+        if role is None:
+            return base
+        return f'{base}_{role}'
 
     def clone_kwargs(self):
         result = super().clone_kwargs()
@@ -264,25 +305,24 @@ class ContactPersonsInlinePanel(InlinePanel):
         return result
 
     def on_model_bound(self):
-        assert ((self.role and self.relation_name == f'contact_persons_{self.role}')
-                or self.relation_name == 'contact_persons')
-        # In either case, we set the DB field to `contact_persons`. We rely on the queryset for `contact_persons_{role}`
-        # being filtered accordingly due to `ActionAdminForm.__init__()`.
-        # The code below could be simplified, but let's keep it like this to resemble InlinePanel.on_model_bound()`.
+        assert ((self.role and self.relation_name == self.get_relation_name(self.role))
+                or self.relation_name == self.get_relation_name())
         assert self.model == Action
-        manager = getattr(self.model, 'contact_persons')
+        manager = getattr(self.model, self.get_relation_name())
         self.db_field = manager.rel
 
 
 # FIXME: Duplicates stuff from ReadOnlyInlinePanel
-class ContactPersonsReadOnlyInlinePanel(Panel):
-    def __init__(self, role: ActionContactPerson.Role | None = None, *args, **kwargs):
+class ModelWithRoleReadOnlyInlinePanel(Panel):
+    def __init__(self, relation_name: str | None = None, role: str | None = None, *args, **kwargs):
         self.role = role
+        self.relation_name = relation_name
         super().__init__(*args, **kwargs)
 
     def clone_kwargs(self):
         result = super().clone_kwargs()
         result['role'] = self.role
+        result['relation_name'] = self.relation_name
         return result
 
     class BoundPanel(Panel.BoundPanel):
@@ -291,10 +331,11 @@ class ContactPersonsReadOnlyInlinePanel(Panel):
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
             role = self.panel.role
+            manager = getattr(self.instance, self.panel.relation_name)
             if role:
-                qs = self.instance.contact_persons.filter(role=role)
+                qs = manager.filter(role=role)
             else:
-                qs = self.instance.contact_persons.all()
+                qs = manager.all()
             context['items'] = [
                 {
                     'label': el.get_label() if hasattr(el, 'get_label') else '',
@@ -305,8 +346,47 @@ class ContactPersonsReadOnlyInlinePanel(Panel):
             return context
 
 
-class ContactPersonsPanel(MultiFieldPanel):
-    def __init__(self, *args, editable_roles: Iterable[ActionContactPerson.Role] | None = None, **kwargs):
+class ResponsiblePartiesInlinePanel(ModelWithRoleInlinePanel):
+    def get_heading(self):
+        return _('Responsible parties')
+
+    def get_base_relation_name(self):
+        return 'responsible_parties'
+
+    def get_panels(self):
+        panels = [
+            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+
+        ]
+        if self.role is None:
+            panels.append(FieldPanel('role'))
+        panels.append(FieldPanel('specifier'))
+        return panels
+
+
+class ContactPersonsInlinePanel(ModelWithRoleInlinePanel):
+    def get_heading(self):
+        return _('Contact persons')
+
+    def get_base_relation_name(self):
+        return 'contact_persons'
+
+    def get_panels(self):
+        return [
+            FieldPanel('person', widget=PersonChooser),
+            FieldPanel('primary_contact')
+        ]
+
+
+class RelatedModelWithRolePanel(MultiFieldPanel):
+    def __init__(
+            self,
+            _cls: Type[ModelWithRole] | None = None,
+            relation_name: str | None = None,
+            *args,
+            editable_roles: Iterable[ActionResponsibleParty.Role] | None = None,
+            **kwargs
+    ):
         """Display inline panels for contact persons, optionally separated by roles.
 
         If `editable_roles` is None, a single inline panel will be shown for all contact persons without distuinguishing
@@ -316,15 +396,17 @@ class ContactPersonsPanel(MultiFieldPanel):
         type of the panel will differ, however, depending on whether contact persons with that role can be edited.
         """
         self.editable_roles = editable_roles
+        self.relation_name = relation_name
+        self._cls = _cls
         children = []
         if editable_roles is None:
-            children.append(ContactPersonsInlinePanel())
+            children.append(ModelWithRoleInlinePanel.create_for_model_class(_cls))
         else:
-            for role in ActionContactPerson.Role:
+            for role in _cls.Role:
                 if role in editable_roles:
-                    panel = ContactPersonsInlinePanel(role)
+                    panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, role)
                 else:
-                    panel = ContactPersonsReadOnlyInlinePanel(role)
+                    panel = ModelWithRoleReadOnlyInlinePanel(relation_name, role)
                 children.append(panel)
         super().__init__(children=children, *args, **kwargs)
 
@@ -333,6 +415,8 @@ class ContactPersonsPanel(MultiFieldPanel):
         # children are statically set in __init__
         kwargs.pop('children')
         kwargs['editable_roles'] = self.editable_roles
+        kwargs['relation_name'] = self.relation_name
+        kwargs['_cls'] = self._cls
         return kwargs
 
 
@@ -441,6 +525,19 @@ class ActionEditHandler(AplansTabbedInterface):
                 }
                 form_class.formsets[formset_name] = childformset_factory(Action, ActionContactPerson, **kwargs)
 
+        for role in ActionResponsibleParty.Role:
+            form_options = self.get_form_options()
+            formset_name = f'responsible_parties_{role}'
+            formset_options = form_options['formsets'].get(formset_name)
+            if formset_options:
+                kwargs = {
+                    'extra': 0,
+                    'fk_name': 'action',
+                    'form': WagtailAdminModelForm,
+                    'formfield_callback': formfield_for_dbfield,
+                    **form_options['formsets'][formset_name],
+                }
+                form_class.formsets[formset_name] = childformset_factory(Action, ActionResponsibleParty, **kwargs)
         return form_class
 
 
@@ -816,28 +913,8 @@ class ActionAdmin(AplansModelAdmin):
         contact_persons_panels = self.get_contact_persons_panels(request, instance)
         all_tabs.append(ObjectList(contact_persons_panels, heading=_('Contact persons')))
 
-        if is_general_admin:
-            all_tabs.append(
-                ObjectList([
-                    InlinePanel(
-                        'responsible_parties',
-                        heading=_('Responsible parties'),
-                        panels=[
-                            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-                            FieldPanel('role'),
-                            FieldPanel('specifier'),
-                        ]
-                    )
-                ], heading=_('Responsible parties'))
-            )
-        else:
-            all_tabs.append(
-                ObjectList([
-                    ReadOnlyInlinePanel(
-                        heading=_('Responsible parties'),
-                        relation_name='responsible_parties')
-                ], heading=_('Responsible parties')),
-            )
+        responsible_parties_panels = self.get_responsible_parties_panels(request, instance)
+        all_tabs.append(ObjectList(responsible_parties_panels, heading=_('Responsible parties')))
 
         all_tabs += [
             ObjectList([
@@ -997,5 +1074,18 @@ class ActionAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         if plan.features.has_action_contact_person_roles:
             editable_contact_person_roles = request.user.get_editable_contact_person_roles(instance)
-            return [ContactPersonsPanel(editable_roles=editable_contact_person_roles)]
-        return [ContactPersonsPanel()]
+            return [
+                RelatedModelWithRolePanel(
+                    _cls=ActionContactPerson, relation_name='contact_persons', editable_roles=editable_contact_person_roles
+                )]
+        return [RelatedModelWithRolePanel(_cls=ActionContactPerson, relation_name='contact_persons')]
+
+    def get_responsible_parties_panels(self, request, instance: Action):
+        plan = request.user.get_active_admin_plan()
+        if plan.features.has_action_contact_person_roles:
+            editable_responsible_party_roles = request.user.get_editable_responsible_party_roles(instance)
+            return [
+                RelatedModelWithRolePanel(
+                    _cls=ActionResponsibleParty, relation_name='responsible_parties', editable_roles=editable_responsible_party_roles
+            )]
+        return [RelatedModelWithRolePanel(_cls=ActionResponsibleParty, relation_name='responsible_parties')]

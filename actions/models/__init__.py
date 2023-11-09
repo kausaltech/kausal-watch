@@ -1,7 +1,7 @@
 from .action import (
     Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
-    ActionStatusUpdate, ImpactGroupAction, DraftableModel
+    ActionStatusUpdate, ImpactGroupAction, DraftableModel, ModelWithRole
 )
 from .attributes import (
     AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText,
@@ -52,4 +52,5 @@ __all__ = [
     'PlanFeatures',
     'PublicationStatus',
     'Scenario',
+    'ModelWithRole'
 ]

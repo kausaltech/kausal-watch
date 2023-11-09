@@ -800,8 +800,16 @@ class Action(  # type: ignore[django-manager-missing]
         return None
 
 
+class ModelWithRole:
+    Role: typing.Iterable[str | None]
+
+    @classmethod
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[str | None]:
+        raise NotImplementedError
+
+
 @reversion.register()
-class ActionResponsibleParty(OrderedModel):
+class ActionResponsibleParty(OrderedModel, ModelWithRole):
     class Role(models.TextChoices):
         PRIMARY = 'primary', _('Primary responsible party')
         COLLABORATOR = 'collaborator', _('Collaborator')
@@ -850,8 +858,20 @@ class ActionResponsibleParty(OrderedModel):
     def __str__(self):
         return str(self.organization)
 
+    @classmethod
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[Role | None]:
+        is_contact_person = person is not None and action.contact_persons.filter(
+            person_id=person.pk,
+        ).exists()
+        if is_contact_person:
+            return {
+                ActionResponsibleParty.Role.COLLABORATOR,
+                None
+            }
+        return set()
 
-class ActionContactPerson(OrderedModel):
+
+class ActionContactPerson(OrderedModel, ModelWithRole):
     """A Person acting as a contact for an action"""
     class Role(models.TextChoices):
         EDITOR = 'editor', _('Editor')
@@ -892,6 +912,17 @@ class ActionContactPerson(OrderedModel):
 
     def get_value(self):
         return str(self.person)
+
+    @classmethod
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[Role | None]:
+        is_moderator = person is not None and action.contact_persons.filter(
+            role=cls.Role.MODERATOR,
+            person_id=person.pk,
+        ).exists()
+        if is_moderator:
+            return {cls.Role.EDITOR}
+        return set()
+
 
 
 class ActionSchedule(models.Model, PlanRelatedModel):  # type: ignore[django-manager-missing]
