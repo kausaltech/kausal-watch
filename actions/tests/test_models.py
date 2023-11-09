@@ -294,11 +294,11 @@ def test_built_in_field_customization_is_action_field_editable_by(
     unprivileged = ActionContactFactory().person.user
     editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
     moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
-    assert not built_in_field_customization.is_instance_editable_by(action, unauthenticated, action.plan)
-    assert built_in_field_customization.is_instance_editable_by(action, unprivileged, action.plan) == expect_unprivileged
-    assert built_in_field_customization.is_instance_editable_by(action, editor, action.plan) == expect_editor
-    assert built_in_field_customization.is_instance_editable_by(action, moderator, action.plan) == expect_moderator
-    assert built_in_field_customization.is_instance_editable_by(action, plan_admin_user, action.plan) == expect_admin
+    assert not built_in_field_customization.is_instance_editable_by(unauthenticated, action.plan, action)
+    assert built_in_field_customization.is_instance_editable_by(unprivileged, action.plan, action) == expect_unprivileged
+    assert built_in_field_customization.is_instance_editable_by(editor, action.plan, action) == expect_editor
+    assert built_in_field_customization.is_instance_editable_by(moderator, action.plan, action) == expect_moderator
+    assert built_in_field_customization.is_instance_editable_by(plan_admin_user, action.plan, action) == expect_admin
 
 
 @pytest.mark.parametrize(
@@ -321,8 +321,8 @@ def test_built_in_field_customization_is_action_field_visible_for(
     unprivileged = ActionContactFactory().person.user
     editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
     moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
-    assert built_in_field_customization.is_instance_visible_for(action, unauthenticated, action.plan) == expect_unauthenticated
-    assert built_in_field_customization.is_instance_visible_for(action, unprivileged, action.plan) == expect_unprivileged
-    assert built_in_field_customization.is_instance_visible_for(action, editor, action.plan) == expect_editor
-    assert built_in_field_customization.is_instance_visible_for(action, moderator, action.plan) == expect_moderator
-    assert built_in_field_customization.is_instance_visible_for(action, plan_admin_user, action.plan) == expect_admin
+    assert built_in_field_customization.is_instance_visible_for(unauthenticated, action.plan, action) == expect_unauthenticated
+    assert built_in_field_customization.is_instance_visible_for(unprivileged, action.plan, action) == expect_unprivileged
+    assert built_in_field_customization.is_instance_visible_for(editor, action.plan, action) == expect_editor
+    assert built_in_field_customization.is_instance_visible_for(moderator, action.plan, action) == expect_moderator
+    assert built_in_field_customization.is_instance_visible_for(plan_admin_user, action.plan, action) == expect_admin

@@ -178,7 +178,7 @@ class ActionAdminForm(WagtailAdminModelForm):
             obj.set_categories(cat_type, field_data)
 
         user = self._user
-        attribute_types = obj.get_visible_attribute_types(user)
+        attribute_types = obj.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
             attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
         return obj
@@ -346,6 +346,7 @@ class ActionEditHandler(AplansTabbedInterface):
 
         request = ctx_request.get()
         instance = ctx_instance.get()
+        assert isinstance(instance, Action)
         user = request.user
         plan = request.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
@@ -391,10 +392,10 @@ class ActionEditHandler(AplansTabbedInterface):
         for field_name in list(form_class.base_fields.keys()):
             customization = customizations.get(field_name)
             if customization:
-                if not customization.is_instance_visible_for(instance, user, plan):
+                if not customization.is_instance_visible_for(user, plan, instance):
                     del form_class.base_fields[field_name]
                     continue
-                if not customization.is_instance_editable_by(instance, user, plan):
+                if not customization.is_instance_editable_by(user, plan, instance):
                     form_class.base_fields[field_name].disabled = True
                     form_class.base_fields[field_name].required = False
 

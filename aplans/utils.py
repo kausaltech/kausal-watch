@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+from django.contrib.auth.models import AnonymousUser
 
 import humanize
 import libvoikko  # type: ignore
@@ -26,6 +27,7 @@ from wagtail.models import Page, ReferenceIndex
 from aplans.types import UserOrAnon
 
 if TYPE_CHECKING:
+    from actions.models.action import Action, Plan
     from actions.models.plan import Plan
     from users.models import User
 
@@ -237,7 +239,18 @@ class PlanRelatedModel(PlanDefaultsModel, Generic[M]):
 
 
 class InstancesEditableByMixin(models.Model):
-    """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes."""
+    """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes.
+
+    When you use this mixin, make sure in the validation of your model that `EditableBy.CONTACT_PERSONS` and
+    `EditableBy.MODERATORS` are only accepted for `instances_editable_by` if your model instance can be associated with
+    a specific action, and that this action is always supplied as the `action` to `is_instance_editable_by()`.
+
+    If your model instance is not associated with a specific action, you may pass `action=None` to
+    `is_instance_editable_by()`.
+
+    For example, action attribute types and built-in field customizations are action-specific, whereas category types
+    and category attribute types are not.
+    """
     class EditableBy(models.TextChoices):
         AUTHENTICATED = 'authenticated', _('Authenticated users')  # practically you also need access to the edit page
         CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # regardless of role; plan admins also can edit
@@ -253,26 +266,34 @@ class InstancesEditableByMixin(models.Model):
         verbose_name=_('Edit rights'),
     )
 
-    def is_instance_editable_by(self, instance, user: UserOrAnon, instance_plan: Plan):
-        # Note that for some models we call this with instance=None. Hopefully in these cases we really don't access
-        # the instance!
+    def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, action: Action | None):
         from actions.models.action import Action, ActionContactPerson
+        # `action` may only be None if `self.instances_editable_by` is not action-specific
+        if __debug__:
+            ACTION_SPECIFIC_VALUES = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
+            is_action_specific = self.instances_editable_by in ACTION_SPECIFIC_VALUES
+            if is_action_specific and action is None:
+                raise AssertionError(f"instances_editable_by has action-specific value '{self.instances_editable_by}', "
+                                     "but no action has been supplied.")
+
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return False
+        # Make linter happy; checking for User will fail because it may be a SimpleLazyObject
+        assert not isinstance(user, AnonymousUser)
         if user.is_superuser:
             return True
         if self.instances_editable_by == self.EditableBy.NOT_EDITABLE:
             return False
-        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
+        is_plan_admin = user.is_general_admin_for_plan(plan)
         if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
-            assert isinstance(instance, Action)  # TODO: Should be validated somewhere
-            is_contact_person = user.is_contact_person_for_action(instance)
+            assert isinstance(action, Action)
+            is_contact_person = user.is_contact_person_for_action(action)
             return is_contact_person or is_plan_admin
         if self.instances_editable_by == self.EditableBy.MODERATORS:
-            assert isinstance(instance, Action)  # TODO: Should be validated somewhere
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
+            assert isinstance(action, Action)
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, action)
             return is_moderator or is_plan_admin
         if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
             assert user.is_authenticated  # checked above
@@ -284,7 +305,18 @@ class InstancesEditableByMixin(models.Model):
 
 
 class InstancesVisibleForMixin(models.Model):
-    """Mixin for models such as AttributeType to restrict visibility of attributes."""
+    """Mixin for models such as AttributeType to restrict visibility of attributes.
+
+    When you use this mixin, make sure in the validation of your model that `VisibleFor.CONTACT_PERSONS` and
+    `VisibleFor.MODERATORS` are only accepted for `instances_visible_for` if your model instance can be associated with
+    a specific action, and that this action is always supplied as the `action` to `is_instance_visible_for()`.
+
+    If your model instance is not associated with a specific action, you may pass `action=None` to
+    `is_instance_visible_for()`.
+
+    For example, action attribute types and built-in field customizations are action-specific, whereas category types
+    and category attribute types are not.
+    """
     class VisibleFor(models.TextChoices):
         PUBLIC = 'public', _('Public')
         AUTHENTICATED = 'authenticated', _('Authenticated users')
@@ -320,24 +352,32 @@ class InstancesVisibleForMixin(models.Model):
         user._instance_visibility_perms = set(permissions)
         return user._instance_visibility_perms
 
-    def is_instance_visible_for(self, instance, user: UserOrAnon, instance_plan: Plan):
-        # Note that for some models we call this with instance=None. Hopefully in these cases we really don't access
-        # the instance!
+    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None):
         from actions.models.action import Action, ActionContactPerson
+        # `action` may only be None if `self.instances_editable_by` is not action-specific
+        if __debug__:
+            ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
+            is_action_specific = self.instances_visible_for in ACTION_SPECIFIC_VALUES
+            if is_action_specific and action is None:
+                raise AssertionError(f"instances_visible_for has action-specific value '{self.instances_visible_for}', "
+                                     "but no action has been supplied.")
+
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return self.instances_visible_for == self.VisibleFor.PUBLIC
+        # Make linter happy; checking for User will fail because it may be a SimpleLazyObject
+        assert not isinstance(user, AnonymousUser)
         if user.is_superuser:
             return True
-        is_plan_admin = user.is_general_admin_for_plan(instance_plan)
+        is_plan_admin = user.is_general_admin_for_plan(plan)
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
-            assert isinstance(instance, Action)  # TODO: Should be validated somewhere
-            is_contact_person = user.is_contact_person_for_action(instance)
+            assert isinstance(action, Action)
+            is_contact_person = user.is_contact_person_for_action(action)
             return is_contact_person or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.MODERATORS:
-            assert isinstance(instance, Action)  # TODO: Should be validated somewhere
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
+            assert isinstance(action, Action)
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, action)
             return is_moderator or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.PUBLIC:
             return True
