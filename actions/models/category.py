@@ -208,6 +208,11 @@ class CategoryType(  # type: ignore[django-manager-missing]
     def __str__(self):
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
+    def clean(self):
+        super().clean()
+        if self.instance_editability_is_action_specific:
+            raise ValidationError({'instances_editable_by': _("This value is not allowed for category types")})
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)

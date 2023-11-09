@@ -179,7 +179,6 @@ class CategoryAdminForm(WagtailAdminModelForm):
     def save(self, commit=True):
         obj = super().save(commit)
         user = self._user
-        attribute_types = obj.get_editable_attribute_types(user)
         # If we are serializing a draft (which happens when `commit` is false), we should include all attributes, i.e.,
         # also the non-editable ones. If we are saving a model instance, we only save the editable attributes.
         # (I copied that from ActionAdminForm, where, in contrast to categories at the moment, we indeed can have

@@ -138,7 +138,7 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
             )
         ]
 
-    def clean_field_name(self):
+    def clean(self):
         # Note that this will only be called when saving the instance using a form, not when doing it with save(). Since
         # for now we don't have an model admin class for this model but rely on creating instances manually in the REPL,
         # we must manually trigger the validation by calling full_clean().
@@ -146,10 +146,10 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
         try:
             model._meta.get_field(self.field_name)
         except FieldDoesNotExist:
-            raise ValidationError(_("%(field)s is not a valid field in the model '%(model)s'") % {
+            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {
                 'field': self.field_name,
                 'model': self.content_type.model
-            })
+            }})
         return self.field_name
 
     def __str__(self):

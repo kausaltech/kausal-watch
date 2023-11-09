@@ -1,12 +1,14 @@
 import pytest
 from datetime import date, datetime, timedelta
-from django.contrib.auth.models import AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from wagtail.models import Locale
 
-from actions.models import Action, ActionContactPerson
-from actions.tests.factories import ActionFactory, ActionContactFactory, CategoryFactory, CategoryTypeFactory
+from actions.models import Action
+from actions.tests.factories import (
+    ActionFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+)
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 from pages.models import CategoryPage, CategoryTypePage
 
@@ -275,54 +277,99 @@ def test_plan_should_trigger_daily_notifications_due(plan):
     assert plan.should_trigger_daily_notifications(now)
 
 
-@pytest.mark.parametrize(
-    'built_in_field_customization__instances_editable_by,'
-    'expect_unprivileged,expect_editor,expect_moderator,expect_admin', [
-        (InstancesEditableByMixin.EditableBy.AUTHENTICATED, True, True, True, True),
-        (InstancesEditableByMixin.EditableBy.CONTACT_PERSONS, False, True, True, True),
-        (InstancesEditableByMixin.EditableBy.MODERATORS, False, False, True, True),
-        (InstancesEditableByMixin.EditableBy.PLAN_ADMINS, False, False, False, True),
-        (InstancesEditableByMixin.EditableBy.NOT_EDITABLE, False, False, False, False),
-    ]
-)
-def test_built_in_field_customization_is_action_field_editable_by(
-    expect_unprivileged, expect_editor, expect_moderator, expect_admin, built_in_field_customization, action,
-    plan_admin_user
-):
-    unauthenticated = AnonymousUser()
-    # Create an authenticated user that's unprivileged for this action because they are a contact for another action
-    unprivileged = ActionContactFactory().person.user
-    editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
-    moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
-    assert not built_in_field_customization.is_instance_editable_by(unauthenticated, action.plan, action)
-    assert built_in_field_customization.is_instance_editable_by(unprivileged, action.plan, action) == expect_unprivileged
-    assert built_in_field_customization.is_instance_editable_by(editor, action.plan, action) == expect_editor
-    assert built_in_field_customization.is_instance_editable_by(moderator, action.plan, action) == expect_moderator
-    assert built_in_field_customization.is_instance_editable_by(plan_admin_user, action.plan, action) == expect_admin
+@pytest.mark.parametrize('editable_by', [
+    InstancesEditableByMixin.EditableBy.CONTACT_PERSONS,
+    InstancesEditableByMixin.EditableBy.MODERATORS,
+])
+def test_category_type_does_not_accept_action_specific_editability(editable_by):
+    with pytest.raises(ValidationError):
+        CategoryTypeFactory(instances_editable_by=editable_by).full_clean()
 
 
-@pytest.mark.parametrize(
-    'built_in_field_customization__instances_visible_for,'
-    'expect_unauthenticated,expect_unprivileged,expect_editor,expect_moderator,expect_admin', [
-        # TODO: Also test visibility via GraphQL API somewhere
-        (InstancesVisibleForMixin.VisibleFor.PUBLIC, True, True, True, True, True),
-        (InstancesVisibleForMixin.VisibleFor.AUTHENTICATED, False, True, True, True, True),
-        (InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, False, False, True, True, True),
-        (InstancesVisibleForMixin.VisibleFor.MODERATORS, False, False, False, True, True),
-        (InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS, False, False, False, False, True),
-    ]
-)
-def test_built_in_field_customization_is_action_field_visible_for(
-    expect_unauthenticated, expect_unprivileged, expect_editor, expect_moderator, expect_admin,
-    built_in_field_customization, action, plan_admin_user
-):
-    unauthenticated = AnonymousUser()
-    # Create an authenticated user that's unprivileged for this action because they are a contact for another action
-    unprivileged = ActionContactFactory().person.user
-    editor = ActionContactFactory(action=action, role=ActionContactPerson.Role.EDITOR).person.user
-    moderator = ActionContactFactory(action=action, role=ActionContactPerson.Role.MODERATOR).person.user
-    assert built_in_field_customization.is_instance_visible_for(unauthenticated, action.plan, action) == expect_unauthenticated
-    assert built_in_field_customization.is_instance_visible_for(unprivileged, action.plan, action) == expect_unprivileged
-    assert built_in_field_customization.is_instance_visible_for(editor, action.plan, action) == expect_editor
-    assert built_in_field_customization.is_instance_visible_for(moderator, action.plan, action) == expect_moderator
-    assert built_in_field_customization.is_instance_visible_for(plan_admin_user, action.plan, action) == expect_admin
+@pytest.mark.parametrize('editable_by', [
+    InstancesEditableByMixin.EditableBy.AUTHENTICATED,
+    InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+    InstancesEditableByMixin.EditableBy.NOT_EDITABLE,
+])
+def test_category_type_accepts_non_action_specific_editability(editable_by):
+    CategoryTypeFactory(instances_editable_by=editable_by).full_clean()
+
+
+@pytest.mark.parametrize('model,scope_factory,editable_by_accepted,editable_by_raises', [
+    ('action', PlanFactory, [
+        # accepted
+        InstancesEditableByMixin.EditableBy.AUTHENTICATED,
+        InstancesEditableByMixin.EditableBy.CONTACT_PERSONS,
+        InstancesEditableByMixin.EditableBy.MODERATORS,
+        InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+        InstancesEditableByMixin.EditableBy.NOT_EDITABLE,
+    ], [
+        # raises
+        # [never]
+    ]),
+    ('category', CategoryTypeFactory, [
+        # accepted
+        InstancesEditableByMixin.EditableBy.AUTHENTICATED,
+        InstancesEditableByMixin.EditableBy.PLAN_ADMINS,
+        InstancesEditableByMixin.EditableBy.NOT_EDITABLE,
+    ], [
+        # raises
+        InstancesEditableByMixin.EditableBy.CONTACT_PERSONS,
+        InstancesEditableByMixin.EditableBy.MODERATORS,
+    ]),
+])
+def test_attribute_type_editability_validation(model, scope_factory, editable_by_accepted, editable_by_raises):
+    scope = scope_factory()
+    for editable_by in editable_by_accepted:
+        AttributeTypeFactory(
+           object_content_type=ContentType.objects.get(app_label='actions', model=model),
+           scope=scope,
+           instances_editable_by=editable_by,
+        ).full_clean()
+    for editable_by in editable_by_raises:
+        with pytest.raises(ValidationError):
+            AttributeTypeFactory(
+               object_content_type=ContentType.objects.get(app_label='actions', model=model),
+               scope=scope,
+               instances_editable_by=editable_by,
+            ).full_clean()
+
+
+@pytest.mark.parametrize('model,scope_factory,visible_for_accepted,visible_for_raises', [
+    ('action', PlanFactory, [
+        # accepted
+        InstancesVisibleForMixin.VisibleFor.PUBLIC,
+        InstancesVisibleForMixin.VisibleFor.AUTHENTICATED,
+        InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS,
+        InstancesVisibleForMixin.VisibleFor.MODERATORS,
+        InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS,
+    ], [
+        # raises
+        # [never]
+    ]),
+    ('category', CategoryTypeFactory, [
+        # accepted
+        InstancesVisibleForMixin.VisibleFor.PUBLIC,
+        InstancesVisibleForMixin.VisibleFor.AUTHENTICATED,
+        InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS,
+    ], [
+        # raises
+        InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS,
+        InstancesVisibleForMixin.VisibleFor.MODERATORS,
+    ]),
+])
+def test_attribute_type_visibility_validation(model, scope_factory, visible_for_accepted, visible_for_raises):
+    scope = scope_factory()
+    for visible_for in visible_for_accepted:
+        AttributeTypeFactory(
+           object_content_type=ContentType.objects.get(app_label='actions', model=model),
+           scope=scope,
+           instances_visible_for=visible_for,
+        ).full_clean()
+    for visible_for in visible_for_raises:
+        with pytest.raises(ValidationError):
+            AttributeTypeFactory(
+               object_content_type=ContentType.objects.get(app_label='actions', model=model),
+               scope=scope,
+               instances_visible_for=visible_for,
+            ).full_clean()
