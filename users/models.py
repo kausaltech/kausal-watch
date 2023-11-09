@@ -110,7 +110,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
             actions = self._contact_for_actions_by_role
             if action is None:
                 return bool(actions)
-            return action.pk in action[role]
+            return action.pk in actions[role]
 
         actions = {r: set() for r in ActionContactPerson.Role}
         self._contact_for_actions_by_role = actions
