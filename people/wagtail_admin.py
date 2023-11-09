@@ -57,7 +57,7 @@ class IsContactPersonFilter(SimpleListFilter):
             action_filters = [('action', _('For an action'))]
         choices = [
             *action_filters,
-            ('peer_contact_persons', _('For same actions or indicators as I am')),
+            ('peer_contact_persons', _('For same actions or indicators as me')),
             ('indicator', _('For an indicator')),
             ('none', _('Not a contact person')),
         ]

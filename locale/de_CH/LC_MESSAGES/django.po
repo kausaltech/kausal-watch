@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-06 15:31+0100\n"
+"POT-Creation-Date: 2023-11-09 10:10+0200\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -3940,6 +3940,12 @@ msgstr "Für eine Massnahme in %(plan)s"
 #: people/wagtail_admin.py
 msgid "For an action"
 msgstr "Für eine Massnahme"
+
+#: people/wagtail_admin.py
+#, fuzzy
+#| msgid "action indicators"
+msgid "For same actions or indicators as me"
+msgstr "Massnahmenindikatoren"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-06 15:31+0100\n"
+"POT-Creation-Date: 2023-11-09 10:10+0200\n"
 "PO-Revision-Date: 2023-09-10 12:07+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -3853,6 +3853,10 @@ msgstr ""
 
 #: people/wagtail_admin.py
 msgid "For an action"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "For same actions or indicators as me"
 msgstr ""
 
 #: people/wagtail_admin.py

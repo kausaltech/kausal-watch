@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-06 15:31+0100\n"
+"POT-Creation-Date: 2023-11-09 10:10+0200\n"
 "PO-Revision-Date: 2023-10-02 16:44+0300\n"
 "Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -4053,6 +4053,12 @@ msgstr "Toimenpiteelle ohjelmassa %(plan)s"
 #: people/wagtail_admin.py
 msgid "For an action"
 msgstr "Toimenpiteelle"
+
+#: people/wagtail_admin.py
+#, fuzzy
+#| msgid "action indicators"
+msgid "For same actions or indicators as me"
+msgstr "toimenpiteen mittarit"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"

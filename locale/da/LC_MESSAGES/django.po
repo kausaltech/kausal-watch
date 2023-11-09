@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-06 15:31+0100\n"
+"POT-Creation-Date: 2023-11-09 10:10+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -4129,6 +4129,12 @@ msgstr "Til en handling i %(plan)s"
 #: people/wagtail_admin.py
 msgid "For an action"
 msgstr "For en handling"
+
+#: people/wagtail_admin.py
+#, fuzzy
+#| msgid "action indicators"
+msgid "For same actions or indicators as me"
+msgstr "handlingsindikatorer"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"
