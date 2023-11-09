@@ -70,6 +70,13 @@ class NodeButtonHelper(ButtonHelper):
             pk=getattr(obj, self.opts.pk.attname),
             **kwargs
         )
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        if not user.is_general_admin_for_plan(plan):
+            # TODO: allow for organization metadata admins
+            # but without the huge amount of db queries
+            # that iterating org.user_can_edit entails
+            return buttons
         buttons.append(add_child_button)
 
         # TODO: Put this in when we have implemented the subtree editor
