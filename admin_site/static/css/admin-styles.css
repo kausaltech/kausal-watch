@@ -56,3 +56,8 @@
     max-width: 100%;
     max-height: 100%;
 }
+
+/* Wagtail notifications */
+.messages {
+    z-index: 1;
+}
