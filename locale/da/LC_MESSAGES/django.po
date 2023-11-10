@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:57+0100\n"
+"POT-Creation-Date: 2023-11-10 09:09+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -29,8 +29,13 @@ msgstr "Der er allerede en handling med denne identifikator."
 #: actions/action_admin.py
 #, fuzzy, python-format
 #| msgid "Organization occurs multiple times as responsible party"
-msgid "%s is listed multiple times as a contact person."
+msgid "%s is listed multiple times in the action."
 msgstr "Organisation optræder flere gange som ansvarlig part"
+
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
+msgid "Responsible parties"
+msgstr "Ansvarlige parter"
 
 #: actions/action_admin.py actions/api.py aplans/utils.py
 #: indicators/wagtail_admin.py
@@ -87,11 +92,6 @@ msgstr "Grundlæggende oplysninger"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Fremskridt"
-
-#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
-#: actions/blocks/action_dashboard.py
-msgid "Responsible parties"
-msgstr "Ansvarlige parter"
 
 #: actions/action_admin.py
 msgid "Reporting"

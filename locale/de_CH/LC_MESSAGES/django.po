@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:57+0100\n"
+"POT-Creation-Date: 2023-11-10 09:09+0200\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -27,7 +27,12 @@ msgstr "Es gibt bereits eine Massnahme mit dieser Kennung."
 
 #: actions/action_admin.py
 #, python-format
-msgid "%s is listed multiple times as a contact person."
+msgid "%s is listed multiple times in the action."
+msgstr ""
+
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
+msgid "Responsible parties"
 msgstr ""
 
 #: actions/action_admin.py actions/api.py aplans/utils.py
@@ -84,11 +89,6 @@ msgstr ""
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
-msgstr ""
-
-#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
-#: actions/blocks/action_dashboard.py
-msgid "Responsible parties"
 msgstr ""
 
 #: actions/action_admin.py

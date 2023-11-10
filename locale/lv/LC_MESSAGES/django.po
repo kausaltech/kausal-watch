@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 00:57+0100\n"
+"POT-Creation-Date: 2023-11-10 09:09+0200\n"
 "PO-Revision-Date: 2023-09-10 12:07+0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -23,7 +23,12 @@ msgstr ""
 
 #: actions/action_admin.py
 #, python-format
-msgid "%s is listed multiple times as a contact person."
+msgid "%s is listed multiple times in the action."
+msgstr ""
+
+#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
+#: actions/blocks/action_dashboard.py
+msgid "Responsible parties"
 msgstr ""
 
 #: actions/action_admin.py actions/api.py aplans/utils.py
@@ -80,11 +85,6 @@ msgstr ""
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
-msgstr ""
-
-#: actions/action_admin.py actions/api.py actions/blocks/action_content.py
-#: actions/blocks/action_dashboard.py
-msgid "Responsible parties"
 msgstr ""
 
 #: actions/action_admin.py
