@@ -1,58 +1,71 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700;800&display=swap");
 
 :root {
-    --w-font-sans: "Inter";
-    /*--w-font-mono: Inconsolata;*/
-    --w-color-primary-hue: 160;
-    --w-color-secondary-hue: 160;
-    --w-color-grey-50: #ECEAE6;
-    --w-color-grey-100: #E1DFDA;
-    --w-color-grey-150: #D8D5CF;
-    --w-color-grey-200: #CBC7C1;
-    --w-color-grey-400:#88847C;
-    --w-color-grey-500: #726E67;
-    --w-color-grey-600: #5C5853;
-    --w-color-grey-700: #46423E;
-    --w-color-grey-800: #302D2B;
+  --w-font-sans: "Inter";
+  /*--w-font-mono: Inconsolata;*/
+  --w-color-primary-hue: 160;
+  --w-color-secondary-hue: 160;
+  --w-color-grey-50: #eceae6;
+  --w-color-grey-100: #e1dfda;
+  --w-color-grey-150: #d8d5cf;
+  --w-color-grey-200: #cbc7c1;
+  --w-color-grey-400: #88847c;
+  --w-color-grey-500: #726e67;
+  --w-color-grey-600: #5c5853;
+  --w-color-grey-700: #46423e;
+  --w-color-grey-800: #302d2b;
 
-    --w-login-fullscreen-background: radial-gradient(100% 300.28% at 100% 0%,var(--w-color-primary) 0%,var(--w-color-primary) 32.94%,var(--w-color-primary) 49.9%,var(--w-color-primary) 50.2%,var(--w-color-secondary) 100%);
-    --w-color-surface-menus: var(--w-color-grey-700);
-    --w-color-surface-menu-item-active: var(--w-color-grey-800);
-    --w-color-text-label-menus-default: var(--w-color-white);
-    --w-color-text-label-menus-active: var(--w-color-grey-50);
+  --w-login-fullscreen-background: radial-gradient(
+    100% 300.28% at 100% 0%,
+    var(--w-color-primary) 0%,
+    var(--w-color-primary) 32.94%,
+    var(--w-color-primary) 49.9%,
+    var(--w-color-primary) 50.2%,
+    var(--w-color-secondary) 100%
+  );
+  --w-color-surface-menus: var(--w-color-grey-700);
+  --w-color-surface-menu-item-active: var(--w-color-grey-800);
+  --w-color-text-label-menus-default: var(--w-color-white);
+  --w-color-text-label-menus-active: var(--w-color-grey-50);
 
-    &.w-theme-dark {
-        --w-color-text-link-default: #C0F5D2;
-        --w-color-secondary-100: #C0F5D2;
-        --w-color-critical-200: #E37D7D;
-    }
+  &.w-theme-dark {
+    --w-color-text-link-default: #c0f5d2;
+    --w-color-secondary-100: #c0f5d2;
+    --w-color-critical-200: #e37d7d;
+  }
 }
 
 .sidebar-custom-branding {
-    margin: 1rem auto;
+  margin: 1rem auto;
 }
 
 .sidebar--slim .sidebar-custom-branding {
-    padding: 10px 0;
+  padding: 10px 0;
 }
 
 .login .login-logo {
-    width: 3.5rem;
+  width: 3.5rem;
 }
 
 .w-header h1 {
-    font-weight: 600;
+  font-weight: 600;
 }
 
-.page-explorer .w-breadcrumb li:only-child a, .page-explorer .w-breadcrumb li[hidden]~li:last-child a {
-    font-weight: 600;
+.page-explorer .w-breadcrumb li:only-child a,
+.page-explorer .w-breadcrumb li[hidden] ~ li:last-child a {
+  font-weight: 600;
 }
 
 .chooser__preview {
-    padding: 2px;
+  padding: 2px;
 }
 
 .chooser__preview svg {
-    max-width: 100%;
-    max-height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* Wagtail notifications */
+.messages {
+  z-index: 1;
 }
