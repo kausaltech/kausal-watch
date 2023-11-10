@@ -128,7 +128,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         sentiment=Sentiment.NEUTRAL
     )
     UNDEFINED = ActionStatusSummary(
-        default_label=_('Unknown'),
+        default_label=_('No status set'),
         color='grey010',
         is_completed=False,
         is_active=True,
