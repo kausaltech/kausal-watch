@@ -1,3 +1,4 @@
+from __future__ import annotations
 import re
 
 from dal import autocomplete
@@ -32,6 +33,10 @@ from pages.models import PlanLink
 from people.chooser import PersonChooser
 from admin_site.wagtail import AplansCreateView
 from admin_site.chooser import ClientChooser
+
+import typing
+if typing.TYPE_CHECKING:
+    from users.models import User
 
 
 class PlanForm(AplansAdminModelForm):
@@ -121,17 +126,6 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('superseded_by', widget=PlanChooser),
     ]
 
-    action_status_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('name'),
-        FieldPanel('is_completed'),
-    ]
-
-    action_implementation_phase_panels = [
-        FieldPanel('identifier'),
-        FieldPanel('name'),
-    ]
-
     action_impact_panels = [
         FieldPanel('identifier'),
         FieldPanel('name'),
@@ -142,6 +136,29 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('begins_at'),
         FieldPanel('ends_at'),
     ]
+
+    COLOR_HELP_TEXT = _(
+        'Only set if explicitly required by customer. Use a color key from the UI theme\'s graphColors, for example red070 or grey030.'
+    )
+
+    def get_action_status_panels(self, user: User):
+        result = [
+            FieldPanel('identifier'),
+            FieldPanel('name'),
+            FieldPanel('is_completed'),
+        ]
+        if user.is_superuser:
+            result.append(FieldPanel('color', help_text=self.COLOR_HELP_TEXT))
+        return result
+
+    def get_action_implementation_phase_panels(self, user: User):
+        result = [
+            FieldPanel('identifier'),
+            FieldPanel('name'),
+        ]
+        if user.is_superuser:
+            result.append(FieldPanel('color', help_text=self.COLOR_HELP_TEXT))
+        return result
 
     def get_edit_handler(self):
         request = ctx_request.get()
@@ -168,10 +185,10 @@ class PlanAdmin(AplansModelAdmin):
             ]
 
         action_status_panels = insert_model_translation_panels(
-            ActionStatus, self.action_status_panels, request, instance
+            ActionStatus, self.get_action_status_panels(request.user), request, instance
         )
         action_implementation_phase_panels = insert_model_translation_panels(
-            ActionStatus, self.action_implementation_phase_panels, request, instance
+            ActionStatus, self.get_action_implementation_phase_panels(request.user), request, instance
         )
         action_impact_panels = insert_model_translation_panels(
             ActionImpact, self.action_impact_panels, request, instance
