@@ -466,6 +466,11 @@ class Plan(ClusterableModel):
 
         # Create translations of root page
         translation_creator.create_translations(primary_root_page)
+        for page in primary_root_page.get_translations():
+            with translation.override(page.locale.language_code):
+                page.draft_title = self.name_i18n
+                page.title = self.name_i18n
+                page.save(update_fields=['draft_title', 'title'])
 
         # Create subpages of root page
         def _dummy_function_so_makemessages_finds_strings():
