@@ -46,19 +46,23 @@ class PlanForm(AplansAdminModelForm):
             raise ValidationError("Changing the primary language is not supported yet.")
         return primary_language
 
-    def clean_identifier(self):
-        identifier = self.cleaned_data['identifier']
+    @staticmethod
+    def _clean_identifier(identifier, plan: Plan):
         qs = Plan.objects.filter(identifier=identifier)
-        if self.instance and self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
+        if plan and plan.pk:
+            qs = qs.exclude(pk=plan.pk)
         if qs.count() > 0:
             raise ValidationError(_('Identifier already in use'), code='identifier-taken')
-        if not re.fullmatch('([a-z]+-)*[a-z]+[0-9]*', identifier):
+        if not re.fullmatch('[a-z]+(-[a-z]+)*(-?[0-9]+)?', identifier):
             raise ValidationError(
                 _('For identifiers, use only lowercase letters from the English alphabet with dashes separating words. '
                   'Numbers are allowed only in the end.')
             )
         return identifier
+
+    def clean_identifier(self):
+        identifier = self.cleaned_data['identifier']
+        return self._clean_identifier(identifier, self.instance)
 
     def clean_name(self):
         name = self.cleaned_data['name']
