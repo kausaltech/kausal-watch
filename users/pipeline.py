@@ -149,12 +149,14 @@ def get_username(details, backend, response, *args, **kwargs):
     if backend.name == 'google-openidconnect':
         return
 
+    if backend.name == 'okta-openidconnect':
+        return
+
     user = details.get('user')
     if not user:
         user_uuid = kwargs.get('uid')
         if not user_uuid:
             return
-
         username = uuid_to_username(user_uuid)
     else:
         username = user.username
