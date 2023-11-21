@@ -609,6 +609,13 @@ if ELASTICSEARCH_URL:
                 }
             }
         },
+        'es': {
+            'analyzer': {
+                'default': {
+                    'type': 'spanish'
+                }
+            }
+        },
     }
     for lang in ANALYSIS_CONFIG.keys():
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
