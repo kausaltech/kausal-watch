@@ -418,6 +418,7 @@ MODELTRANS_FALLBACK = {
     'en-au': ('en',),
     'en-gb': ('en',),
     'de-ch': ('de',),
+    'es-us': ('es',),
 }  # use language in default_language_field instead of a global fallback
 
 WAGTAIL_CONTENT_LANGUAGES = LANGUAGES

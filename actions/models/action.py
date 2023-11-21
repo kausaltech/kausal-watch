@@ -30,7 +30,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 
 from aplans.types import UserOrAnon
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier
+    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language
 )
 from orgs.models import Organization
 from users.models import User
@@ -651,8 +651,13 @@ class Action(  # type: ignore[django-manager-missing]
     def get_indexed_objects(cls):
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
+
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plan__primary_language__istartswith=lang) | Q(plan__other_languages__icontains=[lang]))
+        lang_variants = get_available_variants_for_language(lang)
+        q = Q(plan__primary_language__startswith=lang)
+        for variant in lang_variants:
+            q |= Q(plan__other_languages__contains=[variant])
+        qs = qs.filter(q)
         # FIXME find out how to use action default manager here
         qs = qs.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
         return qs
