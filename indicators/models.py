@@ -25,7 +25,9 @@ from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
-from aplans.utils import IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel
+from aplans.utils import (
+    IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel, get_available_variants_for_language
+)
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
@@ -604,8 +606,12 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     def get_indexed_objects(cls):
         # Return only the actions whose plan supports the current language
         lang = translation.get_language()
+        lang_variants = get_available_variants_for_language(lang)
         qs = super().get_indexed_objects()
-        qs = qs.filter(Q(plans__primary_language__istartswith=lang) | Q(plans__other_languages__icontains=[lang])).distinct()
+        q = Q(plans__primary_language__startswith=lang)
+        for variant in lang_variants:
+            q |= Q(plans__other_languages__contains=[variant])
+        qs = qs.filter(q).distinct()
         return qs
 
     def autocomplete_label(self):

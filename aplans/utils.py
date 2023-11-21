@@ -548,3 +548,9 @@ class MetadataEnum(Enum):
 
     def get_data(self, context=None):
         return self.value.with_identifier(self).with_context(context)
+
+
+def get_available_variants_for_language(language: str):
+    if len(language) != 2:
+        raise ValueError('Provide only the language part of the language code')
+    return [lang_code for lang_code, _ in settings.LANGUAGES if lang_code[0:2] == language]
