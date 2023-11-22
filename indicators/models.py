@@ -29,6 +29,7 @@ from aplans.utils import (
     IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel, get_available_variants_for_language
 )
 from orgs.models import Organization
+from search.backends import TranslatedSearchField, TranslatedAutocompleteField
 
 if typing.TYPE_CHECKING:
     from actions.models.category import CategoryType
@@ -379,9 +380,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language')
 
     search_fields = [
-        index.SearchField('name', boost=10),
-        index.AutocompleteField('name'),
-        index.SearchField('description'),
+        TranslatedSearchField('name', boost=10),
+        TranslatedAutocompleteField('name'),
+        TranslatedSearchField('description'),
         index.FilterField('plans'),
     ]
 

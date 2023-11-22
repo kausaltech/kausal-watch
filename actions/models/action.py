@@ -34,6 +34,7 @@ from aplans.utils import (
 )
 from orgs.models import Organization
 from users.models import User
+from search.backends import TranslatedSearchField, TranslatedAutocompleteField
 
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
 from ..attributes import AttributeFieldPanel, AttributeType
@@ -345,16 +346,16 @@ class Action(  # type: ignore[django-manager-missing]
     objects: ActionManager = ActionManager()
 
     search_fields = [
-        index.SearchField('name', boost=10),
-        index.AutocompleteField('name'),
+        TranslatedSearchField('name', boost=10),
+        TranslatedAutocompleteField('name'),
         ActionIdentifierSearchField('identifier', boost=10),
         ActionIdentifierAutocompleteField('identifier'),
-        index.SearchField('official_name', boost=8),
-        index.AutocompleteField('official_name'),
-        index.SearchField('description'),
+        TranslatedSearchField('official_name', boost=8),
+        TranslatedAutocompleteField('official_name'),
+        TranslatedSearchField('description'),
         index.RelatedFields('tasks', [
-            index.SearchField('name'),
-            index.SearchField('comment'),
+            TranslatedSearchField('name'),
+            TranslatedSearchField('comment'),
         ]),
         index.FilterField('plan'),
         index.FilterField('updated_at'),
