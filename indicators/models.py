@@ -601,7 +601,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         return self.latest_value.date
 
     def __str__(self):
-        return self.name
+        return self.name_i18n
 
     @classmethod
     def get_indexed_objects(cls):
