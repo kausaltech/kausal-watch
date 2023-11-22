@@ -6,13 +6,18 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
 from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
-from factory.django import DjangoModelFactory
 from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
 
-import actions
-from actions.models import ActionContactPerson, AttributeType, Plan, PlanFeatures
+from actions.blocks import ActionListBlock, CategoryListBlock
+from actions.models import (
+    Action, ActionContactPerson, ActionImpact, ActionImplementationPhase, ActionLink, ActionSchedule, ActionStatus,
+    ActionStatusUpdate, ActionTask, ActionResponsibleParty, AttributeCategoryChoice, AttributeChoice,
+    AttributeChoiceWithText, AttributeNumericValue, AttributeRichText, AttributeText, AttributeType,
+    AttributeTypeChoiceOption, Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType, ImpactGroup,
+    ImpactGroupAction, MonitoringQualityPoint, Plan, PlanDomain, PlanFeatures, Scenario
+)
 from aplans.factories import ModelFactory
 from images.tests.factories import AplansImageFactory
 from orgs.tests.factories import OrganizationFactory
@@ -22,9 +27,6 @@ from users.tests.factories import UserFactory
 
 @factory.django.mute_signals(post_save)
 class PlanFactory(ModelFactory[Plan]):
-    class Meta:
-        model = 'actions.Plan'
-
     organization = SubFactory(OrganizationFactory)
     name = Sequence(lambda i: f"Plan {i}")
     identifier = Sequence(lambda i: f'plan{i}')
@@ -50,70 +52,46 @@ class PlanFactory(ModelFactory[Plan]):
 
 @factory.django.mute_signals(post_save)
 class PlanFeaturesFactory(ModelFactory[PlanFeatures]):
-    class Meta:
-        model = 'actions.PlanFeatures'
-
     plan = SubFactory(PlanFactory, features=None)
 
 
-class PlanDomainFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.PlanDomain'
-
+class PlanDomainFactory(ModelFactory[PlanDomain]):
     plan = SubFactory(PlanFactory, _domain=None)
     hostname = Sequence(lambda i: f'plandomain{i}.example.org')
 
 
-class ActionStatusFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionStatus'
-
+class ActionStatusFactory(ModelFactory[ActionStatus]):
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f"Action status {i}")
     identifier = Sequence(lambda i: f'action-status-{i}')
 
 
-class ActionImplementationPhaseFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionImplementationPhase'
-
+class ActionImplementationPhaseFactory(ModelFactory[ActionImplementationPhase]):
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f"Action implementation phase {i}")
     identifier = Sequence(lambda i: f'aip{i}')
 
 
-class ActionScheduleFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionSchedule'
-
+class ActionScheduleFactory(ModelFactory[ActionSchedule]):
     plan = SubFactory(PlanFactory)
     name = "Test action schedule"
     begins_at = datetime.date(2020, 1, 1)
     ends_at = datetime.date(2021, 1, 1)
 
 
-class ActionImpactFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionImpact'
-
+class ActionImpactFactory(ModelFactory[ActionImpact]):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'action-impact-{i}')
     name = Sequence(lambda i: f"Action impact {i}")
 
 
-class ActionLinkFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionLink'
-
+class ActionLinkFactory(ModelFactory[ActionLink]):
     action = SubFactory('actions.tests.factories.ActionFactory')
     url = Sequence(lambda i: f'https://plan{i}.example.com')
     title = "Action link"
 
 
-class CommonCategoryTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.CommonCategoryType'
-
+class CommonCategoryTypeFactory(ModelFactory[CommonCategoryType]):
     primary_language = 'en'
     identifier = Sequence(lambda i: f'cct{i}')
     name = Sequence(lambda i: f"Common category type {i}")
@@ -121,10 +99,7 @@ class CommonCategoryTypeFactory(DjangoModelFactory):
     help_text = "bar"
 
 
-class CategoryTypeFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.CategoryType'
-
+class CategoryTypeFactory(ModelFactory[CategoryType]):
     plan = SubFactory(PlanFactory)
     identifier = Sequence(lambda i: f'ct{i}')
     name = Sequence(lambda i: f"Category type {i}")
@@ -134,9 +109,8 @@ class CategoryTypeFactory(DjangoModelFactory):
     synchronize_with_pages = False
 
 
-class AttributeTypeFactory(DjangoModelFactory):
+class AttributeTypeFactory(ModelFactory[AttributeType]):
     class Meta:
-        model = 'actions.AttributeType'
         exclude = ['scope']
 
     object_content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
@@ -153,19 +127,13 @@ class AttributeTypeFactory(DjangoModelFactory):
     has_zero_option = False
 
 
-class AttributeTypeChoiceOptionFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.AttributeTypeChoiceOption'
-
+class AttributeTypeChoiceOptionFactory(ModelFactory[AttributeTypeChoiceOption]):
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
     identifier = Sequence(lambda i: f'ctmc{i}')
     name = Sequence(lambda i: f"Attribute type choice option {i}")
 
 
-class CommonCategoryFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.CommonCategory'
-
+class CommonCategoryFactory(ModelFactory[CommonCategory]):
     type = SubFactory(CommonCategoryTypeFactory)
     identifier = Sequence(lambda i: f'categorytype{i}')
     name = Sequence(lambda i: f"Category type {i}")
@@ -175,10 +143,7 @@ class CommonCategoryFactory(DjangoModelFactory):
     help_text = "bar"
 
 
-class CategoryFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.Category'
-
+class CategoryFactory(ModelFactory[Category]):
     type = SubFactory(CategoryTypeFactory)
     identifier = Sequence(lambda i: f'category{i}')
     name = Sequence(lambda i: f"Category {i}")
@@ -189,9 +154,8 @@ class CategoryFactory(DjangoModelFactory):
     help_text = "bar"
 
 
-class AttributeCategoryChoiceFactory(DjangoModelFactory):
+class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):
     class Meta:
-        model = 'actions.AttributeCategoryChoice'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.CATEGORY_CHOICE)
@@ -209,9 +173,8 @@ class AttributeCategoryChoiceFactory(DjangoModelFactory):
                 self.categories.add(category)
 
 
-class AttributeTextFactory(DjangoModelFactory):
+class AttributeTextFactory(ModelFactory[AttributeText]):
     class Meta:
-        model = 'actions.AttributeText'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.TEXT)
@@ -222,9 +185,8 @@ class AttributeTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'AttributeText {i}')
 
 
-class AttributeNumericValueFactory(DjangoModelFactory):
+class AttributeNumericValueFactory(ModelFactory[AttributeNumericValue]):
     class Meta:
-        model = 'actions.AttributeNumericValue'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.NUMERIC)
@@ -235,9 +197,8 @@ class AttributeNumericValueFactory(DjangoModelFactory):
     value = Sequence(lambda i: float(i/100))
 
 
-class AttributeRichTextFactory(DjangoModelFactory):
+class AttributeRichTextFactory(ModelFactory[AttributeRichText]):
     class Meta:
-        model = 'actions.AttributeRichText'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.RICH_TEXT)
@@ -248,9 +209,8 @@ class AttributeRichTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'AttributeRichText {i}')
 
 
-class AttributeChoiceFactory(DjangoModelFactory):
+class AttributeChoiceFactory(ModelFactory[AttributeChoice]):
     class Meta:
-        model = 'actions.AttributeChoice'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
@@ -261,9 +221,8 @@ class AttributeChoiceFactory(DjangoModelFactory):
     choice = SubFactory(AttributeTypeChoiceOptionFactory)
 
 
-class AttributeChoiceWithTextFactory(DjangoModelFactory):
+class AttributeChoiceWithTextFactory(ModelFactory[AttributeChoiceWithText]):
     class Meta:
-        model = 'actions.AttributeChoiceWithText'
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT)
@@ -275,29 +234,20 @@ class AttributeChoiceWithTextFactory(DjangoModelFactory):
     text = Sequence(lambda i: f'AttributeChoiceText {i}')
 
 
-class CategoryLevelFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.CategoryLevel'
-
+class CategoryLevelFactory(ModelFactory[CategoryLevel]):
     type = SubFactory(CategoryTypeFactory)
     name = Sequence(lambda i: f"Category level name {i}")
     name_plural = Sequence(lambda i: f'Category level name plural {i}')
 
 
-class ScenarioFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.Scenario'
-
+class ScenarioFactory(ModelFactory[Scenario]):
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f"Scenario {i}")
     identifier = Sequence(lambda i: f'scenario{i}')
     description = "Scenario description"
 
 
-class ActionStatusUpdateFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionStatusUpdate'
-
+class ActionStatusUpdateFactory(ModelFactory[ActionStatusUpdate]):
     action = SubFactory('actions.tests.factories.ActionFactory')
     title = "Action status update"
     date = datetime.date(2020, 1, 1)
@@ -308,10 +258,7 @@ class ActionStatusUpdateFactory(DjangoModelFactory):
     created_by = SubFactory(UserFactory)
 
 
-class ImpactGroupFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ImpactGroup'
-
+class ImpactGroupFactory(ModelFactory[ImpactGroup]):
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f"Impact group {i}")
     identifier = Sequence(lambda i: f'impact-group-{i}')
@@ -320,10 +267,7 @@ class ImpactGroupFactory(DjangoModelFactory):
     color = 'red'
 
 
-class MonitoringQualityPointFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.MonitoringQualityPoint'
-
+class MonitoringQualityPointFactory(ModelFactory[MonitoringQualityPoint]):
     name = Sequence(lambda i: f"Monitoring quality point {i}")
     description_yes = "Yes"
     description_no = "No"
@@ -331,10 +275,7 @@ class MonitoringQualityPointFactory(DjangoModelFactory):
     identifier = Sequence(lambda i: f'monitoring-quality-point-{i}')
 
 
-class ActionFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.Action'
-
+class ActionFactory(ModelFactory[Action]):
     plan = SubFactory(PlanFactory)
     name = Sequence(lambda i: f"Action {i}")
     identifier = Sequence(lambda i: f'action{i}')
@@ -367,13 +308,10 @@ class ActionFactory(DjangoModelFactory):
                 obj.schedule.add(schedule)
 
 
-class ActionTaskFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionTask'
-
+class ActionTaskFactory(ModelFactory[ActionTask]):
     action = SubFactory(ActionFactory)
     name = Sequence(lambda i: f"Action task {i}")
-    state = actions.models.ActionTask.NOT_STARTED
+    state = ActionTask.NOT_STARTED
     comment = "Comment"
     due_at = datetime.date(2020, 1, 1)
     completed_at = None
@@ -382,31 +320,22 @@ class ActionTaskFactory(DjangoModelFactory):
     # modified_at = None  # Should be set automatically
 
 
-class ImpactGroupActionFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ImpactGroupAction'
-
+class ImpactGroupActionFactory(ModelFactory[ImpactGroupAction]):
     group = SubFactory(ImpactGroupFactory)
     action = SubFactory(ActionFactory, plan=SelfAttribute('..group.plan'))
     impact = SubFactory(ActionImpactFactory, plan=SelfAttribute('..group.plan'))
 
 
-class ActionResponsiblePartyFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionResponsibleParty'
-
+class ActionResponsiblePartyFactory(ModelFactory[ActionResponsibleParty]):
     action = SubFactory(ActionFactory)
     organization = SubFactory(OrganizationFactory)
-    role = actions.models.ActionResponsibleParty.Role.PRIMARY
+    role = ActionResponsibleParty.Role.PRIMARY
     specifier = "foo"
 
 
 # FIXME: The factory name does not correspond to the model name because this would suggest that we build a Person
 # object. We might want to consider renaming the model ActionContactPerson to ActionContact or similar.
-class ActionContactFactory(DjangoModelFactory):
-    class Meta:
-        model = 'actions.ActionContactPerson'
-
+class ActionContactFactory(ModelFactory[ActionContactPerson]):
     action = SubFactory(ActionFactory)
     person = SubFactory(PersonFactory, organization=SelfAttribute('..action.plan.organization'))
     role = ActionContactPerson.Role.MODERATOR
@@ -414,14 +343,14 @@ class ActionContactFactory(DjangoModelFactory):
 
 class ActionListBlockFactory(StructBlockFactory):
     class Meta:
-        model = actions.blocks.ActionListBlock
+        model = ActionListBlock
 
     category_filter = SubFactory(CategoryFactory)
 
 
 class CategoryListBlockFactory(StructBlockFactory):
     class Meta:
-        model = actions.blocks.CategoryListBlock
+        model = CategoryListBlock
 
     heading = "Category list heading"
     lead = RichText("<p>Category list lead</p>")
