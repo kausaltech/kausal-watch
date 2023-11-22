@@ -67,14 +67,24 @@ class BulkListSerializer(serializers.ListSerializer):
         return super().to_internal_value(data)
 
     def _handle_updates(self, update_ops):
-        for model in update_ops.keys():
+        for model, ops in update_ops.items():
             # TODO: build the deferred operations structure
             # like this from the get go
+
+            # If the same instance occurs multiple times (perhaps with some fields different) in `ops`, then this
+            # will do nasty stuff. (If we use an instance as a dict key, only the PK matters, so the other values
+            # could different but we'd still map to the same value). We merge all ops with the same instance PK by
+            # only taking the latest instance having that PK and unifying the fields.
             fields_for_instance = {}
-            for instance, fields in update_ops[model]:
-                existing = fields_for_instance.get(instance, tuple())
-                fields_for_instance[instance] = existing + tuple(fields)
-            instances_for_fields = dict()
+            for instance, fields in ops:
+                fields = frozenset(fields)  # merge duplicate fields
+                if instance in fields_for_instance:
+                    # Actually not necessarily the exact instance occurs, but one with the same PK
+                    existing_fields = fields_for_instance.pop(instance)
+                    fields_for_instance[instance] = existing_fields | fields
+                else:
+                    fields_for_instance[instance] = fields
+            instances_for_fields = {}
             for instance, fields in fields_for_instance.items():
                 instances_for_fields.setdefault(fields, []).append(instance)
             for fields, instances in instances_for_fields.items():

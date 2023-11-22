@@ -672,7 +672,7 @@ class PrevSiblingField(serializers.CharField):
             return None
         try:
             value._meta.get_field('uuid')
-            return value.uuid
+            return str(value.uuid)
         except FieldDoesNotExist:
             return value.id
 
@@ -701,11 +701,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
     def create(self, validated_data: dict):
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().create(validated_data)
-        if left_sibling_uuid is None:
-            left_sibling = None
-        else:
-            left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
-        ops = self._update_tree_position(instance, left_sibling)
+        ops = self._update_tree_position(instance, left_sibling_uuid)
         self.add_deferred_operations(ops)
         return instance
 
@@ -715,11 +711,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
         # left_sibling might inadvertently move the node.
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().update(instance, validated_data)
-        if left_sibling_uuid is None:
-            left_sibling = None
-        else:
-            left_sibling = self.Meta.model.objects.get(uuid=left_sibling_uuid)
-        ops = self._update_tree_position(instance, left_sibling)
+        ops = self._update_tree_position(instance, left_sibling_uuid)
         self.add_deferred_operations(ops)
         return instance
 
@@ -765,65 +757,78 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
         Return an order value that can be used for the next node.
         """
         # Make sure that `node` and `instance_to_move` are taken from the cache, otherwise we'll lose the updates
-        assert node is self._cached_instances[node.id]
-        assert instance_to_move is self._cached_instances[instance_to_move.id]
+        assert node is self._cached_instances[node.uuid]
+        assert instance_to_move is self._cached_instances[instance_to_move.uuid]
 
-        instance_to_move_id = getattr(instance_to_move, 'id', None)
-        predecessor_id = getattr(predecessor, 'id', None)
+        instance_to_move_uuid = instance_to_move.uuid
+        predecessor_uuid = predecessor.uuid if predecessor is not None else None
 
         node.order = next_order
         next_order += 1
 
-        if node.id == predecessor_id:
+        if node.uuid == predecessor_uuid:
             # Put instance_to_move after node (it is either a child or a sibling)
             next_order = self._reorder_descendants(instance_to_move, next_order, instance_to_move, predecessor)
 
         if hasattr(node, 'children'):
-            for child_id in node.children.exclude(id=instance_to_move_id).values_list('id', flat=True):
-                child = self._cached_instances[child_id]
+            # We can't use `node.children` because the children might be different due to changes that are only in
+            # `self._cached_instances` at this point
+            children = [
+                n for uuid, n in self._cached_instances.items()
+                if getattr(n, 'parent', None) == node and uuid != instance_to_move_uuid
+            ]
+            children = sorted(children, key=lambda child: child.order)  # FIXME: Could be optimized (keep cache sorted)
+            for child in children:
                 next_order = self._reorder_descendants(child, next_order, instance_to_move, predecessor)
         return next_order
 
-    def _update_tree_position(self, instance, left_sibling):
+    def _update_tree_position(self, instance, left_sibling_uuid):
         # When changing the `order` value of instance, we also need to change it for all its descendants, potentially
         # leading to new collisions, so we just reorder everything here
-
-        # Model may or may not have parent field
-        parent = getattr(instance, 'parent', None)
-
-        # New predecessor of instance in ordering, not necessarily a sibling of instance
-        if left_sibling is None:
-            predecessor = parent
-        else:
-            predecessor = left_sibling
 
         # Use instance cache for bulk update
         def init_cache(force_refresh=False):
             self._cached_instances = {}
             for node in instance.get_siblings(force_refresh=force_refresh):
                 self._cache_descendants(node)
-            return self._cached_instances[instance.id]
+            return self._cached_instances[instance.uuid]
         try:
             instance = init_cache()
         except KeyError:
             # get_siblings is using a cache for performance reasons.  We need to clear the cache when adding new nodes because the cache was
             # initially initialized when the new nodes where not in the database.
             instance = init_cache(force_refresh=True)
+
+        # Model may or may not have parent field
+        parent = getattr(instance, 'parent', None)
+        assert parent is None or parent is self._cached_instances[parent.uuid]
+
+        # New predecessor of instance in ordering, not necessarily a sibling of instance
+        if left_sibling_uuid is None:
+            predecessor = parent
+        else:
+            left_sibling = self._cached_instances[left_sibling_uuid]
+            predecessor = left_sibling
+
         order = 0
-        if left_sibling is None and parent is None:
+        if left_sibling_uuid is None and parent is None:
             # instance gets order 0
             order = self._reorder_descendants(instance, order, instance, predecessor)
 
-        for node_id in instance.get_siblings().exclude(id=instance.id).values_list('id', flat=True):
-            node = self._cached_instances[node_id]
+        siblings = [
+            node for node in self._cached_instances.values()
+            if node != instance and getattr(node, 'parent', None) == parent
+        ]
+        siblings = sorted(siblings, key=lambda node: node.order)  # FIXME: Could be optimized (keep cache sorted)
+        for node in siblings:
             order = self._reorder_descendants(node, order, instance, predecessor)
 
         return [('update', instance, ['order']) for instance in self._cached_instances.values()]
 
     def _cache_descendants(self, node):
         """Add instance `node` and all its descendants to the dict `self._cached_instances`."""
-        assert node.id not in self._cached_instances
-        self._cached_instances[node.id] = node
+        assert node.uuid not in self._cached_instances
+        self._cached_instances[node.uuid] = node
         if hasattr(node, 'children'):
             for child in node.children.all():
                 self._cache_descendants(child)

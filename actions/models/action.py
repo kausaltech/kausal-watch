@@ -416,6 +416,11 @@ class Action(  # type: ignore[django-manager-missing]
                 self.order = 0
             else:
                 self.order = max_order + 1
+        # Invalidate the plan's action cache because, e.g., we might have changed the order
+        try:
+            del self.plan.cached_actions
+        except AttributeError:
+            pass
         return super().save(*args, **kwargs)
 
     def is_merged(self):
