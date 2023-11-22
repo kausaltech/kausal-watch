@@ -1,7 +1,9 @@
 import logging
 from typing import Optional
 from django.utils import translation
+from modeltrans.fields import TranslatedVirtualField
 import elasticsearch_dsl as es_dsl
+from wagtail.search import index
 from wagtail.search.backends.elasticsearch7 import (
     Elasticsearch7SearchBackend, Elasticsearch7SearchResults,
     Elasticsearch7SearchQueryCompiler, Elasticsearch7AutocompleteQueryCompiler,
@@ -129,3 +131,46 @@ def get_search_backend(language=None) -> Optional[WatchSearchBackend]:
     if backend_name not in get_search_backend_config():
         return None
     return wagtail_get_search_backend(backend_name)
+
+
+class ModeltransFieldProxy(index.SearchField):
+    def __init__(self, field_name, original_field):
+        self.field_name = field_name
+        self.original_field = original_field
+
+    def value_from_object(self, obj):
+        lang = translation.get_language()
+        trans_field_name = f'{self.field_name}_{lang}'
+        for field in obj._meta.get_field('i18n').get_translated_fields():
+            field_name = field.get_field_name()
+            if (
+                    field.original_field == self.original_field and
+                    '_i18n' not in field_name and
+                    getattr(obj, field_name) is not None and
+                    field.get_language()[0:2].lower() == lang
+            ):
+                trans_field_name = field_name
+        return getattr(obj, trans_field_name)
+
+    def get_internal_type(self):
+        return "CharField"
+
+    def __getattr__(self, __name: str):
+        return getattr(self.original_field, __name)
+
+
+class TranslatedSearchFieldMixin:
+    def get_field(self, cls):
+        i18n_field = cls._meta.get_field('i18n')
+        original_field = super().get_field(cls)
+        if self.field_name in i18n_field.fields:
+            return ModeltransFieldProxy(self.field_name, original_field)
+        return super().get_field(cls)
+
+
+class TranslatedSearchField(TranslatedSearchFieldMixin, index.SearchField):
+    pass
+
+
+class TranslatedAutocompleteField(TranslatedSearchFieldMixin, index.AutocompleteField):
+    pass
