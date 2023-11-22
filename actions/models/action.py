@@ -397,7 +397,7 @@ class Action(  # type: ignore[django-manager-missing]
         s = ''
         if self.plan is not None and self.plan.features.has_action_identifiers:
             s += '%s. ' % self.identifier
-        s += self.name
+        s += self.name_i18n
         return s
 
     def clean(self):
