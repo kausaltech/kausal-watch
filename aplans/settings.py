@@ -546,6 +546,12 @@ WAGTAILEMBEDS_FINDERS = [
         'provider': 'Sharepoint',
         'domain_whitelist': ('sharepoint.com', ),
         'title': 'Document'
+    },
+    {
+        'class': 'aplans.wagtail_embed_finders.GenericFinder',
+        'provider': 'kartta.hel.fi',
+        'domain_whitelist': ('kartta.hel.fi', ),
+        'title': 'Map'
     }
 ]
 WAGTAIL_SITE_NAME = 'Kausal Watch'
