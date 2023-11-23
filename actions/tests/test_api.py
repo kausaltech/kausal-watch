@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+from itertools import permutations
 
 from actions.api import ActionSerializer
 from actions.tests.factories import ActionFactory
@@ -259,10 +260,10 @@ def test_openapi_schema(api_client, openapi_url):
     assert resp.status_code == 200
 
 
-def test_action_list_serializer_initial_order(plan):
+def test_action_bulk_serializer_initial_order(plan):
     actions = [ActionFactory.create(plan=plan) for _ in range(4)]
     assert [action.order == i for i, action in enumerate(actions)]
-    # Serialize these actions and use them later on with ActionSerializer initialized with `many=True`
+    # Serialize these actions and use that as input for actually testing ActionSerializer initialized with `many=True`
     data = [ActionSerializer(action).data for action in actions]
     serializer = ActionSerializer(many=True, data=data, instance=plan.actions.all())
     assert serializer.is_valid()
@@ -272,18 +273,20 @@ def test_action_list_serializer_initial_order(plan):
     assert [a1.order == a2.order for a1, a2 in zip(actions_after_save, actions)]
 
 
-def test_action_list_serializer_reorder(plan):
-    actions = [ActionFactory.create(plan=plan) for _ in range(4)]
-    # Move actions so that [a, b, c, d] -> [a, c, b, d]
-    actions = [actions[i] for i in (0, 2, 1, 3)]
+@pytest.mark.parametrize('order', permutations(range(3)))
+def test_action_bulk_serializer_reorder(plan, order):
+    actions = [ActionFactory.create(plan=plan) for _ in range(len(order))]
+    # Reorder actions
+    actions = [actions[i] for i in order]
     for i, action in enumerate(actions):
         action.order = i
     data = [ActionSerializer(action).data for action in actions]
-    # The left_sibling values are not according to our new order because it's taken from the persisted values, so we
+    # The left_sibling values are not according to our new order because they are taken from the persisted values, so we
     # need to fix them.
     prev_action_data = None
     for action_data in data:
         action_data['left_sibling'] = prev_action_data['uuid'] if prev_action_data else None
+        action_data.pop('order')  # should work without that
         prev_action_data = action_data
     serializer = ActionSerializer(many=True, data=data, instance=plan.actions.all())
     assert serializer.is_valid()

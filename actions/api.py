@@ -692,6 +692,32 @@ class PrevSiblingField(serializers.CharField):
 class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperationsMixin, metaclass=serializers.SerializerMetaclass):
     left_sibling = PrevSiblingField(allow_null=True, required=False)
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance is not None:
+            self.init_cached_instances(self.instance)
+
+    def init_cached_instances(self, instance):
+        # Use instance cache for bulk update
+        def init_cache(force_refresh=False):
+            self._cached_instances = {}
+            # If we're using self as a list serializer, instance should be an iterable
+            try:
+                iter(instance)
+            except TypeError:
+                # Probably a single instance
+                nodes = instance.get_siblings(force_refresh=force_refresh)
+            else:
+                nodes = instance
+            for node in nodes:
+                self._cache_descendants(node)
+        try:
+            init_cache()
+        except KeyError:
+            # get_siblings is using a cache for performance reasons.  We need to clear the cache when adding new
+            # nodes because the cache was initially initialized when the new nodes where not in the database.
+            init_cache(force_refresh=True)
+
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
         # fields += self._tree_position_fields
@@ -701,6 +727,8 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
     def create(self, validated_data: dict):
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().create(validated_data)
+        self.init_cached_instances(instance)
+        instance = self._cached_instances[instance.uuid]
         ops = self._update_tree_position(instance, left_sibling_uuid)
         self.add_deferred_operations(ops)
         return instance
@@ -709,6 +737,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
         # FIXME: Since left_sibling has allow_null=True, we should distinguish whether left_sibling is None because it
         # is not in validated_data or because validated_data['left_sibling'] is None. Sending a PUT request and omitting
         # left_sibling might inadvertently move the node.
+        instance = self._cached_instances[instance.uuid]
         left_sibling_uuid = validated_data.pop('left_sibling', None)
         instance = super().update(instance, validated_data)
         ops = self._update_tree_position(instance, left_sibling_uuid)
@@ -785,19 +814,6 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
     def _update_tree_position(self, instance, left_sibling_uuid):
         # When changing the `order` value of instance, we also need to change it for all its descendants, potentially
         # leading to new collisions, so we just reorder everything here
-
-        # Use instance cache for bulk update
-        def init_cache(force_refresh=False):
-            self._cached_instances = {}
-            for node in instance.get_siblings(force_refresh=force_refresh):
-                self._cache_descendants(node)
-            return self._cached_instances[instance.uuid]
-        try:
-            instance = init_cache()
-        except KeyError:
-            # get_siblings is using a cache for performance reasons.  We need to clear the cache when adding new nodes because the cache was
-            # initially initialized when the new nodes where not in the database.
-            instance = init_cache(force_refresh=True)
 
         # Model may or may not have parent field
         parent = getattr(instance, 'parent', None)
