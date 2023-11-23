@@ -146,6 +146,7 @@ class PlanRootPage(AplansPage):
         ('action_status_graphs', ActionStatusGraphsBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
+        ('embed', AdaptiveEmbedBlock()),
     ], use_json_field=True)
 
     content_panels = [
