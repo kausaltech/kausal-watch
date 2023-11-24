@@ -1,0 +1,7 @@
+.result-list {
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+.listing.full-width {
+  margin-bottom: -1.5em;
+}
