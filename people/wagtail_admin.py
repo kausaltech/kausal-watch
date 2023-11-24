@@ -316,7 +316,7 @@ class PersonAdmin(AplansModelAdmin):
     search_fields = ('first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation')
     list_filter = (IsContactPersonFilter,)
     button_helper_class = PersonButtonHelper
-
+    index_view_extra_css = ('css/modeladmin-index.css',)
     permission_helper: PersonPermissionHelper
 
     def get_permission_helper_class(self):
