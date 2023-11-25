@@ -711,6 +711,10 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
                 nodes = instance
             for node in nodes:
                 self._cache_descendants(node)
+                # Model may or may not have parent field
+                parent = getattr(instance, 'parent', None)
+                if parent:
+                    self._cached_instances[parent.uuid] = parent
         try:
             init_cache()
         except KeyError:
@@ -811,13 +815,15 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
                 next_order = self._reorder_descendants(child, next_order, instance_to_move, predecessor)
         return next_order
 
-    def _update_tree_position(self, instance, left_sibling_uuid):
+    def _update_tree_position(self, instance, left_sibling_uuid: UUID):
         # When changing the `order` value of instance, we also need to change it for all its descendants, potentially
         # leading to new collisions, so we just reorder everything here
 
         # Model may or may not have parent field
         parent = getattr(instance, 'parent', None)
-        assert parent is None or parent is self._cached_instances[parent.uuid]
+        if parent:
+            assert parent == self._cached_instances[parent.uuid]
+            parent = self._cached_instances[parent.uuid]
 
         # New predecessor of instance in ordering, not necessarily a sibling of instance
         if left_sibling_uuid is None:
@@ -843,7 +849,7 @@ class NonTreebeardModelWithTreePositionSerializerMixin(DeferredDatabaseOperation
 
     def _cache_descendants(self, node):
         """Add instance `node` and all its descendants to the dict `self._cached_instances`."""
-        assert node.uuid not in self._cached_instances
+        assert self._cached_instances.get(node.uuid, node) == node
         self._cached_instances[node.uuid] = node
         if hasattr(node, 'children'):
             for child in node.children.all():
@@ -1167,10 +1173,10 @@ class NonTreebeardParentUUIDField(serializers.Field):
     def to_representation(self, value):
         if value is None:
             return None
-        return value.uuid
+        return str(value.uuid)
 
     def to_internal_value(self, data):
-        return data
+        return UUID(data)
 
 
 class CategorySerializer(
@@ -1323,7 +1329,7 @@ class TreebeardParentField(serializers.CharField):
             return None
         try:
             value._meta.get_field('uuid')
-            return value.uuid
+            return str(value.uuid)
         except FieldDoesNotExist:
             return value.id
 
@@ -1349,13 +1355,14 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         fields += ['parent', 'left_sibling']
         return fields
 
-    def _get_instance_from_uuid(self, uuid):
+    def _get_instance_from_uuid(self, uuid: UUID | str | None):
         if uuid is None:
             return None
         return self.Meta.model.objects.get(uuid=uuid)
 
-    def _get_validated_instance_data(self, uuid):
+    def _get_validated_instance_data(self, uuid: UUID):
         for child_data in getattr(self.parent, '_children_validated_so_far', []):
+            assert child_data['uuid'] is None or isinstance(child_data['uuid'], UUID)
             if child_data['uuid'] == uuid:
                 return child_data
         raise exceptions.ValidationError("No validated instance with the given UUID found")
@@ -1367,9 +1374,19 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
         return data
 
     def validate(self, data):
-        # Map UUID to UUID
+        assert data['left_sibling'] is None or isinstance(data['left_sibling'], UUID)
+        assert data['parent'] is None or isinstance(data['parent'], UUID)
         if data['left_sibling']:
-            parents = {data['uuid']: data['parent'] for data in self.initial_data}
+            parents: dict[UUID, UUID | None] = {}
+            for d in self.initial_data:
+                assert isinstance(d['uuid'], str)
+                uuid = UUID(d['uuid'])
+                if d['parent'] is None:
+                    parent_uuid = None
+                else:
+                    assert isinstance(d['parent'], str)
+                    parent_uuid = UUID(d['parent'])
+                parents[uuid] = parent_uuid
             if data['left_sibling'] in parents:
                 left_sibling_parent_uuid = parents[data['left_sibling']]
             else:
@@ -1379,6 +1396,7 @@ class TreebeardModelSerializerMixin(metaclass=serializers.SerializerMetaclass):
                     # Maybe the instance is not created yet because it is about to be created in the same request
                     left_sibling = self._get_validated_instance_data(data['left_sibling'])
                     left_sibling_parent_uuid = left_sibling['parent']
+                    assert left_sibling_parent_uuid is None or isinstance(left_sibling_parent_uuid, UUID)
                 else:
                     assert left_sibling is not None
                     if left_sibling.parent is None:

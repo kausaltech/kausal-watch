@@ -1,11 +1,12 @@
 import pytest
 from django.urls import reverse
 from itertools import permutations
+from typing import Iterable, List
 
-from actions.api import ActionSerializer
+from actions.api import ActionSerializer, OrganizationSerializer
 from actions.tests.factories import ActionFactory
+from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
-
 
 pytestmark = pytest.mark.django_db
 
@@ -294,3 +295,268 @@ def test_action_bulk_serializer_reorder(plan, order):
     actions_after_save = list(plan.actions.all())
     assert actions_after_save == actions
     assert [a1.order == a2.order for a1, a2 in zip(actions_after_save, actions)]
+
+
+class Tree:
+    def __init__(self, name: str, indent: int):
+        self.name = name
+        self.indent = indent
+        self.children: List[Tree] = []
+        self.parent: 'Tree | None' = None
+
+    @property
+    def left_sibling(self):
+        if not self.parent:
+            return None
+        prev_node = None
+        for sibling in self.parent.children:
+            if sibling == self:
+                return prev_node
+            prev_node = sibling
+        assert False
+
+    def add_child(self, child: 'Tree'):
+        self.children.append(child)
+        assert child.parent is None
+        assert child.indent > self.indent
+        child.parent = self
+
+    def to_organization(self, parent: Organization | None=None):
+        org = OrganizationFactory.create(name=self.name, abbreviation=self.name, parent=parent)
+        for child in self.children:
+            child.to_organization(org)
+        return org
+
+    def equals(self, other: 'Tree'):
+        """Determine equality of structure and names, ignoring indentation."""
+        return (self.name == other.name
+                and len(self.children) == len(other.children)
+                and all(x.equals(y) for (x, y) in zip(self.children, other.children)))
+
+    def reset_indent(self, indent=0, shiftwidth=4):
+        """Make indentation nice."""
+        self.indent = indent
+        for child in self.children:
+            child.reset_indent(self.indent + shiftwidth, shiftwidth)
+
+    def traverse(self):
+        yield self
+        for child in self.children:
+            yield from child.traverse()
+
+    def get_node(self, name: str) -> 'Tree | None':
+        # This could be optimized
+        if self.name == name:
+            return self
+        for child in self.children:
+            node = child.get_node(name)
+            if node:
+                return node
+        return None
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        result = f'{self.indent * " "}{self.name}\n'
+        for child in self.children:
+            result += str(child)
+        return result
+
+
+def parse_tree_string(tree_string: str, reset_indent=True):
+    assert '\t' not in tree_string
+    lines = [line.rstrip() for line in tree_string.split('\n') if line.strip()]
+    # Dummy root
+    root = Tree('<root>', -1)
+    stack = [root]
+    for i, line in enumerate(lines):
+        name = line.lstrip()
+        indent = len(line) - len(name)
+        last_popped = None
+        while indent <= stack[-1].indent:
+            last_popped = stack.pop()
+        if last_popped and indent < last_popped.indent:
+            raise ValueError(f"Invalid indentation for '{name}' at line {i}")
+        child = Tree(name, indent)
+        stack[-1].add_child(child)
+        stack.append(child)
+    if reset_indent:
+        root.reset_indent(-4, 4)
+    # Forget about dummy root
+    for child in root.children:
+        child.parent = None
+    return root.children
+
+
+def orgs_to_trees(roots: Iterable[Organization], indent=0):
+    result: List[Tree] = []
+    for root in roots:
+        tree = Tree(root.name, indent)
+        for child in orgs_to_trees(root.get_children(), indent + 4):
+            tree.add_child(child)
+        result.append(tree)
+    return result
+
+
+@pytest.fixture
+def org_hierarchy():
+    trees = parse_tree_string("""
+        1
+        2
+            2.1
+            2.2
+        3
+            3.1
+            3.2
+            3.3
+    """)
+    return [tree.to_organization() for tree in trees]
+
+
+def assert_org_hierarchy(expected_hierarchy: str):
+    actual_roots = Organization.get_root_nodes()
+    actual = orgs_to_trees(actual_roots)
+    expected = parse_tree_string(expected_hierarchy)
+    # We could use this, but comparing the values as strings produces nicer error messages
+    # assert len(actual) == len(expected)
+    # assert all(a.equals(e) for (a, e) in zip(actual, expected))
+    actual_str = ''.join(str(tree) for tree in actual)
+    expected_str = ''.join(str(tree) for tree in expected)
+    assert actual_str == expected_str
+
+
+def update_org_hierarchy(goal_string: str):
+    # Only handles moving subtrees around for now
+    uuid_for_name = {'<dummy>': None}
+    goal = Tree('<dummy>', 0)
+    for root in parse_tree_string(goal_string, reset_indent=False):
+        root.reset_indent(4)
+        goal.add_child(root)
+        for node in root.traverse():
+            uuid_for_name[node.name] = str(Organization.objects.get(name=node.name).uuid)
+    current = Tree('<dummy>', 0)
+    for child in orgs_to_trees(Organization.get_root_nodes(), 4):
+        current.add_child(child)
+    serializer_input = []
+    for goal_node in goal.traverse():
+        current_node = current.get_node(goal_node.name)
+        assert current_node
+        changed_fields = []
+        for field in ('parent', 'left_sibling'):
+            current_value = getattr(current_node, field)
+            current_value = current_value.name if current_value else None
+            goal_value = getattr(goal_node, field)
+            goal_value = goal_value.name if goal_value else None
+            if current_value != goal_value:
+                changed_fields.append(field)
+        if changed_fields:
+            node_data = OrganizationSerializer(Organization.objects.get(name=goal_node.name)).data
+            for field in changed_fields:
+                goal_value = getattr(goal_node, field)
+                goal_uuid_str = uuid_for_name[goal_value.name] if goal_value else None
+                assert node_data[field] != goal_uuid_str
+                node_data[field] = goal_uuid_str if goal_uuid_str else None
+            serializer_input.append(node_data)
+    serializer = OrganizationSerializer(many=True, data=serializer_input, instance=Organization.objects.all())
+    assert serializer.is_valid()
+    serializer.save()
+
+
+def test_organization_bulk_serializer_move_org1_after_org2(org_hierarchy):
+    expected = """
+        2
+            2.1
+            2.2
+        1
+        3
+            3.1
+            3.2
+            3.3
+    """
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
+
+
+def test_organization_bulk_serializer_move_org1_after_org21(org_hierarchy):
+    expected = """
+        2
+            2.1
+            1
+            2.2
+        3
+            3.1
+            3.2
+            3.3
+    """
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
+
+
+def test_organization_bulk_serializer_move_org22_after_org3(org_hierarchy):
+    expected = """
+        1
+        2
+            2.1
+        3
+            3.1
+            3.2
+            3.3
+        2.2
+    """
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
+
+
+def test_organization_bulk_serializer_move_org3_below_org22(org_hierarchy):
+    expected = """
+        1
+        2
+            2.1
+            2.2
+                3
+                    3.1
+                    3.2
+                    3.3
+    """
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
+
+
+@pytest.mark.parametrize('order', permutations(range(3)))
+def test_organization_bulk_serializer_move_children_of_org3(org_hierarchy, order):
+    expected = f"""
+        1
+        2
+            2.1
+            2.2
+        3
+            3.{order[0]+1}
+            3.{order[1]+1}
+            3.{order[2]+1}
+    """
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
+
+
+@pytest.mark.parametrize('order', permutations(range(3)))
+def test_organization_bulk_serializer_move_roots(org_hierarchy, order):
+    subtrees = [
+        """
+        1
+        """,
+        """
+        2
+            2.1
+            2.2
+        """,
+        """
+        3
+            3.1
+            3.2
+            3.3
+        """,
+    ]
+    expected = subtrees[order[0]] + subtrees[order[1]] + subtrees[order[2]]
+    update_org_hierarchy(expected)
+    assert_org_hierarchy(expected)
