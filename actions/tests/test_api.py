@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 from django.urls import reverse
 from itertools import permutations
@@ -5,10 +7,43 @@ from typing import Iterable, List
 
 from actions.api import ActionSerializer, OrganizationSerializer
 from actions.tests.factories import ActionFactory
+from aplans.tests.tree import Tree, parse_tree_string
 from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
+
+
+def orgs_to_trees(roots: Iterable[Organization], indent=0):
+    result: List[Tree] = []
+    for root in roots:
+        tree = Tree(root.name, indent)
+        for child in orgs_to_trees(root.get_children(), indent + 4):
+            tree.add_child(child)
+        result.append(tree)
+    return result
+
+
+def tree_to_org(tree: Tree, parent: Organization | None=None):
+    org = OrganizationFactory.create(name=tree.name, abbreviation=tree.name, parent=parent)
+    for child in tree.children:
+        tree_to_org(child, org)
+    return org
+
+
+@pytest.fixture
+def org_hierarchy():
+    trees = parse_tree_string("""
+        1
+        2
+            2.1
+            2.2
+        3
+            3.1
+            3.2
+            3.3
+    """)
+    return [tree_to_org(tree) for tree in trees]
 
 
 def test_plan_api_get(api_client, plan_list_url, plan):
@@ -297,123 +332,6 @@ def test_action_bulk_serializer_reorder(plan, order):
     assert [a1.order == a2.order for a1, a2 in zip(actions_after_save, actions)]
 
 
-class Tree:
-    def __init__(self, name: str, indent: int):
-        self.name = name
-        self.indent = indent
-        self.children: List[Tree] = []
-        self.parent: 'Tree | None' = None
-
-    @property
-    def left_sibling(self):
-        if not self.parent:
-            return None
-        prev_node = None
-        for sibling in self.parent.children:
-            if sibling == self:
-                return prev_node
-            prev_node = sibling
-        assert False
-
-    def add_child(self, child: 'Tree'):
-        self.children.append(child)
-        assert child.parent is None
-        assert child.indent > self.indent
-        child.parent = self
-
-    def to_organization(self, parent: Organization | None=None):
-        org = OrganizationFactory.create(name=self.name, abbreviation=self.name, parent=parent)
-        for child in self.children:
-            child.to_organization(org)
-        return org
-
-    def equals(self, other: 'Tree'):
-        """Determine equality of structure and names, ignoring indentation."""
-        return (self.name == other.name
-                and len(self.children) == len(other.children)
-                and all(x.equals(y) for (x, y) in zip(self.children, other.children)))
-
-    def reset_indent(self, indent=0, shiftwidth=4):
-        """Make indentation nice."""
-        self.indent = indent
-        for child in self.children:
-            child.reset_indent(self.indent + shiftwidth, shiftwidth)
-
-    def traverse(self):
-        yield self
-        for child in self.children:
-            yield from child.traverse()
-
-    def get_node(self, name: str) -> 'Tree | None':
-        # This could be optimized
-        if self.name == name:
-            return self
-        for child in self.children:
-            node = child.get_node(name)
-            if node:
-                return node
-        return None
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        result = f'{self.indent * " "}{self.name}\n'
-        for child in self.children:
-            result += str(child)
-        return result
-
-
-def parse_tree_string(tree_string: str, reset_indent=True):
-    assert '\t' not in tree_string
-    lines = [line.rstrip() for line in tree_string.split('\n') if line.strip()]
-    # Dummy root
-    root = Tree('<root>', -1)
-    stack = [root]
-    for i, line in enumerate(lines):
-        name = line.lstrip()
-        indent = len(line) - len(name)
-        last_popped = None
-        while indent <= stack[-1].indent:
-            last_popped = stack.pop()
-        if last_popped and indent < last_popped.indent:
-            raise ValueError(f"Invalid indentation for '{name}' at line {i}")
-        child = Tree(name, indent)
-        stack[-1].add_child(child)
-        stack.append(child)
-    if reset_indent:
-        root.reset_indent(-4, 4)
-    # Forget about dummy root
-    for child in root.children:
-        child.parent = None
-    return root.children
-
-
-def orgs_to_trees(roots: Iterable[Organization], indent=0):
-    result: List[Tree] = []
-    for root in roots:
-        tree = Tree(root.name, indent)
-        for child in orgs_to_trees(root.get_children(), indent + 4):
-            tree.add_child(child)
-        result.append(tree)
-    return result
-
-
-@pytest.fixture
-def org_hierarchy():
-    trees = parse_tree_string("""
-        1
-        2
-            2.1
-            2.2
-        3
-            3.1
-            3.2
-            3.3
-    """)
-    return [tree.to_organization() for tree in trees]
-
-
 def assert_org_hierarchy(expected_hierarchy: str):
     actual_roots = Organization.get_root_nodes()
     actual = orgs_to_trees(actual_roots)
@@ -428,7 +346,7 @@ def assert_org_hierarchy(expected_hierarchy: str):
 
 def update_org_hierarchy(goal_string: str):
     # Only handles moving subtrees around for now
-    uuid_for_name = {'<dummy>': None}
+    uuid_for_name: dict[str, str | None]  = {'<dummy>': None}
     goal = Tree('<dummy>', 0)
     for root in parse_tree_string(goal_string, reset_indent=False):
         root.reset_indent(4)
