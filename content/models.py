@@ -32,6 +32,18 @@ class SiteGeneralContent(models.Model):
         ActionTaskTerm.MILESTONE: _('Milestones'),
     }
 
+    class OrganizationTerm(models.TextChoices):
+        # When changing terms, make sure to also change ORGANIZATION_TERM_PLURAL below.
+        # Get a printable SiteGeneralContent instance's action term with `instance.get_organization_term_display()` and, for
+        # plural, `instance.get_organization_term_display_plural()`.
+        ORGANIZATION = 'organization', _('Organization')
+        DIVISION = 'division', _('Division')
+
+    ORGANIZATION_TERM_PLURAL = {
+        OrganizationTerm.ORGANIZATION: _('Organizations'),
+        OrganizationTerm.DIVISION: _('Divisions'),
+    }
+
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
         unique=True
@@ -60,6 +72,10 @@ class SiteGeneralContent(models.Model):
         max_length=30, choices=ActionTaskTerm.choices, verbose_name=_("Term to use for 'task'"),
         default=ActionTaskTerm.TASK
     )
+    organization_term = models.CharField(
+        max_length=30, choices=OrganizationTerm.choices, verbose_name=_("Term to use for 'organization'"),
+        default=OrganizationTerm.ORGANIZATION
+    )
 
     i18n = TranslationField(
         fields=[
@@ -71,7 +87,7 @@ class SiteGeneralContent(models.Model):
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
         'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
-        'action_task_term',
+        'action_task_term', 'organization_term'
     ]
 
     class Meta:
@@ -91,3 +107,6 @@ class SiteGeneralContent(models.Model):
     def get_action_task_term_display_plural(self):
         # Analogous to get_action_task_term_display, which Django automatically generates
         return SiteGeneralContent.ACTION_TASK_TERM_PLURAL[SiteGeneralContent.ActionTaskTerm(self.action_task_term)]
+
+    def get_organization_term_display_plural(self):
+        return SiteGeneralContent.ORGANIZATION_TERM_PLURAL[SiteGeneralContent.OrganizationTerm(self.organization_term)]
