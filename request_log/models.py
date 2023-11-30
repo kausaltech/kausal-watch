@@ -8,7 +8,7 @@ from users.models import User
 
 class LoggedRequest(models.Model):
     method = models.CharField(max_length=8)
-    path = models.CharField(max_length=400)
+    path = models.CharField(max_length=2000)
     raw_request = models.TextField()
     user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='logged_requests')
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
