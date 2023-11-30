@@ -5,3 +5,34 @@
 .listing.full-width {
   margin-bottom: -1.5em;
 }
+
+.user-without-admin-access {
+  background-color: var(--w-color-warning-50);
+}
+.user-without-admin-access:hover {
+  background-color: var(--w-color-warning-50) !important;
+}
+
+.tooltip-wrapper {
+  position: relative;
+}
+[role="tooltip"],
+/* TODO: Javascript should add hidetooltip class when pressing Escape to close the tooltip */
+.hidetooltip.hidetooltip.hidetooltip + [role="tooltip"] {
+  visibility: hidden;
+  position: absolute;
+  top: 2rem;
+  left: 2rem;
+  background: black;
+  color: white;
+  min-width: 15em;
+  padding: 0.5em 1em;
+}
+[aria-describedby]:hover,
+[aria-describedby]:focus {
+  position: relative;
+}
+[aria-describedby]:hover + [role="tooltip"],
+[aria-describedby]:focus + [role="tooltip"] {
+  visibility: visible;
+}

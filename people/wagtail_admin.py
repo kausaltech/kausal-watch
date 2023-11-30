@@ -363,6 +363,28 @@ class PersonAdmin(AplansModelAdmin):
                 return img
         avatar.short_description = ''
 
+        def cannot_access_admin_warning(obj):
+            if obj.user and not obj.user.can_access_admin():
+                tooltip = _(
+                    "This person has no access to the admin interface. This is commonly because no actions or "
+                    "indicators are assigned to them."
+                )
+                return format_html(
+                    '<div class="tooltip-wrapper">'
+                    f'<div aria-describedby="access-warning-tooltip-{obj.id}">'
+                    '<svg class="icon icon-warning" style="height: 1.5em; width: 1.5em;" aria-hidden="true">'
+                    '<use href="#icon-warning"></use>'
+                    '</svg>'
+                    '</div>'
+                    f'<div id="access-warning-tooltip-{obj.id}" role="tooltip">'
+                    '{}'
+                    '</div>'
+                    '</div>',
+                    tooltip
+                )
+            return ''
+        cannot_access_admin_warning.short_description = ''
+
         def first_name(obj):
             url = edit_url(obj)
             if url:
@@ -391,7 +413,7 @@ class PersonAdmin(AplansModelAdmin):
         organization.short_description = _('organization')
         organization.admin_order_field = 'organization__name'
 
-        fields = [avatar, first_name, last_name, 'title', organization]
+        fields = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
 
         def last_logged_in(obj):
             user = obj.user
@@ -483,6 +505,15 @@ class PersonAdmin(AplansModelAdmin):
         tabs += i18n_tabs
 
         return TabbedInterface(tabs, base_form_class=form_class)
+
+    def get_extra_attrs_for_row(self, obj, context):
+        assert isinstance(obj, Person)
+        if obj.user and not obj.user.can_access_admin():
+            # Add CSS class to highlight rows of users without admin access
+            return {
+                'class': 'user-without-admin-access',
+            }
+        return {}
 
 
 modeladmin_register(PersonAdmin)
