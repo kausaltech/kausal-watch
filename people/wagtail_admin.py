@@ -271,10 +271,12 @@ class PersonButtonHelper(ButtonHelper):
 
     def get_buttons_for_obj(self, obj, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
-
         user = self.request.user
         plan = user.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
+        assert isinstance(obj, Person)
+        # Only display a password reset button if the user has a usable password. This prevents showing the button for
+        # users from a customer that uses SSO because such users normally don't have a usable password.
+        if user.is_general_admin_for_plan(plan) and obj.user and obj.user.has_usable_password():
             reset_password_button = self.reset_password_button(
                 pk=getattr(obj, self.opts.pk.attname),
                 **kwargs
