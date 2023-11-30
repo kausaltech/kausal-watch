@@ -4,12 +4,13 @@ import typing
 from dal import autocomplete
 from datetime import timedelta
 from django.contrib.admin import SimpleListFilter
-from django.contrib.admin.utils import display_for_value
+from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField
+from django.urls import re_path
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
@@ -30,6 +31,7 @@ from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 
 from .models import Person
+from .views import ResetPasswordView
 from orgs.models import Organization, OrganizationPlanAdmin
 from actions.models import Plan
 
@@ -257,6 +259,29 @@ class PersonButtonHelper(ButtonHelper):
         button = super().delete_button(*args, **kwargs)
         button['label'] = _('Deactivate')
         return button
+
+    def reset_password_button(self, pk, **kwargs):
+        """Button for sending password reset emails and displaying reset tokens."""
+        return {
+            'label': _("Reset password"),
+            'title': _("Create a password reset link"),
+            'url': self.url_helper.get_action_url('reset_password', quote(pk)),
+            'classname': self.finalise_classname(['button-secondary', 'button-small']),
+        }
+
+    def get_buttons_for_obj(self, obj, *args, **kwargs):
+        buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
+
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            reset_password_button = self.reset_password_button(
+                pk=getattr(obj, self.opts.pk.attname),
+                **kwargs
+            )
+            buttons.append(reset_password_button)
+
+        return buttons
 
 
 class PersonDeleteView(ActivatePermissionHelperPlanContextMixin, DeleteView):
@@ -514,6 +539,22 @@ class PersonAdmin(AplansModelAdmin):
                 'class': 'user-without-admin-access',
             }
         return {}
+
+    def reset_password_view(self, request, instance_pk):
+        """Generate a class-based view to provide 'reset password' functionality."""
+        return ResetPasswordView.as_view(model_admin=self, target_person_pk=instance_pk)(request)
+
+    def get_admin_urls_for_registration(self):
+        """Add the new url for reset password page to the registered URLs."""
+        urls = super().get_admin_urls_for_registration()
+        reset_password_url = re_path(
+            self.url_helper.get_action_url_pattern('reset_password'),
+            self.reset_password_view,
+            name=self.url_helper.get_action_url_name('reset_password')
+        )
+        return urls + (
+            reset_password_url,
+        )
 
 
 modeladmin_register(PersonAdmin)
