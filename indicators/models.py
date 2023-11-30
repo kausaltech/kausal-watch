@@ -193,7 +193,7 @@ class IndicatorRelationship(models.Model):
 
 @reversion.register()
 class CommonIndicator(ClusterableModel):
-    identifier = IdentifierField(null=True, blank=True)
+    identifier = IdentifierField(null=True, blank=True, max_length=70)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
 
@@ -270,7 +270,7 @@ class RelatedCommonIndicator(IndicatorRelationship):
 
 
 class FrameworkIndicator(models.Model):
-    identifier = IdentifierField(null=True, blank=True)
+    identifier = IdentifierField(null=True, blank=True, max_length=70)
     common_indicator = ParentalKey(
         CommonIndicator, related_name='frameworks', on_delete=models.CASCADE,
         verbose_name=_('common indicator')
@@ -324,7 +324,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'actions.Plan', through='indicators.IndicatorLevel', blank=True,
         verbose_name=_('plans'), related_name='indicators',
     )
-    identifier = IdentifierField(null=True, blank=True)
+    identifier = IdentifierField(null=True, blank=True, max_length=70)
     name = models.CharField(max_length=200, verbose_name=_('name'))
     quantity = ParentalKey(
         Quantity, related_name='indicators', on_delete=models.PROTECT,
