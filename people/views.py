@@ -76,7 +76,7 @@ class ResetPasswordView(WMABaseView):
         except ValueError as e:
             messages.error(request, str(e))
             return redirect(self.index_url)
-        success_msg = _("Password reset link has been sent to %(person)s.")
+        success_msg = _("An email has been sent to %(person)s with a link to reset their password.")
         info_msg = _("If the email does not arrive, you can send them the following link: %(url)s")
         warning_msg = _(
             "Please take great care that nobody except %(person)s gets access to the link. For additional security, "
