@@ -276,7 +276,10 @@ class PersonButtonHelper(ButtonHelper):
         assert isinstance(obj, Person)
         # Only display a password reset button if the user has a usable password. This prevents showing the button for
         # users from a customer that uses SSO because such users normally don't have a usable password.
-        if user.is_general_admin_for_plan(plan) and obj.user and obj.user.has_usable_password():
+        target_has_password = obj.user and obj.user.has_usable_password()
+        target_is_admin_of_any_plan = obj.user and obj.user.is_general_admin_for_plan()
+        # TODO: Should be harmonized with ResetPasswordView.check_action_permitted()
+        if user.is_general_admin_for_plan(plan) and target_has_password and not target_is_admin_of_any_plan:
             reset_password_button = self.reset_password_button(
                 pk=getattr(obj, self.opts.pk.attname),
                 **kwargs

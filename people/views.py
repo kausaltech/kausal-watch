@@ -30,9 +30,13 @@ class ResetPasswordView(WMABaseView):
     def check_action_permitted(self, user):
         plan = user.get_active_admin_plan()
         user_is_admin = user.is_general_admin_for_plan(plan)
+        target_is_admin_of_any_plan = self.target_person.user.is_general_admin_for_plan()
         # Better safe than sorry...
         target_in_same_plan = Person.objects.available_for_plan(plan).filter(pk=self.target_person_pk).exists()
-        return user_is_admin and target_in_same_plan and not self.target_person.user.is_superuser
+        return (
+            user_is_admin and target_in_same_plan and not self.target_person.user.is_superuser
+            and not target_is_admin_of_any_plan
+        )
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
