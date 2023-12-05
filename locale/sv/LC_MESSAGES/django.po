@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 09:09+0200\n"
+"POT-Creation-Date: 2023-12-05 08:42+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -475,8 +475,8 @@ msgstr "Indikatorer"
 msgid "Updated at"
 msgstr "uppdaterad kl"
 
-#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
-#: people/templates/people/chooser_results.html
+#: actions/blocks/action_dashboard.py content/models.py
+#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr "Organisation"
 
@@ -1962,6 +1962,10 @@ msgid "General administrators"
 msgstr "allmänna administratörer"
 
 #: actions/wagtail_admin.py
+msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
+msgstr ""
+
+#: actions/wagtail_admin.py
 msgid "Clients"
 msgstr "Kunder"
 
@@ -2461,6 +2465,22 @@ msgid "Milestones"
 msgstr ""
 
 #: content/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "Division"
+msgstr "mått"
+
+#: content/models.py orgs/apps.py orgs/wagtail_admin.py
+msgid "Organizations"
+msgstr "Organisationer"
+
+#: content/models.py
+#, fuzzy
+#| msgid "dimensions"
+msgid "Divisions"
+msgstr "mått"
+
+#: content/models.py
 msgid "site title"
 msgstr "Sidans Titel"
 
@@ -2514,6 +2534,12 @@ msgstr "redigerbar för åtgärder"
 #, fuzzy
 #| msgid "editable for actions"
 msgid "Term to use for 'task'"
+msgstr "redigerbar för åtgärder"
+
+#: content/models.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Term to use for 'organization'"
 msgstr "redigerbar för åtgärder"
 
 #: content/models.py
@@ -3543,10 +3569,6 @@ msgstr "Meddelanden"
 msgid "Notification preferences"
 msgstr "Meddelanden"
 
-#: orgs/apps.py orgs/wagtail_admin.py
-msgid "Organizations"
-msgstr "Organisationer"
-
 #: orgs/chooser.py
 #, fuzzy
 #| msgid "Choose an action"
@@ -4323,6 +4345,39 @@ msgstr "Ja, radera"
 msgid "No, don't delete"
 msgstr "Nej, radera inte"
 
+#: people/views.py people/wagtail_admin.py
+#, fuzzy
+#| msgid "Reset your password"
+msgid "Reset password"
+msgstr "Återställ ditt lösenord"
+
+#: people/views.py
+#, fuzzy, python-format
+#| msgid "Confirm including %(org)s in plan %(plan)s"
+msgid "Confirm sending password reset link to %(person)s"
+msgstr "Bekräfta att %(org)s ingår i planen %(plan)s"
+
+#: people/views.py
+#, fuzzy, python-format
+#| msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
+msgid "Do you really want to send a password reset link to %(person)s?"
+msgstr "Vill du verkligen inkludera organisationen '%(org)s' i planen '%(plan)s'?"
+
+#: people/views.py
+#, python-format
+msgid "An email has been sent to %(person)s with a link to reset their password."
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "If the email does not arrive, you can send them the following link: %(url)s"
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
+msgstr ""
+
 #: people/wagtail_admin.py
 msgid "Is contact person"
 msgstr "Är kontaktperson"
@@ -4367,8 +4422,16 @@ msgid "Deactivate"
 msgstr "Avaktivera"
 
 #: people/wagtail_admin.py
+msgid "Create a password reset link"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Are you sure you want to deactivate this person?"
 msgstr "Är du säker på att du vill avaktivera den här personen?"
+
+#: people/wagtail_admin.py
+msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
+msgstr ""
 
 #: people/wagtail_admin.py
 #, fuzzy
@@ -4980,9 +5043,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "If you have a separate password, click here to sign in"
 #~ msgstr "Om du har ett separat lösenord, klicka här för att logga in"
-
-#~ msgid "Reset your password"
-#~ msgstr "Återställ ditt lösenord"
 
 #~ msgid "Forgotten it?"
 #~ msgstr "Glömt det?"

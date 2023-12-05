@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-10 09:09+0200\n"
+"POT-Creation-Date: 2023-12-05 08:42+0200\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Last-Translator: Bernhard Bliem, 2022\n"
 "Language-Team: English (United Kingdom) (https://www.transifex.com/kausal-tech/teams/113123/en_GB/)\n"
@@ -436,8 +436,8 @@ msgstr ""
 msgid "Updated at"
 msgstr ""
 
-#: actions/blocks/action_dashboard.py indicators/wagtail_admin.py
-#: people/templates/people/chooser_results.html
+#: actions/blocks/action_dashboard.py content/models.py
+#: indicators/wagtail_admin.py people/templates/people/chooser_results.html
 msgid "Organization"
 msgstr "Organisation"
 
@@ -1779,6 +1779,10 @@ msgid "General administrators"
 msgstr ""
 
 #: actions/wagtail_admin.py
+msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
+msgstr ""
+
+#: actions/wagtail_admin.py
 msgid "Clients"
 msgstr ""
 
@@ -2223,6 +2227,18 @@ msgid "Milestones"
 msgstr ""
 
 #: content/models.py
+msgid "Division"
+msgstr ""
+
+#: content/models.py orgs/apps.py orgs/wagtail_admin.py
+msgid "Organizations"
+msgstr "Organisations"
+
+#: content/models.py
+msgid "Divisions"
+msgstr ""
+
+#: content/models.py
 msgid "site title"
 msgstr ""
 
@@ -2273,6 +2289,12 @@ msgstr ""
 #: content/models.py
 msgid "Term to use for 'task'"
 msgstr ""
+
+#: content/models.py
+#, fuzzy
+#| msgid "organization"
+msgid "Term to use for 'organization'"
+msgstr "organisation"
 
 #: content/models.py
 msgid "site general content"
@@ -3226,10 +3248,6 @@ msgstr ""
 msgid "Notification preferences"
 msgstr ""
 
-#: orgs/apps.py orgs/wagtail_admin.py
-msgid "Organizations"
-msgstr "Organisations"
-
 #: orgs/chooser.py
 #, fuzzy
 #| msgid "organization"
@@ -3920,6 +3938,35 @@ msgstr ""
 msgid "No, don't delete"
 msgstr ""
 
+#: people/views.py people/wagtail_admin.py
+msgid "Reset password"
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "Confirm sending password reset link to %(person)s"
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "Do you really want to send a password reset link to %(person)s?"
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "An email has been sent to %(person)s with a link to reset their password."
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "If the email does not arrive, you can send them the following link: %(url)s"
+msgstr ""
+
+#: people/views.py
+#, python-format
+msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
+msgstr ""
+
 #: people/wagtail_admin.py
 msgid "Is contact person"
 msgstr ""
@@ -3960,7 +4007,15 @@ msgid "Deactivate"
 msgstr ""
 
 #: people/wagtail_admin.py
+msgid "Create a password reset link"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Are you sure you want to deactivate this person?"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr ""
 
 #: people/wagtail_admin.py
