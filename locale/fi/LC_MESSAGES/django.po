@@ -12,15 +12,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-05 08:42+0200\n"
-"PO-Revision-Date: 2023-10-02 16:44+0300\n"
-"Last-Translator: Joe Smallwood <joe.smallwood@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
+"PO-Revision-Date: 2023-12-05 07:24+0000\n"
+"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
+">\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.0.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -100,7 +101,7 @@ msgstr "Raportointi"
 #: actions/action_admin_mixins.py
 #, python-format
 msgid "The %(model_name)s could not be saved as it is locked"
-msgstr ""
+msgstr "Kohdetta %(model_name)s ei voitu tallentaa, koska se on lukittu"
 
 #: actions/action_admin_mixins.py
 #, fuzzy, python-format
@@ -130,6 +131,8 @@ msgstr "%(model_name)s '%(object)s' poistettu."
 #, python-format
 msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
 msgstr ""
+"%(model_name)s '%(object)s' on jo julkinen ja tämä versio on ajastettu "
+"julkaistavaksi."
 
 #: actions/action_admin_mixins.py
 #, fuzzy, python-format
@@ -259,7 +262,7 @@ msgstr "Tällä sähköpostiosoitteella on jo henkilö"
 
 #: actions/api.py
 msgid "Not all objects have an email address"
-msgstr ""
+msgstr "Kaikilla kohteilla ei ole sähköpostiosoitetta"
 
 #: actions/api.py
 #, python-format
@@ -356,7 +359,7 @@ msgstr "Luokka"
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
-msgstr ""
+msgstr "Otsikko, joka näytetään oletusarvon sijasta"
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
 msgid "Contact form"
@@ -434,11 +437,11 @@ msgstr "Osio"
 
 #: actions/blocks/action_dashboard.py
 msgid "Label"
-msgstr ""
+msgstr "Selite"
 
 #: actions/blocks/action_dashboard.py
 msgid "Label for the column to be used instead of the default"
-msgstr ""
+msgstr "Sarakkeen selite, jota käytetään oletusarvon sijasta"
 
 #: actions/blocks/action_dashboard.py reports/spreadsheets.py
 msgid "Identifier"
@@ -525,7 +528,7 @@ msgstr "Luokkien puuvisualisaatio"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
-msgstr ""
+msgstr "Pääsisältö"
 
 #: actions/blocks/category_page_layout.py
 #, fuzzy
@@ -535,7 +538,7 @@ msgstr "kuvaus"
 
 #: actions/blocks/category_page_layout.py
 msgid "Basis"
-msgstr ""
+msgstr "Perusta"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
@@ -555,7 +558,7 @@ msgstr "Montako tasoa kategorihierarkiasta näytetään"
 
 #: actions/blocks/filters.py
 msgid "Depth"
-msgstr ""
+msgstr "Syvyys"
 
 #: actions/blocks/filters.py
 #, python-format
@@ -1151,7 +1154,7 @@ msgstr "toimenpiteen vaikuttavuusryhmät"
 
 #: actions/models/action.py
 msgid "Approve"
-msgstr ""
+msgstr "Hyväksy"
 
 #: actions/models/action.py
 #, fuzzy
@@ -1471,6 +1474,8 @@ msgstr "toimenpiteen yhteyshenkilöt"
 #: actions/models/features.py
 msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
 msgstr ""
+"Aseta jos käytössä on yhteyshenkilöroolit, eli toisilla yhteyshenkilöillä on "
+"julkaisuoikeudet mutta toiset voivat vain ehdottaa muutoksia"
 
 #: actions/models/features.py
 msgid "Minimal statuses"
@@ -1522,11 +1527,11 @@ msgstr "Mahdollistaa mittareiden vertailun eri organisaatioiden kesken"
 
 #: actions/models/features.py
 msgid "Enable moderation workflow"
-msgstr ""
+msgstr "Ota moderointi käyttöön"
 
 #: actions/models/features.py
 msgid "Set to enable drafting and reviewing functionality"
-msgstr ""
+msgstr "Aseta ottaaksesi käyttöön luonnostelu- ja katselmointitoiminnot"
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1851,10 +1856,12 @@ msgstr "pääkäyttäjät"
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgstr ""
+"Aseta ainoastaan jos asiakas erikseen pyytää. Käytä väriavainta UI-teeman "
+"graphColors -arvoista, esimerkiksi red070 tai grey030."
 
 #: actions/wagtail_admin.py
 msgid "Clients"
-msgstr ""
+msgstr "Asiakkaat"
 
 #: actions/wagtail_admin.py
 msgid "Domains"
@@ -1899,18 +1906,25 @@ msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä yllä
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
 msgstr ""
+"Sinulla ei ole pääsyä ylläpitoon. Järjestelmänvalvojan on ehkä tehtävä "
+"sinusta yhteyshenkilö tai myönnettävä sinulle toimenpideohjelman ylläpitäjän "
+"asema."
 
 #: admin_site/api.py
 msgid "Cannot determine authentication method. The email address domain may be unknown."
 msgstr ""
+"Kirjautumistapaa ei saatu selville. Sähköpostiosoitteen loppuosa saattaa "
+"olla tuntematon."
 
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
-msgstr ""
+msgstr "Salasanatodennus vaaditaan, mutta käyttäjällä ei ole salasanaa."
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
 msgstr ""
+"Mikä on sähköpostiosoitteen @-merkkiä seuraava osa sen organisaation "
+"henkilöstön sähköpostiosoitteissa, joka on päävastuussa toimenpideohjelmasta?"
 
 #: admin_site/chooser.py
 #, fuzzy
@@ -1942,11 +1956,11 @@ msgstr "Upotus"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bold"
-msgstr ""
+msgstr "Lihavoitu"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Italic"
-msgstr ""
+msgstr "Kursiivi"
 
 #: admin_site/draftail_rich_text_area.py
 #, fuzzy
@@ -1963,15 +1977,15 @@ msgstr "kuvaus"
 #: admin_site/draftail_rich_text_area.py
 #, python-format
 msgid "Heading %(level)d"
-msgstr ""
+msgstr "Otsikko %(level)d"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Numbered list"
-msgstr ""
+msgstr "Numeroitu luettelo"
 
 #: admin_site/draftail_rich_text_area.py
 msgid "Bulleted list"
-msgstr ""
+msgstr "Luettelo"
 
 #: admin_site/forms.py
 msgid "Enter password"
@@ -1995,11 +2009,11 @@ msgstr "Google"
 
 #: admin_site/models.py
 msgid "Tunnistamo"
-msgstr ""
+msgstr "Tunnistamo"
 
 #: admin_site/models.py
 msgid "OKTA"
-msgstr ""
+msgstr "OKTA"
 
 #: admin_site/models.py
 #, fuzzy
@@ -2024,12 +2038,12 @@ msgstr "kentät"
 #: admin_site/models.py
 #, python-format
 msgid "%(field)s is not a valid field in the model '%(model)s'"
-msgstr ""
+msgstr "%(field)s ei ole kelvollinen kenttä mallissa '%(model)s'"
 
 #: admin_site/models.py
 #, python-format
 msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
-msgstr ""
+msgstr "Kenttä '%(field)s' mallissa '%(model)s' suunnitelmassa '%(plan)s'"
 
 #: admin_site/templates/admin_site/own_indicators_panel.html
 msgid "Own indicators"
@@ -2071,7 +2085,7 @@ msgstr "Pahoittelut, palvelimella on väliaikaisia teknisiä ongelmia."
 
 #: admin_site/views.py
 msgid "Your account settings have been changed successfully!"
-msgstr ""
+msgstr "Tilisi asetukset muutettiin onnistuneesti!"
 
 #: admin_site/wagtail.py
 msgid "View live"
@@ -2174,6 +2188,8 @@ msgstr "Kohdetta ei voida poistaa koska muut oliot viittaavat siihen."
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
 msgstr ""
+"Ei voi poistaa \"%s\", koska se liittyy muihin kohteisiin, kuten "
+"suunnitelmiin, henkilöihin tai toimiin."
 
 #: aplans/settings.py
 msgid "Danish"
@@ -2213,7 +2229,7 @@ msgstr "suomi"
 
 #: aplans/settings.py
 msgid "Latvian"
-msgstr ""
+msgstr "latvia"
 
 #: aplans/settings.py
 msgid "Swedish"
@@ -2221,11 +2237,11 @@ msgstr "ruotsi"
 
 #: aplans/settings.py
 msgid "Portuguese"
-msgstr ""
+msgstr "portugali"
 
 #: aplans/settings.py
 msgid "Portuguese (Brazil)"
-msgstr ""
+msgstr "portugali (Brasilia)"
 
 #: aplans/utils.py
 msgid "order"
@@ -2233,11 +2249,11 @@ msgstr "järjestys"
 
 #: aplans/utils.py
 msgid "Authenticated users"
-msgstr ""
+msgstr "Tunnistetut käyttäjät"
 
 #: aplans/utils.py
 msgid "Contact persons with moderator permissions"
-msgstr ""
+msgstr "Yhteyshenkilöt, joilla on moderaattorin oikeudet"
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
@@ -2290,7 +2306,7 @@ msgstr "Strategia"
 
 #: content/models.py
 msgid "Case study"
-msgstr ""
+msgstr "Tapaustutkimus"
 
 #: content/models.py
 msgid "Strategies"
@@ -2298,7 +2314,7 @@ msgstr "Strategiat"
 
 #: content/models.py
 msgid "Case studies"
-msgstr ""
+msgstr "Tapaustutkimukset"
 
 #: content/models.py
 #, fuzzy
@@ -2308,11 +2324,11 @@ msgstr "Tehtävät"
 
 #: content/models.py
 msgid "Milestone"
-msgstr ""
+msgstr "Virstanpylväs"
 
 #: content/models.py
 msgid "Milestones"
-msgstr ""
+msgstr "Virstanpylväät"
 
 #: content/models.py
 #, fuzzy
@@ -2988,6 +3004,8 @@ msgstr "[ei mukana toimenpideohjelmassa]"
 #: indicators/wagtail_admin.py
 msgid "Changing the organization to one with a different primary language is currently not supported"
 msgstr ""
+"Organisaation vaihtaminen toisenkieliseen (ensisijainen kieli) ei ole tällä "
+"hetkellä tuettu"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
@@ -3021,11 +3039,11 @@ msgstr "Mittari on kytketty yleiseen mittariin, joten sen suuretta (%(quantity)s
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
-msgstr ""
+msgstr "Vaikutukset"
 
 #: indicators/wagtail_admin.py
 msgid "Causes"
-msgstr ""
+msgstr "Syyt"
 
 #: indicators/wagtail_admin.py
 msgid "Advanced options"
@@ -3725,7 +3743,7 @@ msgstr "Ympyräkaaviot toimenpiteiden tilanteesta"
 
 #: pages/blocks.py
 msgid "Width"
-msgstr ""
+msgstr "Leveys"
 
 #: pages/blocks.py
 #, fuzzy
@@ -3861,7 +3879,7 @@ msgstr ""
 
 #: pages/models.py
 msgid "icon size"
-msgstr ""
+msgstr "kuvakkeen koko"
 
 #: pages/models.py
 msgid "Category page"
@@ -3873,7 +3891,7 @@ msgstr "Luokkasivut"
 
 #: pages/models.py
 msgid "This category already has a page"
-msgstr ""
+msgstr "Tällä luokalla on jo oma sivu"
 
 #: pages/models.py
 msgid "lead content"
@@ -4125,16 +4143,23 @@ msgstr "Haluatko varmasti lisätä organisaation '%(org)s' toimenpideohjelmaan '
 #, python-format
 msgid "An email has been sent to %(person)s with a link to reset their password."
 msgstr ""
+"Osoitteeseen %(person)s on lähetetty sähköpostiviesti, jossa on linkki "
+"salasanan palauttamiseen."
 
 #: people/views.py
 #, python-format
 msgid "If the email does not arrive, you can send them the following link: %(url)s"
 msgstr ""
+"Jos sähköposti ei saavu perille, voit lähettää hänelle seuraavan linkin: "
+"%(url)s"
 
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
 msgstr ""
+"Varmistathan, ettei kukaan muu kuin %(person)s pääse käsiksi linkkiin. "
+"Lisäturvallisuuden vuoksi linkki vanhenee %(days_until_expiration)s päivän "
+"kuluttua."
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
@@ -4177,7 +4202,7 @@ msgstr "Poista käytöstä"
 
 #: people/wagtail_admin.py
 msgid "Create a password reset link"
-msgstr ""
+msgstr "Luo salasanan palautuslinkki"
 
 #: people/wagtail_admin.py
 msgid "Are you sure you want to deactivate this person?"
@@ -4186,6 +4211,8 @@ msgstr "Haluatko varmasti poistaa käytöstä tämän henkilön?"
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr ""
+"Tällä henkilöllä ei ole pääsyä ylläpitoon. Tämä johtuu yleensä siitä, ettei "
+"hänelle ole määritetty yhtäkään toimenpidettä tai indikaattoria."
 
 #: people/wagtail_admin.py
 msgid "last login"
