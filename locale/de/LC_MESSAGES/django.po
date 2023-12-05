@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-05 08:42+0200\n"
-"PO-Revision-Date: 2023-11-10 07:13+0000\n"
-"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"PO-Revision-Date: 2023-12-05 10:57+0000\n"
+"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1769,6 +1770,9 @@ msgstr "Allgemeine Administratoren"
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
 msgstr ""
+"Nur setzen, wenn vom Kunden ausdrücklich gewünscht. Verwenden Sie einen "
+"Farbschlüssel aus den graphColors des UI-Themas, zum Beispiel red070 oder "
+"grey030."
 
 #: actions/wagtail_admin.py
 msgid "Clients"
@@ -2211,20 +2215,16 @@ msgid "Milestones"
 msgstr "Meilensteine"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Dimensions"
 msgid "Division"
-msgstr "Dimensionen"
+msgstr "Abteilung"
 
 #: content/models.py orgs/apps.py orgs/wagtail_admin.py
 msgid "Organizations"
 msgstr "Organisationen"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Dimensions"
 msgid "Divisions"
-msgstr "Dimensionen"
+msgstr "Abteilungen"
 
 #: content/models.py
 msgid "site title"
@@ -2279,10 +2279,8 @@ msgid "Term to use for 'task'"
 msgstr "Für 'Aufgabe' zu verwendender Begriff"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Term to use for 'action'"
 msgid "Term to use for 'organization'"
-msgstr "Für 'Maßnahme' zu verwendender Begriff"
+msgstr "Für 'Organisation' zu verwendender Begriff"
 
 #: content/models.py
 msgid "site general content"
@@ -3917,37 +3915,42 @@ msgid "No, don't delete"
 msgstr "Nein, nicht löschen"
 
 #: people/views.py people/wagtail_admin.py
-#, fuzzy
-#| msgid "Enter password"
 msgid "Reset password"
-msgstr "Passwort eingeben"
+msgstr "Passwort zurücksetzen"
 
 #: people/views.py
-#, fuzzy, python-format
-#| msgid "Confirm including %(org)s in plan %(plan)s"
+#, python-format
 msgid "Confirm sending password reset link to %(person)s"
-msgstr "Bestätige Aufnahme von %(org)s in Plan %(plan)s"
+msgstr "Bestätige Senden des Passwort-Rücksetz-Links an %(person)s"
 
 #: people/views.py
-#, fuzzy, python-format
-#| msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
+#, python-format
 msgid "Do you really want to send a password reset link to %(person)s?"
-msgstr "Wollen Sie die Organisation '%(org)s' wirklich in den Plan '%(plan)s' aufnehmen?"
+msgstr ""
+"Möchten Sie wirklich einen Link zum Zurücksetzen des Passworts an %(person)s "
+"senden?"
 
 #: people/views.py
 #, python-format
 msgid "An email has been sent to %(person)s with a link to reset their password."
 msgstr ""
+"Eine E-Mail mit einem Link zum Zurücksetzen des Passworts wurde an %(person)"
+"s gesendet."
 
 #: people/views.py
 #, python-format
 msgid "If the email does not arrive, you can send them the following link: %(url)s"
 msgstr ""
+"Wenn die E-Mail nicht ankommt, können Sie der Person den folgenden Link "
+"schicken: %(url)s"
 
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
 msgstr ""
+"Bitte achten Sie darauf, dass niemand außer %(person)s Zugriff auf den Link "
+"erhält. Zur zusätzlichen Sicherheit wird der Link in %(days_until_expiration)"
+"s Tagen ablaufen."
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
@@ -3988,7 +3991,7 @@ msgstr "Deaktivieren"
 
 #: people/wagtail_admin.py
 msgid "Create a password reset link"
-msgstr ""
+msgstr "Einen Link zum Zurücksetzen des Passworts erstellen"
 
 #: people/wagtail_admin.py
 msgid "Are you sure you want to deactivate this person?"
@@ -3997,6 +4000,8 @@ msgstr "Sind Sie sicher, dass Sie diese Person deaktivieren möchten?"
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
 msgstr ""
+"Diese Person hat keinen Zugriff auf die Verwaltungsoberfläche. Dies liegt in "
+"der Regel daran, dass ihr keine Maßnahmen oder Indikatoren zugewiesen sind."
 
 #: people/wagtail_admin.py
 msgid "last login"
