@@ -909,8 +909,8 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         select_related=('status', 'implementation_phase'),
         only=('status__color', 'implementation_phase__color'),
     )
-    def resolve_color(root: Action, info):
-        return root.get_color()
+    def resolve_color(root: Action, info: GQLInfo):
+        return root.get_color(cache=info.context.watch_cache)
 
     def resolve_edit_url(self: Action, info):
         client_plan = self.plan.clients.first()

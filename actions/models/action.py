@@ -30,7 +30,8 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 
 from aplans.types import UserOrAnon
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language
+    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language,
+    ConstantMetadata
 )
 from orgs.models import Organization
 from users.models import User
@@ -797,18 +798,19 @@ class Action(  # type: ignore[django-manager-missing]
             reversion.set_user(user)
         snapshots.delete()
 
-    def get_status_summary(self, cache: WatchObjectCache | None = None):
+    def get_status_summary(self, cache: WatchObjectCache | None = None) -> ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]:
         return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
 
     def get_timeliness(self, cache: WatchObjectCache | None = None):
         return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
 
-    def get_color(self):
+    def get_color(self, cache: WatchObjectCache | None = None):
         if self.status and self.status.color:
             return self.status.color
         if self.implementation_phase and self.implementation_phase.color:
             return self.implementation_phase.color
-        return None
+        summary = self.get_status_summary(cache=cache)
+        return summary.color
 
 
 class ModelWithRole:
