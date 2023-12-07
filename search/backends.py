@@ -1,3 +1,4 @@
+from copy import deepcopy
 import logging
 from typing import Optional
 from django.utils import translation
@@ -10,7 +11,7 @@ from wagtail.search.backends.elasticsearch7 import (
     Elasticsearch7Index
 )
 from wagtail.search.backends.elasticsearch5 import (
-    ElasticsearchIndexRebuilder, ElasticsearchAtomicIndexRebuilder
+    ElasticsearchIndexRebuilder
 )
 
 logger = logging.getLogger(__name__)
@@ -96,6 +97,9 @@ class WatchSearchBackend(Elasticsearch7SearchBackend):
     basic_rebuilder_class = WatchSearchRebuilder
     autocomplete_query_compiler_class = WatchAutocompleteQueryCompiler
     results_class = WatchSearchResults
+    settings = deepcopy(Elasticsearch7SearchBackend.settings)
+    # Remove asciifolding from filters to retain umlauts and other non-ascii characters
+    settings['settings']['analysis']['analyzer']['edgengram_analyzer']['filter'] = ['edgengram']
 
     def __init__(self, params: dict):
         self.language_code = params.pop('LANGUAGE_CODE')
