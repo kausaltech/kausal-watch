@@ -14,6 +14,7 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
@@ -229,10 +230,22 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             AttributeTypeChoiceOption, self.choice_option_panels, request, instance
         )
 
+        if instance and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
+            format_field_panel = FieldPanel(
+                'format',
+                read_only=True,
+                help_text=_(
+                    "This field already has values. If you want to change the format, you need to delete the existing "
+                    "values first."
+                )
+            )
+        else:
+            format_field_panel = FieldPanel('format')
+
         panels = [
             FieldPanel('name'),
             FieldPanel('help_text'),
-            FieldPanel('format'),
+            format_field_panel,
             FieldPanel('unit'),
             FieldPanel('attribute_category_type', widget=CategoryTypeChooser),
             CondensedInlinePanel('choice_options', heading=_("Choice options"), panels=choice_option_panels),
