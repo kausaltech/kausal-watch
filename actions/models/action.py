@@ -984,6 +984,12 @@ class ActionStatus(models.Model, PlanRelatedModel):  # type: ignore[django-manag
         verbose_name = _('action status')
         verbose_name_plural = _('action statuses')
 
+    def get_color(self, cache: WatchObjectCache | None = None):
+        if self.color:
+            return self.color
+        summary = ActionStatusSummaryIdentifier.for_status(self).get_data({'plan': self.plan})
+        return summary.color
+
     def __str__(self):
         return str(self.name)
 

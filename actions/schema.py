@@ -971,7 +971,11 @@ class ActionScheduleNode(DjangoNode):
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
-        fields = public_fields(ActionStatus)
+        fields = public_fields(ActionStatus, add_fields=['color'])
+
+    @staticmethod
+    def resolve_color(root: ActionStatus, info: GQLInfo):
+        return root.get_color(cache=info.context.watch_cache)
 
 
 class ActionImplementationPhaseNode(DjangoNode):

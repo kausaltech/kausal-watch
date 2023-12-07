@@ -531,6 +531,7 @@ C = TypeVar('C')
 
 class ConstantMetadata(Generic[E, C]):
     identifier: E
+    color: str | None
 
     def with_identifier(self, identifier: E):
         self.identifier = identifier

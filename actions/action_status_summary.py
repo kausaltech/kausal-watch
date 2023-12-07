@@ -10,7 +10,7 @@ from django.utils.translation import gettext_lazy as _
 from aplans.utils import ConstantMetadata, MetadataEnum
 
 if TYPE_CHECKING:
-    from actions.models import Action, Plan
+    from actions.models import Action, Plan, ActionStatus
     from aplans.cache import WatchObjectCache
 
 Sentiment = Enum('Sentiment', names='POSITIVE NEGATIVE NEUTRAL')
@@ -142,11 +142,21 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         return f'{self.name}.{str(self.value)}'
 
     @classmethod
+    def for_status(cls, status: 'ActionStatus'):
+        if status is None:
+            return cls.UNDEFINED
+        status_identifier = status.identifier.lower() if status else None
+        try:
+            return next(s for s in cls if s.name.lower() == status_identifier)
+        except StopIteration:
+            return cls.UNDEFINED
+
+    @classmethod
     def for_action(cls, action: 'Action'):
         # FIXME: Some plans in production have inconsistent Capitalized identifiers
         # Once the db has been cleaned up, this match logic
         # should be revisited
-        status = action.status.identifier.lower() if action.status else None
+        status_identifier = action.status.identifier.lower() if action.status else None
         phase = action.implementation_phase.identifier.lower() if action.implementation_phase else None
         if action.merged_with is not None:
             return cls.MERGED
@@ -154,14 +164,9 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         if phase == 'completed':
             return cls.COMPLETED
         # phase: "begun"? "implementation?"
-        if phase == 'not_started' and status == 'on_time':
+        if phase == 'not_started' and status_identifier == 'on_time':
             return cls.ON_TIME
-        if status is None:
-            return cls.UNDEFINED
-        try:
-            return next(a for a in cls if a.name.lower() == status)
-        except StopIteration:
-            return cls.UNDEFINED
+        return cls.for_status(action.status)
 
 
 Comparison = Enum('Comparison', names='LTE GT')
