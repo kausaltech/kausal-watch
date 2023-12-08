@@ -333,10 +333,7 @@ class IndicatorEditHandler(AplansTabbedInterface):
         assert request is not None
         user = request.user
         plan = request.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
-            cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
-        else:
-            cat_fields = {}
+        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
 
         self.base_form_class = type(
             'IndicatorForm',
