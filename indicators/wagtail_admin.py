@@ -1,4 +1,3 @@
-
 from dal import autocomplete
 from django import forms
 from django.contrib.admin import SimpleListFilter
