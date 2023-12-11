@@ -19,7 +19,7 @@ class PlanSpecificCache:
     def implementation_phases(self) -> list[ActionImplementationPhase]:
         return list(self.plan.action_implementation_phases.all())
 
-    def get_action_status(self, *, id: int | None = None, identifier: str | None = None) -> ActionStatus | None: 
+    def get_action_status(self, *, id: int | None = None, identifier: str | None = None) -> ActionStatus | None:
         # Must supply either id or identifier
         assert bool(id is None) != bool(identifier is None)
 
