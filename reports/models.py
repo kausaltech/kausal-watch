@@ -14,6 +14,7 @@ from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from reversion.revisions import _current_frame, add_to_revision, create_revision
 from wagtail.fields import StreamField
+from wagtail.blocks.stream_block import StreamValue
 
 from actions.models.action import Action
 from aplans.utils import PlanRelatedModel
@@ -43,6 +44,14 @@ class ReportType(models.Model, PlanRelatedModel):
     class Meta:
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
+
+    def get_fields_for_type(self, block_type: str) -> list[StreamValue.StreamChild]:
+        return [f for f in self.fields if f.block_type == block_type]
+
+    def get_field_labels_for_type(self, block_type: str) -> list[list[str]]:
+        fields = self.get_fields_for_type(block_type)
+        labels = [field.block.xlsx_column_labels(field.value) for field in fields]
+        return labels
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
