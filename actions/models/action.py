@@ -985,7 +985,7 @@ class ActionStatus(models.Model, PlanRelatedModel):  # type: ignore[django-manag
         verbose_name_plural = _('action statuses')
 
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 
 @reversion.register()
