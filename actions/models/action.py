@@ -798,8 +798,10 @@ class Action(  # type: ignore[django-manager-missing]
             reversion.set_user(user)
         snapshots.delete()
 
-    def get_status_summary(self, cache: WatchObjectCache | None = None) -> ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]:
-        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
+    def get_status_summary(
+            self, cache: WatchObjectCache | None = None
+    ) -> ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]:
+        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan_id': self.plan_id, 'cache': cache})
 
     def get_timeliness(self, cache: WatchObjectCache | None = None):
         return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
@@ -809,8 +811,9 @@ class Action(  # type: ignore[django-manager-missing]
             return self.status.color
         if self.implementation_phase and self.implementation_phase.color:
             return self.implementation_phase.color
-        summary = self.get_status_summary(cache=cache)
-        return summary.color
+        # No plan context needed just to get the color
+        summary = ActionStatusSummaryIdentifier.for_action(self)
+        return summary.value.color
 
 
 class ModelWithRole:
@@ -987,7 +990,7 @@ class ActionStatus(models.Model, PlanRelatedModel):  # type: ignore[django-manag
     def get_color(self, cache: WatchObjectCache | None = None):
         if self.color:
             return self.color
-        summary = ActionStatusSummaryIdentifier.for_status(self).get_data({'plan': self.plan})
+        summary = ActionStatusSummaryIdentifier.for_status(self).get_data({'plan': self.plan, 'cache': cache})
         return summary.color
 
     def __str__(self):

@@ -907,7 +907,8 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('status', 'implementation_phase'),
-        only=('status__color', 'implementation_phase__color'),
+        only=('plan', 'merged_with', 'status__color',
+              'status__identifier', 'implementation_phase__color', 'implementation_phase__identifier'),
     )
     def resolve_color(root: Action, info: GQLInfo):
         return root.get_color(cache=info.context.watch_cache)

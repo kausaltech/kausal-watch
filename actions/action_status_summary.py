@@ -16,8 +16,9 @@ if TYPE_CHECKING:
 Sentiment = Enum('Sentiment', names='POSITIVE NEGATIVE NEUTRAL')
 
 
-class SummaryContext(TypedDict):
+class SummaryContext(TypedDict, total=False):
     plan: Plan
+    plan_id: int
     cache: NotRequired[WatchObjectCache]
 
 
@@ -44,15 +45,18 @@ class ActionStatusSummary(ConstantMetadata['ActionStatusSummaryIdentifier', Summ
     def with_context(self, context: SummaryContext):  # type: ignore[override]
         if context is None:
             raise ValueError('Context with plan required to resolve status label')
-        if 'plan' not in context:
+        if 'plan' not in context and 'plan_id' not in context:
             raise KeyError('Action status values depend on the plan')
         if self.identifier is None:
             raise ValueError('with_identifier must be called before with_context')
-        plan = context['plan']
+        plan = context.get('plan')
         identifier: str = self.identifier.name.lower()
         cache = context.get('cache')
         if cache is not None:
-            status = context['cache'].for_plan(plan).get_action_status(identifier=identifier)
+            plan_id = context.get('plan_id')
+            if plan_id is None and plan is not None:
+                plan_id = plan.id
+            status = context['cache'].for_plan_id(plan_id).get_action_status(identifier=identifier)
         else:
             status = plan.action_statuses.filter(plan=plan, identifier=identifier).first()
         if status is not None:
@@ -158,7 +162,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         # should be revisited
         status_identifier = action.status.identifier.lower() if action.status else None
         phase = action.implementation_phase.identifier.lower() if action.implementation_phase else None
-        if action.merged_with is not None:
+        if action.merged_with_id is not None:
             return cls.MERGED
         # TODO: check phase "completed" property
         if phase == 'completed':
