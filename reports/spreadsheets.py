@@ -402,10 +402,12 @@ class ExcelReport:
 
     def post_process(self, action_df: polars.DataFrame):
         pivot_specs = [
+            # Pivot sheet: Implementation phase
             {
                 'group': (_('implementation phase').capitalize(),),
                 'type': 'pie'
             },
+            # Pivot sheet: Organization parent x Implementation phase
             {
                 'group': (
                     _('Parent'),
@@ -413,12 +415,18 @@ class ExcelReport:
                 'type': 'column'
             }
         ]
-        for ct in self.plan_current_related_objects.category_types.values():
-            pivot_specs.append({
-                'group': (ct.name, _('implementation phase').capitalize()),
-                'type': 'column',
-                'subtype': 'stacked'
-            })
+
+        # Pivot sheet: Category (level) x Implementation phase
+        category_labels = self.report.type.get_field_labels_for_type('category')
+        implementation_phase_fields = self.report.type.get_fields_for_type('implementation_phase')
+        if len(implementation_phase_fields) > 0:
+            for label in category_labels:
+                assert len(label) == 1
+                pivot_specs.append({
+                    'group': (label[0], _('implementation phase').capitalize()),
+                    'type': 'column',
+                    'subtype': 'stacked'
+                })
         sheet_number = 1
         for spec in pivot_specs:
             grouping = spec['group']
