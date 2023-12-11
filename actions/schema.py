@@ -783,7 +783,10 @@ Sentiment = graphene.Enum.from_enum(SentimentEnum)
 class ActionStatusSummaryNode(graphene.ObjectType):
     identifier = ActionStatusSummaryIdentifierNode(required=True)
     label = graphene.String(required=True)
-    color = graphene.String(required=True)
+    color = graphene.String(
+        required=True,
+        deprecation_reason='This field is an internal implementation detail; most often you should use action.color'
+    )
     is_active = graphene.Boolean(required=True)
     is_completed = graphene.Boolean(required=True)
     sentiment = Sentiment(required=True)
