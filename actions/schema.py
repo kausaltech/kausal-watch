@@ -795,7 +795,7 @@ class ActionStatusSummaryNode(graphene.ObjectType):
 @register_graphene_node
 class ActionTimelinessNode(graphene.ObjectType):
     identifier = ActionTimelinessIdentifierNode(required=True)
-    label = graphene.String(required=True)
+    label = graphene.String(required=True, deprecation_reason='Generate human-friendly labels in the UI.')
     color = graphene.String(required=True)
     sentiment = Sentiment(required=True)
     comparison = graphene.Enum.from_enum(Comparison)(required=True)
