@@ -12,15 +12,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-05 08:42+0200\n"
-"PO-Revision-Date: 2023-09-15 10:18+0000\n"
+"PO-Revision-Date: 2023-12-13 16:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
+"\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
-"X-Generator: Weblate 4.18.2\n"
+"X-Generator: Weblate 5.0.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
@@ -466,7 +467,7 @@ msgstr "Status"
 
 #: actions/blocks/action_dashboard.py content/models.py
 msgid "Tasks"
-msgstr "Opgaver"
+msgstr "Projekter"
 
 #: actions/blocks/action_dashboard.py actions/models/plan.py indicators/apps.py
 #: indicators/blocks.py indicators/templates/indicators/edit_values.html
@@ -911,7 +912,7 @@ msgstr "Har kontaktpersoner"
 
 #: actions/models/action.py
 msgid "Active tasks"
-msgstr "Aktive opgaver"
+msgstr "Aktive projekter"
 
 #: actions/models/action.py
 #, python-format
@@ -1098,15 +1099,15 @@ msgstr "handlingsopgave"
 
 #: actions/models/action.py
 msgid "action tasks"
-msgstr "handlingsopgaver"
+msgstr "handlingsprojekter"
 
 #: actions/models/action.py
 msgid "Non-completed tasks cannot have a completion date"
-msgstr "Ikke-afsluttede opgaver kan ikke have en afslutningsdato"
+msgstr "Ikke-afsluttede projekter kan ikke have en afslutningsdato"
 
 #: actions/models/action.py
 msgid "Completed tasks must have a completion date"
-msgstr "Afsluttede opgaver skal have en afslutningsdato"
+msgstr "Afsluttede projekter skal have en afslutningsdato"
 
 #: actions/models/action.py
 msgid "action impact class"
@@ -2341,10 +2342,8 @@ msgid "Case studies"
 msgstr "Casestudier"
 
 #: content/models.py
-#, fuzzy
-#| msgid "Tasks"
 msgid "Task"
-msgstr "Opgaver"
+msgstr "Projekt"
 
 #: content/models.py
 msgid "Milestone"
@@ -3139,7 +3138,13 @@ msgstr "Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "not_enough_tasks"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
-msgstr "Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne i handlingsplanen. Du kan se på handlingsplanens vagtside, hvad der allerede er blevet gjort for at fremme handlingerne, og hvad der er planlagt for fremtiden. Det betyder, at det ville være at foretrække for hver aktion at have mindst én kommende opgave inden for det næste år. Gå og tilføj opgaver til handlingen, som viser, hvad de næste planlagte trin for handlingen er."
+msgstr ""
+"Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne i "
+"handlingsplanen. Du kan se på handlingsplanens vagtside, hvad der allerede "
+"er blevet gjort for at fremme handlingerne, og hvad der er planlagt for "
+"fremtiden. Det betyder, at det ville være at foretrække for hver aktion at "
+"have mindst en kommende projekt inden for det næste år. Gå og tilføj projekt "
+"til handlingen, som viser, hvad de næste planlagte trin for handlingen er."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_due_soon"
@@ -3209,7 +3214,7 @@ msgstr "Handlingsmetadata er ikke blevet opdateret for nylig"
 
 #: notifications/models.py
 msgid "Action doesn't have enough in-progress tasks"
-msgstr "Handling har ikke nok igangværende opgaver"
+msgstr "Handling har ikke nok igangværende projekter"
 
 #: notifications/models.py
 msgid "Updated indicator values are late"
