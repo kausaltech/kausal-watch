@@ -783,7 +783,10 @@ Sentiment = graphene.Enum.from_enum(SentimentEnum)
 class ActionStatusSummaryNode(graphene.ObjectType):
     identifier = ActionStatusSummaryIdentifierNode(required=True)
     label = graphene.String(required=True)
-    color = graphene.String(required=True)
+    color = graphene.String(
+        required=True,
+        deprecation_reason='This field is an internal implementation detail; most often you should use action.color'
+    )
     is_active = graphene.Boolean(required=True)
     is_completed = graphene.Boolean(required=True)
     sentiment = Sentiment(required=True)
@@ -907,10 +910,11 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     @staticmethod
     @gql_optimizer.resolver_hints(
         select_related=('status', 'implementation_phase'),
-        only=('status__color', 'implementation_phase__color'),
+        only=('plan', 'merged_with', 'status__color',
+              'status__identifier', 'implementation_phase__color', 'implementation_phase__identifier'),
     )
-    def resolve_color(root: Action, info):
-        return root.get_color()
+    def resolve_color(root: Action, info: GQLInfo):
+        return root.get_color(cache=info.context.watch_cache)
 
     def resolve_edit_url(self: Action, info):
         client_plan = self.plan.clients.first()
@@ -971,7 +975,11 @@ class ActionScheduleNode(DjangoNode):
 class ActionStatusNode(DjangoNode):
     class Meta:
         model = ActionStatus
-        fields = public_fields(ActionStatus)
+        fields = public_fields(ActionStatus, add_fields=['color'])
+
+    @staticmethod
+    def resolve_color(root: ActionStatus, info: GQLInfo):
+        return root.get_color(cache=info.context.watch_cache)
 
 
 class ActionImplementationPhaseNode(DjangoNode):

@@ -30,13 +30,14 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 
 from aplans.types import UserOrAnon
 from aplans.utils import (
-    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language
+    IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language,
+    ConstantMetadata
 )
 from orgs.models import Organization
 from users.models import User
 from search.backends import TranslatedSearchField, TranslatedAutocompleteField
 
-from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier
+from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, SummaryContext
 from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
@@ -797,18 +798,22 @@ class Action(  # type: ignore[django-manager-missing]
             reversion.set_user(user)
         snapshots.delete()
 
-    def get_status_summary(self, cache: WatchObjectCache | None = None):
-        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
+    def get_status_summary(
+            self, cache: WatchObjectCache | None = None
+    ) -> ConstantMetadata['ActionStatusSummaryIdentifier', SummaryContext]:
+        return ActionStatusSummaryIdentifier.for_action(self).get_data({'plan_id': self.plan_id, 'cache': cache})
 
     def get_timeliness(self, cache: WatchObjectCache | None = None):
         return ActionTimelinessIdentifier.for_action(self).get_data({'plan': self.plan, 'cache': cache})
 
-    def get_color(self):
+    def get_color(self, cache: WatchObjectCache | None = None):
         if self.status and self.status.color:
             return self.status.color
         if self.implementation_phase and self.implementation_phase.color:
             return self.implementation_phase.color
-        return None
+        # No plan context needed just to get the color
+        summary = ActionStatusSummaryIdentifier.for_action(self)
+        return summary.value.color
 
 
 class ModelWithRole:
@@ -982,8 +987,14 @@ class ActionStatus(models.Model, PlanRelatedModel):  # type: ignore[django-manag
         verbose_name = _('action status')
         verbose_name_plural = _('action statuses')
 
+    def get_color(self, cache: WatchObjectCache | None = None):
+        if self.color:
+            return self.color
+        summary = ActionStatusSummaryIdentifier.for_status(self).get_data({'plan': self.plan, 'cache': cache})
+        return summary.color
+
     def __str__(self):
-        return self.name
+        return str(self.name)
 
 
 @reversion.register()
