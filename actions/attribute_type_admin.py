@@ -230,7 +230,8 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             AttributeTypeChoiceOption, self.choice_option_panels, request, instance
         )
 
-        if instance and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
+        creating = instance.pk is None
+        if not creating and instance and AttributeTypeWrapper.from_model_instance(instance).attributes.exists():
             format_field_panel = FieldPanel(
                 'format',
                 read_only=True,
