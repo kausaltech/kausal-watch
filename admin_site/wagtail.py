@@ -39,6 +39,7 @@ from aplans.types import WatchAdminRequest
 from aplans.utils import PlanDefaultsModel, PlanRelatedModel
 from pages.models import ActionListPage
 
+from .utils import FieldLabelRenderer
 
 if TYPE_CHECKING:
     from wagtail_modeladmin.views import ModelFormView
@@ -211,6 +212,7 @@ class BoundCustomizableBuiltInFieldPanelMixin:
         from admin_site.models import BuiltInFieldCustomization
         super().__init__(**kwargs)
         plan = self.request.get_active_admin_plan()
+        is_public_field = True
         try:
             customization: BuiltInFieldCustomization = BuiltInFieldCustomization.objects.get(
                 plan=plan,
@@ -224,6 +226,9 @@ class BoundCustomizableBuiltInFieldPanelMixin:
                 self.help_text = customization.help_text_override
             if customization.label_override:
                 self.heading = customization.label_override
+            if customization.instances_visible_for != BuiltInFieldCustomization.VisibleFor.PUBLIC:
+                is_public_field = False
+        self.heading = FieldLabelRenderer(plan)(self.heading, public=is_public_field)
 
 
 class CustomizableBuiltInFieldPanel(FieldPanel):

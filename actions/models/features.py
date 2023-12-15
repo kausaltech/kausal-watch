@@ -70,6 +70,13 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_('Enable moderation workflow'),
         help_text=_("Set to enable drafting and reviewing functionality")
     )
+    display_field_visibility_restrictions = models.BooleanField(
+        default=False, verbose_name=_('Display field visibility as a label in edit views'),
+        help_text=_(
+            "For plans which have field-specific visibility restrictions, "
+            "show to users which fields are public and which are restricted."
+        )
+    )
 
     @property
     def public_contact_persons(self):
