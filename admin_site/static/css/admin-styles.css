@@ -51,6 +51,27 @@
   font-weight: 600;
 }
 
+.w-panel span.field-visibility-label {
+  font-weight: bold;
+}
+
+.w-panel span.field-visibility-label.w-status--primary {
+  color: var(--w-color-grey-800);
+}
+
+section[role="tabpanel"] .help-block {
+  background-color: inherit;
+  padding-left: 0;
+  span.field-visibility-label.w-status--primary {
+    color: var(--w-color-grey-800);
+    font-size: .8rem;
+    font-weight: bold;
+  }
+  svg {
+    display: none;
+  }
+}
+
 .page-explorer .w-breadcrumb li:only-child a,
 .page-explorer .w-breadcrumb li[hidden] ~ li:last-child a {
   font-weight: 600;

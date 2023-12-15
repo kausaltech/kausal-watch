@@ -33,6 +33,7 @@ from admin_site.wagtail import (
     PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
+from admin_site.utils import FieldLabelRenderer
 from aplans.extensions import modeladmin_register
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.types import WatchAdminRequest
@@ -690,15 +691,7 @@ class ActionAdmin(AplansModelAdmin):
         CustomizableBuiltInFieldPanel('description'),
     ]
     basic_related_panels = [
-        CustomizableBuiltInFieldPanel('image'),
-        CondensedInlinePanel(
-            'links',
-            panels=[
-                FieldPanel('url'),
-                FieldPanel('title')
-            ],
-            heading=_('External links'),
-        ),
+        CustomizableBuiltInFieldPanel('image')
     ]
     basic_related_panels_general_admin = [
         CustomizableBuiltInFieldPanel(
@@ -849,6 +842,8 @@ class ActionAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         assert plan is not None
 
+        render_field_label = FieldLabelRenderer(plan)
+
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
         serialized_attributes = instance_being_edited.get_serialized_attribute_data() if instance_being_edited else None
         attribute_panels = instance.get_attribute_panels(
@@ -878,12 +873,23 @@ class ActionAdmin(AplansModelAdmin):
             cat_fields = _get_category_fields(instance.plan, Action, instance, with_initial=True)
             cat_panels = []
             for key, field in cat_fields.items():
-                cat_panels.append(FieldPanel(key, heading=field.label))
+                cat_panels.append(FieldPanel(key, heading=render_field_label(field.label, public=False)))
             if cat_panels:
                 panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
 
         for panel in self.basic_related_panels:
             panels.append(panel)
+
+        panels.append(
+            CondensedInlinePanel(
+                'links',
+                panels=[
+                    FieldPanel('url'),
+                    FieldPanel('title')
+                ],
+                heading=render_field_label(_('External links'), public=True),
+            ),
+        )
 
         if is_general_admin:
             panels += self.basic_related_panels_general_admin
@@ -911,10 +917,12 @@ class ActionAdmin(AplansModelAdmin):
         all_tabs.append(ObjectList(progress_panels, heading=_('Progress')))
 
         contact_persons_panels = self.get_contact_persons_panels(request, instance)
-        all_tabs.append(ObjectList(contact_persons_panels, heading=_('Contact persons')))
+        all_tabs.append(ObjectList(
+            contact_persons_panels, help_text=render_field_label('', public=True), heading=_('Contact persons')))
 
         responsible_parties_panels = self.get_responsible_parties_panels(request, instance)
-        all_tabs.append(ObjectList(responsible_parties_panels, heading=_('Responsible parties')))
+        all_tabs.append(ObjectList(
+            responsible_parties_panels, help_text=render_field_label('', public=True), heading=_('Responsible parties')))
 
         all_tabs += [
             ObjectList([
@@ -922,7 +930,8 @@ class ActionAdmin(AplansModelAdmin):
                     'tasks',
                     panels=task_panels,
                 )
-            ], heading=plan.general_content.get_action_task_term_display_plural()),
+            ], heading=plan.general_content.get_action_task_term_display_plural(),
+               help_text=render_field_label('', public=True)),
         ]
 
         reporting_panels = reporting_attribute_panels
@@ -938,7 +947,11 @@ class ActionAdmin(AplansModelAdmin):
 
         if is_general_admin:
             reporting_panels.append(
-                FieldPanel('internal_admin_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5)))
+                FieldPanel(
+                    'internal_admin_notes',
+                    heading=render_field_label(_('internal notes for plan administrators'), public=False),
+                    widget=AdminAutoHeightTextInput(attrs=dict(rows=5))
+                )
             )
             if plan.action_impacts.exists():
                 reporting_panels.append(PlanFilteredFieldPanel('impact'))

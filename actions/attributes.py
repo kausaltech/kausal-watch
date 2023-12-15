@@ -15,6 +15,7 @@ from wagtail.fields import RichTextField
 from wagtail.rich_text import RichText as WagtailRichText
 
 import actions.models.attributes as models
+from admin_site.utils import FieldLabelRenderer
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
@@ -47,6 +48,8 @@ class FormField:
     label: str = ''
     # If the field refers to a modeltrans field and `language` is not empty, use localized virtual field for `language`.
     language: str = ''
+    is_public: bool = False
+    plan: Plan = None
 
     def get_panel(self):
         if self.label:
@@ -55,6 +58,7 @@ class FormField:
             heading = str(self.attribute_type.instance)
         if self.language:
             heading += f' ({self.language})'
+        heading = FieldLabelRenderer(self.plan)(heading, public=self.is_public)
         return AttributeFieldPanel(self.name, heading=heading)
 
 
@@ -210,7 +214,9 @@ class OrderedChoice(AttributeType):
         )
         if not self.is_editable(user, plan, obj):
             field.disabled = True
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
+
+        is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
+        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
 
     def set_attributes(self, obj: models.ModelWithAttributes, cleaned_data: Dict[str, Any], commit: bool = True):
         value = self.get_value_from_form_data(cleaned_data)
@@ -277,7 +283,8 @@ class CategoryChoice(AttributeType):
         )
         if not self.is_editable(user, plan, obj):
             field.disabled = True
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
+        is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
+        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
 
     def get_value_from_serialized_data(self, data):
         from actions.models.category import Category
@@ -352,10 +359,13 @@ class OptionalChoiceWithText(AttributeType):
         )
         if not editable:
             choice_field.disabled = True
+        is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         fields.append(FormField(
             attribute_type=self,
             django_field=choice_field,
             name=self.choice_form_field_name,
+            is_public=is_public,
+            plan=plan,
             label=_('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
         ))
 
@@ -373,12 +383,15 @@ class OptionalChoiceWithText(AttributeType):
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)  # type: ignore[union-attr]
             if not editable:
                 text_field.disabled = True
+                is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
                 attribute_type=self,
                 django_field=text_field,
                 name=self.get_text_form_field_name(language),
                 language=language,
+                plan=plan,
                 label=_('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
+                is_public=is_public
             ))
         return fields
 
@@ -477,11 +490,14 @@ class GenericTextAttributeType(AttributeType):
             field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)
             if not editable:
                 field.disabled = True
+            is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
                 attribute_type=self,
                 django_field=field,
                 name=self.get_form_field_name(language),
                 language=language,
+                is_public=is_public,
+                plan=plan
             ))
         return fields
 
@@ -562,7 +578,8 @@ class Numeric(AttributeType):
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
         if not self.is_editable(user, plan, obj):
             field.disabled = True
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name)]
+        is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
+        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
 
     def get_value_from_serialized_data(self, attributes):
         return self.get_from_serialized_attributes(attributes)
