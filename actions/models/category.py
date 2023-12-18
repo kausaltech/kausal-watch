@@ -238,12 +238,16 @@ class CategoryType(  # type: ignore[django-manager-missing]
     @staticmethod
     def expand_category_paths(qs: models.QuerySet[Category]) -> Iterable[Sequence[Category]]:
         category_paths = []
+        categories_by_id = {c.pk: c for c in qs}
         for category in qs:
             path = []
             c = category
             while c is not None:
                 path.append(c)
-                c = c.parent
+                parent_id = c.parent_id
+                c = None
+                if parent_id is not None:
+                    c = categories_by_id[parent_id]
             path.reverse()
             category_paths.append(path)
         return category_paths
