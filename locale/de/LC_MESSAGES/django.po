@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-05 08:42+0200\n"
-"PO-Revision-Date: 2023-12-05 10:57+0000\n"
+"POT-Creation-Date: 2023-12-15 15:38+0200\n"
+"PO-Revision-Date: 2023-12-15 15:41+0200\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -61,10 +60,6 @@ msgstr "Abschließen für Bericht %s rückgängig machen"
 msgid "Undo marking this action as complete for the report %s"
 msgstr "Mache das Markieren dieser Maßnahme als für den Bericht %s abgeschlossen rückgängig"
 
-#: actions/action_admin.py actions/wagtail_admin.py
-msgid "External links"
-msgstr "Externe links"
-
 #: actions/action_admin.py
 msgid "Last updated"
 msgstr "Zuletzt aktualisiert"
@@ -81,6 +76,10 @@ msgstr "Name"
 msgid "Categories"
 msgstr "Kategorien"
 
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr "Externe links"
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
@@ -91,6 +90,10 @@ msgstr "Grunddaten"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Fortschritt"
+
+#: actions/action_admin.py actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "interne Notizen für Planadministratoren"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -292,6 +295,10 @@ msgstr "Wenn das Format „Kategorie“ ist, muss ein Kategorietyp festgelegt we
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werden"
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
+msgstr ""
 
 #: actions/attribute_type_admin.py
 msgid "Choice options"
@@ -713,10 +720,6 @@ msgstr "Die Auswirkungen dieser Maßnahme"
 #: actions/models/action.py
 msgid "internal priority"
 msgstr "interne Priorität"
-
-#: actions/models/action.py
-msgid "internal notes for plan administrators"
-msgstr "interne Notizen für Planadministratoren"
 
 #: actions/models/action.py
 msgid "internal notes"
@@ -1454,6 +1457,14 @@ msgid "Set to enable drafting and reviewing functionality"
 msgstr "Einstellen, um die Entwurfs- und Überprüfungsfunktion zu aktivieren"
 
 #: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr ""
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "Plan-Feature"
 
@@ -1769,10 +1780,7 @@ msgstr "Allgemeine Administratoren"
 
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
-msgstr ""
-"Nur setzen, wenn vom Kunden ausdrücklich gewünscht. Verwenden Sie einen "
-"Farbschlüssel aus den graphColors des UI-Themas, zum Beispiel red070 oder "
-"grey030."
+msgstr "Nur setzen, wenn vom Kunden ausdrücklich gewünscht. Verwenden Sie einen Farbschlüssel aus den graphColors des UI-Themas, zum Beispiel red070 oder grey030."
 
 #: actions/wagtail_admin.py
 msgid "Clients"
@@ -1974,6 +1982,14 @@ msgstr "Admin-Login für Kausal Watch"
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr "Wir bitten um Entschuldigung, der Server hat vorübergehend Schwierigkeiten."
+
+#: admin_site/utils.py
+msgid "Public field"
+msgstr "Öffentliches Feld"
+
+#: admin_site/utils.py
+msgid "Non-public field"
+msgstr "Nicht öffentliches Feld"
 
 #: admin_site/views.py
 msgid "Your account settings have been changed successfully!"
@@ -3926,31 +3942,22 @@ msgstr "Bestätige Senden des Passwort-Rücksetz-Links an %(person)s"
 #: people/views.py
 #, python-format
 msgid "Do you really want to send a password reset link to %(person)s?"
-msgstr ""
-"Möchten Sie wirklich einen Link zum Zurücksetzen des Passworts an %(person)s "
-"senden?"
+msgstr "Möchten Sie wirklich einen Link zum Zurücksetzen des Passworts an %(person)s senden?"
 
 #: people/views.py
 #, python-format
 msgid "An email has been sent to %(person)s with a link to reset their password."
-msgstr ""
-"Eine E-Mail mit einem Link zum Zurücksetzen des Passworts wurde an %(person)"
-"s gesendet."
+msgstr "Eine E-Mail mit einem Link zum Zurücksetzen des Passworts wurde an %(person)s gesendet."
 
 #: people/views.py
 #, python-format
 msgid "If the email does not arrive, you can send them the following link: %(url)s"
-msgstr ""
-"Wenn die E-Mail nicht ankommt, können Sie der Person den folgenden Link "
-"schicken: %(url)s"
+msgstr "Wenn die E-Mail nicht ankommt, können Sie der Person den folgenden Link schicken: %(url)s"
 
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
-msgstr ""
-"Bitte achten Sie darauf, dass niemand außer %(person)s Zugriff auf den Link "
-"erhält. Zur zusätzlichen Sicherheit wird der Link in %(days_until_expiration)"
-"s Tagen ablaufen."
+msgstr "Bitte achten Sie darauf, dass niemand außer %(person)s Zugriff auf den Link erhält. Zur zusätzlichen Sicherheit wird der Link in %(days_until_expiration)s Tagen ablaufen."
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
@@ -3999,9 +4006,7 @@ msgstr "Sind Sie sicher, dass Sie diese Person deaktivieren möchten?"
 
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
-msgstr ""
-"Diese Person hat keinen Zugriff auf die Verwaltungsoberfläche. Dies liegt in "
-"der Regel daran, dass ihr keine Maßnahmen oder Indikatoren zugewiesen sind."
+msgstr "Diese Person hat keinen Zugriff auf die Verwaltungsoberfläche. Dies liegt in der Regel daran, dass ihr keine Maßnahmen oder Indikatoren zugewiesen sind."
 
 #: people/wagtail_admin.py
 msgid "last login"
@@ -4268,6 +4273,11 @@ msgstr "Benutzer"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
+
+#, fuzzy
+#~| msgid "internal notes"
+#~ msgid "Internal field"
+#~ msgstr "interne Notizen"
 
 #~ msgid "Admin hostnames"
 #~ msgstr "Admin-Hostnamen"

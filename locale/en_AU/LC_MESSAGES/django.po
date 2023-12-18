@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-05 08:42+0200\n"
+"POT-Creation-Date: 2023-12-15 15:38+0200\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -56,10 +56,6 @@ msgstr ""
 msgid "Undo marking this action as complete for the report %s"
 msgstr ""
 
-#: actions/action_admin.py actions/wagtail_admin.py
-msgid "External links"
-msgstr ""
-
 #: actions/action_admin.py
 msgid "Last updated"
 msgstr ""
@@ -76,6 +72,10 @@ msgstr ""
 msgid "Categories"
 msgstr ""
 
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr ""
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
@@ -85,6 +85,10 @@ msgstr ""
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
+msgstr ""
+
+#: actions/action_admin.py actions/models/action.py
+msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/action_admin.py
@@ -286,6 +290,10 @@ msgstr ""
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr ""
 
 #: actions/attribute_type_admin.py
@@ -711,10 +719,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "internal priority"
-msgstr ""
-
-#: actions/models/action.py
-msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/models/action.py
@@ -1463,6 +1467,14 @@ msgid "Set to enable drafting and reviewing functionality"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr ""
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr ""
 
@@ -1977,6 +1989,14 @@ msgstr ""
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
+msgstr ""
+
+#: admin_site/utils.py
+msgid "Public field"
+msgstr ""
+
+#: admin_site/utils.py
+msgid "Non-public field"
 msgstr ""
 
 #: admin_site/views.py

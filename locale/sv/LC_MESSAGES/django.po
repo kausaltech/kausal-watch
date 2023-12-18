@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-05 08:42+0200\n"
+"POT-Creation-Date: 2023-12-15 15:38+0200\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -61,10 +61,6 @@ msgstr "Ångra markering som slutförd för rapport %s"
 msgid "Undo marking this action as complete for the report %s"
 msgstr "Ångra markeringen av denna åtgärd som slutförd för rapporten %s"
 
-#: actions/action_admin.py actions/wagtail_admin.py
-msgid "External links"
-msgstr "Länk till externa webbplats"
-
 #: actions/action_admin.py
 msgid "Last updated"
 msgstr "Senast uppdaterad"
@@ -81,6 +77,10 @@ msgstr "Namn"
 msgid "Categories"
 msgstr "Kategorier"
 
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr "Länk till externa webbplats"
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
@@ -91,6 +91,10 @@ msgstr "Grundläggande information"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Framsteg"
+
+#: actions/action_admin.py actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "interna anteckningar för planadministratörer"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -312,6 +316,10 @@ msgstr "Om formatet är \"Kategori\" måste en kategorityp anges"
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Om formatet är \"Numerisk\" måste en enhet anges"
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
+msgstr ""
 
 #: actions/attribute_type_admin.py
 #, fuzzy
@@ -779,10 +787,6 @@ msgstr "Effekten av denna åtgärd"
 #: actions/models/action.py
 msgid "internal priority"
 msgstr "intern prioritering"
-
-#: actions/models/action.py
-msgid "internal notes for plan administrators"
-msgstr "interna anteckningar för planadministratörer"
 
 #: actions/models/action.py
 msgid "internal notes"
@@ -1610,6 +1614,14 @@ msgid "Set to enable drafting and reviewing functionality"
 msgstr "Ställ in för att aktivera utkast- och granskningsfunktionalitet"
 
 #: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr ""
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "plan funktion"
 
@@ -2193,6 +2205,18 @@ msgstr "Logga in på Kausal Watch"
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr "Vi ber om ursäkt, servern har för tillfället problem."
+
+#: admin_site/utils.py
+#, fuzzy
+#| msgid "Public"
+msgid "Public field"
+msgstr "Offentlig"
+
+#: admin_site/utils.py
+#, fuzzy
+#| msgid "Public"
+msgid "Non-public field"
+msgstr "Offentlig"
 
 #: admin_site/views.py
 msgid "Your account settings have been changed successfully!"
@@ -4739,6 +4763,11 @@ msgstr "Användare"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
 
+#, fuzzy
+#~| msgid "Internal fields"
+#~ msgid "Internal field"
+#~ msgstr "Interna fält"
+
 #~ msgid "Admin hostnames"
 #~ msgstr "Admin värdnamn"
 
@@ -4896,9 +4925,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Completion"
 #~ msgstr "Komplettering"
-
-#~ msgid "Internal fields"
-#~ msgstr "Interna fält"
 
 #~ msgid "Schedule and decision level"
 #~ msgstr "Schema och beslutsnivå"

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-05 08:42+0200\n"
+"POT-Creation-Date: 2023-12-15 15:38+0200\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -60,10 +60,6 @@ msgstr ""
 msgid "Undo marking this action as complete for the report %s"
 msgstr "Abschliessen für Bericht %s rückgängig machen"
 
-#: actions/action_admin.py actions/wagtail_admin.py
-msgid "External links"
-msgstr ""
-
 #: actions/action_admin.py
 msgid "Last updated"
 msgstr ""
@@ -80,6 +76,10 @@ msgstr ""
 msgid "Categories"
 msgstr ""
 
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr ""
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
@@ -89,6 +89,10 @@ msgstr ""
 #: actions/action_admin.py actions/blocks/category_page_layout.py
 #: indicators/blocks.py
 msgid "Progress"
+msgstr ""
+
+#: actions/action_admin.py actions/models/action.py
+msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/action_admin.py
@@ -294,6 +298,10 @@ msgstr ""
 
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
+msgstr ""
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr ""
 
 #: actions/attribute_type_admin.py
@@ -731,10 +739,6 @@ msgstr "Die Auswirkungen dieser Massnahme"
 
 #: actions/models/action.py
 msgid "internal priority"
-msgstr ""
-
-#: actions/models/action.py
-msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/models/action.py
@@ -1481,6 +1485,14 @@ msgid "Set to enable drafting and reviewing functionality"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr ""
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr ""
 
@@ -2005,6 +2017,14 @@ msgstr ""
 
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
+msgstr ""
+
+#: admin_site/utils.py
+msgid "Public field"
+msgstr ""
+
+#: admin_site/utils.py
+msgid "Non-public field"
 msgstr ""
 
 #: admin_site/views.py
@@ -4330,6 +4350,11 @@ msgstr ""
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
+
+#, fuzzy
+#~| msgid "Action field"
+#~ msgid "Internal field"
+#~ msgstr "Massnahmenfeld"
 
 #~ msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
 #~ msgstr "Dieses Formular ist für Superadministratoren gedacht, um einen völlig neuen Massnahmenplan zu erstellen. Wenn Sie sich bei einem der technischen Felder weiter unten unsicher sind, können Sie es leer lassen. Bitte versuchen Sie, bestehende Konventionen für die Plankennung zu befolgen."
