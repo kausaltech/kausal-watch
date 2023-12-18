@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-05 08:42+0200\n"
+"POT-Creation-Date: 2023-12-15 15:38+0200\n"
 "PO-Revision-Date: 2023-12-13 16:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
-"\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -63,10 +62,6 @@ msgstr "Fortryd markering som færdig for rapport %s"
 msgid "Undo marking this action as complete for the report %s"
 msgstr "Fortryd markering af denne handling som fuldført for rapporten %s"
 
-#: actions/action_admin.py actions/wagtail_admin.py
-msgid "External links"
-msgstr "Eksterne links"
-
 #: actions/action_admin.py
 msgid "Last updated"
 msgstr "Sidst opdateret"
@@ -83,6 +78,10 @@ msgstr "Navn"
 msgid "Categories"
 msgstr "Kategorier"
 
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr "Eksterne links"
+
 #: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
 #: indicators/wagtail_admin.py notifications/wagtail_admin.py
 #: orgs/wagtail_admin.py
@@ -93,6 +92,10 @@ msgstr "Grundlæggende oplysninger"
 #: indicators/blocks.py
 msgid "Progress"
 msgstr "Fremskridt"
+
+#: actions/action_admin.py actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "interne notater til planadministratorer"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -318,6 +321,10 @@ msgstr "Hvis formatet er \"Kategori\", skal du vælge hvilken kategoritype attri
 #: actions/attribute_type_admin.py
 msgid "If format is 'Numeric', a unit must be set"
 msgstr "Hvis formatet er 'Numerisk', skal der angives en enhed"
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
+msgstr ""
 
 #: actions/attribute_type_admin.py
 #, fuzzy
@@ -779,10 +786,6 @@ msgstr "Indvirkningen af denne handling"
 #: actions/models/action.py
 msgid "internal priority"
 msgstr "intern prioritering"
-
-#: actions/models/action.py
-msgid "internal notes for plan administrators"
-msgstr "interne notater til planadministratorer"
 
 #: actions/models/action.py
 msgid "internal notes"
@@ -1558,6 +1561,14 @@ msgid "Set to enable drafting and reviewing functionality"
 msgstr "Indstillet til at aktivere kladde- og gennemgangsfunktionalitet"
 
 #: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr ""
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr ""
+
+#: actions/models/features.py
 msgid "plan feature"
 msgstr "plan funktion"
 
@@ -2105,6 +2116,18 @@ msgstr "Log ind på Kausal Watch"
 #: admin_site/templates/wagtailadmin/login.html
 msgid "Our apologies, the server is temporarily experiencing difficulties."
 msgstr "Vi beklager, men serveren har midlertidigt problemer."
+
+#: admin_site/utils.py
+#, fuzzy
+#| msgid "Published"
+msgid "Public field"
+msgstr "Publiceret"
+
+#: admin_site/utils.py
+#, fuzzy
+#| msgid "Published"
+msgid "Non-public field"
+msgstr "Publiceret"
 
 #: admin_site/views.py
 msgid "Your account settings have been changed successfully!"
@@ -3138,13 +3161,7 @@ msgstr "Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "not_enough_tasks"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
-msgstr ""
-"Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne i "
-"handlingsplanen. Du kan se på handlingsplanens vagtside, hvad der allerede "
-"er blevet gjort for at fremme handlingerne, og hvad der er planlagt for "
-"fremtiden. Det betyder, at det ville være at foretrække for hver aktion at "
-"have mindst en kommende projekt inden for det næste år. Gå og tilføj projekt "
-"til handlingen, som viser, hvad de næste planlagte trin for handlingen er."
+msgstr "Dette er en automatisk påmindelse om opdatering af handlingsdetaljerne i handlingsplanen. Du kan se på handlingsplanens vagtside, hvad der allerede er blevet gjort for at fremme handlingerne, og hvad der er planlagt for fremtiden. Det betyder, at det ville være at foretrække for hver aktion at have mindst en kommende projekt inden for det næste år. Gå og tilføj projekt til handlingen, som viser, hvad de næste planlagte trin for handlingen er."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_due_soon"
@@ -4575,6 +4592,11 @@ msgstr "Brugere"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
 
+#, fuzzy
+#~| msgid "Internal fields"
+#~ msgid "Internal field"
+#~ msgstr "Interne felter"
+
 #~ msgid "Admin hostnames"
 #~ msgstr "Administrator værtsnavne"
 
@@ -4717,9 +4739,6 @@ msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke
 
 #~ msgid "Completion"
 #~ msgstr "Færdiggørelse"
-
-#~ msgid "Internal fields"
-#~ msgstr "Interne felter"
 
 #~ msgid "Schedule and decision level"
 #~ msgstr "Tidsplan og beslutningsniveau"
