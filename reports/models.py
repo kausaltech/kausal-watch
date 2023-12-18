@@ -7,17 +7,16 @@ from contextlib import contextmanager
 import reversion
 from autoslug.fields import AutoSlugField
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from reversion.revisions import _current_frame, add_to_revision, create_revision
+from sentry_sdk import capture_message
 from wagtail.fields import StreamField
 from wagtail.blocks.stream_block import StreamValue
 
 from actions.models.action import Action
-from aplans.utils import PlanRelatedModel
 from reports.blocks.action_content import ReportFieldBlock
 
 from .spreadsheets import ExcelReport
@@ -116,7 +115,11 @@ class Report(models.Model, PlanRelatedModel):
 
         actions_to_snapshot = (
             self.type.plan.actions.all()
-            .prefetch_related('responsible_parties__organization', 'categories__type')
+            .prefetch_related(
+                'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
+                'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
+            )
+
         )
         result = list()
 
@@ -124,17 +127,43 @@ class Report(models.Model, PlanRelatedModel):
             return v._model == Action
 
         incomplete_actions = []
+
         ct = ContentType.objects.get_for_model(Action)
-        for action in actions_to_snapshot:
-            try:
-                snapshot = action.get_latest_snapshot(report=self)
-                revision = snapshot.action_version.revision
-                result.append((snapshot.action_version, snapshot.get_related_versions(ct),
-                               {'completed_at': revision.date_created,
-                                'completed_by': str(revision.user) if revision.user else ''}))
+        version_qs = Version.objects.filter(
+                content_type=ct,
+                object_id__in=[a.pk for a in actions_to_snapshot],
+                action_snapshots__report_id=self.pk
+            ).prefetch_related(
+                'action_snapshots'
+            ).select_related(
+                'revision'
+            ).order_by(
+                '-revision__date_created'
+            )
+
+        action_snapshots_by_action_pk = dict()
+        for version in version_qs:
+            action_pk = version.object_id
+            if action_pk in action_snapshots_by_action_pk:
                 continue
-            except ObjectDoesNotExist:
+            qs = version.action_snapshots.filter(report_id=self.pk)
+            if qs.count() > 1:
+                capture_message("Database consistency error: snapshot has multiple versions")
+            snapshot = qs.first()
+            action_snapshots_by_action_pk[int(action_pk)] = snapshot
+
+        for action in actions_to_snapshot:
+            snapshot = action_snapshots_by_action_pk.get(action.pk)
+            if snapshot is None:
                 incomplete_actions.append(action)
+                continue
+            revision = snapshot.action_version.revision
+            result.append(
+                (snapshot.action_version,
+                 snapshot.get_related_versions(ct),
+                 {'completed_at': revision.date_created,
+                  'completed_by': str(revision.user) if revision.user else ''})
+            )
         versions = []
         try:
             with create_revision(manage_manually=True):
@@ -197,6 +226,7 @@ class ActionSnapshot(models.Model):
         verbose_name = _('action snapshot')
         verbose_name_plural = _('action snapshots')
         get_latest_by = 'action_version__revision__date_created'
+        unique_together = (('report', 'action_version'),)
 
     @classmethod
     def for_action(cls, report: Report, action: Action, created_explicitly: bool = True) -> ActionSnapshot:
