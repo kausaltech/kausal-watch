@@ -235,8 +235,8 @@ class CategoryType(  # type: ignore[django-manager-missing]
             for category in self.categories.filter(parent__isnull=True):
                 category.synchronize_pages(ct_page)
 
-    @staticmethod
-    def expand_category_paths(qs: models.QuerySet[Category]) -> Iterable[Sequence[Category]]:
+    def _expand_category_paths(self) -> Iterable[Sequence[Category]]:
+        qs = self.categories.all()
         category_paths = []
         categories_by_id = {c.pk: c for c in qs}
         for category in qs:
@@ -261,8 +261,7 @@ class CategoryType(  # type: ignore[django-manager-missing]
         all of the leaf level categories get mapped to their parents
         in the root level.
         """
-        qs = self.categories.all()
-        category_paths = self.expand_category_paths(qs)
+        category_paths = self._expand_category_paths()
         pks_by_level = {}
 
         for idx, level in enumerate(self.levels.all()):
