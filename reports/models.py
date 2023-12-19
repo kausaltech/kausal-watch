@@ -16,6 +16,7 @@ from sentry_sdk import capture_message
 from wagtail.fields import StreamField
 from wagtail.blocks.stream_block import StreamValue
 
+from aplans.utils import PlanRelatedModel
 from actions.models.action import Action
 from reports.blocks.action_content import ReportFieldBlock
 
