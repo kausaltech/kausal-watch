@@ -92,7 +92,7 @@ def test_report_action_snapshots(plan_with_some_actions, report_type_with_multip
     live_action_versions = report_partially_complete.get_live_action_versions()
     for action_version, related, metadata in live_action_versions:
         pk = action_version.field_dict['id']
-        assert type(pk) == int
+        assert isinstance(pk, int)
         if pk in [a.pk for a in complete_actions]:
             assert action_version.pk is not None
             pk = action_version.field_dict['id']
