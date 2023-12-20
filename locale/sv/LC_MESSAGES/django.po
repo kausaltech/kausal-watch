@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-15 15:38+0200\n"
+"POT-Creation-Date: 2023-12-20 17:07+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -92,8 +92,16 @@ msgstr "Grundläggande information"
 msgid "Progress"
 msgstr "Framsteg"
 
-#: actions/action_admin.py actions/models/action.py
-msgid "internal notes for plan administrators"
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "internal notes"
+msgid "Internal notes"
+msgstr "interna anteckningar"
+
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "internal notes for plan administrators"
+msgid "Internal notes for plan administrators"
 msgstr "interna anteckningar för planadministratörer"
 
 #: actions/action_admin.py
@@ -787,6 +795,10 @@ msgstr "Effekten av denna åtgärd"
 #: actions/models/action.py
 msgid "internal priority"
 msgstr "intern prioritering"
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "interna anteckningar för planadministratörer"
 
 #: actions/models/action.py
 msgid "internal notes"

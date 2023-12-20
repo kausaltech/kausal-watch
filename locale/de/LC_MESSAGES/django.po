@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-15 15:38+0200\n"
+"POT-Creation-Date: 2023-12-20 17:07+0100\n"
 "PO-Revision-Date: 2023-12-19 09:19+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -92,8 +91,16 @@ msgstr "Grunddaten"
 msgid "Progress"
 msgstr "Fortschritt"
 
-#: actions/action_admin.py actions/models/action.py
-msgid "internal notes for plan administrators"
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "internal notes"
+msgid "Internal notes"
+msgstr "interne Notizen"
+
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "internal notes for plan administrators"
+msgid "Internal notes for plan administrators"
 msgstr "interne Notizen für Planadministratoren"
 
 #: actions/action_admin.py
@@ -721,6 +728,10 @@ msgstr "Die Auswirkungen dieser Maßnahme"
 #: actions/models/action.py
 msgid "internal priority"
 msgstr "interne Priorität"
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "interne Notizen für Planadministratoren"
 
 #: actions/models/action.py
 msgid "internal notes"

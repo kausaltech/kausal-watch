@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-15 15:38+0200\n"
+"POT-Creation-Date: 2023-12-20 17:07+0100\n"
 "PO-Revision-Date: 2023-07-28 10:27+0000\n"
 "Last-Translator: Bernhard Bliem, 2023\n"
 "Language-Team: German (Switzerland) (https://app.transifex.com/kausal-tech/teams/173102/de_CH/)\n"
@@ -91,9 +91,17 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: actions/action_admin.py actions/models/action.py
-msgid "internal notes for plan administrators"
-msgstr ""
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Internal notes"
+msgstr "Massnahmenfeld"
+
+#: actions/action_admin.py
+#, fuzzy
+#| msgid "Can administrate all actions"
+msgid "Internal notes for plan administrators"
+msgstr "Kann alle Massnahmen verwalten"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -739,6 +747,10 @@ msgstr "Die Auswirkungen dieser Massnahme"
 
 #: actions/models/action.py
 msgid "internal priority"
+msgstr ""
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/models/action.py
@@ -4350,11 +4362,6 @@ msgstr ""
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
-
-#, fuzzy
-#~| msgid "Action field"
-#~ msgid "Internal field"
-#~ msgstr "Massnahmenfeld"
 
 #~ msgid "This form is for super administrators for creating a completely new action plan. If you are unsure about any of the technical fields near the bottom, they can be left empty. Please try to follow existing conventions for the plan identifier."
 #~ msgstr "Dieses Formular ist für Superadministratoren gedacht, um einen völlig neuen Massnahmenplan zu erstellen. Wenn Sie sich bei einem der technischen Felder weiter unten unsicher sind, können Sie es leer lassen. Bitte versuchen Sie, bestehende Konventionen für die Plankennung zu befolgen."

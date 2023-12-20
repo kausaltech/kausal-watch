@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-15 15:38+0200\n"
+"POT-Creation-Date: 2023-12-20 17:07+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -87,8 +87,12 @@ msgstr ""
 msgid "Progress"
 msgstr ""
 
-#: actions/action_admin.py actions/models/action.py
-msgid "internal notes for plan administrators"
+#: actions/action_admin.py
+msgid "Internal notes"
+msgstr ""
+
+#: actions/action_admin.py
+msgid "Internal notes for plan administrators"
 msgstr ""
 
 #: actions/action_admin.py
@@ -715,6 +719,10 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "internal priority"
+msgstr ""
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
 msgstr ""
 
 #: actions/models/action.py
