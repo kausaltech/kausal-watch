@@ -716,9 +716,6 @@ class ActionAdmin(AplansModelAdmin):
         CustomizableBuiltInFieldPanel('start_date'),
         CustomizableBuiltInFieldPanel('end_date'),
     ]
-    reporting_panels = [
-        CustomizableBuiltInFieldPanel('internal_notes', widget=AdminAutoHeightTextInput(attrs=dict(rows=5))),
-    ]
 
     task_panels = [
         FieldPanel('name'),
@@ -918,7 +915,9 @@ class ActionAdmin(AplansModelAdmin):
 
         contact_persons_panels = self.get_contact_persons_panels(request, instance)
         all_tabs.append(ObjectList(
-            contact_persons_panels, help_text=render_field_label('', public=True), heading=_('Contact persons')))
+            contact_persons_panels,
+            help_text=render_field_label('', public=plan.features.public_contact_persons), heading=_('Contact persons')
+        ))
 
         responsible_parties_panels = self.get_responsible_parties_panels(request, instance)
         all_tabs.append(ObjectList(
@@ -943,13 +942,19 @@ class ActionAdmin(AplansModelAdmin):
                     help_panels_for_field.setdefault(field.id, []).append(help_panel)
         for help_panels in help_panels_for_field.values():
             reporting_panels += help_panels
-        reporting_panels += list(self.reporting_panels)
+        reporting_panels.append(
+            FieldPanel(
+                'internal_notes',
+                heading=render_field_label(_('Internal notes'), public=False),
+                widget=AdminAutoHeightTextInput(attrs=dict(rows=5))
+            )
+        )
 
         if is_general_admin:
             reporting_panels.append(
                 FieldPanel(
                     'internal_admin_notes',
-                    heading=render_field_label(_('internal notes for plan administrators'), public=False),
+                    heading=render_field_label(_('Internal notes for plan administrators'), public=False),
                     widget=AdminAutoHeightTextInput(attrs=dict(rows=5))
                 )
             )
