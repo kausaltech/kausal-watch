@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-20 17:07+0100\n"
-"PO-Revision-Date: 2023-12-19 09:19+0000\n"
-"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"PO-Revision-Date: 2023-12-20 16:44+0000\n"
+"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -92,16 +93,12 @@ msgid "Progress"
 msgstr "Fortschritt"
 
 #: actions/action_admin.py
-#, fuzzy
-#| msgid "internal notes"
 msgid "Internal notes"
-msgstr "interne Notizen"
+msgstr "Interne Notizen"
 
 #: actions/action_admin.py
-#, fuzzy
-#| msgid "internal notes for plan administrators"
 msgid "Internal notes for plan administrators"
-msgstr "interne Notizen für Planadministratoren"
+msgstr "Interne Notizen für Planadministratoren"
 
 #: actions/action_admin.py
 msgid "Reporting"
@@ -307,6 +304,8 @@ msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werde
 #: actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
 msgstr ""
+"Dieses Feld enthält bereits Werte. Wenn Sie das Format ändern möchten, "
+"müssen Sie zuerst die vorhandenen Werte löschen."
 
 #: actions/attribute_type_admin.py
 msgid "Choice options"
@@ -1470,11 +1469,13 @@ msgstr "Einstellen, um die Entwurfs- und Überprüfungsfunktion zu aktivieren"
 
 #: actions/models/features.py
 msgid "Display field visibility as a label in edit views"
-msgstr ""
+msgstr "Feldsichtbarkeit als Beschriftung in Bearbeitungsansichten anzeigen"
 
 #: actions/models/features.py
 msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
 msgstr ""
+"Bei Plänen, die feldspezifische Sichtbarkeitsbeschränkungen haben, zeige den "
+"Benutzern an, welche Felder öffentlich und welche eingeschränkt sind."
 
 #: actions/models/features.py
 msgid "plan feature"
