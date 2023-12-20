@@ -227,9 +227,10 @@ class OrderedChoice(AttributeType):
 
     def get_value_from_serialized_data(self, data):
         choice = self.get_from_serialized_attributes(data)
-        initial_choice = models.AttributeTypeChoiceOption.objects.filter(pk=choice)
-        if initial_choice:
-            return initial_choice.get()
+        if choice:
+            initial_choice = models.AttributeTypeChoiceOption.objects.filter(pk=choice)
+            if initial_choice:
+                return initial_choice.get()
         return None
 
     def commit_attributes(self, obj: models.ModelWithAttributes, value: models.AttributeTypeChoiceOption):
