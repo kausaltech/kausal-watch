@@ -859,5 +859,25 @@ WAGTAILEMBEDS_RESPONSIVE_HTML = True
 
 # Workaround until https://github.com/wagtail/wagtail/pull/11075 is merged
 WAGTAILADMIN_RICH_TEXT_EDITORS = {
-    "default": {"WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations"}
+    'default': {
+        "WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations"
+    },
+    'limited': {
+        "WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations",
+        "OPTIONS": {
+            "features": ["bold", "italic", "ol", "ul", "link"]
+        },
+    },
+    'very-limited-with-links': {
+        "WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations",
+        "OPTIONS": {
+            "features": ["bold", "italic", "link"]
+        },
+    },
+    'very-limited': {
+        "WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations",
+        "OPTIONS": {
+            "features": ["bold", "italic"]
+        },
+    },
 }
