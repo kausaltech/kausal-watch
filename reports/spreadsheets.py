@@ -404,14 +404,14 @@ class ExcelReport:
         pivot_specs = [
             # Pivot sheet: Implementation phase
             {
-                'group': (_('implementation phase').capitalize(),),
+                'group': (_('Implementation phase'),),
                 'type': 'pie'
             },
             # Pivot sheet: Organization parent x Implementation phase
             {
                 'group': (
                     _('Parent'),
-                    _('implementation phase').capitalize()),
+                    _('Implementation phase')),
                 'type': 'column'
             }
         ]
@@ -423,7 +423,7 @@ class ExcelReport:
             for label in category_labels:
                 assert len(label) == 1
                 pivot_specs.append({
-                    'group': (label[0], _('implementation phase').capitalize()),
+                    'group': (label[0], _('Implementation phase')),
                     'type': 'column',
                     'subtype': 'stacked'
                 })
