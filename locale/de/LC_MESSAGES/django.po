@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-20 17:07+0100\n"
+"POT-Creation-Date: 2023-12-21 17:21+0100\n"
 "PO-Revision-Date: 2023-12-20 16:44+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -303,9 +302,7 @@ msgstr "Wenn das Format „Numerisch“ ist, muss eine Einheit eingestellt werde
 
 #: actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
-msgstr ""
-"Dieses Feld enthält bereits Werte. Wenn Sie das Format ändern möchten, "
-"müssen Sie zuerst die vorhandenen Werte löschen."
+msgstr "Dieses Feld enthält bereits Werte. Wenn Sie das Format ändern möchten, müssen Sie zuerst die vorhandenen Werte löschen."
 
 #: actions/attribute_type_admin.py
 msgid "Choice options"
@@ -429,6 +426,7 @@ msgstr "Kennung"
 
 #: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
 #: actions/blocks/filters.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "Implementation phase"
 msgstr "Umsetzungsphase"
 
@@ -736,7 +734,7 @@ msgstr "interne Notizen für Planadministratoren"
 msgid "internal notes"
 msgstr "interne Notizen"
 
-#: actions/models/action.py reports/spreadsheets.py
+#: actions/models/action.py
 msgid "implementation phase"
 msgstr "Umsetzungsphase"
 
@@ -1473,9 +1471,7 @@ msgstr "Feldsichtbarkeit als Beschriftung in Bearbeitungsansichten anzeigen"
 
 #: actions/models/features.py
 msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
-msgstr ""
-"Bei Plänen, die feldspezifische Sichtbarkeitsbeschränkungen haben, zeige den "
-"Benutzern an, welche Felder öffentlich und welche eingeschränkt sind."
+msgstr "Bei Plänen, die feldspezifische Sichtbarkeitsbeschränkungen haben, zeige den Benutzern an, welche Felder öffentlich und welche eingeschränkt sind."
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1850,6 +1846,10 @@ msgstr "Authentifizierungsmethode kann nicht festgestellt werden. Die Domäne de
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
 msgstr "Passwortauthentifizierung ist erforderlich, aber der Benutzer hat kein Passwort."
+
+#: admin_site/apps.py
+msgid "History"
+msgstr "Verlauf"
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"

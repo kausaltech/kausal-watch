@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-20 17:07+0100\n"
+"POT-Creation-Date: 2023-12-21 17:21+0100\n"
 "PO-Revision-Date: 2023-12-16 09:19+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -427,6 +427,7 @@ msgstr "Identifikators"
 
 #: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
 #: actions/blocks/filters.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgid "Implementation phase"
 msgstr "Īstenošanas posms"
 
@@ -734,7 +735,7 @@ msgstr "iekšējās piezīmes plānu administratoriem"
 msgid "internal notes"
 msgstr "iekšējās piezīmes"
 
-#: actions/models/action.py reports/spreadsheets.py
+#: actions/models/action.py
 msgid "implementation phase"
 msgstr "īstenošanas posms"
 
@@ -1844,6 +1845,10 @@ msgstr "Nevar noteikt autentifikācijas metodi. E-pasta adreses domēns var būt
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
 msgstr "Ir nepieciešama paroles autentifikācija, bet lietotājam nav paroles."
+
+#: admin_site/apps.py
+msgid "History"
+msgstr ""
 
 #: admin_site/chooser.py
 msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"

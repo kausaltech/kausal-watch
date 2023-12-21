@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-20 17:07+0100\n"
+"POT-Creation-Date: 2023-12-21 17:21+0100\n"
 "PO-Revision-Date: 2023-09-15 10:18+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -465,6 +465,7 @@ msgstr "identifierare"
 
 #: actions/blocks/action_dashboard.py actions/blocks/category_page_layout.py
 #: actions/blocks/filters.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 #, fuzzy
 #| msgid "implementation phase"
 msgid "Implementation phase"
@@ -804,7 +805,7 @@ msgstr "interna anteckningar för planadministratörer"
 msgid "internal notes"
 msgstr "interna anteckningar"
 
-#: actions/models/action.py reports/spreadsheets.py
+#: actions/models/action.py
 msgid "implementation phase"
 msgstr "genomförandefas"
 
@@ -2053,6 +2054,10 @@ msgstr ""
 
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
+msgstr ""
+
+#: admin_site/apps.py
+msgid "History"
 msgstr ""
 
 #: admin_site/chooser.py

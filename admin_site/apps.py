@@ -4,7 +4,7 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.contrib.admin.apps import AdminConfig
 from django.db.models.fields import BLANK_CHOICE_DASH
-from django.utils.translation import get_language_info
+from django.utils.translation import get_language_info, gettext as _
 from wagtail.admin.localization import get_available_admin_languages
 
 
@@ -62,6 +62,11 @@ class AdminSiteConfig(AdminConfig):
         # LANGUAGES in settings.py for details about this.
         from wagtail.admin.forms import account
         account.LocalePreferencesForm.base_fields['preferred_language']._choices.choices_func = _get_language_choices
+
+        # We use this just for overriding some Django translations that are weird in some languages
+        def _dummy_function_so_makemessages_finds_strings():
+            # This is never called
+            _("History")
 
 
 class AdminSiteStatic(AppConfig):
