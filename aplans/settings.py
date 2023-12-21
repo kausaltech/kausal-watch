@@ -871,7 +871,7 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
     'very-limited-with-links': {
         "WIDGET": "admin_site.draftail_rich_text_area.DraftailRichTextAreaWithFixedTranslations",
         "OPTIONS": {
-            "features": ["bold", "italic", "link"]
+            "features": ["italic", "link"]
         },
     },
     'very-limited': {
