@@ -69,6 +69,7 @@ class SiteGeneralContentAdmin(ModelAdmin):
         FieldPanel('action_term'),
         FieldPanel('action_task_term'),
         FieldPanel('organization_term'),
+        FieldPanel('sitewide_announcement'),
     ]
 
     def get_queryset(self, request):
