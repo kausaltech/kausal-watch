@@ -115,12 +115,11 @@ class Report(models.Model, PlanRelatedModel):
             self._raise_complete()
 
         actions_to_snapshot = (
-            self.type.plan.actions.all()
+            self.type.plan.actions.visible_for_user(None)
             .prefetch_related(
                 'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
             )
-
         )
         result = list()
 
