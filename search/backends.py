@@ -144,7 +144,7 @@ class ModeltransFieldProxy(index.SearchField):
 
     def value_from_object(self, obj):
         lang = translation.get_language()
-        trans_field_name = f'{self.field_name}_{lang}'
+        trans_field_name = f'{self.field_name}_i18n'
         for field in obj._meta.get_field('i18n').get_translated_fields():
             field_name = field.get_field_name()
             if (
