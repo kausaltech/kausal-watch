@@ -150,8 +150,6 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
             attribute_type_model_instance,
             related_objects
         )
-        if attribute_record is None:
-            return [None]
         return wrapped_type.xlsx_values(attribute_record, related_objects)
 
     def xlsx_column_labels(self, block_value) -> List[str]:

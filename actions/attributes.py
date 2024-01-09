@@ -29,6 +29,8 @@ def html_to_plaintext(richtext):
     so that <p>hello</p><p>world</p> gives "hello world", not "helloworld".
     """
     # insert space after </p>, </h1> - </h6>, </li> and </blockquote> tags
+    if richtext is None:
+        return None
     richtext = re.sub(
         r"(</(p|h\d|li|blockquote)>)", r"\1\n\n", richtext, flags=re.IGNORECASE
     )
@@ -542,7 +544,7 @@ class Text(GenericTextAttributeType):
 
     def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
         if not attribute:
-            return [None, None]
+            return [None]
         attribute_data = attribute.get('data')
         text = attribute_data['text']
         return [text]
