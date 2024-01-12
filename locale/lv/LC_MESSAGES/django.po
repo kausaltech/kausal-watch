@@ -8,19 +8,21 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-21 17:21+0100\n"
-"PO-Revision-Date: 2023-12-16 09:19+0000\n"
-"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
+"PO-Revision-Date: 2024-01-13 09:19+0000\n"
+"Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
+"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/"
+">\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
+"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.0.2\n"
 
 #: actions/action_admin.py
 msgid "There is already an action with this identifier."
-msgstr "Ar šo identifikatoru jau ir veikta darbība."
+msgstr "Ar šo identifikatoru jau ir veikta rīcība."
 
 #: actions/action_admin.py
 #, python-format
@@ -45,7 +47,7 @@ msgstr "Atzīmēt kā pabeigtu ziņojumam %s"
 #: actions/action_admin.py
 #, python-format
 msgid "Mark this action as complete for the report %s"
-msgstr "Atzīmējiet šo darbību kā pabeigtu ziņojumam %s"
+msgstr "Atzīmējiet šo rīcību kā pabeigtu ziņojumam %s"
 
 #: actions/action_admin.py
 #, python-format
@@ -55,7 +57,7 @@ msgstr "Atcelt ziņojuma atzīmēšanu kā pabeigtu %s"
 #: actions/action_admin.py
 #, python-format
 msgid "Undo marking this action as complete for the report %s"
-msgstr "Atcelt šīs darbības atzīmēšanu kā pabeigtu ziņojumam %s"
+msgstr "Atcelt šīs rīcības atzīmēšanu kā pabeigtu ziņojumam %s"
 
 #: actions/action_admin.py
 msgid "Last updated"
@@ -204,7 +206,7 @@ msgstr "Atcelts"
 
 #: actions/action_status_summary.py
 msgid "Out of scope"
-msgstr "Ārpus darbības jomas"
+msgstr "Ārpus rīcības jomas"
 
 #: actions/action_status_summary.py
 msgid "Merged"
@@ -386,7 +388,7 @@ msgstr "Apvienotie pasākumi"
 
 #: actions/blocks/action_content.py
 msgid "Related actions"
-msgstr "Saistītās darbības"
+msgstr "Saistītās rīcības"
 
 #: actions/blocks/action_content.py
 msgid "Full width"
@@ -563,7 +565,7 @@ msgstr "Kategorijas veidi"
 
 #: actions/category_admin.py
 msgid "Action and indicator categorization"
-msgstr "Darbības un rādītāju iedalījums kategorijās"
+msgstr "Rīcības un rādītāju iedalījums kategorijās"
 
 #: actions/category_admin.py
 msgid "Category levels"
@@ -607,11 +609,11 @@ msgstr "Izvēlieties kategorijas līmeni"
 
 #: actions/chooser.py
 msgid "Choose an action"
-msgstr "Izvēlieties darbību"
+msgstr "Izvēlieties rīcību"
 
 #: actions/chooser.py
 msgid "Choose another action"
-msgstr "Izvēlieties citu darbību"
+msgstr "Izvēlieties citu rīcību"
 
 #: actions/chooser.py
 msgid "Choose a plan"
@@ -703,7 +705,7 @@ msgstr "Oficiālās puses apstiprinātais nosaukums"
 
 #: actions/models/action.py
 msgid "The identifier for this action (e.g. number)"
-msgstr "Šīs darbības identifikators (piem., numurs)"
+msgstr "Šīs rīcības identifikators (piem., numurs)"
 
 #: actions/models/action.py admin_site/draftail_rich_text_area.py
 #: pages/blocks.py
@@ -717,11 +719,11 @@ msgstr "apraksts"
 
 #: actions/models/action.py
 msgid "What does this action involve in more detail?"
-msgstr "Kāda ir šī darbība sīkāk?"
+msgstr "Kāda ir šīs rīcības sīkāk?"
 
 #: actions/models/action.py
 msgid "The impact of this action"
-msgstr "Šīs darbības ietekme"
+msgstr "Šīs rīcības ietekme"
 
 #: actions/models/action.py
 msgid "internal priority"
@@ -745,7 +747,8 @@ msgstr "statusa manuāla atcelšana"
 
 #: actions/models/action.py
 msgid "Set if you want to prevent the action status from being determined automatically"
-msgstr "Iestatiet, ja vēlaties, lai darbības statuss netiktu noteikts automātiski"
+msgstr ""
+"Iestatiet, ja vēlaties, lai rīcības statuss netiktu noteikts automātiski"
 
 #: actions/models/action.py
 msgid "specifier for status"
@@ -753,15 +756,15 @@ msgstr "statusa specifikators"
 
 #: actions/models/action.py
 msgid "Describe the reason why this action has has this status"
-msgstr "Aprakstiet iemeslu, kāpēc šai darbībai ir šāds statuss"
+msgstr "Aprakstiet iemeslu, kāpēc šai rīcībai ir šāds statuss"
 
 #: actions/models/action.py
 msgid "merged with action"
-msgstr "apvienots ar darbību"
+msgstr "apvienots ar rīcību"
 
 #: actions/models/action.py
 msgid "Set if this action is merged with another action"
-msgstr "Iestatīt, ja šī darbība ir apvienota ar citu darbību"
+msgstr "Iestatīt, ja šī rīcība ir apvienota ar citu rīcību"
 
 #: actions/models/action.py
 msgid "completion"
@@ -769,7 +772,7 @@ msgstr "pabeigšana"
 
 #: actions/models/action.py
 msgid "The completion percentage for this action"
-msgstr "Šīs darbības pabeigšanas procentuālā daļa"
+msgstr "Šīs rīcības pabeigšanas procentuālā daļa"
 
 #: actions/models/action.py
 msgid "schedule"
@@ -777,11 +780,11 @@ msgstr "grafiks"
 
 #: actions/models/action.py
 msgid "continuous action"
-msgstr "nepārtraukta darbība"
+msgstr "nepārtraukta rīcība"
 
 #: actions/models/action.py
 msgid "Set if the action does not have a start or an end date"
-msgstr "Iestatīts, ja darbībai nav sākuma vai beigu datuma"
+msgstr "Iestatīts, ja rīcībai nav sākuma vai beigu datuma"
 
 #: actions/models/action.py
 msgid "decision-making level"
@@ -797,7 +800,7 @@ msgstr "rādītāji"
 
 #: actions/models/action.py
 msgid "related actions"
-msgstr "saistītās darbības"
+msgstr "saistītās rīcības"
 
 #: actions/models/action.py
 msgid "responsible organizations"
@@ -813,7 +816,7 @@ msgstr "sākuma datums"
 
 #: actions/models/action.py
 msgid "The date when implementation of this action starts"
-msgstr "Datums, kad sākas šīs darbības īstenošana"
+msgstr "Datums, kad sākas šīs rīcības īstenošana"
 
 #: actions/models/action.py reports/models.py
 msgid "end date"
@@ -821,7 +824,7 @@ msgstr "beigu datums"
 
 #: actions/models/action.py
 msgid "The date when implementation of this action ends"
-msgstr "Datums, kad beidzas šīs darbības īstenošana"
+msgstr "Datums, kad beidzas šīs rīcības īstenošana"
 
 #: actions/models/action.py
 msgctxt "action"
@@ -830,7 +833,7 @@ msgstr "aizstāts ar"
 
 #: actions/models/action.py
 msgid "Set if this action is superseded by another action"
-msgstr "Iestatīts, ja šo darbību aizstāj cita darbība"
+msgstr "Iestatīts, ja šo rīcību aizstāj cita rīcība"
 
 #: actions/models/action.py
 msgctxt "partitive"
@@ -851,7 +854,7 @@ msgstr "Var pārvaldīt visas rīcības"
 
 #: actions/models/action.py
 msgid "Other action is merged with this one"
-msgstr "Cita darbība ir apvienota ar šo darbību"
+msgstr "Cita rīcība ir apvienota ar šo rīcību"
 
 #: actions/models/action.py
 msgid "Has contact persons"
@@ -864,22 +867,24 @@ msgstr "Aktīvie uzdevumi"
 #: actions/models/action.py
 #, python-format
 msgid "The action is already marked as complete for report %s."
-msgstr "Darbība jau ir atzīmēta kā pabeigta ziņojumam %s."
+msgstr "Rīcība jau ir atzīmēta kā pabeigta ziņojumam %s."
 
 #: actions/models/action.py
 #, python-format
 msgid "Marked action '%(action)s' as complete for report '%(report)s'"
-msgstr "Atzīmēta darbība '%(action)s' kā pabeigta ziņojumam '%(report)s'"
+msgstr "Atzīmēta rīcība '%(action)s' kā pabeigta ziņojumam '%(report)s'"
 
 #: actions/models/action.py
 #, python-format
 msgid "Cannot undo marking action as complete as there are %s snapshots"
-msgstr "Nav iespējams atcelt darbības atzīmēšanu kā pabeigtu, jo ir %s momentuzņēmumi"
+msgstr ""
+"Nav iespējams atcelt rīcības atzīmēšanu kā pabeigtu, jo ir %s momentuzņēmumi"
 
 #: actions/models/action.py
 #, python-format
 msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
-msgstr "Atcelta darbības '%(action)s' atzīmēšana kā pabeigta ziņojumam '%(report)s'"
+msgstr ""
+"Atcelta rīcības '%(action)s' atzīmēšana kā pabeigta ziņojumam '%(report)s'"
 
 #: actions/models/action.py
 msgid "Primary responsible party"
@@ -912,11 +917,11 @@ msgstr "Organizācijas atbildības joma"
 
 #: actions/models/action.py
 msgid "action responsible party"
-msgstr "darbība atbildīgā puse"
+msgstr "rīcība atbildīgā puse"
 
 #: actions/models/action.py
 msgid "action responsible parties"
-msgstr "darbības atbildīgās puses"
+msgstr "rīcības atbildīgās puses"
 
 #: actions/models/action.py
 msgid "Editor"
@@ -937,23 +942,23 @@ msgstr "galvenā kontaktpersona"
 
 #: actions/models/action.py
 msgid "Is this person the primary contact person for the action?"
-msgstr "Vai šī persona ir galvenā kontaktpersona saistībā ar darbību?"
+msgstr "Vai šī persona ir galvenā kontaktpersona saistībā ar rīcību?"
 
 #: actions/models/action.py
 msgid "action contact person"
-msgstr "darbības kontaktpersona"
+msgstr "rīcības kontaktpersona"
 
 #: actions/models/action.py
 msgid "action contact persons"
-msgstr "darbības kontaktpersonas"
+msgstr "rīcības kontaktpersonas"
 
 #: actions/models/action.py
 msgid "action schedule"
-msgstr "darbību grafiks"
+msgstr "rīcību grafiks"
 
 #: actions/models/action.py
 msgid "action schedules"
-msgstr "darbības grafiki"
+msgstr "rīcības grafiki"
 
 #: actions/models/action.py
 msgid "is completed"
@@ -965,19 +970,19 @@ msgstr "krāsa"
 
 #: actions/models/action.py
 msgid "action status"
-msgstr "darbības statuss"
+msgstr "rīcības statuss"
 
 #: actions/models/action.py
 msgid "action statuses"
-msgstr "darbības statusus"
+msgstr "rīcības statusus"
 
 #: actions/models/action.py
 msgid "action implementation phase"
-msgstr "darbības īstenošanas posms"
+msgstr "rīcības īstenošanas posms"
 
 #: actions/models/action.py
 msgid "action implementation phases"
-msgstr "darbības īstenošanas posmi"
+msgstr "rīcības īstenošanas posmi"
 
 #: actions/models/action.py
 msgid "not started"
@@ -1034,15 +1039,15 @@ msgstr "modificēts vietnē"
 #: actions/models/action.py
 msgctxt "partitive"
 msgid "action task"
-msgstr "darbības uzdevums"
+msgstr "rīcības uzdevums"
 
 #: actions/models/action.py
 msgid "action task"
-msgstr "darbības uzdevums"
+msgstr "rīcības uzdevums"
 
 #: actions/models/action.py
 msgid "action tasks"
-msgstr "darbības uzdevumi"
+msgstr "rīcības uzdevumi"
 
 #: actions/models/action.py
 msgid "Non-completed tasks cannot have a completion date"
@@ -1054,11 +1059,11 @@ msgstr "Pabeigtajiem uzdevumiem jābūt norādītam pabeigšanas datumam"
 
 #: actions/models/action.py
 msgid "action impact class"
-msgstr "darbības ietekmes klase"
+msgstr "rīcības ietekmes klase"
 
 #: actions/models/action.py
 msgid "action impact classes"
-msgstr "darbības ietekmes klases"
+msgstr "rīcības ietekmes klases"
 
 #: actions/models/action.py feedback/models.py indicators/models.py
 #: orgs/models.py pages/blocks.py pages/models.py
@@ -1071,11 +1076,11 @@ msgstr "virsraksts"
 
 #: actions/models/action.py
 msgid "action link"
-msgstr "darbības saite"
+msgstr "rīcības saite"
 
 #: actions/models/action.py
 msgid "action links"
-msgstr "darbības saites"
+msgstr "rīcības saites"
 
 #: actions/models/action.py indicators/models.py
 msgid "date"
@@ -1095,19 +1100,19 @@ msgstr "izveidojis"
 
 #: actions/models/action.py
 msgid "action status update"
-msgstr "darbības statusa atjaunināšana"
+msgstr "rīcības statusa atjaunināšana"
 
 #: actions/models/action.py
 msgid "action status updates"
-msgstr "darbības statusa atjauninājumi"
+msgstr "rīcības statusa atjauninājumi"
 
 #: actions/models/action.py
 msgid "impact group action"
-msgstr "ietekmes grupas darbība"
+msgstr "ietekmes grupas rīcība"
 
 #: actions/models/action.py
 msgid "impact group actions"
-msgstr "ietekmes grupas darbības"
+msgstr "ietekmes grupas rīcības"
 
 #: actions/models/action.py
 msgid "Approve"
@@ -1203,7 +1208,7 @@ msgstr "Ja nav iestatīta pamatvaloda, nedrīkst būt citu valodu"
 
 #: actions/models/attributes.py
 msgid "This value is only allowed for action fields"
-msgstr "Šī vērtība ir atļauta tikai darbības laukiem"
+msgstr "Šī vērtība ir atļauta tikai rīcības laukiem"
 
 #: actions/models/attributes.py
 msgid "attribute choice option"
@@ -1235,7 +1240,7 @@ msgstr "galvenā rindkopa"
 
 #: actions/models/category.py
 msgid "usable for action categorization"
-msgstr "izmantojams darbību kategorizēšanai"
+msgstr "izmantojams rīcību kategorizēšanai"
 
 #: actions/models/category.py
 msgid "usable for indicator categorization"
@@ -1243,7 +1248,7 @@ msgstr "izmantojams rādītāju kategorizēšanai"
 
 #: actions/models/category.py
 msgid "editable for actions"
-msgstr "rediģējams darbībām"
+msgstr "rediģējams rīcībām"
 
 #: actions/models/category.py
 msgid "editable for indicators"
@@ -1364,11 +1369,11 @@ msgstr "Rādīt visu informāciju"
 
 #: actions/models/features.py
 msgid "Allow images for actions"
-msgstr "Atļaut darbību attēlus"
+msgstr "Atļaut rīcību attēlus"
 
 #: actions/models/features.py
 msgid "Should custom images for individual actions be allowed"
-msgstr "Vai atsevišķām darbībām ir atļauts izmantot pielāgotus attēlus"
+msgstr "Vai atsevišķām rīcībām ir atļauts izmantot pielāgotus attēlus"
 
 #: actions/models/features.py
 msgid "Show admin link"
@@ -1388,19 +1393,21 @@ msgstr "Izvēlieties, kura informācija par kontaktpersonām ir redzama publiska
 
 #: actions/models/features.py
 msgid "Has action identifiers"
-msgstr "Ir darbības identifikatori"
+msgstr "Ir rīcības identifikatori"
 
 #: actions/models/features.py
 msgid "Set if the plan uses meaningful action identifiers"
-msgstr "Iestatīts, ja plānā tiek izmantoti jēgpilni darbību identifikatori"
+msgstr "Iestatīts, ja plānā tiek izmantoti jēgpilni rīcību identifikatori"
 
 #: actions/models/features.py
 msgid "Show action identifiers"
-msgstr "Rādīt darbības identifikatorus"
+msgstr "Rādīt rīcības identifikatorus"
 
 #: actions/models/features.py
 msgid "Set if action identifiers should be visible in the public UI"
-msgstr "Iestatiet, vai darbību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+msgstr ""
+"Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja "
+"saskarnē"
 
 #: actions/models/features.py
 msgid "Action contact persons have different roles"
@@ -1420,7 +1427,7 @@ msgstr "Iestatīts, lai nepieļautu statusam specifisku grafiku un citu elementu
 
 #: actions/models/features.py
 msgid "Has action official name field"
-msgstr "Ir darbības oficiālā nosaukuma lauks"
+msgstr "Ir rīcības oficiālā nosaukuma lauks"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the official name field"
@@ -1428,7 +1435,7 @@ msgstr "Iestatīts, ja plānā tiek izmantots oficiālā nosaukuma lauks"
 
 #: actions/models/features.py
 msgid "Has action lead paragraph"
-msgstr "Ir darbības vadošā rindkopa"
+msgstr "Ir rīcības vadošā rindkopa"
 
 #: actions/models/features.py
 msgid "Set if the plan uses the lead paragraph field"
@@ -1436,11 +1443,13 @@ msgstr "Iestatīts, ja plānā tiek izmantots galvenās rindkopas lauks"
 
 #: actions/models/features.py
 msgid "Has primary organizations for actions"
-msgstr "Ir primārās organizācijas darbībām"
+msgstr "Ir primārās organizācijas rīcībām"
 
 #: actions/models/features.py
 msgid "Set if actions have a clear primary organization (such as multi-city plans)"
-msgstr "Noteikt, ja darbībām ir skaidra primārā organizācija (piemēram, vairāku pilsētu plāni)"
+msgstr ""
+"Noteikt, ja rīcībām ir skaidra primārā organizācija (piemēram, vairāku "
+"pilsētu plāni)"
 
 #: actions/models/features.py
 msgid "Enable site search"
@@ -1524,11 +1533,11 @@ msgstr "vietnes URL"
 
 #: actions/models/plan.py
 msgid "actions locked"
-msgstr "darbības bloķētas"
+msgstr "rīcības bloķētas"
 
 #: actions/models/plan.py
 msgid "Can actions be added and the official metadata edited?"
-msgstr "Vai var pievienot darbības un rediģēt oficiālos metadatus?"
+msgstr "Vai var pievienot rīcību un rediģēt oficiālos metadatus?"
 
 #: actions/models/plan.py
 msgid "main organization for the plan"
@@ -1565,43 +1574,49 @@ msgstr "vecāku"
 
 #: actions/models/plan.py
 msgid "The primary action classification"
-msgstr "Galvenās darbības klasifikācija"
+msgstr "Galvenās rīcības klasifikācija"
 
 #: actions/models/plan.py
 msgid "Used for primary navigation and grouping of actions"
-msgstr "Izmanto primārajai navigācijai un darbību grupēšanai"
+msgstr "Izmanto primārajai navigācijai un rīcību grupēšanai"
 
 #: actions/models/plan.py
 msgid "A secondary action classification"
-msgstr "Sekundārās darbības klasifikācija"
+msgstr "Sekundārās rīcības klasifikācija"
 
 #: actions/models/plan.py
 msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
-msgstr "Atstājiet tukšu, ja vien tas nav īpaši prasīts. Darbības filtri, kas balstīti uz šo kategoriju, tiek parādīti redzamāk nekā citu kategoriju filtri."
+msgstr ""
+"Atstājiet tukšu, ja vien tas nav īpaši prasīts. Rīcības filtri, kas balstīti "
+"uz šo kategoriju, tiek parādīti redzamāk nekā citu kategoriju filtri."
 
 #: actions/models/plan.py
 msgid "Days until actions considered stale"
-msgstr "Dienas, līdz darbības tiek uzskatītas par novecojušām"
+msgstr "Dienas, līdz rīcības tiek uzskatītas par novecojušām"
 
 #: actions/models/plan.py
 msgid "Actions not updated since this many days are considered stale."
-msgstr "Darbības, kas nav atjauninātas pēc tik daudzām dienām, tiek uzskatītas par novecojušām."
+msgstr ""
+"Rīcības, kas nav atjauninātas pēc tik daudzām dienām, tiek uzskatītas par "
+"novecojušām."
 
 #: actions/models/plan.py
 msgid "Target interval in days to update actions"
-msgstr "Mērķa intervāls dienās, lai atjauninātu darbības"
+msgstr "Mērķa intervāls dienās, lai atjauninātu rīcības"
 
 #: actions/models/plan.py
 msgid "A desirable time interval in days within which actions should be updated in the optimal case."
-msgstr "Vēlamais laika intervāls dienās, kurā optimālajā gadījumā darbības būtu jāatjaunina."
+msgstr ""
+"Vēlamais laika intervāls dienās, kurā optimālajā gadījumā rīcības būtu "
+"jāatjaunina."
 
 #: actions/models/plan.py
 msgid "Acceptable interval in days to update actions"
-msgstr "Pieņemamais intervāls dienās, lai atjauninātu darbības"
+msgstr "Pieņemamais intervāls dienās, lai atjauninātu rīcības"
 
 #: actions/models/plan.py
 msgid "A maximum time interval in days within which actions should always be updated."
-msgstr "Maksimālais laika intervāls dienās, kurā darbības vienmēr jāatjaunina."
+msgstr "Maksimālais laika intervāls dienās, kurā rīcības vienmēr jāatjaunina."
 
 #: actions/models/plan.py
 msgctxt "plan"
@@ -1626,7 +1641,9 @@ msgstr "Kategorijas tipam jābūt piederīgam plānam"
 
 #: actions/models/plan.py
 msgid "You must create and choose a primary category type for classifying actions"
-msgstr "Jums ir jāizveido un jāizvēlas primārais kategorijas tips darbību klasificēšanai"
+msgstr ""
+"Jums ir jāizveido un jāizvēlas primārais kategorijas tips rīcību "
+"klasificēšanai"
 
 #: actions/models/plan.py
 msgid "Primary and secondary classification cannot be the same"
@@ -1731,11 +1748,11 @@ msgstr "ietekmes grupas"
 
 #: actions/models/plan.py
 msgid "description when action fulfills criteria"
-msgstr "apraksts, ja darbība atbilst kritērijiem"
+msgstr "apraksts, ja rīcība atbilst kritērijiem"
 
 #: actions/models/plan.py
 msgid "description when action doesn't fulfill criteria"
-msgstr "apraksts, ja darbība neatbilst kritērijiem"
+msgstr "apraksts, ja rīcība neatbilst kritērijiem"
 
 #: actions/models/plan.py
 msgid "monitoring quality point"
@@ -1800,11 +1817,11 @@ msgstr "Domēni"
 
 #: actions/wagtail_admin.py
 msgid "Action statuses"
-msgstr "Darbības statusi"
+msgstr "Rīcības statusi"
 
 #: actions/wagtail_admin.py
 msgid "Action implementation phases"
-msgstr "Darbības īstenošanas posmi"
+msgstr "Rīcības īstenošanas posmi"
 
 #: actions/wagtail_admin.py
 msgid "Action impacts"
@@ -1816,7 +1833,7 @@ msgstr "Rīcības grafiki"
 
 #: actions/wagtail_admin.py
 msgid "Action classifications"
-msgstr "Darbību klasifikācijas"
+msgstr "Rīcību klasifikācijas"
 
 #: actions/wagtail_admin.py
 msgid "Plan features"
@@ -1836,7 +1853,10 @@ msgstr "Lietotājs ar šo e-pasta adresi nav atrasts. Lūdziet administratoram i
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr "Jums nav administratora piekļuves. Jūsu administratoram var būt nepieciešams jums piešķirt darbību vai indikatoru vai piešķirt plāna administratora statusu."
+msgstr ""
+"Jums nav administratora piekļuves. Jūsu administratoram var būt nepieciešams "
+"jums piešķirt rīcību vai indikatoru vai piešķirt plāna administratora "
+"statusu."
 
 #: admin_site/api.py
 msgid "Cannot determine authentication method. The email address domain may be unknown."
@@ -2109,7 +2129,9 @@ msgstr "Nevar dzēst gadījumu, jo uz to atsaucas citi objekti."
 #: aplans/rest_api.py
 #, python-format
 msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
-msgstr "Nevar dzēst \"%s\", jo tas ir saistīts ar citiem objektiem, piemēram, plāniem, personām vai darbībām."
+msgstr ""
+"Nevar dzēst \"%s\", jo tas ir saistīts ar citiem objektiem, piemēram, "
+"plāniem, personām vai rīcībām."
 
 #: aplans/settings.py
 msgid "Danish"
@@ -2302,7 +2324,7 @@ msgstr "Saite uz GitHub lietotāja saskarnes repozitoriju"
 
 #: content/models.py
 msgid "Term to use for 'action'"
-msgstr "Termins, ko lietot, lai apzīmētu \"darbību"
+msgstr "Termins, ko lietot, lai apzīmētu \"rīcību\""
 
 #: content/models.py
 msgid "Term to use for 'task'"
@@ -2618,7 +2640,7 @@ msgstr "taktiskais"
 
 #: indicators/models.py
 msgid "operational"
-msgstr "darbības"
+msgstr "operatīvi"
 
 #: indicators/models.py
 msgid "minimum value"
@@ -2760,23 +2782,23 @@ msgstr "Cik pārliecināti esam, ka cēloņsakarības ietekme pastāv"
 
 #: indicators/models.py
 msgid "What type of effect should the action cause?"
-msgstr "Kāda veida iedarbībai vajadzētu izraisīt darbību?"
+msgstr "Kāda veida iedarbībai vajadzētu izraisīt rīcību?"
 
 #: indicators/models.py
 msgid "indicates action progress"
-msgstr "norāda darbības progresu"
+msgstr "norāda rīcības progresu"
 
 #: indicators/models.py
 msgid "Set if the indicator should be used to determine action progress"
-msgstr "Iestatiet, vai rādītājs jāizmanto, lai noteiktu darbības progresu"
+msgstr "Iestatiet, vai rādītājs jāizmanto, lai noteiktu rīcības progresu"
 
 #: indicators/models.py
 msgid "action indicator"
-msgstr "darbības rādītājs"
+msgstr "rīcības rādītājs"
 
 #: indicators/models.py
 msgid "action indicators"
-msgstr "darbības rādītāji"
+msgstr "rīcības rādītāji"
 
 #: indicators/models.py
 msgid "indicator contact person"
@@ -2976,7 +2998,9 @@ msgstr "Vispārīgi paziņojumi par rīcību '%s'"
 
 #: notifications/forms.py
 msgid "These are sent when there are news about this action such as reminders for deadlines."
-msgstr "Tie tiek nosūtīti, kad ir ziņas par šo darbību, piemēram, atgādinājumi par termiņiem."
+msgstr ""
+"Tie tiek nosūtīti, kad ir ziņas par šo rīcību, piemēram, atgādinājumi par "
+"termiņiem."
 
 #: notifications/forms.py
 #, python-format
@@ -2985,7 +3009,7 @@ msgstr "Atgriezeniskās saites paziņojumi par rīcību '%s'"
 
 #: notifications/forms.py
 msgid "These are sent when a visitor has left feedback for this action."
-msgstr "Tie tiek nosūtīti, ja apmeklētājs ir atstājis atsauksmi par šo darbību."
+msgstr "Tie tiek nosūtīti, ja apmeklētājs ir atstājis atsauksmi par šo rīcību."
 
 #: notifications/forms.py
 #, python-format
@@ -2999,22 +3023,43 @@ msgstr "Tie tiek nosūtīti, ja apmeklētājs ir atstājis atsauksmi par šo pl�
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "action_not_updated"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
-msgstr "Tas ir automātisks atgādinājums par darbības plāna informācijas atjaunināšanu.  Rīcības plāna skatīšanās vietnē varat redzēt, kas jau ir paveikts, lai turpinātu darbības, un kas ir plānots nākotnē.  Ir pagājuši jau seši mēneši kopš pēdējās darbības atjaunināšanas. Lūdzu, apmeklējiet un atjauniniet darbību, iekļaujot tajā jaunāko informāciju. Vienlaikus varat pievienot darbībai kādu gaidāmo uzdevumu."
+msgstr ""
+"Tas ir automātisks atgādinājums par rīcības plāna informācijas "
+"atjaunināšanu. Rīcības plāna skatīšanās vietnē varat redzēt, kas jau ir "
+"paveikts, lai turpinātu rīcību, un kas ir plānots nākotnē. Ir pagājuši jau "
+"seši mēneši kopš pēdējās rīcības atjaunināšanas. Lūdzu, apmeklējiet un "
+"atjauniniet rīcību, iekļaujot tajā jaunāko informāciju. Vienlaikus varat "
+"pievienot rīcībai kādu gaidāmo uzdevumu."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "not_enough_tasks"
 msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
-msgstr "Tas ir automātisks atgādinājums par darbības plāna informācijas atjaunināšanu.  Rīcības plāna skatīšanās vietnē varat redzēt, kas jau ir paveikts, lai turpinātu darbības, un kas ir plānots nākotnē.  Tas nozīmē, ka būtu vēlams, lai katrai darbībai būtu vismaz viens nākamā gada laikā veicams uzdevums. Lūdzu, ejiet un pievienojiet darbībai uzdevumus, kas parāda, kādi ir nākamie plānotie pasākumi saistībā ar darbību."
+msgstr ""
+"Tas ir automātisks atgādinājums par rīcības plāna informācijas "
+"atjaunināšanu. Rīcības plāna skatīšanās vietnē varat redzēt, kas jau ir "
+"paveikts, lai turpinātu rīcību, un kas ir plānots nākotnē. Tas nozīmē, ka "
+"būtu vēlams, lai katrai rīcībai būtu vismaz viens nākamā gada laikā veicams "
+"uzdevums. Lūdzu, ejiet un pievienojiet rīcībai uzdevumus, kas parāda, kādi "
+"ir nākamie plānotie pasākumi saistībā ar rīcību."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_due_soon"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
-msgstr "Tas ir automātisks atgādinājums par jūsu darbības uzdevuma informācijas atjaunināšanu rīcības plānā.  Rīcības plānā ir darbība, kuras termiņš tuvojas. Lūdzu, atcerieties atzīmēt uzdevumu kā izpildītu, tiklīdz tas ir pabeigts. Pēc termiņa beigām darbība tiks atzīmēta kā novēlota. Uzdevuma informāciju varat rediģēt, izmantojot tālāk norādīto saiti."
+msgstr ""
+"Tas ir automātisks atgādinājums par jūsu rīcības uzdevuma informācijas "
+"atjaunināšanu rīcības plānā. Rīcības plānā ir rīcība, kuras termiņš tuvojas. "
+"Lūdzu, atcerieties atzīmēt uzdevumu kā izpildītu, tiklīdz tas ir pabeigts. "
+"Pēc termiņa beigām rīcība tiks atzīmēta kā novēlota. Uzdevuma informāciju "
+"varat rediģēt, izmantojot tālāk norādīto saiti."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "task_late"
 msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
-msgstr "Tas ir automātisks atgādinājums par jūsu darbības uzdevuma informācijas atjaunināšanu rīcības plānā. Ir darbība, kuras termiņš ir beidzies. Darbība tiek rādīta kā novēlota, līdz jūs to atzīmējat kā izpildītu un aizpildāt kādu informāciju."
+msgstr ""
+"Tas ir automātisks atgādinājums par jūsu rīcības uzdevuma informācijas "
+"atjaunināšanu rīcības plānā. Ir rīcība, kuras termiņš ir beidzies. Rīcība "
+"tiek rādīta kā novēlota, līdz jūs to atzīmējat kā izpildītu un aizpildāt "
+"kādu informāciju."
 
 #: notifications/management/commands/initialize_notifications.py
 msgctxt "updated_indicator_values_due_soon"
@@ -3063,11 +3108,11 @@ msgstr "Uzdevums drīzumā ir jāizpilda"
 
 #: notifications/models.py
 msgid "Action metadata has not been updated recently"
-msgstr "Darbības metadati pēdējā laikā nav atjaunināti"
+msgstr "Rīcības metadati pēdējā laikā nav atjaunināti"
 
 #: notifications/models.py
 msgid "Action doesn't have enough in-progress tasks"
-msgstr "Darbībā nav pietiekami daudz nepabeigtu uzdevumu"
+msgstr "Rīcībā nav pietiekami daudz nepabeigtu uzdevumu"
 
 #: notifications/models.py
 msgid "Updated indicator values are late"
@@ -3253,11 +3298,11 @@ msgstr "saņemt atgriezeniskās saites paziņojumus"
 
 #: notifications/models.py
 msgid "receive general action notifications"
-msgstr "saņemt vispārīgus darbības paziņojumus"
+msgstr "saņemt vispārīgus rīcības paziņojumus"
 
 #: notifications/models.py
 msgid "receive action feedback notifications"
-msgstr "saņemt darbības atgriezeniskās saites paziņojumus"
+msgstr "saņemt rīcības atgriezeniskās saites paziņojumus"
 
 #: notifications/wagtail_admin.py
 msgid "Recipients"
@@ -3533,7 +3578,7 @@ msgstr "Karte"
 
 #: pages/blocks.py
 msgid "Action category filter card"
-msgstr "Darbības kategorijas filtra karte"
+msgstr "Rīcības kategorijas filtra karte"
 
 #: pages/blocks.py
 msgid "Links"
@@ -3541,7 +3586,7 @@ msgstr "Saites"
 
 #: pages/blocks.py
 msgid "Action category filter cards"
-msgstr "Darbību kategorijas filtrēšanas kartes"
+msgstr "Rīcību kategorijas filtrēšanas kartes"
 
 #: pages/blocks.py
 msgid "Accessibility statement compliance status"
@@ -3625,7 +3670,7 @@ msgstr "Kopējā lapas konfigurācija"
 
 #: pages/models.py
 msgid "Links to actions in specific category"
-msgstr "Saites uz darbībām konkrētā kategorijā"
+msgstr "Saites uz rīcībām konkrētā kategorijā"
 
 #: pages/models.py
 msgid "Front page"
@@ -3733,7 +3778,7 @@ msgstr "noklusējuma skats"
 
 #: pages/models.py
 msgid "Tab of the action list page that should be visible by default"
-msgstr "darbību saraksta lapas cilne, kurai jābūt redzamai pēc noklusējuma"
+msgstr "rīcību saraksta lapas cilne, kurai jābūt redzamai pēc noklusējuma"
 
 #: pages/models.py
 msgid "Subheading hierarchy depth"
@@ -3749,7 +3794,7 @@ msgstr "Iekļaut saistītos plānus"
 
 #: pages/models.py
 msgid "Enable to make this page include actions from related plans."
-msgstr "Iespēja šajā lapā iekļaut darbības no saistītiem plāniem."
+msgstr "Iespēja šajā lapā iekļaut rīcības no saistītiem plāniem."
 
 #: pages/models.py
 msgid "Primary filters"
@@ -3765,7 +3810,7 @@ msgstr "Uzlabotie filtri (pēc noklusējuma paslēpti)"
 
 #: pages/models.py
 msgid "Action list filters"
-msgstr "Darbību saraksta filtri"
+msgstr "Rīcību saraksta filtri"
 
 #: pages/models.py
 msgid "Main column (top part on mobile)"
@@ -3781,19 +3826,19 @@ msgstr "Sānu kolonna"
 
 #: pages/models.py
 msgid "Action details page"
-msgstr "Sīkāka informācija par darbību lapa"
+msgstr "Sīkāka informācija par rīcību lapu"
 
 #: pages/models.py
 msgid "Action dashboard columns"
-msgstr "Darbību paneļa slejas"
+msgstr "Rīcību paneļa slejas"
 
 #: pages/models.py
 msgid "Action list page"
-msgstr "Darbību saraksta lapa"
+msgstr "Rīcību saraksta lapa"
 
 #: pages/models.py
 msgid "Action list pages"
-msgstr "Darbību saraksta lapas"
+msgstr "Rīcību saraksta lapas"
 
 #: pages/models.py
 msgid "Should insight network be shown for indicators?"
@@ -3914,7 +3959,7 @@ msgstr "attēlu apgriešana"
 
 #: people/models.py people/wagtail_admin.py
 msgid "contact for actions"
-msgstr "kontaktinformācija par darbībām"
+msgstr "kontaktinformācija par rīcībām"
 
 #: people/models.py
 msgid "people"
@@ -3979,15 +4024,15 @@ msgstr "Vai ir kontaktpersona"
 #: people/wagtail_admin.py
 #, python-format
 msgid "For an action in %(plan)s"
-msgstr "Attiecībā uz darbību %(plan)s"
+msgstr "Attiecībā uz rīcību %(plan)s"
 
 #: people/wagtail_admin.py
 msgid "For an action"
-msgstr "Par darbību"
+msgstr "Par rīcību"
 
 #: people/wagtail_admin.py
 msgid "For same actions or indicators as me"
-msgstr "Par tādām pašām darbībām vai rādītājiem kā man"
+msgstr "Par tādām pašām rīcībām vai rādītājiem kā man"
 
 #: people/wagtail_admin.py
 msgid "For an indicator"
@@ -4019,7 +4064,9 @@ msgstr "Vai esat pārliecināts, ka vēlaties deaktivizēt šo personu?"
 
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
-msgstr "Šai personai nav piekļuves administratora saskarnei. Parasti tas ir tāpēc, ka viņiem nav piešķirtas nekādas darbības vai rādītāji."
+msgstr ""
+"Šai personai nav piekļuves administratora saskarnei. Parasti tas ir tāpēc, "
+"ka viņiem nav piešķirtas nekādas rīcības vai rādītāji."
 
 #: people/wagtail_admin.py
 msgid "last login"
@@ -4039,11 +4086,11 @@ msgstr "Pārskatu salīdzinājums"
 
 #: reports/blocks/action_content.py
 msgid "Action field"
-msgstr "Darbības lauks"
+msgstr "Rīcības lauks"
 
 #: reports/blocks/action_content.py
 msgid "Action category"
-msgstr "Darbības kategorija"
+msgstr "Rīcības kategorija"
 
 #: reports/blocks/action_content.py
 msgid "Level of containing organization"
@@ -4121,11 +4168,11 @@ msgstr "Atcelt ziņojuma '%s' atzīmēšanu kā pabeigtu"
 
 #: reports/models.py
 msgid "action snapshot"
-msgstr "darbības momentuzņēmums"
+msgstr "rīcības momentuzņēmums"
 
 #: reports/models.py
 msgid "action snapshots"
-msgstr "darbības momentuzņēmumi"
+msgstr "rīcības momentuzņēmumi"
 
 #: reports/spreadsheets.py
 msgid "Exported from Kausal Watch"
@@ -4151,49 +4198,58 @@ msgstr "Vai tiešām vēlaties atcelt ziņojuma <i>%(report)s</i> atzīmēšanu 
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will mark the following actions as complete:"
-msgstr "Šādas darbības tiks atzīmētas kā pabeigtas:"
+msgstr "Šādas rīcības tiks atzīmētas kā pabeigtas:"
 
 #: reports/templates/reports/mark_report_as_complete_confirmation.html
 msgid "This will undo marking the following actions as complete:"
-msgstr "Tādējādi tiks atcelta šādu darbību atzīmēšana kā pabeigtas:"
+msgstr "Tādējādi tiks atcelta šādu rīcību atzīmēšana kā pabeigtas:"
 
 #: reports/views.py
 msgid "Mark action as complete"
-msgstr "Atzīmēt darbību kā pabeigtu"
+msgstr "Atzīmēt rīcību kā pabeigtu"
 
 #: reports/views.py
 msgid "Undo marking action as complete"
-msgstr "Atcelt darbības atzīmēšanu kā pabeigtu"
+msgstr "Atcelt rīcības atzīmēšanu kā pabeigtu"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm marking action %(action)s as complete for report %(report)s"
-msgstr "Apstiprināt, ka darbība %(action)s ir atzīmēta kā pabeigta ziņojumam. %(report)s"
+msgstr ""
+"Apstiprināt, ka rīcība %(action)s ir atzīmēta kā pabeigta ziņojumam. "
+"%(report)s"
 
 #: reports/views.py
 #, python-format
 msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
-msgstr "Apstiprināt atcelšanu, atzīmējot darbību %(action)s kā pabeigtu ziņojumam %(report)s"
+msgstr ""
+"Apstiprināt atcelšanu, atzīmējot rīcību %(action)s kā pabeigtu ziņojumam "
+"%(report)s"
 
 #: reports/views.py
 #, python-format
 msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr "Vai tiešām vēlaties atzīmēt darbību '%(action)s' kā pabeigtu ziņojumam '%(report)s'?"
+msgstr ""
+"Vai tiešām vēlaties atzīmēt rīcību '%(action)s' kā pabeigtu ziņojumam "
+"'%(report)s'?"
 
 #: reports/views.py
 #, python-format
 msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
-msgstr "Vai tiešām vēlaties atcelt darbības '%(action)s' atzīšanu par pabeigtu ziņojumam '%(report)s'?"
+msgstr ""
+"Vai tiešām vēlaties atcelt rīcības '%(action)s' atzīšanu par pabeigtu "
+"ziņojumam '%(report)s'?"
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
-msgstr "Darbība '%(action)s' ir atzīmēta kā pabeigta ziņojumam '%(report)s'."
+msgstr "Rīcība '%(action)s' ir atzīmēta kā pabeigta ziņojumam '%(report)s'."
 
 #: reports/views.py
 #, python-format
 msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
-msgstr "Darbība '%(action)s' vairs nav atzīmēta kā pabeigta ziņojumam '%(report)s'."
+msgstr ""
+"Rīcība '%(action)s' vairs nav atzīmēta kā pabeigta ziņojumam '%(report)s'."
 
 #: reports/views.py
 msgid "Mark report as complete"
