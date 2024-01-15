@@ -379,11 +379,24 @@ class Person(index.Indexed, ClusterableModel):
     def create_corresponding_user(self):
         user = self.get_corresponding_user()
         email = self.email.lower()
-        if not user:
+        if user:
+            created = False
+        else:
             user = User(
                 email=email,
                 uuid=uuid.uuid4(),
             )
+            created = True
+
+        if not created and not user.is_active:
+            # Probably the user has been deactivated because the person has been deleted. Reactivate it.
+            user.is_active = True
+            reactivated = True
+        else:
+            reactivated = False
+
+        set_password = created or reactivated
+        if set_password:
             client = self.get_client_for_email_domain()
             if client is not None and client.auth_backend:
                 user.set_unusable_password()
