@@ -146,10 +146,7 @@ def get_username(details, backend, response, *args, **kwargs):
     `helusers.utils.uuid_to_username` function.
     """
 
-    if backend.name == 'google-openidconnect':
-        return
-
-    if backend.name == 'okta-openidconnect':
+    if backend.name != 'azure_ad':
         return
 
     user = details.get('user')

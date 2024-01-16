@@ -1,5 +1,6 @@
 from social_core.backends.azuread_tenant import AzureADTenantOAuth2
-
+from social_core.backends.open_id_connect import OpenIdConnectAuth
+from django.conf import settings
 
 class AzureADAuth(AzureADTenantOAuth2):
     name = 'azure_ad'
@@ -43,3 +44,23 @@ class AzureADAuth(AzureADTenantOAuth2):
         if email:
             extra_arguments['login_hint'] = email
         return extra_arguments
+
+
+class ADFSOpenIDConnectAuth(OpenIdConnectAuth):
+    """ Integrate with an on-premises Microsoft ADFS implementation """
+    name = 'adfs-openidconnect'
+    # When more than one customer needs this backend,
+    # we need to override the oidc_endpoint method somehow
+    # and also get_key_and_secret (to support multiple confs per backend)
+    OIDC_ENDPOINT = settings.SOCIAL_AUTH_ADFS_OPENIDCONNECT_API_URL
+
+    def user_data(self, access_token, *args, **kwargs):
+        # This method has been overridden because it is difficult to get the userinfo endpoint for ADFS working, and additionally the
+        # endpoint isn't even needed. We already get all the relevant data in the id token.
+        return {
+            'username': self.id_token['unique_name'],
+            'email': self.id_token['upn']
+        }
+
+    def get_user_id(self, details, response):
+        return self.id_token['sub']
