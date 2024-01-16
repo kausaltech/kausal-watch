@@ -127,7 +127,9 @@ class ActionAdminForm(WagtailAdminModelForm):
         super().__init__(*args, **kwargs)
         # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
         for cls, relation_name, __, __ in MODELS_WITH_ROLES:
-            for role in cls.Role:
+            for role in cls.get_roles():
+                # For some models, the role can be blank
+                # OMG, we're really hacking this so that a formset is called, e.g., `responsible_parties_None`...
                 formset = self.formsets.get(f'{relation_name}_{role}')
                 if formset:
                     formset.queryset = formset.queryset.filter(role=role)
@@ -158,7 +160,7 @@ class ActionAdminForm(WagtailAdminModelForm):
             self, _cls: Type[ModelWithRole], relation_name: str, wrapped_object_cls: Type[Model], wrapped_object_attr: str
     ):
         seen_related_objects = set()
-        for role in _cls.Role:
+        for role in _cls.get_roles():
             if role is None:
                 role = 'None'
             for obj in self.get_related_objects_with_role(
@@ -183,7 +185,7 @@ class ActionAdminForm(WagtailAdminModelForm):
         for _cls, relation_name, __, __ in MODELS_WITH_ROLES:
             formsets = {}
             # There is a corresponding formset for a role if and only if we can edit objects of that role.
-            for role in _cls.Role:
+            for role in _cls.get_roles():
                 formset = self.formsets.pop(f'{relation_name}_{role}', None)
                 if formset:
                     formsets[role] = formset
@@ -224,7 +226,10 @@ class ActionAdminForm(WagtailAdminModelForm):
         for role, formset in formsets.items():
             saved_instances = formset.save(commit=False)
             for instance in saved_instances:
-                instance.role = str(role)
+                if role is None:
+                    instance.role = None
+                else:
+                    instance.role = str(role)
             # Each call of `formset.save()` changes the object list in the manager. We reset it to the original state,
             # and after all formsets have been processed, we'll manually set it to all objects from all formsets.
             manager.set(original_objects)
@@ -269,17 +274,23 @@ class ModelWithRoleInlinePanel(InlinePanel):
         if _cls == ActionContactPerson:
             return ContactPersonsInlinePanel(*args, **kwargs)
 
-    def __init__(self, role: str | None = None, *args, **kwargs):
-        """If `role` is None, we show all contact persons in this panel, otherwise only the ones with that role.
+    def __init__(self, filter_by_role: bool, role: ModelWithRole.Role | None = None, *args, **kwargs):
+        """If `filter_by_role` is false, we show all instances in this panel, otherwise only the ones with the given
+        role. (`None` is a possible role for ActionResponsibleParty.)
 
-        For the latter to work, make sure that your form contains formsets `contact_persons_<role>` whose querysets are
-        filtered accordingly.
+        For the latter to work, make sure that your form contains formsets `contact_persons_<role>` (or equivalent for
+        other models) whose querysets are filtered accordingly.
         """
+        self.filter_by_role = filter_by_role
         self.role = role
         kwargs.setdefault('panels', self.get_panels())
-        if role:
+        if filter_by_role:
             kwargs['relation_name'] = self.get_relation_name(role=role)
-            kwargs.setdefault('heading', role.label)
+            if role:
+                heading = role.label
+            else:
+                heading = _('Unspecified')
+            kwargs.setdefault('heading', heading)
         else:
             kwargs['relation_name'] = self.get_relation_name()
             kwargs.setdefault('heading', self.get_heading())
@@ -294,34 +305,46 @@ class ModelWithRoleInlinePanel(InlinePanel):
     def get_heading(self) -> str:
         raise NotImplementedError
 
-    def get_relation_name(self, role: str | None = None) -> str:
+    def get_relation_name(self, role: ModelWithRole.Role | None = None) -> str:
         base = self.get_base_relation_name()
-        if role is None:
+        if not self.filter_by_role:
             return base
         return f'{base}_{role}'
 
     def clone_kwargs(self):
         result = super().clone_kwargs()
+        result['filter_by_role'] = self.filter_by_role
         result['role'] = self.role
         return result
 
     def on_model_bound(self):
-        assert ((self.role and self.relation_name == self.get_relation_name(self.role))
+        assert ((self.filter_by_role and self.relation_name == self.get_relation_name(self.role))
                 or self.relation_name == self.get_relation_name())
+        # In either case, we set the DB field to `contact_persons` (or similarly for other models). We rely on the
+        # queryset for `contact_persons_{role}` being filtered accordingly due to `ActionAdminForm.__init__()`.
+        # The code below could be simplified, but let's keep it like this to resemble InlinePanel.on_model_bound()`.
         assert self.model == Action
-        manager = getattr(self.model, self.get_relation_name())
+        manager = getattr(self.model, self.get_base_relation_name())
         self.db_field = manager.rel
 
 
 # FIXME: Duplicates stuff from ReadOnlyInlinePanel
 class ModelWithRoleReadOnlyInlinePanel(Panel):
-    def __init__(self, relation_name: str | None = None, role: str | None = None, *args, **kwargs):
+    def __init__(
+            self,
+            relation_name: str | None = None,
+            filter_by_role: bool = False,
+            role: ModelWithRole.Role | None = None,
+            *args, **kwargs
+        ):
+        self.filter_by_role = filter_by_role
         self.role = role
         self.relation_name = relation_name
         super().__init__(*args, **kwargs)
 
     def clone_kwargs(self):
         result = super().clone_kwargs()
+        result['filter_by_role'] = self.filter_by_role
         result['role'] = self.role
         result['relation_name'] = self.relation_name
         return result
@@ -331,10 +354,9 @@ class ModelWithRoleReadOnlyInlinePanel(Panel):
 
         def get_context_data(self, parent_context=None):
             context = super().get_context_data(parent_context)
-            role = self.panel.role
             manager = getattr(self.instance, self.panel.relation_name)
-            if role:
-                qs = manager.filter(role=role)
+            if self.panel.filter_by_role:
+                qs = manager.filter(role=self.panel.role)
             else:
                 qs = manager.all()
             context['items'] = [
@@ -357,9 +379,8 @@ class ResponsiblePartiesInlinePanel(ModelWithRoleInlinePanel):
     def get_panels(self):
         panels = [
             FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-
         ]
-        if self.role is None:
+        if not self.filter_by_role:
             panels.append(FieldPanel('role'))
         panels.append(FieldPanel('specifier'))
         return panels
@@ -385,7 +406,7 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
             _cls: Type[ModelWithRole] | None = None,
             relation_name: str | None = None,
             *args,
-            editable_roles: Iterable[ActionResponsibleParty.Role] | None = None,
+            editable_roles: Iterable[ModelWithRole.Role | None] | None = None,
             **kwargs
     ):
         """Display inline panels for contact persons, optionally separated by roles.
@@ -400,14 +421,15 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         self.relation_name = relation_name
         self._cls = _cls
         children = []
+        assert _cls  # TODO: Didn't really check when or if it can actually be None
         if editable_roles is None:
-            children.append(ModelWithRoleInlinePanel.create_for_model_class(_cls))
+            children.append(ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=False))
         else:
-            for role in _cls.Role:
+            for role in _cls.get_roles():
                 if role in editable_roles:
-                    panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, role)
+                    panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=True, role=role)
                 else:
-                    panel = ModelWithRoleReadOnlyInlinePanel(relation_name, role)
+                    panel = ModelWithRoleReadOnlyInlinePanel(relation_name, filter_by_role=True, role=role)
                 children.append(panel)
         super().__init__(children=children, *args, **kwargs)
 
@@ -512,7 +534,7 @@ class ActionEditHandler(AplansTabbedInterface):
         # Manually add a formset for each contact person role whose contact persons we may edit.
         # There is a corresponding formset in the form options if and only if we can edit contact persons of a
         # certain role.
-        for role in ActionContactPerson.Role:
+        for role in ActionContactPerson.get_roles():
             form_options = self.get_form_options()
             formset_name = f'contact_persons_{role}'
             formset_options = form_options['formsets'].get(formset_name)
@@ -526,7 +548,7 @@ class ActionEditHandler(AplansTabbedInterface):
                 }
                 form_class.formsets[formset_name] = childformset_factory(Action, ActionContactPerson, **kwargs)
 
-        for role in ActionResponsibleParty.Role:
+        for role in ActionResponsibleParty.get_roles():
             form_options = self.get_form_options()
             formset_name = f'responsible_parties_{role}'
             formset_options = form_options['formsets'].get(formset_name)

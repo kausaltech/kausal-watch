@@ -212,9 +212,9 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         else:
             return plan.pk in plans
 
-    def _get_editable_roles(self, action: Action, _class: ModelWithRole) -> typing.Iterable[ModelWithRole.Role]:
+    def _get_editable_roles(self, action: Action, _class: ModelWithRole) -> typing.Iterable[ModelWithRole.Role | None]:
         if self.is_general_admin_for_plan(action.plan):
-            return {role for role in _class.Role}
+            return _class.get_roles()
         person = self.get_corresponding_person()
         return _class.get_roles_editable_in_action_by(action, person)
 

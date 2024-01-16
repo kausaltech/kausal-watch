@@ -817,16 +817,27 @@ class Action(  # type: ignore[django-manager-missing]
 
 
 class ModelWithRole:
-    Role: typing.Iterable[str | None]
+    class Role(models.TextChoices):
+        # If your model allows blank values for the role field, specify it using `__empty__ = _("Text")`, but bear in
+        # mind that this won't be included when you iterate over the enum.
+        pass
 
     @classmethod
-    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[str | None]:
+    def get_roles(cls) -> typing.Iterable[ModelWithRole.Role | None]:
+        roles: list[ModelWithRole.Role | None] = list(cls.Role)
+        if cls.role.field.blank:
+            # None is not part of list(cls.Role) even if it's an allowed value in the DB field
+            roles.append(None)
+        return roles
+
+    @classmethod
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Iterable[ModelWithRole.Role | None]:
         raise NotImplementedError
 
 
 @reversion.register()
 class ActionResponsibleParty(OrderedModel, ModelWithRole):
-    class Role(models.TextChoices):
+    class Role(ModelWithRole.Role):
         PRIMARY = 'primary', _('Primary responsible party')
         COLLABORATOR = 'collaborator', _('Collaborator')
         __empty__ = _('Unspecified')
@@ -875,21 +886,21 @@ class ActionResponsibleParty(OrderedModel, ModelWithRole):
         return str(self.organization)
 
     @classmethod
-    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[Role | None]:
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Iterable[ModelWithRole.Role | None]:
         is_contact_person = person is not None and action.contact_persons.filter(
             person_id=person.pk,
         ).exists()
         if is_contact_person:
-            return {
+            return [
                 ActionResponsibleParty.Role.COLLABORATOR,
-                None
-            }
-        return set()
+                None,  # for responsible parties with unspecified role
+            ]
+        return []
 
 
 class ActionContactPerson(OrderedModel, ModelWithRole):
     """A Person acting as a contact for an action"""
-    class Role(models.TextChoices):
+    class Role(ModelWithRole.Role):
         EDITOR = 'editor', _('Editor')
         MODERATOR = 'moderator', _('Moderator')
 
@@ -930,14 +941,14 @@ class ActionContactPerson(OrderedModel, ModelWithRole):
         return str(self.person)
 
     @classmethod
-    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Set[Role | None]:
+    def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Iterable[ModelWithRole.Role | None]:
         is_moderator = person is not None and action.contact_persons.filter(
             role=cls.Role.MODERATOR,
             person_id=person.pk,
         ).exists()
         if is_moderator:
-            return {cls.Role.EDITOR}
-        return set()
+            return [cls.Role.EDITOR]
+        return []
 
 
 
