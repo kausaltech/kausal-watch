@@ -9,7 +9,7 @@ from django.contrib.gis.db import models as gis_models
 from django.db import models
 from django.db.models import Q, Count
 from django.template.loader import render_to_string
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
@@ -59,7 +59,7 @@ class Node(MP_Node, ClusterableModel):
     # Duplicate get_parent from super class just to set short_description below
     def get_parent(self, *args, **kwargs):
         return super().get_parent(*args, **kwargs)
-    get_parent.short_description = _('Parent')
+    get_parent.short_description = pgettext_lazy('node', 'Parent')
 
     def __str__(self):
         return self.name

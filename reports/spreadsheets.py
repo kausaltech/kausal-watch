@@ -4,7 +4,7 @@ import inspect
 from django.contrib.contenttypes.models import ContentType
 from django.utils import translation
 from django.utils import timezone
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, pgettext
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from actions.models.category import Category, CategoryType
@@ -410,7 +410,7 @@ class ExcelReport:
             # Pivot sheet: Organization parent x Implementation phase
             {
                 'group': (
-                    _('Parent'),
+                    pgettext('organization', 'Parent'),
                     _('Implementation phase')),
                 'type': 'column'
             }

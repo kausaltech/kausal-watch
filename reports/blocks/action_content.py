@@ -5,7 +5,7 @@ import graphene
 from django.db.models import Model
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
-from django.utils.translation import gettext, gettext_lazy as _
+from django.utils.translation import gettext, gettext_lazy as _, pgettext
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
@@ -403,7 +403,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
         target_depth = value.get('target_ancestor_depth')
         if target_depth is None:
             return labels
-        return labels + [gettext('Parent')]
+        return labels + [pgettext('organization', 'Parent')]
 
     def get_xlsx_cell_format(self, block_value):
         return None
