@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-21 17:21+0100\n"
+"POT-Creation-Date: 2024-01-17 16:15+0100\n"
 "PO-Revision-Date: 2024-01-17 15:10+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2313,6 +2312,14 @@ msgid "Term to use for 'organization'"
 msgstr "Für 'Organisation' zu verwendender Begriff"
 
 #: content/models.py
+msgid "Sitewide announcement"
+msgstr ""
+
+#: content/models.py
+msgid "A message prominently displayed in a banner at the top of every page on the public website"
+msgstr ""
+
+#: content/models.py
 msgid "site general content"
 msgstr "Allgemeiner Seiteninhalt"
 
@@ -3288,7 +3295,10 @@ msgstr "Wähle eine andere Organisation"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Ein Knoten kann in der Hierarchie nicht unter sich selbst verschoben werden."
 
-#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
+#: orgs/models.py
+#, fuzzy
+#| msgid "Parent"
+msgctxt "node"
 msgid "Parent"
 msgstr "Vorgänger"
 
@@ -3459,7 +3469,8 @@ msgstr "Aus Plan ausschließen"
 msgid "Exclude this organization from the active plan"
 msgstr "Schließe Organisation aus aktivem Plan aus"
 
-#: orgs/wagtail_admin.py
+#: orgs/wagtail_admin.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgctxt "organization"
 msgid "Parent"
 msgstr "Vorgänger"

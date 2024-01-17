@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-21 17:21+0100\n"
+"POT-Creation-Date: 2024-01-17 16:15+0100\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -2322,6 +2322,14 @@ msgid "Term to use for 'organization'"
 msgstr "organisation"
 
 #: content/models.py
+msgid "Sitewide announcement"
+msgstr ""
+
+#: content/models.py
+msgid "A message prominently displayed in a banner at the top of every page on the public website"
+msgstr ""
+
+#: content/models.py
 msgid "site general content"
 msgstr ""
 
@@ -3289,7 +3297,8 @@ msgstr "organisation"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr ""
 
-#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
+#: orgs/models.py
+msgctxt "node"
 msgid "Parent"
 msgstr ""
 
@@ -3476,7 +3485,8 @@ msgstr ""
 msgid "Exclude this organization from the active plan"
 msgstr "main organisation for the plan"
 
-#: orgs/wagtail_admin.py
+#: orgs/wagtail_admin.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgctxt "organization"
 msgid "Parent"
 msgstr ""

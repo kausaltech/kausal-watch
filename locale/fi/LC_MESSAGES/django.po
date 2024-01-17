@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-12-21 17:21+0100\n"
+"POT-Creation-Date: 2024-01-17 16:15+0100\n"
 "PO-Revision-Date: 2023-12-05 07:24+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -2432,6 +2432,14 @@ msgid "Term to use for 'organization'"
 msgstr "Nimi, jolla kutsutaan toimenpiteitä"
 
 #: content/models.py
+msgid "Sitewide announcement"
+msgstr ""
+
+#: content/models.py
+msgid "A message prominently displayed in a banner at the top of every page on the public website"
+msgstr ""
+
+#: content/models.py
 msgid "site general content"
 msgstr "sivuston yleisen sisältö"
 
@@ -3454,7 +3462,10 @@ msgstr "Valitse toinen toimenpide"
 msgid "A node cannot be moved under itself in the hierarchy."
 msgstr "Organisaatio ei voi olla itsensä yläorganisaatio."
 
-#: orgs/models.py reports/blocks/action_content.py reports/spreadsheets.py
+#: orgs/models.py
+#, fuzzy
+#| msgid "Parent"
+msgctxt "node"
 msgid "Parent"
 msgstr "Yläorganisaatio"
 
@@ -3627,7 +3638,8 @@ msgstr "Poista toimenpideohjelmasta"
 msgid "Exclude this organization from the active plan"
 msgstr "Poista tämä organisaatio aktiivisesta toimenpideohjelmasta"
 
-#: orgs/wagtail_admin.py
+#: orgs/wagtail_admin.py reports/blocks/action_content.py
+#: reports/spreadsheets.py
 msgctxt "organization"
 msgid "Parent"
 msgstr "Yläorganisaatio"
