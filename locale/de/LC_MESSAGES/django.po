@@ -11,9 +11,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-12-21 17:21+0100\n"
-"PO-Revision-Date: 2023-12-20 16:44+0000\n"
-"Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
+"PO-Revision-Date: 2024-01-17 15:10+0000\n"
+"Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
+"\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -996,7 +997,7 @@ msgstr "gestrichen"
 
 #: actions/models/action.py
 msgid "state"
-msgstr "Zustand"
+msgstr "Status"
 
 #: actions/models/action.py feedback/models.py
 msgid "comment"
@@ -1560,7 +1561,7 @@ msgstr "Themakennung"
 #: actions/models/plan.py
 msgctxt "plan"
 msgid "parent"
-msgstr "Vorgänger"
+msgstr "Übergeordneter Plan"
 
 #: actions/models/plan.py
 msgid "The primary action classification"
@@ -1714,7 +1715,7 @@ msgstr "Szenarien"
 #: actions/models/plan.py
 msgctxt "impact group"
 msgid "parent"
-msgstr "Vorgänger"
+msgstr "Übergeordnete Auswirkungsgruppe"
 
 #: actions/models/plan.py
 msgid "weight"
