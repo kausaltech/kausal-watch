@@ -64,10 +64,10 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
 
 def create_or_update_user(backend, details, user, *args, **kwargs):
     if user is None:
-        if backend.name == 'google-openidconnect':
-            uuid = uuid4()
+        if 'uuid' in details:
+            uuid = details.get('uuid')
         else:
-            uuid = details.get('uuid') or kwargs.get('uid')
+            uuid = uuid4()
         user = User(uuid=uuid)
         msg = 'Created new user'
     else:
@@ -146,10 +146,7 @@ def get_username(details, backend, response, *args, **kwargs):
     `helusers.utils.uuid_to_username` function.
     """
 
-    if backend.name == 'google-openidconnect':
-        return
-
-    if backend.name == 'okta-openidconnect':
+    if backend.name != 'azure_ad':
         return
 
     user = details.get('user')

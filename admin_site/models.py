@@ -21,6 +21,7 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
         GOOGLE = 'google-openidconnect', _('Google')
         TUNNISTAMO = 'tunnistamo', _('Tunnistamo')
         OKTA = 'okta-openidconnect', _('OKTA')
+        ADFS = 'adfs-openidconnect', _('ADFS OpenID Connect')
 
     name = models.CharField(
         max_length=100,

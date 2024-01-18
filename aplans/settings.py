@@ -51,6 +51,9 @@ env = environ.FileAwareEnv(
     OKTA_CLIENT_ID=(str, ''),
     OKTA_CLIENT_SECRET=(str, ''),
     OKTA_API_URL=(str, ''),
+    ADFS_CLIENT_ID=(str, ''),
+    ADFS_CLIENT_SECRET=(str, ''),
+    ADFS_API_URL=(str, ''),
     MAILGUN_API_KEY=(str, ''),
     MAILGUN_SENDER_DOMAIN=(str, ''),
     MAILGUN_REGION=(str, ''),
@@ -270,9 +273,10 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTHENTICATION_BACKENDS = (
     'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
+    'admin_site.backends.ADFSOpenIDConnectAuth',
     'django.contrib.auth.backends.ModelBackend',
     'social_core.backends.google_openidconnect.GoogleOpenIdConnect',
-    'social_core.backends.okta_openidconnect.OktaOpenIdConnect'
+    'social_core.backends.okta_openidconnect.OktaOpenIdConnect',
 )
 
 AUTH_USER_MODEL = 'users.User'
@@ -297,6 +301,10 @@ SOCIAL_AUTH_GOOGLE_OPENIDCONNECT_SECRET = env.str('GOOGLE_CLIENT_SECRET')
 SOCIAL_AUTH_OKTA_OPENIDCONNECT_KEY = env.str('OKTA_CLIENT_ID')
 SOCIAL_AUTH_OKTA_OPENIDCONNECT_SECRET = env.str('OKTA_CLIENT_SECRET')
 SOCIAL_AUTH_OKTA_OPENIDCONNECT_API_URL = env.str('OKTA_API_URL')
+
+SOCIAL_AUTH_ADFS_OPENIDCONNECT_KEY = env.str('ADFS_CLIENT_ID')
+SOCIAL_AUTH_ADFS_OPENIDCONNECT_SECRET = env.str('ADFS_CLIENT_SECRET')
+SOCIAL_AUTH_ADFS_OPENIDCONNECT_API_URL = env.str('ADFS_API_URL')
 
 SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.log_login_attempt',
