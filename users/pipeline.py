@@ -64,7 +64,7 @@ def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs
 
 def create_or_update_user(backend, details, user, *args, **kwargs):
     if user is None:
-        if backend.name == 'google-openidconnect':
+        if backend.name != 'azure_ad':
             uuid = uuid4()
         else:
             uuid = details.get('uuid') or kwargs.get('uid')
