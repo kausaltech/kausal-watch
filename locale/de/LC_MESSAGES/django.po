@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-01-17 16:15+0100\n"
-"PO-Revision-Date: 2024-01-17 15:25+0000\n"
+"PO-Revision-Date: 2024-01-18 13:30+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
 "Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
 "\n"
@@ -39,7 +39,7 @@ msgstr "Zuständige Stellen"
 #: actions/action_admin.py actions/api.py aplans/utils.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
-msgstr "Ansprechpartner"
+msgstr "Ansprechpersonen"
 
 #: actions/action_admin.py
 #, python-format
@@ -242,7 +242,7 @@ msgstr "Organisation kommt mehrfach als zuständige Stelle vor"
 
 #: actions/api.py
 msgid "Person occurs multiple times as contact person"
-msgstr "Person tritt mehrfach als Ansprechpartner auf"
+msgstr "Person tritt mehrfach als Ansprechperson auf"
 
 #: actions/api.py
 msgid "Identifier must be set"
@@ -685,7 +685,7 @@ msgstr "Andere Indikatoren"
 
 #: actions/export.py actions/models/action.py indicators/models.py
 msgid "contact persons"
-msgstr "Ansprechpartner"
+msgstr "Ansprechpersonen"
 
 #: actions/models/action.py
 msgid "Draft"
@@ -877,7 +877,7 @@ msgstr "Andere Maßnahme ist mit dieser zusammengeführt"
 
 #: actions/models/action.py
 msgid "Has contact persons"
-msgstr "Hat Ansprechpartner"
+msgstr "Hat Ansprechpersonen"
 
 #: actions/models/action.py
 msgid "Active tasks"
@@ -961,19 +961,19 @@ msgstr "Person"
 
 #: actions/models/action.py
 msgid "primary contact person"
-msgstr "Hauptansprechpartner"
+msgstr "Hauptansprechperson"
 
 #: actions/models/action.py
 msgid "Is this person the primary contact person for the action?"
-msgstr "Ist diese Person der Hauptansprechpartner für die Maßnahme?"
+msgstr "Ist diese Person die Hauptansprechperson für die Maßnahme?"
 
 #: actions/models/action.py
 msgid "action contact person"
-msgstr "Maßnahmenansprechpartner"
+msgstr "Maßnahmenansprechperson"
 
 #: actions/models/action.py
 msgid "action contact persons"
-msgstr "Maßnahmenansprechpartner"
+msgstr "Maßnahmenansprechpersonen"
 
 #: actions/models/action.py
 msgid "action schedule"
@@ -1402,7 +1402,7 @@ msgstr "Entweder SVG oder Bild muss gesetzt sein"
 
 #: actions/models/features.py
 msgid "Do not show contact persons publicly"
-msgstr "Ansprechpartner nicht öffentlich anzeigen"
+msgstr "Ansprechpersonen nicht öffentlich anzeigen"
 
 #: actions/models/features.py
 msgid "Show only name, role and affiliation"
@@ -1430,13 +1430,13 @@ msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: actions/models/features.py
 msgid "Publicly visible data about contact persons"
-msgstr "Öffentlich sichtbare Daten über Ansprechpartner"
+msgstr "Öffentlich sichtbare Daten über Ansprechpersonen"
 
 #: actions/models/features.py
 msgid ""
 "Choose which information about contact persons is visible in the public UI"
 msgstr ""
-"Wählen Sie aus, welche Informationen über Ansprechpartner in der "
+"Wählen Sie aus, welche Informationen über Ansprechpersonen in der "
 "öffentlichen Benutzeroberfläche sichtbar sind"
 
 #: actions/models/features.py
@@ -1459,15 +1459,16 @@ msgstr ""
 
 #: actions/models/features.py
 msgid "Action contact persons have different roles"
-msgstr "Maßnahmenansprechpartner haben unterschiedliche Rollen"
+msgstr "Maßnahmenansprechpersonen haben unterschiedliche Rollen"
 
 #: actions/models/features.py
 msgid ""
 "Set if there are separate contact persons with publishing rights and others "
 "who can only suggest changes"
 msgstr ""
-"Legen Sie fest, ob es getrennte Ansprechpartner mit Veröffentlichungsrechten "
-"und andere, die nur Änderungen vorschlagen können, gibt"
+"Legen Sie fest, ob es getrennte Ansprechpersonen mit "
+"Veröffentlichungsrechten und andere, die nur Änderungen vorschlagen können, "
+"gibt"
 
 #: actions/models/features.py
 msgid "Minimal statuses"
@@ -2342,7 +2343,7 @@ msgstr "Authentifizierte Benutzer"
 
 #: aplans/utils.py
 msgid "Contact persons with moderator permissions"
-msgstr "Ansprechpartner mit Moderatorenberechtigung"
+msgstr "Ansprechpersonen mit Moderatorenberechtigung"
 
 #: aplans/utils.py orgs/wagtail_admin.py
 msgid "Plan admins"
@@ -2358,7 +2359,7 @@ msgstr "Bearbeitungsrechte"
 
 #: aplans/utils.py
 msgid "Contact persons with \"moderator\" role"
-msgstr "Ansprechpartner mit \"Moderatoren\"-Rolle"
+msgstr "Ansprechpersonen mit \"Moderatoren\"-Rolle"
 
 #: aplans/utils.py
 msgid "Visibility"
@@ -2991,11 +2992,11 @@ msgstr "Maßnahmenindikatoren"
 
 #: indicators/models.py
 msgid "indicator contact person"
-msgstr "Indikatoransprechpartner"
+msgstr "Indikatoransprechperson"
 
 #: indicators/models.py
 msgid "indicator contact persons"
-msgstr "Indikatoransprechpartner"
+msgstr "Indikatoransprechpersonen"
 
 #: indicators/resources.py
 msgid "Creating new indicators is not allowed"
@@ -3502,24 +3503,24 @@ msgstr "an benutzerdefinierte E-Mail-Adresse senden"
 
 #: notifications/models.py
 msgid "Do not send to contact persons"
-msgstr "Nicht an Ansprechpartner senden"
+msgstr "Nicht an Ansprechpersonen senden"
 
 #: notifications/models.py
 msgid "Send to contact persons"
-msgstr "An Ansprechpartner senden"
+msgstr "An Ansprechpersonen senden"
 
 #: notifications/models.py
 msgid "Send to contact persons; fallback: organization admins"
-msgstr "An Ansprechpartner senden; ausweichen auf Organisations-Admins"
+msgstr "An Ansprechpersonen senden; ausweichen auf Organisations-Admins"
 
 #: notifications/models.py
 msgid "Send to contact persons; fallback: organization admins, plan admins"
 msgstr ""
-"An Ansprechpartner senden; ausweichen auf Organisations-Admin, Plan-Admins"
+"An Ansprechpersonen senden; ausweichen auf Organisations-Admin, Plan-Admins"
 
 #: notifications/models.py
 msgid "send to contact persons"
-msgstr "an Ansprechpartner senden"
+msgstr "an Ansprechpersonen senden"
 
 #: notifications/models.py
 msgid "notification template"
@@ -3544,7 +3545,8 @@ msgstr ""
 #: notifications/models.py
 msgid "Notifications of this type cannot be sent to contact persons"
 msgstr ""
-"Benachrichtigungen dieser Art können nicht an Ansprechpartner gesendet werden"
+"Benachrichtigungen dieser Art können nicht an Ansprechpersonen gesendet "
+"werden"
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -4271,7 +4273,7 @@ msgstr "Bildzuschnitt"
 
 #: people/models.py people/wagtail_admin.py
 msgid "contact for actions"
-msgstr "Ansprechpartner für Maßnahmen"
+msgstr "Ansprechperson für Maßnahmen"
 
 #: people/models.py
 msgid "people"
@@ -4349,7 +4351,7 @@ msgstr ""
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
-msgstr "Ist Ansprechpartner"
+msgstr "Ist Ansprechperson"
 
 #: people/wagtail_admin.py
 #, python-format
@@ -4370,7 +4372,7 @@ msgstr "Für einen Indikator"
 
 #: people/wagtail_admin.py
 msgid "Not a contact person"
-msgstr "Kein Ansprechpartner"
+msgstr "Keine Ansprechperson"
 
 #: people/wagtail_admin.py
 msgid "Is plan admin"
@@ -4406,7 +4408,7 @@ msgstr "letzte Anmeldung"
 
 #: people/wagtail_admin.py
 msgid "contact for indicators"
-msgstr "Ansprechpartner für Indikatoren"
+msgstr "Ansprechperson für Indikatoren"
 
 #: reports/blocks/action_content.py
 msgid "UUID of report field"
