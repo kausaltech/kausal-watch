@@ -114,6 +114,13 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True)
     ]
 
+    def get_help_label(self, value):
+        if 'attribute_type' in value:
+            at = value.get('attribute_type')
+            if hasattr(at, 'name_i18n'):
+                return at.name_i18n
+        return None
+
     @register_graphene_node
     class Value(graphene.ObjectType):
         class Meta:
