@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-17 16:15+0100\n"
+"POT-Creation-Date: 2024-01-19 10:28+0100\n"
 "PO-Revision-Date: 2024-01-13 09:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -1749,18 +1749,15 @@ msgstr "kvalitātes uzraudzības punkti"
 #, python-format
 msgid ""
 "\n"
-"        <span>%(total)s</span> action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"        <span>%(n)s</span> active action <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
 "    "
 msgid_plural ""
 "\n"
-"        <span>%(total)s</span> actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
+"        <span>%(n)s</span> active actions <span class=\"visuallyhidden\">monitored in %(plan.name)s</span>\n"
 "    "
 msgstr[0] ""
 msgstr[1] ""
 msgstr[2] ""
-"\n"
-"        <span>%(total)s</span> darbības <span class=\"visuallyhidden\">pārrauga %(plan.name)s</span>\n"
-"    "
 
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
@@ -1930,6 +1927,10 @@ msgstr "Tunnistamo"
 #: admin_site/models.py
 msgid "OKTA"
 msgstr "OKTA"
+
+#: admin_site/models.py
+msgid "ADFS OpenID Connect"
+msgstr ""
 
 #: admin_site/models.py
 msgid "Name of the customer organization administering the plan"
