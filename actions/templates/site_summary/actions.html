@@ -3,10 +3,10 @@
 <li>
     <span class="icon icon-fa-cubes"></span>
     <a href="{% url 'actions_action_modeladmin_index' %}">
-    {% blocktrans count counter=total_actions with total_actions|intcomma as total %}
-        <span>{{ total }}</span> action <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% blocktrans count counter=active_actions with active_actions|intcomma as n %}
+        <span>{{ n }}</span> active action <span class="visuallyhidden">monitored in {{ plan.name }}</span>
     {% plural %}
-        <span>{{ total }}</span> actions <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+        <span>{{ n }}</span> active actions <span class="visuallyhidden">monitored in {{ plan.name }}</span>
     {% endblocktrans %}
     </a>
 </li>

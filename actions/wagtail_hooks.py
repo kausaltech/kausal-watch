@@ -17,7 +17,7 @@ class ActionsSummaryItem(SummaryItem):
     def get_context_data(self, parent_context: Mapping[str, Any]) -> Mapping[str, Any]:
         ctx = super().get_context_data(parent_context)
         plan = self.request.get_active_admin_plan()
-        ctx['total_actions'] = plan.actions.active().count()
+        ctx['active_actions'] = plan.actions.active().count()
         ctx['plan'] = plan
         return ctx
 
