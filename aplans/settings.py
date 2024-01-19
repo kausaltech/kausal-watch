@@ -187,17 +187,18 @@ if env('ENABLE_WAGTAIL_STYLEGUIDE'):
     INSTALLED_APPS += ['wagtail.contrib.styleguide']
 
 INSTALLED_APPS += [
-    'users',
     'actions',
-    'indicators',
     'content',
-    'people',
-    'notifications',
+    'documentation',
     'feedback',
+    'indicators',
+    'notifications',
     'orgs',
     'pages',
+    'people',
     'reports',
     'request_log',
+    'users',
 ]
 
 MIDDLEWARE = [

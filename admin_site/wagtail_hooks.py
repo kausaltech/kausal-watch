@@ -254,6 +254,8 @@ def restrict_pages_to_plan(parent_page, pages, request):
     q = Q(depth=1)
     for page in plan.root_page.get_translations(inclusive=True):
         q |= pages.descendant_of_q(page, inclusive=True)
+    for page in plan.documentation_root_pages.all():
+        q |= pages.descendant_of_q(page, inclusive=True)
     return pages.filter(q)
 
 
@@ -345,6 +347,23 @@ def should_remove_help_menu_item(item):
 @hooks.register('construct_help_menu')
 def remove_help_menu_items(request, items: list):
     items[:] = [item for item in items if not should_remove_help_menu_item(item)]
+
+
+@hooks.register('construct_help_menu')
+def add_documentation_to_help_menu(request, items: list):
+    # Add an item for each documentation page
+    plan = request.user.get_active_admin_plan()
+    documentation_root = plan.get_translated_documentation_root_page()
+    # import pdb;pdb.set_trace()
+    if not documentation_root:
+        return
+    for page in documentation_root.get_children():
+        item = MenuItem(
+            label=page.title,
+            url=reverse('documentation', kwargs={'page_id': page.id}),
+            icon_name='help',
+        )
+        items.append(item)
 
 
 @hooks.register("register_icons")

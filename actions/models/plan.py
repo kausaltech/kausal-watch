@@ -65,6 +65,18 @@ def get_plan_identifier_from_wildcard_domain(hostname: str) -> Union[Tuple[str, 
         return (None, None)
 
 
+def get_page_translation(page: Page, fallback=True) -> Page:
+    """Return translation of `page` in activated language, fall back to `page` by default."""
+    language = translation.get_language()
+    try:
+        locale = Locale.objects.get(language_code__iexact=language)
+        page = page.get_translation(locale)
+    except (Locale.DoesNotExist, Page.DoesNotExist):
+        if not fallback:
+            raise
+    return page
+
+
 class PlanQuerySet(models.QuerySet['Plan']):
     def for_hostname(self, hostname):
         hostname = hostname.lower()
@@ -357,15 +369,31 @@ class Plan(ClusterableModel):
         """Return root page in activated language, fall back to default language by default."""
         if self.site_id is None:
             return None
-        root = self.root_page
-        language = translation.get_language()
-        try:
-            locale = Locale.objects.get(language_code__iexact=language)
-            root = root.get_translation(locale)
-        except (Locale.DoesNotExist, Page.DoesNotExist):
-            if not fallback:
-                raise
+        root = get_page_translation(self.root_page)
         return root
+
+    def get_translated_documentation_root_page(self, fallback=True) -> Page | None:
+        """Return documentation root page in activated language.
+
+        If `fallback` is true, falls back to to the plan's primary language or, if this fails, to any language.
+        """
+        activated_language = translation.get_language()
+        root_pages = {
+            page.locale.language_code: page for page in self.documentation_root_pages.all()
+        }
+        try:
+            return root_pages[activated_language]
+        except KeyError:
+            if not fallback:
+                return None
+        assert fallback
+        try:
+            return root_pages[self.primary_language]
+        except KeyError:
+            pass
+        if root_pages:
+            return next(iter(root_pages.values()))
+        return None
 
     def create_default_site(self):
         if self.site is not None:

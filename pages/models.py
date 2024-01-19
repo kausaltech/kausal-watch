@@ -15,8 +15,8 @@ from grapple.models import (
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
-from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail import blocks
+from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail.fields import RichTextField, StreamField
 from wagtail.models import Page, Site
 from wagtail.search import index
