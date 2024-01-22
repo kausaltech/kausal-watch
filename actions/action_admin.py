@@ -402,12 +402,12 @@ class ContactPersonsInlinePanel(ModelWithRoleInlinePanel):
 
 class RelatedModelWithRolePanel(MultiFieldPanel):
     def __init__(
-            self,
-            _cls: Type[ModelWithRole] | None = None,
-            relation_name: str | None = None,
-            *args,
-            editable_roles: Iterable[ModelWithRole.Role | None] | None = None,
-            **kwargs
+        self,
+        action: Action,
+        relation_name: str,
+        _cls: Type[ModelWithRole],
+        editable_roles: Iterable[ModelWithRole.Role | None] | None = None,
+        *args, **kwargs
     ):
         """Display inline panels for contact persons, optionally separated by roles.
 
@@ -417,15 +417,20 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         Otherwise an inline panel will be included for each role, no matter if it is included in `editable_roles`. The
         type of the panel will differ, however, depending on whether contact persons with that role can be edited.
         """
-        self.editable_roles = editable_roles
+        self.action= action
         self.relation_name = relation_name
         self._cls = _cls
+        self.editable_roles = editable_roles
         children = []
         assert _cls  # TODO: Didn't really check when or if it can actually be None
         if editable_roles is None:
             children.append(ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=False))
         else:
             for role in _cls.get_roles():
+                # Only show panel for "unspecified" role if there are instances with an unspecified role
+                # https://github.com/kausaltech/kausal-watch-private/pull/111#issuecomment-1896291423
+                if role is None and not getattr(action, relation_name).filter(role__isnull=True).exists():
+                    continue
                 if role in editable_roles:
                     panel = ModelWithRoleInlinePanel.create_for_model_class(_cls, filter_by_role=True, role=role)
                 else:
@@ -437,9 +442,10 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         kwargs = super().clone_kwargs()
         # children are statically set in __init__
         kwargs.pop('children')
-        kwargs['editable_roles'] = self.editable_roles
+        kwargs['action'] = self.action
         kwargs['relation_name'] = self.relation_name
         kwargs['_cls'] = self._cls
+        kwargs['editable_roles'] = self.editable_roles
         return kwargs
 
 
@@ -1116,9 +1122,10 @@ class ActionAdmin(AplansModelAdmin):
             editable_contact_person_roles = request.user.get_editable_contact_person_roles(instance)
             return [
                 RelatedModelWithRolePanel(
-                    _cls=ActionContactPerson, relation_name='contact_persons', editable_roles=editable_contact_person_roles
+                    action=instance, relation_name='contact_persons', _cls=ActionContactPerson,
+                    editable_roles=editable_contact_person_roles
                 )]
-        return [RelatedModelWithRolePanel(_cls=ActionContactPerson, relation_name='contact_persons')]
+        return [RelatedModelWithRolePanel(action=instance, relation_name='contact_persons', _cls=ActionContactPerson)]
 
     def get_responsible_parties_panels(self, request, instance: Action):
         plan = request.user.get_active_admin_plan()
@@ -1126,6 +1133,9 @@ class ActionAdmin(AplansModelAdmin):
             editable_responsible_party_roles = request.user.get_editable_responsible_party_roles(instance)
             return [
                 RelatedModelWithRolePanel(
-                    _cls=ActionResponsibleParty, relation_name='responsible_parties', editable_roles=editable_responsible_party_roles
+                    action=instance, relation_name='responsible_parties', _cls=ActionResponsibleParty,
+                    editable_roles=editable_responsible_party_roles
             )]
-        return [RelatedModelWithRolePanel(_cls=ActionResponsibleParty, relation_name='responsible_parties')]
+        return [
+            RelatedModelWithRolePanel(action=instance, relation_name='responsible_parties', _cls=ActionResponsibleParty)
+        ]
