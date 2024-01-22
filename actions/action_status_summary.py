@@ -168,9 +168,10 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         if phase == 'completed':
             return cls.COMPLETED
         # phase: "begun"? "implementation?"
-        if phase == 'not_started' and status_identifier == 'on_time':
-            return cls.ON_TIME
-        return cls.for_status(action.status)
+        status_match = cls.for_status(action.status)
+        if status_match == cls.UNDEFINED and phase == 'not_started':
+            return cls.NOT_STARTED
+        return status_match
 
 
 Comparison = Enum('Comparison', names='LTE GT')
