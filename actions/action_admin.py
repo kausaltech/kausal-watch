@@ -417,7 +417,7 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
         Otherwise an inline panel will be included for each role, no matter if it is included in `editable_roles`. The
         type of the panel will differ, however, depending on whether contact persons with that role can be edited.
         """
-        self.action= action
+        self.action = action
         self.relation_name = relation_name
         self._cls = _cls
         self.editable_roles = editable_roles
