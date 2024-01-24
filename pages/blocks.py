@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 import graphene
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLField, GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey
+from grapple.models import GraphQLField, GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey, GraphQLBoolean
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
 from uuid import UUID
@@ -83,12 +83,14 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
              label=_('Size'),
          ))]
     )
+    full_width = blocks.BooleanBlock(required=False)
 
     class Meta:
         label = _('Embed')
 
     graphql_fields = [
-        GraphQLField('embed', EmbedHTMLValue)
+        GraphQLField('embed', EmbedHTMLValue),
+        GraphQLBoolean('full_width'),
     ]
 
 
