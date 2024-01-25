@@ -147,10 +147,11 @@ def _sync_group_collection_perms(root_collection, group, perms):
             group.collection_permissions.get(collection=root_collection, permission=perm).delete()
 
 
-def _sync_group_page_perms(root_page, group):
-    # Delete all page permissions that are connected to another root page that's not a translation of this one
+def _sync_group_page_perms(root_pages, group):
+    # Delete all page permissions connected to another root page. (Root pages can be either plan root pages or
+    # documentation root pages, and their respective translations are also root pages.)
     qs = GroupPagePermission.objects.filter(group=group)
-    for page in root_page.get_translations(inclusive=True):
+    for page in root_pages:
         qs = qs.exclude(page=page)
     qs.delete()
 
@@ -158,7 +159,7 @@ def _sync_group_page_perms(root_page, group):
     perm_set = {gpp.permission.codename for gpp in current_perms}
     new_perm_set = {x[0] for x in PAGE_PERMISSION_TYPES}
     page_set = {gpp.page for gpp in current_perms}
-    new_page_set = set(root_page.get_translations(inclusive=True))
+    new_page_set = set(root_pages)
     if perm_set != new_perm_set or page_set != new_page_set:
         current_perms.delete()
         for codename in new_perm_set:
@@ -289,8 +290,11 @@ def _sync_plan_admin_groups(user):
         user.groups.add(group)
         if plan.root_collection is not None:
             _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
+        root_pages = set()
         if plan.root_page is not None:
-            _sync_group_page_perms(plan.root_page, group)
+            root_pages |= set(plan.root_page.get_translations(inclusive=True))
+        root_pages |= set(plan.documentation_root_pages.all())
+        _sync_group_page_perms(root_pages, group)
 
 
 def remove_plan_admin_perms(user):

@@ -354,7 +354,6 @@ def add_documentation_to_help_menu(request, items: list):
     # Add an item for each documentation page
     plan = request.user.get_active_admin_plan()
     documentation_root = plan.get_translated_documentation_root_page()
-    # import pdb;pdb.set_trace()
     if not documentation_root:
         return
     for page in documentation_root.get_children():
