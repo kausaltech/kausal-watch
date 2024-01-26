@@ -18,7 +18,7 @@ from modeltrans.fields import TranslationField
 from wagtail import blocks
 from wagtail.admin.panels import FieldPanel, InlinePanel, MultiFieldPanel, Panel
 from wagtail.fields import RichTextField, StreamField
-from wagtail.models import Page, Site
+from wagtail.models import Page, PagePermissionTester, Site
 from wagtail.search import index
 
 from actions.blocks import (
@@ -235,6 +235,37 @@ class ReadOnlyFieldPanelWithRawValueId(FieldPanel):
     read_only_output_template_name = "aplans/panels/read_only_output_with_raw_value_id.html"
 
 
+class CategoryTypeRelatedPagePermissionTester(PagePermissionTester):
+    def __init__(self, user, page, category_type):
+        super().__init__(user, page)
+        self.category_type = category_type
+
+    def can_add_subpage(self):
+        return super().can_add_subpage() and not self.category_type.synchronize_with_pages
+
+    def can_delete(self, ignore_bulk=False):
+        return super().can_delete(ignore_bulk) and not self.category_type.synchronize_with_pages
+
+    def can_reorder_children(self):
+        return super().can_reorder_children() and not self.category_type.synchronize_with_pages
+
+    def can_move(self):
+        return super().can_move() and not self.category_type.synchronize_with_pages
+
+    def can_copy(self):
+        return super().can_copy() and not self.category_type.synchronize_with_pages
+
+
+class CategoryTypePagePermissionTester(CategoryTypeRelatedPagePermissionTester):
+    def __init__(self, user, page):
+        super().__init__(user, page, page.category_type)
+
+
+class CategoryPagePermissionTester(CategoryTypeRelatedPagePermissionTester):
+    def __init__(self, user, page):
+        super().__init__(user, page, page.category.type)
+
+
 class CategoryTypePage(StaticPage):
     category_type = models.ForeignKey(
         CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
@@ -264,6 +295,9 @@ class CategoryTypePage(StaticPage):
     @property
     def remove_sort_menu_order_button(self):
         return self.category_type.synchronize_with_pages
+
+    def permissions_for_user(self, user):
+        return CategoryTypePagePermissionTester(user, self)
 
 
 # FIXME: Duplicated code (see action_list_page_streamfield_node_getter)
@@ -405,6 +439,9 @@ class CategoryPage(AplansPage):
     @property
     def layout(self):
         return self.get_layout()
+
+    def permissions_for_user(self, user):
+        return CategoryPagePermissionTester(user, self)
 
 
 class FixedSlugPage(AplansPage):
