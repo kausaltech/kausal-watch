@@ -14,11 +14,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='actionlistpage',
             name='action_date_format',
-            field=aplans.utils.DateFormatField(choices=[('FULL', 'Day, month and year (1.11.2020)'), ('MONTH_YEAR', 'Month and year (11.2020)'), ('YEAR', 'Year (2020)')], default='FULL', help_text='Default format of action start and end dates shown in the public UI.', max_length=16, verbose_name='Action date format'),
+            field=aplans.utils.DateFormatField(choices=[('FULL', 'Day, month and year (31.12.2020)'), ('MONTH_YEAR', 'Month and year (12.2020)'), ('YEAR', 'Year (2020)')], default='FULL', help_text='Default format of action start and end dates shown in the public UI.', max_length=16, verbose_name='Action date format'),
         ),
         migrations.AddField(
             model_name='actionlistpage',
             name='task_date_format',
-            field=aplans.utils.DateFormatField(choices=[('FULL', 'Day, month and year (1.11.2020)'), ('MONTH_YEAR', 'Month and year (11.2020)'), ('YEAR', 'Year (2020)')], default='FULL', help_text='Default format of action task due dates shown in the public UI.', max_length=16, verbose_name='Task due date format'),
+            field=aplans.utils.DateFormatField(choices=[('FULL', 'Day, month and year (31.12.2020)'), ('MONTH_YEAR', 'Month and year (12.2020)'), ('YEAR', 'Year (2020)')], default='FULL', help_text='Default format of action task due dates shown in the public UI.', max_length=16, verbose_name='Task due date format'),
         ),
     ]

@@ -135,8 +135,8 @@ class IdentifierValidator(RegexValidator):
         super().__init__(regex, **kwargs)
 
 class DateFormatOptions(models.TextChoices):
-    FULL = 'FULL', _('Day, month and year (1.11.2020)')
-    MONTH_YEAR = 'MONTH_YEAR', _('Month and year (11.2020)')
+    FULL = 'FULL', _('Day, month and year (31.12.2020)')
+    MONTH_YEAR = 'MONTH_YEAR', _('Month and year (12.2020)')
     YEAR = 'YEAR', _('Year (2020)')
 
 class DateFormatField(models.CharField):
