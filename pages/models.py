@@ -37,7 +37,7 @@ from aplans.extensions import get_body_blocks
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
-from aplans.utils import OrderedModel, DateFormatField
+from aplans.utils import OrderedModel, DateFormatField, DateFormatOptions
 from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
     AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
@@ -503,10 +503,12 @@ class ActionListPage(FixedSlugPage):
     action_date_format = DateFormatField(
         verbose_name=_('Action date format'),
         help_text=_('Default format of action start and end dates shown in the public UI.'),
+        default=DateFormatOptions.FULL
     )
     task_date_format = DateFormatField(
         verbose_name=_('Task due date format'),
         help_text=_('Default format of action task due dates shown in the public UI.'),
+        default=DateFormatOptions.FULL
     )
     include_related_plans = models.BooleanField(
         verbose_name=_('Include related plans'),

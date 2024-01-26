@@ -143,8 +143,6 @@ class DateFormatField(models.CharField):
     def __init__(self, *args, **kwargs):
         kwargs['max_length'] = 16
         kwargs['choices'] = DateFormatOptions.choices
-        if 'default' not in kwargs:
-            kwargs['default'] = DateFormatOptions.FULL
         super().__init__(*args, **kwargs)
 
 class IdentifierField(models.CharField):
