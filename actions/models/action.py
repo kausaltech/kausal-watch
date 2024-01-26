@@ -31,7 +31,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 from aplans.types import UserOrAnon
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language,
-    ConstantMetadata
+    ConstantMetadata, DateFormatField
 )
 from orgs.models import Organization
 from users.models import User
@@ -332,6 +332,16 @@ class Action(  # type: ignore[django-manager-missing]
         blank=True,
         null=True,
     )
+    date_format = DateFormatField(
+        verbose_name=_('Date format'),
+        help_text=_(
+            'Format of action start and end dates shown in the public UI. \
+            The default for all actions can be specified on the actions page.'
+        ),
+        blank=True,
+        null=True,
+        default=None
+    )
     superseded_by = models.ForeignKey(
         'self', verbose_name=pgettext_lazy('action', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_actions', help_text=_('Set if this action is superseded by another action')
@@ -368,7 +378,7 @@ class Action(  # type: ignore[django-manager-missing]
     public_fields = [
         'id', 'uuid', 'plan', 'name', 'official_name', 'identifier', 'lead_paragraph', 'description', 'status',
         'completion', 'schedule', 'schedule_continuous', 'decision_level', 'responsible_parties',
-        'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'tasks',
+        'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'date_format', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
         'primary_org', 'order', 'superseded_by', 'superseded_actions',
@@ -1109,6 +1119,16 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
     due_at = models.DateField(
         verbose_name=_('due date'),
         help_text=_('The date by which the task should be completed (deadline)')
+    )
+    date_format = DateFormatField(
+        verbose_name=_('Due date format'),
+        help_text=_(
+            'Format of action task due dates shown in the public UI. \
+            The default for all actions can be specified on the actions page.'
+        ),
+        blank=True,
+        null=True,
+        default=None
     )
     completed_at = models.DateField(
         null=True, blank=True, verbose_name=_('completion date'),

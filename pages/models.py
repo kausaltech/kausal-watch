@@ -37,7 +37,7 @@ from aplans.extensions import get_body_blocks
 from indicators.blocks import (
     IndicatorGroupBlock, IndicatorHighlightsBlock, IndicatorShowcaseBlock, RelatedIndicatorsBlock
 )
-from aplans.utils import OrderedModel
+from aplans.utils import OrderedModel, DateFormatField
 from .blocks import (
     AccessibilityStatementComplianceStatusBlock, AccessibilityStatementContactInformationBlock,
     AccessibilityStatementContactFormBlock, AccessibilityStatementPreparationInformationBlock, CardListBlock,
@@ -500,6 +500,14 @@ class ActionListPage(FixedSlugPage):
         validators=(MinValueValidator(1),),
         default=1
     )
+    action_date_format = DateFormatField(
+        verbose_name=_('Action date format'),
+        help_text=_('Default format of action start and end dates shown in the public UI.'),
+    )
+    task_date_format = DateFormatField(
+        verbose_name=_('Task due date format'),
+        help_text=_('Default format of action task due dates shown in the public UI.'),
+    )
     include_related_plans = models.BooleanField(
         verbose_name=_('Include related plans'),
         help_text=_('Enable to make this page include actions from related plans.'),
@@ -515,6 +523,8 @@ class ActionListPage(FixedSlugPage):
         FieldPanel('default_view'),
         FieldPanel('heading_hierarchy_depth'),
         FieldPanel('include_related_plans'),
+        FieldPanel('action_date_format'),
+        FieldPanel('task_date_format'),
         MultiFieldPanel([
             FieldPanel('primary_filters', heading=_("Primary filters")),
             FieldPanel('main_filters', heading=_("Main filters")),
@@ -535,6 +545,8 @@ class ActionListPage(FixedSlugPage):
         GraphQLField('default_view', graphql_type_from_enum(View, 'ActionListPageView'), required=True),
         GraphQLInt(field_name='heading_hierarchy_depth', required=True),
         GraphQLBoolean('include_related_plans'),
+        GraphQLString('action_date_format'),
+        GraphQLString('task_date_format'),
         action_list_page_streamfield_node_getter('primary_filters'),
         action_list_page_streamfield_node_getter('main_filters'),
         action_list_page_streamfield_node_getter('advanced_filters'),

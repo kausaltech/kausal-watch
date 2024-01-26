@@ -134,6 +134,18 @@ class IdentifierValidator(RegexValidator):
             regex = r'^[a-zA-Z0-9äöüåÄÖÜßÅ_.-]+$'
         super().__init__(regex, **kwargs)
 
+class DateFormatOptions(models.TextChoices):
+    FULL = 'FULL', _('Day, month and year (1.11.2020)')
+    MONTH_YEAR = 'MONTH_YEAR', _('Month and year (11.2020)')
+    YEAR = 'YEAR', _('Year (2020)')
+
+class DateFormatField(models.CharField):
+    def __init__(self, *args, **kwargs):
+        kwargs['max_length'] = 16
+        kwargs['choices'] = DateFormatOptions.choices
+        if 'default' not in kwargs:
+            kwargs['default'] = DateFormatOptions.FULL
+        super().__init__(*args, **kwargs)
 
 class IdentifierField(models.CharField):
     def __init__(self, *args, **kwargs):

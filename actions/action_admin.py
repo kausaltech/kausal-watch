@@ -743,11 +743,13 @@ class ActionAdmin(AplansModelAdmin):
         CustomizableBuiltInFieldPanel('schedule_continuous'),
         CustomizableBuiltInFieldPanel('start_date'),
         CustomizableBuiltInFieldPanel('end_date'),
+        CustomizableBuiltInFieldPanel('date_format'),
     ]
 
     task_panels = [
         FieldPanel('name'),
         FieldPanel('due_at'),
+        FieldPanel('date_format'),
         FieldPanel('state'),
         FieldPanel('completed_at'),
         FieldPanel('comment'),
