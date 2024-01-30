@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: 2024-01-13 09:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -26,6 +26,10 @@ msgstr "Ar šo identifikatoru jau ir veikta rīcība."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s ir minēts vairākkārt."
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Nav norādīts"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -824,6 +828,16 @@ msgid "The date when implementation of this action ends"
 msgstr "Datums, kad beidzas šīs rīcības īstenošana"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date format"
+msgstr "Kontaktinformācija"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr "aizstāts ar"
@@ -888,10 +902,6 @@ msgstr "Galvenā atbildīgā puse"
 #: actions/models/action.py
 msgid "Collaborator"
 msgstr "Sadarbības partneris"
-
-#: actions/models/action.py
-msgid "Unspecified"
-msgstr "Nav norādīts"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py people/wagtail_admin.py
@@ -1012,6 +1022,16 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr "Datums, līdz kuram uzdevums jāpabeidz (termiņš)"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Due date format"
+msgstr "atjaunināts vietnē"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr "pabeigšanas datums"
 
@@ -1129,7 +1149,7 @@ msgstr "Neobligāta izvēle ar neobligātu tekstu"
 msgid "Choice"
 msgstr "Izvēle"
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr "Teksts"
 
@@ -1265,6 +1285,10 @@ msgstr "ir kolekcija"
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
 msgstr "Iestatīt, vai šim kategorijas tipam ir jābūt savai attēlu kolekcijai"
+
+#: actions/models/category.py orgs/models.py
+msgid "primary language"
+msgstr "pamatvaloda"
 
 #: actions/models/category.py
 msgid "common category type"
@@ -2165,6 +2189,18 @@ msgid "Portuguese (Brazil)"
 msgstr "portugāļu (Brazīlija)"
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr "pasūtījums"
 
@@ -2332,6 +2368,18 @@ msgstr "vietnes vispārējais saturs"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Vietnes iestatījumi"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation page"
+msgstr "Īstenošanas posms"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation pages"
+msgstr "Īstenošanas posms"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -3360,10 +3408,6 @@ msgid "A date of dissolution"
 msgstr "Izbeigšanas datums"
 
 #: orgs/models.py
-msgid "primary language"
-msgstr "pamatvaloda"
-
-#: orgs/models.py
 msgid "Location"
 msgstr "Atrašanās vieta"
 
@@ -3755,6 +3799,28 @@ msgstr "Apakšvirsrakstu hierarhijas dziļums"
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
 msgstr "Kategoriju hierarhijas dziļums, kas jāsniedz kā apakšvirsraksti, sākot no saknes."
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Action category"
+msgid "Action date format"
+msgstr "Rīcības kategorija"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
 
 #: pages/models.py
 msgid "Include related plans"

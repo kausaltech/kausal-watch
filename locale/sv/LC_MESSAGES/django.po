@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: 2024-01-25 11:05+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/"
-">\n"
+"Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,6 +29,10 @@ msgstr "Det finns redan en handling med denna identifieraren."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s anges flera gånger i åtgärden."
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Ospecificerad"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -303,9 +306,7 @@ msgstr "Om formatet är \"Numerisk\" måste en enhet anges"
 
 #: actions/attribute_type_admin.py
 msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
-msgstr ""
-"Detta fält har redan värden. Om du vill ändra formatet måste du först ta "
-"bort de befintliga värdena."
+msgstr "Detta fält har redan värden. Om du vill ändra formatet måste du först ta bort de befintliga värdena."
 
 #: actions/attribute_type_admin.py
 msgid "Choice options"
@@ -826,6 +827,16 @@ msgid "The date when implementation of this action ends"
 msgstr "Datum då implementeringen av denna åtgärd slutar"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date format"
+msgstr "Kontaktformulär"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr "ersatt av"
@@ -890,10 +901,6 @@ msgstr "Primärt ansvarig part"
 #: actions/models/action.py
 msgid "Collaborator"
 msgstr "Samarbetspartner"
-
-#: actions/models/action.py
-msgid "Unspecified"
-msgstr "Ospecificerad"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py people/wagtail_admin.py
@@ -1014,6 +1021,16 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr "Datum då uppgiften ska slutföras (deadline)"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Due date format"
+msgstr "uppdaterad kl"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr "slutdatum"
 
@@ -1131,7 +1148,7 @@ msgstr "Valfritt val med valfri text"
 msgid "Choice"
 msgstr "Val"
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr "Text"
 
@@ -1271,6 +1288,12 @@ msgstr "Visa alla åtgärder"
 #| msgid "Set if the indicator should be used to determine action progress"
 msgid "Set if this category type should have its own collection for images"
 msgstr "Ställ in om indikatorn ska användas för att bestämma framsteg"
+
+#: actions/models/category.py orgs/models.py
+#, fuzzy
+#| msgid "Primary language must not be selected"
+msgid "primary language"
+msgstr "Primärspråk får inte väljas"
 
 #: actions/models/category.py
 #, fuzzy
@@ -1530,9 +1553,7 @@ msgstr "Visa fältets synlighet som en etikett i redigeringsvyer"
 
 #: actions/models/features.py
 msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
-msgstr ""
-"För planer som har fältspecifika synlighetsbegränsningar, visa användarna "
-"vilka fält som är offentliga och vilka som är begränsade."
+msgstr "För planer som har fältspecifika synlighetsbegränsningar, visa användarna vilka fält som är offentliga och vilka som är begränsade."
 
 #: actions/models/features.py
 msgid "plan feature"
@@ -1896,9 +1917,7 @@ msgstr "allmänna administratörer"
 
 #: actions/wagtail_admin.py
 msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
-msgstr ""
-"Ställs endast in om kunden uttryckligen kräver det. Använd en färgnyckel "
-"från UI-temaets graphColors, till exempel red070 eller grey030."
+msgstr "Ställs endast in om kunden uttryckligen kräver det. Använd en färgnyckel från UI-temaets graphColors, till exempel red070 eller grey030."
 
 #: actions/wagtail_admin.py
 msgid "Clients"
@@ -1956,15 +1975,11 @@ msgstr "Ingen användare hittades med den här e-postadressen. Be din administra
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
-msgstr ""
-"Du har inte administratörsåtkomst. Din administratör kan behöva tilldela dig "
-"en åtgärd eller indikator, eller ge dig status som planadministratör."
+msgstr "Du har inte administratörsåtkomst. Din administratör kan behöva tilldela dig en åtgärd eller indikator, eller ge dig status som planadministratör."
 
 #: admin_site/api.py
 msgid "Cannot determine authentication method. The email address domain may be unknown."
-msgstr ""
-"Kan inte fastställa autentiseringsmetod. Domänen för e-postadressen kan vara "
-"okänd."
+msgstr "Kan inte fastställa autentiseringsmetod. Domänen för e-postadressen kan vara okänd."
 
 #: admin_site/api.py
 msgid "Password authentication is required, but the user has no password."
@@ -2321,6 +2336,18 @@ msgid "Portuguese (Brazil)"
 msgstr "Portugisiska (Brasilien)"
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr "ordning"
 
@@ -2507,9 +2534,7 @@ msgstr "Platsomfattande tillkännagivande"
 
 #: content/models.py
 msgid "A message prominently displayed in a banner at the top of every page on the public website"
-msgstr ""
-"Ett meddelande som visas tydligt i en banner högst upp på varje sida på den "
-"offentliga webbplatsen"
+msgstr "Ett meddelande som visas tydligt i en banner högst upp på varje sida på den offentliga webbplatsen"
 
 #: content/models.py
 msgid "site general content"
@@ -2522,6 +2547,18 @@ msgstr "webbplatsens allmänna innehåll"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Webbplatsinställningar"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation page"
+msgstr "Fas"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation pages"
+msgstr "Fas"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -3129,9 +3166,7 @@ msgstr "[finns inte i aktiv plan]"
 
 #: indicators/wagtail_admin.py
 msgid "Changing the organization to one with a different primary language is currently not supported"
-msgstr ""
-"Att ändra organisationen till en med ett annat huvudspråk stöds för "
-"närvarande inte"
+msgstr "Att ändra organisationen till en med ett annat huvudspråk stöds för närvarande inte"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions must be the same as in common indicator"
@@ -3635,12 +3670,6 @@ msgstr "tidsupplösning"
 
 #: orgs/models.py
 #, fuzzy
-#| msgid "Primary language must not be selected"
-msgid "primary language"
-msgstr "Primärspråk får inte väljas"
-
-#: orgs/models.py
-#, fuzzy
 #| msgid "action"
 msgid "Location"
 msgstr "åtgärd"
@@ -4087,6 +4116,28 @@ msgid "Depth of category hierarchy to present as subheadings starting from the r
 msgstr "Djup i kategorihierarkin som ska presenteras som underrubriker med början från roten."
 
 #: pages/models.py
+#, fuzzy
+#| msgid "common indicator"
+msgid "Action date format"
+msgstr "gemensam indikator"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if the contact persons should not be visible in the public UI"
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Ange om kontaktpersonerna inte ska vara synliga i det offentliga användargränssnittet"
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if the contact persons should not be visible in the public UI"
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Ange om kontaktpersonerna inte ska vara synliga i det offentliga användargränssnittet"
+
+#: pages/models.py
 msgid "Include related plans"
 msgstr "Inkludera relaterade planer"
 
@@ -4339,24 +4390,17 @@ msgstr "Vill du verkligen inkludera organisationen '%(org)s' i planen '%(plan)s'
 #: people/views.py
 #, python-format
 msgid "An email has been sent to %(person)s with a link to reset their password."
-msgstr ""
-"Ett e-postmeddelande har skickats till %(person)s med en länk för att "
-"återställa deras lösenord."
+msgstr "Ett e-postmeddelande har skickats till %(person)s med en länk för att återställa deras lösenord."
 
 #: people/views.py
 #, python-format
 msgid "If the email does not arrive, you can send them the following link: %(url)s"
-msgstr ""
-"Om e-postmeddelandet inte kommer fram kan du skicka följande länk till dem: "
-"%(url)s"
+msgstr "Om e-postmeddelandet inte kommer fram kan du skicka följande länk till dem: %(url)s"
 
 #: people/views.py
 #, python-format
 msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
-msgstr ""
-"Vänligen se till att ingen annan än %(person)s får tillgång till länken. För "
-"ytterligare säkerhet kommer länken att upphöra att gälla om "
-"%(days_until_expiration)s dagar."
+msgstr "Vänligen se till att ingen annan än %(person)s får tillgång till länken. För ytterligare säkerhet kommer länken att upphöra att gälla om %(days_until_expiration)s dagar."
 
 #: people/wagtail_admin.py
 msgid "Is contact person"
@@ -4411,9 +4455,7 @@ msgstr "Är du säker på att du vill avaktivera den här personen?"
 
 #: people/wagtail_admin.py
 msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
-msgstr ""
-"Den här personen har ingen åtkomst till administratörsgränssnittet. Detta "
-"beror vanligtvis på att inga åtgärder eller indikatorer har tilldelats dem."
+msgstr "Den här personen har ingen åtkomst till administratörsgränssnittet. Detta beror vanligtvis på att inga åtgärder eller indikatorer har tilldelats dem."
 
 #: people/wagtail_admin.py
 #, fuzzy

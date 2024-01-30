@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: 2024-01-19 09:43+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
-">\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -32,6 +31,10 @@ msgstr "Tällä tunnisteella on jo toimenpide."
 #| msgid "Organization occurs multiple times as responsible party"
 msgid "%s is listed multiple times in the action."
 msgstr "Sama organisaatio toistuu vastuutahona"
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Määrittelemätön"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -878,6 +881,16 @@ msgid "The date when implementation of this action ends"
 msgstr "Päivämäärä jona toimenpiteen toteutus päättyy/päättyi"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date format"
+msgstr "Yhteydenottolomake"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr "korvattu toimenpiteellä"
@@ -942,10 +955,6 @@ msgstr "Päävastuutaho"
 #: actions/models/action.py
 msgid "Collaborator"
 msgstr "Yhteistyötaho"
-
-#: actions/models/action.py
-msgid "Unspecified"
-msgstr "Määrittelemätön"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py people/wagtail_admin.py
@@ -1070,6 +1079,16 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr "Päivämäärä johon mennessä tehtävän pitäisi valmistua (deadline)"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Due date format"
+msgstr "päivitysaika"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr "valmistumispäivämäärä"
 
@@ -1191,7 +1210,7 @@ msgstr "Valinnainen vaihtoehto ja valinnainen seliteteksti"
 msgid "Choice"
 msgstr "ominaisuuden valintavaihtoehdot"
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr "Teksti"
 
@@ -1331,6 +1350,12 @@ msgstr "kategorialla on kokoelma"
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
 msgstr "Aseta jos tälle kategoriatyypille halutaan oma kokoelma kuvia varten"
+
+#: actions/models/category.py orgs/models.py
+#, fuzzy
+#| msgid "Primary language"
+msgid "primary language"
+msgstr "Ensisijainen kieli"
 
 #: actions/models/category.py
 msgid "common category type"
@@ -1839,13 +1864,11 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 "\n"
-"        <span>%(n)s</span> aktiivinen toimenpide <span class=\"visuallyhidden"
-"\">seurannassa (%(plan.name)s)</span>\n"
+"        <span>%(n)s</span> aktiivinen toimenpide <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
 msgstr[1] ""
 "\n"
-"        <span>%(n)s</span> aktiivista toimenpidettä <span class="
-"\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
+"        <span>%(n)s</span> aktiivista toimenpidettä <span class=\"visuallyhidden\">seurannassa (%(plan.name)s)</span>\n"
 "    "
 
 #: actions/wagtail_admin.py
@@ -2276,6 +2299,18 @@ msgid "Portuguese (Brazil)"
 msgstr "portugali (Brasilia)"
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr "järjestys"
 
@@ -2457,6 +2492,18 @@ msgstr "sivuston yleiset sisällöt"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Sivuston asetukset"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Documentation page"
+msgstr "toteutusvaihe"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Documentation pages"
+msgstr "toteutusvaihe"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -3533,12 +3580,6 @@ msgid "A date of dissolution"
 msgstr "Lakkauttamispäivämäärä"
 
 #: orgs/models.py
-#, fuzzy
-#| msgid "Primary language"
-msgid "primary language"
-msgstr "Ensisijainen kieli"
-
-#: orgs/models.py
 msgid "Location"
 msgstr "Sijainti"
 
@@ -3958,6 +3999,28 @@ msgstr "Alaotsikoissa näytettävä hierarkiataso"
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
 msgstr "Kategoriahierarkian syvyys joka esitetään alaotsikkoina, hierarkian juuresta laskien"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Action category"
+msgid "Action date format"
+msgstr "Toimenpiteen luokka"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Aseta jos julkisessa sivustossa halutaan näyttää toimenpiteiden tunnisteet"
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Aseta jos julkisessa sivustossa halutaan näyttää toimenpiteiden tunnisteet"
 
 #: pages/models.py
 msgid "Include related plans"

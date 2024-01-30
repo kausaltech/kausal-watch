@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: 2023-12-13 16:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -31,6 +31,10 @@ msgstr "Der er allerede en handling med denne identifikator."
 #| msgid "Organization occurs multiple times as responsible party"
 msgid "%s is listed multiple times in the action."
 msgstr "Organisation optræder flere gange som ansvarlig part"
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Uspecificeret"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -893,6 +897,16 @@ msgid "The date when implementation of this action ends"
 msgstr "Den dato, hvor implementeringen af denne handling slutter"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date format"
+msgstr "Kontaktformular"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr "afløst af"
@@ -957,10 +971,6 @@ msgstr "Primær ansvarlig part"
 #: actions/models/action.py
 msgid "Collaborator"
 msgstr "Samarbejdspartner"
-
-#: actions/models/action.py
-msgid "Unspecified"
-msgstr "Uspecificeret"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py people/wagtail_admin.py
@@ -1085,6 +1095,16 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr "Den dato, hvor opgaven skal være afsluttet (deadline)"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Due date format"
+msgstr "opdateret kl"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr "færdiggørelsesdato"
 
@@ -1206,7 +1226,7 @@ msgstr "Valgfrit valg med valgfri tekst"
 msgid "Choice"
 msgstr "valgmuligheder for attributter"
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr "Tekst"
 
@@ -1350,6 +1370,12 @@ msgstr "har en samling"
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
 msgstr "Indstil om denne kategoritype skal have sin egen samling til billeder"
+
+#: actions/models/category.py orgs/models.py
+#, fuzzy
+#| msgid "Primary language"
+msgid "primary language"
+msgstr "Primære sprog"
 
 #: actions/models/category.py
 msgid "common category type"
@@ -2321,6 +2347,18 @@ msgid "Portuguese (Brazil)"
 msgstr ""
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr "bestille"
 
@@ -2500,6 +2538,18 @@ msgstr "webstedets generelle indhold"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Indstillinger for websted"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Documentation page"
+msgstr "implementeringsfasen"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "implementation phase"
+msgid "Documentation pages"
+msgstr "implementeringsfasen"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -3580,12 +3630,6 @@ msgid "A date of dissolution"
 msgstr "En dato for opløsning"
 
 #: orgs/models.py
-#, fuzzy
-#| msgid "Primary language"
-msgid "primary language"
-msgstr "Primære sprog"
-
-#: orgs/models.py
 msgid "Location"
 msgstr "Beliggenhed"
 
@@ -4035,6 +4079,28 @@ msgstr "Underoverskriftshierarki dybde"
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
 msgstr "Dybde af kategorihierarki til at præsentere som underoverskrifter startende fra roden."
+
+#: pages/models.py
+#, fuzzy
+#| msgid "common category"
+msgid "Action date format"
+msgstr "fælles kategori"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Indstil, om handlingsidentifikatorer skal være synlige i den offentlige brugergrænseflade"
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Indstil, om handlingsidentifikatorer skal være synlige i den offentlige brugergrænseflade"
 
 #: pages/models.py
 #, fuzzy

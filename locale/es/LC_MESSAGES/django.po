@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -24,6 +24,10 @@ msgstr ""
 #: actions/action_admin.py
 #, python-format
 msgid "%s is listed multiple times in the action."
+msgstr ""
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
 msgstr ""
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
@@ -819,6 +823,14 @@ msgid "The date when implementation of this action ends"
 msgstr ""
 
 #: actions/models/action.py
+msgid "Date format"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr ""
@@ -882,10 +894,6 @@ msgstr ""
 
 #: actions/models/action.py
 msgid "Collaborator"
-msgstr ""
-
-#: actions/models/action.py
-msgid "Unspecified"
 msgstr ""
 
 #: actions/models/action.py indicators/models.py orgs/models.py
@@ -1007,6 +1015,14 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr ""
 
 #: actions/models/action.py
+msgid "Due date format"
+msgstr ""
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr ""
 
@@ -1124,7 +1140,7 @@ msgstr ""
 msgid "Choice"
 msgstr ""
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr ""
 
@@ -1259,6 +1275,10 @@ msgstr ""
 
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
+msgstr ""
+
+#: actions/models/category.py orgs/models.py
+msgid "primary language"
 msgstr ""
 
 #: actions/models/category.py
@@ -2157,6 +2177,18 @@ msgid "Portuguese (Brazil)"
 msgstr ""
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr ""
 
@@ -2323,6 +2355,14 @@ msgstr ""
 
 #: content/wagtail_admin.py
 msgid "Site settings"
+msgstr ""
+
+#: documentation/models.py
+msgid "Documentation page"
+msgstr ""
+
+#: documentation/models.py
+msgid "Documentation pages"
 msgstr ""
 
 #: documents/chooser.py
@@ -3339,10 +3379,6 @@ msgid "A date of dissolution"
 msgstr ""
 
 #: orgs/models.py
-msgid "primary language"
-msgstr ""
-
-#: orgs/models.py
 msgid "Location"
 msgstr ""
 
@@ -3733,6 +3769,22 @@ msgstr ""
 
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
+msgstr ""
+
+#: pages/models.py
+msgid "Action date format"
+msgstr ""
+
+#: pages/models.py
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr ""
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+msgid "Default format of action task due dates shown in the public UI."
 msgstr ""
 
 #: pages/models.py

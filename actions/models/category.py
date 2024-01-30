@@ -103,7 +103,9 @@ class CommonCategoryType(CategoryTypeBase):
         Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='common_category_type',
     )
 
-    primary_language = models.CharField(max_length=20, choices=get_supported_languages(), default='en')
+    primary_language = models.CharField(
+        max_length=20, choices=get_supported_languages(), default='en', verbose_name=_('primary language')
+    )
     i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='primary_language')
 
     # type annotations

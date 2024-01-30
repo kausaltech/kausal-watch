@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-19 10:28+0100\n"
+"POT-Creation-Date: 2024-01-30 12:04+0100\n"
 "PO-Revision-Date: 2024-01-19 09:43+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -30,6 +29,10 @@ msgstr "Es gibt bereits eine Maßnahme mit dieser Kennung."
 #, python-format
 msgid "%s is listed multiple times in the action."
 msgstr "%s wird mehrfach in der Maßnahme aufgeführt."
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Unspezifiziert"
 
 #: actions/action_admin.py actions/api.py actions/blocks/action_content.py
 #: actions/blocks/action_dashboard.py
@@ -824,6 +827,16 @@ msgid "The date when implementation of this action ends"
 msgstr "Das Datum, an dem die Umsetzung dieser Maßnahme endet"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "Contact form"
+msgid "Date format"
+msgstr "Kontaktformular"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgctxt "action"
 msgid "superseded by"
 msgstr "ersetzt durch"
@@ -888,10 +901,6 @@ msgstr "Hauptverantwortliche Stelle"
 #: actions/models/action.py
 msgid "Collaborator"
 msgstr "Mitwirkende Stelle"
-
-#: actions/models/action.py
-msgid "Unspecified"
-msgstr "Unspezifiziert"
 
 #: actions/models/action.py indicators/models.py orgs/models.py
 #: people/models.py people/wagtail_admin.py
@@ -1012,6 +1021,16 @@ msgid "The date by which the task should be completed (deadline)"
 msgstr "Das Datum, zu dem die Aufgabe fertiggestellt sein soll"
 
 #: actions/models/action.py
+#, fuzzy
+#| msgid "updated at"
+msgid "Due date format"
+msgstr "aktualisiert am"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr ""
+
+#: actions/models/action.py
 msgid "completion date"
 msgstr "Fertigstellungsdatum"
 
@@ -1129,7 +1148,7 @@ msgstr "Optionale Auswahl mit optionalem Text"
 msgid "Choice"
 msgstr "Auswahl"
 
-#: actions/models/attributes.py pages/models.py
+#: actions/models/attributes.py documentation/models.py pages/models.py
 msgid "Text"
 msgstr "Text"
 
@@ -1265,6 +1284,10 @@ msgstr "hat eine Sammlung"
 #: actions/models/category.py
 msgid "Set if this category type should have its own collection for images"
 msgstr "Setzen, wenn dieser Kategorietyp seine eigene Sammlung für Bilder haben soll"
+
+#: actions/models/category.py orgs/models.py
+msgid "primary language"
+msgstr "Hauptsprache"
 
 #: actions/models/category.py
 msgid "common category type"
@@ -1757,13 +1780,11 @@ msgid_plural ""
 "    "
 msgstr[0] ""
 "\n"
-"        <span> %(n)s </span> aktive Maßnahme <span class=\"visuallyhidden\"> "
-"überwacht in %(plan.name)s </span>\n"
+"        <span> %(n)s </span> aktive Maßnahme <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
 "    "
 msgstr[1] ""
 "\n"
-"        <span> %(n)s </span> aktive Maßnahmen <span class=\"visuallyhidden\""
-"> überwacht in %(plan.name)s </span>\n"
+"        <span> %(n)s </span> aktive Maßnahmen <span class=\"visuallyhidden\"> überwacht in %(plan.name)s </span>\n"
 "    "
 
 #: actions/wagtail_admin.py
@@ -2170,6 +2191,18 @@ msgid "Portuguese (Brazil)"
 msgstr "Portugiesisch (Brasilien)"
 
 #: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr ""
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr ""
+
+#: aplans/utils.py
 msgid "order"
 msgstr "Sortierung"
 
@@ -2337,6 +2370,18 @@ msgstr "Allgemeine Seiteninhalte"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Site-Einstellungen"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation page"
+msgstr "Umsetzungsphase"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Implementation phase"
+msgid "Documentation pages"
+msgstr "Umsetzungsphase"
 
 #: documents/chooser.py
 msgid "Server Error"
@@ -3364,10 +3409,6 @@ msgid "A date of dissolution"
 msgstr "Ein Auflösungsdatum"
 
 #: orgs/models.py
-msgid "primary language"
-msgstr "Hauptsprache"
-
-#: orgs/models.py
 msgid "Location"
 msgstr "Standort"
 
@@ -3759,6 +3800,28 @@ msgstr "Hierarchietiefe der Unterüberschriften"
 #: pages/models.py
 msgid "Depth of category hierarchy to present as subheadings starting from the root."
 msgstr "Tiefe der Kategoriehierarchie, die ausgehend von der Wurzel als Unterüberschriften dargestellt werden soll."
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Action category"
+msgid "Action date format"
+msgstr "Maßnahmenkategorie"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Setzen, wenn die Maßnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Setzen, wenn die Maßnahmenkennungen in der öffentlichen Oberfläche sichtbar sein sollen"
 
 #: pages/models.py
 msgid "Include related plans"
