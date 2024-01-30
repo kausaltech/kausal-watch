@@ -177,14 +177,16 @@ class PlanAdmin(AplansModelAdmin):
             'other_languages'
         }
 
+        panels = list(self.panels)
+
         if creating:
             # Accidentally changing a plan organization would be dangerous, so don't show this for existing plans
             create_panels = [
                 FieldPanel('organization', widget=OrganizationChooser),
 
             ]
-            self.panels = create_panels + [
-                p for p in self.panels
+            panels = create_panels + [
+                p for p in panels
                 if getattr(p, 'field_name', None) in panels_enabled_when_creating
             ]
 
@@ -202,7 +204,7 @@ class PlanAdmin(AplansModelAdmin):
         )
 
         panels = insert_model_translation_panels(
-            Plan, self.panels, request, instance
+            Plan, panels, request, instance
         )
         if request.user.is_superuser:
             panels.append(InlinePanel('clients', min_num=1, panels=[
