@@ -1,12 +1,25 @@
 from wagtail.admin.mail import EmailNotificationMixin, Notifier
+from wagtail_modeladmin.helpers import ModelAdminURLFinder
 from wagtail.models import TaskState
 
 from .models import Action, ActionContactPerson
+from .action_admin import ActionAdmin
 from users.models import User
 
 
 class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, Notifier):
     """A base notifier to send updates for UserApprovalTask events"""
+
+    class AllowAllUsersAdminURLFinder(ModelAdminURLFinder):
+        """
+        Only to be used in contexts where permissions checks are impossible and not needed,
+        currently when rendering emails to non-logged in users.
+        """
+        class PermissionHelper:
+            def user_can_edit_obj(self, user, instance):
+                return True
+        url_helper = ActionAdmin().url_helper
+        permission_helper = PermissionHelper
 
     def __init__(self):
         # Allow TaskState to send notifications
@@ -17,6 +30,7 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         context['object'] = task_state.workflow_state.content_object
         context['task'] = task_state.task.specific
         context["model_name"] = context["object"]._meta.verbose_name
+        context['admin_url_finder'] = self.AllowAllUsersAdminURLFinder(None)
         return context
 
     def get_recipient_users(self, task_state, **kwargs):
