@@ -377,7 +377,7 @@ class OptionalChoiceWithText(AttributeType):
             initial_text = None
             attribute_text_field_name = f'text_{language}' if language else 'text'
             if serialized_value:
-                initial_text = serialized_value[attribute_text_field_name].get('text')
+                initial_text = serialized_value.get('text').get(attribute_text_field_name)
             elif attribute:
                 initial_text = getattr(attribute, attribute_text_field_name)
             form_field_kwargs = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
