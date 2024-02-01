@@ -90,7 +90,6 @@ class ActionPermissionHelper(PlanRelatedPermissionHelper):
     def user_can_edit_obj(self, user, obj):
         if not super().user_can_edit_obj(user, obj):
             return False
-
         return user.can_modify_action(obj)
 
     def user_can_delete_obj(self, user, obj):
