@@ -6,7 +6,7 @@
 {% block content %}
     {% include "wagtailadmin/shared/header.html" with title=page.title icon='help' %}
 
-    <div class="nice-padding">
+    <div class="nice-padding"{% if page.css_style %} style="{{ page.css_style }}"{% endif %}>
         {% for block in page.body %}
         {{ block.value|richtext }}
         {% endfor %}
