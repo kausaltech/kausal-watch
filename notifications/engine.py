@@ -9,6 +9,8 @@ from sentry_sdk import capture_exception
 from typing import Dict, Sequence
 
 from .mjml import render_mjml_from_template
+from aplans.email_sender import EmailSender
+
 from .models import NotificationType
 from .notifications import (
     ActionNotUpdatedNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
@@ -238,12 +240,11 @@ class NotificationEngine:
         for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
 
-        from_address = base_template.from_address or settings.DEFAULT_FROM_EMAIL or 'noreply@kausal.tech'
-        from_name = base_template.from_name or 'Kausal'
-        email_from = '%s <%s>' % (from_name, from_address)
+        from_email = base_template.get_from_email()
         reply_to = [base_template.reply_to] if base_template.reply_to else None
 
         notification_count = 0
+        email_sender = EmailSender(from_email=from_email, reply_to=reply_to)
 
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
@@ -281,9 +282,7 @@ class NotificationEngine:
                 msg = EmailMessage(
                     subject=rendered['subject'],
                     body=rendered['html_body'],
-                    from_email=email_from,
-                    to=[to_email],
-                    reply_to=reply_to,
+                    to=[to_email]
                 )
                 msg.content_subtype = "html"  # Main content is now text/html
 
@@ -296,14 +295,18 @@ class NotificationEngine:
                     nstr.append(s)
                 logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
 
-                if not self.noop:
-                    msg.send()
+                email_sender.queue(msg)
                 if not self.force_to and not self.noop:
                     for item in queue_items:
                         item.notification.mark_sent(recipient)
                 notification_count += 1
                 if self.limit and notification_count >= self.limit:
+                    if not self.noop:
+                        email_sender.send_all()
                     return
+        if self.noop:
+            return
+        email_sender.send_all()
 
     def queue_notification(self, notification: Notification, recipient: NotificationRecipient):
         item = recipient.queue_item(notification)

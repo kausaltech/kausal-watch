@@ -185,6 +185,11 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
             link_in_brand_bg_color="#ffffff"
         ))
 
+    def get_from_email(self):
+        from_address = self.from_address or settings.DEFAULT_FROM_EMAIL or 'noreply@kausal.tech'
+        from_name = self.from_name or 'Kausal'
+        return f'{from_name} <{from_address}>'
+
 
 class NotificationTemplateManager(models.Manager):
     def get_by_natural_key(self, base, type_):
