@@ -311,6 +311,13 @@ class Person(index.Indexed, ClusterableModel):
                 super().save(update_fields=['image_cropping'])
         user = self.create_corresponding_user()
         if self.user != user:
+            if self.user:
+                # Deactivate `self.user` as we'll replace it with `user`
+                # FIXME: We don't have access to any user to set as the deactivating user. There might not be a
+                # deactivating user at all because we're not in a view. Setting `User.deactivated_by` to None may cause
+                # problems.
+                deactivating_user = None
+                self.user.deactivate(deactivating_user)
             self.user = user
             super().save(update_fields=['user'])
 
@@ -381,12 +388,22 @@ class Person(index.Indexed, ClusterableModel):
         email = self.email.lower()
         if user:
             created = False
+            email_changed = user.email.lower() != email
+            if email_changed:
+                # If we change the email address to that of an existing deactivated user, we need to deactivate the
+                # user with the old email address (done after this returns because it returns a user different from
+                # `self.user`) and re-activate the user with the new email address (done further down in this method).
+                try:
+                    user = User.objects.get(email__iexact=email, is_active=False)
+                except User.DoesNotExist:
+                    pass
         else:
             user = User(
                 email=email,
                 uuid=uuid.uuid4(),
             )
             created = True
+            email_changed = False
 
         if not created and not user.is_active:
             # Probably the user has been deactivated because the person has been deleted. Reactivate it.
@@ -395,7 +412,7 @@ class Person(index.Indexed, ClusterableModel):
         else:
             reactivated = False
 
-        set_password = created or reactivated
+        set_password = created or reactivated or email_changed
         if set_password:
             client = self.get_client_for_email_domain()
             if client is not None and client.auth_backend:
@@ -405,8 +422,7 @@ class Person(index.Indexed, ClusterableModel):
 
         user.first_name = self.first_name
         user.last_name = self.last_name
-        if user.email != email:
-            user.email = email
+        user.email = email
         user.save()
         return user
 
