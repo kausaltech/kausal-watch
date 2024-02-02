@@ -186,8 +186,8 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
         ))
 
     def get_from_email(self):
-        from_address = self.from_address or settings.DEFAULT_FROM_EMAIL or 'noreply@kausal.tech'
-        from_name = self.from_name or 'Kausal'
+        from_address = self.from_address or settings.DEFAULT_FROM_EMAIL
+        from_name = self.from_name or settings.DEFAULT_FROM_NAME
         return f'{from_name} <{from_address}>'
 
 
