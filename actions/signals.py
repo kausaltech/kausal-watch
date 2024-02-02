@@ -2,9 +2,9 @@ import logging
 from anymail.signals import pre_send, post_send
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from wagtail.signals import task_submitted
+from wagtail.signals import task_submitted, task_cancelled
 
-from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier
+from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
 from .models import Plan, PlanFeatures
 from notifications.models import NotificationSettings
 
@@ -38,10 +38,15 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
 
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
+action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
 
 
 def register_signal_handlers():
     task_submitted.connect(
         action_moderator_approval_task_submission_email_notifier,
         dispatch_uid='action_moderator_approval_task_submitted_email_notification',
+    )
+    task_cancelled.connect(
+        action_moderator_cancel_task_submission_email_notifier,
+        dispatch_uid='action_moderator_cancel_task_submitted_email_notification',
     )
