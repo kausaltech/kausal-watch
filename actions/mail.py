@@ -33,6 +33,16 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         context['admin_url_finder'] = self.AllowAllUsersAdminURLFinder(None)
         return context
 
+    def get_valid_recipients(self, instance, **kwargs):
+        # The stock implementation has a limited selection of notification types based on what's available in Wagtail's UserProfile
+        # model. We will assume that cancellation of a submitted item can reuse the same settings as the original submit.
+        actual_notification = self.notification
+        if self.notification == 'cancelled':
+            self.notification = 'submitted'
+        result = super().get_valid_recipients(instance, **kwargs)
+        self.notification = actual_notification
+        return result
+
     def get_recipient_users(self, task_state, **kwargs):
         # TODO
         action = task_state.workflow_state.content_object
@@ -43,5 +53,9 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
 
 class ActionModeratorApprovalTaskStateSubmissionEmailNotifier(BaseActionModeratorApprovalTaskStateEmailNotifier):
     """A notifier to send updates for ActionModeratorApprovalTask submission events"""
-
     notification = 'submitted'
+
+
+class ActionModeratorCancelTaskStateSubmissionEmailNotifier(BaseActionModeratorApprovalTaskStateEmailNotifier):
+    """A notifier to send updates for ActionModeratorApprovalTask submission events"""
+    notification = 'cancelled'
