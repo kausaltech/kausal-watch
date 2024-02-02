@@ -825,6 +825,9 @@ class Action(  # type: ignore[django-manager-missing]
         summary = ActionStatusSummaryIdentifier.for_action(self)
         return summary.value.color
 
+    def get_workflow(self):
+        return self.plan.features.moderation_workflow
+
 
 class ModelWithRole:
     class Role(models.TextChoices):

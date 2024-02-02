@@ -74,6 +74,11 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_('Enable moderation workflow'),
         help_text=_("Set to enable drafting and reviewing functionality")
     )
+    moderation_workflow = models.ForeignKey(
+        'wagtailcore.WorkFlow', default=None, null=True, blank=True,
+        help_text=_("Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"),
+        on_delete=models.PROTECT
+    )
     display_field_visibility_restrictions = models.BooleanField(
         default=False, verbose_name=_('Display field visibility as a label in edit views'),
         help_text=_(

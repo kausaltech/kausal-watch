@@ -355,7 +355,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('has_action_primary_orgs'),
         FieldPanel('has_action_contact_person_roles'),
         FieldPanel('minimal_statuses'),
-        FieldPanel('enable_moderation_workflow'),
+        FieldPanel('moderation_workflow'),
         FieldPanel('display_field_visibility_restrictions'),
     ]
 
