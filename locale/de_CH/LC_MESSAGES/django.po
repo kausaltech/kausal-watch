@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-30 12:04+0100\n"
+"POT-Creation-Date: 2024-02-02 14:16+0200\n"
 "PO-Revision-Date: 2024-01-19 09:43+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
 "Language-Team: German (Switzerland) <https://weblate.kausal.tech/projects/watch/django/de_CH/>\n"
@@ -1783,6 +1783,44 @@ msgstr[1] ""
 "        <span>%(n)s</span> aktive Massnahmen <span class=\"visuallyhidden\">überwacht in %(plan.name)s</span>\n"
 "    "
 
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "The page \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\"."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can preview the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can edit the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from the moderation stage \"%(task)s\". It does not require approval until it has been resubmitted for moderation again."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can preview the %(model_name)s here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can edit the %(model_name)s here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, python-format
+msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
+msgstr ""
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr ""
@@ -2365,6 +2403,14 @@ msgstr ""
 
 #: content/wagtail_admin.py
 msgid "Site settings"
+msgstr ""
+
+#: documentation/models.py
+msgid "CSS style"
+msgstr ""
+
+#: documentation/models.py
+msgid "CSS style to be applied to the container of the body"
 msgstr ""
 
 #: documentation/models.py

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-30 12:04+0100\n"
+"POT-Creation-Date: 2024-02-02 14:16+0200\n"
 "PO-Revision-Date: 2023-12-13 16:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -1909,6 +1909,46 @@ msgstr[1] ""
 "         <span> %(total)s </span> handlinger <span class=\"visuallyhidden\"> overvåget i %(plan.name)s </span>\n"
 "    "
 
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The page \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\"."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can preview the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can edit the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from the moderation stage \"%(task)s\". It does not require approval until it has been resubmitted for moderation again."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can preview the %(model_name)s here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can edit the %(model_name)s here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, python-format
+msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Identifikator er allerede i brug"
@@ -2538,6 +2578,16 @@ msgstr "webstedets generelle indhold"
 #: content/wagtail_admin.py
 msgid "Site settings"
 msgstr "Indstillinger for websted"
+
+#: documentation/models.py
+#, fuzzy
+#| msgid "Style"
+msgid "CSS style"
+msgstr "Stil"
+
+#: documentation/models.py
+msgid "CSS style to be applied to the container of the body"
+msgstr ""
 
 #: documentation/models.py
 #, fuzzy
