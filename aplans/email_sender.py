@@ -6,7 +6,7 @@ class EmailSender:
     from_email: str | None
     reply_to: list | None
 
-    def __init__(self, from_email: str | None=None, reply_to: list | None=None):
+    def __init__(self, from_email: str | None = None, reply_to: list | None = None):
         self.messages = []
         self.from_email = from_email
         self.reply_to = reply_to
