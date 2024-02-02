@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:16+0200\n"
+"POT-Creation-Date: 2024-02-02 14:20+0100\n"
 "PO-Revision-Date: 2024-01-25 11:05+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -1917,14 +1917,15 @@ msgid "You can edit the %(model_name)s here:"
 msgstr ""
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
-#, python-format
-msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\""
-msgstr ""
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgstr "%(model_name)s '%(object)s' har skickats in för moderering."
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
 #, fuzzy, python-format
 #| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
-msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr "%(model_name)s '%(object)s' har skickats in för moderering."
 
 #: actions/wagtail_admin.py

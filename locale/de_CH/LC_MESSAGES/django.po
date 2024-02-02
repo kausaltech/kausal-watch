@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:16+0200\n"
+"POT-Creation-Date: 2024-02-02 14:20+0100\n"
 "PO-Revision-Date: 2024-01-19 09:43+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
 "Language-Team: German (Switzerland) <https://weblate.kausal.tech/projects/watch/django/de_CH/>\n"
@@ -1813,12 +1813,12 @@ msgstr ""
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
 #, python-format
-msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\""
+msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
 msgstr ""
 
 #: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
 #, python-format
-msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr ""
 
 #: actions/wagtail_admin.py
