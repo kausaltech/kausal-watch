@@ -627,6 +627,13 @@ if ELASTICSEARCH_URL:
                 }
             }
         },
+        'lv': {
+            'analyzer': {
+                'default': {
+                    'type': 'latvian'
+                }
+            }
+        },
     }
     for lang in ANALYSIS_CONFIG.keys():
         WAGTAILSEARCH_BACKENDS['default-%s' % lang] = {
