@@ -38,7 +38,7 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
         context = super().get_context(task_state, **kwargs)
         object = task_state.workflow_state.content_object
         context['object'] = object
-        context['plan'] = getattr(object, 'plan')
+        context['plan'] = getattr(object, 'plan', None)
         context['task'] = task_state.task.specific
         context['admin_url_finder'] = self.AllowAllUsersAdminURLFinder(None)
         context['model_name'] = object._meta.verbose_name
