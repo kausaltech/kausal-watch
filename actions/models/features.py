@@ -70,10 +70,6 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Enable indicator comparison'),
         help_text=_("Set to enable comparing indicators between organizations")
     )
-    enable_moderation_workflow = models.BooleanField(
-        default=False, verbose_name=_('Enable moderation workflow'),
-        help_text=_("Set to enable drafting and reviewing functionality")
-    )
     moderation_workflow = models.ForeignKey(
         'wagtailcore.WorkFlow', default=None, null=True, blank=True,
         help_text=_("Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"),
@@ -90,6 +86,10 @@ class PlanFeatures(models.Model):
     @property
     def public_contact_persons(self):
         return self.contact_persons_public_data != self.ContactPersonsPublicData.NONE
+
+    @property
+    def enable_moderation_workflow(self):
+        return self.moderation_workflow is not None
 
     public_fields: ClassVar = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
