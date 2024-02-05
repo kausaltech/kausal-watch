@@ -63,15 +63,8 @@ class BaseActionModeratorApprovalTaskStateEmailNotifier(EmailNotificationMixin, 
 
     def send_emails(self, template_set, context, recipients, **kwargs):
         """ Overridden just to modify the From: and Reply-To: headers """
-        from_email = None
-        reply_to = None
-        if 'plan' in context:
-            plan = context.get('plan')
-            base_template = plan.notification_base_template
-            if base_template is not None:
-                from_email = base_template.get_from_email()
-                reply_to = [base_template.reply_to] if base_template.reply_to else None
-        email_sender = EmailSender(from_email=from_email, reply_to=reply_to)
+        plan = context.get('plan', None)
+        email_sender = EmailSender(plan=plan)
         subject = render_to_string(
             template_set["subject"], context
         ).strip()

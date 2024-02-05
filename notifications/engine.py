@@ -240,11 +240,8 @@ class NotificationEngine:
         for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
 
-        from_email = base_template.get_from_email()
-        reply_to = [base_template.reply_to] if base_template.reply_to else None
-
         notification_count = 0
-        email_sender = EmailSender(from_email=from_email, reply_to=reply_to)
+        email_sender = EmailSender(plan=self.plan)
 
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
