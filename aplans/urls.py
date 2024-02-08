@@ -14,6 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 import importlib
+from urllib.parse import urlparse
 from django.conf import settings
 from django.conf.urls.static import static
 from django.urls import include, path, re_path
@@ -21,11 +22,13 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from wagtail.admin import urls as wagtailadmin_urls
 from wagtail.documents import urls as wagtaildocs_urls
+from django.contrib.auth.views import LogoutView
 from wagtailautocomplete.urls.admin import urlpatterns as autocomplete_admin_urls
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 from .graphene_views import SentryGraphQLView
 from .api_router import router as api_router
+from actions.models import PlanDomain
 from actions.api import all_views as actions_api_views, all_routers as actions_api_routers
 from actions.autocomplete import (
     ActionAutocomplete, CategoryAutocomplete, CommonCategoryTypeAutocomplete,
@@ -42,12 +45,32 @@ from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, Rep
 from users.views import change_admin_plan
 
 extensions_api_views = []
+kwe_urls = []
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions.api import all_views
+    from kausal_watch_extensions import urls
     extensions_api_views = all_views
+    kwe_urls = urls
+
 
 for view in actions_api_views + indicators_api_views + insight_api_views + extensions_api_views:
     api_router.register(view['name'], view['class'], basename=view.get('basename'))
+
+
+class KausalLogoutView(LogoutView):
+
+    def get_success_url_allowed_hosts(self):
+        base = super().get_success_url_allowed_hosts()
+        redirect_url = self.request.GET.get(self.redirect_field_name, '')
+        if redirect_url:
+            parsed = urlparse(redirect_url)
+            configs = PlanDomain.objects.filter(hostname=parsed.hostname)
+            if configs.exists():
+                base.add(parsed.netloc)
+            return base
+        return base
+
+
 
 api_urls = []
 for router in [api_router] + actions_api_routers:
@@ -102,9 +125,14 @@ urlpatterns = [
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
     path('auth/', include('social_django.urls', namespace='social')),
+    path("logout/", KausalLogoutView.as_view(), name="logout"),
     path('', include('admin_site.urls')),
     path('', RootRedirectView.as_view(), name='root-redirect'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+if kwe_urls:
+    urlpatterns.append(path('', include(kwe_urls)))
 
 
 if settings.ENABLE_DEBUG_TOOLBAR:

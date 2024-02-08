@@ -69,3 +69,5 @@ Babel
 polars[xlsx2csv]
 wagtail-modeladmin
 loguru
+django-oauth-toolkit==2.3.0
+pycryptodome==3.19.0

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 import os
 import sys
 import importlib
+from importlib.util import find_spec
 from celery.schedules import crontab
 from typing import Literal
 
@@ -283,6 +284,7 @@ AUTHENTICATION_BACKENDS = (
 )
 
 AUTH_USER_MODEL = 'users.User'
+LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/admin/'
 LOGOUT_REDIRECT_URL = '/admin/'
 
@@ -710,6 +712,9 @@ COMMON_CATEGORIES_COLLECTION = 'Common Categories'
 
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     INSTALLED_APPS.append('kausal_watch_extensions')
+    from kausal_watch_extensions import register_settings
+    register_settings(locals())
+
 
 # local_settings.py can be used to override environment-specific settings
 # like database and email that differ between development and production.

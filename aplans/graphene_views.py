@@ -1,4 +1,5 @@
 import hashlib
+import importlib
 import json
 from loguru import logger
 
@@ -12,6 +13,7 @@ from actions.models import Plan
 from django.core.exceptions import ValidationError
 from graphene_django.views import GraphQLView
 from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
+from graphql.execution import ExecutionContext
 from graphql.error import GraphQLError
 from graphql.language.ast import VariableNode, StringValueNode
 from rich.console import Console
@@ -25,6 +27,13 @@ from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import AuthenticatedUserNode
 from .code_rev import REVISION
 from users.models import User
+
+
+IDTokenMiddleware = None
+
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    from kausal_watch_extensions.auth.middleware import IDTokenMiddleware
+
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
@@ -134,7 +143,11 @@ class SentryGraphQLView(GraphQLView):
 
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
-            kwargs['middleware'] = (APITokenMiddleware, LocaleMiddleware)
+            middleware = (APITokenMiddleware, LocaleMiddleware, WorkflowStateMiddleware)
+            if IDTokenMiddleware is not None:
+                kwargs['middleware'] = (IDTokenMiddleware, ) + middleware
+            else:
+                kwargs['middleware'] = middleware
         super().__init__(*args, **kwargs)
 
     def get_cache_key(self, request, data, query, variables):
