@@ -94,6 +94,31 @@ class APITokenMiddleware:
         return next(root, info, **kwargs)
 
 
+class WorkflowStateMiddleware:
+    def process_workflow_directive(self, info, directive):
+        variable_vals = info.variable_values
+        for arg in directive.arguments:
+            if arg.name.value == 'state':
+                if isinstance(arg.value, VariableNode):
+                    val = variable_vals.get(arg.value.name.value)
+                    print(val)
+                else:
+                    val = arg.value.value
+                #if val not in   TODO VALIDATION
+                info.context._graphql_query_workflow_state = val
+                return val
+
+    def resolve(self, next, root, info, **kwargs):
+        if root is None:
+            info.context._graphql_query_workflow_state = None
+            operation = info.operation
+            for directive in operation.directives:
+                if directive.name.value == 'workflow':
+                    info.context.watch_cache.query_workflow_state = self.process_workflow_directive(info, directive)
+
+        return next(root, info, **kwargs)
+
+
 class LocaleMiddleware:
     def process_locale_directive(self, info, directive):
         variable_vals = info.variable_values
@@ -134,7 +159,7 @@ class SentryGraphQLView(GraphQLView):
 
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
-            kwargs['middleware'] = (APITokenMiddleware, LocaleMiddleware)
+            kwargs['middleware'] = (APITokenMiddleware, LocaleMiddleware, WorkflowStateMiddleware)
         super().__init__(*args, **kwargs)
 
     def get_cache_key(self, request, data, query, variables):

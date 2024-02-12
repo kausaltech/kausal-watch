@@ -47,6 +47,7 @@ from aplans.graphql_types import (
     set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
+from aplans.graphql_types import WorkflowState
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
@@ -1047,6 +1048,39 @@ def plans_actions_queryset(plans, category, first, order_by, user):
     return qs
 
 
+def _resolve_published_action(
+        obj_id: int | None,
+        identifier: str | None,
+        plan_identifier: str | None,
+        info
+) -> Action | None:
+    qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
+    if obj_id:
+        qs = qs.filter(id=obj_id)
+    if identifier:
+        plan_obj = get_plan_from_context(info, plan_identifier)
+        if not plan_obj:
+            return None
+        qs = qs.filter(identifier=identifier, plan=plan_obj)
+
+    qs = gql_optimizer.query(qs, info)
+
+    try:
+        return qs.get()
+    except Action.DoesNotExist:
+        return None
+
+
+def _resolve_draft_action(workflow_state, id, identifier, plan, info):
+    if workflow_state == WorkflowState.PUBLISHED:
+        raise ValueError('Cannot return published drafts')
+    action = _resolve_published_action(id, identifier, plan, info)
+    if not action.has_unpublished_changes:
+        return action
+    revision = action.get_latest_revision_as_object()
+    return revision
+
+
 class Query:
     plan = gql_optimizer.field(graphene.Field(PlanNode, id=graphene.ID(), domain=graphene.String()))
     plans_for_hostname = graphene.List(PlanInterface, hostname=graphene.String())
@@ -1071,7 +1105,7 @@ class Query:
         external_identifier=graphene.ID(required=True)
     )
 
-    def resolve_plan(self, info, id=None, domain=None, **kwargs):
+    def resolve_plan(root, info, id=None, domain=None, **kwargs):
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
 
@@ -1130,32 +1164,24 @@ class Query:
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_action(self, info, **kwargs):
-        obj_id = kwargs.get('id')
-        identifier = kwargs.get('identifier')
-        plan = kwargs.get('plan')
+    @staticmethod
+    def resolve_action(
+            root,
+            info: GQLInfo,
+            id: int | None = None,
+            identifier: str | None = None,
+            plan: str | None = None
+    ) -> Action | None:
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
-        qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
-        if obj_id:
-            qs = qs.filter(id=obj_id)
-        if identifier:
-            plan_obj = get_plan_from_context(info, plan)
-            if not plan_obj:
-                return None
-            qs = qs.filter(identifier=identifier, plan=plan_obj)
-
-        qs = gql_optimizer.query(qs, info)
-
-        try:
-            obj = qs.get()
-        except Action.DoesNotExist:
-            return None
-
-        if not identifier:
+        workflow_state = info.context.watch_cache.query_workflow_state
+        if workflow_state == WorkflowState.PUBLISHED.value.value:
+            obj = _resolve_published_action(id, identifier, plan, info)
+        else:
+            obj = _resolve_draft_action(workflow_state, id, identifier, plan, info)
+        if obj and not identifier:
             set_active_plan(info, obj.plan)
-
         return obj
 
     def resolve_category(self, info, plan, category_type, external_identifier):

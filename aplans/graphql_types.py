@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum as python_enum
 import functools
 import typing
 from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
@@ -7,8 +8,10 @@ import graphene
 import re
 
 from django.db.models import Model, QuerySet
+from django.utils.translation import gettext_lazy as _
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
+from graphql import GraphQLEnumValue
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -180,3 +183,9 @@ class AdminButton(graphene.ObjectType):
     classname = graphene.String(required=True)
     title = graphene.String(required=False)
     target = graphene.String(required=False)
+
+
+class WorkflowState(python_enum.Enum):
+    PUBLISHED = GraphQLEnumValue(value='published', description=_('Published'))
+    APPROVED = GraphQLEnumValue(value='approved', description=_('Approved'))
+    DRAFT = GraphQLEnumValue(value='draft', description=_('Draft'))

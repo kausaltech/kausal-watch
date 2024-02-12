@@ -50,10 +50,12 @@ class PlanSpecificCache:
 class WatchObjectCache:
     plan_caches: dict[int, PlanSpecificCache]
     admin_plan_cache: PlanSpecificCache | None
+    query_workflow_state: str
 
     def __init__(self):
         self.plan_caches = {}
         self.admin_plan_cache = None
+        self.query_workflow_state = 'published'
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)

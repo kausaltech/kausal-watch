@@ -47,6 +47,7 @@ def get_active_admin_plan(self):
 class AdminMiddleware(MiddlewareMixin):
     def process_view(self, request: WatchAdminRequest, *args, **kwargs):
         request.watch_cache = WatchObjectCache()
+        print('Injecting watch cache')
 
         user = request.user
         if not user or not user.is_authenticated or not user.is_staff:
