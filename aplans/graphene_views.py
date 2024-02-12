@@ -24,7 +24,7 @@ from aplans.settings import LOG_SQL_QUERIES
 from aplans.types import WatchAPIRequest
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
-from .graphql_types import AuthenticatedUserNode
+from .graphql_types import AuthenticatedUserNode, WorkflowState
 from .code_rev import REVISION
 from users.models import User
 
@@ -100,6 +100,30 @@ class APITokenMiddleware:
         if gt and issubclass(gt, AuthenticatedUserNode):
             if not getattr(context, 'user', None):
                 raise GraphQLAuthRequiredError("Authentication required")
+        return next(root, info, **kwargs)
+
+
+class WorkflowStateMiddleware:
+    def process_workflow_directive(self, info, directive):
+        user = info.context.user
+        if not user.is_authenticated:
+            return WorkflowState.PUBLISHED
+        variable_vals = info.variable_values
+        for arg in directive.arguments:
+            if arg.name.value == 'state':
+                if isinstance(arg.value, VariableNode):
+                    str_val = variable_vals.get(arg.value.name.value)
+                else:
+                    str_val = arg.value.value
+                return WorkflowState.for_value_string(str_val)
+
+    def resolve(self, next, root, info, **kwargs):
+        if root is None:
+            operation = info.operation
+            for directive in operation.directives:
+                if directive.name.value == 'workflow':
+                    info.context.watch_cache.query_workflow_state = self.process_workflow_directive(info, directive)
+
         return next(root, info, **kwargs)
 
 

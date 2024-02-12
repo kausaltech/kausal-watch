@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum as python_enum
 import functools
 import typing
 from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
@@ -7,8 +8,10 @@ import graphene
 import re
 
 from django.db.models import Model, QuerySet
+from django.utils.translation import gettext_lazy as _
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
+from graphql import GraphQLEnumValue
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -18,6 +21,7 @@ from modeltrans.translator import get_i18n_field
 
 from actions.models.plan import Plan
 from aplans.types import WatchAPIRequest
+from users.models import User
 
 
 graphene_registry: list[Type[graphene.ObjectType]] = []
@@ -180,3 +184,27 @@ class AdminButton(graphene.ObjectType):
     classname = graphene.String(required=True)
     title = graphene.String(required=False)
     target = graphene.String(required=False)
+
+
+class WorkflowState(python_enum.Enum):
+    PUBLISHED = GraphQLEnumValue(value='published', description=_('Published'))
+    APPROVED = GraphQLEnumValue(value='approved', description=_('Approved'))
+    DRAFT = GraphQLEnumValue(value='draft', description=_('Draft'))
+
+    @staticmethod
+    def for_value_string(value: str):
+        try:
+            return next(w for w in WorkflowState if w.value.value == value)
+        except StopIteration:
+            return None
+
+    def is_visible_to_user(self, user: User, plan: Plan):
+        if self == WorkflowState.PUBLISHED:
+            return True
+        if not user.is_authenticated:
+            return False
+        if self == WorkflowState.APPROVED:
+            return True
+        if self == WorkflowState.DRAFT:
+            return user.can_access_admin(plan)
+        return False
