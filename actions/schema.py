@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import typing
 from urllib.parse import urlparse
 from typing import Generic, List, Optional, Protocol, TypeVar
@@ -763,6 +764,12 @@ class ActionTaskNode(DjangoNode):
     class Meta:
         model = ActionTask
 
+    @staticmethod
+    def resolve_id(root, info):
+        if root.pk is None:
+            return f'unpublished-{uuid.uuid4()}'
+        return root.pk
+
     @gql_optimizer.resolver_hints(
         model_field='comment',
     )
@@ -1020,13 +1027,19 @@ class ActionLinkNode(DjangoNode):
         model = ActionLink
         fields = public_fields(ActionLink)
 
-        @staticmethod
-        def resolve_url(root: ActionLink, info):
-            return root.url_i18n
+    @staticmethod
+    def resolve_id(root, info):
+        if root.pk is None:
+            return f'unpublished-{uuid.uuid4()}'
+        return root.pk
 
-        @staticmethod
-        def resolve_title(root: ActionLink, info):
-            return root.title_i18n
+    @staticmethod
+    def resolve_url(root: ActionLink, info):
+        return root.url_i18n
+
+    @staticmethod
+    def resolve_title(root: ActionLink, info):
+        return root.title_i18n
 
 
 def plans_actions_queryset(plans, category, first, order_by, user):
