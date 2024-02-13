@@ -186,7 +186,7 @@ class SentryGraphQLView(GraphQLView):
 
     def log_request(self, request: WatchAPIRequest, query, variables, operation_name):
         logger.info('GraphQL request %s from %s' % (operation_name, request._referer))
-        debug_logging = settings.LOG_SQL_QUERIES
+        debug_logging = settings.LOG_GRAPHQL_QUERIES
         if not debug_logging or not query:
             return
         console = Console()
