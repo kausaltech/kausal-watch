@@ -1,4 +1,7 @@
+from urllib.parse import urlparse
+
 from django.utils.translation import gettext as _
+from django.urls import resolve
 
 from rest_framework.decorators import (
     api_view, throttle_classes, schema, authentication_classes, permission_classes
@@ -30,6 +33,16 @@ def check_login_method(request):
     if not email:
         msg = _("Invalid email address")
         raise ValidationError({'detail': msg, 'code': 'invalid_email'})
+
+    next_url_input = d.get('next')
+    resolved = None
+    if next_url_input:
+        next_url = urlparse(next_url_input)
+        resolved = resolve(next_url.path)
+    destination_is_admin_site = resolved is None or not (
+        resolved.url_name == 'authorize' and 'oauth2_provider' in resolved.app_names
+    )
+
     user = User.objects.filter(email__iexact=email).first()
     person = user.get_corresponding_person() if user else None
     if user is None or person is None:
@@ -37,11 +50,17 @@ def check_login_method(request):
         raise ValidationError({'detail': msg, 'code': 'no_user'})
 
     if not user.can_access_admin():
-        msg = _(
-            "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
-            "you plan admin status."
-        )
-        raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
+        if destination_is_admin_site:
+            msg = _(
+                "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
+                "you plan admin status."
+            )
+            raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
+        elif not person.public_site_only:
+            msg = _(
+                "You do not have access to the public site."
+            )
+            raise ValidationError({'detail': msg, 'code': 'no_site_access'})
 
     # Always use password authentication if the user has a password
     if user.has_usable_password():

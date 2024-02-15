@@ -147,6 +147,10 @@ class Person(index.Indexed, ClusterableModel):
         User, related_name='created_persons', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'),
     )
+    public_site_only = models.BooleanField(
+        null=False, default=False, verbose_name=_('Restrict access to public site'),
+        help_text=_('Set to enable read-only access to public site')
+    )
 
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
 
