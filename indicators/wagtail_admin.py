@@ -424,31 +424,30 @@ class IndicatorAdmin(AplansModelAdmin):
                           }
             basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
 
-        if request.user.is_superuser:
-            basic_panels.insert(
-                1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))
-            )
-            basic_panels.insert(
-                2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
-            )
-            basic_panels.append(InlinePanel(
-                'related_effects',
-                panels=[
-                    FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                    FieldPanel('effect_type'),
-                    FieldPanel('confidence_level'),
-                ],
-                heading=_('Effects'),
-            ))
-            basic_panels.append(InlinePanel(
-                'related_causes',
-                panels=[
-                    FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                    FieldPanel('effect_type'),
-                    FieldPanel('confidence_level'),
-                ],
-                heading=_('Causes'),
-            ))
+        advanced_panels.insert(
+            1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete'))
+        )
+        advanced_panels.insert(
+            2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete'))
+        )
+        advanced_panels.append(InlinePanel(
+            'related_effects',
+            panels=[
+                FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                FieldPanel('effect_type'),
+                FieldPanel('confidence_level'),
+            ],
+            heading=_('Effects'),
+        ))
+        advanced_panels.append(InlinePanel(
+            'related_causes',
+            panels=[
+                FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                FieldPanel('effect_type'),
+                FieldPanel('confidence_level'),
+            ],
+            heading=_('Causes'),
+        ))
 
         cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
         cat_panels = []
