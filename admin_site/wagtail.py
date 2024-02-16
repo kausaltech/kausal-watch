@@ -36,7 +36,7 @@ from wagtailautocomplete.edit_handlers import \
 from actions.models.plan import Plan
 from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel, InstancesVisibleForMixin
 from pages.models import ActionListPage
 
 from .utils import FieldLabelRenderer
@@ -226,7 +226,7 @@ class BoundCustomizableBuiltInFieldPanelMixin:
                 self.help_text = customization.help_text_override
             if customization.label_override:
                 self.heading = customization.label_override
-            if customization.instances_visible_for != BuiltInFieldCustomization.VisibleFor.PUBLIC:
+            if customization.instances_visible_for != InstancesVisibleForMixin.VisibleFor.PUBLIC:
                 is_public_field = False
         self.heading = FieldLabelRenderer(plan)(self.heading, public=is_public_field)
 

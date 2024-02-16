@@ -24,7 +24,7 @@ from aplans.types import WatchAPIRequest
 from users.models import User
 
 
-graphene_registry: list[Type[graphene.ObjectType]] = []
+graphene_registry: list[Type[graphene.ObjectType | graphene.Interface]] = []
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -152,6 +152,15 @@ def order_queryset(qs: Q, node_class: Type[SupportsOrderable], order_by: str | N
 OT = TypeVar('OT', bound=graphene.ObjectType)
 
 def register_graphene_node(cls: Type[OT]) -> Type[OT]:
+    global graphene_registry
+    graphene_registry.append(cls)
+    return cls
+
+
+IT = TypeVar('IT', bound=graphene.Interface)
+
+
+def register_graphene_interface(cls: Type[IT]) -> Type[IT]:
     global graphene_registry
     graphene_registry.append(cls)
     return cls
