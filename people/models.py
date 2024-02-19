@@ -148,8 +148,8 @@ class Person(index.Indexed, ClusterableModel):
         verbose_name=_('created by'),
     )
     public_site_only = models.BooleanField(
-        null=False, default=False, verbose_name=_('Restrict access to public site'),
-        help_text=_('Set to enable read-only access to public site')
+        null=False, default=False, verbose_name=_('Allow access to public site only'),
+        help_text=_('Set to enable read-only access to public site without admin access')
     )
 
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')

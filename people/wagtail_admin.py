@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction
 from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField
@@ -126,6 +126,17 @@ class PersonForm(AplansAdminModelForm):
         if 'image' in self.files:
             self.instance.image_cropping = None
         return super().save(commit)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        is_plan_admin = cleaned_data.get('is_admin_for_active_plan')
+        public_site_only = cleaned_data.get('public_site_only')
+        organization_plan_admin_orgs = cleaned_data.get('organization_plan_admin_orgs')
+        contact_for_actions = cleaned_data.get('contact_for_actions_unordered')
+        if public_site_only:
+            if is_plan_admin or organization_plan_admin_orgs or contact_for_actions:
+                raise ValidationError('Person cannot be plan admin and have only public site access')
+        return cleaned_data
 
 
 class PersonFormForGeneralAdmin(PersonForm):
@@ -499,6 +510,7 @@ class PersonAdmin(AplansModelAdmin):
             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
         ),
         FieldPanel('image', widget=AvatarWidget),
+        FieldPanel('public_site_only'),
     ]
 
     def get_edit_handler(self):
