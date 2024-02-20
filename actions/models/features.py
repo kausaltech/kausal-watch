@@ -22,7 +22,7 @@ class PlanFeatures(models.Model):
     )
     allow_public_site_login = models.BooleanField(
         default=False, verbose_name=_('Allow logging in to the public website'),
-        help_text=_('Should users be able to have authenticated sessions in the public UI'),
+        help_text=_('Should users be able to have authenticated sessions in the public UI?'),
     )
     contact_persons_public_data = models.CharField(
         max_length=50,

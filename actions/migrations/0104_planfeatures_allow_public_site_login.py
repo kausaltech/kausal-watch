@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='planfeatures',
             name='allow_public_site_login',
-            field=models.BooleanField(default=False, help_text='Should users be able to have authenticated sessions in the public UI', verbose_name='Allow logging in to the public website'),
+            field=models.BooleanField(default=False, help_text='Should users be able to have authenticated sessions in the public UI?', verbose_name='Allow logging in to the public website'),
         ),
     ]
