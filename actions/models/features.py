@@ -20,6 +20,10 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_('Show admin link'),
         help_text=_('Should the public website contain a link to the admin login?'),
     )
+    allow_public_site_login = models.BooleanField(
+        default=False, verbose_name=_('Allow logging in to the public website'),
+        help_text=_('Should users be able to have authenticated sessions in the public UI'),
+    )
     contact_persons_public_data = models.CharField(
         max_length=50,
         choices=ContactPersonsPublicData.choices,
@@ -86,7 +90,7 @@ class PlanFeatures(models.Model):
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
         'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
         'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
-        'minimal_statuses', 'has_action_contact_person_roles'
+        'minimal_statuses', 'has_action_contact_person_roles', 'allow_public_site_login'
     ]
 
     class Meta:
