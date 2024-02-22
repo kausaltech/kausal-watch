@@ -41,6 +41,8 @@ from aplans.graphql_helpers import AdminButtonsMixin, UpdateModelInstanceMutatio
 from aplans.graphql_types import (
     DjangoNode,
     GQLInfo,
+    WorkflowStateEnum,
+    WorkflowStateDescription,
     get_plan_from_context,
     order_queryset,
     register_django_node,
@@ -48,7 +50,6 @@ from aplans.graphql_types import (
     set_active_plan
 )
 from aplans.utils import hyphenate, public_fields
-from aplans.graphql_types import WorkflowState
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
@@ -1116,6 +1117,28 @@ class Query:
         external_identifier=graphene.ID(required=True)
     )
 
+    workflow_states = graphene.List(
+        WorkflowStateDescription, plan=graphene.ID(required=True)
+    )
+
+    @staticmethod
+    def resolve_workflow_states(root, info, plan):
+        user = info.context.user
+        result = []
+        plan = Plan.objects.get(identifier=plan)
+        if not user.is_authenticated or not user.can_access_public_site(plan):
+            result = [WorkflowStateEnum.PUBLISHED]
+        elif user.can_access_admin(plan):
+            result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED, WorkflowStateEnum.DRAFT]
+        elif user.can_access_public_site(plan):
+            result =  [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED]
+
+        return [{
+            'id': e.name,
+            'description': WorkflowStateEnum.get(e).description,
+        } for e in result]
+
+
     def resolve_plan(root, info, id=None, domain=None, **kwargs):
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
@@ -1187,7 +1210,7 @@ class Query:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
         workflow_state = info.context.watch_cache.query_workflow_state
-        if workflow_state == WorkflowState.PUBLISHED:
+        if workflow_state == WorkflowStateEnum.PUBLISHED:
             obj = _resolve_published_action(id, identifier, plan, info)
         else:
             obj = _resolve_draft_action(workflow_state, id, identifier, plan, info)

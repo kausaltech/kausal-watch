@@ -195,25 +195,35 @@ class AdminButton(graphene.ObjectType):
     target = graphene.String(required=False)
 
 
-class WorkflowState(python_enum.Enum):
-    PUBLISHED = GraphQLEnumValue(value='published', description=_('Published'))
-    APPROVED = GraphQLEnumValue(value='approved', description=_('Approved'))
-    DRAFT = GraphQLEnumValue(value='draft', description=_('Draft'))
+class WorkflowStateEnum(graphene.Enum):
+    PUBLISHED = 'PUBLISHED'
+    APPROVED = 'APPROVED'
+    DRAFT = 'DRAFT'
 
-    @staticmethod
-    def for_value_string(value: str):
-        try:
-            return next(w for w in WorkflowState if w.value.value == value)
-        except StopIteration:
-            return None
+    class Meta:
+        name = 'WorkflowState'
 
     def is_visible_to_user(self, user: User, plan: Plan):
-        if self == WorkflowState.PUBLISHED:
+        if self == WorkflowStateEnum.PUBLISHED:
             return True
         if not user.is_authenticated:
             return False
-        if self == WorkflowState.APPROVED:
+        if self == WorkflowStateEnum.APPROVED:
             return True
-        if self == WorkflowState.DRAFT:
+        if self == WorkflowStateEnum.DRAFT:
             return user.can_access_admin(plan)
         return False
+
+    @property
+    def description(self):
+        if self == WorkflowStateEnum.PUBLISHED:
+            return _('Published')
+        if self == WorkflowStateEnum.APPROVED:
+            return _('Approved')
+        if self == WorkflowStateEnum.DRAFT:
+            return _('Draft')
+
+
+class WorkflowStateDescription(graphene.ObjectType):
+    id = graphene.String()
+    description = graphene.String()

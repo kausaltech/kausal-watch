@@ -1,9 +1,11 @@
+import typing
+
 import graphene
 import graphene_django_optimizer as gql_optimizer
 
 from django.db.models import Count, Q
 from graphql.error import GraphQLError
-from graphql import DirectiveLocation, GraphQLEnumType
+from graphql import DirectiveLocation
 from graphql.type import (
     GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
 )
@@ -16,6 +18,7 @@ from . import graphql_gis  # noqa
 from actions import schema as actions_schema
 from actions.models import Plan
 from aplans.utils import public_fields
+from aplans.graphql_types import WorkflowStateEnum
 from admin_site.wagtail import PlanRelatedPermissionHelper
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
@@ -29,7 +32,7 @@ from reports import schema as reports_schema
 from search import schema as search_schema
 
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, GQLInfo, get_plan_from_context, graphene_registry, WorkflowState
+from .graphql_types import DjangoNode, GQLInfo, get_plan_from_context, graphene_registry, WorkflowStateEnum, register_graphene_node
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -195,6 +198,8 @@ class AuthDirective(GraphQLDirective):
             locations=[DirectiveLocation.MUTATION]
         )
 
+graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateEnum)
+
 
 class WorkflowStateDirective(GraphQLDirective):
     def __init__(self):
@@ -202,8 +207,9 @@ class WorkflowStateDirective(GraphQLDirective):
             name='workflow',
             description='Select whether to show drafts currently in moderation workflow or final published versions',
             args={
-                'state': GraphQLArgument(
-                    type_=GraphQLEnumType('WorkflowState', WorkflowState),
+                'state':
+                GraphQLArgument(
+                    type_= graphene_enum_type,
                     description="State of content to show",
                     default_value='published'
                 )
@@ -216,5 +222,5 @@ schema = graphene.Schema(
     query=Query,
     mutation=Mutation,
     directives=specified_directives + (LocaleDirective(), AuthDirective(), WorkflowStateDirective()),
-    types=graphene_registry + list(grapple_registry.models.values())
+    types=graphene_registry + list(grapple_registry.models.values()),
 )

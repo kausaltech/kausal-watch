@@ -1,7 +1,7 @@
 from __future__ import annotations
 from functools import cached_property
 
-from aplans.graphql_types import WorkflowState
+from aplans.graphql_types import WorkflowStateEnum
 from actions.models import ActionStatus, ActionImplementationPhase, Plan
 from reports.models import Report
 
@@ -51,12 +51,11 @@ class PlanSpecificCache:
 class WatchObjectCache:
     plan_caches: dict[int, PlanSpecificCache]
     admin_plan_cache: PlanSpecificCache | None
-    query_workflow_state: WorkflowState
-
+    query_workflow_state: WorkflowStateEnum
     def __init__(self):
         self.plan_caches = {}
         self.admin_plan_cache = None
-        self.query_workflow_state = WorkflowState.PUBLISHED
+        self.query_workflow_state = WorkflowStateEnum.PUBLISHED
 
     def for_plan_id(self, plan_id: int) -> PlanSpecificCache:
         plan_cache = self.plan_caches.get(plan_id)
