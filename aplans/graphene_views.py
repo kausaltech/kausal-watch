@@ -169,7 +169,7 @@ class SentryGraphQLView(GraphQLView):
         if 'middleware' not in kwargs:
             middleware = (APITokenMiddleware, LocaleMiddleware, WorkflowStateMiddleware)
             if IDTokenMiddleware is not None:
-                kwargs['middleware'] = (IDTokenMiddleware, ) + middleware
+                kwargs['middleware'] =  middleware + (IDTokenMiddleware, )
             else:
                 kwargs['middleware'] = middleware
         super().__init__(*args, **kwargs)
