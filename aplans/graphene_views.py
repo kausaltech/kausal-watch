@@ -29,12 +29,6 @@ from .code_rev import REVISION
 from users.models import User
 
 
-IDTokenMiddleware = None
-
-if importlib.util.find_spec('kausal_watch_extensions') is not None:
-    from kausal_watch_extensions.auth.middleware import IDTokenMiddleware
-
-
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
 PLAN_IDENTIFIER_HEADER = 'x-cache-plan-identifier'
@@ -160,6 +154,23 @@ class LocaleMiddleware:
         return next(root, info, **kwargs)
 
 
+if importlib.util.find_spec('kausal_watch_extensions') is not None:
+    from kausal_watch_extensions.auth.authentication import IDTokenAuthentication
+else:
+    IDTokenAuthentication = None
+
+
+def perform_auth(request):
+    if IDTokenAuthentication is None:
+        return
+    auth = IDTokenAuthentication()
+    ret = auth.authenticate(request)
+    if ret is not None:
+        user, token = ret
+        request.user = user
+
+
+
 class SentryGraphQLView(GraphQLView):
     graphiql_version = "2.0.7"
     graphiql_sri = "sha256-qQ6pw7LwTLC+GfzN+cJsYXfVWRKH9O5o7+5H96gTJhQ="
@@ -167,11 +178,8 @@ class SentryGraphQLView(GraphQLView):
 
     def __init__(self, *args, **kwargs):
         if 'middleware' not in kwargs:
-            middleware = (APITokenMiddleware, LocaleMiddleware, WorkflowStateMiddleware)
-            if IDTokenMiddleware is not None:
-                kwargs['middleware'] =  middleware + (IDTokenMiddleware, )
-            else:
-                kwargs['middleware'] = middleware
+            middleware = (APITokenMiddleware, WorkflowStateMiddleware, LocaleMiddleware)
+            kwargs['middleware'] = middleware
         super().__init__(*args, **kwargs)
 
     def get_cache_key(self, request, data, query, variables):
@@ -245,6 +253,7 @@ class SentryGraphQLView(GraphQLView):
         if tenant_id:
             log_context['tenant'] = tenant_id
         with sentry_sdk.push_scope() as scope, logger.contextualize(**log_context):
+            perform_auth(request)
             self.log_request(request, query, variables, operation_name)
             scope.set_context('graphql_variables', variables)
             scope.set_tag('graphql_operation_name', operation_name)
@@ -260,10 +269,13 @@ class SentryGraphQLView(GraphQLView):
                 span = sentry_tracing.Span()
 
             with span:
-                result = self.caching_execute_graphql_request(
-                    span, request, data, query, variables, operation_name, *args, **kwargs
-                )
-
+                if request.user and request.user.is_authenticated:
+                    # Uncached execution for authenticated requests
+                    result = super().execute_graphql_request(request, data, query, variables, operation_name, *args, **kwargs)
+                else:
+                    result = self.caching_execute_graphql_request(
+                        span, request, data, query, variables, operation_name, *args, **kwargs
+                    )
             # If 'invalid' is set, it's a bad request
             if result and result.errors:
                 if settings.LOG_SQL_QUERIES:
@@ -289,5 +301,5 @@ class SentryGraphQLView(GraphQLView):
                         # It's an invalid query
                         continue
                     sentry_sdk.capture_exception(err)
-
+        print(result)
         return result
