@@ -392,3 +392,8 @@ def hack_wagtail_rich_text_fields():
         });
         </script>
         """)
+
+
+@hooks.register("insert_html_attributes_js")
+def global_admin_js():
+    return format_html('<script src="{}"></script>', static("js/addAriaToButton.js"))
