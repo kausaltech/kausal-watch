@@ -343,6 +343,12 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         else:
             return plan.pk in adminable_plans
 
+    def can_access_public_site(self, plan: Plan | None = None) -> bool:
+        """Can the user access the public site (authenticated) in general or for a given plan."""
+        if self.can_access_admin(plan):
+            return True
+        return self.person.is_public_site_viewer(plan)
+
     def can_modify_action(self, action: Action | None = None, plan: Plan | None = None):
         if self.is_superuser:
             return True

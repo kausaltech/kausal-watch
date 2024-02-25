@@ -147,11 +147,6 @@ class Person(index.Indexed, ClusterableModel):
         User, related_name='created_persons', blank=True, null=True, on_delete=models.SET_NULL,
         verbose_name=_('created by'),
     )
-    public_site_only = models.BooleanField(
-        null=False, default=False, verbose_name=_('Allow access to public site only'),
-        help_text=_('Set to enable read-only access to public site without admin access')
-    )
-
     i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language_lowercase')
 
     objects = PersonQuerySet.as_manager()
@@ -441,6 +436,11 @@ class Person(index.Indexed, ClusterableModel):
             if user is None or not user.is_authenticated or not user.can_access_admin(plan):
                 return False
         return True
+
+    def is_public_site_viewer(self, plan: Plan | None = None) -> bool:
+        if plan is None:
+            return self.plans_with_public_site_access.exists()
+        return plan.pk in self.plans_with_public_site_access.values_list('plan_id', flat=True)
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)

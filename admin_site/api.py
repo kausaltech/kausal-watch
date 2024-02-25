@@ -50,20 +50,18 @@ def check_login_method(request):
     destination_is_public_site = resolved and (
         resolved.url_name == 'authorize' and 'oauth2_provider' in resolved.app_names
     )
+    if destination_is_public_site and not user.can_access_public_site(plan=None):
+        msg = _(
+            "You do not have access to the public site."
+        )
+        raise ValidationError({'detail': msg, 'code': 'no_site_access'})
 
-    if destination_is_public_site:
-        if user.can_access_admin() or person.public_site_only:
-            msg = _(
-                "You do not have access to the public site."
-            )
-            raise ValidationError({'detail': msg, 'code': 'no_site_access'})
-    else:
-        if not user.can_access_admin():
-            msg = _(
-                "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
-                "you plan admin status."
-            )
-            raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
+    if not destination_is_public_site and not user.can_access_admin(plan=None):
+        msg = _(
+            "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
+            "you plan admin status."
+        )
+        raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
 
     # Always use password authentication if the user has a password
     if user.has_usable_password():

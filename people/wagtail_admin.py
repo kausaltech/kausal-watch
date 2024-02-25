@@ -7,9 +7,9 @@ from django.contrib.admin import SimpleListFilter
 from django.contrib.admin.utils import display_for_value, quote
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.db import transaction
+from django.db import transaction, models
 from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
-from django.forms import BooleanField, ModelMultipleChoiceField
+from django.forms import BooleanField, ModelMultipleChoiceField, ChoiceField
 from django.urls import re_path
 from django.utils import timezone
 from django.utils.html import format_html
@@ -19,7 +19,7 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.views import DeleteView
 
-from actions.models import ActionContactPerson, Plan
+from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
     InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
@@ -127,20 +127,13 @@ class PersonForm(AplansAdminModelForm):
             self.instance.image_cropping = None
         return super().save(commit)
 
-    def clean(self):
-        cleaned_data = super().clean()
-        is_plan_admin = cleaned_data.get('is_admin_for_active_plan')
-        public_site_only = cleaned_data.get('public_site_only')
-        organization_plan_admin_orgs = cleaned_data.get('organization_plan_admin_orgs')
-        contact_for_actions = cleaned_data.get('contact_for_actions_unordered')
-        if public_site_only:
-            if is_plan_admin or organization_plan_admin_orgs or contact_for_actions:
-                raise ValidationError('Person cannot be plan admin and have only public site access')
-        return cleaned_data
-
-
 class PersonFormForGeneralAdmin(PersonForm):
+    class AccessLevel(models.TextChoices):
+        PUBLIC_SITE_ONLY = "public_site_only", _('Access to public site only')
+        FULL_ACCESS = "full_access", _('Access to admin site and public site')
+
     is_admin_for_active_plan = BooleanField(required=False, label=_('Is plan admin'))
+    access_level = ChoiceField(choices=AccessLevel.choices, required=True, label=_('Site access'))
     organization_plan_admin_orgs = ModelMultipleChoiceField(
         queryset=None, required=False, widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
         label=_('Plan admin organizations'),
@@ -150,19 +143,52 @@ class PersonFormForGeneralAdmin(PersonForm):
         plan = kwargs['plan']
         instance = kwargs['instance']  # should be a model instance (perhaps with pk None) due to ModelFormView
         initial = kwargs.setdefault('initial', {})
+        initial['access_level'] = self.AccessLevel.FULL_ACCESS
         if instance.pk is not None:
             initial['organization_plan_admin_orgs'] = (
                 instance.organization_plan_admins.filter(plan=plan).values_list('organization', flat=True)
             )
+            is_public_site_viewer = instance.plans_with_public_site_access.filter(plan=plan).exists()
+            initial['access_level'] = self.AccessLevel.PUBLIC_SITE_ONLY if is_public_site_viewer else self.AccessLevel.FULL_ACCESS
+
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
-        self.fields['organization_plan_admin_orgs'].queryset = (
-            Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
-        )
+        if plan.features.allow_public_site_login:
+            if initial.get('access_level') == self.AccessLevel.PUBLIC_SITE_ONLY:
+                del self.fields['organization_plan_admin_orgs']
+                del self.fields['is_admin_for_active_plan']
+                del self.fields['contact_for_actions_unordered']
+                del self.fields['participated_in_training']
+        else:
+            # Allow removing lingering public site restriction if public site login was recently removed
+            if initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
+                del self.fields['access_level']
+        if 'organization_plan_admin_orgs' in self.fields:
+            self.fields['organization_plan_admin_orgs'].queryset = (
+                Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        access_level = cleaned_data.get('access_level')
+        is_plan_admin = cleaned_data.get('is_admin_for_active_plan')
+        organization_plan_admin_orgs = cleaned_data.get('organization_plan_admin_orgs')
+        contact_for_actions = cleaned_data.get('contact_for_actions_unordered')
+        if access_level == self.AccessLevel.PUBLIC_SITE_ONLY:
+            if is_plan_admin or organization_plan_admin_orgs or contact_for_actions:
+                raise ValidationError(
+                    'Person cannot have admin responsibilities while also being restricted to only public site access.'
+                )
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit)
         is_admin_for_active_plan = self.cleaned_data.get('is_admin_for_active_plan')
+        access_level = self.cleaned_data.get('access_level')
+        if access_level == self.AccessLevel.PUBLIC_SITE_ONLY:
+            PlanPublicSiteViewer.objects.get_or_create(plan=self.plan, person=instance)
+        elif access_level == self.AccessLevel.FULL_ACCESS:
+            PlanPublicSiteViewer.objects.filter(plan=self.plan, person=instance).delete()
         if is_admin_for_active_plan is True:
             instance.general_admin_plans.add(self.plan)
         elif is_admin_for_active_plan is False:
@@ -510,7 +536,6 @@ class PersonAdmin(AplansModelAdmin):
             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
         ),
         FieldPanel('image', widget=AvatarWidget),
-        FieldPanel('public_site_only'),
     ]
 
     def get_edit_handler(self):
@@ -521,6 +546,7 @@ class PersonAdmin(AplansModelAdmin):
         plan = user.get_active_admin_plan()
         if user.is_general_admin_for_plan(plan):
             form_class = PersonFormForGeneralAdmin
+            basic_panels.append(FieldPanel('access_level'))
             basic_panels.append(FieldPanel('participated_in_training'))
             basic_panels.append(FieldPanel('is_admin_for_active_plan'))
             basic_panels.append(FieldPanel(

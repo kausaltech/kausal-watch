@@ -789,6 +789,20 @@ class GeneralPlanAdmin(OrderedModel):
         return str(self.person)
 
 
+class PlanPublicSiteViewer(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, verbose_name=_('plan'), related_name='public_site_viewers')
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, verbose_name=_('person'),
+                               related_name='plans_with_public_site_access')
+
+    class Meta:
+        unique_together = (('plan', 'person',),)
+        verbose_name = _('public site viewer')
+        verbose_name_plural = _('public site viewers')
+
+    def __str__(self):
+        return str(self.person)
+
+
 def is_valid_hostname(hostname):
     if len(hostname) > 255:
         return False

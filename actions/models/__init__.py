@@ -11,7 +11,7 @@ from .category import (
     Category, CategoryType, CategoryLevel, CategoryIcon, CommonCategory, CommonCategoryIcon, CommonCategoryType
 )
 from .features import PlanFeatures
-from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario, PublicationStatus
+from .plan import GeneralPlanAdmin, ImpactGroup, Plan, PlanDomain, MonitoringQualityPoint, Scenario, PublicationStatus, PlanPublicSiteViewer
 
 
 __all__ = [
@@ -50,6 +50,7 @@ __all__ = [
     'Plan',
     'PlanDomain',
     'PlanFeatures',
+    'PlanPublicSiteViewer',
     'PublicationStatus',
     'Scenario',
     'ModelWithRole'
