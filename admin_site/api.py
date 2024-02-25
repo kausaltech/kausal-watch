@@ -34,33 +34,36 @@ def check_login_method(request):
         msg = _("Invalid email address")
         raise ValidationError({'detail': msg, 'code': 'invalid_email'})
 
+    user = User.objects.filter(email__iexact=email).first()
+    person = user.get_corresponding_person() if user else None
+
+    if user is None or person is None:
+        msg = _("No user found with this email address. Ask your administrator to create an account for you.")
+        raise ValidationError({'detail': msg, 'code': 'no_user'})
+
     next_url_input = d.get('next')
     resolved = None
     if next_url_input:
         next_url = urlparse(next_url_input)
         resolved = resolve(next_url.path)
-    destination_is_admin_site = resolved is None or not (
+
+    destination_is_public_site = resolved and (
         resolved.url_name == 'authorize' and 'oauth2_provider' in resolved.app_names
     )
 
-    user = User.objects.filter(email__iexact=email).first()
-    person = user.get_corresponding_person() if user else None
-    if user is None or person is None:
-        msg = _("No user found with this email address. Ask your administrator to create an account for you.")
-        raise ValidationError({'detail': msg, 'code': 'no_user'})
-
-    if not user.can_access_admin():
-        if destination_is_admin_site:
+    if destination_is_public_site:
+        if user.can_access_admin() or person.public_site_only:
+            msg = _(
+                "You do not have access to the public site."
+            )
+            raise ValidationError({'detail': msg, 'code': 'no_site_access'})
+    else:
+        if not user.can_access_admin():
             msg = _(
                 "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
                 "you plan admin status."
             )
             raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
-        elif not person.public_site_only:
-            msg = _(
-                "You do not have access to the public site."
-            )
-            raise ValidationError({'detail': msg, 'code': 'no_site_access'})
 
     # Always use password authentication if the user has a password
     if user.has_usable_password():
