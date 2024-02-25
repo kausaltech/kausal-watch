@@ -90,7 +90,7 @@ class SiteGeneralContent(models.Model):
             'site_title', 'site_description', 'official_name_description', 'copyright_text',
             'creative_commons_license', 'owner_name', 'owner_url'
         ],
-        default_language_field='plan__primary_language')
+        default_language_field='plan__primary_language_lowercase')
 
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',

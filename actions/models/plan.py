@@ -33,6 +33,7 @@ from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
     OrderedModel,
+    ModelWithPrimaryLanguage,
     PlanRelatedModel,
     validate_css_color,
     get_default_language,
@@ -127,7 +128,7 @@ def help_text_with_default_disclaimer(help_text, default_value=None):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     """The Action Plan under monitoring.
 
     Most information in this service is linked to a Plan.
@@ -196,7 +197,6 @@ class Plan(ClusterableModel):
         Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
     )
 
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
     other_languages = ChoiceArrayField(
         models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
         default=list, null=True, blank=True
@@ -279,7 +279,7 @@ class Plan(ClusterableModel):
     daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
+    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language_lowercase')
 
     action_attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -923,7 +923,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
         validators=[validate_css_color]
     )
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
@@ -958,7 +958,7 @@ class MonitoringQualityPoint(PlanRelatedModel, OrderedModel):  # type: ignore[dj
 
     i18n = TranslationField(
         fields=('name', 'description_yes', 'description_no'),
-        default_language_field='plan__primary_language',
+        default_language_field='plan__primary_language_lowercase',
     )
 
     public_fields = [

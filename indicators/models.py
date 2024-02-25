@@ -377,7 +377,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
-    i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language')
+    i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
 
     search_fields = [
         TranslatedSearchField('name', boost=10),

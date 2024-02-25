@@ -152,7 +152,7 @@ class Person(index.Indexed, ClusterableModel):
         help_text=_('Set to enable read-only access to public site without admin access')
     )
 
-    i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language')
+    i18n = TranslationField(fields=('title',), default_language_field='organization__primary_language_lowercase')
 
     objects = PersonQuerySet.as_manager()
 

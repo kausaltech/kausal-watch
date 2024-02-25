@@ -18,7 +18,7 @@ from wagtail.fields import RichTextField
 from aplans.types import UserOrAnon
 from aplans.utils import (
     ChoiceArrayField, InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, ReferenceIndexedModelMixin,
-    get_supported_languages
+    get_supported_languages, ModelWithPrimaryLanguage
 )
 from indicators.models import Unit
 
@@ -47,7 +47,8 @@ class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
 
 @reversion.register(follow=['choice_options'])
 class AttributeType(  # type: ignore[django-manager-missing]
-    InstancesEditableByMixin, InstancesVisibleForMixin, ReferenceIndexedModelMixin, ClusterableModel, OrderedModel
+        InstancesEditableByMixin, InstancesVisibleForMixin, ReferenceIndexedModelMixin, ClusterableModel, OrderedModel,
+        ModelWithPrimaryLanguage
 ):
     class AttributeFormat(models.TextChoices):
         ORDERED_CHOICE = 'ordered_choice', _('Ordered choice')
@@ -104,7 +105,6 @@ class AttributeType(  # type: ignore[django-manager-missing]
     show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages())
     other_languages = ChoiceArrayField(
         models.CharField(max_length=8, choices=get_supported_languages()),
         default=list, null=True, blank=True
@@ -115,7 +115,7 @@ class AttributeType(  # type: ignore[django-manager-missing]
         # FIXME: This unfortunately duplicates the primary language of the plan of `scope` because we have no way of
         # easily accessing it with modeltrans. It should be kept in sync with the language of the plan of `scope`, but
         # it isn't at the moment because we hopefully will never change the primary language of a plan.
-        default_language_field='primary_language',
+        default_language_field='primary_language_lowercase',
     )
 
     public_fields: ClassVar = [
@@ -200,7 +200,7 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):  # type: ignore
 
     i18n = TranslationField(
         fields=('name',),
-        default_language_field='type__primary_language',
+        default_language_field='type__primary_language_lowercase',
     )
 
     objects: models.Manager[AttributeTypeChoiceOption] = MultilingualManager()
@@ -292,7 +292,7 @@ class AttributeChoiceWithText(Attribute, models.Model):
 
     i18n = TranslationField(
         fields=('text',),
-        default_language_field='type__primary_language',
+        default_language_field='type__primary_language_lowercase',
     )
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
@@ -323,7 +323,7 @@ class AttributeText(Attribute, models.Model):
 
     i18n = TranslationField(
         fields=('text',),
-        default_language_field='type__primary_language',
+        default_language_field='type__primary_language_lowercase',
     )
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
@@ -356,7 +356,7 @@ class AttributeRichText(Attribute, models.Model):
 
     i18n = TranslationField(
         fields=('text',),
-        default_language_field='type__primary_language',
+        default_language_field='type__primary_language_lowercase',
     )
 
     objects = models.Manager.from_queryset(AttributeQuerySet)()
