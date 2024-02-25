@@ -24,7 +24,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from typing import ClassVar, Optional, Tuple, Union
 from urllib.parse import urlparse
-from wagtail.models import Collection, Page, Site
+from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
@@ -47,6 +47,7 @@ if typing.TYPE_CHECKING:
     from .action import ActionStatus, ActionImplementationPhase, ActionManager
     from .category import CategoryType
     from .features import PlanFeatures
+    from aplans.graphql_types import WorkflowStateEnum
     from reports.models import ReportType
     from feedback.models import UserFeedback
     from orgs.models import OrganizationPlanAdmin
@@ -750,6 +751,36 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         if sent_at.time() >= self.notification_settings.send_at_time:
             send_at_or_after += timedelta(days=1)
         return now >= send_at_or_after
+
+    def get_workflow_tasks(self):
+        tasks = WorkflowTask.objects.filter(workflow=self.features.moderation_workflow)
+        assert tasks.count() < 3, 'Currently max. 2 task workflows supported'
+        return tasks
+
+    def get_next_workflow_task(self, workflow_state: WorkflowStateEnum) -> WorkflowTask:
+        """ Returns the next workflow task that should be active after the
+        desired workflow_state has been achieved. For example, in a workflow
+        with an approval task (1) and after that a separate publishing task (2),
+        for an action to be in a "APPROVED" state, task (2) must be the current
+        active workflow state task for that action. (Once a task has been approved,
+        it is no longer active in that workflow for that action.)
+
+        Returns None if no task satisfies the condition and we should use
+        the published action.
+        """
+        from aplans.graphql_types import WorkflowStateEnum
+        tasks = self.get_workflow_tasks()
+        if workflow_state == WorkflowStateEnum.PUBLISHED:
+            return None
+        if tasks.count() == 1:
+            if workflow_state == WorkflowStateEnum.APPROVED:
+                return None
+            return tasks.get().task
+        elif tasks.count() == 2:
+            if workflow_state == WorkflowStateEnum.APPROVED:
+                return tasks.last().task
+            return None
+        return None
 
 
 class PublicationStatus(models.TextChoices):

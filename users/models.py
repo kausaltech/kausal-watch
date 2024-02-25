@@ -332,6 +332,10 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
         self._adminable_plans = plans
         return plans
 
+    def get_viewable_plans(self) -> models.QuerySet[Plan]:
+        from actions.models import Plan
+        return Plan.objects.filter(public_site_viewers__person=self.person)
+
     def can_access_admin(self, plan: Plan | None = None) -> bool:
         """Can the user access the admin interface in general or for a given plan."""
 

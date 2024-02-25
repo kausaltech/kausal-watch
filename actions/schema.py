@@ -18,6 +18,7 @@ from grapple.registry import registry as grapple_registry
 from itertools import chain
 from wagtail.rich_text import RichText
 
+
 from actions.action_admin import ActionAdmin
 from actions.models import (
     Action, ActionContactPerson, ActionImpact,
@@ -1085,12 +1086,25 @@ def _resolve_published_action(
         return None
 
 
-def _resolve_draft_action(workflow_state, id, identifier, plan, info):
-    action = _resolve_published_action(id, identifier, plan, info)
+def _resolve_draft_action(action, workflow_state):
     if not action.has_unpublished_changes:
         return action
-    revision = action.get_latest_revision_as_object()
-    return revision
+    if workflow_state == WorkflowStateEnum.DRAFT:
+        return action.get_latest_revision_as_object()
+    if workflow_state == WorkflowStateEnum.APPROVED:
+        # Draft has been approved if the next workflow task
+        # (publishing) is in progress
+        task = action.plan.get_next_workflow_task(WorkflowStateEnum.APPROVED)
+        if not task:
+            return action
+        current_state = action.current_workflow_state
+        if current_state is None:
+            return action
+        if current_state.current_task_state.task == task:
+            return current_state.current_task_state.revision.as_object()
+        return action
+
+    return action
 
 
 class Query:
@@ -1126,13 +1140,19 @@ class Query:
         user = info.context.user
         result = []
         plan = Plan.objects.get(identifier=plan)
+        tasks = plan.get_workflow_tasks()
         if not user.is_authenticated or not user.can_access_public_site(plan):
             result = [WorkflowStateEnum.PUBLISHED]
         elif user.can_access_admin(plan):
-            result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED, WorkflowStateEnum.DRAFT]
+            if tasks.count() > 1:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED, WorkflowStateEnum.DRAFT]
+            else:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.DRAFT]
         elif user.can_access_public_site(plan):
-            result =  [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED]
-
+            if tasks.count() > 1:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED]
+            else:
+                result = [WorkflowStateEnum.PUBLISHED]
         return [{
             'id': e.name,
             'description': WorkflowStateEnum.get(e).description,
@@ -1206,17 +1226,37 @@ class Query:
             identifier: str | None = None,
             plan: str | None = None
     ) -> Action | None:
+
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
         workflow_state = info.context.watch_cache.query_workflow_state
-        if workflow_state == WorkflowStateEnum.PUBLISHED:
-            obj = _resolve_published_action(id, identifier, plan, info)
-        else:
-            obj = _resolve_draft_action(workflow_state, id, identifier, plan, info)
-        if obj and not identifier:
-            set_active_plan(info, obj.plan)
-        return obj
+
+        user = info.context.user
+        if not user.is_authenticated:
+            workflow_state = WorkflowStateEnum.PUBLISHED
+
+        action = _resolve_published_action(id, identifier, plan, info)
+
+        if action and not identifier:
+            set_active_plan(info, action.plan)
+
+        plan_obj = action.plan if action else None
+        if plan_obj is None:
+            return action
+
+        if workflow_state == WorkflowStateEnum.DRAFT:
+            if not user.can_access_admin(plan=plan_obj):
+                workflow_state = WorkflowStateEnum.APPROVED
+
+        if workflow_state == WorkflowStateEnum.APPROVED:
+            if not user.can_access_public_site(plan=plan_obj):
+                workflow_state == WorkflowStateEnum.PUBLISHED
+
+        if workflow_state != WorkflowStateEnum.PUBLISHED:
+            action = _resolve_draft_action(action, workflow_state)
+
+        return action
 
     def resolve_category(self, info, plan, category_type, external_identifier):
         plan_obj = get_plan_from_context(info, plan)

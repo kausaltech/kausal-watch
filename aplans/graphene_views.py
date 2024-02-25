@@ -301,5 +301,4 @@ class SentryGraphQLView(GraphQLView):
                         # It's an invalid query
                         continue
                     sentry_sdk.capture_exception(err)
-        print(result)
         return result
