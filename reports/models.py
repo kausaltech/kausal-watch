@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from functools import lru_cache
 from typing import TYPE_CHECKING
 from contextlib import contextmanager
 
@@ -26,6 +27,11 @@ from .utils import group_by_model, prepare_serialized_model_version
 if TYPE_CHECKING:
     from actions.models import AttributeType
     from users.models import User
+
+@lru_cache
+def _related_versions_for_revision(revision, exclude_content_type) -> models.QuerySet[Version]:
+    return revision.version_set.exclude(content_type=exclude_content_type).select_related('content_type')
+
 
 class NoRevisionSave(Exception):
     pass
@@ -251,7 +257,7 @@ class ActionSnapshot(models.Model):
             pass
 
     def get_related_versions(self, ct) -> models.QuerySet[Version]:
-        return self.action_version.revision.version_set.exclude(content_type=ct).select_related('content_type')
+        return _related_versions_for_revision(self.action_version.revision, ct)
 
     def get_attribute_for_type_from_versions(
         self, attribute_type: AttributeType, versions: typing.Iterable[Version], ct: ContentType
