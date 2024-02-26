@@ -205,7 +205,13 @@ class WorkflowStateDirective(GraphQLDirective):
     def __init__(self):
         super().__init__(
             name='workflow',
-            description='Select whether to show drafts currently in moderation workflow or final published versions',
+            description=(
+                'Let the client request retrieving approved/unapproved '
+                'drafts or published versions of plan data (currently individual actions). '
+                'The actual response is dependent on user access rights, for example '
+                'a published version is always returned to unauthenticated users '
+                'or when no draft exists.'
+            ),
             args={
                 'state':
                 GraphQLArgument(
