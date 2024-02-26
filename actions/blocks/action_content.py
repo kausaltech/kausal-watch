@@ -2,6 +2,7 @@ from django.apps import apps
 from django.db import models
 from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
+import graphene
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 from typing import Tuple, Type
@@ -12,7 +13,8 @@ from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
-from aplans.utils import underscore_to_camelcase
+from aplans.graphql_types import register_graphene_interface
+from aplans.utils import underscore_to_camelcase, InstancesVisibleForMixin
 from reports.blocks.action_content import ReportComparisonBlock
 
 # Attention: Defines several block classes via metaprogramming. See `action_attribute_blocks`. Currently:
@@ -63,11 +65,49 @@ def generate_blocks_for_fields(model: Type[models.Model], fields: list[str | Tup
         klass = type(class_name, (ActionListContentBlock,), {
             'Meta': Meta,
             '__module__': __name__,
+            'graphql_interfaces': (FieldBlockMetaInterface, )
         })
         register_streamfield_block(klass)
         globals()[class_name] = klass
         out[field_name] = klass
     return out
+
+
+class FieldBlockMetaData(graphene.ObjectType):
+    restricted = graphene.Boolean()
+    hidden = graphene.Boolean()
+
+    @staticmethod
+    def resolve_restricted(root, *args, **kwargs):
+        return root['restricted']
+
+    @staticmethod
+    def resolve_hidden(root, *args, **kwargs):
+        return root['hidden']
+
+
+@register_graphene_interface
+class FieldBlockMetaInterface(graphene.Interface):
+    meta = graphene.Field(FieldBlockMetaData)
+
+    @staticmethod
+    def resolve_meta(root, info, *args, **kwargs):
+        attribute_type = root.value.get('attribute_type') if root.value else None
+        user = info.context.user
+        plan = info.context._graphql_active_plan
+        restricted = hidden = False
+        if attribute_type:
+            # TODO: implement for builtin fields as well
+            hidden = not attribute_type.is_instance_visible_for(user, plan, None)
+            restricted = attribute_type.VisibleFor.PUBLIC != attribute_type.instances_visible_for
+        return {
+            'restricted': restricted,
+            'hidden': hidden
+        }
+
+
+class FieldBlockMetaField:
+    meta = graphene.Field(FieldBlockMetaData)
 
 
 def generate_stream_block(
@@ -107,6 +147,7 @@ def generate_stream_block(
 @register_streamfield_block
 class ActionContentAttributeTypeBlock(blocks.StructBlock):
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
+    graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
         label = _('Field')
@@ -123,6 +164,7 @@ class ActionContentAttributeTypeBlock(blocks.StructBlock):
 @register_streamfield_block
 class ActionContentCategoryTypeBlock(blocks.StructBlock):
     category_type = CategoryTypeChooserBlock(required=True)
+    graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
         label = _('Category')
@@ -138,6 +180,8 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
 
 @register_streamfield_block
 class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+    graphql_interfaces = (FieldBlockMetaInterface, )
+
     class Meta:
         label = _('Responsible parties')
 
@@ -152,12 +196,16 @@ class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blo
 
 @register_streamfield_block
 class ActionContactFormBlock(blocks.StaticBlock):
+    graphql_interfaces = (FieldBlockMetaInterface, )
+
     class Meta:
         label = _("Contact form")
 
 
 @register_streamfield_block
 class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+    graphql_interfaces = (FieldBlockMetaInterface, )
+
     field_label = blocks.CharBlock(
         required=False,
         help_text=_("What label should be used in the public UI for the official name?"),

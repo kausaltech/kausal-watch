@@ -715,7 +715,7 @@ class PlanLink(OrderedModel):
 
     i18n = TranslationField(
         fields=['title', 'url'],
-        default_language_field='plan__primary_language',
+        default_language_field='plan__primary_language_lowercase',
     )
 
     class Meta:

@@ -1,8 +1,10 @@
 import pytest
 from datetime import date, datetime, timedelta
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
+from django.utils import translation
 from wagtail.models import Locale
 
 from actions.models import Action
@@ -373,3 +375,33 @@ def test_attribute_type_visibility_validation(model, scope_factory, visible_for_
                scope=scope,
                instances_visible_for=visible_for,
             ).full_clean()
+
+
+LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]
+
+
+@pytest.mark.parametrize('primary_language', LANGUAGES_TO_TEST)
+@pytest.mark.parametrize('active_language', LANGUAGES_TO_TEST)
+def test_action_i18n_when_saving(plan, action_factory, primary_language, active_language):
+    plan.primary_language = primary_language
+    plan.save()
+    with translation.override(active_language):
+        action = action_factory(plan=plan)
+        action.name = 'action.name'
+        action.save()
+        assert action.i18n == None or len(action.i18n) == 0
+        assert action.name == 'action.name'
+        action.name = 'action.name.original'
+        action.name_i18n = 'action.name_i18n'
+        action.save()
+        active_lang_translation_without_fallback = getattr(
+            action,
+            f"name_{active_language.replace('-', '_').lower()}"
+        )
+        if active_language == primary_language:
+            assert action.name == 'action.name_i18n'
+            assert not action.i18n
+        else:
+            assert active_lang_translation_without_fallback == 'action.name_i18n'
+            assert action.name == 'action.name.original'
+            assert len(action.i18n) > 0

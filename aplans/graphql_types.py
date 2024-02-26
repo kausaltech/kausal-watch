@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum as python_enum
 import functools
 import typing
 from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
@@ -7,8 +8,10 @@ import graphene
 import re
 
 from django.db.models import Model, QuerySet
+from django.utils.translation import gettext_lazy as _
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
+from graphql import GraphQLEnumValue
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -18,9 +21,10 @@ from modeltrans.translator import get_i18n_field
 
 from actions.models.plan import Plan
 from aplans.types import WatchAPIRequest
+from users.models import User
 
 
-graphene_registry: list[Type[graphene.ObjectType]] = []
+graphene_registry: list[Type[graphene.ObjectType | graphene.Interface]] = []
 
 
 def get_i18n_field_with_fallback(field_name, obj, info):
@@ -153,6 +157,15 @@ def register_graphene_node(cls: Type[OT]) -> Type[OT]:
     return cls
 
 
+IT = TypeVar('IT', bound=graphene.Interface)
+
+
+def register_graphene_interface(cls: Type[IT]) -> Type[IT]:
+    global graphene_registry
+    graphene_registry.append(cls)
+    return cls
+
+
 def register_django_node(cls: Type[M]) -> Type[M]:
     model = cls._meta.model
     grapple_registry.django_models[model] = cls
@@ -180,3 +193,37 @@ class AdminButton(graphene.ObjectType):
     classname = graphene.String(required=True)
     title = graphene.String(required=False)
     target = graphene.String(required=False)
+
+
+class WorkflowStateEnum(graphene.Enum):
+    PUBLISHED = 'PUBLISHED'
+    APPROVED = 'APPROVED'
+    DRAFT = 'DRAFT'
+
+    class Meta:
+        name = 'WorkflowState'
+
+    def is_visible_to_user(self, user: User, plan: Plan):
+        if self == WorkflowStateEnum.PUBLISHED:
+            return True
+        if not user.is_authenticated:
+            return False
+        if self == WorkflowStateEnum.APPROVED:
+            return True
+        if self == WorkflowStateEnum.DRAFT:
+            return user.can_access_admin(plan)
+        return False
+
+    @property
+    def description(self):
+        if self == WorkflowStateEnum.PUBLISHED:
+            return _('Published')
+        if self == WorkflowStateEnum.APPROVED:
+            return _('Approved')
+        if self == WorkflowStateEnum.DRAFT:
+            return _('Draft')
+
+
+class WorkflowStateDescription(graphene.ObjectType):
+    id = graphene.String()
+    description = graphene.String()

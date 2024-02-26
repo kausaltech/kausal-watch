@@ -17,7 +17,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.fields import RichTextField
 from wagtail.search import index
 
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel, get_supported_languages
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel, ModelWithPrimaryLanguage
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
@@ -181,7 +181,7 @@ class OrganizationManager(gis_models.Manager):
         return self.get_queryset().available_for_plans(plans)
 
 
-class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
+class Organization(index.Indexed, Node, ModelWithPrimaryLanguage, gis_models.Model, PlanDefaultsModel):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
     class Meta:
         verbose_name = _("organization")
@@ -248,12 +248,9 @@ class Organization(index.Indexed, Node, gis_models.Model, PlanDefaultsModel):
                                              through='orgs.OrganizationMetadataAdmin',
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
-    primary_language = models.CharField(
-        max_length=8, choices=get_supported_languages(), verbose_name=_('primary language'),
-    )
     location = gis_models.PointField(verbose_name=_('Location'), srid=4326, null=True, blank=True)
 
-    i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language')
+    i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language_lowercase')
 
     objects: OrganizationManager = OrganizationManager()
 

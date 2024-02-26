@@ -351,7 +351,7 @@ class Action(  # type: ignore[django-manager-missing]
 
     i18n = TranslationField(
         fields=('name', 'official_name', 'description', 'manual_status_reason', 'lead_paragraph'),
-        default_language_field='plan__primary_language',
+        default_language_field='plan__primary_language_lowercase',
     )
 
     objects: ActionManager = ActionManager()
@@ -972,8 +972,7 @@ class ActionSchedule(models.Model, PlanRelatedModel):  # type: ignore[django-man
     name = models.CharField(max_length=100)
     begins_at = models.DateField()
     ends_at = models.DateField(null=True, blank=True)
-
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'name', 'begins_at', 'ends_at'
@@ -1000,7 +999,7 @@ class ActionStatus(models.Model, PlanRelatedModel):  # type: ignore[django-manag
     is_completed = models.BooleanField(default=False, verbose_name=_('is completed'))
     color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'name', 'identifier', 'is_completed'
@@ -1031,7 +1030,7 @@ class ActionImplementationPhase(PlanRelatedModel, OrderedModel):  # type: ignore
     identifier = IdentifierField(max_length=20)
     color = models.CharField(max_length=50, verbose_name=_('color'), blank=True, null=True)
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'order', 'name', 'identifier', 'color'
@@ -1055,7 +1054,7 @@ class ActionDecisionLevel(models.Model, PlanRelatedModel):  # type: ignore[djang
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'name', 'identifier',
@@ -1147,7 +1146,7 @@ class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='action_task')
 
-    i18n = TranslationField(fields=('name', 'comment'), default_language_field='action__plan__primary_language')
+    i18n = TranslationField(fields=('name', 'comment'), default_language_field='action__plan__primary_language_lowercase')
 
     objects = ActionTaskQuerySet.as_manager()
 
@@ -1204,7 +1203,7 @@ class ActionImpact(PlanRelatedModel, OrderedModel):  # type: ignore[django-manag
     name = models.CharField(max_length=200, verbose_name=_('name'))
     identifier = IdentifierField()
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'name', 'identifier', 'order',
@@ -1227,7 +1226,7 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
     url = models.URLField(max_length=400, verbose_name=_('URL'), validators=[URLValidator(('http', 'https'))])
     title = models.CharField(max_length=254, verbose_name=_('title'), blank=True)
 
-    i18n = TranslationField(fields=('url', 'title'), default_language_field='action__plan__primary_language')
+    i18n = TranslationField(fields=('url', 'title'), default_language_field='action__plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'action', 'url', 'title', 'order'

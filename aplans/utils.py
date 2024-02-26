@@ -495,6 +495,23 @@ def get_default_language():
     return settings.LANGUAGES[0][0]
 
 
+class ModelWithPrimaryLanguage(models.Model):
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
+
+    class Meta:
+        abstract = True
+
+    @property
+    def primary_language_lowercase(self):
+        """
+        This must be used as the modeltrans default language field instead
+        of the primary language field itself, because modeltrans is using
+        lowercase language codes. Otherwise primary languages with variant
+        suffixes do not match, causing all sorts of problems.
+        """
+        return self.primary_language.lower()
+
+
 class ModificationTracking(models.Model):
     updated_at = models.DateTimeField(
         auto_now=True, editable=False, verbose_name=_('updated at')

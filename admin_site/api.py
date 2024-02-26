@@ -1,4 +1,7 @@
+from urllib.parse import urlparse
+
 from django.utils.translation import gettext as _
+from django.urls import resolve
 
 from rest_framework.decorators import (
     api_view, throttle_classes, schema, authentication_classes, permission_classes
@@ -30,13 +33,30 @@ def check_login_method(request):
     if not email:
         msg = _("Invalid email address")
         raise ValidationError({'detail': msg, 'code': 'invalid_email'})
+
     user = User.objects.filter(email__iexact=email).first()
     person = user.get_corresponding_person() if user else None
+
     if user is None or person is None:
         msg = _("No user found with this email address. Ask your administrator to create an account for you.")
         raise ValidationError({'detail': msg, 'code': 'no_user'})
 
-    if not user.can_access_admin():
+    next_url_input = d.get('next')
+    resolved = None
+    if next_url_input:
+        next_url = urlparse(next_url_input)
+        resolved = resolve(next_url.path)
+
+    destination_is_public_site = resolved and (
+        resolved.url_name == 'authorize' and 'oauth2_provider' in resolved.app_names
+    )
+    if destination_is_public_site and not user.can_access_public_site(plan=None):
+        msg = _(
+            "You do not have access to the public site."
+        )
+        raise ValidationError({'detail': msg, 'code': 'no_site_access'})
+
+    if not destination_is_public_site and not user.can_access_admin(plan=None):
         msg = _(
             "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
             "you plan admin status."

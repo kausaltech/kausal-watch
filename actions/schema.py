@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import typing
 from urllib.parse import urlparse
 from typing import Generic, List, Optional, Protocol, TypeVar
@@ -16,6 +17,7 @@ from grapple.types.pages import PageInterface
 from grapple.registry import registry as grapple_registry
 from itertools import chain
 from wagtail.rich_text import RichText
+
 
 from actions.action_admin import ActionAdmin
 from actions.models import (
@@ -40,6 +42,8 @@ from aplans.graphql_helpers import AdminButtonsMixin, UpdateModelInstanceMutatio
 from aplans.graphql_types import (
     DjangoNode,
     GQLInfo,
+    WorkflowStateEnum,
+    WorkflowStateDescription,
     get_plan_from_context,
     order_queryset,
     register_django_node,
@@ -762,6 +766,12 @@ class ActionTaskNode(DjangoNode):
     class Meta:
         model = ActionTask
 
+    @staticmethod
+    def resolve_id(root, info):
+        if root.pk is None:
+            return f'unpublished-{uuid.uuid4()}'
+        return root.pk
+
     @gql_optimizer.resolver_hints(
         model_field='comment',
     )
@@ -1019,13 +1029,19 @@ class ActionLinkNode(DjangoNode):
         model = ActionLink
         fields = public_fields(ActionLink)
 
-        @staticmethod
-        def resolve_url(root: ActionLink, info):
-            return root.url_i18n
+    @staticmethod
+    def resolve_id(root, info):
+        if root.pk is None:
+            return f'unpublished-{uuid.uuid4()}'
+        return root.pk
 
-        @staticmethod
-        def resolve_title(root: ActionLink, info):
-            return root.title_i18n
+    @staticmethod
+    def resolve_url(root: ActionLink, info):
+        return root.url_i18n
+
+    @staticmethod
+    def resolve_title(root: ActionLink, info):
+        return root.title_i18n
 
 
 def plans_actions_queryset(plans, category, first, order_by, user):
@@ -1045,6 +1061,50 @@ def plans_actions_queryset(plans, category, first, order_by, user):
     if first is not None:
         qs = qs[0:first]
     return qs
+
+
+def _resolve_published_action(
+        obj_id: int | None,
+        identifier: str | None,
+        plan_identifier: str | None,
+        info
+) -> Action | None:
+    qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
+    if obj_id:
+        qs = qs.filter(id=obj_id)
+    if identifier:
+        plan_obj = get_plan_from_context(info, plan_identifier)
+        if not plan_obj:
+            return None
+        qs = qs.filter(identifier=identifier, plan=plan_obj)
+
+    qs = gql_optimizer.query(qs, info)
+
+    try:
+        return qs.get()
+    except Action.DoesNotExist:
+        return None
+
+
+def _resolve_draft_action(action, workflow_state):
+    if not action.has_unpublished_changes:
+        return action
+    if workflow_state == WorkflowStateEnum.DRAFT:
+        return action.get_latest_revision_as_object()
+    if workflow_state == WorkflowStateEnum.APPROVED:
+        # Draft has been approved if the next workflow task
+        # (publishing) is in progress
+        task = action.plan.get_next_workflow_task(WorkflowStateEnum.APPROVED)
+        if not task:
+            return action
+        current_state = action.current_workflow_state
+        if current_state is None:
+            return action
+        if current_state.current_task_state.task == task:
+            return current_state.current_task_state.revision.as_object()
+        return action
+
+    return action
 
 
 class Query:
@@ -1071,7 +1131,35 @@ class Query:
         external_identifier=graphene.ID(required=True)
     )
 
-    def resolve_plan(self, info, id=None, domain=None, **kwargs):
+    workflow_states = graphene.List(
+        WorkflowStateDescription, plan=graphene.ID(required=True)
+    )
+
+    @staticmethod
+    def resolve_workflow_states(root, info, plan):
+        user = info.context.user
+        result = []
+        plan = Plan.objects.get(identifier=plan)
+        tasks = plan.get_workflow_tasks()
+        if not user.is_authenticated or not user.can_access_public_site(plan):
+            result = [WorkflowStateEnum.PUBLISHED]
+        elif user.can_access_admin(plan):
+            if tasks.count() > 1:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED, WorkflowStateEnum.DRAFT]
+            else:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.DRAFT]
+        elif user.can_access_public_site(plan):
+            if tasks.count() > 1:
+                result = [WorkflowStateEnum.PUBLISHED, WorkflowStateEnum.APPROVED]
+            else:
+                result = [WorkflowStateEnum.PUBLISHED]
+        return [{
+            'id': e.name,
+            'description': WorkflowStateEnum.get(e).description,
+        } for e in result]
+
+
+    def resolve_plan(root, info, id=None, domain=None, **kwargs):
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
 
@@ -1130,33 +1218,45 @@ class Query:
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_action(self, info, **kwargs):
-        obj_id = kwargs.get('id')
-        identifier = kwargs.get('identifier')
-        plan = kwargs.get('plan')
+    @staticmethod
+    def resolve_action(
+            root,
+            info: GQLInfo,
+            id: int | None = None,
+            identifier: str | None = None,
+            plan: str | None = None
+    ) -> Action | None:
+
         if identifier and not plan:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
 
-        qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
-        if obj_id:
-            qs = qs.filter(id=obj_id)
-        if identifier:
-            plan_obj = get_plan_from_context(info, plan)
-            if not plan_obj:
-                return None
-            qs = qs.filter(identifier=identifier, plan=plan_obj)
+        workflow_state = info.context.watch_cache.query_workflow_state
 
-        qs = gql_optimizer.query(qs, info)
+        user = info.context.user
+        if not user.is_authenticated:
+            workflow_state = WorkflowStateEnum.PUBLISHED
 
-        try:
-            obj = qs.get()
-        except Action.DoesNotExist:
-            return None
+        action = _resolve_published_action(id, identifier, plan, info)
 
-        if not identifier:
-            set_active_plan(info, obj.plan)
+        if action and not identifier:
+            set_active_plan(info, action.plan)
 
-        return obj
+        plan_obj = action.plan if action else None
+        if plan_obj is None:
+            return action
+
+        if workflow_state == WorkflowStateEnum.DRAFT:
+            if not user.can_access_admin(plan=plan_obj):
+                workflow_state = WorkflowStateEnum.APPROVED
+
+        if workflow_state == WorkflowStateEnum.APPROVED:
+            if not user.can_access_public_site(plan=plan_obj):
+                workflow_state == WorkflowStateEnum.PUBLISHED
+
+        if workflow_state != WorkflowStateEnum.PUBLISHED:
+            action = _resolve_draft_action(action, workflow_state)
+
+        return action
 
     def resolve_category(self, info, plan, category_type, external_identifier):
         plan_obj = get_plan_from_context(info, plan)

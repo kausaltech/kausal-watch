@@ -26,7 +26,7 @@ from ..attributes import AttributeFieldPanel, AttributeType
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from aplans.utils import (
     IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, ReferenceIndexedModelMixin,
-    generate_identifier, validate_css_color, get_supported_languages
+    ModelWithPrimaryLanguage, generate_identifier, validate_css_color, get_supported_languages
 )
 
 if typing.TYPE_CHECKING:
@@ -93,7 +93,7 @@ class CategoryTypeBase(models.Model):
 
 
 @reversion.register()
-class CommonCategoryType(CategoryTypeBase):
+class CommonCategoryType(CategoryTypeBase, ModelWithPrimaryLanguage):
     has_collection = models.BooleanField(
         default=False, verbose_name=_('has a collection'),
         help_text=_('Set if this category type should have its own collection for images')
@@ -106,7 +106,7 @@ class CommonCategoryType(CategoryTypeBase):
     primary_language = models.CharField(
         max_length=20, choices=get_supported_languages(), default='en', verbose_name=_('primary language')
     )
-    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='primary_language_lowercase')
 
     # type annotations
     objects: MultilingualManager[Self]
@@ -185,7 +185,7 @@ class CategoryType(  # type: ignore[django-manager-missing]
         default=False, verbose_name=_("synchronize with pages"),
         help_text=_("Set if categories of this type should be synchronized with pages")
     )
-    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name', 'lead_paragraph', 'help_text'), default_language_field='plan__primary_language_lowercase')
 
     attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -292,7 +292,7 @@ class CategoryLevel(OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
 
-    i18n = TranslationField(fields=('name',), default_language_field='type__plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='type__plan__primary_language_lowercase')
 
     public_fields: typing.ClassVar = [
         'id', 'name', 'name_plural', 'order', 'type',
@@ -351,7 +351,7 @@ class CommonCategory(CategoryBase, ClusterableModel):
 
     i18n = TranslationField(
         fields=('name', 'lead_paragraph', 'help_text'),
-        default_language_field='type__primary_language'
+        default_language_field='type__primary_language_lowercase'
     )
 
     public_fields: typing.ClassVar = CategoryBase.public_fields + [
@@ -425,7 +425,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
 
     i18n = TranslationField(
         fields=('name', 'lead_paragraph', 'help_text'),
-        default_language_field='type__plan__primary_language'
+        default_language_field='type__plan__primary_language_lowercase'
     )
 
     # type annotations

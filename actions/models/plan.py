@@ -24,7 +24,7 @@ from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from typing import ClassVar, Optional, Tuple, Union
 from urllib.parse import urlparse
-from wagtail.models import Collection, Page, Site
+from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
@@ -33,6 +33,7 @@ from aplans.utils import (
     ChoiceArrayField,
     IdentifierField,
     OrderedModel,
+    ModelWithPrimaryLanguage,
     PlanRelatedModel,
     validate_css_color,
     get_default_language,
@@ -46,6 +47,7 @@ if typing.TYPE_CHECKING:
     from .action import ActionStatus, ActionImplementationPhase, ActionManager
     from .category import CategoryType
     from .features import PlanFeatures
+    from aplans.graphql_types import WorkflowStateEnum
     from reports.models import ReportType
     from feedback.models import UserFeedback
     from orgs.models import OrganizationPlanAdmin
@@ -127,7 +129,7 @@ def help_text_with_default_disclaimer(help_text, default_value=None):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     """The Action Plan under monitoring.
 
     Most information in this service is linked to a Plan.
@@ -196,7 +198,6 @@ class Plan(ClusterableModel):
         Group, null=True, on_delete=models.PROTECT, editable=False, related_name='contact_person_for_plan',
     )
 
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
     other_languages = ChoiceArrayField(
         models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language),
         default=list, null=True, blank=True
@@ -279,7 +280,7 @@ class Plan(ClusterableModel):
     daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
     cache_invalidated_at = models.DateTimeField(auto_now=True)
-    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language')
+    i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language_lowercase')
 
     action_attribute_types = GenericRelation(
         to='actions.AttributeType',
@@ -751,6 +752,36 @@ class Plan(ClusterableModel):
             send_at_or_after += timedelta(days=1)
         return now >= send_at_or_after
 
+    def get_workflow_tasks(self):
+        tasks = WorkflowTask.objects.filter(workflow=self.features.moderation_workflow)
+        assert tasks.count() < 3, 'Currently max. 2 task workflows supported'
+        return tasks
+
+    def get_next_workflow_task(self, workflow_state: WorkflowStateEnum) -> WorkflowTask:
+        """ Returns the next workflow task that should be active after the
+        desired workflow_state has been achieved. For example, in a workflow
+        with an approval task (1) and after that a separate publishing task (2),
+        for an action to be in a "APPROVED" state, task (2) must be the current
+        active workflow state task for that action. (Once a task has been approved,
+        it is no longer active in that workflow for that action.)
+
+        Returns None if no task satisfies the condition and we should use
+        the published action.
+        """
+        from aplans.graphql_types import WorkflowStateEnum
+        tasks = self.get_workflow_tasks()
+        if workflow_state == WorkflowStateEnum.PUBLISHED:
+            return None
+        if tasks.count() == 1:
+            if workflow_state == WorkflowStateEnum.APPROVED:
+                return None
+            return tasks.get().task
+        elif tasks.count() == 2:
+            if workflow_state == WorkflowStateEnum.APPROVED:
+                return tasks.last().task
+            return None
+        return None
+
 
 class PublicationStatus(models.TextChoices):
     PUBLISHED = 'published', _('Published')
@@ -784,6 +815,20 @@ class GeneralPlanAdmin(OrderedModel):
             general_plan_admin=self,
         )
         return result
+
+    def __str__(self):
+        return str(self.person)
+
+
+class PlanPublicSiteViewer(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, verbose_name=_('plan'), related_name='public_site_viewers')
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, verbose_name=_('person'),
+                               related_name='plans_with_public_site_access')
+
+    class Meta:
+        unique_together = (('plan', 'person',),)
+        verbose_name = _('public site viewer')
+        verbose_name_plural = _('public site viewers')
 
     def __str__(self):
         return str(self.person)
@@ -923,7 +968,7 @@ class ImpactGroup(models.Model, PlanRelatedModel):
         validators=[validate_css_color]
     )
 
-    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language')
+    i18n = TranslationField(fields=('name',), default_language_field='plan__primary_language_lowercase')
 
     public_fields: ClassVar = [
         'id', 'plan', 'identifier', 'parent', 'weight', 'name', 'color', 'actions',
@@ -958,7 +1003,7 @@ class MonitoringQualityPoint(PlanRelatedModel, OrderedModel):  # type: ignore[dj
 
     i18n = TranslationField(
         fields=('name', 'description_yes', 'description_no'),
-        default_language_field='plan__primary_language',
+        default_language_field='plan__primary_language_lowercase',
     )
 
     public_fields = [
