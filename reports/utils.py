@@ -1,3 +1,4 @@
+from functools import lru_cache
 from django.contrib.contenttypes.models import ContentType
 from modelcluster.fields import ParentalManyToManyDescriptor
 
@@ -31,6 +32,11 @@ def get_attribute_for_type_from_related_objects(
     return None
 
 
+# FIXME: `maxsize=None` might cause memory issues eventually, so maybe we should (a) deal with the problem in a clever
+# way instead of cheating our way out of performance issues using `lru_cache`, (b) just choose a very large magic
+# number for `maxsize`, or (c) implement a caching strategy of our own or clear the cache manually wheneven exporting
+# one report is finished.
+@lru_cache(maxsize=None)  
 def prepare_serialized_model_version(version):
     attribute_path = None
     if issubclass(version.content_type.model_class(), Attribute):
