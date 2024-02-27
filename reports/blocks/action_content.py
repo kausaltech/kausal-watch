@@ -392,14 +392,12 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             return [None] * value_length
         if target_depth is None:
             return [organization.name]
-        ancestors = organization.get_ancestors()
-        depth = len(ancestors)
-        if depth == 0:
+        ancestors = organization.get_ancestors()  # does not contain organization itself
+        num_ancestors = len(ancestors)
+        if num_ancestors == 0:
             parent = None
-        elif depth == 1:
-            parent = organization
-        elif depth < target_depth:
-            parent = ancestors[depth-1]
+        elif target_depth > num_ancestors:
+            parent = ancestors[num_ancestors-1]
         else:
             parent = ancestors[target_depth-1]
         parent_name = parent.name if parent else None
