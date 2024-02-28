@@ -1,0 +1,5 @@
+{% load static %}
+{% if sentry_dsn and sentry_bundle_installed %}
+{{ sentry_trace_meta }}
+<script src="{% static "kausal_watch_extensions/sentry.js" %}"></script>
+{% endif %}

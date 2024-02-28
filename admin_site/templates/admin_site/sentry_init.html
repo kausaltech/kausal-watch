@@ -1,0 +1,39 @@
+{% if sentry_dsn and sentry_bundle_installed %}
+<script>
+    if (KausalSentry !== undefined) {
+        KausalSentry.initSentry({
+            dsn: '{{ sentry_dsn }}',
+            {% if request and request.user and request.user.is_authenticated %}
+            user: {
+              id: '{{ request.user.id }}',
+              email: '{{ request.user.email }}',
+            },
+            {% endif %}
+            {% if active_plan %}plan: '{{ active_plan.identifier }}',{% endif %}
+            environment: '{{ deployment_type }}',
+            {% if active_client %}client: '{{ active_client.name|default:"none"|escape }}',{% endif %}
+            release: '{{ sentry_release }}',
+        });
+
+        {% if sentry_error_id %}
+        Sentry.addBreadcrumb({ event_id: "{{ sentry_error_id }}"});
+
+        const reportDialogOptions = {
+            eventId: "{{ sentry_error_id }}",
+        };
+        {% if request and request.user and request.user.is_authenticated %}
+        reportDialogOptions.user = {
+            email: "{{ request.user.email }}",
+            name: "{{ request.user.get_display_name }}",
+        };
+        {% endif %}
+        Sentry.showReportDialog(reportDialogOptions);
+        {% endif %}
+
+        {% if sentry_flush_replay %}
+        const replay = Sentry.getReplay();
+        replay.flush();
+        {% endif %}
+    }
+</script>
+{% endif %}
