@@ -1,5 +1,5 @@
 {% extends "wagtailadmin/base.html" %}
-{% load static wagtailimages_tags wagtailadmin_tags %}
+{% load static wagtailimages_tags wagtailadmin_tags sentry %}
 
 {% block branding_logo %}
     {% if active_client and active_client.logo %}
@@ -10,21 +10,14 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+{% comment %} abusing css block to inject meta tags in the right place {% endcomment %}
+{% sentry_js %}
+{% endblock %}
+
 {% block js %}
     {{ block.super }}
-    {% if sentry_dsn %}
-    <script>
-        if (KausalSentry !== undefined) {
-            KausalSentry.initSentry({
-                dsn: '{{ sentry_dsn }}',
-                user: '{{ request.user.email }}',
-                plan: '{{ active_plan.identifier }}',
-                environment: '{{ deployment_type }}',
-                client: '{{ active_client.name|default:"none"|escape }}'
-            });
-        }
-    </script>
-    {% endif %}
+    {% sentry_init %}
     {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
     <script>
       $(document).ready(function () {
