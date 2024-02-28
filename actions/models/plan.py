@@ -229,15 +229,16 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     )
     common_category_types = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
 
-    primary_action_classification = models.ForeignKey(
-        'actions.CategoryType', blank=True, null=True, on_delete=models.PROTECT,
-        related_name='plans_with_primary_classification',
+    primary_action_classification = models.OneToOneField(
+        # null=False would be nice, but we need to avoid on_delete=CASCADE and use on_delete=SET_NULL instead
+        'actions.CategoryType', blank=False, null=True, on_delete=models.SET_NULL,
+        related_name='primary_classification_for_plan',
         verbose_name=_('The primary action classification'),
         help_text=_('Used for primary navigation and grouping of actions')
     )
-    secondary_action_classification = models.ForeignKey(
+    secondary_action_classification = models.OneToOneField(
         'actions.CategoryType', blank=True, null=True, on_delete=models.SET_NULL,
-        related_name='plans_with_secondary_classification',
+        related_name='secondary_classification_for_plan',
         verbose_name=_('A secondary action classification'),
         help_text=(_(
             'Leave empty unless specifically required. Action filters based on this category are displayed '

@@ -410,7 +410,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
     """A category for actions and indicators."""
 
     type = models.ForeignKey(
-        CategoryType, on_delete=models.PROTECT, related_name='categories',
+        CategoryType, on_delete=models.CASCADE, related_name='categories',
         verbose_name=_('type')
     )
     common = models.ForeignKey(

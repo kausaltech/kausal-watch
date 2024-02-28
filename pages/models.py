@@ -268,7 +268,7 @@ class CategoryPagePermissionTester(CategoryTypeRelatedPagePermissionTester):
 
 class CategoryTypePage(StaticPage):
     category_type = models.ForeignKey(
-        CategoryType, on_delete=models.PROTECT, null=False, verbose_name=_('Category type'),
+        CategoryType, on_delete=models.CASCADE, null=False, verbose_name=_('Category type'),
         related_name='category_type_pages',
     )
 
@@ -363,7 +363,7 @@ class CategoryTypePageLevelLayout(ClusterableModel):
 
 class CategoryPage(AplansPage):
     category = models.ForeignKey(
-        Category, on_delete=models.PROTECT, null=False, verbose_name=_('Category'),
+        Category, on_delete=models.CASCADE, null=False, verbose_name=_('Category'),
         related_name='category_pages',
     )
     body = StreamField([

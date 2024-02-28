@@ -1298,7 +1298,7 @@ class ImpactGroupAction(models.Model):
         related_name='impact_groups',
     )
     impact = models.ForeignKey(
-        ActionImpact, verbose_name=_('impact'), on_delete=models.PROTECT,
+        ActionImpact, verbose_name=_('impact'), on_delete=models.CASCADE,
         related_name='+',
     )
 

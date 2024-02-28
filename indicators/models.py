@@ -317,7 +317,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         on_delete=models.PROTECT, verbose_name=_('common indicator')
     )
     organization = models.ForeignKey(
-        Organization, related_name='indicators', on_delete=models.PROTECT,
+        Organization, related_name='indicators', on_delete=models.CASCADE,
         verbose_name=_('organization'),
     )
     plans = models.ManyToManyField(

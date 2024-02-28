@@ -132,7 +132,7 @@ class ReportType(models.Model, PlanRelatedModel):
 
 @reversion.register()
 class Report(models.Model, PlanRelatedModel):
-    type = models.ForeignKey(ReportType, on_delete=models.PROTECT, related_name='reports')
+    type = models.ForeignKey(ReportType, on_delete=models.CASCADE, related_name='reports')
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
         always_update=True,

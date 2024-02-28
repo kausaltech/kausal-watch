@@ -358,9 +358,9 @@ class ContentBlockManager(models.Manager):
 class ContentBlock(models.Model):
     content = RichTextField(verbose_name=_('content'), help_text=_('HTML content for the block'))
 
-    base = ParentalKey(BaseTemplate, on_delete=models.PROTECT, related_name='content_blocks', editable=False)
+    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
     template = models.ForeignKey(
-        NotificationTemplate, null=True, blank=True, on_delete=models.PROTECT, related_name='content_blocks',
+        NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
         verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
     )
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'), choices=(
