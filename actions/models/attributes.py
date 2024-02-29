@@ -105,6 +105,9 @@ class AttributeType(  # type: ignore[django-manager-missing]
     show_in_reporting_tab = models.BooleanField(default=False, verbose_name=_('show in reporting tab'))
     choice_attributes: models.manager.RelatedManager[AttributeChoice]
 
+    # Intentionally overrides ModelWithPrimaryLanguage.primary_language
+    # leaving out the default keyword argument
+    primary_language = models.CharField(max_length=8, choices=get_supported_languages())
     other_languages = ChoiceArrayField(
         models.CharField(max_length=8, choices=get_supported_languages()),
         default=list, null=True, blank=True
