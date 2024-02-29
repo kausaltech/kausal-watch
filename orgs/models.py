@@ -17,7 +17,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeQuerySet
 from wagtail.fields import RichTextField
 from wagtail.search import index
 
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel, ModelWithPrimaryLanguage
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel, ModelWithPrimaryLanguage, get_supported_languages
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
@@ -248,6 +248,12 @@ class Organization(index.Indexed, Node, ModelWithPrimaryLanguage, gis_models.Mod
                                              through='orgs.OrganizationMetadataAdmin',
                                              related_name='metadata_adminable_organizations',
                                              blank=True)
+
+    # Intentionally overrides ModelWithPrimaryLanguage.primary_language
+    # leaving out the default keyword argument
+    primary_language = models.CharField(
+        max_length=8, choices=get_supported_languages(), verbose_name=_('primary language'),
+    )
     location = gis_models.PointField(verbose_name=_('Location'), srid=4326, null=True, blank=True)
 
     i18n = TranslationField(fields=('name', 'abbreviation'), default_language_field='primary_language_lowercase')
