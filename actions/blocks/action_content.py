@@ -14,7 +14,7 @@ from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 from aplans.graphql_types import register_graphene_interface
-from aplans.utils import underscore_to_camelcase, InstancesVisibleForMixin
+from aplans.utils import underscore_to_camelcase
 from reports.blocks.action_content import ReportComparisonBlock
 
 # Attention: Defines several block classes via metaprogramming. See `action_attribute_blocks`. Currently:
@@ -228,8 +228,27 @@ class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.St
     ]
 
 
-class ActionListContentBlock(blocks.StaticBlock):
+class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
     block_label: str
+
+    field_label = blocks.CharBlock(
+        required=False,
+        help_text=_("Heading to show instead of the default"),
+        default='',
+        label=_("Field label"),
+    )
+
+    field_help_text = blocks.CharBlock(
+        required=False,
+        help_text=_("Help text for the field to be shown in the UI"),
+        default='',
+        label = _("Help text"),
+    )
+
+    graphql_fields = [
+        GraphQLString('field_label'),
+        GraphQLString('field_help_text'),
+    ]
 
     def get_admin_text(self):
         return _("Content block: %(label)s") % dict(label=self.label)
