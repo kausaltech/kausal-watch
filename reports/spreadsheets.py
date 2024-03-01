@@ -13,14 +13,13 @@ from io import BytesIO
 from reversion.models import Version
 from xlsxwriter.format import Format
 
-from .utils import group_by_model, prepare_serialized_model_version, SerializedAttributeVersion
+from .utils import group_by_model
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
-    from .models import ActionSnapshot, ActionVersionData, Report
-    from .utils import SerializedVersion
+    from .models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
     from reports.blocks.action_content import ReportFieldBlock
 
 
@@ -313,10 +312,10 @@ class ExcelReport:
     def close(self):
         self.workbook.close()
 
-    def _prepare_serialized_report_data(self) -> tuple[list[ActionVersionData], list[SerializedVersion]]:
-        from .models import ActionVersionData
-        row_data: list[ActionVersionData] = []
+    def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
+        from .models import SerializedActionVersion, SerializedVersion
         if self.report.is_complete:
+            serialized_actions: list[SerializedActionVersion] = []
             snapshots = (
                 self.report.action_snapshots.all()
                 .select_related('action_version__revision__user')
@@ -326,26 +325,23 @@ class ExcelReport:
             related_versions: QuerySet[Version] = Version.objects.none()
             for snapshot in snapshots:
                 action_version_data = snapshot.get_serialized_data()
-                row_data.append(action_version_data)
+                serialized_actions.append(action_version_data)
                 related_versions |= snapshot.get_related_versions()
-            serialized_related = [prepare_serialized_model_version(v) for v in related_versions]
-            return row_data, serialized_related
+            serialized_related = [SerializedVersion.from_version(v) for v in related_versions]
+            return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
-        report_data = self.report.get_live_action_versions()
-        for action_version_data in report_data.action_versions:
-            row_data.append(ActionVersionData(
-                action=action_version_data.action,
-                completed_at=action_version_data.completed_at,
-                completed_by=action_version_data.completed_by,
-            ))
-        return row_data, report_data.related_versions
+        live_versions = self.report.get_live_versions()
+        serialized_actions = [SerializedActionVersion.from_version(v) for v in live_versions.actions]
+        serialized_related = [SerializedVersion.from_version(v) for v in live_versions.related]
+        return serialized_actions, serialized_related
 
     def create_populated_actions_dataframe(
             self,
-            all_actions: list[ActionVersionData],
+            all_actions: list[SerializedActionVersion],
             all_related_versions: list[SerializedVersion],
     ):
+        from .models import SerializedAttributeVersion
         data = {}
 
         def append_to_key(key, value):
@@ -360,16 +356,15 @@ class ExcelReport:
             for v in all_related_versions
             if isinstance(v, SerializedAttributeVersion)
         }
-        for action_row in all_actions:
-            action = action_row.action
+        for action in all_actions:
             action_identifier = action.data['identifier']
             action_obj = Action(**{key: action.data[key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
             action_name = action_obj.name.replace("\n", " ")
 
             # FIXME: Right now, we print the user who made the last change to the action, which may be different from
             # the user who marked the action as complete.
-            completed_by = action_row.completed_by
-            completed_at = action_row.completed_at
+            completed_by = action.completed_by
+            completed_at = action.completed_at
             if completed_at is not None:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier)

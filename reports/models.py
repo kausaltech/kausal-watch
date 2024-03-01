@@ -4,14 +4,11 @@ import reversion
 import typing
 from autoslug.fields import AutoSlugField
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
-from django.db.models import Q
-from django.db.models.functions import Cast
 from django.utils.translation import gettext_lazy as _
-from functools import lru_cache
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from reversion.revisions import _current_frame, add_to_revision, create_revision
@@ -21,14 +18,77 @@ from wagtail.fields import StreamField
 from wagtail.blocks.stream_block import StreamValue
 
 from .spreadsheets import ExcelReport
-from .utils import SerializedVersion, prepare_serialized_model_version
 from aplans.utils import PlanRelatedModel
 from actions.models.action import Action
+from actions.models.attributes import Attribute
 from reports.blocks.action_content import ReportFieldBlock
 
 if TYPE_CHECKING:
     from actions.models import AttributeType
     from users.models import User
+
+AttributePath = tuple[int, int, int]
+
+
+@dataclass
+class SerializedVersion:
+    type: type
+    data: dict
+    str: str
+
+    @classmethod
+    def from_version(cls, version: Version) -> SerializedVersion:
+        return cls(
+            type=version.content_type.model_class(),
+            data=version.field_dict,
+            str=version.object_repr,
+        )
+
+
+@dataclass
+class SerializedAttributeVersion(SerializedVersion):
+    attribute_path: AttributePath
+
+    @classmethod
+    def from_version(cls, version: Version) -> SerializedAttributeVersion:
+        base = SerializedVersion.from_version(version)
+        assert issubclass(base.type, Attribute)
+        attribute_path = (
+            version.field_dict['content_type_id'],
+            version.field_dict['object_id'],
+            version.field_dict['type_id']
+        )
+        return cls(
+            **asdict(base),
+            attribute_path=attribute_path,
+        )
+
+
+@dataclass
+class SerializedActionVersion(SerializedVersion):
+    completed_at: datetime | None
+    completed_by: str | None
+
+    @classmethod
+    def from_version(cls, version: Version) -> SerializedActionVersion:
+        base = SerializedVersion.from_version(version)
+        assert issubclass(base.type, Action)
+        completed_at = None
+        completed_by = None
+        if hasattr(version, 'revision'):
+            completed_at = version.revision.date_created
+            completed_by = str(version.revision.user) if version.revision.user else ''
+        return cls(
+            **asdict(base),
+            completed_at=completed_at,
+            completed_by=completed_by,
+        )
+
+
+@dataclass
+class LiveVersions:
+    actions: list[Version] = field(default_factory=list)
+    related: list[Version] = field(default_factory=list)
 
 
 class NoRevisionSave(Exception):
@@ -59,19 +119,6 @@ class ReportType(models.Model, PlanRelatedModel):
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
-
-
-@dataclass
-class ActionVersionData:
-    action: SerializedVersion
-    completed_at: datetime | None
-    completed_by: str | None
-
-
-@dataclass
-class ReportData:
-    action_versions: list[ActionVersionData] = field(default_factory=list)
-    related_versions: list[SerializedVersion] = field(default_factory=list)
 
 
 @reversion.register()
@@ -124,8 +171,8 @@ class Report(models.Model, PlanRelatedModel):
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))
 
-    def get_live_action_versions(self) -> ReportData:
-        """Returns action versions for an incomplete report
+    def get_live_versions(self) -> LiveVersions:
+        """Returns action versions and related object versions for an incomplete report
         similar to those that would be saved to the database when completing a report.
         """
         if self.is_complete:
@@ -138,7 +185,7 @@ class Report(models.Model, PlanRelatedModel):
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
             )
         )
-        result = ReportData()
+        result = LiveVersions()
 
         incomplete_actions = []
 
@@ -172,12 +219,7 @@ class Report(models.Model, PlanRelatedModel):
             if snapshot is None:
                 incomplete_actions.append(action)
                 continue
-            revision = snapshot.action_version.revision
-            result.action_versions.append(ActionVersionData(
-                action=prepare_serialized_model_version(snapshot.action_version),
-                completed_at=revision.date_created,
-                completed_by=str(revision.user) if revision.user else '',
-            ))
+            result.actions.append(snapshot.action_version)
             related_versions.update(snapshot.get_related_versions())
         fake_revision_versions: list[Version] = []
         try:
@@ -192,16 +234,8 @@ class Report(models.Model, PlanRelatedModel):
         def is_action(v):
             return v._model == Action
 
-        fake_action_versions: list[Version] = list(filter(is_action, fake_revision_versions))
-        for action_version in fake_action_versions:
-            result.action_versions.append(ActionVersionData(
-                action=prepare_serialized_model_version(action_version),
-                completed_at=None,
-                completed_by=None,
-            ))
-        all_related = [*related_versions, *filter(lambda v: not is_action(v), fake_revision_versions)]
-        serialized_related = [prepare_serialized_model_version(v) for v in all_related]
-        result.related_versions = serialized_related
+        result.actions += filter(is_action, fake_revision_versions)
+        result.related = [*related_versions, *filter(lambda v: not is_action(v), fake_revision_versions)]
         return result
 
     def mark_as_complete(self, user: User):
@@ -323,14 +357,8 @@ class ActionSnapshot(models.Model):
             attribute_type, self.get_related_versions(), ct
         )
 
-    def get_serialized_data(self) -> ActionVersionData:
-        revision = self.action_version.revision
-        action = prepare_serialized_model_version(self.action_version)
-        return ActionVersionData(
-            action=action,
-            completed_at=revision.date_created,
-            completed_by=str(revision.user),
-        )
+    def get_serialized_data(self) -> SerializedActionVersion:
+        return SerializedActionVersion.from_version(self.action_version)
 
     def __str__(self):
         return f'{self.action_version} @ {self.report}'

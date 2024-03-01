@@ -1,10 +1,10 @@
 import pytest
-
 import reversion
+import typing
 from reversion.models import Version, Revision
 
 from actions.models import Action
-from reports.models import Report, ActionSnapshot
+from reports.models import Report, ActionSnapshot, SerializedActionVersion
 from .fixtures import *  # noqa
 
 
@@ -79,6 +79,7 @@ def test_report_action_snapshots(plan_with_some_actions, report_type_with_multip
 
     # Step 2: Mark some actions for partial report 2 complete
     report_partially_complete = Report.objects.get(name='Report 2')
+    report_partially_complete = typing.cast(Report, report_partially_complete)
     complete_actions = actions[0:3]
     for action in complete_actions:
         action.mark_as_complete_for_report(report_partially_complete, user)
@@ -89,8 +90,8 @@ def test_report_action_snapshots(plan_with_some_actions, report_type_with_multip
         version = Version.objects.get_for_object(action).first()
         actions_by_pk[action.pk].__version = version
 
-    live_action_versions = report_partially_complete.get_live_action_versions()
-    for action_version, related, metadata in live_action_versions:
+    live_versions = report_partially_complete.get_live_versions()
+    for action_version in live_versions.actions:
         pk = action_version.field_dict['id']
         assert isinstance(pk, int)
         if pk in [a.pk for a in complete_actions]:
@@ -112,10 +113,11 @@ def test_report_action_snapshots(plan_with_some_actions, report_type_with_multip
     # Step 3: Test that the completely incomplete report doesn't
     # get the previous existing versions
     report_incomplete = Report.objects.get(name='Report 3')
+    report_incomplete = typing.cast(Report, report_incomplete)
 
-    live_action_versions = report_incomplete.get_live_action_versions()
-    for action_version, related, metadata in live_action_versions:
-        assert metadata['completed_at'] is None
+    live_versions = report_incomplete.get_live_versions()
+    for action_version in live_versions.actions:
+        assert SerializedActionVersion.from_version(action_version).completed_at is None
         assert action_version.pk is None
         pk = action_version.field_dict['id']
         assert actions_by_pk[pk].__version != action_version
