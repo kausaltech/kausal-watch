@@ -142,7 +142,9 @@ class AttributeType(Generic[T]):
         # Implement in subclass
         raise NotImplementedError()
 
-    def xlsx_values(self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         raise NotImplementedError()
 
@@ -248,8 +250,6 @@ class OrderedChoice(AttributeType):
     ) -> List[Any]:
         if not attribute:
             return [None]
-        if 'actions.models.attributes.AttributeTypeChoiceOption' not in related_data_objects:
-            import pdb;pdb.set_trace()
         choice = next(
             (o.data['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
              if o.data['id'] == attribute.data['choice_id']))
