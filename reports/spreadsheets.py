@@ -327,13 +327,13 @@ class ExcelReport:
                 action_version_data = snapshot.get_serialized_data()
                 serialized_actions.append(action_version_data)
                 related_versions |= snapshot.get_related_versions()
-            serialized_related = [SerializedVersion.from_version(v) for v in related_versions]
+            serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in related_versions]
             return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
         live_versions = self.report.get_live_versions()
         serialized_actions = [SerializedActionVersion.from_version(v) for v in live_versions.actions]
-        serialized_related = [SerializedVersion.from_version(v) for v in live_versions.related]
+        serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in live_versions.related]
         return serialized_actions, serialized_related
 
     def create_populated_actions_dataframe(

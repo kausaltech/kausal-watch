@@ -44,6 +44,15 @@ class SerializedVersion:
             str=version.object_repr,
         )
 
+    @classmethod
+    def from_version_polymorphic(cls, version: Version) -> SerializedVersion:
+        model = version.content_type.model_class()
+        if issubclass(model, Attribute):
+            return SerializedAttributeVersion.from_version(version)
+        elif issubclass(model, Action):
+            return SerializedActionVersion.from_version(version)
+        return cls.from_version(version)
+
 
 @dataclass
 class SerializedAttributeVersion(SerializedVersion):
