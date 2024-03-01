@@ -38,7 +38,7 @@ import typing
 if typing.TYPE_CHECKING:
     from reports.spreadsheets import ExcelReport
     from reports.models import ActionSnapshot
-    from reports.utils import SerializedVersion
+    from reports.utils import AttributePath, SerializedAttributeVersion, SerializedVersion
 
 from reports.utils import get_attribute_for_type_from_related_objects
 
@@ -151,14 +151,15 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
             block_value: dict,
             action: dict,
             related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
     ) -> Optional[Any]:
         attribute_type_model_instance = block_value['attribute_type']
         wrapped_type = AttributeType.from_model_instance(attribute_type_model_instance)
         attribute_record = get_attribute_for_type_from_related_objects(
-            report.plan_current_related_objects.action_content_type,
+            report.plan_current_related_objects.action_content_type.id,
             int(action['id']),
-            attribute_type_model_instance,
-            related_objects
+            attribute_type_model_instance.id,
+            attribute_versions
         )
         return wrapped_type.xlsx_values(attribute_record, related_objects)
 
@@ -194,7 +195,8 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
 
     def extract_action_values(
             self, report: 'ExcelReport', block_value: dict, action: dict,
-            related_objects: dict[str, list[SerializedVersion]]
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
     ) -> Optional[Any]:
         category_type: CategoryType = block_value['category_type']
 
@@ -266,7 +268,8 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock, FieldBlockWi
 
     def extract_action_values(
             self, report: 'ExcelReport', block_value: dict, action: dict,
-            related_objects: dict[str, list[SerializedVersion]]
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
     ) -> list[str]:
         pk = action.get('implementation_phase_id')
         if pk is None:
@@ -298,7 +301,8 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
             report: 'ExcelReport',
             block_value: dict,
             action: dict,
-            related_objects: dict[str, list[SerializedVersion]]
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
     ) -> list[str|None]:
         pk = action.get('status_id')
         if pk is None:
@@ -380,7 +384,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             report: 'ExcelReport',
             block_value: dict,
             action: dict,
-            related_objects: dict[str, list[SerializedVersion]]
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
     ) -> list[str | None]:
         organization_id = self._find_organization_id(
             (version.data for version in related_objects['actions.models.action.ActionResponsibleParty']),

@@ -5,8 +5,9 @@ from django.contrib.contenttypes.models import ContentType
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 
-from actions.models.attributes import AttributeTypeChoiceOption
 from actions.models.attributes import Attribute
+
+AttributePath = tuple[int, int, int]
 
 
 @dataclass
@@ -18,10 +19,10 @@ class SerializedVersion:
 
 @dataclass
 class SerializedAttributeVersion(SerializedVersion):
-    attribute_path: str
+    attribute_path: AttributePath
 
 
-def make_attribute_path(version_data):
+def make_attribute_path(version_data) -> AttributePath:
     return (
         version_data['content_type_id'],
         version_data['object_id'],
@@ -30,21 +31,17 @@ def make_attribute_path(version_data):
 
 
 def get_attribute_for_type_from_related_objects(
-        required_content_type: ContentType,
+        required_content_type_id: int,
         action_id: int,
-        attribute_type,
-        versions_by_model: dict[str, list[SerializedVersion]]
+        attribute_type_id: int,
+        attribute_versions: dict[AttributePath, SerializedAttributeVersion],
 ) -> SerializedAttributeVersion | None:
-    required_attribute_path = (
-        required_content_type.id,
+    required_attribute_path: AttributePath = (
+        required_content_type_id,
         action_id,
-        attribute_type.id
+        attribute_type_id
     )
-    for versions in versions_by_model.values():
-        for version in versions:
-            if isinstance(version, SerializedAttributeVersion) and version.attribute_path == required_attribute_path:
-                return version
-    return None
+    return attribute_versions.get(required_attribute_path)
 
 
 def prepare_serialized_model_version(version: Version) -> SerializedVersion:
@@ -53,7 +50,7 @@ def prepare_serialized_model_version(version: Version) -> SerializedVersion:
         data=version.field_dict,
         str=version.object_repr,
     )
-    if issubclass(version.content_type.model_class(), Attribute):
+    if issubclass(serialized.type, Attribute):
         return SerializedAttributeVersion(
             **asdict(serialized),
             attribute_path=make_attribute_path(version.field_dict),

@@ -13,7 +13,7 @@ from io import BytesIO
 from reversion.models import Version
 from xlsxwriter.format import Format
 
-from .utils import group_by_model, prepare_serialized_model_version
+from .utils import group_by_model, prepare_serialized_model_version, SerializedAttributeVersion
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from actions.models.category import Category, CategoryType
 from orgs.models import Organization
@@ -355,6 +355,11 @@ class ExcelReport:
         COMPLETED_AT_LABEL = _('Marked as complete at')
 
         related_objects = group_by_model(all_related_versions)
+        attribute_versions = {
+            v.attribute_path: v
+            for v in all_related_versions
+            if isinstance(v, SerializedAttributeVersion)
+        }
         for action_row in all_actions:
             action = action_row.action
             action_identifier = action.data['identifier']
@@ -371,7 +376,9 @@ class ExcelReport:
             append_to_key(_('Action'), action_name)
             for field in self.report.type.fields:
                 labels = [label for label in field.block.xlsx_column_labels(field.value)]
-                values = field.block.extract_action_values(self, field.value, action.data, related_objects)
+                values = field.block.extract_action_values(
+                    self, field.value, action.data, related_objects, attribute_versions
+                )
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
