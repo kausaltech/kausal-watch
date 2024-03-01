@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 
@@ -5,7 +6,7 @@ import graphene
 from django.db.models import Model
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
-from django.utils.translation import gettext, gettext_lazy as _, pgettext
+from django.utils.translation import gettext_lazy as _, pgettext
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLField, GraphQLForeignKey, GraphQLString
 from grapple.registry import registry as grapple_registry
@@ -37,6 +38,7 @@ import typing
 if typing.TYPE_CHECKING:
     from reports.spreadsheets import ExcelReport
     from reports.models import ActionSnapshot
+    from reports.utils import SerializedVersion
 
 from reports.utils import get_attribute_for_type_from_related_objects
 
@@ -148,7 +150,8 @@ class ActionAttributeTypeReportFieldBlock(blocks.StructBlock, FieldBlockWithHelp
             report: 'ExcelReport',
             block_value: dict,
             action: dict,
-            related_objects: list[dict]) -> Optional[Any]:
+            related_objects: dict[str, list[SerializedVersion]],
+    ) -> Optional[Any]:
         attribute_type_model_instance = block_value['attribute_type']
         wrapped_type = AttributeType.from_model_instance(attribute_type_model_instance)
         attribute_record = get_attribute_for_type_from_related_objects(
@@ -190,7 +193,8 @@ class ActionCategoryReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel
         category = graphene.Field('actions.schema.CategoryNode')
 
     def extract_action_values(
-        self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]
+            self, report: 'ExcelReport', block_value: dict, action: dict,
+            related_objects: dict[str, list[SerializedVersion]]
     ) -> Optional[Any]:
         category_type: CategoryType = block_value['category_type']
 
@@ -260,7 +264,10 @@ class ActionImplementationPhaseReportFieldBlock(blocks.StaticBlock, FieldBlockWi
             implementation_phase=self.value_for_action_snapshot(field.value, snapshot),
         )
 
-    def extract_action_values(self, report: 'ExcelReport', block_value: dict, action: dict, related_objects: list[dict]) -> list[str]:
+    def extract_action_values(
+            self, report: 'ExcelReport', block_value: dict, action: dict,
+            related_objects: dict[str, list[SerializedVersion]]
+    ) -> list[str]:
         pk = action.get('implementation_phase_id')
         if pk is None:
             return [None]
@@ -291,7 +298,7 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
             report: 'ExcelReport',
             block_value: dict,
             action: dict,
-            related_objects: list[dict]
+            related_objects: dict[str, list[SerializedVersion]]
     ) -> list[str|None]:
         pk = action.get('status_id')
         if pk is None:
@@ -342,7 +349,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
         related_versions = snapshot.get_related_versions(
             ContentType.objects.get_for_model(Action))
         action_responsible_parties = (
-            {'data': arp.field_dict}
+            arp.field_dict
             for arp in related_versions if arp.content_type.model_class() == ActionResponsibleParty
         )
         org_id = self._find_organization_id(action_responsible_parties, snapshot.action_version.field_dict['id'])
@@ -358,13 +365,12 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
         )
         return result
 
-    def _find_organization_id(self, action_responsible_parties, action_id):
+    def _find_organization_id(self, action_responsible_parties: Iterable[dict], action_id):
+        """Each element of `action_responsible_parties` is a dict like the one in SerializedVersion.data."""
         try:
             return next((
-                arp['data']['organization_id'] for arp in action_responsible_parties
-                if arp['data'].get('action_id') == action_id and (
-                    arp['data'].get('role') == 'primary'
-                )
+                arp['organization_id'] for arp in action_responsible_parties
+                if arp.get('action_id') == action_id and arp.get('role') == 'primary'
             ))
         except StopIteration:
             return None
@@ -374,10 +380,10 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             report: 'ExcelReport',
             block_value: dict,
             action: dict,
-            related_objects: list[dict]
+            related_objects: dict[str, list[SerializedVersion]]
     ) -> list[str | None]:
         organization_id = self._find_organization_id(
-            related_objects['actions.models.action.ActionResponsibleParty'],
+            (version.data for version in related_objects['actions.models.action.ActionResponsibleParty']),
             action['id']
         )
         target_depth = block_value.get('target_ancestor_depth')
