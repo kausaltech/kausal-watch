@@ -19,6 +19,7 @@ from admin_site.utils import FieldLabelRenderer
 
 if typing.TYPE_CHECKING:
     from actions.models import Plan
+    from reports.utils import SerializedAttributeVersion, SerializedVersion
     from users.models import User
 
 
@@ -141,7 +142,7 @@ class AttributeType(Generic[T]):
         # Implement in subclass
         raise NotImplementedError()
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         raise NotImplementedError()
 
@@ -242,13 +243,16 @@ class OrderedChoice(AttributeType):
         if value is not None:
             self.create_attribute(obj, choice=value)
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         if not attribute:
             return [None]
-        attribute_data = attribute.get('data')
+        if 'actions.models.attributes.AttributeTypeChoiceOption' not in related_data_objects:
+            import pdb;pdb.set_trace()
         choice = next(
-            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
-             if o['data']['id'] == attribute_data['choice_id']))
+            (o.data['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
+             if o.data['id'] == attribute.data['choice_id']))
         return [choice]
 
 
@@ -312,14 +316,18 @@ class CategoryChoice(AttributeType):
             # persist the categories we just set
             attribute.save()
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
-        category_ids = attribute['data']['categories']
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
+        if not attribute:
+            return [None]
+        category_ids = attribute.data['categories']
         # TODO i18n doesn't really work easily with the serialized
         # models
         category_names = [
-            d['data']['name']
+            d.data['name']
             for d in related_data_objects['actions.models.category.Category']
-            if d['data']['id'] in category_ids
+            if d.data['id'] in category_ids
         ]
         return ['; '.join(sorted(category_names))]
 
@@ -435,14 +443,15 @@ class OptionalChoiceWithText(AttributeType):
         if choice_val is not None or has_text_in_some_language:
             self.create_attribute(obj, choice=choice_val, **text_vals)
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         if not attribute:
             return [None, None]
-        attribute_data = attribute.get('data')
         choice = next(
-            (o['data']['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
-             if o['data']['id'] == attribute_data['choice_id']))
-        rich_text = attribute_data['text']
+            (o.data['name'] for o in related_data_objects['actions.models.attributes.AttributeTypeChoiceOption']
+             if o.data['id'] == attribute.data['choice_id']))
+        rich_text = attribute.data['text']
         return [choice, html_to_plaintext(rich_text)]
 
     def xlsx_column_labels(self) -> List[str]:
@@ -542,22 +551,24 @@ class GenericTextAttributeType(AttributeType):
 class Text(GenericTextAttributeType):
     ATTRIBUTE_MODEL = models.AttributeText
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         if not attribute:
             return [None]
-        attribute_data = attribute.get('data')
-        text = attribute_data['text']
+        text = attribute.data['text']
         return [text]
 
 
 class RichText(GenericTextAttributeType):
     ATTRIBUTE_MODEL = models.AttributeRichText
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         if not attribute:
             return [None]
-        attribute_data = attribute.get('data')
-        rich_text = attribute_data['text']
+        rich_text = attribute.data['text']
         return [html_to_plaintext(rich_text)]
 
 
@@ -610,11 +621,13 @@ class Numeric(AttributeType):
     def xlsx_column_labels(self) -> List[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
-    def xlsx_values(self, attribute, related_data_objects) -> List[Any]:
+    def xlsx_values(
+            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> List[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
-        return [attribute['data']['value']]
+        return [attribute.data['value']]
 
     def get_xlsx_cell_format(self) -> dict:
         return {'num_format': '#,##0.00'}

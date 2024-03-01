@@ -1,36 +1,34 @@
 from __future__ import annotations
 
-import typing
-from functools import lru_cache
-from typing import TYPE_CHECKING
-from contextlib import contextmanager
-
 import reversion
+import typing
 from autoslug.fields import AutoSlugField
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
+from django.db.models import Q
+from django.db.models.functions import Cast
 from django.utils.translation import gettext_lazy as _
+from functools import lru_cache
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from reversion.revisions import _current_frame, add_to_revision, create_revision
 from sentry_sdk import capture_message
+from typing import TYPE_CHECKING
 from wagtail.fields import StreamField
 from wagtail.blocks.stream_block import StreamValue
 
+from .spreadsheets import ExcelReport
+from .utils import SerializedVersion, prepare_serialized_model_version
 from aplans.utils import PlanRelatedModel
 from actions.models.action import Action
 from reports.blocks.action_content import ReportFieldBlock
 
-from .spreadsheets import ExcelReport
-from .utils import group_by_model, prepare_serialized_model_version
-
 if TYPE_CHECKING:
     from actions.models import AttributeType
     from users.models import User
-
-@lru_cache
-def _related_versions_for_revision(revision, exclude_content_type) -> models.QuerySet[Version]:
-    return revision.version_set.exclude(content_type=exclude_content_type).select_related('content_type')
 
 
 class NoRevisionSave(Exception):
@@ -61,6 +59,19 @@ class ReportType(models.Model, PlanRelatedModel):
 
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
+
+
+@dataclass
+class ActionVersionData:
+    action: SerializedVersion
+    completed_at: datetime | None
+    completed_by: str | None
+
+
+@dataclass
+class ReportData:
+    action_versions: list[ActionVersionData] = field(default_factory=list)
+    related_versions: list[SerializedVersion] = field(default_factory=list)
 
 
 @reversion.register()
@@ -113,7 +124,7 @@ class Report(models.Model, PlanRelatedModel):
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))
 
-    def get_live_action_versions(self) -> list[tuple[Version, list[Version], dict]]:
+    def get_live_action_versions(self) -> ReportData:
         """Returns action versions for an incomplete report
         similar to those that would be saved to the database when completing a report.
         """
@@ -127,10 +138,7 @@ class Report(models.Model, PlanRelatedModel):
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
             )
         )
-        result = list()
-
-        def is_action(v):
-            return v._model == Action
+        result = ReportData()
 
         incomplete_actions = []
 
@@ -147,7 +155,7 @@ class Report(models.Model, PlanRelatedModel):
                 '-revision__date_created'
             )
 
-        action_snapshots_by_action_pk = dict()
+        action_snapshots_by_action_pk: dict[int, ActionSnapshot] = dict()
         for version in version_qs:
             action_pk = version.object_id
             if action_pk in action_snapshots_by_action_pk:
@@ -158,33 +166,42 @@ class Report(models.Model, PlanRelatedModel):
             snapshot = qs.first()
             action_snapshots_by_action_pk[int(action_pk)] = snapshot
 
+        related_versions: set[Version] = set() # non-Action versions from the same revision as any of our actions
         for action in actions_to_snapshot:
             snapshot = action_snapshots_by_action_pk.get(action.pk)
             if snapshot is None:
                 incomplete_actions.append(action)
                 continue
             revision = snapshot.action_version.revision
-            result.append(
-                (snapshot.action_version,
-                 snapshot.get_related_versions(ct),
-                 {'completed_at': revision.date_created,
-                  'completed_by': str(revision.user) if revision.user else ''})
-            )
-        versions = []
+            result.action_versions.append(ActionVersionData(
+                action=prepare_serialized_model_version(snapshot.action_version),
+                completed_at=revision.date_created,
+                completed_by=str(revision.user) if revision.user else '',
+            ))
+            related_versions.update(snapshot.get_related_versions())
+        fake_revision_versions: list[Version] = []
         try:
             with create_revision(manage_manually=True):
                 for action in incomplete_actions:
                     add_to_revision(action)
-                versions = list(_current_frame().db_versions['default'].values())
+                fake_revision_versions = list(_current_frame().db_versions['default'].values())
                 raise NoRevisionSave()
         except NoRevisionSave:
             pass
-        action_versions = list(filter(is_action, versions))
-        related_versions = list(filter(lambda v: not is_action(v), versions))
-        for action_version in action_versions:
-            result.append((action_version, related_versions,
-                           {'completed_at': None,
-                            'completed_by': None}))
+
+        def is_action(v):
+            return v._model == Action
+
+        fake_action_versions: list[Version] = list(filter(is_action, fake_revision_versions))
+        for action_version in fake_action_versions:
+            result.action_versions.append(ActionVersionData(
+                action=prepare_serialized_model_version(action_version),
+                completed_at=None,
+                completed_by=None,
+            ))
+        all_related = [*related_versions, *filter(lambda v: not is_action(v), fake_revision_versions)]
+        serialized_related = [prepare_serialized_model_version(v) for v in all_related]
+        result.related_versions = serialized_related
         return result
 
     def mark_as_complete(self, user: User):
@@ -256,8 +273,13 @@ class ActionSnapshot(models.Model):
         except ActionSnapshot._RollbackRevision:
             pass
 
-    def get_related_versions(self, ct) -> models.QuerySet[Version]:
-        return _related_versions_for_revision(self.action_version.revision, ct)
+    def get_related_versions(self) -> models.QuerySet[Version]:
+        """Get all Version instances from the same revision as this action version's.
+
+        There may be more than one action version in this revision.
+        """
+        revision = self.action_version.revision
+        return revision.version_set.select_related('content_type')
 
     def get_attribute_for_type_from_versions(
         self, attribute_type: AttributeType, versions: typing.Iterable[Version], ct: ContentType
@@ -298,22 +320,16 @@ class ActionSnapshot(models.Model):
         """
         ct = ContentType.objects.get_for_model(Action)
         return self.get_attribute_for_type_from_versions(
-            attribute_type, self.get_related_versions(ct), ct
+            attribute_type, self.get_related_versions(), ct
         )
 
-    def get_related_serialized_data(self):
-        ct = ContentType.objects.get_for_model(Action)
-        all_related_versions = self.get_related_versions(ct)
+    def get_serialized_data(self) -> ActionVersionData:
         revision = self.action_version.revision
         action = prepare_serialized_model_version(self.action_version)
-        related_objects = group_by_model([prepare_serialized_model_version(o) for o in all_related_versions])
-        return dict(
+        return ActionVersionData(
             action=action,
-            related_objects=related_objects,
-            completion={
-                'completed_at': revision.date_created,
-                'completed_by': str(revision.user)
-            }
+            completed_at=revision.date_created,
+            completed_by=str(revision.user),
         )
 
     def __str__(self):

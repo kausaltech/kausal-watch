@@ -1,27 +1,27 @@
-from datetime import datetime
+from __future__ import annotations
 import inspect
-
+import polars
+import typing
+import xlsxwriter
+from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import QuerySet
 from django.utils import translation
 from django.utils import timezone
 from django.utils.translation import gettext as _, pgettext
+from io import BytesIO
+from reversion.models import Version
+from xlsxwriter.format import Format
 
+from .utils import group_by_model, prepare_serialized_model_version
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
-from io import BytesIO
-
-import polars
-import xlsxwriter
-from xlsxwriter.format import Format
-
-import typing
 if typing.TYPE_CHECKING:
-    from .models import Report
+    from .models import ActionSnapshot, ActionVersionData, Report
+    from .utils import SerializedVersion
     from reports.blocks.action_content import ReportFieldBlock
-
-from .utils import group_by_model, prepare_serialized_model_version
 
 
 class ExcelFormats(dict):
@@ -212,8 +212,8 @@ class ExcelReport:
 
     def generate_actions_dataframe(self) -> polars.DataFrame:
         with translation.override(self.language):
-            prepared_data = self._prepare_serialized_report_data()
-            return self.create_populated_actions_dataframe(prepared_data)
+            action_version_data, related_versions = self._prepare_serialized_report_data()
+            return self.create_populated_actions_dataframe(action_version_data, related_versions)
 
     def generate_xlsx(self) -> bytes:
         actions_df = self.generate_actions_dataframe()
@@ -313,29 +313,38 @@ class ExcelReport:
     def close(self):
         self.workbook.close()
 
-    def _prepare_serialized_report_data(self):
-        row_data = []
+    def _prepare_serialized_report_data(self) -> tuple[list[ActionVersionData], list[SerializedVersion]]:
+        from .models import ActionVersionData
+        row_data: list[ActionVersionData] = []
         if self.report.is_complete:
-            for snapshot in (
-                    self.report.action_snapshots.all()
-                    .select_related('action_version__revision__user')
-                    .prefetch_related('action_version__revision__version_set')
-            ):
-                row_data.append(snapshot.get_related_serialized_data())
-            return row_data
+            snapshots = (
+                self.report.action_snapshots.all()
+                .select_related('action_version__revision__user')
+                .prefetch_related('action_version__revision__version_set')
+            )
+            snapshots = typing.cast(typing.Iterable['ActionSnapshot'], snapshots)
+            related_versions: QuerySet[Version] = Version.objects.none()
+            for snapshot in snapshots:
+                action_version_data = snapshot.get_serialized_data()
+                row_data.append(action_version_data)
+                related_versions |= snapshot.get_related_versions()
+            serialized_related = [prepare_serialized_model_version(v) for v in related_versions]
+            return row_data, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
-        for action, all_related_versions, completion in self.report.get_live_action_versions():
-            row_data.append(dict(
-                action=prepare_serialized_model_version(action),
-                related_objects=group_by_model([prepare_serialized_model_version(o) for o in all_related_versions]),
-                completion=completion
+        report_data = self.report.get_live_action_versions()
+        for action_version_data in report_data.action_versions:
+            row_data.append(ActionVersionData(
+                action=action_version_data.action,
+                completed_at=action_version_data.completed_at,
+                completed_by=action_version_data.completed_by,
             ))
-        return row_data
+        return row_data, report_data.related_versions
 
     def create_populated_actions_dataframe(
             self,
-            all_actions: list
+            all_actions: list[ActionVersionData],
+            all_related_versions: list[SerializedVersion],
     ):
         data = {}
 
@@ -345,27 +354,24 @@ class ExcelReport:
         COMPLETED_BY_LABEL = _('Marked as complete by')
         COMPLETED_AT_LABEL = _('Marked as complete at')
 
+        related_objects = group_by_model(all_related_versions)
         for action_row in all_actions:
-            action = action_row['action']
-            action_identifier = action['data']['identifier']
-            action_obj = Action(**{key: action['data'][key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
+            action = action_row.action
+            action_identifier = action.data['identifier']
+            action_obj = Action(**{key: action.data[key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
             action_name = action_obj.name.replace("\n", " ")
 
             # FIXME: Right now, we print the user who made the last change to the action, which may be different from
             # the user who marked the action as complete.
-            completion = action_row['completion']
-            completed_by = completion['completed_by']
-            completed_at = completion['completed_at']
+            completed_by = action_row.completed_by
+            completed_at = action_row.completed_at
             if completed_at is not None:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier)
             append_to_key(_('Action'), action_name)
             for field in self.report.type.fields:
                 labels = [label for label in field.block.xlsx_column_labels(field.value)]
-                values = field.block.extract_action_values(
-                    self, field.value, action['data'],
-                    action_row['related_objects'],
-                )
+                values = field.block.extract_action_values(self, field.value, action.data, related_objects)
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
