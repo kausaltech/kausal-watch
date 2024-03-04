@@ -350,8 +350,7 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
         responsible_party = graphene.Field('actions.schema.ActionResponsiblePartyNode')
 
     def value_for_action_snapshot(self, block_value, snapshot):
-        related_versions = snapshot.get_related_versions(
-            ContentType.objects.get_for_model(Action))
+        related_versions = snapshot.get_related_versions()
         action_responsible_parties = (
             arp.field_dict
             for arp in related_versions if arp.content_type.model_class() == ActionResponsibleParty
