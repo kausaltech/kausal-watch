@@ -349,26 +349,6 @@ class InstancesVisibleForMixin(models.Model):
         ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
         return self.instances_visible_for in ACTION_SPECIFIC_VALUES
 
-    @classmethod
-    def get_visibility_permissions_for_user(cls, user: UserOrAnon, plan: Plan | None) -> set[VisibleFor]:
-        # FIXME: Use the method above here instead for consistency
-        if hasattr(user, '_instance_visibility_perms'):
-            return user._instance_visibility_perms
-        permissions = [InstancesVisibleForMixin.VisibleFor.PUBLIC]
-        if not user.is_authenticated:
-            return set(permissions)
-
-        permissions.append(InstancesVisibleForMixin.VisibleFor.AUTHENTICATED)
-        is_plan_admin = plan is not None and user.is_general_admin_for_plan(plan)
-        if is_plan_admin:
-            permissions.append(InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS)
-        # FIXME: Check if the user is a contact person for the object, not for *anything* in the plan.
-        is_contact_person = plan is not None and user.is_contact_person_in_plan(plan)
-        if is_contact_person or is_plan_admin:
-            permissions.append(InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS)
-        user._instance_visibility_perms = set(permissions)
-        return user._instance_visibility_perms
-
     def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None):
         from actions.models.action import Action, ActionContactPerson
         # `action` may only be None if `self.instances_visible_for` is not action-specific

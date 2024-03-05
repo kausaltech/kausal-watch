@@ -176,19 +176,17 @@ class HasAttributeType(Protocol):
 
 class Attribute:
     def is_visible_for_user(self: HasAttributeType, user: UserOrAnon, plan: Plan):
+        from actions.models.action import Action
         assert plan is not None
-        user_perms = set(AttributeType.get_visibility_permissions_for_user(user, plan))
-        if self.type.instances_visible_for in user_perms:
-            return True
-        return False
+        if self.content_type == ContentType.objects.get_for_model(Action):
+            action = self.content_object
+        else:
+            action = None
+        return self.type.is_instance_visible_for(user, plan, action)
 
 
 class AttributeQuerySet(models.QuerySet):
-    def visible_for_user(self, user: UserOrAnon, plan: typing.Optional[Plan]):
-        if user.is_superuser:
-            return self
-        user_perms = AttributeType.get_visibility_permissions_for_user(user, plan)
-        return self.filter(type__instances_visible_for__in=user_perms)
+    pass
 
 
 @reversion.register()
