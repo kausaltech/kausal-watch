@@ -85,7 +85,7 @@ class PersonQuerySet(models.QuerySet['Person']):
     def available_for_plan(self, plan: Plan, include_contact_persons=False):
         """Return persons from an organization related to the plan."""
         related = Organization.objects.filter(id=plan.organization_id) | plan.related_organizations.all()
-        q = Q()
+        q = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
         for org in related:
             q |= Q(organization__path__startswith=org.path)
         if include_contact_persons:

@@ -105,7 +105,7 @@ class OrganizationQuerySet(MP_NodeQuerySet):
         adminable_plans = user.get_adminable_plans()
         if not adminable_plans:
             return self.none()
-        q = Q()
+        q = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
         for plan in adminable_plans:
             available_orgs = Organization.objects.available_for_plan(plan)
             q |= Q(pk__in=available_orgs)
@@ -125,7 +125,7 @@ class OrganizationQuerySet(MP_NodeQuerySet):
         return self.filter(id__in=self._available_for_plan(plan))
 
     def available_for_plans(self, plans: Sequence[Plan] | models.QuerySet[Plan]):
-        query = Q()
+        query = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
         for pl in plans:
             query |= Q(id__in=self._available_for_plan(pl))
         return self.filter(query)

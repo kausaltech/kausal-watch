@@ -97,7 +97,7 @@ class Query(
         visible_actions = Action.objects.visible_for_user(info.context.user).filter(plan__in=plans)
         qs = Organization.objects.available_for_plans(plans)
         if plan is not None:
-            query = Q()
+            query = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
             if for_responsible_parties:
                 query |= Q(responsible_actions__action__in=visible_actions)
             if for_contact_persons:

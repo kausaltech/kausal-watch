@@ -133,7 +133,7 @@ class Query:
                 .filter(sites_rooted_here__plan__in=plan_ids)
                 .values_list('path', flat=True)
         )
-        page_filter = Q()
+        page_filter = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
         for path in root_page_paths:
             page_filter |= Q(path__startswith=path)
 
