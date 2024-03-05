@@ -178,7 +178,6 @@ class AttributeTextFactory(ModelFactory[AttributeText]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.TEXT)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')

@@ -7,9 +7,9 @@ from django.db.utils import IntegrityError
 from django.utils import translation
 from wagtail.models import Locale
 
-from actions.models import Action
+from actions.models import Action, ActionContactPerson
 from actions.tests.factories import (
-    ActionFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+    ActionFactory, ActionContactFactory, AttributeTextFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
 )
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 from pages.models import CategoryPage, CategoryTypePage
@@ -375,6 +375,31 @@ def test_attribute_type_visibility_validation(model, scope_factory, visible_for_
                scope=scope,
                instances_visible_for=visible_for,
             ).full_clean()
+
+
+def test_attribute_type_visibility_contact_person_particular_action(plan, action, person):
+    ac = ActionContactFactory(action__plan=plan, person=person, role=ActionContactPerson.Role.MODERATOR)
+    assert ac.action != action
+    assert not action.contact_persons.exists()
+    at = AttributeTypeFactory(
+        object_content_type=ContentType.objects.get_for_model(Action),
+        scope=plan,
+        instances_visible_for=InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS,
+    )
+    # Attribute for an action that `person` is a contact person for
+    visible_attr = AttributeTextFactory(
+        type=at,
+        content_object=ac.action,
+    )
+    # Attribute for an action that `person` is not a contact person for
+    invisible_attr = AttributeTextFactory(
+        type=at,
+        content_object=action,
+    )
+    assert visible_attr.is_visible_for_user(person.user, plan)
+    # For InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, it should not enough to be a contact person for *any*
+    # action; you need to be a contact person of that particular action.
+    assert not invisible_attr.is_visible_for_user(person.user, plan)
 
 
 LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]
