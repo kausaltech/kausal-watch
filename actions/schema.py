@@ -261,7 +261,7 @@ class PlanNode(DjangoNode):
 
     @staticmethod
     def resolve_action_list_page(root: Plan, info: GQLInfo):
-        root_page: Page | None = root.root_page
+        root_page: Page | None = root.get_translated_root_page()
         if not root_page:
             return
         return root_page.get_descendants().live().public().type(ActionListPage).first().specific
