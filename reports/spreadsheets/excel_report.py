@@ -13,13 +13,13 @@ from io import BytesIO
 from reversion.models import Version
 from xlsxwriter.format import Format
 
-from .utils import group_by_model
+from reports.utils import group_by_model
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
 if typing.TYPE_CHECKING:
-    from .models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
+    from reports.models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
     from reports.blocks.action_content import ReportFieldBlock
 
 
@@ -213,7 +213,7 @@ class CursorWriter:
                 url = None
                 if len(cell) > 3:
                     raise ValueError('Invalid cell tuple')
-                if len(cell) == 2:
+                if len(cell) == 3:
                     cell = typing.cast(tuple[str, str, str], cell)
                     url = cell[2]
 
@@ -378,7 +378,7 @@ class ExcelReport:
         self.workbook.close()
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
-        from .models import SerializedActionVersion, SerializedVersion
+        from reports.models import SerializedActionVersion, SerializedVersion
         if self.report.is_complete:
             serialized_actions: list[SerializedActionVersion] = []
             snapshots = (
@@ -406,7 +406,7 @@ class ExcelReport:
             all_actions: list[SerializedActionVersion],
             all_related_versions: list[SerializedVersion],
     ):
-        from .models import SerializedAttributeVersion
+        from reports.models import SerializedAttributeVersion
         data = {}
 
         def append_to_key(key, value):
