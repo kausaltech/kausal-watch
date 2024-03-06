@@ -88,6 +88,13 @@ class PlanFeatures(models.Model):
             "show to users which fields are public and which are restricted."
         )
     )
+    output_report_action_print_layout = models.BooleanField(
+        default=False,
+        verbose_name=_('Include action print layout in reports'),
+        help_text=_(
+            'In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing.'
+        ),
+    )
 
     @property
     def public_contact_persons(self):

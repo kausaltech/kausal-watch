@@ -366,6 +366,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('minimal_statuses'),
         FieldPanel('moderation_workflow'),
         FieldPanel('display_field_visibility_restrictions'),
+        FieldPanel('output_report_action_print_layout'),
     ]
 
     panels = [
