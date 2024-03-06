@@ -36,6 +36,8 @@ class ExcelFormats(dict):
         BG_COLOR_ODD = '#f4f4f4'
         BG_COLOR_HEADER = '#0a5e43'
         COLOR_WHITE = '#ffffff'
+        COLOR_LIGHT_HEADER = '#f0f0f0'
+        COLOR_PAGE_HEADER = '#3c504a'
 
         @classmethod
         def header_row(cls, f: Format):
@@ -94,6 +96,44 @@ class ExcelFormats(dict):
         def all_rows(cls, f: Format):
             f.set_border(0)
             f.set_align('top')
+            f.set_text_wrap(True)
+
+        @classmethod
+        def action_digest_value(cls, f: Format):
+            f.set_font_size(8)
+            f.set_left()
+            f.set_bottom()
+            f.set_right()
+            f.set_align('vjustify')
+            f.set_text_wrap(True)
+
+        @classmethod
+        def action_digest_label(cls, f: Format):
+            f.set_bg_color(cls.COLOR_LIGHT_HEADER)
+            f.set_font_size(8)
+            f.set_left()
+            f.set_top()
+            f.set_right()
+            f.set_align('vjustify')
+            f.set_text_wrap(True)
+
+        @classmethod
+        def action_digest_page_header(cls, f: Format):
+            f.set_bg_color(cls.COLOR_PAGE_HEADER)
+            f.set_color('#ffffff')
+            f.set_align('top')
+            f.set_font_size(10)
+            f.set_bold()
+            f.set_align('vjustify')
+            f.set_text_wrap(True)
+
+        @classmethod
+        def action_digest_value_long(cls, f: Format):
+            cls.action_digest_value(f)
+            f.set_bold(False)
+            f.set_font_size(8)
+            f.set_align('top')
+            f.set_align('vjustify')
             f.set_text_wrap(True)
 
     def __getattr__(self, name):
