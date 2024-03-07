@@ -325,19 +325,22 @@ class ActionSnapshot(models.Model):
         return revision.version_set.select_related('content_type')
 
     def get_attribute_for_type_from_versions(
-        self, attribute_type: AttributeType, versions: typing.Iterable[Version], ct: ContentType
+        self, attribute_type: AttributeType, versions: models.QuerySet[Version], ct: ContentType
     ) -> models.Model | None:
-        pattern = {
-            'type_id': attribute_type.id,
-            'content_type_id': ct.id,
-            'object_id': int(self.action_version.object_id),
-        }
-
+        # FIXME: This relies on `serialized_data` to contain strings exactly in a certain syntax, which is an
+        # implementation detail. Unfortunately, `serialized_data` is not a JSON field, so we can't use Django's
+        # QuerySet filter syntax for that.
+        # We used to omit the filtering here and filter in Python code in the for loop below, but it's too slow when
+        # there are a lot of versions.
+        versions = (versions
+            .filter(serialized_data__contains=f'"type": {attribute_type.id}')
+            .filter(serialized_data__contains=f'"content_type": {ct.id}')
+            .filter(serialized_data__contains=f'"object_id": {int(self.action_version.object_id)}')
+        )
         for version in versions:
             model = version.content_type.model_class()
             # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
-            if (model.__module__ == 'actions.models.attributes'
-                    and all(version.field_dict.get(key) == value for key, value in pattern.items())):
+            if model.__module__ == 'actions.models.attributes':
                 # Replace PKs by model instances. (We assume they still exist in the DB, otherwise we are fucked.)
                 field_dict = {}
                 for field_name, value in version.field_dict.items():
