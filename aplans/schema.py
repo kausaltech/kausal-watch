@@ -97,7 +97,9 @@ class Query(
         visible_actions = Action.objects.visible_for_user(info.context.user).filter(plan__in=plans)
         qs = Organization.objects.available_for_plans(plans)
         if plan is not None:
-            query = Q(pk__in=[])  # always false; Q() doesn't cut it; https://stackoverflow.com/a/39001190/14595546
+            # Note the weird behavior by Django: Q() is neither "true" nor "false".
+            # For all x, Q() | x is equivalent to x, and Q() & x is also equivalent to x.
+            query = Q()
             if for_responsible_parties:
                 query |= Q(responsible_actions__action__in=visible_actions)
             if for_contact_persons:
