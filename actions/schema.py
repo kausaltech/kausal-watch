@@ -16,10 +16,12 @@ from graphql.error import GraphQLError
 from grapple.types.pages import PageInterface
 from grapple.registry import registry as grapple_registry
 from itertools import chain
+from modelcluster.models import model_from_serializable_data
 from wagtail.rich_text import RichText
 
 
 from actions.action_admin import ActionAdmin
+from actions.attributes import AttributeType as AttributeTypeWrapper
 from actions.models import (
     Action, ActionContactPerson, ActionImpact,
     ActionImplementationPhase, ActionLink, ActionResponsibleParty,
@@ -608,8 +610,27 @@ class AttributesMixin:
             return out
 
         attributes: List[AttributeUnion] = []
-        for attr_type_name in ModelWithAttributes.ATTRIBUTE_RELATIONS:
-            attributes += filter_attrs(getattr(root, attr_type_name).all())
+        serialized_attributes = root.get_serialized_attribute_data()
+        if serialized_attributes:
+            for format, type_id_to_attribute_data in serialized_attributes.items():
+                wrapper_class = AttributeTypeWrapper.format_to_class(format)
+                attribute_model = wrapper_class.ATTRIBUTE_MODEL
+                for type_id, data in type_id_to_attribute_data.items():
+                    import pdb;pdb.set_trace()
+                    # FIXME: We probably don't need to make a SQL query every time for this
+                    wrapper = wrapper_class(AttributeType.objects.get(id=type_id))
+                    value = wrapper.get_value_from_serialized_data(serialized_attributes)
+                    assert 'pk' not in data
+                    data['pk'] = None
+                    assert 'type' not in data
+                    data['type'] = type_id
+                    instance = model_from_serializable_data(attribute_model, data, check_fks=True, strict_fks=True)
+                    assert instance is not None
+                    # wrapper.commit_value_from_serialized_data(action, serialized_attributes)
+                    attributes.append(instance)
+        else:
+            for attr_type_name in ModelWithAttributes.ATTRIBUTE_RELATIONS:
+                attributes += filter_attrs(getattr(root, attr_type_name).all())
 
         return sorted(attributes, key=lambda a: a.type.order)
 
