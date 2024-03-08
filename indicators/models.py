@@ -400,12 +400,17 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     levels: RelatedManager[IndicatorLevel]
     values: RelatedManager[IndicatorValue]
     actions: RelatedManager[Action]
+    related_actions: RelatedManager[ActionIndicator]
 
     class Meta:
         verbose_name = _('indicator')
         verbose_name_plural = _('indicators')
         unique_together = (('common', 'organization'),)
         ordering = ('-updated_at',)
+
+    def handle_admin_save(self, context: Optional[dict] = None):
+        for rel_action in self.related_actions.all():
+            rel_action.action.recalculate_status()
 
     def get_latest_graph(self):
         return self.graphs.latest()
