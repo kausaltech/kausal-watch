@@ -31,6 +31,12 @@ class PlanFeatures(models.Model):
         verbose_name=_('Publicly visible data about contact persons'),
         help_text=_('Choose which information about contact persons is visible in the public UI')
     )
+
+    contact_persons_hide_moderators = models.BooleanField(
+        default=False, verbose_name=_('Hide moderators from the contact persons'),
+        help_text=_('Should moderators be hidden from the visible contact persons in the public UI?')
+    )
+
     has_action_identifiers = models.BooleanField(
         default=True, verbose_name=_('Has action identifiers'),
         help_text=_("Set if the plan uses meaningful action identifiers")
@@ -93,7 +99,7 @@ class PlanFeatures(models.Model):
 
     public_fields: ClassVar = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
-        'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
+        'contact_persons_hide_moderators', 'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
         'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
         'minimal_statuses', 'has_action_contact_person_roles', 'allow_public_site_login'
     ]

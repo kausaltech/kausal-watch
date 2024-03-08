@@ -987,7 +987,8 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_contact_persons(root: Action, info: GQLInfo):
         plan: Plan = get_plan_from_context(info)
         user = info.context.user
-        acps = [acp for acp in root.contact_persons.all() if acp.person.visible_for_user(user=user, plan=plan)]
+        acps = [acp for acp in root.contact_persons.all()
+                if acp.person.visible_for_user(user=user, plan=plan) and acp.is_visible_moderator()]
         return acps
 
     @staticmethod
