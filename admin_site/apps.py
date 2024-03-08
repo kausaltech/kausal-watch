@@ -45,6 +45,8 @@ def _get_language_choices():
 class AdminSiteConfig(AdminConfig):
     def ready(self):
         super().ready()
+        import admin_site.signals # noqa
+
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
         global _wagtail_collection_save_instance

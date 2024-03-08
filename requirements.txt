@@ -101,6 +101,7 @@ django==5.0.4
     #   django-extensions
     #   django-filter
     #   django-helusers
+    #   django-hijack
     #   django-import-export
     #   django-modelcluster
     #   django-modeltrans
@@ -144,6 +145,8 @@ django-filter==23.5
     #   -r requirements.in
     #   wagtail
 django-helusers==0.11.0
+    # via -r requirements.in
+django-hijack==3.4.5
     # via -r requirements.in
 django-image-cropping==1.7
     # via -r requirements.in

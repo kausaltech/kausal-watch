@@ -51,7 +51,6 @@ class AdminMiddleware(MiddlewareMixin):
         user = request.user
         if not user or not user.is_authenticated or not user.is_staff:
             return
-
         profile = UserProfile.get_for_user(user)
         plan = request.user.get_active_admin_plan()
         if plan is not None:

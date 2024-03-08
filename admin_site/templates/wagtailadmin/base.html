@@ -19,6 +19,7 @@
     {% else %}
         <img src="{% static 'images/kausal-avatar-dark-green.svg' %}" alt="Kausal Logo" width="80" />
     {% endif %}
+
 {% endblock %}
 
 {% block extra_css %}
@@ -42,4 +43,10 @@
     </script>
     {# Set role alert for notifications for accessibility #}
     
+
+    {% if request.user.is_hijacked %}
+        {% include "admin_site/release_impersonation.html" %}
+    {% endif %}
+
+
 {% endblock %}

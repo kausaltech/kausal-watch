@@ -12,7 +12,7 @@ class LoggedRequest(models.Model):
     raw_request = models.TextField()
     user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='logged_requests')
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
-
+    impersonator = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='logged_impersonated_requests')
     class Meta:
         ordering = ['created_at']
 

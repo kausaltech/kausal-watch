@@ -10,10 +10,11 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction, models
 from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField, ChoiceField
-from django.urls import re_path
+from django.urls import re_path, reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from django.middleware.csrf import get_token
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.helpers import ButtonHelper
@@ -306,6 +307,7 @@ class PersonButtonHelper(ButtonHelper):
             'classname': self.finalise_classname(['button-secondary', 'button-small']),
         }
 
+
     def get_buttons_for_obj(self, obj, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
         user = self.request.user
@@ -324,6 +326,7 @@ class PersonButtonHelper(ButtonHelper):
             buttons.append(reset_password_button)
 
         return buttons
+    
 
 
 class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin, DeleteView):
@@ -522,6 +525,25 @@ class PersonAdmin(AplansModelAdmin):
             fields.append(contact_for_actions)
         elif contact_person_filter == 'indicator':
             fields.append(contact_for_indicators)
+
+        def impersonate_button(obj):
+            user_pk = obj.user.pk
+            if request.user.has_perm('hijack.permissions.superusers_only') and not request.user.is_hijacked and not request.user.pk == obj.user.pk:
+                impersonate_url = reverse('hijack:acquire')
+                csrf_token = get_token(request)
+                return format_html(
+                    '<form method="post" action="{}">'
+                    '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
+                    '<input type="hidden" name="user_pk" value="{}">'
+                    '<input type="hidden" name="next" value="{}">'
+                    '<button type="submit" class="button button-secondary button-small">{}</button>'
+                    '</form>',
+                    impersonate_url, csrf_token, user_pk, request.path, _("View as User")
+                )
+            return ''
+        impersonate_button.short_description = ''
+
+        fields.append(impersonate_button)
 
         request._person_list_display = fields
         return fields

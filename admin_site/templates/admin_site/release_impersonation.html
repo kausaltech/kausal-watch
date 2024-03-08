@@ -1,0 +1,13 @@
+<script>
+    $(document).ready(function() {{
+        $('.sidebar').append(
+            '<div class="release-impersonation">' +
+            '<form method="POST" action="{% url 'hijack:release' %}"">' +
+            '{% csrf_token %}' +
+            '<button type="submit" class="button bicolor icon icon-warning">Back to own User</button>' +
+            '<input type="hidden" name="next" value="{{ request.path }}">' +
+            '</form>' +
+            '</div>'
+        );
+    }});
+</script>

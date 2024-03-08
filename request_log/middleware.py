@@ -37,9 +37,12 @@ class LogUnsafeRequestMiddleware:
         raw_request += f'Content-Length: {len(request_body)}\r\n\r\n'
         raw_request += request_body
         user_id = getattr(request.user, 'id', None)
+        impersonator_list = request.session.get("hijack_history", [])
+        impersonator = impersonator_list[-1] if impersonator_list else None
         LoggedRequest.objects.create(
             method=request.method,
             path=path,
             raw_request=raw_request,
             user_id=user_id,
+            impersonator_id=impersonator,
         )

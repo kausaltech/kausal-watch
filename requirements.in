@@ -74,3 +74,4 @@ networkx
 html2text
 dnspython
 PyGithub
+django-hijack

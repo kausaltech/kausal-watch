@@ -199,6 +199,7 @@ INSTALLED_APPS = [
     'django_filters',
     'grapple',
     'graphene_django',
+    'hijack',
 ]
 
 if env('ENABLE_WAGTAIL_STYLEGUIDE'):
@@ -234,6 +235,7 @@ MIDDLEWARE = [
     'aplans.middleware.RequestMiddleware',
     'aplans.middleware.AdminMiddleware',
     'request_log.middleware.LogUnsafeRequestMiddleware',
+    'hijack.middleware.HijackUserMiddleware',
 ]
 
 ROOT_URLCONF = 'aplans.urls'
@@ -955,3 +957,6 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
         },
     },
 }
+
+HIJACK_PERMISSION_CHECK = "hijack.permissions.superusers_only"
+HIJACK_INSERT_BEFORE = None
