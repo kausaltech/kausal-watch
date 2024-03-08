@@ -340,7 +340,9 @@ class ActionSnapshot(models.Model):
         }
         for k, v in pattern.items():
             str_pattern = f'"{k}": {v}'
-            versions = versions.filter(Q(serialized_data__contains=str_pattern + ',') | Q(serialized_data__contains=str_pattern + '}'))
+            versions = versions.filter(
+                Q(serialized_data__contains=str_pattern + ',') | Q(serialized_data__contains=str_pattern + '}')
+            )
         for version in versions:
             model = version.content_type.model_class()
             # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
