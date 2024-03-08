@@ -36,6 +36,9 @@ def report_type_with_all_attributes(
         action_attribute_type__numeric,
         action_attribute_type__category_choice
 ):
+    plan.features.output_report_action_print_layout = True
+    plan.features.save()
+
     return report_type_factory(
         plan=plan,
         fields__0='implementation_phase',

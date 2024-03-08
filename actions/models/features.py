@@ -97,11 +97,11 @@ class PlanFeatures(models.Model):
     )
 
     @property
-    def public_contact_persons(self):
+    def public_contact_persons(self) -> bool:
         return self.contact_persons_public_data != self.ContactPersonsPublicData.NONE
 
     @property
-    def enable_moderation_workflow(self):
+    def enable_moderation_workflow(self) -> bool:
         return self.moderation_workflow is not None
 
     public_fields: ClassVar = [
@@ -115,5 +115,5 @@ class PlanFeatures(models.Model):
         verbose_name = _('plan feature')
         verbose_name_plural = _('plan features')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "Features for %s" % self.plan

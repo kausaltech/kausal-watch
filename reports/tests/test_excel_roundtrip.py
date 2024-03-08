@@ -18,6 +18,7 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def excel_file_from_report_factory(actions_having_attributes, report_with_all_attributes):
     def _excel_factory():
+        assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True
         assert report_with_all_attributes.fields == report_with_all_attributes.type.fields
         output_excel = report_with_all_attributes.to_xlsx()
         return output_excel

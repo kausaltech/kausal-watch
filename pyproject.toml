@@ -38,7 +38,7 @@ filterwarnings = [
     "ignore::DeprecationWarning:easy_thumbnails",
 ]
 testpaths = [
-    "*/tests"
+    "**/tests"
 ]
 
 [tool.mypy]

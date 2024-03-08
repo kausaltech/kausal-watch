@@ -25,8 +25,10 @@ from actions.models.attributes import Attribute
 from reports.blocks.action_content import ReportFieldBlock
 
 if TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
     from actions.models import AttributeType
     from users.models import User
+
 
 AttributePath = tuple[int, int, int]
 
@@ -158,6 +160,8 @@ class Report(models.Model, PlanRelatedModel):
     public_fields = [
         'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
     ]
+
+    type: RelatedManager[ReportType]
 
     class Meta:
         verbose_name = _('report')
@@ -380,3 +384,7 @@ class ActionSnapshot(models.Model):
 
     def __str__(self):
         return f'{self.action_version} @ {self.report}'
+
+
+# The following model is for very specialized use and is only imported here so that Django finds it
+from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization

@@ -18,6 +18,7 @@ from actions.models.action import Action, ActionImplementationPhase, ActionStatu
 from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
+from .action_print_layout import write_action_summaries
 from .cursor_writer import CursorWriter
 
 
@@ -166,6 +167,7 @@ class ExcelReport:
     workbook: xlsxwriter.Workbook
     formats: ExcelFormats
     plan_current_related_objects: 'PlanRelatedObjects'
+    field_to_column_label: dict[str, set[str]]
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -202,6 +204,7 @@ class ExcelReport:
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
         self.formats = ExcelFormats(self.workbook)
         self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
+        self.field_to_column_labels = dict()
         self._initialize_formats()
 
     def generate_actions_dataframe(self) -> polars.DataFrame:
@@ -331,6 +334,9 @@ class ExcelReport:
         serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in live_versions.related]
         return serialized_actions, serialized_related
 
+    def get_column_labels(self, field_name: str) -> set[str]:
+        return self.field_to_column_labels.get(field_name, set())
+
     def create_populated_actions_dataframe(
             self,
             all_actions: list[SerializedActionVersion],
@@ -339,7 +345,8 @@ class ExcelReport:
         from reports.models import SerializedAttributeVersion
         data = {}
 
-        def append_to_key(key, value):
+        def append_to_key(key, value, field_name):
+            self.field_to_column_labels.setdefault(field_name, set()).add(key)
             data.setdefault(key, []).append(value)
 
         COMPLETED_BY_LABEL = _('Marked as complete by')
@@ -362,19 +369,22 @@ class ExcelReport:
             completed_at = action.completed_at
             if completed_at is not None:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
-            append_to_key(_('Identifier'), action_identifier)
-            append_to_key(_('Action'), action_name)
+            append_to_key(_('Identifier'), action_identifier, 'identifier')
+            append_to_key(_('Action'), action_name, 'name')
             for field in self.report.type.fields:
                 labels = [label for label in field.block.xlsx_column_labels(field.value)]
                 values = field.block.extract_action_values(
                     self, field.value, action.data, related_objects, attribute_versions
                 )
+                field_name = field.block.name
+                if field_name == 'attribute_type':
+                    field_name = f'{field_name}.{field.value.get("attribute_type").identifier}'
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
                 for label, value in zip(labels, values):
-                    append_to_key(label, value)
-            append_to_key(COMPLETED_BY_LABEL, completed_by or '')
-            append_to_key(COMPLETED_AT_LABEL, completed_at)
+                    append_to_key(label, value, field_name)
+            append_to_key(COMPLETED_BY_LABEL, completed_by or '', 'completed_by')
+            append_to_key(COMPLETED_AT_LABEL, completed_at, 'completed_at')
             self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
 
             if (visibility_label := action_obj.get_visibility_display()):
@@ -408,6 +418,9 @@ class ExcelReport:
             ).sort(labels[0])
 
     def post_process(self, action_df: polars.DataFrame):
+        if getattr(self.report.type.plan.features, 'output_report_action_print_layout', False):
+            write_action_summaries(self, action_df)
+
         pivot_specs = [
             # Pivot sheet: Implementation phase
             {
