@@ -170,12 +170,19 @@ class AttributeType(  # type: ignore[django-manager-missing]
         return self.name_i18n
 
 
-class HasAttributeType(Protocol):
+class Attribute(models.Model):
+    class Meta:
+        abstract = True
+
+    # Must define a ParentalKey `type` in subclasses
     type: AttributeType
+    # `content_object` must fit `type`
+    # TODO: Enforce this
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey()
 
-
-class Attribute:
-    def is_visible_for_user(self: HasAttributeType, user: UserOrAnon, plan: Plan):
+    def is_visible_for_user(self, user: UserOrAnon, plan: Plan):
         from actions.models.action import Action
         assert plan is not None
         if self.content_type == ContentType.objects.get_for_model(Action):
@@ -229,10 +236,6 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
     type = ParentalKey(
         AttributeType, on_delete=models.CASCADE, related_name='category_choice_attributes'
     )
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     categories = ParentalManyToManyField('actions.Category', related_name='+')
 
     public_fields: ClassVar = ['id', 'categories']
@@ -245,15 +248,8 @@ class AttributeCategoryChoice(Attribute, ClusterableModel):
 
 
 @reversion.register(follow=['choice'])
-class AttributeChoice(Attribute, models.Model):
+class AttributeChoice(Attribute):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='choice_attributes')
-
-    # `content_object` must fit `type`
-    # TODO: Enforce this
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     choice = models.ForeignKey(
         AttributeTypeChoiceOption, on_delete=models.CASCADE, related_name='choice_attributes'
     )
@@ -266,17 +262,10 @@ class AttributeChoice(Attribute, models.Model):
 
 
 @reversion.register(follow=['choice'])
-class AttributeChoiceWithText(Attribute, models.Model):
+class AttributeChoiceWithText(Attribute):
     type = ParentalKey(
         AttributeType, on_delete=models.CASCADE, related_name='choice_with_text_attributes'
     )
-
-    # `content_object` must fit `type`
-    # TODO: Enforce this
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     choice = models.ForeignKey(
         AttributeTypeChoiceOption, blank=True, null=True, on_delete=models.CASCADE,
         related_name='choice_with_text_attributes',
@@ -296,19 +285,12 @@ class AttributeChoiceWithText(Attribute, models.Model):
 
 
 @reversion.register()
-class AttributeText(Attribute, models.Model):
+class AttributeText(Attribute):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
         related_name='text_attributes',
     )
-
-    # `content_object` must fit `type`
-    # TODO: Enforce this
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     text = models.TextField(verbose_name=_('Text'))
     text_i18n: str
 
@@ -327,19 +309,12 @@ class AttributeText(Attribute, models.Model):
 
 
 @reversion.register()
-class AttributeRichText(Attribute, models.Model):
+class AttributeRichText(Attribute):
     type = ParentalKey(
         AttributeType,
         on_delete=models.CASCADE,
         related_name='rich_text_attributes',
     )
-
-    # `content_object` must fit `type`
-    # TODO: Enforce this
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     text = RichTextField(verbose_name=_('Text'))
     text_i18n: str
 
@@ -358,15 +333,8 @@ class AttributeRichText(Attribute, models.Model):
 
 
 @reversion.register()
-class AttributeNumericValue(Attribute, models.Model):
+class AttributeNumericValue(Attribute):
     type = ParentalKey(AttributeType, on_delete=models.CASCADE, related_name='numeric_value_attributes')
-
-    # `content_object` must fit `type`
-    # TODO: Enforce this
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
-
     value = models.FloatField()
 
     public_fields: ClassVar = ['id', 'type', 'value']
