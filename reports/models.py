@@ -8,6 +8,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
@@ -332,11 +333,14 @@ class ActionSnapshot(models.Model):
         # QuerySet filter syntax for that.
         # We used to omit the filtering here and filter in Python code in the for loop below, but it's too slow when
         # there are a lot of versions.
-        versions = (versions
-            .filter(serialized_data__contains=f'"type": {attribute_type.id}')
-            .filter(serialized_data__contains=f'"content_type": {ct.id}')
-            .filter(serialized_data__contains=f'"object_id": {int(self.action_version.object_id)}')
-        )
+        pattern = {
+            'type': attribute_type.id,
+            'content_type': ct.id,
+            'object_id': int(self.action_version.object_id),
+        }
+        for k, v in pattern.items():
+            str_pattern = f'"{k}": {v}'
+            versions = versions.filter(Q(serialized_data__contains=str_pattern + ',') | Q(serialized_data__contains=str_pattern + '}'))
         for version in versions:
             model = version.content_type.model_class()
             # FIXME: It would be safer if there were a common base class for all (and only for) attribute models
