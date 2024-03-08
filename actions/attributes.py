@@ -1,6 +1,7 @@
 from __future__ import annotations
 import re
 import typing
+from abc import ABC, abstractmethod
 from dal import autocomplete, forward as dal_forward
 from dataclasses import dataclass
 from django import forms
@@ -45,6 +46,7 @@ class AttributeFieldPanel(FieldPanel):
 
 @dataclass
 class FormField:
+    plan: Plan
     attribute_type: 'AttributeType'
     django_field: forms.Field
     name: str
@@ -52,7 +54,6 @@ class FormField:
     # If the field refers to a modeltrans field and `language` is not empty, use localized virtual field for `language`.
     language: str = ''
     is_public: bool = False
-    plan: Plan = None
 
     def get_panel(self):
         if self.label:
@@ -76,9 +77,6 @@ class AttributeValue:
     def serialize(self) -> Any:
         # Implement in subclass
         raise NotImplementedError()
-
-    def should_set_into_serialized_attributes(self) -> bool:
-        return True
 
     def attribute_model_kwargs(self) -> dict[str, Any]:
         # Implement in subclass
@@ -139,10 +137,6 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
             'text': self.text_vals,
         }
 
-    def should_set_into_serialized_attributes(self) -> bool:
-        has_text_in_some_language = any(v for v in self.text_vals.values())
-        return self.option is not None or has_text_in_some_language
-
     def attribute_model_kwargs(self) -> dict[str, Any]:
         return {'choice': self.option, **self.text_vals}
 
@@ -181,7 +175,7 @@ class NumericAttributeValue(AttributeValue):
 
 
 T = TypeVar('T', bound=models.Attribute)
-class AttributeType(Generic[T]):
+class AttributeType(ABC, Generic[T]):
     # In subclasses, define ATTRIBUTE_MODEL to be the model of the attributes of that type. It needs to have a foreign
     # key to actions.models.attributes.AttributeType called `type` with a defined `related_name`.
     # Probably best to set it to the same value as the type variable T. Unfortunately currently we cannot get the value
@@ -189,6 +183,32 @@ class AttributeType(Generic[T]):
     # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance
     ATTRIBUTE_MODEL: type[T]
     instance: models.AttributeType
+
+    @abstractmethod
+    def get_form_fields(
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
+    ) -> list[FormField]:
+        # Implement in subclass
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def xlsx_values(
+        self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+    ) -> list[Any]:
+        """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
+        raise NotImplementedError()
 
     @classmethod
     def format_to_class(cls, format: models.AttributeType.AttributeFormat) -> type[AttributeType]:
@@ -249,15 +269,11 @@ class AttributeType(Generic[T]):
         instance.save()
         return instance
 
-    def get_form_fields(
-        self, user: User, plan: Plan, obj: models.ModelWithAttributes | None = None,
-        serialized_attributes: dict | None = None
-    ) -> list[FormField]:
-        # Implement in subclass
-        raise NotImplementedError()
-
     def set_attributes(
-            self, obj: models.ModelWithAttributes, cleaned_data: dict[str, Any], commit: bool = True
+        self,
+        obj: models.ModelWithAttributes,
+        cleaned_data: dict[str, Any],
+        commit: bool = True,
     ) -> None:
         """Set the attribute(s) of this type for the given object using cleaned data from a form.
 
@@ -267,16 +283,10 @@ class AttributeType(Generic[T]):
         if commit:
             self.commit_attributes(obj, value)
         else:
-            if value.should_set_into_serialized_attributes():
+            if value:
                 obj.set_serialized_attribute_data_for_attribute(
-                    self.serialized_attribute_data_key, self.instance.pk, value
+                    self.serialized_attribute_data_key, self.instance.pk, value.serialize()
                 )
-
-    def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
-    ) -> list[Any]:
-        """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
-        raise NotImplementedError()
 
     def xlsx_column_labels(self) -> list[str]:
         """Return the label for each of this attribute type's columns."""
@@ -299,12 +309,6 @@ class AttributeType(Generic[T]):
 
     def commit_value_from_serialized_data(self, obj: models.ModelWithAttributes, data: dict[str, Any]) -> None:
         self.commit_attributes(obj, self.get_value_from_serialized_data(data))
-
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
-        raise NotImplementedError()
-
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
-        raise NotImplementedError()
 
     def commit_attributes(self, obj: models.ModelWithAttributes, attribute_value: AttributeValue) -> None:
         try:
@@ -336,22 +340,19 @@ class AttributeType(Generic[T]):
         return self.instance.is_instance_editable_by(user, plan, action)
 
 
-OrderedChoiceAttributeModel = models.AttributeChoice
-
-
-class OrderedChoice(AttributeType[OrderedChoiceAttributeModel]):
-    ATTRIBUTE_MODEL = OrderedChoiceAttributeModel
+class OrderedChoice(AttributeType[models.AttributeChoice]):
+    ATTRIBUTE_MODEL = models.AttributeChoice
 
     @property
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
     def get_form_fields(
-            self,
-            user: User,
-            plan: Plan,
-            obj: models.ModelWithAttributes | None = None,
-            serialized_attributes: dict | None = None
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
     ) -> list[FormField]:
         initial_choice = None
         if obj:
@@ -359,7 +360,8 @@ class OrderedChoice(AttributeType[OrderedChoiceAttributeModel]):
             if c:
                 initial_choice = c.choice
         if serialized_attributes:
-            initial_choice = self.get_value_from_serialized_data(serialized_attributes)
+            attribute_value = self.get_value_from_serialized_data(serialized_attributes)
+            initial_choice = attribute_value.option
 
         choice_options = self.instance.choice_options.all()
         field = forms.ModelChoiceField(
@@ -369,12 +371,18 @@ class OrderedChoice(AttributeType[OrderedChoiceAttributeModel]):
             field.disabled = True
 
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
+        return [FormField(
+            plan=plan,
+            attribute_type=self,
+            django_field=field,
+            name=self.form_field_name,
+            is_public=is_public,
+        )]
 
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> OrderedChoiceAttributeValue:
         return OrderedChoiceAttributeValue(cleaned_data.get(self.form_field_name))
 
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> OrderedChoiceAttributeValue:
         choice = self.get_from_serialized_attributes(data)
         if choice:
             initial_choice = models.AttributeTypeChoiceOption.objects.filter(pk=choice)
@@ -383,7 +391,9 @@ class OrderedChoice(AttributeType[OrderedChoiceAttributeModel]):
         return OrderedChoiceAttributeValue(None)
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None,
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         if not attribute:
             return [None]
@@ -393,18 +403,20 @@ class OrderedChoice(AttributeType[OrderedChoiceAttributeModel]):
         return [choice]
 
 
-CategoryChoiceAttributeModel = models.AttributeCategoryChoice
-
-
-class CategoryChoice(AttributeType[CategoryChoiceAttributeModel]):
-    ATTRIBUTE_MODEL = CategoryChoiceAttributeModel
+class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
+    ATTRIBUTE_MODEL = models.AttributeCategoryChoice
 
     @property
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: models.ModelWithAttributes | None = None,
-                        serialized_attributes: dict | None = None) -> list[FormField]:
+    def get_form_fields(
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
+    ) -> list[FormField]:
         from actions.models.category import Category
         categories = Category.objects.filter(type=self.instance.attribute_category_type)
         initial_categories = None
@@ -431,18 +443,26 @@ class CategoryChoice(AttributeType[CategoryChoiceAttributeModel]):
         if not self.is_editable(user, plan, obj):
             field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
+        return [FormField(
+            plan=plan,
+            attribute_type=self, 
+            django_field=field, 
+            name=self.form_field_name, 
+            is_public=is_public, 
+        )]
 
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
-        return CategoryChoiceAttributeValue(cleaned_data.get(self.form_field_name))
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> CategoryChoiceAttributeValue:
+        return CategoryChoiceAttributeValue(cleaned_data.get(self.form_field_name, []))
 
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> CategoryChoiceAttributeValue:
         from actions.models.category import Category
         category_ids = self.get_from_serialized_attributes(data)
         return CategoryChoiceAttributeValue(Category.objects.filter(id__in=category_ids))
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None,
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         if not attribute:
             return [None]
@@ -457,11 +477,8 @@ class CategoryChoice(AttributeType[CategoryChoiceAttributeModel]):
         return ['; '.join(sorted(category_names))]
 
 
-OptionalChoiceWithTextAttributeModel = models.AttributeChoiceWithText
-
-
-class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]):
-    ATTRIBUTE_MODEL = OptionalChoiceWithTextAttributeModel
+class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
+    ATTRIBUTE_MODEL = models.AttributeChoiceWithText
 
     @property
     def choice_form_field_name(self):
@@ -473,8 +490,13 @@ class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]
             name += f'_{language}'
         return name
 
-    def get_form_fields(self, user: User, plan: Plan, obj: models.ModelWithAttributes | None = None,
-                        serialized_attributes: dict | None = None) -> list[FormField]:
+    def get_form_fields(
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
+    ) -> list[FormField]:
         fields = []
         attribute = None
         if obj:
@@ -500,11 +522,11 @@ class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]
             choice_field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         fields.append(FormField(
+            plan=plan,
             attribute_type=self,
             django_field=choice_field,
             name=self.choice_form_field_name,
             is_public=is_public,
-            plan=plan,
             label=_('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
         ))
 
@@ -524,17 +546,17 @@ class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]
                 text_field.disabled = True
                 is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
+                plan=plan,
                 attribute_type=self,
                 django_field=text_field,
                 name=self.get_text_form_field_name(language),
                 language=language,
-                plan=plan,
                 label=_('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
-                is_public=is_public
+                is_public=is_public,
             ))
         return fields
 
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> OptionalChoiceWithTextAttributeValue:
         choice_val = cleaned_data.get(self.choice_form_field_name)
         text_vals = {}
         for language in ('', *self.instance.other_languages):
@@ -543,7 +565,7 @@ class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
         return OptionalChoiceWithTextAttributeValue(choice_val, text_vals)
 
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> OptionalChoiceWithTextAttributeValue:
         serialized = self.get_from_serialized_attributes(data)
         choice_pk = serialized.get('choice')
         try:
@@ -554,7 +576,9 @@ class OptionalChoiceWithText(AttributeType[OptionalChoiceWithTextAttributeModel]
         return OptionalChoiceWithTextAttributeValue(choice_obj, text_vals)
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None,
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         if not attribute:
             return [None, None]
@@ -579,11 +603,11 @@ class GenericTextAttributeType(AttributeType[T]):
         return name
 
     def get_form_fields(
-            self,
-            user: User,
-            plan: Plan,
-            obj: models.ModelWithAttributes | None = None,
-            serialized_attributes: dict | None = None
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
     ) -> list[FormField]:
         fields = []
         attribute = None
@@ -614,16 +638,16 @@ class GenericTextAttributeType(AttributeType[T]):
                 field.disabled = True
             is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
+                plan=plan,
                 attribute_type=self,
                 django_field=field,
                 name=self.get_form_field_name(language),
                 language=language,
                 is_public=is_public,
-                plan=plan
             ))
         return fields
 
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> GenericTextAttributeAttributeValue:
         text_vals = {}
         for language in ('', *self.instance.other_languages):
             attribute_text_field_name = f'text_{language}' if language else 'text'
@@ -631,7 +655,7 @@ class GenericTextAttributeType(AttributeType[T]):
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
         return GenericTextAttributeAttributeValue(text_vals)
 
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> GenericTextAttributeAttributeValue:
         return GenericTextAttributeAttributeValue(self.get_from_serialized_attributes(data))
 
     @property
@@ -639,14 +663,13 @@ class GenericTextAttributeType(AttributeType[T]):
         return 'text' if self.ATTRIBUTE_MODEL == models.AttributeText else 'rich_text'
 
 
-TextAttributeModel = models.AttributeText
-
-
-class Text(GenericTextAttributeType[TextAttributeModel]):
-    ATTRIBUTE_MODEL = TextAttributeModel
+class Text(GenericTextAttributeType[models.AttributeText]):
+    ATTRIBUTE_MODEL = models.AttributeText
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None,
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         if not attribute:
             return [None]
@@ -654,14 +677,13 @@ class Text(GenericTextAttributeType[TextAttributeModel]):
         return [text]
 
 
-RichTextAttributeModel = models.AttributeRichText
-
-
-class RichText(GenericTextAttributeType[RichTextAttributeModel]):
-    ATTRIBUTE_MODEL = RichTextAttributeModel
+class RichText(GenericTextAttributeType[models.AttributeRichText]):
+    ATTRIBUTE_MODEL = models.AttributeRichText
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None,
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         if not attribute:
             return [None]
@@ -669,48 +691,58 @@ class RichText(GenericTextAttributeType[RichTextAttributeModel]):
         return [html_to_plaintext(rich_text)]
 
 
-NumericAttributeModel = models.AttributeNumericValue
-
-
-class Numeric(AttributeType[NumericAttributeModel]):
-    ATTRIBUTE_MODEL = NumericAttributeModel
+class Numeric(AttributeType[models.AttributeNumericValue]):
+    ATTRIBUTE_MODEL = models.AttributeNumericValue
 
     @property
     def form_field_name(self):
         return f'attribute_type_{self.instance.identifier}'
 
-    def get_form_fields(self, user: User, plan: Plan, obj: models.ModelWithAttributes | None = None,
-                        serialized_attributes: dict | None = None) -> list[FormField]:
+    def get_form_fields(
+        self,
+        user: User,
+        plan: Plan,
+        obj: models.ModelWithAttributes | None = None,
+        serialized_attributes: dict | None = None,
+    ) -> list[FormField]:
         attribute = None
+        initial_value = None
         if serialized_attributes:
             initial_value = self.get_from_serialized_attributes(serialized_attributes)
         elif obj:
             attribute = self.get_attributes(obj).first()
-            initial_value = None
             if attribute:
                 initial_value = attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
         if not self.is_editable(user, plan, obj):
             field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
-        return [FormField(attribute_type=self, django_field=field, name=self.form_field_name, is_public=is_public, plan=plan)]
+        return [FormField(
+            plan=plan,
+            attribute_type=self,
+            django_field=field,
+            name=self.form_field_name,
+            is_public=is_public,
+        )]
 
-    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> NumericAttributeValue:
         return NumericAttributeValue(cleaned_data.get(self.form_field_name))
 
-    def get_value_from_serialized_data(self, data: dict[str, Any]) -> AttributeValue:
+    def get_value_from_serialized_data(self, data: dict[str, Any]) -> NumericAttributeValue:
         return NumericAttributeValue(self.get_from_serialized_attributes(data))
 
     def xlsx_column_labels(self) -> list[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
     def xlsx_values(
-            self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
+        self,
+        attribute: SerializedAttributeVersion | None, 
+        related_data_objects: dict[str, list[SerializedVersion]],
     ) -> list[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
         if not attribute:
             return [None]
         return [attribute.data['value']]
 
-    def get_xlsx_cell_format(self) -> dict:
+    def get_xlsx_cell_format(self) -> dict | None:
         return {'num_format': '#,##0.00'}
