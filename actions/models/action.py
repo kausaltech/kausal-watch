@@ -953,9 +953,8 @@ class ActionContactPerson(OrderedModel, ModelWithRole):
     def get_value(self):
         return str(self.person)
 
-    def is_visible_moderator(self) -> bool:
-        plan = self.action.plan
-        return not(plan.features.contact_persons_hide_moderators and self.role == self.Role.MODERATOR)
+    def is_moderator(self) -> bool:
+        return self.role == self.Role.MODERATOR
 
     @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> typing.Iterable[ModelWithRole.Role | None]:
