@@ -158,10 +158,10 @@ class AttributeType(Generic[T]):
         return None
 
     def get_from_serialized_attributes(self, serialized_attributes: dict[str, Any]) -> Any:
-        return serialized_attributes.get(self.instance.format, {}).get(str(self.instance.pk), {})
+        return serialized_attributes.get(str(self.instance.format), {}).get(str(self.instance.pk), {})
 
     def set_into_serialized_attributes(self, obj, value):
-        obj.set_serialized_attribute_data_for_attribute(self.instance.format, self.instance.pk, value)
+        obj.set_serialized_attribute_data_for_attribute(str(self.instance.format), self.instance.pk, value)
 
     def commit_value_from_serialized_data(self, obj: models.ModelWithAttributes, data: Dict[str, Any]):
         self.commit_attributes(obj, self.get_value_from_serialized_data(data))
@@ -430,9 +430,7 @@ class OptionalChoiceWithText(AttributeType):
         if commit:
             self.commit_attributes(obj, (choice_val, text_vals))
         else:
-            has_text_in_some_language = any(v for v in text_vals.values())
-            if choice_val is not None or has_text_in_some_language:
-                self.set_into_serialized_attributes(obj, {'choice': choice_val.pk if choice_val else None, 'text': text_vals})
+            self.set_into_serialized_attributes(obj, {'choice': choice_val.pk if choice_val else None, 'text': text_vals})
 
     def commit_attributes(self, obj, value):
         choice_val, text_vals = value

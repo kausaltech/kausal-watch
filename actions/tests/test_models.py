@@ -7,6 +7,7 @@ from django.db.utils import IntegrityError
 from django.utils import translation
 from wagtail.models import Locale
 
+from actions.attributes import AttributeType
 from actions.models import Action, ActionContactPerson
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, AttributeTextFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
@@ -430,3 +431,79 @@ def test_action_i18n_when_saving(plan, action_factory, primary_language, active_
             assert active_lang_translation_without_fallback == 'action.name_i18n'
             assert action.name == 'action.name.original'
             assert len(action.i18n) > 0
+
+
+def test_action_set_attributes_no_commit(actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice, action_attribute_type__unordered_choice, action_attribute_type__optional_choice, action_attribute_type__numeric):
+    action = actions_having_attributes[0]
+    attribute_types = [
+        action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice,
+        action_attribute_type__unordered_choice, action_attribute_type__optional_choice, action_attribute_type__numeric,
+    ]
+    for attribute_type in attribute_types:
+        # Further down, we rely on data being present due to the other language
+        assert attribute_type.other_languages == ['fi']
+
+    def set_attributes(cleaned_data):
+        for attribute_type in attribute_types:
+            wrapper = AttributeType.from_model_instance(attribute_type)
+            wrapper.set_attributes(action, cleaned_data, commit=False)
+
+    # Clear all attributes first
+    cleaned_data_attributes_cleared = {
+        f'attribute_type_{action_attribute_type__numeric.identifier}': None,
+        f'attribute_type_{action_attribute_type__optional_choice.identifier}_choice': None,
+        f'attribute_type_{action_attribute_type__optional_choice.identifier}_text': '',
+        f'attribute_type_{action_attribute_type__ordered_choice.identifier}': None,
+        f'attribute_type_{action_attribute_type__rich_text.identifier}': '',
+        f'attribute_type_{action_attribute_type__text.identifier}': '',
+        f'attribute_type_{action_attribute_type__unordered_choice.identifier}': None,
+    }
+    set_attributes(cleaned_data_attributes_cleared)
+    expected_result_attributes_cleared = {
+        'numeric': {str(action_attribute_type__numeric.id): None},
+        'optional_choice': {
+            # FIXME: I'm not sure this mess of mixing '' and None is good to expect
+            str(action_attribute_type__optional_choice.id): {'choice': None, 'text': {'text': '', 'text_fi': None}}
+        },
+        'ordered_choice': {str(action_attribute_type__ordered_choice.id): None},
+        'rich_text': {str(action_attribute_type__rich_text.id): {'text': '', 'text_fi': None}},
+        'text': {str(action_attribute_type__text.id): {'text': '', 'text_fi': None}},
+        'unordered_choice': {str(action_attribute_type__unordered_choice.id): None},
+    }
+    assert action.serialized_attribute_data == expected_result_attributes_cleared
+
+    # Set all attributes to some values
+    cleaned_data_attributes_set = {
+        f'attribute_type_{action_attribute_type__numeric.identifier}': 123.0,
+        f'attribute_type_{action_attribute_type__optional_choice.identifier}_choice': action_attribute_type__optional_choice.choice_options.first(),
+        f'attribute_type_{action_attribute_type__optional_choice.identifier}_text': 'foo',
+        f'attribute_type_{action_attribute_type__ordered_choice.identifier}': action_attribute_type__ordered_choice.choice_options.first(),
+        f'attribute_type_{action_attribute_type__rich_text.identifier}': 'bar',
+        f'attribute_type_{action_attribute_type__text.identifier}': 'baz',
+        f'attribute_type_{action_attribute_type__unordered_choice.identifier}': action_attribute_type__unordered_choice.choice_options.first(),
+    }
+    set_attributes(cleaned_data_attributes_set)
+    expected_result_attributes_set = {
+        'numeric': {str(action_attribute_type__numeric.id): 123.0},
+        'optional_choice': {
+            str(action_attribute_type__optional_choice.id): {
+                'choice': action_attribute_type__optional_choice.choice_options.first().id,
+                'text': {'text': 'foo', 'text_fi': None}
+            }
+        },
+        'ordered_choice': {
+            str(action_attribute_type__ordered_choice.id):
+            action_attribute_type__ordered_choice.choice_options.first().id,
+        },
+        'rich_text': {str(action_attribute_type__rich_text.id): {'text': 'bar', 'text_fi': None}},
+        'text': {str(action_attribute_type__text.id): {'text': 'baz', 'text_fi': None}},
+        'unordered_choice': {
+            str(action_attribute_type__unordered_choice.id):
+            action_attribute_type__unordered_choice.choice_options.first().id,
+        },
+    }
+    assert action.serialized_attribute_data == expected_result_attributes_set
+
+    # Clear all attributes again to check if the previously set values are removed
+    set_attributes(cleaned_data_attributes_cleared)
+    assert action.serialized_attribute_data == expected_result_attributes_cleared
