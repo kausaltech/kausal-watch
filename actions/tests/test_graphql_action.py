@@ -2,7 +2,7 @@ import itertools
 import pytest
 
 
-from actions.models import Action
+from actions.models.action import ActionContactPerson
 from indicators.models import Indicator
 
 
@@ -150,3 +150,74 @@ def _action_in_list(action, data):
         if item['id'] == str(action.id):
             return True
     return False
+
+
+def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, action, action_contact_factory):
+    acp1 = action_contact_factory(action=action, role=ActionContactPerson.Role.MODERATOR)
+    acp2 = action_contact_factory(action=action, role=ActionContactPerson.Role.MODERATOR)
+    acp3 = action_contact_factory(action=action, role=ActionContactPerson.Role.EDITOR)
+
+    query = '''
+        query($action: ID!) {
+          action(id: $action) {
+            contactPersons {
+              __typename
+              id
+              action {
+                __typename
+                id
+              }
+              person {
+                __typename
+                id
+              }
+              order
+              primaryContact
+            }
+          }
+        }
+        '''
+  
+    data = graphql_client_query_data(query, variables={'action': action.id})
+    expected = {
+        'action': {
+            'contactPersons': [{
+                '__typename': 'ActionContactPerson',
+                'id': str(acp.id),
+                'action': {
+                   '__typename': 'Action',
+                   'id': str(action.id),
+                },
+                'person': {
+                   '__typename': 'Person',
+                   'id': str(acp.person.id),
+                },
+                'order': acp.order,
+                'primaryContact': acp.primary_contact,
+            } for acp in [acp1, acp2, acp3]]
+        }
+    }
+    assert data == expected
+
+    plan.features.contact_persons_hide_moderators = True
+    plan.features.save()
+    data = graphql_client_query_data(query, variables={'action': action.id})
+    expected = {
+        'action': {
+            'contactPersons': [{
+                '__typename': 'ActionContactPerson',
+                'id': str(acp3.id),
+                'action': {
+                   '__typename': 'Action',
+                   'id': str(action.id),
+                },
+                'person': {
+                   '__typename': 'Person',
+                   'id': str(acp3.person.id),
+                },
+                'order': acp3.order,
+                'primaryContact': acp3.primary_contact,
+            }]
+        }
+    }
+    assert data == expected
