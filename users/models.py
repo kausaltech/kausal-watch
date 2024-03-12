@@ -1,4 +1,5 @@
 from __future__ import annotations
+from enum import StrEnum, auto
 from typing import ClassVar, Self
 import typing
 
@@ -21,6 +22,11 @@ if typing.TYPE_CHECKING:
     from aplans.utils import InstancesVisibleForMixin, InstancesEditableByMixin
     from rest_framework.authtoken.models import Token
     from django.db.models.fields.related import ReverseOneToOneDescriptor
+
+
+class ModerationAction(StrEnum):
+    PUBLISH = auto()
+    APPROVE = auto()
 
 
 class User(AbstractUser):  # type: ignore[django-manager-missing]
@@ -382,16 +388,37 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     def can_delete_action(self, plan: Plan, action: Action | None = None):
         return self.can_create_action(plan)
 
-    def can_publish_action(self, action: Action):
+    def _check_moderation_publish_permissions(self, action: Action, person: Person) -> bool:
+        if action.plan.features.moderation_workflow.tasks.count() > 1:
+            # If the acceptance chain is longer, moderators are restricted to only the first acceptance task
+            # (and are not allowed to publish)
+            return False
+        return self._check_moderation_approve_permissions(action, person)
+
+    def _check_moderation_approve_permissions(self, action: Action, person: Person) -> bool:
         from actions.models.action import ActionContactPerson
+        return action.contact_persons.filter(role=ActionContactPerson.Role.MODERATOR, person=person).exists()
+
+    def _check_moderation_permissions(self, moderation_action: ModerationAction, action: Action):
+        # Only called currently if a plan has a moderation workflow enabled
         if self.is_superuser:
             return True
         person = self.get_corresponding_person()
         if not person:
             return False
+        if self.is_general_admin_for_plan(action.plan):
+            return True
         # TODO: Cache?
-        return (self.is_general_admin_for_plan(action.plan)
-                or action.contact_persons.filter(role=ActionContactPerson.Role.MODERATOR, person=person).exists())
+        if moderation_action == ModerationAction.PUBLISH:
+            return self._check_moderation_publish_permissions(action, person)
+        elif moderation_action == ModerationAction.APPROVE:
+            return self._check_moderation_approve_permissions(action, person)
+
+    def can_publish_action(self, action: Action):
+        return self._check_moderation_permissions(ModerationAction.PUBLISH, action)
+
+    def can_approve_action(self, action: Action):
+        return self._check_moderation_permissions(ModerationAction.APPROVE, action)
 
     def can_create_indicator(self, plan):
         if self.is_superuser:

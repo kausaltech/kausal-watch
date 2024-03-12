@@ -1320,10 +1320,10 @@ class ImpactGroupAction(models.Model):
 
 class ActionModeratorApprovalTask(Task):
     def locked_for_user(self, obj: Action, user: User):
-        return not user.can_publish_action(obj)
+        return not user.can_approve_action(obj)
 
     def get_actions(self, obj: Action, user: User):
-        if user.can_publish_action(obj):
+        if user.can_approve_action(obj):
             return [
                 ("approve", _("Approve"), False),
                 # ("approve", _("Approve with comment"), True),

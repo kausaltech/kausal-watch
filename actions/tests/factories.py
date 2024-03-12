@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.utils.timezone import make_aware
 from factory import LazyAttribute, RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
+from wagtail.models import Workflow, WorkflowTask, Task as WagtailTask
 from wagtail.models.i18n import Locale
 from wagtail.rich_text import RichText
 from wagtail.test.utils.wagtail_factories import StructBlockFactory
@@ -354,3 +355,28 @@ class CategoryListBlockFactory(StructBlockFactory):
     heading = "Category list heading"
     lead = RichText("<p>Category list lead</p>")
     style = 'cards'
+
+
+class WagtailTaskFactory(ModelFactory[WagtailTask]):
+    class Meta:
+        model = WagtailTask
+
+    name = Sequence(lambda i: f'WorkflowTask {i}')
+    active = True
+    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action'))
+
+
+class WorkflowFactory(ModelFactory[Workflow]):
+    class Meta:
+        model = Workflow
+
+    name = Sequence(lambda i: f'Workflow {i}')
+    active = True
+
+
+class WorkflowTaskFactory(ModelFactory[WorkflowTask]):
+    class Meta:
+        model = WorkflowTask
+
+    workflow = SubFactory(WorkflowFactory)
+    task = SubFactory(WagtailTaskFactory)

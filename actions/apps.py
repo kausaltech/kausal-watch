@@ -122,16 +122,40 @@ def get_base_snippet_action_menu_items(model):
 
         class SubmitForModerationMenuItem(WagtailSubmitForModerationMenuItem):
             def is_shown(self, context):
-                # Don't show "submit for moderation" if we are moderators ourselves. Also don't show "Resubmit" because
-                # then "Restart workflow" is what we probably want as it sends notifications to the reviewers again.
-                user = context['request'].user
+                if not super().is_shown(context):
+                    return False
+
                 instance = context['instance']
                 workflow_state = instance.current_workflow_state if instance else None
                 in_moderation = workflow_state and workflow_state.status == workflow_state.STATUS_NEEDS_CHANGES
-                return (super().is_shown(context)
-                        and not user.can_publish_action(instance)
-                        and not in_moderation)
 
+                workflow = instance.get_workflow()
+                if workflow.tasks.count() > 1:
+                    """
+                    In multiple-task workflows, there needs to be a way for
+                    the moderator to initiate the workflow because otherwise
+                    the moderator has no way to pass the object along the
+                    workflow to the next moderation task.
+
+                    FIXME: optimally there would be a way for a moderator to
+                    start the workflow immediately from the second task if the
+                    editor hasn't initiated the first task. Now the moderator
+                    has to first submit, then approve if nobody has originally
+                    submitted.
+                    """
+                    return True
+
+                if in_moderation:
+                    # Don't show "Resubmit" because then "Restart workflow" is what we probably want as it sends notifications to the
+                    # reviewers again.
+                    # FIXME: handle this in the multiple-task workflow case
+                    return False
+
+                user = context['request'].user
+                if user.can_approve_action(instance):
+                    # In one-task workflows, sending for moderation is redundant because they can publish immediately.
+                    return False
+                return True
 
         # class UnpublishMenuItem(WagtailUnpublishMenuItem):
         #     def is_shown(self, context):
