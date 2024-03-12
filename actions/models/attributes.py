@@ -25,9 +25,9 @@ from indicators.models import Unit
 from typing import ClassVar, Dict, Any
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
-    from actions.attributes import DraftAttributes
     from .plan import Plan
     from .category import CategoryType
+    from actions.attributes import AttributeType as AttributeTypeWrapper, DraftAttributes
 
 
 class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
@@ -132,7 +132,7 @@ class AttributeType(  # type: ignore[django-manager-missing]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
 
-    # type annotations for related objects
+    id: int
     choice_options: RelatedManager[AttributeTypeChoiceOption]
 
     class Meta:
@@ -189,7 +189,7 @@ class Attribute(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    def is_visible_for_user(self, user: UserOrAnon, plan: Plan):
+    def is_visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
         from actions.models.action import Action
         assert plan is not None
         if self.content_type == ContentType.objects.get_for_model(Action):
@@ -353,17 +353,12 @@ class AttributeNumericValue(Attribute):
         return str(self.value)
 
 
-AttributeUnion: typing.TypeAlias = typing.Union[
-    AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText, AttributeText,
-    AttributeRichText, AttributeNumericValue
-]
-
-
 class ModelWithAttributes(models.Model):
     """Fields for models with attributes.
 
-    Models inheriting from this should implement the method
-    get_attribute_type_by_identifier(self, identifier).
+    Models inheriting from this should implement a couple of abstract methods (see below). Unfortunately Django models
+    don't get along well with the `abc` package. (Decorating with `@abstractmethod` only has an effect if deriving from
+    `ABC`, which conflicts with the metaclass of `Model`.).
     """
     choice_attributes = GenericRelation(to='actions.AttributeChoice')
     choice_with_text_attributes = GenericRelation(to='actions.AttributeChoiceWithText')
@@ -387,6 +382,12 @@ class ModelWithAttributes(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.draft_attributes = None
+
+    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeTypeWrapper]:
+        raise NotImplementedError("Implement in subclass")
+
+    def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeTypeWrapper]:
+        raise NotImplementedError("Implement in subclass")
 
     @classmethod
     def from_serializable_data(cls, data, check_fks=True, strict_fks=False):

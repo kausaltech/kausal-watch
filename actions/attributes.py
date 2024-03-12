@@ -73,6 +73,11 @@ class AttributeValue(ABC):
     but for some attribute types we need to assemble multiple values from `cleaned_data` to construct the respective
     attribute, so data stored in AttributeValue is not the same as a single value in `cleaned_data`.
     """
+    @classmethod
+    @abstractmethod
+    def from_serialized_value(cls, value: Any) -> AttributeValue:
+        pass
+
     @abstractmethod
     def serialize(self) -> Any:
         pass
@@ -94,6 +99,15 @@ class AttributeValue(ABC):
 class OrderedChoiceAttributeValue(AttributeValue):
     option: models.AttributeTypeChoiceOption | None
 
+    @classmethod
+    def from_serialized_value(cls, value: Any) -> OrderedChoiceAttributeValue:
+        if value is None:
+            option = None
+        else:
+            assert isinstance(value, int)
+            option = models.AttributeTypeChoiceOption.objects.get(pk=value)
+        return OrderedChoiceAttributeValue(option=option)
+
     def serialize(self) -> Any:
         return self.option.pk if self.option else None
 
@@ -107,6 +121,13 @@ class OrderedChoiceAttributeValue(AttributeValue):
 @dataclass
 class CategoryChoiceAttributeValue(AttributeValue):
     categories: QuerySet['Category']
+
+    @classmethod
+    def from_serialized_value(cls, value: Any) -> CategoryChoiceAttributeValue:
+        assert isinstance(value, list)
+        from actions.models import Category
+        categories = Category.objects.filter(pk__in=value)
+        return CategoryChoiceAttributeValue(categories)
 
     def serialize(self) -> Any:
         return [c.pk for c in self.categories] if self.categories else []
@@ -131,6 +152,17 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
     option: models.AttributeTypeChoiceOption | None
     text_vals: dict[str, str]  # dict because we might have different strings for different languages
 
+    @classmethod
+    def from_serialized_value(cls, value: Any) -> OptionalChoiceWithTextAttributeValue:
+        if value['choice'] is None:
+            option = None
+        else:
+            assert isinstance(value['choice'], int)
+            option = models.AttributeTypeChoiceOption.objects.get(pk=value['choice'])
+        text_vals = value['text']
+        assert isinstance(text_vals, dict)
+        return OptionalChoiceWithTextAttributeValue(option=option, text_vals=text_vals)
+
     def serialize(self) -> Any:
         return {
             'choice': self.option.pk if self.option else None,
@@ -149,6 +181,11 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
 class GenericTextAttributeAttributeValue(AttributeValue):
     text_vals: dict[str, str]  # keys: "text", and zero or more "text_<language>"
 
+    @classmethod
+    def from_serialized_value(cls, value: Any) -> GenericTextAttributeAttributeValue:
+        assert isinstance(value, dict)
+        return GenericTextAttributeAttributeValue(text_vals=value)
+
     def serialize(self) -> Any:
         return self.text_vals
 
@@ -163,6 +200,11 @@ class GenericTextAttributeAttributeValue(AttributeValue):
 @dataclass
 class NumericAttributeValue(AttributeValue):
     value: float | None
+
+    @classmethod
+    def from_serialized_value(cls, value: Any) -> NumericAttributeValue:
+        assert isinstance(value, float)
+        return NumericAttributeValue(value=value)
 
     def serialize(self) -> Any:
         return self.value
@@ -181,7 +223,9 @@ class AttributeType(ABC, Generic[T]):
     # Probably best to set it to the same value as the type variable T. Unfortunately currently we cannot get the value
     # of T without relying on CPython implementation details, so we need to repeat the value here.
     # https://stackoverflow.com/questions/57706180/generict-base-class-how-to-get-type-of-t-from-within-instance
+    # Furthermore, define VALUE_CLASS to be a suitable subclass of AttributeValue.
     ATTRIBUTE_MODEL: type[T]
+    VALUE_CLASS: type[AttributeValue]
     instance: models.AttributeType
 
     @abstractmethod
@@ -204,11 +248,6 @@ class AttributeType(ABC, Generic[T]):
 
     @abstractmethod
     def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue | None:
-        """Returns None if there is no data for this attribute type."""
-        pass
-
-    @abstractmethod
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> AttributeValue | None:
         """Returns None if there is no data for this attribute type."""
         pass
 
@@ -324,6 +363,7 @@ class AttributeType(ABC, Generic[T]):
 
 class OrderedChoice(AttributeType[models.AttributeChoice]):
     ATTRIBUTE_MODEL = models.AttributeChoice
+    VALUE_CLASS = OrderedChoiceAttributeValue
 
     @property
     def form_field_name(self):
@@ -338,8 +378,12 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
     ) -> list[FormField]:
         initial_choice = None
         if draft_attributes:
-            attribute_value = self.get_value_from_draft(draft_attributes)
-            if attribute_value is not None:
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(self)
+            except KeyError:
+                pass
+            else:
+                assert isinstance(attribute_value, OrderedChoiceAttributeValue)
                 initial_choice = attribute_value.option
         elif obj:
             c = self.get_attributes(obj).first()
@@ -367,17 +411,6 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
             return None
         return OrderedChoiceAttributeValue(cleaned_data.get(self.form_field_name))
 
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> OrderedChoiceAttributeValue | None:
-        try:
-            choice = draft_attributes.get_serialized_value_for_attribute_type(self)
-        except KeyError:
-            return None
-        if choice:
-            initial_choice = models.AttributeTypeChoiceOption.objects.filter(pk=choice)
-            if initial_choice:
-                return OrderedChoiceAttributeValue(initial_choice.get())
-        return OrderedChoiceAttributeValue(None)
-
     def xlsx_values(
         self,
         attribute: SerializedAttributeVersion | None,
@@ -393,6 +426,7 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
 
 class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
     ATTRIBUTE_MODEL = models.AttributeCategoryChoice
+    VALUE_CLASS = CategoryChoiceAttributeValue
 
     @property
     def form_field_name(self):
@@ -408,8 +442,12 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
         from actions.models.category import Category
         initial_categories = None
         if draft_attributes:
-            attribute_value = self.get_value_from_draft(draft_attributes)
-            if attribute_value is not None:
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(self)
+            except KeyError:
+                pass
+            else:
+                assert isinstance(attribute_value, CategoryChoiceAttributeValue)
                 initial_categories = list(attribute_value.categories)
         elif obj:
             c = self.get_attributes(obj).first()
@@ -445,14 +483,6 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
             return None
         return CategoryChoiceAttributeValue(cleaned_data[self.form_field_name])
 
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> CategoryChoiceAttributeValue | None:
-        from actions.models.category import Category
-        try:
-            category_ids = draft_attributes.get_serialized_value_for_attribute_type(self)
-        except KeyError:
-            return None
-        return CategoryChoiceAttributeValue(Category.objects.filter(id__in=category_ids))
-
     def xlsx_values(
         self,
         attribute: SerializedAttributeVersion | None,
@@ -473,6 +503,7 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
 
 class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
     ATTRIBUTE_MODEL = models.AttributeChoiceWithText
+    VALUE_CLASS = OptionalChoiceWithTextAttributeValue
 
     @property
     def choice_form_field_name(self):
@@ -494,7 +525,13 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
         draft_attribute: OptionalChoiceWithTextAttributeValue | None = None
         committed_attribute: models.AttributeChoiceWithText | None = None
         if draft_attributes:
-            draft_attribute = self.get_value_from_draft(draft_attributes)
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(self)
+            except KeyError:
+                pass
+            else:
+                assert isinstance(attribute_value, OptionalChoiceWithTextAttributeValue)
+                draft_attribute = attribute_value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
         editable = self.is_editable(user, plan, obj)
@@ -558,19 +595,6 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
         return OptionalChoiceWithTextAttributeValue(choice_val, text_vals)
 
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> OptionalChoiceWithTextAttributeValue | None:
-        try:
-            serialized = draft_attributes.get_serialized_value_for_attribute_type(self)
-        except KeyError:
-            return None
-        choice_pk = serialized.get('choice')
-        try:
-            choice_obj = models.AttributeTypeChoiceOption.objects.get(pk=choice_pk)
-        except models.AttributeTypeChoiceOption.DoesNotExist:
-            choice_obj = None
-        text_vals = serialized.get('text', {})
-        return OptionalChoiceWithTextAttributeValue(choice_obj, text_vals)
-
     def xlsx_values(
         self,
         attribute: SerializedAttributeVersion | None,
@@ -608,7 +632,13 @@ class GenericTextAttributeType(AttributeType[T]):
         draft_attribute: GenericTextAttributeAttributeValue | None = None
         committed_attribute: T | None = None
         if draft_attributes:
-            draft_attribute = self.get_value_from_draft(draft_attributes)
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(self)
+            except KeyError:
+                pass
+            else:
+                assert isinstance(attribute_value, GenericTextAttributeAttributeValue)
+                draft_attribute = attribute_value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
         editable = self.is_editable(user, plan, obj)
@@ -653,16 +683,10 @@ class GenericTextAttributeType(AttributeType[T]):
             text_vals[attribute_text_field_name] = cleaned_data.get(text_form_field_name)
         return GenericTextAttributeAttributeValue(text_vals)
 
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> GenericTextAttributeAttributeValue | None:
-        try:
-            values = draft_attributes.get_serialized_value_for_attribute_type(self)
-        except KeyError:
-            return None
-        return GenericTextAttributeAttributeValue(values)
-
 
 class Text(GenericTextAttributeType[models.AttributeText]):
     ATTRIBUTE_MODEL = models.AttributeText
+    VALUE_CLASS = GenericTextAttributeAttributeValue
 
     def xlsx_values(
         self,
@@ -677,6 +701,7 @@ class Text(GenericTextAttributeType[models.AttributeText]):
 
 class RichText(GenericTextAttributeType[models.AttributeRichText]):
     ATTRIBUTE_MODEL = models.AttributeRichText
+    VALUE_CLASS = GenericTextAttributeAttributeValue
 
     def xlsx_values(
         self,
@@ -691,6 +716,7 @@ class RichText(GenericTextAttributeType[models.AttributeRichText]):
 
 class Numeric(AttributeType[models.AttributeNumericValue]):
     ATTRIBUTE_MODEL = models.AttributeNumericValue
+    VALUE_CLASS = NumericAttributeValue
 
     @property
     def form_field_name(self):
@@ -705,8 +731,12 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
     ) -> list[FormField]:
         initial_value = None
         if draft_attributes:
-            attribute_value = self.get_value_from_draft(draft_attributes)
-            if attribute_value is not None:
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(self)
+            except KeyError:
+                pass
+            else:
+                assert isinstance(attribute_value, NumericAttributeValue)
                 initial_value = attribute_value.value
         elif obj:
             committed_attribute = self.get_attributes(obj).first()
@@ -729,13 +759,6 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
             return None
         return NumericAttributeValue(cleaned_data[self.form_field_name])
 
-    def get_value_from_draft(self, draft_attributes: DraftAttributes) -> NumericAttributeValue | None:
-        try:
-            value = draft_attributes.get_serialized_value_for_attribute_type(self)
-        except KeyError:
-            return None
-        return NumericAttributeValue(value)
-
     def xlsx_column_labels(self) -> list[str]:
         return [f'{self.instance} [{self.instance.unit}]']
 
@@ -754,29 +777,43 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
 
 
 class DraftAttributes:
-    """Contains serialized data for all draft attributes of a ModelWithAttributes instance.
+    """Contains the values of all draft attributes of a ModelWithAttributes instance.
 
     "Draft attribute" means attributes that are not necessarily commited to the model's database table yet.
     """
-    _serialized_data: dict[str, Any]
+    # map attribute type format to a mapping from attribute type ID to attribute value
+    _values: dict[str, dict[int, AttributeValue]]
 
-    def __init__(self) -> None:
-        self._serialized_data = {}
+    def __init__(self):
+        self._values = {}
 
     @classmethod
-    def from_revision_content(cls, data: dict[str, Any]) -> DraftAttributes:
+    def from_revision_content(cls, data: dict[str, dict[str, Any]]) -> DraftAttributes:
         draft_attributes = DraftAttributes()
-        draft_attributes._serialized_data = data
+        for format, id_to_serialized_value in data.items():
+            # No idea anymore why we serialize the IDs as strings
+            assert all(isinstance(k, str) for k in id_to_serialized_value)
+            at_class = AttributeType.format_to_class(models.AttributeType.AttributeFormat(format))
+            draft_attributes._values[format] = {
+                int(id): at_class.VALUE_CLASS.from_serialized_value(serialized_value)
+                for id, serialized_value in id_to_serialized_value.items()
+            }
         return draft_attributes
 
     def update(self, attribute_type: AttributeType, value: AttributeValue):
-        data_for_format = self._serialized_data.setdefault(str(attribute_type.instance.format), {})
-        data_for_format[str(attribute_type.instance.pk)] = value.serialize()
+        data_for_format = self._values.setdefault(str(attribute_type.instance.format), {})
+        data_for_format[attribute_type.instance.id] = value
 
-    def get_serialized_value_for_attribute_type(self, attribute_type: AttributeType) -> Any:
+    def get_value_for_attribute_type(self, attribute_type: AttributeType) -> AttributeValue:
         """Raises KeyError if there is no value for the given attribute type."""
-        data_for_format = self._serialized_data[str(attribute_type.instance.format)]
-        return data_for_format[str(attribute_type.instance.pk)]
+        data_for_format = self._values[str(attribute_type.instance.format)]
+        return data_for_format[attribute_type.instance.id]
 
-    def get_serialized_data(self) -> dict[str, Any]:
-        return self._serialized_data
+    def get_serialized_data(self) -> dict[str, dict[str, Any]]:
+        result: dict[str, dict[str, Any]] = {}
+        for format, values_for_type in self._values.items():
+            result[format] = {}
+            for id, value in values_for_type.items():
+                # No idea anymore why we serialize the IDs as strings
+                result[format][str(id)] = value.serialize()
+        return result

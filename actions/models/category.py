@@ -25,17 +25,17 @@ from wagtailsvg.models import Svg  # type: ignore
 from ..attributes import AttributeFieldPanel, AttributeType
 from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 from aplans.utils import (
-    IdentifierField, InstancesEditableByMixin, OrderedModel, PlanRelatedModel, ReferenceIndexedModelMixin,
-    ModelWithPrimaryLanguage, generate_identifier, validate_css_color, get_supported_languages
+    IdentifierField, InstancesEditableByMixin, ModelWithPrimaryLanguage, OrderedModel, PlanRelatedModel,
+    ReferenceIndexedModelMixin, UserOrAnon, generate_identifier, validate_css_color, get_supported_languages
 )
 
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
+    from django.db.models.expressions import Combinable
     from .action import ActionManager
     from actions.models.plan import Plan
-    from pages.models import CategoryTypePageLevelLayout, CategoryPage, CategoryTypePage
     from indicators.models import Indicator
-    from django.db.models.expressions import Combinable
+    from pages.models import CategoryTypePageLevelLayout, CategoryPage, CategoryTypePage
 
 
 class CategoryTypeBase(models.Model):
@@ -569,10 +569,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
             return self.common.get_icon(language)
         return None
 
-    def get_attribute_type_by_identifier(self, identifier):
-        return self.type.attribute_types.get(identifier=identifier)
-
-    def get_editable_attribute_types(self, user):
+    def get_editable_attribute_types(self, user: UserOrAnon) -> list[AttributeType]:
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
         at_qs = AttributeTypeModel.objects.filter(
@@ -584,7 +581,7 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in attribute_types]
 
-    def get_visible_attribute_types(self, user):
+    def get_visible_attribute_types(self, user: UserOrAnon) -> list[AttributeType]:
         category_ct = ContentType.objects.get_for_model(Category)
         category_type_ct = ContentType.objects.get_for_model(self.type)
         at_qs = AttributeTypeModel.objects.filter(
