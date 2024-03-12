@@ -68,6 +68,11 @@ register(actions_factories.AttributeChoiceWithTextFactory)
 register(actions_factories.AttributeNumericValueFactory)
 register(actions_factories.AttributeCategoryChoiceFactory)
 register(actions_factories.AttributeTypeFactory)
+
+register(actions_factories.WagtailTaskFactory)
+register(actions_factories.WorkflowFactory)
+register(actions_factories.WorkflowTaskFactory)
+
 register(
     actions_factories.AttributeTypeFactory,
     'action_attribute_type',
