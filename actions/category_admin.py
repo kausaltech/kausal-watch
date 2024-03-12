@@ -188,7 +188,7 @@ class CategoryAdminForm(WagtailAdminModelForm):
         else:
             attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_type.set_attributes(obj, self.cleaned_data)
+            attribute_type.on_form_save(obj, self.cleaned_data)
         return obj
 
 

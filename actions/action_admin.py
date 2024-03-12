@@ -48,6 +48,7 @@ from .models.action import Action, ActionContactPerson, ActionResponsibleParty, 
 from reports.views import MarkActionAsCompleteView
 
 if typing.TYPE_CHECKING:
+    from actions.attributes import DraftAttributes
     from users.models import User
 
 logger = logging.getLogger(__name__)
@@ -178,6 +179,7 @@ class ActionAdminForm(WagtailAdminModelForm):
             # Organizations can only have at most one role as a responsible party
 
     def save(self, commit=True):
+        from actions.attributes import DraftAttributes
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
@@ -210,7 +212,7 @@ class ActionAdminForm(WagtailAdminModelForm):
         else:
             attribute_types = obj.get_visible_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_type.set_attributes(obj, self.cleaned_data, commit=commit)
+            attribute_type.on_form_save(obj, self.cleaned_data, commit=commit)
         return obj
 
     def save_related_objects_with_role(self, manager, formsets, original_objects, commit=True):
@@ -449,13 +451,13 @@ class RelatedModelWithRolePanel(MultiFieldPanel):
 
 
 class ActionEditHandler(AplansTabbedInterface):
-    def __init__(self, *args, serialized_attributes=None, **kwargs):
+    def __init__(self, *args, draft_attributes: DraftAttributes | None = None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.serialized_attributes = serialized_attributes
+        self.draft_attributes = draft_attributes
 
     def clone_kwargs(self):
         result = super().clone_kwargs()
-        result['serialized_attributes'] = self.serialized_attributes
+        result['draft_attributes'] = self.draft_attributes
         return result
 
     def get_form_class(self):
@@ -476,7 +478,7 @@ class ActionEditHandler(AplansTabbedInterface):
             attribute_fields = {field.name: field.django_field
                                 for attribute_type in attribute_types
                                 for field in attribute_type.get_form_fields(
-                                        user, plan, instance, serialized_attributes=self.serialized_attributes
+                                    user, plan, instance, draft_attributes=self.draft_attributes
                                 )}
         else:
             attribute_fields = {}
@@ -871,11 +873,8 @@ class ActionAdmin(AplansModelAdmin):
         render_field_label = FieldLabelRenderer(plan)
 
         task_panels = insert_model_translation_panels(ActionTask, self.task_panels, request, plan)
-        serialized_attributes = instance_being_edited.get_serialized_attribute_data() if instance_being_edited else None
-        attribute_panels = instance.get_attribute_panels(
-            request.user,
-            serialized_attributes=serialized_attributes
-        )
+        draft_attributes = instance_being_edited.draft_attributes if instance_being_edited else None
+        attribute_panels = instance.get_attribute_panels(request.user, draft_attributes)
         main_attribute_panels, reporting_attribute_panels, i18n_attribute_panels = attribute_panels
 
         all_tabs = []
@@ -999,7 +998,7 @@ class ActionAdmin(AplansModelAdmin):
 
         return ActionEditHandler(
             all_tabs,
-            serialized_attributes=serialized_attributes,
+            draft_attributes=draft_attributes,
         )
 
     def get_queryset(self, request):

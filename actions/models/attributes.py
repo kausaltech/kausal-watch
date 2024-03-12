@@ -22,8 +22,10 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
-from typing import ClassVar, Dict, Any, Protocol
+from typing import ClassVar, Dict, Any
 if typing.TYPE_CHECKING:
+    from django.db.models.manager import RelatedManager
+    from actions.attributes import DraftAttributes
     from .plan import Plan
     from .category import CategoryType
 
@@ -120,6 +122,8 @@ class AttributeType(  # type: ignore[django-manager-missing]
         # it isn't at the moment because we hopefully will never change the primary language of a plan.
         default_language_field='primary_language_lowercase',
     )
+    name_i18n: str
+    help_text_i18n: str
 
     public_fields: ClassVar = [
         'id', 'identifier', 'name', 'help_text', 'format', 'unit', 'attribute_category_type', 'show_choice_names',
@@ -127,6 +131,9 @@ class AttributeType(  # type: ignore[django-manager-missing]
     ]
 
     objects: models.Manager[AttributeType] = models.Manager.from_queryset(AttributeTypeQuerySet)()
+
+    # type annotations for related objects
+    choice_options: RelatedManager[AttributeTypeChoiceOption]
 
     class Meta:
         unique_together = (('object_content_type', 'scope_content_type', 'scope_id', 'identifier'),)
@@ -374,21 +381,21 @@ class ModelWithAttributes(models.Model):
     # @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW)
     REVERSION_FOLLOW = ATTRIBUTE_RELATIONS
 
-    serialized_attribute_data: Dict
+    draft_attributes: DraftAttributes | None
     id: int
 
-    def get_serialized_attribute_data(self):
-        return getattr(self, 'serialized_attribute_data', None)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.draft_attributes = None
 
-    def set_serialized_attribute_data(self, attributes):
-        if attributes is None:
-            attributes = {}
-        self.serialized_attribute_data = attributes
-
-    def set_serialized_attribute_data_for_attribute(self, key: str, pk: Any, data: Any):
-        if not hasattr(self, 'serialized_attribute_data'):
-            self.serialized_attribute_data = {}
-        self.serialized_attribute_data.setdefault(key, {})[str(pk)] = data
+    @classmethod
+    def from_serializable_data(cls, data, check_fks=True, strict_fks=False):
+        """Called by Wagtail when editing a draft."""
+        from actions.attributes import DraftAttributes
+        serialized_attributes = data.pop('attributes', {})
+        result = super().from_serializable_data(data, check_fks=check_fks, strict_fks=strict_fks)
+        result.draft_attributes = DraftAttributes.from_revision_content(serialized_attributes)
+        return result
 
     def _value_is_empty(self, value):
         return len([v for v in value.values() if v is not None or v == '' or v == []]) == 0
