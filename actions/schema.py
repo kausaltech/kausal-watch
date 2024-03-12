@@ -1,21 +1,22 @@
 from __future__ import annotations
 
-import uuid
-import typing
-from urllib.parse import urlparse
-from typing import Generic, List, Optional, Protocol, TypeVar
-
 import graphene
-from graphene_django import DjangoObjectType
-from graphene_django.converter import convert_django_field_with_choices
 import graphene_django_optimizer as gql_optimizer
+import logging
+import sentry_sdk
+import typing
+import uuid
 from django.db.models import Q, Prefetch
 from django.forms import ModelForm
 from django.utils.translation import get_language
+from graphene_django import DjangoObjectType
+from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
-from grapple.types.pages import PageInterface
 from grapple.registry import registry as grapple_registry
+from grapple.types.pages import PageInterface
 from itertools import chain
+from typing import Generic, Iterable, Optional, Protocol, TypeVar
+from urllib.parse import urlparse
 from wagtail.rich_text import RichText
 
 
@@ -56,10 +57,10 @@ from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
 
 if typing.TYPE_CHECKING:
-    from django.db.models import QuerySet
-    from actions.models.attributes import AttributeUnion
+    from actions.models.attributes import Attribute
 
 
+logger = logging.getLogger(__name__)
 PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
 
 
@@ -617,21 +618,33 @@ class AttributesMixin:
         request = info.context
         plan = get_plan_from_context(info)
 
-        def filter_attrs(qs: QuerySet[AttributeUnion]) -> List[AttributeUnion]:
-            out = []
-            for attr in qs:
-                if id is not None:
-                    if attr.type.identifier != id:
-                        continue
-                if not attr.is_visible_for_user(request.user, plan):  # pyright: ignore
+        def filter_attrs(attributes: Iterable[Attribute]) -> list[Attribute]:
+            result = []
+            for attribute in attributes:
+                id_mismatch = id is not None and attribute.type.identifier != id
+                if not id_mismatch and attribute.is_visible_for_user(request.user, plan):
+                    result.append(attribute)
+            return result
+
+        attributes: list[Attribute] = []
+        if root.draft_attributes:
+            attribute_types = root.get_visible_attribute_types(request.user)
+            for attribute_type in attribute_types:
+                try:
+                    attribute_value = root.draft_attributes.get_value_for_attribute_type(attribute_type)
+                except KeyError:
+                    message = (
+                        f"Could not get value for attribute type {attribute_type.instance.pk} on "
+                        f"{root._meta.model.__name__} {root.id}; skipping this attribute type"
+                    )
+                    logger.warning(message)
+                    sentry_sdk.capture_message(message)
                     continue
-                out.append(attr)
-            return out
-
-        attributes: List[AttributeUnion] = []
-        for attr_type_name in ModelWithAttributes.ATTRIBUTE_RELATIONS:
-            attributes += filter_attrs(getattr(root, attr_type_name).all())
-
+                instance = attribute_value.instantiate_attribute(attribute_type, root)
+                attributes.append(instance)
+        else:
+            for relation_name in ModelWithAttributes.ATTRIBUTE_RELATIONS:
+                attributes += filter_attrs(getattr(root, relation_name).all())
         return sorted(attributes, key=lambda a: a.type.order)
 
 

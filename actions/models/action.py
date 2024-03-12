@@ -188,9 +188,8 @@ class Action(  # type: ignore[django-manager-missing]
         draft_attributes = DraftAttributes.from_revision_content(attributes)
         attribute_types = self.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
-            value = attribute_type.get_value_from_draft(draft_attributes)
-            if value is not None:
-                attribute_type.commit_attribute(self, value)
+            attribute_value = draft_attributes.get_value_for_attribute_type(attribute_type)
+            attribute_type.commit_attribute(self, attribute_value)
 
     def publish(self, revision, user=None, **kwargs):
         attributes = revision.content.pop('attributes')
@@ -675,12 +674,9 @@ class Action(  # type: ignore[django-manager-missing]
         qs = qs.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
         return qs
 
-    def get_attribute_type_by_identifier(self, identifier):
-        return self.plan.action_attribute_types.get(identifier=identifier)
-
     def get_editable_attribute_types(
-            self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
-        ):
+        self, user: UserOrAnon, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
+    ) -> list[AttributeType]:
         attribute_types = self.__class__.get_attribute_types_for_plan(
             self.plan,
             only_in_reporting_tab=only_in_reporting_tab,
@@ -689,8 +685,8 @@ class Action(  # type: ignore[django-manager-missing]
         return [at for at in attribute_types if at.instance.is_instance_editable_by(user, self.plan, self)]
 
     def get_visible_attribute_types(
-            self, user: User, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
-        ):
+        self, user: UserOrAnon, only_in_reporting_tab: bool = False, unless_in_reporting_tab: bool = False
+    ) -> list[AttributeType]:
         attribute_types = self.__class__.get_attribute_types_for_plan(
             self.plan,
             only_in_reporting_tab=only_in_reporting_tab,

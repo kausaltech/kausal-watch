@@ -349,7 +349,7 @@ class InstancesVisibleForMixin(models.Model):
         ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
         return self.instances_visible_for in ACTION_SPECIFIC_VALUES
 
-    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None):
+    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None) -> bool:
         from actions.models.action import Action, ActionContactPerson
         # `action` may only be None if `self.instances_visible_for` is not action-specific
         if __debug__:
