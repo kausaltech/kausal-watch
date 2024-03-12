@@ -45,6 +45,7 @@ from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
     from django.db.models.expressions import Combinable
+    from actions.attributes import DraftAttributes
     from aplans.cache import WatchObjectCache
     from people.models import Person
     from .plan import Plan
@@ -180,14 +181,16 @@ class Action(  # type: ignore[django-manager-missing]
             return None
         return super().save_revision(*args, **kwargs)
 
-    def commit_attributes(self, attributes, user):
+    def commit_attributes(self, attributes: dict[str, typing.Any], user):
         """Called when the serialized draft contents of attribute values must be persisted to the actual Attribute models
         when publishing an action from a draft"""
+        from actions.attributes import DraftAttributes
+        draft_attributes = DraftAttributes.from_revision_content(attributes)
         attribute_types = self.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_type.commit_value_from_serialized_data(
-                self, attributes
-            )
+            value = attribute_type.get_value_from_draft(draft_attributes)
+            if value is not None:
+                attribute_type.commit_attribute(self, value)
 
     def publish(self, revision, user=None, **kwargs):
         attributes = revision.content.pop('attributes')
@@ -203,18 +206,11 @@ class Action(  # type: ignore[django-manager-missing]
             field.serialize = False
         try:
             result = super().serializable_data(*args, **kwargs)
-            result['attributes'] = self.get_serialized_attribute_data()
+            result['attributes'] = self.draft_attributes.get_serialized_data()
             return result
         finally:
             for field in i18n_field.get_translated_fields():
                 field.serialize = True
-
-    @classmethod
-    def from_serializable_data(cls, data, check_fks=True, strict_fks=False):
-        attribute_data = data.pop('attributes', {})
-        result: Action = super().from_serializable_data(data, check_fks=check_fks, strict_fks=strict_fks)
-        result.set_serialized_attribute_data(attribute_data)
-        return result
 
     id: int
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
@@ -718,7 +714,7 @@ class Action(  # type: ignore[django-manager-missing]
         # Convert to wrapper objects
         return [AttributeType.from_model_instance(at) for at in at_qs]
 
-    def get_attribute_panels(self, user: User, serialized_attributes=None):
+    def get_attribute_panels(self, user: User, draft_attributes: DraftAttributes | None = None):
         # Return a triple `(main_panels, reporting_panels, i18n_panels)`, where `main_panels` is a list of panels to be
         # put on the main tab, `reporting_panels` is a list of panels to be put on the reporting tab, and `i18n_panels`
         # is a dict mapping a non-primary language to a list of panels to be put on the tab for that language.
@@ -730,7 +726,7 @@ class Action(  # type: ignore[django-manager-missing]
                                (reporting_panels, {'only_in_reporting_tab': True})]:
             attribute_types = self.get_visible_attribute_types(user, **kwargs)
             for attribute_type in attribute_types:
-                fields = attribute_type.get_form_fields(user, plan, self, serialized_attributes=serialized_attributes)
+                fields = attribute_type.get_form_fields(user, plan, self, draft_attributes=draft_attributes)
                 for field in fields:
                     if field.language:
                         i18n_panels.setdefault(field.language, []).append(field.get_panel())

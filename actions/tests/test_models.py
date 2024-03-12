@@ -433,7 +433,7 @@ def test_action_i18n_when_saving(plan, action_factory, primary_language, active_
             assert len(action.i18n) > 0
 
 
-def test_action_set_attributes_no_commit(actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice, action_attribute_type__unordered_choice, action_attribute_type__optional_choice, action_attribute_type__numeric):
+def test_action_on_form_save_no_commit(actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice, action_attribute_type__unordered_choice, action_attribute_type__optional_choice, action_attribute_type__numeric):
     action = actions_having_attributes[0]
     attribute_types = [
         action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice,
@@ -443,10 +443,10 @@ def test_action_set_attributes_no_commit(actions_having_attributes, action_attri
         # Further down, we rely on data being present due to the other language
         assert attribute_type.other_languages == ['fi']
 
-    def set_attributes(cleaned_data):
+    def save_form(cleaned_data):
         for attribute_type in attribute_types:
             wrapper = AttributeType.from_model_instance(attribute_type)
-            wrapper.set_attributes(action, cleaned_data, commit=False)
+            wrapper.on_form_save(action, cleaned_data, commit=False)
 
     # Clear all attributes first
     cleaned_data_attributes_cleared = {
@@ -458,11 +458,10 @@ def test_action_set_attributes_no_commit(actions_having_attributes, action_attri
         f'attribute_type_{action_attribute_type__text.identifier}': '',
         f'attribute_type_{action_attribute_type__unordered_choice.identifier}': None,
     }
-    set_attributes(cleaned_data_attributes_cleared)
+    save_form(cleaned_data_attributes_cleared)
     expected_result_attributes_cleared = {
         'numeric': {str(action_attribute_type__numeric.id): None},
         'optional_choice': {
-            # FIXME: I'm not sure this mess of mixing '' and None is good to expect
             str(action_attribute_type__optional_choice.id): {'choice': None, 'text': {'text': '', 'text_fi': None}}
         },
         'ordered_choice': {str(action_attribute_type__ordered_choice.id): None},
@@ -470,7 +469,7 @@ def test_action_set_attributes_no_commit(actions_having_attributes, action_attri
         'text': {str(action_attribute_type__text.id): {'text': '', 'text_fi': None}},
         'unordered_choice': {str(action_attribute_type__unordered_choice.id): None},
     }
-    assert action.serialized_attribute_data == expected_result_attributes_cleared
+    assert action.draft_attributes.get_serialized_data() == expected_result_attributes_cleared
 
     # Set all attributes to some values
     cleaned_data_attributes_set = {
@@ -482,7 +481,7 @@ def test_action_set_attributes_no_commit(actions_having_attributes, action_attri
         f'attribute_type_{action_attribute_type__text.identifier}': 'baz',
         f'attribute_type_{action_attribute_type__unordered_choice.identifier}': action_attribute_type__unordered_choice.choice_options.first(),
     }
-    set_attributes(cleaned_data_attributes_set)
+    save_form(cleaned_data_attributes_set)
     expected_result_attributes_set = {
         'numeric': {str(action_attribute_type__numeric.id): 123.0},
         'optional_choice': {
@@ -502,8 +501,8 @@ def test_action_set_attributes_no_commit(actions_having_attributes, action_attri
             action_attribute_type__unordered_choice.choice_options.first().id,
         },
     }
-    assert action.serialized_attribute_data == expected_result_attributes_set
+    assert action.draft_attributes.get_serialized_data() == expected_result_attributes_set
 
     # Clear all attributes again to check if the previously set values are removed
-    set_attributes(cleaned_data_attributes_cleared)
-    assert action.serialized_attribute_data == expected_result_attributes_cleared
+    save_form(cleaned_data_attributes_cleared)
+    assert action.draft_attributes.get_serialized_data() == expected_result_attributes_cleared
