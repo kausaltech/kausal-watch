@@ -433,7 +433,11 @@ def test_action_i18n_when_saving(plan, action_factory, primary_language, active_
             assert len(action.i18n) > 0
 
 
-def test_action_on_form_save_no_commit(actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice, action_attribute_type__unordered_choice, action_attribute_type__optional_choice, action_attribute_type__numeric):
+def test_action_on_form_save_no_commit(
+    actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text,
+    action_attribute_type__ordered_choice, action_attribute_type__unordered_choice,
+    action_attribute_type__optional_choice, action_attribute_type__numeric
+):
     action = actions_having_attributes[0]
     attribute_types = [
         action_attribute_type__text, action_attribute_type__rich_text, action_attribute_type__ordered_choice,

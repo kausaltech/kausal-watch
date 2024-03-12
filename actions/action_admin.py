@@ -179,7 +179,6 @@ class ActionAdminForm(WagtailAdminModelForm):
             # Organizations can only have at most one role as a responsible party
 
     def save(self, commit=True):
-        from actions.attributes import DraftAttributes
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
