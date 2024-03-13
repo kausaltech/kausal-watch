@@ -932,7 +932,7 @@ class ActionContactPerson(OrderedModel, ModelWithRole):
     )
 
     public_fields: ClassVar = [
-        'id', 'action', 'person', 'order', 'primary_contact',
+        'id', 'action', 'person', 'order', 'primary_contact', 'role',
     ]
 
     class Meta:

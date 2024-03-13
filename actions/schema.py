@@ -1042,7 +1042,7 @@ class ActionResponsiblePartyNode(DjangoNode):
 class ActionContactPersonNode(DjangoNode):
     class Meta:
         model = ActionContactPerson
-        fields = public_fields(ActionContactPerson, add_fields=['role'])
+        fields = public_fields(ActionContactPerson)
 
 
 class ActionImpactNode(DjangoNode):
