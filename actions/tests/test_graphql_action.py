@@ -177,7 +177,7 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
           }
         }
         '''
-  
+
     data = graphql_client_query_data(query, variables={'action': action.id})
     expected = {
         'action': {

@@ -114,7 +114,7 @@ class AttributeTypeFactory(ModelFactory[AttributeType]):
     class Meta:
         exclude = ['scope']
 
-    object_content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
+    object_content_type = LazyAttribute(lambda _: ContentType.objects.get_for_model(Category))
     scope = SubFactory(CategoryTypeFactory)
     scope_content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.scope))
     scope_id = SelfAttribute('scope.id')
@@ -160,7 +160,6 @@ class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.CATEGORY_CHOICE)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
@@ -190,7 +189,6 @@ class AttributeNumericValueFactory(ModelFactory[AttributeNumericValue]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.NUMERIC)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
@@ -202,7 +200,6 @@ class AttributeRichTextFactory(ModelFactory[AttributeRichText]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.RICH_TEXT)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
@@ -214,7 +211,6 @@ class AttributeChoiceFactory(ModelFactory[AttributeChoice]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
@@ -226,7 +222,6 @@ class AttributeChoiceWithTextFactory(ModelFactory[AttributeChoiceWithText]):
         exclude = ['content_object']
 
     type = SubFactory(AttributeTypeFactory, format=AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT)
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='category'))
     content_object = SubFactory(CategoryFactory)
     content_type = LazyAttribute(lambda o: ContentType.objects.get_for_model(o.content_object))
     object_id = SelfAttribute('content_object.id')
@@ -363,7 +358,7 @@ class WagtailTaskFactory(ModelFactory[WagtailTask]):
 
     name = Sequence(lambda i: f'WorkflowTask {i}')
     active = True
-    content_type = LazyAttribute(lambda _: ContentType.objects.get(app_label='actions', model='action'))
+    content_type = LazyAttribute(lambda _: ContentType.objects.get_for_model(Action))
 
 
 class WorkflowFactory(ModelFactory[Workflow]):
