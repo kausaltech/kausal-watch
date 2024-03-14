@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: 2023-12-13 16:19+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -417,6 +417,14 @@ msgid "Official name"
 msgstr "officielt navn"
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "hjælpetekst"
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Indholdsblok: %(label)s"
@@ -447,10 +455,6 @@ msgstr "Grid"
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Overskrift"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "hjælpetekst"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -741,8 +745,10 @@ msgid "contact persons"
 msgstr "kontaktpersoner"
 
 #: actions/models/action.py
-msgid "Draft"
-msgstr "Udkast"
+#, fuzzy
+#| msgid "internal notes"
+msgid "Internal"
+msgstr "interne noter"
 
 #: actions/models/action.py aplans/utils.py
 #, fuzzy
@@ -1500,6 +1506,14 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Skal den offentlige hjemmeside indeholde et link til admin-login?"
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 #, fuzzy
 #| msgid "indicator contact persons"
 msgid "Publicly visible data about contact persons"
@@ -1509,6 +1523,18 @@ msgstr "indikator kontaktpersoner"
 #, fuzzy
 #| msgid "Set if the contact persons should be visible in the public UI"
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Indstil om kontaktpersonerne skal være synlige i den offentlige brugergrænseflade"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Hide moderators from the contact persons"
+msgstr "indikator kontaktpersoner"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Set if the contact persons should be visible in the public UI"
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr "Indstil om kontaktpersonerne skal være synlige i den offentlige brugergrænseflade"
 
 #: actions/models/features.py
@@ -1592,11 +1618,9 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Indstil til at muliggøre sammenligning af indikatorer mellem organisationer"
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr "Aktivér arbejdsgangen for moderation"
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+#, fuzzy
+#| msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Indstillet til at aktivere kladde- og gennemgangsfunktionalitet"
 
 #: actions/models/features.py
@@ -1777,7 +1801,7 @@ msgstr "Uforstyrrethed"
 msgid "Accessibility"
 msgstr "Tilgængelighed"
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr "Publiceret"
 
@@ -1796,6 +1820,14 @@ msgstr "generel plan admin"
 #: actions/models/plan.py
 msgid "general plan admins"
 msgstr "generelle plan administratorer"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "host name"
@@ -2029,6 +2061,12 @@ msgstr "email adresse"
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr "Ingen bruger fundet med denne e-mailadresse. Bed din administrator om at oprette en konto til dig."
+
+#: admin_site/api.py
+#, fuzzy
+#| msgid "This user does not have access to admin."
+msgid "You do not have access to the public site."
+msgstr "Denne bruger har ikke adgang til admin."
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
@@ -2317,6 +2355,16 @@ msgstr "Indtast et gyldigt værtsnavn."
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Fuldt kvalificeret værtsnavn (FQDN)"
+
+#: aplans/graphql_types.py
+#, fuzzy
+#| msgid "Approve"
+msgid "Approved"
+msgstr "Godkend"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Udkast"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -4420,10 +4468,22 @@ msgid "Not a contact person"
 msgstr "Ikke en kontaktperson"
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 #, fuzzy
 #| msgid "is plan admin"
 msgid "Is plan admin"
 msgstr "er planadministrator"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr ""
 
 #: people/wagtail_admin.py
 #, fuzzy
@@ -4750,6 +4810,9 @@ msgstr "Brugere"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
 
+#~ msgid "Enable moderation workflow"
+#~ msgstr "Aktivér arbejdsgangen for moderation"
+
 #, fuzzy
 #~| msgid "Internal fields"
 #~ msgid "Internal field"
@@ -4757,9 +4820,6 @@ msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke
 
 #~ msgid "Admin hostnames"
 #~ msgstr "Administrator værtsnavne"
-
-#~ msgid "This user does not have access to admin."
-#~ msgstr "Denne bruger har ikke adgang til admin."
 
 #, fuzzy
 #~| msgid "main organization for the plan"

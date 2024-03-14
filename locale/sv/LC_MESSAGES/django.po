@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: 2024-01-25 11:05+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -375,6 +375,14 @@ msgid "Official name"
 msgstr "Officiellt namn"
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Hjälptext"
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Innehållsblock:%(label)s"
@@ -403,10 +411,6 @@ msgstr "Nät"
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Rubrik"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Hjälptext"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -675,8 +679,10 @@ msgid "contact persons"
 msgstr "kontaktpersoner"
 
 #: actions/models/action.py
-msgid "Draft"
-msgstr "Utkast"
+#, fuzzy
+#| msgid "Internal notes"
+msgid "Internal"
+msgstr "Interna anteckningar"
 
 #: actions/models/action.py aplans/utils.py
 msgid "Public"
@@ -1432,6 +1438,14 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Bör den offentliga webbplatsen innehålla en länk till admin -inloggningen?"
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 #, fuzzy
 #| msgid "indicator contact persons"
 msgid "Publicly visible data about contact persons"
@@ -1441,6 +1455,18 @@ msgstr "kontaktpersoner"
 #, fuzzy
 #| msgid "Set if the contact persons should not be visible in the public UI"
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Ange om kontaktpersonerna inte ska vara synliga i det offentliga användargränssnittet"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Hide moderators from the contact persons"
+msgstr "indikator kontaktpersoner"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Set if the contact persons should not be visible in the public UI"
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr "Ange om kontaktpersonerna inte ska vara synliga i det offentliga användargränssnittet"
 
 #: actions/models/features.py
@@ -1540,11 +1566,9 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "användbar för kategorisering av indikatorer"
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr "Aktivera arbetsflöde för moderering"
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+#, fuzzy
+#| msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Ställ in för att aktivera utkast- och granskningsfunktionalitet"
 
 #: actions/models/features.py
@@ -1745,7 +1769,7 @@ msgstr "Integritet"
 msgid "Accessibility"
 msgstr "Tillgänglighet"
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr "Publicerad"
 
@@ -1770,6 +1794,14 @@ msgstr "allmänna administratörer"
 #| msgid "general administrators"
 msgid "general plan admins"
 msgstr "allmänna administratörer"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "host name"
@@ -2013,6 +2045,12 @@ msgstr "e-postadress"
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr "Ingen användare hittades med den här e-postadressen. Be din administratör att skapa ett konto åt dig."
+
+#: admin_site/api.py
+#, fuzzy
+#| msgid "This user does not have access to admin."
+msgid "You do not have access to the public site."
+msgstr "Denna användare har inte tillgång till admin."
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
@@ -2307,6 +2345,16 @@ msgstr "Ange ett giltigt värdnamn."
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Fullt kvalificerat värdnamn (FQDN)"
+
+#: aplans/graphql_types.py
+#, fuzzy
+#| msgid "Approve"
+msgid "Approved"
+msgstr "Godkänn"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Utkast"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -4481,10 +4529,22 @@ msgid "Not a contact person"
 msgstr "Inte en kontaktperson"
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 #, fuzzy
 #| msgid "plan domain"
 msgid "Is plan admin"
 msgstr "plandomän"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr ""
 
 #: people/wagtail_admin.py
 #, fuzzy
@@ -4814,6 +4874,9 @@ msgstr "Användare"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
 
+#~ msgid "Enable moderation workflow"
+#~ msgstr "Aktivera arbetsflöde för moderering"
+
 #, fuzzy
 #~| msgid "Internal fields"
 #~ msgid "Internal field"
@@ -4821,9 +4884,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "Admin hostnames"
 #~ msgstr "Admin värdnamn"
-
-#~ msgid "This user does not have access to admin."
-#~ msgstr "Denna användare har inte tillgång till admin."
 
 #~ msgid "Show only organizations in active plan"
 #~ msgstr "Visa endast organisationer i aktiv plan"

@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: 2024-01-19 09:43+0000\n"
 "Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -378,6 +378,14 @@ msgid "Official name"
 msgstr "Virallinen nimi"
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Ohjeteksti"
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Sisältölohko: %(label)s"
@@ -406,10 +414,6 @@ msgstr "Ruudukko (grid)"
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Otsikko"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Ohjeteksti"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -684,8 +688,10 @@ msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
 #: actions/models/action.py
-msgid "Draft"
-msgstr "Luonnos"
+#, fuzzy
+#| msgid "Internal notes"
+msgid "Internal"
+msgstr "Sisäiset muistiinpanot"
 
 #: actions/models/action.py aplans/utils.py
 msgid "Public"
@@ -1415,12 +1421,31 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Näytetäänkö julkisella sivustolla linkki ylläpitokäyttöliittymään?"
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Publicly visible data about contact persons"
 msgstr "Julkisesti näkyvät tiedot yhteyshenkilöistä"
 
 #: actions/models/features.py
 #, fuzzy
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Hide moderators from the contact persons"
+msgstr "mittarin yhteyshenkilöt"
+
+#: actions/models/features.py
+#, fuzzy
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr "Aseta jos yhteyshenkilöt näkyvät julkisessa käyttöliittymässä"
 
 #: actions/models/features.py
@@ -1497,11 +1522,9 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Mahdollistaa mittareiden vertailun eri organisaatioiden kesken"
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr "Ota moderointi käyttöön"
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+#, fuzzy
+#| msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Aseta ottaaksesi käyttöön luonnostelu- ja katselmointitoiminnot"
 
 #: actions/models/features.py
@@ -1679,7 +1702,7 @@ msgstr "Tietosuoja"
 msgid "Accessibility"
 msgstr "Saavutettavuus"
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr "Julkaistu"
 
@@ -1698,6 +1721,14 @@ msgstr "toimenpideohjelman pääkäyttäjä"
 #: actions/models/plan.py
 msgid "general plan admins"
 msgstr "toimenpideohjelman pääkäyttäjät"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "host name"
@@ -1914,6 +1945,12 @@ msgstr "Virheellinen sähköpostiosoite"
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr "Tällä sähköpostiosoitteella ei löytynyt käyttäjää. Pyydä ylläpitäjää luomaan sinulle käyttäjätili."
+
+#: admin_site/api.py
+#, fuzzy
+#| msgid "This user does not have access to admin."
+msgid "You do not have access to the public site."
+msgstr "Tällä käyttäjällä ei ole pääsyä ylläpitoon."
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
@@ -2190,6 +2227,16 @@ msgstr "Syötä sallittu hostname."
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Täydellinen verkkotunnus (FQDN)"
+
+#: aplans/graphql_types.py
+#, fuzzy
+#| msgid "Approve"
+msgid "Approved"
+msgstr "Hyväksy"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Luonnos"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -4217,8 +4264,20 @@ msgid "Not a contact person"
 msgstr "Ei ole yhteyshenkilö"
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Is plan admin"
 msgstr "On pääkäyttäjä"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr ""
 
 #: people/wagtail_admin.py
 msgid "Plan admin organizations"
@@ -4508,6 +4567,9 @@ msgstr "Käyttäjät"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
 
+#~ msgid "Enable moderation workflow"
+#~ msgstr "Ota moderointi käyttöön"
+
 #, python-format
 #~ msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation"
 #~ msgstr "Moderointipyyntö on peruttu kohteelle %(model_name)s \"%(title)s\""
@@ -4518,9 +4580,6 @@ msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita 
 
 #~ msgid "Admin hostnames"
 #~ msgstr "Ylläpidon palvelinnimet"
-
-#~ msgid "This user does not have access to admin."
-#~ msgstr "Tällä käyttäjällä ei ole pääsyä ylläpitoon."
 
 #~ msgid "Show only organizations in active plan"
 #~ msgstr "Näytä vain valitun toimenpideohjelman organisaatiot"

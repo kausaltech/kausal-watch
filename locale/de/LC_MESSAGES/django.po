@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: 2024-03-08 13:14+0000\n"
 "Last-Translator: Bernhard Bliem <bernhard.bliem@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -376,6 +375,14 @@ msgid "Official name"
 msgstr "Offizieller Name"
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Hilfetext"
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Inhaltsblock: %(label)s"
@@ -404,10 +411,6 @@ msgstr "Gitter"
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Überschrift"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Hilfetext"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -676,8 +679,10 @@ msgid "contact persons"
 msgstr "Ansprechpersonen"
 
 #: actions/models/action.py
-msgid "Draft"
-msgstr "Entwurf"
+#, fuzzy
+#| msgid "Internal notes"
+msgid "Internal"
+msgstr "Interne Notizen"
 
 #: actions/models/action.py aplans/utils.py
 msgid "Public"
@@ -1399,11 +1404,31 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Soll die öffentliche Webseite einen Link zur Admin-Login enthalten?"
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Publicly visible data about contact persons"
 msgstr "Öffentlich sichtbare Daten über Ansprechpersonen"
 
 #: actions/models/features.py
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Wählen Sie aus, welche Informationen über Ansprechpersonen in der öffentlichen Benutzeroberfläche sichtbar sind"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Hide moderators from the contact persons"
+msgstr "Indikatoransprechpersonen"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Choose which information about contact persons is visible in the public UI"
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr "Wählen Sie aus, welche Informationen über Ansprechpersonen in der öffentlichen Benutzeroberfläche sichtbar sind"
 
 #: actions/models/features.py
@@ -1479,11 +1504,9 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Setzen, um den Vergleich von Indikatoren zwischen Organisationen zu ermöglichen"
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr "Moderationsworkflow aktivieren"
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+#, fuzzy
+#| msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Einstellen, um die Entwurfs- und Überprüfungsfunktion zu aktivieren"
 
 #: actions/models/features.py
@@ -1660,7 +1683,7 @@ msgstr "Datenschutz"
 msgid "Accessibility"
 msgstr "Barrierefreiheit"
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr "Veröffentlicht"
 
@@ -1679,6 +1702,14 @@ msgstr "Allgemeiner Plan-Admin"
 #: actions/models/plan.py
 msgid "general plan admins"
 msgstr "Allgemeine Plan-Admins"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "host name"
@@ -1893,6 +1924,12 @@ msgstr "Ungültige E-Mail-Adresse"
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr "Es wurde kein Benutzer mit dieser E-Mail-Adresse gefunden. Bitten Sie Ihren Administrator, ein Konto für Sie zu erstellen."
+
+#: admin_site/api.py
+#, fuzzy
+#| msgid "This user does not have access to admin."
+msgid "You do not have access to the public site."
+msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
@@ -2159,6 +2196,16 @@ msgstr "Geben Sie einen gültigen Hostname ein."
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "vollständig qualifizierter Domänenname (FQDN)"
+
+#: aplans/graphql_types.py
+#, fuzzy
+#| msgid "Approve"
+msgid "Approved"
+msgstr "Genehmigen"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Entwurf"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -4111,8 +4158,20 @@ msgid "Not a contact person"
 msgstr "Keine Ansprechperson"
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Is plan admin"
 msgstr "Ist Plan-Admin"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr ""
 
 #: people/wagtail_admin.py
 msgid "Plan admin organizations"
@@ -4400,6 +4459,9 @@ msgstr "Benutzer"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören, die Sie nicht verwalten."
 
+#~ msgid "Enable moderation workflow"
+#~ msgstr "Moderationsworkflow aktivieren"
+
 #~ msgid "Parent"
 #~ msgstr "Vorgänger"
 
@@ -4412,9 +4474,6 @@ msgstr "Keine Berechtigung zum Entfernen von Benutzern, die zu Plänen gehören,
 
 #~ msgid "Only plan admins may change the moderators of an action."
 #~ msgstr "Nur Plan-Administratoren können die Moderatoren einer Maßnahme ändern."
-
-#~ msgid "This user does not have access to admin."
-#~ msgstr "Dieser Benutzer hat keinen Admin-Zugriff."
 
 #~ msgid "Show only organizations in active plan"
 #~ msgstr "Zeige nur Organisationen in aktivem Plan"

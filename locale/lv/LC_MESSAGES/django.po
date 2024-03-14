@@ -7,17 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: 2024-03-08 13:14+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
-"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/"
-">\n"
+"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.0.2\n"
 
 #: actions/action_admin.py
@@ -378,6 +376,14 @@ msgid "Official name"
 msgstr "Oficiālais nosaukums"
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Palīdzības teksts"
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Satura bloks: %(label)s"
@@ -406,10 +412,6 @@ msgstr "Tīkls"
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
 msgstr "Virsraksts"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Palīdzības teksts"
 
 #: actions/blocks/action_content.py
 msgid "Blocks"
@@ -678,8 +680,10 @@ msgid "contact persons"
 msgstr "kontaktpersonas"
 
 #: actions/models/action.py
-msgid "Draft"
-msgstr "Projekts"
+#, fuzzy
+#| msgid "internal notes"
+msgid "Internal"
+msgstr "iekšējās piezīmes"
 
 #: actions/models/action.py aplans/utils.py
 msgid "Public"
@@ -1405,11 +1409,31 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr "Vai publiskajā tīmekļa vietnē ir jābūt saitei uz administratora pieteikšanās iespēju?"
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Publicly visible data about contact persons"
 msgstr "Publiski redzami dati par kontaktpersonām"
 
 #: actions/models/features.py
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Izvēlieties, kura informācija par kontaktpersonām ir redzama publiskajā lietotāja saskarnē"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "indicator contact persons"
+msgid "Hide moderators from the contact persons"
+msgstr "rādītāju kontaktpersonas"
+
+#: actions/models/features.py
+#, fuzzy
+#| msgid "Choose which information about contact persons is visible in the public UI"
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr "Izvēlieties, kura informācija par kontaktpersonām ir redzama publiskajā lietotāja saskarnē"
 
 #: actions/models/features.py
@@ -1485,11 +1509,9 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr "Iestatīts, lai varētu salīdzināt rādītājus starp organizācijām"
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr "Moderēšanas darbplūsmas iespējošana"
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+#, fuzzy
+#| msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr "Iestatīts, lai iespējotu sagatavošanas un pārskatīšanas funkcijas"
 
 #: actions/models/features.py
@@ -1666,7 +1688,7 @@ msgstr "Konfidencialitāte"
 msgid "Accessibility"
 msgstr "Pieejamība"
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr "Publicēts"
 
@@ -1685,6 +1707,14 @@ msgstr "vispārējā plāna administrēšana"
 #: actions/models/plan.py
 msgid "general plan admins"
 msgstr "vispārējā plāna administratori"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr ""
 
 #: actions/models/plan.py
 msgid "host name"
@@ -1897,6 +1927,10 @@ msgstr "Nederīga e-pasta adrese"
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
 msgstr "Lietotājs ar šo e-pasta adresi nav atrasts. Lūdziet administratoram izveidot jums kontu."
+
+#: admin_site/api.py
+msgid "You do not have access to the public site."
+msgstr ""
 
 #: admin_site/api.py
 msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
@@ -2165,6 +2199,16 @@ msgstr "Ievadiet derīgu resursvietas nosaukumu."
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
 msgstr "Pilnīgi kvalificēts resursvietas nosaukums (FQDN)"
+
+#: aplans/graphql_types.py
+#, fuzzy
+#| msgid "Approve"
+msgid "Approved"
+msgstr "Apstiprināt"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Projekts"
 
 #: aplans/middleware.py
 msgid "Login was unsuccessful."
@@ -4130,8 +4174,20 @@ msgid "Not a contact person"
 msgstr "Ne kontaktpersona"
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Is plan admin"
 msgstr "Vai plāns ir administrators"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr ""
 
 #: people/wagtail_admin.py
 msgid "Plan admin organizations"
@@ -4418,3 +4474,6 @@ msgstr "Lietotāji"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nav atļauts noņemt lietotājus, kas pieder pie plāniem, kurus jūs neapsaimniekojat."
+
+#~ msgid "Enable moderation workflow"
+#~ msgstr "Moderēšanas darbplūsmas iespējošana"

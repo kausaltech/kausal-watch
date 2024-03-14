@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-02-02 14:34+0100\n"
+"POT-Creation-Date: 2024-03-14 17:47+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -372,6 +372,14 @@ msgid "Official name"
 msgstr ""
 
 #: actions/blocks/action_content.py
+msgid "Help text for the field to be shown in the UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr ""
+
+#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr ""
@@ -399,10 +407,6 @@ msgstr ""
 #: actions/blocks/action_content.py actions/blocks/category_list.py
 #: actions/blocks/category_page_layout.py pages/blocks.py
 msgid "Heading"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Help text"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -672,7 +676,7 @@ msgid "contact persons"
 msgstr ""
 
 #: actions/models/action.py
-msgid "Draft"
+msgid "Internal"
 msgstr ""
 
 #: actions/models/action.py aplans/utils.py
@@ -1395,11 +1399,27 @@ msgid "Should the public website contain a link to the admin login?"
 msgstr ""
 
 #: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr ""
+
+#: actions/models/features.py
 msgid "Publicly visible data about contact persons"
 msgstr ""
 
 #: actions/models/features.py
 msgid "Choose which information about contact persons is visible in the public UI"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Hide moderators from the contact persons"
+msgstr ""
+
+#: actions/models/features.py
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
 msgstr ""
 
 #: actions/models/features.py
@@ -1475,11 +1495,7 @@ msgid "Set to enable comparing indicators between organizations"
 msgstr ""
 
 #: actions/models/features.py
-msgid "Enable moderation workflow"
-msgstr ""
-
-#: actions/models/features.py
-msgid "Set to enable drafting and reviewing functionality"
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
 msgstr ""
 
 #: actions/models/features.py
@@ -1656,7 +1672,7 @@ msgstr ""
 msgid "Accessibility"
 msgstr ""
 
-#: actions/models/plan.py
+#: actions/models/plan.py aplans/graphql_types.py
 msgid "Published"
 msgstr ""
 
@@ -1674,6 +1690,14 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "general plan admins"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "public site viewers"
 msgstr ""
 
 #: actions/models/plan.py
@@ -1882,6 +1906,10 @@ msgstr ""
 
 #: admin_site/api.py
 msgid "No user found with this email address. Ask your administrator to create an account for you."
+msgstr ""
+
+#: admin_site/api.py
+msgid "You do not have access to the public site."
 msgstr ""
 
 #: admin_site/api.py
@@ -2148,6 +2176,14 @@ msgstr ""
 
 #: aplans/fields.py
 msgid "Fully qualified hostname (FQDN)"
+msgstr ""
+
+#: aplans/graphql_types.py
+msgid "Approved"
+msgstr ""
+
+#: aplans/graphql_types.py
+msgid "Draft"
 msgstr ""
 
 #: aplans/middleware.py
@@ -4089,7 +4125,19 @@ msgid "Not a contact person"
 msgstr ""
 
 #: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr ""
+
+#: people/wagtail_admin.py
 msgid "Is plan admin"
+msgstr ""
+
+#: people/wagtail_admin.py
+msgid "Site access"
 msgstr ""
 
 #: people/wagtail_admin.py
