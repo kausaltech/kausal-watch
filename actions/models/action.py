@@ -91,7 +91,7 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
         """ A None value is interpreted identically
         to a non-authenticated user"""
         if user is None or not user.is_authenticated:
-            return self.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
+            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
 
     def complete_for_report(self, report):
@@ -132,9 +132,9 @@ class ResponsiblePartyDict(TypedDict):
     role: Literal['primary', 'collaborator', None]
 
 
-class DraftableModel(models.Model):
+class RestrictedVisibilityModel(models.Model):
     class VisibilityState(models.TextChoices):
-        DRAFT = 'draft', _('Draft')
+        INTERNAL = 'internal', _('Internal')
         PUBLIC = 'public', _('Public')
 
     visibility = models.CharField(
@@ -159,7 +159,7 @@ else:
 @reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties'])
 class Action(  # type: ignore[django-manager-missing]
     WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin,
-    ModelWithAttributes, PlanRelatedModel, OrderedModel, ClusterableModel, DraftableModel, index.Indexed
+    ModelWithAttributes, PlanRelatedModel, OrderedModel, ClusterableModel, RestrictedVisibilityModel, index.Indexed
 ):
     """One action/measure tracked in an action plan."""
 
@@ -671,7 +671,7 @@ class Action(  # type: ignore[django-manager-missing]
             q |= Q(plan__other_languages__contains=[variant])
         qs = qs.filter(q)
         # FIXME find out how to use action default manager here
-        qs = qs.filter(visibility=DraftableModel.VisibilityState.PUBLIC)
+        qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return qs
 
     def get_editable_attribute_types(
