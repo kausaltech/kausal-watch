@@ -12,9 +12,10 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2024-03-14 17:47+0200\n"
-"PO-Revision-Date: 2024-01-19 09:43+0000\n"
-"Last-Translator: Weblate Admin <noreply@mj.kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
+"PO-Revision-Date: 2024-03-14 15:57+0000\n"
+"Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
+">\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -169,9 +170,8 @@ msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
 msgstr "Työnkulku kohteelle %(model_name)s '%(object)s' on peruutettu."
 
 #: actions/action_admin_mixins.py
-#, fuzzy
 msgid "Unlock"
-msgstr "Avaa"
+msgstr "Poista lukitus"
 
 #: actions/action_admin_mixins.py
 msgid "Cancel scheduled publish"
@@ -688,14 +688,12 @@ msgid "contact persons"
 msgstr "yhteyshenkilöt"
 
 #: actions/models/action.py
-#, fuzzy
-#| msgid "Internal notes"
 msgid "Internal"
-msgstr "Sisäiset muistiinpanot"
+msgstr "Sisäinen"
 
 #: actions/models/action.py aplans/utils.py
 msgid "Public"
-msgstr "Julkaistu"
+msgstr "Julkinen"
 
 #: actions/models/action.py
 msgid "visibility"
