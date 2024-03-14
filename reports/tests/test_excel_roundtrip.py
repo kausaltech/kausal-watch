@@ -51,7 +51,7 @@ def test_excel_export(
         user,
         django_assert_max_num_queries
 ):
-    with django_assert_max_num_queries(259):
+    with django_assert_max_num_queries(266):
         # report.get_live_action_versions hack still causes some extra queries
         # because of implementation details wrt. reversion
         excel_file_incomplete = excel_file_from_report_factory()

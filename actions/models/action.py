@@ -156,7 +156,7 @@ else:
     ActionManager = models.Manager.from_queryset(ActionQuerySet)
 
 
-@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties'])
+@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties', 'tasks'])
 class Action(  # type: ignore[django-manager-missing]
     WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin,
     ModelWithAttributes, PlanRelatedModel, OrderedModel, ClusterableModel, RestrictedVisibilityModel, index.Indexed
@@ -1088,6 +1088,7 @@ class ActionRelatedModelTransModelMixin():
         return model_from_serializable_data(cls, data, check_fks=check_fks, strict_fks=strict_fks)
 
 
+@reversion.register()
 class ActionTask(ActionRelatedModelTransModelMixin, models.Model):
     """A task that should be completed during the execution of an action.
 
