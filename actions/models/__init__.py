@@ -1,7 +1,7 @@
 from .action import (
     Action, ActionResponsibleParty, ActionContactPerson, ActionSchedule,
     ActionStatus, ActionImplementationPhase, ActionDecisionLevel, ActionTask, ActionImpact, ActionLink,
-    ActionStatusUpdate, ImpactGroupAction, DraftableModel, ModelWithRole
+    ActionStatusUpdate, ImpactGroupAction, RestrictedVisibilityModel, ModelWithRole
 )
 from .attributes import (
     AttributeType, AttributeTypeChoiceOption, AttributeCategoryChoice, AttributeChoice, AttributeChoiceWithText,
@@ -42,7 +42,7 @@ __all__ = [
     'CommonCategory',
     'CommonCategoryIcon',
     'CommonCategoryType',
-    'DraftableModel',
+    'RestrictedVisibilityModel',
     'GeneralPlanAdmin',
     'ImpactGroup',
     'ImpactGroupAction',
