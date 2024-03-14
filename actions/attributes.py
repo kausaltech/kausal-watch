@@ -66,28 +66,28 @@ class FormField:
         return AttributeFieldPanel(self.name, heading=heading)
 
 
-class AttributeValue:
+class AttributeValue(ABC):
     """Representation of data stored inside an Attribute instance.
 
     AttributeValue may sometimes contain the same data as an element of Django's dict `cleaned_data` after validation,
     but for some attribute types we need to assemble multiple values from `cleaned_data` to construct the respective
     attribute, so data stored in AttributeValue is not the same as a single value in `cleaned_data`.
     """
-
+    @abstractmethod
     def serialize(self) -> Any:
-        # Implement in subclass
-        raise NotImplementedError()
+        pass
 
+    @abstractmethod
     def attribute_model_kwargs(self) -> dict[str, Any]:
-        # Implement in subclass
-        raise NotImplementedError()
+        pass
+
+    @abstractmethod
+    def __bool__(self) -> bool:
+        pass
 
     def instantiate_attribute(self, type: AttributeType[T], obj: models.ModelWithAttributes) -> T:
         return type.ATTRIBUTE_MODEL(type=type.instance, content_object=obj, **self.attribute_model_kwargs())
 
-    def __bool__(self):
-        # Implement in subclass
-        raise NotImplementedError()
 
 
 @dataclass
@@ -200,51 +200,40 @@ class AttributeType(ABC, Generic[T]):
         If `draft_attributes` is given, its contents override the attributes attached to `obj` because it is assumed
         that the values in `draft_attributes` should be edited but are not yet committed to the model's database table.
         """
-        # Implement in subclass
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> AttributeValue | None:
         """Returns None if there is no data for this attribute type."""
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def get_value_from_draft(self, draft_attributes: DraftAttributes) -> AttributeValue | None:
         """Returns None if there is no data for this attribute type."""
-        raise NotImplementedError()
+        pass
 
     @abstractmethod
     def xlsx_values(
         self, attribute: SerializedAttributeVersion | None, related_data_objects: dict[str, list[SerializedVersion]]
     ) -> list[Any]:
         """Return the value for each of this attribute type's columns for the given attribute (can be None)."""
-        raise NotImplementedError()
-
-    @classmethod
-    def format_to_class(cls, format: models.AttributeType.AttributeFormat) -> type[AttributeType]:
-        if format == models.AttributeType.AttributeFormat.ORDERED_CHOICE:
-            return OrderedChoice
-        if format == models.AttributeType.AttributeFormat.UNORDERED_CHOICE:
-            # We reuse the ordered choice implementation and simply
-            # render differently in the UI according to format
-            # TODO: combine different choice attributes under same implementation
-            # with additional metadata configuring the concrete behavior
-            return OrderedChoice
-        elif format == models.AttributeType.AttributeFormat.CATEGORY_CHOICE:
-            return CategoryChoice
-        elif format == models.AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT:
-            return OptionalChoiceWithText
-        elif format == models.AttributeType.AttributeFormat.TEXT:
-            return Text
-        elif format == models.AttributeType.AttributeFormat.RICH_TEXT:
-            return RichText
-        elif format == models.AttributeType.AttributeFormat.NUMERIC:
-            return Numeric
-        raise ValueError(f'Unsupported attribute type format: {format}')
+        pass
 
     @classmethod
     def from_model_instance(cls, instance: models.AttributeType) -> AttributeType[T]:
-        attr_class = cls.format_to_class(instance.format)
+        format_to_class: dict[models.AttributeType.AttributeFormat, type[AttributeType]] = {
+            models.AttributeType.AttributeFormat.ORDERED_CHOICE: OrderedChoice,
+            # We reuse the ordered choice implementation and simply render differently in the UI according to format
+            # TODO: combine different choice attributes under same implementation with additional metadata configuring
+            # the concrete behavior
+            models.AttributeType.AttributeFormat.UNORDERED_CHOICE: OrderedChoice,
+            models.AttributeType.AttributeFormat.CATEGORY_CHOICE: CategoryChoice,
+            models.AttributeType.AttributeFormat.OPTIONAL_CHOICE_WITH_TEXT: OptionalChoiceWithText,
+            models.AttributeType.AttributeFormat.TEXT: Text,
+            models.AttributeType.AttributeFormat.RICH_TEXT: RichText,
+            models.AttributeType.AttributeFormat.NUMERIC: Numeric,
+        }
+        attr_class = format_to_class[instance.format]
         return attr_class(instance)
 
     def __init__(self, instance: models.AttributeType):
