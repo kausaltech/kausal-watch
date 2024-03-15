@@ -4,7 +4,7 @@ from wagtail.models import Page as WagtailPage
 from grapple.types.pages import PageInterface
 
 from aplans.graphql_types import get_plan_from_context, register_graphene_node
-from pages.models import AplansPage
+from pages.models import AplansPage, Page
 
 
 @register_graphene_node
@@ -16,6 +16,8 @@ class PageMenuItemNode(graphene.ObjectType):
     page = graphene.Field(PageInterface, required=True)
     parent = graphene.Field('pages.schema.PageMenuItemNode')
     children = graphene.List('pages.schema.PageMenuItemNode')
+    cross_plan_link = graphene.Boolean()
+    view_url = graphene.String(client_url=graphene.String(required=False))
 
     def resolve_id(item, info):
         return item.page.id
@@ -38,6 +40,14 @@ class PageMenuItemNode(graphene.ObjectType):
             pages = pages.filter(id__in=footer_page_ids)
         pages = pages.specific()
         return [PageMenuItemNode(page=page) for page in pages]
+
+    def resolve_view_url(item, info, client_url=None):
+        page = item.page
+        plan = page.get_site().plan
+        if not client_url:
+            client_url = info.variable_values['clientUrl']
+        view_url = plan.get_view_url(client_url=client_url)
+        return view_url
 
 
 @register_graphene_node
@@ -135,11 +145,26 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
         # AplansPage is abstract and thus has no manager, so we need to find additional links pages for each subclass of
         # AplansPage individually. Gather IDs first and then make a separate query for additional_links_pages because
         # the latter gives us the correct order of the pages.
+
         additional_links_page_ids = [page.id
                                      for Model in AplansPage.get_subclasses()
                                      for page in Model.objects.filter(show_in_additional_links=True)]
         pages = pages.filter(id__in=additional_links_page_ids).specific()
-        return [PageMenuItemNode(page=page) for page in pages]
+
+        # Add general additional links that should be included in all plan pages
+        parent_plan = parent.get_site().plan.parent
+
+        cross_plan_page_ids = [
+            page.id for Model in AplansPage.get_subclasses()
+            for page in Model.objects.filter(link_in_all_org_child_plans=True)
+            if page.get_site().plan == parent_plan
+        ]
+
+        cross_plan_pages = Page.objects.filter(id__in=cross_plan_page_ids).specific()
+        cross_plan_pages = cross_plan_pages.live().public()
+        cross_plan_pages = [PageMenuItemNode(page=page, cross_plan_link=True) for page in cross_plan_pages]
+        pages_nodes = [PageMenuItemNode(page=page) for page in pages]
+        return pages_nodes + cross_plan_pages
 
 
 class Query:
