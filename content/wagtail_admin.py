@@ -56,22 +56,6 @@ class SiteGeneralContentAdmin(ModelAdmin):
     menu_label = _('Site settings')
     menu_order = 503
 
-    panels = [
-        FieldPanel('site_title'),
-        FieldPanel('site_description'),
-        FieldPanel('owner_url'),
-        FieldPanel('owner_name'),
-        FieldPanel('official_name_description'),
-        FieldPanel('copyright_text'),
-        FieldPanel('creative_commons_license'),
-        FieldPanel('github_api_repository'),
-        FieldPanel('github_ui_repository'),
-        FieldPanel('action_term'),
-        FieldPanel('action_task_term'),
-        FieldPanel('organization_term'),
-        FieldPanel('sitewide_announcement'),
-    ]
-
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
@@ -82,9 +66,24 @@ class SiteGeneralContentAdmin(ModelAdmin):
         return SiteGeneralContentMenuItem(self, order or self.get_menu_order())
 
     def get_edit_handler(self):
+        default_panels = [
+            FieldPanel('site_title'),
+            FieldPanel('site_description'),
+            FieldPanel('owner_url'),
+            FieldPanel('owner_name'),
+            FieldPanel('official_name_description'),
+            FieldPanel('copyright_text'),
+            FieldPanel('creative_commons_license'),
+            FieldPanel('github_api_repository'),
+            FieldPanel('github_ui_repository'),
+            FieldPanel('action_term'),
+            FieldPanel('action_task_term'),
+            FieldPanel('organization_term'),
+            FieldPanel('sitewide_announcement'),
+        ]
         request = ctx_request.get()
         instance = ctx_instance.get()
         self.panels = insert_model_translation_panels(
-            SiteGeneralContent, self.panels, request, instance.plan
+            SiteGeneralContent, default_panels, request, instance.plan
         )
         return super().get_edit_handler()
