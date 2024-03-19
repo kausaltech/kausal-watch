@@ -52,7 +52,7 @@ class WatchObjectCache:
     plan_caches: dict[int, PlanSpecificCache]
     admin_plan_cache: PlanSpecificCache | None
     query_workflow_state: WorkflowStateEnum
-    def __init__(self):
+    def __init__(self) -> None:
         self.plan_caches = {}
         self.admin_plan_cache = None
         self.query_workflow_state = WorkflowStateEnum.PUBLISHED
