@@ -36,7 +36,7 @@ from wagtailautocomplete.edit_handlers import \
 from actions.models.plan import Plan
 from aplans.context_vars import set_instance
 from aplans.types import WatchAdminRequest
-from aplans.utils import PlanDefaultsModel, PlanRelatedModel, InstancesVisibleForMixin
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel, InstancesVisibleForMixin, get_language_from_default_language_field
 from pages.models import ActionListPage
 
 from .utils import FieldLabelRenderer
@@ -92,12 +92,7 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
     languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
     if include_all_languages:
         # Omit default language because it's stored in the model field without a modeltrans language suffix
-        if i18n_field.default_language_field:
-            default_language = get_instance_field_value(instance, i18n_field.default_language_field)
-        else:
-            default_language = settings.LANGUAGE_CODE
-        if default_language:
-            default_language = default_language.lower()
+        default_language = get_language_from_default_language_field(instance, i18n_field)
         languages = [lang for lang in languages_by_code.keys() if lang != default_language]
     else:
         languages = [lang.lower() for lang in plan.other_languages]

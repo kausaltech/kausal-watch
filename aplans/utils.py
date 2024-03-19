@@ -1,13 +1,13 @@
 from __future__ import annotations
 import abc
 from django.contrib.auth.models import AnonymousUser
-
 import humanize
 import libvoikko  # type: ignore
 import logging
 import random
 import re
 from typing import Generic, Iterable, List, Protocol, Self, Sequence, TYPE_CHECKING, TypeVar
+from modeltrans.fields import TranslationField
 
 import sentry_sdk
 from datetime import datetime, timedelta
@@ -20,6 +20,8 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
 from enum import Enum
+from modeltrans.translator import get_i18n_field
+from modeltrans.utils import get_instance_field_value
 from tinycss2.color3 import parse_color  # type: ignore
 from wagtail.fields import StreamField
 from wagtail.models import Page, ReferenceIndex
@@ -472,7 +474,28 @@ def get_supported_languages():
 
 
 def get_default_language():
+    """Return the global default language from Django settings"""
     return settings.LANGUAGES[0][0]
+
+
+def get_language_from_default_language_field(
+        instance: models.Model,
+        i18n_field: TranslationField | None = None
+):
+    """Return the primary language from the default language field"""
+
+    i18n_field = i18n_field or get_i18n_field(instance._meta.model)
+    if i18n_field is None:
+        raise ValueError('No i18n field found for', instance)
+    if i18n_field.default_language_field:
+        default_language = get_instance_field_value(instance, i18n_field.default_language_field)
+    else:
+        default_language = settings.LANGUAGE_CODE
+    if isinstance(default_language, str):
+        default_language = default_language.lower()
+    else:
+        raise ValueError('Invalid default_language for', instance, default_language)
+    return default_language
 
 
 class ModelWithPrimaryLanguage(models.Model):

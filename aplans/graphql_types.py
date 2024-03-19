@@ -21,16 +21,17 @@ from modeltrans.translator import get_i18n_field
 
 from actions.models.plan import Plan
 from aplans.types import WatchAPIRequest
+from aplans.utils import get_language_from_default_language_field
 from users.models import User
 
 
 graphene_registry: list[Type[graphene.ObjectType | graphene.Interface]] = []
 
 
-def get_i18n_field_with_fallback(field_name, obj, info):
+def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
+    i18n_field = get_i18n_field(obj._meta.model)
     fallback_value = getattr(obj, field_name)
-    fallback_lang = 'fi'  # FIXME
-
+    fallback_lang = get_language_from_default_language_field(obj, i18n_field)
     fallback = (fallback_value, fallback_lang)
 
     active_language = getattr(info.context, '_graphql_query_language', None)
@@ -38,8 +39,6 @@ def get_i18n_field_with_fallback(field_name, obj, info):
         return fallback
 
     active_language = active_language.lower().replace('-', '_')
-
-    i18n_field = get_i18n_field(obj._meta.model)
 
     i18n_values = getattr(obj, i18n_field.name)
     if i18n_values is None or active_language == fallback_lang:
