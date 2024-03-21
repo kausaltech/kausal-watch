@@ -510,3 +510,11 @@ def test_action_on_form_save_no_commit(
     # Clear all attributes again to check if the previously set values are removed
     save_form(cleaned_data_attributes_cleared)
     assert action.draft_attributes.get_serialized_data() == expected_result_attributes_cleared
+
+
+def test_primary_language_lowercase(attribute_type, common_category_type, plan, organization):
+    for instance in (attribute_type, common_category_type, plan, organization):
+        for lang_code, _ in settings.LANGUAGES:
+            instance.primary_language = lang_code
+            instance.save()
+            assert instance.primary_language.lower() == instance.primary_language_lowercase

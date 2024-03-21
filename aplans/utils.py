@@ -478,6 +478,10 @@ def get_default_language():
     return settings.LANGUAGES[0][0]
 
 
+def get_default_language_lowercase():
+    return get_default_language().lower()
+
+
 def get_language_from_default_language_field(
         instance: models.Model,
         i18n_field: TranslationField | None = None
@@ -498,21 +502,23 @@ def get_language_from_default_language_field(
     return default_language
 
 
+LANGUAGE_MAX_LENGTH = 8
+
+
 class ModelWithPrimaryLanguage(models.Model):
-    primary_language = models.CharField(max_length=8, choices=get_supported_languages(), default=get_default_language)
+    primary_language = models.CharField(max_length=LANGUAGE_MAX_LENGTH, choices=get_supported_languages(), default=get_default_language)
+
+    # The lowercase field must be used as the modeltrans default language field instead of the primary language field itself, because
+    # modeltrans is using lowercase language codes. Otherwise primary languages with variant suffixes do not match, causing all sorts of
+    # problems.
+    primary_language_lowercase =  models.CharField(max_length=LANGUAGE_MAX_LENGTH, default=get_default_language_lowercase)
 
     class Meta:
         abstract = True
 
-    @property
-    def primary_language_lowercase(self):
-        """
-        This must be used as the modeltrans default language field instead
-        of the primary language field itself, because modeltrans is using
-        lowercase language codes. Otherwise primary languages with variant
-        suffixes do not match, causing all sorts of problems.
-        """
-        return self.primary_language.lower()
+    def save(self, *args, **kwargs) -> None:  # type: ignore[no-untyped-def]
+        self.primary_language_lowercase = self.primary_language.lower()
+        super().save(*args, **kwargs)
 
 
 class ModificationTracking(models.Model):
