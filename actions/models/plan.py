@@ -126,6 +126,15 @@ def help_text_with_default_disclaimer(help_text, default_value=None):
     )
 
 
+class UsageStatus(models.TextChoices):
+    CUSTOMER_USE = 'customer_use', _('Customer use')
+    SALES = 'sales', _('Sales and demos')
+    DEVELOPMENT = 'development', _('Internal testing, training, development or other non-public use')
+    CUSTOMER_OFFBOARDING = 'customer_offboarding', _('Offboarding in progress')
+    INACTIVE = 'inactive', _('Inactive, not in use currently')
+    DEPRECATED = 'deprecated', _('Deprecated, should be deleted')
+
+
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
@@ -167,6 +176,19 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
     published_at = models.DateTimeField(null=True, blank=True, verbose_name=_('published at'))
     archived_at = models.DateTimeField(null=True, blank=True, editable=False, verbose_name=_('archived at'))
+
+    usage_status = models.CharField(
+        max_length=30,
+        choices=UsageStatus.choices,
+        default=UsageStatus.CUSTOMER_USE,
+        verbose_name=_('Usage status'),
+        help_text=_(
+            'If unsure, use the default value representing customer use. For statistical purposes specify '
+            'what the plan will be used for in order to differentiate between plans actually in '
+            'use by customers and those created for some other reason.'
+        )
+    )
+
     site_url = models.URLField(
         blank=True, null=True, verbose_name=_('site URL'),
         validators=[URLValidator(('http', 'https'))]

@@ -217,6 +217,7 @@ class PlanAdmin(AplansModelAdmin):
             panels.append(InlinePanel('clients', min_num=1, panels=[
                 FieldPanel('client', widget=ClientChooser)
                 ], heading=_('Clients')))
+            panels.append(FieldPanel('usage_status'))
         if not creating and request.user.is_superuser:
             panels.append(FieldPanel('theme_identifier'))
             panels.append(InlinePanel('domains', panels=[
