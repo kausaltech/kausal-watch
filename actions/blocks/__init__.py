@@ -8,7 +8,7 @@ from actions.blocks.action_content import (
     ActionAsideContentBlock, ActionContactFormBlock, ActionContactPersonsBlock, ActionDescriptionBlock,
     ActionLeadParagraphBlock, ActionLinksBlock, ActionMainContentBlock, ActionMergedActionsBlock,
     ActionOfficialNameBlock, ActionRelatedActionsBlock, ActionRelatedIndicatorsBlock, ActionResponsiblePartiesBlock,
-    ActionScheduleBlock, ActionTasksBlock,
+    ActionScheduleBlock, ActionTasksBlock, ActionDependenciesBlock
 )
 from actions.blocks.action_dashboard import (
     IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
@@ -116,7 +116,7 @@ class RelatedPlanListBlock(blocks.StaticBlock):
 __all__ = [
     'ActionAttributeTypeChooserBlock', 'ActionContactPersonsBlock', 'ActionDescriptionBlock', 'ActionContactFormBlock',
     'ActionHighlightsBlock', 'ActionImplementationPhaseFilterBlock', 'ActionLeadParagraphBlock', 'ActionLinksBlock',
-    'ActionListBlock', 'ActionMergedActionsBlock', 'ActionOfficialNameBlock', 'ActionRelatedActionsBlock',
+    'ActionListBlock', 'ActionMergedActionsBlock', 'ActionOfficialNameBlock', 'ActionRelatedActionsBlock', 'ActionDependenciesBlock',
     'ActionRelatedIndicatorsBlock', 'ActionResponsiblePartiesBlock', 'ActionScheduleBlock', 'ActionScheduleFilterBlock',
     'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
     'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeChooserBlock', 'PrimaryOrganizationFilterBlock',

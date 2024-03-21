@@ -20,7 +20,7 @@ from reports.blocks.action_content import ReportComparisonBlock
 # Attention: Defines several block classes via metaprogramming. See `action_attribute_blocks`. Currently:
 # ActionLeadParagraphBlock, ActionDescriptionBlock, ActionScheduleBlock, ActionLinksBlock, ActionTasksBlock,
 # ActoinMergedActionsBlock, ActionRelatedActionsBlock, ActionRelatedIndicatorsBlock, ActionContactPersonsBlock,
-# ActionResponsiblePartiesBlock
+# ActionResponsiblePartiesBlock, ActionDependenciesBlock
 
 
 class StaticBlockToStructBlockWorkaroundMixin:
@@ -262,6 +262,7 @@ action_attribute_blocks = generate_blocks_for_fields(Action, [
     'tasks',
     ('merged_actions', {'label': _('Merged actions')}),
     ('related_actions', {'label': _('Related actions')}),
+    ('dependencies', {'label': _('Action dependencies')}),
     'related_indicators',
     'contact_persons',
 ])
@@ -319,6 +320,7 @@ ActionMainContentBlock = generate_stream_block(
         'tasks',
         'merged_actions',
         'related_actions',
+        'dependencies',
         'related_indicators',
         ('contact_form', ActionContactFormBlock(required=True)),
         ('report_comparison', ReportComparisonBlock()),
