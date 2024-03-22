@@ -26,7 +26,7 @@ def excel_file_from_report_factory(actions_having_attributes, report_with_all_at
 
 def assert_report_dimensions(excel_file, report, actions):
     df_actions = polars.read_excel(BytesIO(excel_file), sheet_name=_('Actions'))
-    non_report_fields = ['action', 'identifier']
+    non_report_fields = ['action', 'identifier', 'visibility']
     has_complete_actions = False
     if report.is_complete:
         has_complete_actions = True
@@ -51,7 +51,7 @@ def test_excel_export(
         user,
         django_assert_max_num_queries
 ):
-    with django_assert_max_num_queries(266):
+    with django_assert_max_num_queries(269):
         # report.get_live_action_versions hack still causes some extra queries
         # because of implementation details wrt. reversion
         excel_file_incomplete = excel_file_from_report_factory()
