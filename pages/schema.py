@@ -156,7 +156,7 @@ class AdditionalLinksNode(MenuNodeMixin, graphene.ObjectType):
 
         cross_plan_page_ids = [
             page.id for Model in AplansPage.get_subclasses()
-            for page in Model.objects.filter(link_in_all_org_child_plans=True)
+            for page in Model.objects.filter(link_in_all_child_plans=True)
             if page.get_site().plan == parent_plan
         ]
 

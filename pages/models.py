@@ -55,7 +55,7 @@ class AplansPage(Page):
                                          help_text=_('Should the page be shown in the footer?'),)
     show_in_additional_links = models.BooleanField(default=False, verbose_name=_('show in additional links'),
                                                    help_text=_('Should the page be shown in the additional links?'),)
-    link_in_all_org_child_plans = models.BooleanField(default=False, verbose_name=_('show link in child plans'),
+    link_in_all_child_plans = models.BooleanField(default=False, verbose_name=_('show link in child plans'),
                                                 help_text=_("Should this additional link be displayed in child plans?"))
 
     children_use_secondary_navigation = models.BooleanField(
@@ -72,7 +72,7 @@ class AplansPage(Page):
         FieldPanel('show_in_menus'),
         FieldPanel('show_in_footer'),
         FieldPanel('show_in_additional_links'),
-        FieldPanel('link_in_all_org_child_plans'),
+        FieldPanel('link_in_all_child_plans'),
         FieldPanel('children_use_secondary_navigation'),
         FieldPanel('search_description'),
     ]
@@ -95,7 +95,7 @@ class AplansPage(Page):
         GraphQLField('plan', 'actions.schema.PlanNode', required=False),
         GraphQLBoolean('show_in_footer'),
         GraphQLBoolean('show_in_additional_links'),
-        GraphQLBoolean('link_in_all_org_child_plans'),
+        GraphQLBoolean('link_in_all_child_plans'),
         GraphQLBoolean('children_use_secondary_navigation'),
     ]
 
