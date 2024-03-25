@@ -375,6 +375,16 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         related_name='contact_for_indicators', verbose_name=_('contact persons')
     )
 
+    internal_notes = models.TextField(
+        blank=True, null=True, verbose_name=_('internal notes')
+    )
+
+    reference = RichTextField(
+        blank=True, null=True, verbose_name=_('reference'), max_length=255,
+        help_text=_("What is the reference or source for this indicator?"),
+        features=['link'],
+    )
+
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
@@ -390,7 +400,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
-        'related_causes', 'related_effects', 'dimensions',
+        'related_causes', 'related_effects', 'dimensions', 'reference',
     ]
 
     objects = IndicatorQuerySet.as_manager()

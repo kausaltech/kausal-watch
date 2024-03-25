@@ -541,6 +541,7 @@ def test_indicator_node(graphql_client_query_data):
               id
             }
             timeResolution
+            reference
             latestValue {
               __typename
               id
@@ -619,6 +620,7 @@ def test_indicator_node(graphql_client_query_data):
                 'id': str(category.id),
             }],
             'timeResolution': indicator.time_resolution.upper(),
+            'reference': indicator.reference,
             'latestValue': {
                 '__typename': 'IndicatorValue',
                 'id': str(indicator.latest_value.id),

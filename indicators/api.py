@@ -7,6 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
+from aplans.types import AuthenticatedWatchRequest
+
 from .models import (
     ActionIndicator, Indicator, IndicatorLevel, IndicatorGoal, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
@@ -217,7 +219,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
         list_serializer_class = BulkListSerializer
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
-            'latest_value',
+            'latest_value', 'reference', 'internal_notes',
         )
 
     def create(self, validated_data: dict):
@@ -228,6 +230,21 @@ class IndicatorSerializer(serializers.ModelSerializer):
         assert level in [v for v, _ in Indicator.LEVELS]
         instance.levels.create(plan=plan, level=level)
         return instance
+    
+
+    def get_fields(self):
+        fields = super().get_fields()
+        request: AuthenticatedWatchRequest = self.context.get('request')
+        user = None
+        plan = None
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+            plan = user.get_active_admin_plan()
+
+        if user is None or (not user.is_superuser and not user.is_general_admin_for_plan(plan)):
+            # Remove fields that are only for admins
+            del fields['internal_notes']
+        return fields
 
 
 class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):

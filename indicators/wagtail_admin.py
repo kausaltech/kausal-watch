@@ -368,6 +368,8 @@ class IndicatorAdmin(AplansModelAdmin):
         FieldPanel('min_value'),
         FieldPanel('max_value'),
         FieldPanel('level'),
+        FieldPanel('reference'),
+        FieldPanel('internal_notes'),
         InlinePanel(
             'related_actions',
             panels=[
