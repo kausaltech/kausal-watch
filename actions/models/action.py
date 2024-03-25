@@ -463,6 +463,11 @@ class Action(  # type: ignore[django-manager-missing]
             .first()
         )
 
+    @property
+    def visibility_display(self):
+        return self.get_visibility_display()
+
+
     def _calculate_status_from_indicators(self):
         progress_indicators = self.related_indicators.filter(indicates_action_progress=True)
         total_completion = 0.0

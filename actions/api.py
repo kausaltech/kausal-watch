@@ -1005,7 +1005,7 @@ class ActionSerializer(
         fields = public_fields(
             Action,
             add_fields=[
-                'internal_notes', 'internal_admin_notes',
+                'internal_notes', 'internal_admin_notes', 'visibility', 'visibility_display'
             ],
             remove_fields=[
                 'impact', 'status_updates', 'monitoring_quality_points', 'image', 'tasks', 'links',
