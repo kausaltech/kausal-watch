@@ -8,6 +8,7 @@ from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, GQLInfo, reg
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
 from actions.models import Plan
+from aplans.utils import public_fields
 from orgs.forms import NodeForm
 from orgs.models import Organization, OrganizationClass
 
@@ -24,6 +25,7 @@ class OrganizationForm(NodeForm):
 class OrganizationClassNode(DjangoNode):
     class Meta:
         model = OrganizationClass
+        fields = public_fields(OrganizationClass)
 
 
 @register_django_node

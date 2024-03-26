@@ -4,6 +4,8 @@ from actions.models import Plan
 from aplans.graphql_types import DjangoObjectType
 from graphene_django.forms.mutation import DjangoModelFormMutation
 
+from aplans.utils import public_fields
+
 from .models import UserFeedback
 
 
@@ -18,6 +20,7 @@ class UserFeedbackForm(forms.ModelForm):
 class UserFeedbackNode(DjangoObjectType):
     class Meta:
         model = UserFeedback
+        fields = public_fields(UserFeedback)
 
 
 class UserFeedbackMutation(DjangoModelFormMutation):

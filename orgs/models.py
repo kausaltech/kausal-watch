@@ -80,6 +80,8 @@ class OrganizationClass(models.Model):
 
     i18n = TranslationField(fields=('name',))
 
+    public_fields: typing.ClassVar = ['id', 'identifier', 'name', 'created_time', 'last_modified_time']
+
     def __str__(self):
         return self.name
 

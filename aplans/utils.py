@@ -97,7 +97,7 @@ def underscore_to_camelcase(value: str) -> str:
 
 
 class HasPublicFields(Protocol):
-    public_fields: Sequence[str]
+    public_fields: List[str]
 
 
 def public_fields(

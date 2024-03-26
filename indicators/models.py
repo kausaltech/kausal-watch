@@ -263,6 +263,8 @@ class RelatedCommonIndicator(IndicatorRelationship):
         verbose_name=_('effect indicator')
     )
 
+    public_fields: typing.ClassVar = ['id', 'causal_indicator', 'effect_indicator']
+
     class Meta:
         unique_together = (('causal_indicator', 'effect_indicator'),)
         verbose_name = _('related indicator')
@@ -718,6 +720,8 @@ class IndicatorLevel(ClusterableModel):
     )
     level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS)
 
+    public_fields: typing.ClassVar = ['id', 'indicator', 'plan', 'level']
+
     class Meta:
         unique_together = (('indicator', 'plan'),)
         verbose_name = _('indicator levels')
@@ -731,6 +735,8 @@ class IndicatorGraph(models.Model):
     indicator = models.ForeignKey(Indicator, related_name='graphs', on_delete=models.CASCADE)
     data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    public_fields: typing.ClassVar = ['id', 'indicator', 'data', 'created_at']
 
     class Meta:
         get_latest_by = 'created_at'
@@ -830,6 +836,8 @@ class RelatedIndicator(IndicatorRelationship):
         verbose_name=_('confidence level'), help_text=_('How confident we are that the causal effect is present')
     )
 
+    public_fields: typing.ClassVar = ['id', 'effect_type', 'causal_indicator', 'effect_indicator', 'confidence_level']
+
     class Meta:
         unique_together = (('causal_indicator', 'effect_indicator'),)
         verbose_name = _('related indicator')
@@ -858,6 +866,8 @@ class ActionIndicator(models.Model):
         default=False, verbose_name=_('indicates action progress'),
         help_text=_('Set if the indicator should be used to determine action progress')
     )
+
+    public_fields: typing.ClassVar = ['id', 'action', 'indicator', 'effect_type', 'indicates_action_progress']
 
     class Meta:
         unique_together = (('action', 'indicator'),)

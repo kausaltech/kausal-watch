@@ -1,3 +1,4 @@
+import typing
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -29,6 +30,8 @@ class UserFeedback(models.Model):
     is_processed = models.BooleanField(default=False, verbose_name=_("is processed"))
 
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='user_feedbacks')
+
+    public_fields: typing.ClassVar = ['id']
 
     class Meta:
         verbose_name = _('user feedback')

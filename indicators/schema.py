@@ -75,21 +75,25 @@ class QuantityNode(DjangoNode):
 class RelatedIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedIndicator
+        fields = public_fields(RelatedIndicator)
 
 
 class ActionIndicatorNode(DjangoNode):
     class Meta:
         model = ActionIndicator
+        fields = public_fields(ActionIndicator)
 
 
 class IndicatorGraphNode(DjangoNode):
     class Meta:
         model = IndicatorGraph
+        fields = public_fields(IndicatorGraph)
 
 
 class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
+        fields = public_fields(IndicatorLevel)
 
 
 class DimensionNode(DjangoNode):
@@ -132,6 +136,7 @@ class CommonIndicatorNode(DjangoNode):
 class RelatedCommonIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedCommonIndicator
+        fields = public_fields(RelatedCommonIndicator)
 
 
 class FrameworkIndicatorNode(DjangoNode):
