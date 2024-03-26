@@ -136,8 +136,6 @@ INSTALLED_APPS = [
     'dal_select2',
     'dal_admin_filters',
 
-    'helusers.apps.HelusersConfig',
-    # 'helusers.apps.HelusersAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -274,7 +272,6 @@ AUTH_PASSWORD_VALIDATORS = [
 # SOCIAL_AUTH_POSTGRES_JSONFIELD = True
 
 AUTHENTICATION_BACKENDS = (
-    'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
     'admin_site.backends.ADFSOpenIDConnectAuth',
     'django.contrib.auth.backends.ModelBackend',
@@ -344,13 +341,7 @@ SOCIAL_AUTH_PIPELINE = (
 
     # Update avatar photo from MS Graph
     'users.pipeline.update_avatar',
-
-    # Store the end session URL in the user's session data so that
-    # we can format logout links properly.
-    'helusers.pipeline.store_end_session_url',
 )
-
-HELUSERS_PASSWORD_LOGIN_DISABLED = True
 
 SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
 

@@ -1,7 +1,6 @@
 django
 wagtail-orderable
 djangorestframework
-django-helusers
 social-auth-app-django
 psycopg2-binary
 django-extensions
