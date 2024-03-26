@@ -448,8 +448,6 @@ TIME_ZONE = 'Europe/Helsinki'
 USE_I18N = True
 WAGTAIL_I18N_ENABLED = True
 
-USE_L10N = True
-
 USE_TZ = True
 
 LOCALE_PATHS = [
