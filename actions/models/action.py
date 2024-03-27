@@ -400,7 +400,9 @@ class Action(  # type: ignore[django-manager-missing]
         verbose_name = _('action')
         verbose_name_plural = _('actions')
         ordering = ('plan', 'order')
-        index_together = (('plan', 'order'),)
+        indexes = [
+            models.Index(fields=['plan', 'order']),
+        ]
         unique_together = (('plan', 'identifier'),)
         permissions = (
             ('admin_action', _("Can administrate all actions")),
@@ -884,7 +886,9 @@ class ActionResponsibleParty(OrderedModel, ModelWithRole):
 
     class Meta:
         ordering = ['action', 'order']
-        index_together = (('action', 'order'),)
+        indexes = [
+            models.Index(fields=['action', 'order']),
+        ]
         unique_together = (('action', 'organization'),)
         verbose_name = _('action responsible party')
         verbose_name_plural = _('action responsible parties')
@@ -942,7 +946,9 @@ class ActionContactPerson(OrderedModel, ModelWithRole):
 
     class Meta:
         ordering = ['action', 'order']
-        index_together = (('action', 'order'),)
+        indexes = [
+            models.Index(fields=['action', 'order']),
+        ]
         unique_together = (('action', 'person',),)
         verbose_name = _('action contact person')
         verbose_name_plural = _('action contact persons')
@@ -1243,7 +1249,9 @@ class ActionLink(ActionRelatedModelTransModelMixin, OrderedModel):
 
     class Meta:
         ordering = ['action', 'order']
-        index_together = (('action', 'order'),)
+        indexes = [
+            models.Index(fields=['action', 'order']),
+        ]
         verbose_name = _('action link')
         verbose_name_plural = _('action links')
 

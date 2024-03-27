@@ -680,7 +680,9 @@ class IndicatorDimension(OrderedModel):
         verbose_name = _('indicator dimension')
         verbose_name_plural = _('indicator dimensions')
         ordering = ['indicator', 'order']
-        index_together = (('indicator', 'order'),)
+        indexes = [
+            models.Index(fields=['indicator', 'order']),
+        ]
         unique_together = (('indicator', 'dimension'),)
 
     def __str__(self):
@@ -699,7 +701,9 @@ class CommonIndicatorDimension(OrderedModel):
         verbose_name = _('common indicator dimension')
         verbose_name_plural = _('common indicator dimensions')
         ordering = ['common_indicator', 'order']
-        index_together = (('common_indicator', 'order'),)
+        indexes = [
+            models.Index(fields=['common_indicator', 'order']),
+        ]
         unique_together = (('common_indicator', 'dimension'),)
 
     def __str__(self):
@@ -890,7 +894,9 @@ class IndicatorContactPerson(OrderedModel):
 
     class Meta:
         ordering = ['indicator', 'order']
-        index_together = (('indicator', 'order'),)
+        indexes = [
+            models.Index(fields=['indicator', 'order']),
+        ]
         unique_together = (('indicator', 'person',),)
         verbose_name = _('indicator contact person')
         verbose_name_plural = _('indicator contact persons')

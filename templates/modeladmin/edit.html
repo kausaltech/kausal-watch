@@ -12,6 +12,21 @@
     {{ block.super }}
     {# Copied from wagtail/admin/templates/wagtailadmin/pages/edit.html #}
     <script>
+        {# FIXME: This will break eventually. #}
+        {# https://docs.wagtail.org/en/stable/releases/5.2.html#window-updatefootersavewarning-global-util-removed #}
+        window.updateFooterSaveWarning = (formDirty, commentsDirty) => {
+          if (!formDirty && !commentsDirty) {
+            document.dispatchEvent(new CustomEvent('w-unsaved:clear'));
+          } else {
+            const [type] = [
+              formDirty && commentsDirty && 'all',
+              commentsDirty && 'comments',
+              formDirty && 'edits',
+            ].filter(Boolean);
+            document.dispatchEvent(new CustomEvent('w-unsaved:add', { detail: { type } }));
+          }
+        };
+
         $(function() {
             /* Make user confirm before leaving the editor if there are unsaved changes */
             {% trans "This page has unsaved changes." as confirmation_message %}

@@ -34,7 +34,7 @@ pytest-cov
 factory-boy
 pytest-factoryboy
 libvoikko
-https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
+https://github.com/kausaltech/django-modeltrans/archive/a734040c3f38c2e404a61dc0be2c017874a9ea45.zip
 wagtail
 wagtail-autocomplete
 wagtail-generic-chooser

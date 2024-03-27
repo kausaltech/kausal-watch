@@ -240,7 +240,15 @@ TEMPLATES = [
 ]
 
 WAGTAILADMIN_STATIC_FILE_VERSION_STRINGS = False
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage',
+    },
+}
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -343,7 +351,7 @@ SOCIAL_AUTH_PIPELINE = (
     'users.pipeline.update_avatar',
 )
 
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
+SESSION_SERIALIZER = 'django.contrib.sessions.serializers.JSONSerializer'
 
 #
 # REST Framework
@@ -674,7 +682,7 @@ AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 if AWS_S3_ENDPOINT_URL:
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES['default']['BACKEND'] = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
@@ -717,7 +725,8 @@ if os.path.exists(f):
 if not locals().get('SECRET_KEY', ''):
     secret_file = os.path.join(BASE_DIR, '.django_secret')
     try:
-        SECRET_KEY = open(secret_file).read().strip()
+        with open(secret_file) as f:
+            SECRET_KEY = f.read().strip()
     except IOError:
         import random
         system_random = random.SystemRandom()
@@ -863,7 +872,6 @@ CELERY_WORKER_SEND_TASK_EVENTS = True
 # CELERY_TASK_SEND_SENT_EVENT = True  # required only for danihodovic/celery-exporter
 
 
-WAGTAIL_MODERATION_ENABLED = True
 WAGTAIL_WORKFLOW_ENABLED = True
 WAGTAILEMBEDS_RESPONSIVE_HTML = True
 

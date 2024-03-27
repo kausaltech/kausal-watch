@@ -826,7 +826,9 @@ class GeneralPlanAdmin(OrderedModel):
 
     class Meta:
         ordering = ['plan', 'order']
-        index_together = (('plan', 'order'),)
+        indexes = [
+            models.Index(fields=['plan', 'order']),
+        ]
         unique_together = (('plan', 'person',),)
         verbose_name = _('general plan admin')
         verbose_name_plural = _('general plan admins')
