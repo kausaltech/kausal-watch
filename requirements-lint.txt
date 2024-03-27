@@ -4,7 +4,7 @@
 #
 #    pip-compile requirements-lint.in
 #
-asgiref==3.5.2
+asgiref==3.8.1
     # via
     #   -c requirements.txt
     #   django
@@ -18,7 +18,7 @@ charset-normalizer==2.1.1
     # via
     #   -c requirements.txt
     #   requests
-django==4.1.13
+django==4.2.11
     # via
     #   -c requirements.txt
     #   django-stubs

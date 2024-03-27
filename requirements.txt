@@ -12,7 +12,7 @@ aniso8601==9.0.1
     #   graphene
 anyascii==0.3.1
     # via wagtail
-asgiref==3.5.2
+asgiref==3.8.1
     # via django
 async-timeout==4.0.2
     # via redis
@@ -76,7 +76,7 @@ deprecated==1.2.13
     # via redis
 diff-match-patch==20200713
     # via django-import-export
-django==4.1.13
+django==4.2.11
     # via
     #   -r requirements.in
     #   django-anymail
@@ -102,7 +102,7 @@ django==4.1.13
     #   graphene-django
     #   wagtail
     #   wagtail-localize
-django-anymail[mailgun,mailjet,sendgrid]==8.6
+django-anymail[mailgun,mailjet,sendgrid]==10.3
     # via -r requirements.in
 django-appconf==1.0.5
     # via django-image-cropping
@@ -130,7 +130,7 @@ django-import-export==3.0.1
     # via -r requirements.in
 django-modelcluster==6.0
     # via wagtail
-django-modeltrans @ https://github.com/kausaltech/django-modeltrans/archive/27bd15f13f091e9ac388241bfce902da98074a55.zip
+django-modeltrans @ https://github.com/kausaltech/django-modeltrans/archive/a734040c3f38c2e404a61dc0be2c017874a9ea45.zip
     # via -r requirements.in
 django-npm==1.0.0
     # via -r requirements.in
@@ -396,6 +396,7 @@ uritemplate==4.1.1
     #   drf-spectacular
 urllib3==1.26.15
     # via
+    #   django-anymail
     #   elasticsearch
     #   requests
     #   sentry-sdk
@@ -422,7 +423,7 @@ wagtail-grapple==0.23.0
     # via -r requirements.in
 wagtail-headless-preview==0.4.0
     # via wagtail-grapple
-wagtail-localize==1.5
+wagtail-localize==1.8.2
     # via -r requirements.in
 wagtail-modeladmin==1.0.0
     # via -r requirements.in
