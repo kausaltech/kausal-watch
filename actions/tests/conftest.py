@@ -42,3 +42,24 @@ def plan_list_url():
 @pytest.fixture
 def person_list_url():
     return reverse('person-list')
+
+
+@pytest.fixture
+def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_task_factory, action_factory):
+    plan = plan_factory()
+    workflow = workflow_factory()
+    workflow_task_factory(workflow=workflow)
+    plan.features.moderation_workflow = workflow
+    action_factory(plan=plan)
+    return plan
+
+
+@pytest.fixture
+def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workflow_factory, action_factory):
+    plan = plan_factory()
+    workflow = workflow_factory()
+    workflow_task_factory(workflow=workflow)
+    workflow_task_factory(workflow=workflow)
+    plan.features.moderation_workflow = workflow
+    action_factory(plan=plan)
+    return plan

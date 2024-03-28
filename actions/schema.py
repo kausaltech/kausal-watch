@@ -17,6 +17,7 @@ from grapple.types.pages import PageInterface
 from itertools import chain
 from typing import Generic, Iterable, Optional, Protocol, TypeVar
 from urllib.parse import urlparse
+from wagtail.models import Revision, WorkflowState
 from wagtail.rich_text import RichText
 
 
@@ -52,6 +53,7 @@ from aplans.graphql_types import (
     register_graphene_node,
     set_active_plan
 )
+from aplans.graphql_errors import ErrorCode
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
@@ -614,6 +616,17 @@ def get_translated_category_page(info, **kwargs) -> Prefetch:
     return Prefetch('category_pages', to_attr='category_pages_locale', queryset=qs)
 
 
+def prefetch_workflow_states(info, **_kwargs) -> Prefetch:
+    workflow_states = WorkflowState.objects.active().select_related(
+        "current_task_state__task"
+    )
+    return Prefetch(
+        "_workflow_states",
+        queryset=workflow_states,
+        to_attr="_current_workflow_states",
+    )
+
+
 class AttributesMixin:
     attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False), required=True)
 
@@ -895,6 +908,42 @@ def _get_visible_actions(root, field_name, user: Optional[User]):
     return actions.visible_for_user(user)
 
 
+class RevisionNode(DjangoNode):
+    class Meta:
+        model = Revision
+        fields = ('created_at',)
+
+
+class WorkflowStateInfoNode(DjangoNode):
+    status_message = graphene.String()
+    class Meta:
+        model = WorkflowState
+        fields = ('status',)
+
+    @staticmethod
+    def resolve_status_message(root: WorkflowState, info: GQLInfo) -> str | None:
+        status_choices = dict(WorkflowState.STATUS_CHOICES)
+        return status_choices.get(root.status)
+
+
+class WorkflowInfoNode(graphene.ObjectType):
+    has_unpublished_changes = graphene.Boolean(default_value=False)
+    latest_revision = graphene.Field('actions.schema.RevisionNode')
+    current_workflow_state = graphene.Field('actions.schema.WorkflowStateInfoNode')
+
+    @staticmethod
+    def resolve_has_unpublished_changes(root: Action, info: GQLInfo) -> bool:
+        return root.has_unpublished_changes
+
+    @staticmethod
+    def resolve_latest_revision(root: Action, info: GQLInfo) -> Revision:
+        return root.get_latest_revision()
+
+    @staticmethod
+    def resolve_current_workflow_state(root: Action, info: GQLInfo) -> bool:
+        return root.current_workflow_state
+
+
 @register_django_node
 class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     ORDERABLE_FIELDS = ['updated_at', 'identifier']
@@ -914,6 +963,7 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     all_dependency_relationships = graphene.List(
         graphene.NonNull('actions.schema.ActionDependencyRelationshipNode'), required=True
     )
+    workflow_status = graphene.Field('actions.schema.WorkflowInfoNode')
 
     class Meta:
         model = Action
@@ -1050,6 +1100,19 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     @staticmethod
     def resolve_all_dependency_relationships(root: Action, info: GQLInfo):
         return root.get_dependency_relationships(info.context.user, root.plan)
+
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        select_related=('latest_revision','plan'),
+        only=('latest_revision', 'has_unpublished_changes', 'plan', 'plan__features__moderation_workflow'),
+        prefetch_related=prefetch_workflow_states
+    )
+    def resolve_workflow_status(root: Action, info) -> WorkflowState:
+        user = info.context.user
+        plan = root.plan
+        if not user.is_authenticated or not user.can_access_admin(plan):
+            raise ErrorCode.ACCESS_DENIED.create_error('Access denied')
+        return root
 
 
 class ActionScheduleNode(DjangoNode):
@@ -1268,7 +1331,8 @@ class Query:
         if plan_obj is None:
             return None
         qs = plans_actions_queryset([plan_obj], category, first, order_by, info.context.user)
-        return gql_optimizer.query(qs, info)
+        result = gql_optimizer.query(qs, info)
+        return result
 
     @staticmethod
     def resolve_related_plan_actions(root, info, plan, first=None, category=None, order_by=None, **kwargs):

@@ -358,7 +358,6 @@ class WagtailTaskFactory(ModelFactory[WagtailTask]):
 
     name = Sequence(lambda i: f'WorkflowTask {i}')
     active = True
-    content_type = LazyAttribute(lambda _: ContentType.objects.get_for_model(Action))
 
 
 class WorkflowFactory(ModelFactory[Workflow]):

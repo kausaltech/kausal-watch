@@ -356,6 +356,17 @@ class Action(  # type: ignore[django-manager-missing]
         default_language_field='plan__primary_language_lowercase',
     )
 
+    # Add reverse GenericRelation to add the ability to prefetch the related workflowstates
+    # to optimize the performance of querying actions in GQL.
+    # See ActionNode.resolve_workflow_status and its prefetch_related hint
+    _workflow_states = GenericRelation(
+        "wagtailcore.WorkflowState",
+        content_type_field="base_content_type",
+        object_id_field="object_id",
+        related_query_name="action",
+        for_concrete_model=False,
+    )
+
     objects: ActionManager = ActionManager()
 
     search_fields = [

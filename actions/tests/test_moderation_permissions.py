@@ -4,27 +4,6 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_task_factory, action_factory):
-    plan = plan_factory()
-    workflow = workflow_factory()
-    workflow_task_factory(workflow=workflow)
-    plan.features.moderation_workflow = workflow
-    action_factory(plan=plan)
-    return plan
-
-
-@pytest.fixture
-def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workflow_factory, action_factory):
-    plan = plan_factory()
-    workflow = workflow_factory()
-    workflow_task_factory(workflow=workflow)
-    workflow_task_factory(workflow=workflow)
-    plan.features.moderation_workflow = workflow
-    action_factory(plan=plan)
-    return plan
-
-
-@pytest.fixture
 def action_contact_person_user_maker(action_contact_factory):
     def make_action_contact_person_with_role(plan, role):
         action = plan.actions.get()
