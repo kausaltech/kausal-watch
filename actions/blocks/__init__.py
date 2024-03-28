@@ -21,6 +21,7 @@ from actions.blocks.choosers import ActionAttributeTypeChooserBlock, AttributeTy
 from actions.blocks.filters import (
     ActionImplementationPhaseFilterBlock, ActionListFilterBlock,
     ActionScheduleFilterBlock, PrimaryOrganizationFilterBlock, ResponsiblePartyFilterBlock,
+    ContinuousActionFilterBlock,
 )
 from actions.models.attributes import AttributeType, AttributeTypeQuerySet
 from actions.models.category import CategoryType
@@ -120,7 +121,7 @@ __all__ = [
     'ActionRelatedIndicatorsBlock', 'ActionResponsiblePartiesBlock', 'ActionScheduleBlock', 'ActionScheduleFilterBlock',
     'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
     'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeChooserBlock', 'PrimaryOrganizationFilterBlock',
-    'ResponsiblePartyFilterBlock',
+    'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
     'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
     'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
     'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock'

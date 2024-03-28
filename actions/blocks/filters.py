@@ -99,6 +99,12 @@ class ActionScheduleFilterBlock(FilterBlock):
     class Meta:
         label = _("Schedule")
 
+@register_streamfield_block
+class ContinuousActionFilterBlock(FilterBlock):
+
+    class Meta:
+        label = _("Continuous Action")
+
 
 @register_streamfield_block
 class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock):
@@ -110,6 +116,7 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
     attribute = ActionAttributeTypeFilterBlock()
     category = CategoryTypeFilterBlock()
     plan = PlanFilterBlock()
+    schedule_continuous = ContinuousActionFilterBlock()
 
     model_instance_container_blocks = {
         AttributeType: 'attribute',
@@ -119,5 +126,5 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
     graphql_types = [
         ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
         ActionStatusFilterBlock, ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock,
-        PlanFilterBlock
+        PlanFilterBlock, ContinuousActionFilterBlock
     ]
