@@ -849,6 +849,14 @@ if 'DATABASES' in locals():
 if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += ['debug_toolbar']
     MIDDLEWARE.insert(0, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+
+if DEBUG:
+    MIDDLEWARE.insert(
+        0, 'aplans.middleware.PrintQueryCountMiddleware'
+    )
+
+
 CELERY_BROKER_URL = env('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
 CELERY_BEAT_SCHEDULE = {

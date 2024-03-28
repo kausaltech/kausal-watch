@@ -1,6 +1,6 @@
 import re
 from django.conf import settings
-from django.db import transaction
+from django.db import transaction, connection
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
@@ -96,3 +96,25 @@ class RequestMiddleware:
             log_context['session'] = str(request.session.session_key)
         with set_request(request), logger.contextualize(**log_context):
             return self.get_response(request)
+
+
+class PrintQueryCountMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+
+        sqltime = 0
+        for query in connection.queries:
+            sqltime += float(query["time"])
+        sqltime = round(1000 * sqltime)
+
+        query_count = len(connection.queries)
+        level = 'INFO'
+        if query_count >= 50:
+            level = 'WARN'
+        if query_count >= 100:
+            level = 'ERROR'
+        logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms")
+        return response
