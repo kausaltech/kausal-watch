@@ -34,16 +34,16 @@ if typing.TYPE_CHECKING:
 
 class ReportActionPrintLayoutCustomization(models.Model):
     # If plan is None, this acts as a global fallback for defaults
-    plan = models.OneToOneField('actions.Plan', on_delete=models.CASCADE, related_name='+', null=True)
-    max_columns = models.IntegerField(null=True)
-    approximate_chars_per_line = models.IntegerField(null=True)
-    approximate_lines_per_page = models.IntegerField(null=True)
-    min_split_chars = models.IntegerField(null=True)
+    plan = models.OneToOneField('actions.Plan', on_delete=models.CASCADE, related_name='+', null=True, blank=True)
+    max_columns = models.IntegerField(null=True, blank=True)
+    approximate_chars_per_line = models.IntegerField(null=True, blank=True)
+    approximate_lines_per_page = models.IntegerField(null=True, blank=True)
+    min_split_chars = models.IntegerField(null=True, blank=True)
     # Approximately how many excel columns do we need to fit a string of this many characters.  4 is full width, 2 is half of the width of
     # the entire page.
     # Contains a list[list[int, int]]
     # (fist of pair is char count, second width in columns)
-    width_needed = models.JSONField(null=True)
+    width_needed = models.JSONField(null=True, blank=True)
 
     @classmethod
     def _get_field_names(cls) -> list[str]:
