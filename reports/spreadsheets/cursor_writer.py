@@ -1,13 +1,30 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from xlsxwriter.workbook import Worksheet
 from xlsxwriter.format import Format
 
-from typing import Any
+from typing import Any, Sequence
 
 import typing
 if typing.TYPE_CHECKING:
     from reports.spreadsheets.excel_report import ExcelFormats
+
+
+class CellBase(ABC):
+    @abstractmethod
+    def is_page_break(self) -> bool:
+        pass
+
+
+@dataclass
+class Cell(CellBase):
+    value: Any
+    format: str | Format | None
+    url: str | None = None
+    def is_page_break(self) -> bool:
+        return False
 
 
 class CursorWriter:
@@ -58,7 +75,7 @@ class CursorWriter:
         self.cursor = (x + 1, self.start[1])
         return self
 
-    def write_cells(self, cells: Sequence[list[tuple[str, str]|tuple[str, str, str]]]) -> None:
+    def write_cells(self, cells: Sequence[Sequence[Cell]]) -> None:
         for row in cells:
             extra_padding_all_cells = extra_padding_last_cell_only = 0
 
@@ -72,19 +89,15 @@ class CursorWriter:
 
             for i, cell in enumerate(row):
                 format: Format | None = None
-                format_or_key: Format | str | None = cell[1] if len(cell) > 1 else None
+                format_or_key: Format | str | None = cell.format
                 if isinstance(format_or_key, str):
                     format = getattr(self.formats, format_or_key, None)
                 else:
                     format = format_or_key
-                url = None
-                if len(cell) > 3:
-                    raise ValueError('Invalid cell tuple')
-                if len(cell) == 3:
-                    url = cell[2]
+                url = cell.url
 
                 start_cursor = self.cursor
-                self.write(cell[0], format=format, url=url)
+                self.write(cell.value, format=format, url=url)
 
                 add_empty = extra_padding_all_cells
                 if i + 1 == len(row):
@@ -92,5 +105,5 @@ class CursorWriter:
                 if add_empty > 0:
                     self.write_empty(add_empty)
                     end_cursor = self.cursor
-                    self.worksheet.merge_range(start_cursor[0], start_cursor[1], end_cursor[0], end_cursor[1] - 1, cell[0], format)
+                    self.worksheet.merge_range(start_cursor[0], start_cursor[1], end_cursor[0], end_cursor[1] - 1, cell.value, format)
             self.newline()

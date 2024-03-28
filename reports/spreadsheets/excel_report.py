@@ -2,6 +2,7 @@ from __future__ import annotations
 import inspect
 import polars
 import typing
+from typing import Sequence
 import xlsxwriter
 from datetime import datetime
 from django.contrib.contenttypes.models import ContentType
@@ -19,7 +20,7 @@ from actions.models.category import Category, CategoryType
 from orgs.models import Organization
 
 from .action_print_layout import write_action_summaries
-from .cursor_writer import CursorWriter
+from .cursor_writer import CursorWriter, Cell
 
 
 if typing.TYPE_CHECKING:
@@ -167,7 +168,7 @@ class ExcelReport:
     workbook: xlsxwriter.Workbook
     formats: ExcelFormats
     plan_current_related_objects: 'PlanRelatedObjects'
-    field_to_column_label: dict[str, set[str]]
+    field_to_column_labels: dict[str, set[str]]
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -222,7 +223,7 @@ class ExcelReport:
         self.close()
         return self.output.getvalue()
 
-    def _write_title_sheet(self):
+    def _write_title_sheet(self) -> None:
         worksheet = self.workbook.add_worksheet(_('Lead'))
         plan = self.report.type.plan
         start = self.report.start_date
@@ -231,18 +232,18 @@ class ExcelReport:
         complete_label = _('complete')
         not_complete_label = _('in progress')
         completed = complete_label if self.report.is_complete else not_complete_label
-        cells = [
-            [(plan.name, 'title')],
-            [(self.report.type.name, 'sub_title')],
-            [(self.report.name, 'sub_sub_title')],
+        cells: Sequence[Sequence[Cell]] = [
+            [Cell(plan.name, 'title')],
+            [Cell(self.report.type.name, 'sub_title')],
+            [Cell(self.report.name, 'sub_sub_title')],
             [],
-            [(complete_key, 'metadata_label'), (completed, 'metadata_value')],
-            [(str(self.report._meta.get_field('start_date').verbose_name), 'metadata_label'), (start, 'date')],
-            [(str(self.report._meta.get_field('end_date').verbose_name), 'metadata_label'), (end, 'date')],
-            [(_('updated at'), 'metadata_label'), (plan.to_local_timezone(datetime.now()).replace(tzinfo=None), 'date')],
+            [Cell(complete_key, 'metadata_label'), Cell(completed, 'metadata_value')],
+            [Cell(str(self.report._meta.get_field('start_date').verbose_name), 'metadata_label'), Cell(start, 'date')],
+            [Cell(str(self.report._meta.get_field('end_date').verbose_name), 'metadata_label'), Cell(end, 'date')],
+            [Cell(_('updated at'), 'metadata_label'), Cell(plan.to_local_timezone(datetime.now()).replace(tzinfo=None), 'date')],
             [],
-            [(_('Exported from Kausal Watch'), 'metadata_value')],
-            [('kausal.tech', 'metadata_value', 'https://kausal.tech')],
+            [Cell(_('Exported from Kausal Watch'), 'metadata_value')],
+            [Cell('kausal.tech', 'metadata_value', url='https://kausal.tech')],
             [],
         ]
         CursorWriter(
@@ -281,7 +282,7 @@ class ExcelReport:
             format = self.formats.get_for_label(label)
             if format is None:
                 format = self.formats.all_rows
-            width = col_width
+            width: int | None = col_width
             if i == 0:
                 width = first_col_width
             elif i == len(df.columns) - 1:
@@ -388,7 +389,7 @@ class ExcelReport:
             self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
 
             if (visibility_label := action_obj.get_visibility_display()):
-                append_to_key(_('Visibility'), visibility_label)
+                append_to_key(_('Visibility'), visibility_label, 'visibility')
 
         if data and set(data.get(COMPLETED_AT_LABEL)) == {None}:
             if COMPLETED_AT_LABEL in data:

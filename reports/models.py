@@ -24,6 +24,10 @@ from actions.models.action import Action
 from actions.models.attributes import Attribute
 from reports.blocks.action_content import ReportFieldBlock
 
+# The following model is for very specialized use and is only imported here so that Django finds it
+from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
+
+
 if TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
     from actions.models import AttributeType
@@ -384,7 +388,3 @@ class ActionSnapshot(models.Model):
 
     def __str__(self):
         return f'{self.action_version} @ {self.report}'
-
-
-# The following model is for very specialized use and is only imported here so that Django finds it
-from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization

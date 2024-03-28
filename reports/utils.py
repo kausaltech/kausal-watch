@@ -19,7 +19,7 @@ def get_attribute_for_type_from_related_objects(
 
 
 def group_by_model(serialized_versions: list[SerializedVersion]) -> dict[str, list[SerializedVersion]]:
-    result = {}
+    result: dict[str, list[SerializedVersion]] = {}
     for version in serialized_versions:
         _cls = version.type
         key = f'{_cls.__module__}.{_cls.__name__}'

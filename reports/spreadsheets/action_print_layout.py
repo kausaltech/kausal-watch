@@ -18,13 +18,13 @@ from dataclasses import dataclass
 from functools import reduce
 from loguru import logger
 import re
-from typing import Any
+from typing import Any, cast
 import typing
 
 from django.utils.translation import gettext as _
 from django.db import models
 
-from .cursor_writer import CursorWriter
+from .cursor_writer import CursorWriter, CellBase, Cell
 
 if typing.TYPE_CHECKING:
     import polars
@@ -111,7 +111,12 @@ def _keys_with_total_length(action_df: polars.DataFrame) -> list[tuple[str, int]
     return result
 
 
-NEWPAGE_MARKER = '___newpage___'
+@dataclass
+class NewPageMarker(CellBase):
+    action_identifier: str
+    action_name: str
+    def is_page_break(self) -> bool:
+        return True
 
 
 def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFrame) -> None:
@@ -135,9 +140,13 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
         logger.error(f'Invalid custom_variables received for write_action_summaries, pk: {custom_variables.pk}')
         return
 
-    def map_length(l: int) -> list[int | None]:
+    assert isinstance(MAX_COLUMNS, int)
+    assert isinstance(APPROXIMATE_LINES_PER_PAGE, int)
+    assert isinstance(MIN_SPLIT_CHARS, int)
+
+    def map_length(length: int) -> list[int | None]:
         try:
-            return next(w for w in WIDTH_NEEDED if (w[0] is not None and w[0] >= l))
+            return next(w for w in WIDTH_NEEDED if (w[0] is not None and w[0] >= length))
         except StopIteration:
             return [None, MAX_COLUMNS]
 
@@ -153,7 +162,7 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
     keys_to_column_count: list[tuple[str, int | None]] = [
         (label, map_length(length)[1]) for label, length in keys_with_total_length
     ]
-    grid_layout = []
+    grid_layout: list[list[str]] = []
     current_row: list[str] = []
     cols_left_in_row = MAX_COLUMNS
     for label, cols in keys_to_column_count:
@@ -175,12 +184,18 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
         return val
 
     pages_per_action_identifier = {}
-    def grid_layout_to_grid_values(grid_layout: list[list[str]], action: dict[str, Any]) -> list[tuple[tuple[str, str] | str, ...]]:
-        result: list[tuple[tuple[str, str] | str, ...]] = []
+    def grid_layout_to_grid_values(
+            grid_layout: list[list[str]],
+            action: dict[str, Any],
+            approximate_chars_per_line: int,
+            approximate_lines_per_page: int
+    ) -> list[tuple[CellBase, ...]]:
+
+        result: list[tuple[CellBase, ...]] = []
         action_identifier = pop_value_from_action(action, 'identifier')
         action_name = pop_value_from_action(action, 'name')
         pages_per_action_identifier[action_identifier] = 1
-        result.append((NEWPAGE_MARKER, action_identifier, action_name))
+        result.append((NewPageMarker(action_identifier, action_name), ))
 
         def style_for_value(val: str | None) -> str:
             if val is not None and len(str(val)) > 100:
@@ -192,30 +207,29 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
             return val.rstrip()
 
         approximate_lines_so_far = 0
-        label_row = None
-        value_row = None
+        label_row: tuple[Cell, ...] = tuple()
+        value_row: tuple[Cell, ...] = tuple()
 
         i = 0
         while i < len(grid_layout):
-            if label_row is None:
+            if not label_row:
                 row = grid_layout[i]
-                label_row = tuple((label, 'action_digest_label') for label in row if label not in FILTER_OUT)
-                value_row = tuple((clean_text(action.get(label) or '-'),
-                              style_for_value(action.get(label)))
-                             for label in row if label not in FILTER_OUT)
+                label_row = tuple(Cell(label, 'action_digest_label') for label in row if label not in FILTER_OUT)
+                value_row = tuple(Cell(clean_text(action.get(label) or '-'), style_for_value(action.get(label)))
+                                  for label in row if label not in FILTER_OUT)
 
-            accumulated_string_contents = "\n".join([str(x[0]) for x in value_row])
-            total_len_chars = reduce(lambda x,y: x + y, [len(str(x[0])) for x in value_row], 0)
+            accumulated_string_contents = "\n".join([str(x.value) for x in value_row])
+            total_len_chars = reduce(lambda x,y: x + y, [len(str(x.value)) for x in value_row], 0)
 
             approximate_lines_so_far += 1 # header
 
             assert len(label_row) == len(value_row)
             if len(label_row) == 0:
-                label_row = None
+                label_row = tuple()
                 continue
 
             if len(label_row) == 1:
-                approximate_lines_so_far += int(total_len_chars / APPROXIMATE_CHARS_PER_LINE)
+                approximate_lines_so_far += int(total_len_chars / approximate_chars_per_line)
                 newline_count = len(re.findall(r"\n", accumulated_string_contents))
                 approximate_lines_so_far += newline_count
             else:
@@ -223,13 +237,13 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
 
             MIN_SPLIT_CHARS = 500
 
-            if approximate_lines_so_far > APPROXIMATE_LINES_PER_PAGE:
-                last_element_value = value_row[-1][0]
-                approximate_lines_last_el = int(len(last_element_value)/APPROXIMATE_CHARS_PER_LINE)
+            if approximate_lines_so_far > approximate_lines_per_page:
+                last_element_value = value_row[-1].value
+                approximate_lines_last_el = int(len(last_element_value)/approximate_chars_per_line)
                 approximate_lines_last_el += len(re.findall(r"\n", last_element_value))
 
-                delta = APPROXIMATE_LINES_PER_PAGE - (approximate_lines_so_far - approximate_lines_last_el)
-                delta = delta * APPROXIMATE_CHARS_PER_LINE
+                delta = approximate_lines_per_page - (approximate_lines_so_far - approximate_lines_last_el)
+                delta = delta * approximate_chars_per_line
                 split_point = delta
                 if split_point > len(last_element_value) - 1:
                     split_point = int(len(last_element_value)/2)
@@ -245,51 +259,61 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
                 part1 = last_element_value[0:split_point]
                 part2 = last_element_value[split_point:]
                 result.append(label_row)
-                if len(part2) < APPROXIMATE_CHARS_PER_LINE / 2:
-                    result.append(value_row[0:-1] + ((last_element_value, 'action_digest_value_long'),))
+                if len(part2) < approximate_chars_per_line / 2:
+                    result.append(value_row[0:-1] + (Cell(last_element_value, 'action_digest_value_long'),))
                     if i + 1 < len(grid_layout):
-                        result.append((NEWPAGE_MARKER, action_identifier, action_name))
+                        result.append((NewPageMarker(action_identifier, action_name),))
                         pages_per_action_identifier[action_identifier] += 1
                         approximate_lines_so_far = 0
-                    label_row = None
+                    label_row = tuple()
                     i += 1
                 else:
-                    result.append(value_row[0:-1] + ((part1, 'action_digest_value_long'),))
-                    result.append((NEWPAGE_MARKER, action_identifier, action_name))
+                    result.append(value_row[0:-1] + (Cell(part1, 'action_digest_value_long'),))
+                    result.append((NewPageMarker(action_identifier, action_name),))
                     pages_per_action_identifier[action_identifier] += 1
                     approximate_lines_so_far = 0
-                    value_row = ((part2, value_row[-1][1]), )
+                    value_row = (Cell(part2, value_row[-1].format), )
             else:
                 result.append(label_row)
                 result.append(value_row)
-                label_row = None
+                label_row = tuple()
                 i += 1
         return result
 
     sheet_rows = []
     for data_row in action_df.iter_rows(named=True):
-        sheet_rows.extend(grid_layout_to_grid_values(grid_layout, data_row))
+        sheet_rows.extend(
+            grid_layout_to_grid_values(
+                grid_layout,
+                data_row,
+                APPROXIMATE_CHARS_PER_LINE,
+                APPROXIMATE_LINES_PER_PAGE,
+            )
+        )
 
     page_break_row_indexes = []
     row_index = 0
-    processed: list[tuple[tuple[str, str] | str, ...]] = []
+    processed: list[tuple[Cell, ...]] = []
     page = 1
     last_action_identifier = None
 
     for sheet_row in sheet_rows:
-        if sheet_row[0] != NEWPAGE_MARKER:
+        if all(not x.is_page_break() for x in sheet_row):
+            # Safe to cast because page breaks and normal cells are mutually exhaustive
+            sheet_row = cast(tuple[Cell, ...], sheet_row)
             processed.append(sheet_row)
             row_index += 1
             continue
 
-        action_identifier = sheet_row[1]
+        cell = cast(NewPageMarker, sheet_row[0])
+        action_identifier = cell.action_identifier
+        action_name = cell.action_name
         assert isinstance(action_identifier, str)
         if action_identifier == last_action_identifier:
             page += 1
         else:
             last_action_identifier = action_identifier
             page = 1
-        action_name = sheet_row[2]
         assert isinstance(action_name, str)
         if row_index != 0:
             page_break_row_indexes.append(row_index)
@@ -298,8 +322,8 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
         if page_count > 1:
             page_specifier = f' [{_("Page")} {page}/{page_count}]'
         processed.append((
-            (action_identifier + page_specifier, 'action_digest_page_header'),
-            (action_name, 'action_digest_page_header')
+            Cell(value=(action_identifier + page_specifier), format='action_digest_page_header'),
+            Cell(value=action_name, format='action_digest_page_header')
         ))
         row_index += 1
 
