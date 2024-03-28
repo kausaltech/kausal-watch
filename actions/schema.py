@@ -84,14 +84,19 @@ class PlanDomainNode(DjangoNode):
 
 class PlanFeaturesNode(DjangoNode):
     public_contact_persons = graphene.Boolean(required=True)
+    enable_moderation_workflow = graphene.Boolean()
 
     class Meta:
         model = PlanFeatures
         fields = public_fields(PlanFeatures)
 
     @staticmethod
-    def resolve_public_contact_persons(parent, info):
-        return parent.public_contact_persons
+    def resolve_public_contact_persons(root: PlanFeatures, info: GQLInfo) -> bool:
+        return root.public_contact_persons
+
+    @staticmethod
+    def resolve_enable_moderation_workflow(root: PlanFeatures, info: GQLInfo) -> bool:
+        return root.enable_moderation_workflow
 
 
 def get_action_list_page_node():
