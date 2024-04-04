@@ -109,7 +109,7 @@ class WorkflowStateMiddleware:
                     str_val =  variable_vals.get(arg.value.name.value)
                 else:
                     str_val = arg.value.value
-                return WorkflowStateEnum.get(str_val)
+                return WorkflowStateEnum(str_val)
 
     def resolve(self, next, root, info, **kwargs):
         if root is None:

@@ -18,7 +18,7 @@ from . import graphql_gis  # noqa
 from actions import schema as actions_schema
 from actions.models import Plan
 from aplans.utils import public_fields
-from aplans.graphql_types import WorkflowStateEnum
+from aplans.graphql_types import WorkflowStateGrapheneEnum
 from admin_site.wagtail import PlanRelatedPermissionHelper
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
@@ -200,7 +200,7 @@ class AuthDirective(GraphQLDirective):
             locations=[DirectiveLocation.MUTATION]
         )
 
-graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateEnum)
+graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
 
 
 class WorkflowStateDirective(GraphQLDirective):

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Type, TypeVar
+from typing import TYPE_CHECKING, Type, TypeVar, TypeGuard
 import typing
 
 from django.http import HttpRequest
@@ -12,6 +12,11 @@ if typing.TYPE_CHECKING:
 
 
 UserOrAnon: typing.TypeAlias = 'User | AnonymousUser'
+
+
+def is_authenticated(user: UserOrAnon) -> TypeGuard[User]:
+    return user.is_authenticated
+
 
 class WatchRequest(HttpRequest):
     watch_cache: WatchObjectCache

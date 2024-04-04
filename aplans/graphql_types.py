@@ -1,19 +1,18 @@
 from __future__ import annotations
 
-import enum as python_enum
 import functools
 import uuid
 
 import typing
 from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
 import graphene
+from enum import Enum
 import re
 
 from django.db.models import Model, QuerySet
 from django.utils.translation import gettext_lazy as _
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
-from graphql import GraphQLEnumValue
 import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
@@ -200,13 +199,10 @@ class AdminButton(graphene.ObjectType):
     target = graphene.String(required=False)
 
 
-class WorkflowStateEnum(graphene.Enum):
+class WorkflowStateEnum(Enum):
     PUBLISHED = 'PUBLISHED'
     APPROVED = 'APPROVED'
     DRAFT = 'DRAFT'
-
-    class Meta:
-        name = 'WorkflowState'
 
     def is_visible_to_user(self, user: User, plan: Plan):
         if self == WorkflowStateEnum.PUBLISHED:
@@ -227,6 +223,9 @@ class WorkflowStateEnum(graphene.Enum):
             return _('Approved')
         if self == WorkflowStateEnum.DRAFT:
             return _('Draft')
+
+
+WorkflowStateGrapheneEnum = graphene.Enum.from_enum(WorkflowStateEnum, name='WorkflowState')  # type: ignore
 
 
 class WorkflowStateDescription(graphene.ObjectType):

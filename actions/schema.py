@@ -54,6 +54,7 @@ from aplans.graphql_types import (
     set_active_plan
 )
 from aplans.graphql_errors import ErrorCode
+from aplans.types import is_authenticated
 from aplans.utils import hyphenate, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
@@ -1208,9 +1209,8 @@ def _resolve_published_action(
     if identifier:
         plan_obj = get_plan_from_context(info, plan_identifier)
         if not plan_obj:
-            return None
+            raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
         qs = qs.filter(identifier=identifier, plan=plan_obj)
-
     qs = gql_optimizer.query(qs, info)
 
     try:
@@ -1219,7 +1219,7 @@ def _resolve_published_action(
         return None
 
 
-def _resolve_draft_action(action, workflow_state):
+def _resolve_draft_action(action: Action, workflow_state: WorkflowStateEnum):
     if not action.has_unpublished_changes:
         return action
     if workflow_state == WorkflowStateEnum.DRAFT:
@@ -1288,7 +1288,7 @@ class Query:
                 result = [WorkflowStateEnum.PUBLISHED]
         return [{
             'id': e.name,
-            'description': WorkflowStateEnum.get(e).description,
+            'description': WorkflowStateEnum(e).description,
         } for e in result]
 
 
@@ -1394,6 +1394,8 @@ class Query:
                 workflow_state == WorkflowStateEnum.PUBLISHED
 
         if workflow_state != WorkflowStateEnum.PUBLISHED:
+            if action is None:
+                return None
             action = _resolve_draft_action(action, workflow_state)
 
         return action
