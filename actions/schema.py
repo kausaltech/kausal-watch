@@ -1367,15 +1367,7 @@ class Query:
             plan: str | None = None
     ) -> Action | None:
 
-        if identifier and not plan:
-            raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
-
         workflow_state = info.context.watch_cache.query_workflow_state
-
-        user = info.context.user
-        if not user.is_authenticated:
-            workflow_state = WorkflowStateEnum.PUBLISHED
-
         action = _resolve_published_action(id, identifier, plan, info)
 
         if action and not identifier:
@@ -1385,14 +1377,12 @@ class Query:
         if plan_obj is None:
             return action
 
-        if workflow_state == WorkflowStateEnum.DRAFT:
-            if not user.can_access_admin(plan=plan_obj):
-                workflow_state = WorkflowStateEnum.APPROVED
+        user = info.context.user
 
-        if workflow_state == WorkflowStateEnum.APPROVED:
-            if not user.can_access_public_site(plan=plan_obj):
-                workflow_state == WorkflowStateEnum.PUBLISHED
-
+        if not is_authenticated(user):
+            workflow_state = WorkflowStateEnum.PUBLISHED
+        elif not user.can_access_public_site(plan=plan_obj):
+            workflow_state = WorkflowStateEnum.PUBLISHED
         if workflow_state != WorkflowStateEnum.PUBLISHED:
             if action is None:
                 return None
