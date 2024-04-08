@@ -500,7 +500,9 @@ class IndicatorAdmin(AplansModelAdmin):
         if request.user.is_superuser:
             qs = qs.filter(organization__in=Organization.objects.available_for_plan(plan))
         else:
-            qs = qs.filter(organization=plan.organization)
+            orgs = [plan.organization.id]
+            orgs.extend(Organization.objects.user_is_plan_admin_for(request.user, plan).values_list("id", flat=True))
+            qs = qs.filter(organization_id__in=orgs)
         return qs.select_related('unit', 'quantity')
 
 
