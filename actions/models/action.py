@@ -190,8 +190,12 @@ class Action(  # type: ignore[django-manager-missing]
         draft_attributes = DraftAttributes.from_revision_content(attributes)
         attribute_types = self.get_editable_attribute_types(user)
         for attribute_type in attribute_types:
-            attribute_value = draft_attributes.get_value_for_attribute_type(attribute_type)
-            attribute_type.commit_attribute(self, attribute_value)
+            try:
+                attribute_value = draft_attributes.get_value_for_attribute_type(attribute_type)
+            except KeyError:
+                pass
+            else:
+                attribute_type.commit_attribute(self, attribute_value)
 
     def publish(self, revision, user=None, **kwargs):
         attributes = revision.content.pop('attributes')
