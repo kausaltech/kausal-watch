@@ -207,7 +207,12 @@ class Action(  # type: ignore[django-manager-missing]
             field.serialize = False
         try:
             result = super().serializable_data(*args, **kwargs)
-            result['attributes'] = self.draft_attributes.get_serialized_data()
+            if self.draft_attributes is None:
+                # This is a newly created action
+                attributes = {}
+            else:
+                attributes = self.draft_attributes.get_serialized_data()
+            result['attributes'] = attributes
             return result
         finally:
             for field in i18n_field.get_translated_fields():
