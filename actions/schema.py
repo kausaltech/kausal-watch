@@ -1074,8 +1074,9 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         plan: Plan = get_plan_from_context(info)
         user = info.context.user
         acps = [acp for acp in root.contact_persons.all()
-                if acp.person.visible_for_user(user=user, plan=plan) and
-                not(acp.is_moderator() and plan.features.contact_persons_hide_moderators)]
+                if acp.person.visible_for_user(user=user, plan=plan)]
+        if not user.is_authenticated or not user.can_access_admin(plan):
+            acps = [acp for acp in acps if not(acp.is_moderator() and plan.features.contact_persons_hide_moderators)]
         return acps
 
     @staticmethod
