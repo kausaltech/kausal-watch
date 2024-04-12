@@ -22,7 +22,7 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
-from typing import ClassVar, Dict, Any
+from typing import ClassVar, Any
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
     from .plan import Plan
@@ -398,26 +398,37 @@ class ModelWithAttributes(models.Model):
         result.draft_attributes = DraftAttributes.from_revision_content(serialized_attributes)
         return result
 
-    def _value_is_empty(self, value):
+    def _value_is_empty(self, value: dict[str, Any]):
         return len([v for v in value.values() if v is not None or v == '' or v == []]) == 0
 
-    def set_attribute(self, attribute_type, existing_attribute, value: Dict[str, Any]):
+    def set_attribute(
+            self,
+            attribute_type: AttributeTypeWrapper,
+            existing_attribute: Attribute,
+            value_parameters: dict[str, Any],
+            attribute_value_input: Any
+    ):
         if existing_attribute is None:
-            if self._value_is_empty(value):
+            if self._value_is_empty(value_parameters):
                 return (None, None)
-            new_attribute = attribute_type.instantiate_attribute(self, **value)
+
+            attribute_value_class = attribute_type.VALUE_CLASS
+            attribute_value = attribute_value_class.from_serialized_value(attribute_value_input)
+            new_attribute = attribute_value.instantiate_attribute(attribute_type, self)
             return ('create', new_attribute)
-        if self._value_is_empty(value):
+        if self._value_is_empty(value_parameters):
             return ('delete', existing_attribute)
-        for k, v in value.items():
+        for k, v in value_parameters.items():
             setattr(existing_attribute, k, v)
-        return ('update', existing_attribute, value.keys())
+        return ('update', existing_attribute, value_parameters.keys())
 
     def set_category_choice_attribute(self, attribute_type, existing_attribute, category_ids):
         if existing_attribute is None:
             if category_ids == []:
                 return (None, None)
-            new_attribute = attribute_type.instantiate_attribute(self)
+            attribute_value_class = attribute_type.VALUE_CLASS
+            attribute_value = attribute_value_class.from_serialized_value(category_ids)
+            new_attribute = attribute_value.instantiate_attribute(attribute_type, self)
             return ('create_and_set_related', new_attribute, 'categories', category_ids)
         if category_ids == []:
             return ('delete', existing_attribute)

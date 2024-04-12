@@ -491,7 +491,10 @@ class AttributesSerializerMixin:
 
     def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
         return instance.set_attribute(
-            attribute_type, existing_attribute, self.to_value_parameter(item)
+            attribute_type,
+            existing_attribute,
+            self.to_value_parameter(item),
+            self.to_attribute_value_input(item)
         )
 
     def update(self, instance: Model, validated_data):
@@ -516,6 +519,29 @@ class AttributesSerializerMixin:
             )
         return attribute_operations
 
+    def to_attribute_value_input(self, item: Any) ->  Any:
+        '''
+        Format the incoming REST API data to conform
+        to the format expected by each actions.attributes.AttributeValue
+        subclass as the value parameter of the from_serialized_value method
+        '''
+        return self.to_value_parameter(item)
+
+    def to_value_parameter(self, item: Any) -> dict[str, Any]:
+        '''
+        Format the incoming REST API data to conform
+        to the format expected by an existing Attribute model
+        instance, setting the instance attributes with
+
+            setattr(instance, key_in_dict, value_parameter_dict[key_in_dict])
+
+        This means the dict keys must be django model field names
+        for that attribute type's attribute model instances
+        and the corresponding dict values must be compatible
+        values for that field.
+        '''
+        raise NotImplementedError
+
 
 class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_formats = (AttributeType.AttributeFormat.ORDERED_CHOICE, AttributeType.AttributeFormat.UNORDERED_CHOICE)
@@ -530,6 +556,9 @@ class ChoiceAttributesSerializer(AttributesSerializerMixin, serializers.Serializ
 
     def to_value_parameter(self, item):
         return {'choice_id': item}
+
+    def to_attribute_value_input(self, item):
+        return item
 
 
 class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
@@ -549,6 +578,12 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
             'text': item.get('text')
         }
 
+    def to_attribute_value_input(self, item):
+        return {
+            'choice': item.get('choice'),
+            'text': {'text': item.get('text')}
+        }
+
 
 class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
     attribute_formats = (AttributeType.AttributeFormat.NUMERIC, )
@@ -565,6 +600,9 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
         return {
             'value': item
         }
+
+    def to_attribute_value_input(self, item):
+        return float(item)
 
 
 class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer):
