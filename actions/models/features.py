@@ -96,6 +96,11 @@ class PlanFeatures(models.Model):
         ),
     )
 
+    password_protected = models.BooleanField(
+        default=False, verbose_name=_("Password protected"),
+        help_text=_("Is this plan password protected?")
+    )
+
     @property
     def public_contact_persons(self) -> bool:
         return self.contact_persons_public_data != self.ContactPersonsPublicData.NONE

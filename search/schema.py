@@ -116,7 +116,7 @@ class Query:
             # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site
             related_plans = related_plans.live()
         if only_other_plans:
-            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=related_plans))
+            plans = Plan.objects.live().exclude(Q(id=plan_obj.id) | Q(id__in=related_plans) | Q(features__password_protected=True))
         else:
             qs = Q(id=plan_obj.id)
             if include_related_plans:

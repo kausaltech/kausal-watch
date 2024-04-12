@@ -367,6 +367,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('moderation_workflow'),
         FieldPanel('display_field_visibility_restrictions'),
         FieldPanel('output_report_action_print_layout'),
+        FieldPanel('password_protected'),
     ]
 
     panels = [
