@@ -189,6 +189,7 @@ if env('ENABLE_WAGTAIL_STYLEGUIDE'):
 
 INSTALLED_APPS += [
     'actions',
+    'budget',
     'content',
     'documentation',
     'feedback',
