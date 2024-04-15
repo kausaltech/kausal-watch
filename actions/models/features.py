@@ -31,6 +31,13 @@ class PlanFeatures(models.Model):
         verbose_name=_('Publicly visible data about contact persons'),
         help_text=_('Choose which information about contact persons is visible in the public UI')
     )
+    contact_persons_show_organization_ancestors = models.BooleanField(
+        default=True, verbose_name=_("Show organization ancestors in contact details of contact persons"),
+        help_text=_(
+            "When displaying a contact person's contact details, should the contact person's organization be "
+            "displayed along with all its ancestors?"
+        ),
+    )
 
     contact_persons_hide_moderators = models.BooleanField(
         default=False, verbose_name=_('Hide moderators from the contact persons'),
@@ -106,9 +113,10 @@ class PlanFeatures(models.Model):
 
     public_fields: ClassVar = [
         'allow_images_for_actions', 'show_admin_link', 'public_contact_persons', 'contact_persons_public_data',
-        'contact_persons_hide_moderators', 'has_action_identifiers', 'has_action_official_name', 'has_action_lead_paragraph',
-        'has_action_primary_orgs', 'enable_search', 'enable_indicator_comparison',
-        'minimal_statuses', 'has_action_contact_person_roles', 'allow_public_site_login'
+        'contact_persons_show_organization_ancestors', 'contact_persons_hide_moderators', 'has_action_identifiers',
+        'has_action_official_name', 'has_action_lead_paragraph', 'has_action_primary_orgs', 'enable_search',
+        'enable_indicator_comparison', 'minimal_statuses', 'has_action_contact_person_roles',
+        'allow_public_site_login'
     ]
 
     class Meta:
