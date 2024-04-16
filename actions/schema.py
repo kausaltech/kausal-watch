@@ -952,7 +952,9 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     name = graphene.String(hyphenated=graphene.Boolean(), required=True)
     categories = graphene.List(graphene.NonNull(CategoryNode), category_type=graphene.ID(), required=True)
     contact_persons = graphene.List(
-        graphene.NonNull('actions.schema.ActionContactPersonNode'), required=True, public_ui=graphene.Boolean(default_value=True))
+        graphene.NonNull('actions.schema.ActionContactPersonNode'),
+        required=True,
+        show_all_contact_persons=graphene.Boolean(default_value=False))
     next_action = graphene.Field('actions.schema.ActionNode')
     previous_action = graphene.Field('actions.schema.ActionNode')
     image = graphene.Field('images.schema.ImageNode')
@@ -1071,12 +1073,13 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         model_field='contact_persons',
         prefetch_related='contact_persons__person'
     )
-    def resolve_contact_persons(root: Action, info: GQLInfo, public_ui: bool):
+    def resolve_contact_persons(root: Action, info: GQLInfo, show_all_contact_persons: bool):
         plan: Plan = get_plan_from_context(info)
         user = info.context.user
         acps = [acp for acp in root.contact_persons.all()
                 if acp.person.visible_for_user(user=user, plan=plan)]
-        if plan.features.contact_persons_hide_moderators and (public_ui or not user.is_authenticated or not user.can_access_admin(plan)):
+        if plan.features.contact_persons_hide_moderators and (
+            not show_all_contact_persons or not user.is_authenticated or not user.can_access_admin(plan)):
             acps = [acp for acp in acps if not acp.is_moderator()]
         return acps
 
