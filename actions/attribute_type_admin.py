@@ -14,6 +14,8 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import IndexView, DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from aplans.utils import OrderedModelChildFormSet
+
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 from actions.chooser import CategoryTypeChooser
@@ -204,6 +206,13 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
     pass
 
 
+class AttributeTypeEditHandler(AplansTabbedInterface):
+    def get_form_options(self):
+        options = super().get_form_options()
+        options['formsets']['choice_options']['formset'] = OrderedModelChildFormSet
+        return options
+
+
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
@@ -278,7 +287,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('General'))]
 
-        handler = AplansTabbedInterface(tabs, base_form_class=base_form_class)
+        handler = AttributeTypeEditHandler(tabs, base_form_class=base_form_class)
         return handler
 
     def get_menu_item(self, order=None):

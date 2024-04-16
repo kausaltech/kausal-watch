@@ -22,7 +22,7 @@ from aplans.utils import (
 )
 from indicators.models import Unit
 
-from typing import ClassVar, Any
+from typing import Any, ClassVar, Self
 if typing.TYPE_CHECKING:
     from django.db.models.manager import RelatedManager
     from .plan import Plan
@@ -218,6 +218,8 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):  # type: ignore
 
     public_fields: ClassVar = ['id', 'identifier', 'name']
 
+    override_order = False  # see OrderedModel
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -236,6 +238,10 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):  # type: ignore
 
     def __str__(self):
         return self.name
+
+    def filter_siblings(self, qs: models.QuerySet[Self]) -> models.QuerySet[Self]:
+        # Used by OrderedModel to make sure order starts at 0 for each attribute type
+        return qs.filter(type=self.type)
 
 
 @reversion.register(follow=['categories'])

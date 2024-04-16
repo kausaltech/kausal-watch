@@ -7,6 +7,7 @@ import logging
 import random
 import re
 from typing import Generic, Iterable, List, Protocol, Self, Sequence, TYPE_CHECKING, TypeVar
+from modelcluster.forms import BaseChildFormSet
 from modeltrans.fields import TranslationField
 
 import sentry_sdk
@@ -163,11 +164,14 @@ class OrderedModel(models.Model):
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
     order_on_create: int | None
+    override_order = True
 
     def __init__(self, *args, order_on_create: int | None = None, **kwargs):
         """
         Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
         None, the order will instead be set to <maximum existing order> + 1.
+
+        If `override_order` is false, the order will not be changed and `order_on_create` will have no effect.
         """
         super().__init__(*args, **kwargs)
         self.order_on_create = order_on_create
@@ -205,7 +209,7 @@ class OrderedModel(models.Model):
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
 
     def save(self, *args, **kwargs):
-        if self.pk is None:
+        if self.pk is None and self.override_order:
             order_on_create = getattr(self, 'order_on_create', None)
             if order_on_create is not None:
                 self.order = order_on_create
@@ -215,6 +219,40 @@ class OrderedModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class OrderedModelChildFormSet(BaseChildFormSet):
+    """Fix ordering issues when using an `OrderedModel` in an `InlinePanel`.
+
+    When using an `OrderedModel` in at `InlinePanel`, you will probably run into problems with the order field values
+    being messed up by modelcluster's saving logic as it does not make sure that, e.g., the order of existing instances
+    is updated when an element before them in the order is deleted or when a new element is inserted. This may lead to
+    potential integrity constraint violations even if you override `OrderedModel.filter_siblings()` correctly.
+
+    This class is intended to fix these issues. Define an edit handler for the modeladmin class containing the inline
+    panel and override the `get_form_options()` method like this to make the formset use this class instead of
+    `BaseChildFormSet`:
+
+    ```
+    def get_form_options(self):
+        options = super().get_form_options()
+        options['formsets']['<field_name>']['formset'] = OrderedModelChildFormSet
+        return options
+    ```
+
+    You'll probably also have to set `override_order` to false on your `OrderedModel` subclass.
+    """
+
+    def save(self, commit=True):
+        original_instance_orders = [form.instance.order for form in self.ordered_forms]
+        # `super().save()` may change the order field of instances in `self.ordered_forms` without persisting the new
+        # values of the order field to the database unless something else changed in the respective instance.
+        saved_instances = super().save(commit)
+        if commit:
+            for form, original_instance_order in zip(self.ordered_forms, original_instance_orders):
+                if form.instance.order != original_instance_order:
+                    form.instance.save()
+        return saved_instances
 
 
 class PlanDefaultsModel:

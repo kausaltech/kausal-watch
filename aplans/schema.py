@@ -47,16 +47,6 @@ def mp_node_get_ancestors(qs, include_self=False):
     return qs.model.objects.filter(path__in=paths)
 
 
-class OrderableModelMixin:
-    order = graphene.Int()
-
-    @gql_optimizer.resolver_hints(
-        model_field='sort_order',
-    )
-    def resolve_order(self, **kwargs):
-        return self.sort_order
-
-
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
