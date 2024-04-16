@@ -201,6 +201,7 @@ class StaticPage(AplansPage):
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('category_list', CategoryListBlock()),
+        ('indicator_group', IndicatorGroupBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
