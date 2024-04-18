@@ -28,6 +28,7 @@ if typing.TYPE_CHECKING:
     from .plan import Plan
     from .category import CategoryType
     from actions.attributes import AttributeType as AttributeTypeWrapper, DraftAttributes
+    from actions.models import Action, Category
 
 
 class AttributeTypeQuerySet(models.QuerySet['AttributeType']):
@@ -189,11 +190,13 @@ class Attribute(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey()
 
-    def is_visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
+    def is_visible_for_user(self, user: UserOrAnon, plan: Plan, model_with_attribute: Action | Category) -> bool:
         from actions.models.action import Action
         assert plan is not None
-        if self.content_type == ContentType.objects.get_for_model(Action):
-            action = self.content_object
+        if self.content_type_id == ContentType.objects.get_for_model(Action).id:
+            assert self.object_id == model_with_attribute.pk
+            action = model_with_attribute
+            assert type(action) == Action
         else:
             action = None
         return self.type.is_instance_visible_for(user, plan, action)

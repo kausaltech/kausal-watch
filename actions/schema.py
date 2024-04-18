@@ -646,7 +646,7 @@ class AttributesMixin:
             result = []
             for attribute in attributes:
                 id_mismatch = id is not None and attribute.type.identifier != id
-                if not id_mismatch and attribute.is_visible_for_user(request.user, plan):
+                if not id_mismatch and attribute.is_visible_for_user(request.user, plan, root):
                     result.append(attribute)
             return result
 
