@@ -10,6 +10,7 @@ from enum import Enum
 import re
 
 from django.db.models import Model, QuerySet
+from django.db.models.constants import LOOKUP_SEP
 from django.utils.translation import gettext_lazy as _
 from graphql import GraphQLResolveInfo
 from graphql.language.ast import OperationDefinitionNode
@@ -89,7 +90,20 @@ class DjangoNode(DjangoObjectType, Generic[M]):
                 field = fields.get(translated_field_name)
                 if field is not None and field.resolver is None and not hasattr(cls, 'resolve_%s' % translated_field_name):
                     resolver = functools.partial(resolve_i18n_field, translated_field_name)
-                    apply_hints = gql_optimizer.resolver_hints(only=[translated_field_name, i18n_field.name])
+                    only = [translated_field_name, i18n_field.name]
+                    select_related=[]
+                    default_language_field = i18n_field.default_language_field
+                    if default_language_field:
+                        parsed_default_language_field = default_language_field.split(LOOKUP_SEP)
+                        only.append(default_language_field)
+                        if len(parsed_default_language_field) > 1:
+                            related_path = parsed_default_language_field[:-1]
+                            select_related.append(LOOKUP_SEP.join(related_path))
+                    hints = dict(
+                        only=only,
+                        select_related=select_related
+                    )
+                    apply_hints = gql_optimizer.resolver_hints(**hints)
                     field.resolver = apply_hints(resolver)
 
     class Meta:
