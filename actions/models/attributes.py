@@ -192,7 +192,7 @@ class Attribute(models.Model):
     def is_visible_for_user(self, user: UserOrAnon, plan: Plan) -> bool:
         from actions.models.action import Action
         assert plan is not None
-        if self.content_type == ContentType.objects.get_for_model(Action):
+        if ContentType.objects.get_for_model(self) == ContentType.objects.get_for_model(Action):
             action = self.content_object
         else:
             action = None
