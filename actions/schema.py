@@ -635,7 +635,8 @@ class AttributesMixin:
     @gql_optimizer.resolver_hints(
         prefetch_related=[
             *chain(*[('%s' % rel, '%s__type' % rel) for rel in ModelWithAttributes.ATTRIBUTE_RELATIONS]),
-            *['choice_attributes__choice', 'choice_with_text_attributes__choice']
+            *['choice_attributes__choice', 'choice_with_text_attributes__choice'],
+            *['choice_attributes__choice__type', 'choice_with_text_attributes__choice__type'],
         ]
     )
     def resolve_attributes(root: Category | Action, info: GQLInfo, id: str | None = None):
