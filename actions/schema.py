@@ -1108,6 +1108,9 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
 
     @staticmethod
     def resolve_all_dependency_relationships(root: Action, info: GQLInfo):
+        cache = info.context.watch_cache.for_plan_id(root.plan_id)
+        if not cache.plan_has_action_dependency_roles:
+            return []
         return root.get_dependency_relationships(info.context.user, root.plan)
 
     @staticmethod

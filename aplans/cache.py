@@ -17,6 +17,10 @@ class PlanSpecificCache:
         return list(self.plan.action_statuses.all())
 
     @cached_property
+    def plan_has_action_dependency_roles(self):
+        return self.plan.action_dependency_roles.count() > 0
+
+    @cached_property
     def implementation_phases(self) -> list[ActionImplementationPhase]:
         return list(self.plan.action_implementation_phases.all())
 
