@@ -397,10 +397,10 @@ def test_attribute_type_visibility_contact_person_particular_action(plan, action
         type=at,
         content_object=action,
     )
-    assert visible_attr.is_visible_for_user(person.user, plan, ac.action)
+    assert visible_attr.is_visible_for_user(person.user, plan)
     # For InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, it should not enough to be a contact person for *any*
     # action; you need to be a contact person of that particular action.
-    assert not invisible_attr.is_visible_for_user(person.user, plan, action)
+    assert not invisible_attr.is_visible_for_user(person.user, plan)
 
 
 LANGUAGES_TO_TEST = [l[0] for l in settings.LANGUAGES]

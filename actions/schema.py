@@ -634,8 +634,7 @@ class AttributesMixin:
     @staticmethod
     @gql_optimizer.resolver_hints(
         prefetch_related=[
-            *chain(*[('%s' % rel, '%s__type' % rel) for rel in ModelWithAttributes.ATTRIBUTE_RELATIONS]),
-            *['choice_attributes__choice', 'choice_with_text_attributes__choice'],
+            *chain(*[(f'{rel}__type', f'{rel}__content_object') for rel in ModelWithAttributes.ATTRIBUTE_RELATIONS]),
             *['choice_attributes__choice__type', 'choice_with_text_attributes__choice__type'],
         ]
     )
@@ -647,7 +646,7 @@ class AttributesMixin:
             result = []
             for attribute in attributes:
                 id_mismatch = id is not None and attribute.type.identifier != id
-                if not id_mismatch and attribute.is_visible_for_user(request.user, plan, root):
+                if not id_mismatch and attribute.is_visible_for_user(request.user, plan):
                     result.append(attribute)
             return result
 

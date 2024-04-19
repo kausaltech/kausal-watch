@@ -18,7 +18,7 @@ class PlanSpecificCache:
 
     @cached_property
     def plan_has_action_dependency_roles(self):
-        return self.plan.action_dependency_roles.count() > 0
+        return self.plan.action_dependency_roles.exists()
 
     @cached_property
     def implementation_phases(self) -> list[ActionImplementationPhase]:
