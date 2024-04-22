@@ -24,6 +24,11 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
+from admin_site.wagtail import (
+    CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
+    get_translation_tabs, insert_model_translation_panels
+)
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
 
@@ -149,14 +154,15 @@ class CategoryTypeAdmin(AplansModelAdmin):
                 FieldPanel('editable_for_indicators'),
             ]),
         ], heading=_('Action and indicator categorization'), classname='collapsible'),
-        CondensedInlinePanel('levels', panels=[
-            FieldPanel('name'),
-            FieldPanel('name_plural'),
-        ], heading=_("Category levels")),
         FieldPanel('synchronize_with_pages'),
         FieldPanel('instances_editable_by'),
         FieldPanel('action_list_filter_section'),
         FieldPanel('action_detail_content_section'),
+    ]
+
+    levels_panels = [
+        FieldPanel('name'),
+        FieldPanel('name_plural'),
     ]
 
     def get_form_fields_exclude(self, request):
@@ -173,9 +179,18 @@ class CategoryTypeAdmin(AplansModelAdmin):
     def get_edit_handler(self):
         request = ctx_request.get_admin_request()
         instance = ctx_instance.get_as_type(CategoryType)
+        plan = instance.plan
+
         panels = list(self.panels)
+
         if instance and instance.common:
             panels.insert(1, FieldPanel('common'))
+
+        levels_panels = insert_model_translation_panels(CategoryLevel, self.levels_panels, request, plan)
+        panels.append(
+            CondensedInlinePanel('levels', panels=levels_panels, heading=_("Category levels")),
+        )
+
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
         i18n_tabs = get_translation_tabs(instance, request)

@@ -320,7 +320,10 @@ class CategoryLevel(OrderedModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
     name_plural = models.CharField(max_length=100, verbose_name=_('plural name'), null=True, blank=True)
 
-    i18n = TranslationField(fields=('name',), default_language_field='type__plan__primary_language_lowercase')
+    i18n = TranslationField(
+        fields=('name', 'name_plural'),
+        default_language_field='type__plan__primary_language_lowercase',
+    )
 
     public_fields: ClassVar = [
         'id', 'name', 'name_plural', 'order', 'type',
