@@ -161,17 +161,15 @@ class IdentifierField(models.CharField):
 
 
 class OrderedModel(models.Model):
+    """Like wagtailorderable.models.Orderable, but with additional functionality in filter_siblings()."""
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
     order_on_create: int | None
-    override_order = True
 
     def __init__(self, *args, order_on_create: int | None = None, **kwargs):
         """
         Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
         None, the order will instead be set to <maximum existing order> + 1.
-
-        If `override_order` is false, the order will not be changed and `order_on_create` will have no effect.
         """
         super().__init__(*args, **kwargs)
         self.order_on_create = order_on_create
@@ -183,6 +181,7 @@ class OrderedModel(models.Model):
             errors.append(checks.Warning("filter_siblings() not defined", hint="Implement filter_siblings() method", obj=cls))
         return errors
 
+    # Probably for compatibility with things that expect a `sort_order` field as in wagtailorderable.models.Orderable
     @property
     def sort_order(self):
         return self.order
@@ -209,7 +208,7 @@ class OrderedModel(models.Model):
         return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
 
     def save(self, *args, **kwargs):
-        if self.pk is None and self.override_order:
+        if self.pk is None:
             order_on_create = getattr(self, 'order_on_create', None)
             if order_on_create is not None:
                 self.order = order_on_create
@@ -229,9 +228,11 @@ class OrderedModelChildFormSet(BaseChildFormSet):
     is updated when an element before them in the order is deleted or when a new element is inserted. This may lead to
     potential integrity constraint violations even if you override `OrderedModel.filter_siblings()` correctly.
 
-    This class is intended to fix these issues. Define an edit handler for the modeladmin class containing the inline
-    panel and override the `get_form_options()` method like this to make the formset use this class instead of
-    `BaseChildFormSet`:
+    This class is intended to fix these issues by setting the order of *all* instances in the forms of the formset
+    according to the form order and saving all instances.
+
+    Define an edit handler for the modeladmin class containing the inline panel and override the `get_form_options()`
+    method like this to make the formset use this class instead of `BaseChildFormSet`:
 
     ```
     def get_form_options(self):
@@ -239,19 +240,16 @@ class OrderedModelChildFormSet(BaseChildFormSet):
         options['formsets']['<field_name>']['formset'] = OrderedModelChildFormSet
         return options
     ```
-
-    You'll probably also have to set `override_order` to false on your `OrderedModel` subclass.
     """
 
     def save(self, commit=True):
-        original_instance_orders = [form.instance.order for form in self.ordered_forms]
         # `super().save()` may change the order field of instances in `self.ordered_forms` without persisting the new
         # values of the order field to the database unless something else changed in the respective instance.
         saved_instances = super().save(commit)
         if commit:
-            for form, original_instance_order in zip(self.ordered_forms, original_instance_orders):
-                if form.instance.order != original_instance_order:
-                    form.instance.save()
+            for i, form in enumerate(self.ordered_forms):
+                form.instance.order = i
+                form.instance.save()
         return saved_instances
 
 

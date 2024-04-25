@@ -218,8 +218,6 @@ class AttributeTypeChoiceOption(ClusterableModel, OrderedModel):  # type: ignore
 
     public_fields: ClassVar = ['id', 'identifier', 'name']
 
-    override_order = False  # see OrderedModel
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
