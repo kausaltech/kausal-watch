@@ -30,12 +30,26 @@
     {{ block.super }}
     {% sentry_init %}
     {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
+    {# Adding aria-expanded and aria-controls to dropdown #}
     <script>
       $(document).ready(function () {
         const dropdownButton = document.querySelector('form footer .dropdown-toggle');
         if (dropdownButton != null) {
           dropdownButton.tabIndex = 0;
           dropdownButton.addEventListener('keydown', (e) => (e.code === "Space" || e.code === "Enter") && dropdownButton.click());
+
+          const dropdownList = document.querySelector('form footer .dropdown-toggle + ul');
+          if (dropdownList != null) {
+            const dropdownListId = 'actionmenu-dropdown-list';
+            dropdownList.id = dropdownListId;
+            dropdownButton.setAttribute('aria-controls', dropdownListId);
+            dropdownButton.setAttribute('aria-expanded', 'false');
+
+            dropdownButton.addEventListener('click', function() {
+              const expanded = dropdownButton.getAttribute('aria-expanded') === 'true' || false;
+              dropdownButton.setAttribute('aria-expanded', !expanded);
+            });
+          }
         }
       });
     </script>
