@@ -20,14 +20,16 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
-from typing import Optional, Protocol
+from typing import Optional, Protocol, Self
 from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
 from aplans.utils import (
-    IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel, get_available_variants_for_language
+    IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel, get_available_variants_for_language,
+    RestrictedVisibilityModel
 )
+from aplans.types import UserOrAnon
 from orgs.models import Organization
 from search.backends import TranslatedSearchField, TranslatedAutocompleteField
 
@@ -297,9 +299,16 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
         related_orgs = Organization.objects.available_for_plan(plan)
         return self.filter(organization__in=related_orgs)
 
+    def visible_for_user(self, user: UserOrAnon | None) -> Self:
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if user is None or not user.is_authenticated:
+            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self
+
 
 @reversion.register()
-class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel):
+class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel, RestrictedVisibilityModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
     TIME_RESOLUTIONS = (
@@ -396,6 +405,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         TranslatedAutocompleteField('name'),
         TranslatedSearchField('description'),
         index.FilterField('plans'),
+        index.FilterField('visibility'),
     ]
 
     public_fields = [
@@ -605,6 +615,13 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             g.normalized_values = nvals
             g.save(update_fields=['normalized_values'])
 
+    def is_visible_for_user(self, user: UserOrAnon):
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
+            return False
+        return True
+
     @property
     def latest_value_value(self):
         if self.latest_value is None:
@@ -630,6 +647,8 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         for variant in lang_variants:
             q |= Q(plans__other_languages__contains=[variant])
         qs = qs.filter(q).distinct()
+        # FIXME find out how to use action default manager here
+        qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return qs
 
     def autocomplete_label(self):
@@ -719,6 +738,15 @@ class CommonIndicatorDimension(OrderedModel):
     def __str__(self):
         return "%s ∈ %s" % (str(self.dimension), str(self.common_indicator))
 
+class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet):
+
+    def visible_for_user(self, user: UserOrAnon | None) -> Self:
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if user is None or not user.is_authenticated:
+            return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self
+
 
 class IndicatorLevel(ClusterableModel):
     """The level for an indicator in an action plan.
@@ -735,6 +763,9 @@ class IndicatorLevel(ClusterableModel):
     level = models.CharField(max_length=30, verbose_name=_('level'), choices=Indicator.LEVELS)
 
     public_fields: typing.ClassVar = ['id', 'indicator', 'plan', 'level']
+
+    objects = IndicatorLevelQuerySet.as_manager()
+
 
     class Meta:
         unique_together = (('indicator', 'plan'),)
@@ -860,6 +891,16 @@ class RelatedIndicator(IndicatorRelationship):
     def __str__(self):
         return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
 
+class ActionIndicatorQuerySet(models.QuerySet):
+
+
+    def visible_for_user(self, user: UserOrAnon | None) -> Self:
+        """ A None value is interpreted identically
+        to a non-authenticated user"""
+        if user is None or not user.is_authenticated:
+            return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self
+
 
 class ActionIndicator(models.Model):
     """Link between an action and an indicator."""
@@ -882,6 +923,8 @@ class ActionIndicator(models.Model):
     )
 
     public_fields: typing.ClassVar = ['id', 'action', 'indicator', 'effect_type', 'indicates_action_progress']
+
+    objects = ActionIndicatorQuerySet.as_manager()
 
     class Meta:
         unique_together = (('action', 'indicator'),)

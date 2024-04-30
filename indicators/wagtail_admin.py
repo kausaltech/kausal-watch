@@ -15,7 +15,7 @@ from wagtail import hooks
 from .models import CommonIndicator, Dimension, Indicator, IndicatorLevel, Quantity, Unit
 from admin_site.wagtail import (
     AplansAdminModelForm, AplansCreateView, AplansEditView,
-    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
+    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel, CustomizableBuiltInFieldPanel,
     InitializeFormWithPlanMixin, get_translation_tabs
 )
 from aplans.context_vars import ctx_instance, ctx_request
@@ -395,7 +395,7 @@ class IndicatorAdmin(AplansModelAdmin):
             dimensions_str = _("none")
 
         # Some fields should only be editable if the indicator is not linked to a common indicator
-        show_dimensions_section = request.user.is_general_admin_for_plan(plan)
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
         if not instance or not instance.common:
             basic_panels.insert(
                 1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete'))
@@ -403,7 +403,8 @@ class IndicatorAdmin(AplansModelAdmin):
             basic_panels.insert(
                 2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete'))
             )
-            if show_dimensions_section:
+            if is_general_admin:
+                basic_panels.append(CustomizableBuiltInFieldPanel('visibility'))
                 advanced_panels.append(CondensedInlinePanel('dimensions', panels=[
                     FieldPanel('dimension')
                 ], heading=_("Dimensions")))

@@ -62,6 +62,7 @@ class IndicatorFactory(DjangoModelFactory):
     updated_values_due_at = None
     internal_notes = "Indicator internal note"
     reference = "Indicator reference"
+    visibility = "public"
 
     # created_at = None  # Should be set automatically
     # updated_at = None  # Should be set automatically

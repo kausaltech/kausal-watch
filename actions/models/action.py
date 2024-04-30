@@ -33,7 +33,7 @@ from wagtail.search.queryset import SearchableQuerySetMixin
 from aplans.types import UserOrAnon
 from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language,
-    ConstantMetadata, DateFormatField
+    ConstantMetadata, DateFormatField, RestrictedVisibilityModel
 )
 from orgs.models import Organization
 from users.models import User
@@ -136,23 +136,6 @@ class ResponsiblePartyDict(TypedDict):
     # Allowed roles in ActionResponsibleParty.Role.values
     # https://stackoverflow.com/a/67292548/14595546
     role: Literal['primary', 'collaborator', None]
-
-
-class RestrictedVisibilityModel(models.Model):
-    class VisibilityState(models.TextChoices):
-        INTERNAL = 'internal', _('Internal')
-        PUBLIC = 'public', _('Public')
-
-    visibility = models.CharField(
-        blank=False, null=False,
-        default=VisibilityState.PUBLIC,
-        choices=VisibilityState.choices,
-        max_length=20,
-        verbose_name=_('visibility'),
-    )
-
-    class Meta:
-        abstract = True
 
 
 if TYPE_CHECKING:
@@ -494,6 +477,13 @@ class Action(  # type: ignore[django-manager-missing]
             .order_by('-order')
             .first()
         )
+
+    def get_visible_indicators(self, user: User):
+        return self.indicators.visible_for_user(user)
+
+    def get_visible_related_indicators(self, user: User):
+        indicator_ids = self.indicators.visible_for_user(user).values_list("id", flat=True)
+        return self.related_indicators.filter(indicator_id__in=indicator_ids)
 
     @property
     def visibility_display(self):

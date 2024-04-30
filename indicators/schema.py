@@ -6,7 +6,7 @@ from wagtail.rich_text import RichText
 
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
-from aplans.utils import public_fields
+from aplans.utils import RestrictedVisibilityModel, public_fields
 from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
@@ -71,7 +71,6 @@ class QuantityNode(DjangoNode):
             'id', 'name',
         ]
 
-
 class RelatedIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedIndicator
@@ -94,7 +93,6 @@ class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
-
 
 class DimensionNode(DjangoNode):
     class Meta:
@@ -131,7 +129,6 @@ class CommonIndicatorNode(DjangoNode):
     )
     def resolve_normalizations(root: CommonIndicator, info):
         return root.normalizations.all()
-
 
 class RelatedCommonIndicatorNode(DjangoNode):
     class Meta:
@@ -242,7 +239,9 @@ class IndicatorNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='levels',
     )
-    def resolve_level(self, info, plan):
+    def resolve_levels(self, info, plan):
+        if not self.is_visible_for_user(info.context.user):
+            return None
         try:
             obj = self.levels.get(plan__identifier=plan)
         except IndicatorLevel.DoesNotExist:
@@ -257,7 +256,24 @@ class IndicatorNode(DjangoNode):
         if description is None:
             return None
         return RichText(description)
+    
+    @gql_optimizer.resolver_hints(
+        model_field=('related_causes', 'i18n'),
+    )
+    def resolve_related_causes(self: Indicator, info):
+        user = info.context.user
+        if user is None or not user.is_authenticated:
+            return self.related_causes.filter(causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self.related_causes
 
+    @gql_optimizer.resolver_hints(
+        model_field=('related_effects', 'i18n'),
+    )
+    def resolve_related_effects(self: Indicator, info):
+        user = info.context.user
+        if user is None or not user.is_authenticated:
+            return self.related_effects.filter(effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self.related_effects
 
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
@@ -280,7 +296,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        qs = Indicator.objects.all()
+        qs = Indicator.objects.all().visible_for_user(info.context.user)
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
@@ -303,7 +319,7 @@ class Query:
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
 
-        qs = Indicator.objects.all()
+        qs = Indicator.objects.visible_for_user(info.context.user)
         if obj_id:
             try:
                 obj_id = int(obj_id)

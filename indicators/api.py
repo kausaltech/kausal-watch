@@ -219,7 +219,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
         list_serializer_class = BulkListSerializer
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
-            'latest_value', 'reference', 'internal_notes',
+            'latest_value', 'reference', 'internal_notes', 'visibility'
         )
 
     def create(self, validated_data: dict):
@@ -290,7 +290,8 @@ class IndicatorViewSet(BulkModelViewSet):
         if not plan_pk:
             return Indicator.objects.none()
         plan = Plan.objects.get(pk=plan_pk)
-        return Indicator.objects.available_for_plan(plan)
+        qs = Indicator.objects.available_for_plan(plan)
+        return qs
 
     def get_permissions(self):
         if self.action == 'update_values':

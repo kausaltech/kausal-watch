@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.urls import reverse
 
 from actions.models import Action
+from aplans.utils import RestrictedVisibilityModel
 from indicators.models import Indicator, RelatedIndicator, ActionIndicator
 
 
@@ -27,15 +28,16 @@ class ActionGraphGenerator(GraphGenerator):
     def fetch_data(self):
         action_qs = self.plan.actions.unmerged()
         self.actions = {obj.id: obj for obj in action_qs}
-        action_indicators = ActionIndicator.objects.filter(action__in=action_qs)
+        action_indicators = ActionIndicator.objects.visible_for_user(self.request.user).filter(action__in=action_qs)
         for ai in action_indicators:
             act = self.actions[ai.action_id]
             if not hasattr(act, '_indicators'):
                 act._indicators = []
             act._indicators.append(ai)
-        indicator_levels = self.plan.indicator_levels.all().select_related(
+        indicator_levels = self.plan.indicator_levels.visible_for_user(self.request.user).select_related(
             'indicator', 'indicator__latest_value', 'indicator__unit'
         )
+
         indicators = {}
         for level in indicator_levels:
             indicator = level.indicator
@@ -129,12 +131,14 @@ class ActionGraphGenerator(GraphGenerator):
             if hasattr(obj, '_effect_relations'):
                 return obj._effect_relations
             else:
-                return self.filter_indicators(obj.related_effects.all(), 'effect_indicator')
+                return self.filter_indicators(obj.related_effects.filter(
+                    effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC), 'effect_indicator')
         elif relation_type == 'causal':
             if hasattr(obj, '_causal_relations'):
                 return obj._causal_relations
             else:
-                return self.filter_indicators(obj.related_causes.all(), 'causal_indicator')
+                return self.filter_indicators(obj.related_causes.filter(
+                    causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC), 'causal_indicator')
 
     def add_node(self, obj):
         node_id = self.make_node_id(obj)
@@ -150,7 +154,7 @@ class ActionGraphGenerator(GraphGenerator):
                 if hasattr(obj, '_indicators'):
                     related_indicators = obj._indicators
                 else:
-                    related_indicators = obj.related_indicators.all()
+                    related_indicators = obj.related_indicators.visible_for_user(self.request.user)
                 for ri in related_indicators:
                     if ri.indicator_id in self.indicators:
                         target = self.indicators[ri.indicator_id]
@@ -161,23 +165,25 @@ class ActionGraphGenerator(GraphGenerator):
                     )
                     self.add_node(target)
         elif isinstance(obj, Indicator):
-            if obj.id in self.indicators:
-                obj = self.indicators[obj.id]
-            if self.traverse_direction in ('forward', 'both'):
-                for related in self.get_related_indicators(obj, 'effect'):
-                    target = self.indicators.get(related.effect_indicator_id, None)
-                    if target is None:
-                        target = related.effect_indicator
-                    self.add_edge(obj, target, related.effect_type, related.confidence_level)
-                    self.add_node(target)
+            if obj.is_visible_for_user(None):
+                if obj.id in self.indicators:
+                    obj = self.indicators[obj.id]
+                if self.traverse_direction in ('forward', 'both'):
+                    for related in self.get_related_indicators(obj, 'effect'):
+                        target = self.indicators.get(related.effect_indicator_id, None)
+                        if target is None:
+                            target = related.effect_indicator
+                        self.add_edge(obj, target, related.effect_type, related.confidence_level)
+                        self.add_node(target)
 
-            if self.traverse_direction in ('backward', 'both'):
-                for related in self.get_related_indicators(obj, 'causal'):
-                    source = self.indicators.get(related.causal_indicator_id, None)
-                    if source is None:
-                        source = related.causal_indicator
-                    self.add_edge(source, obj, related.effect_type, related.confidence_level)
-                    self.add_node(source)
+                if self.traverse_direction in ('backward', 'both'):
+                    for related in self.get_related_indicators(obj, 'causal'):
+                        source = self.indicators.get(related.causal_indicator_id, None)
+                        if source is None:
+                            source = related.causal_indicator
+                        self.add_edge(source, obj, related.effect_type, related.confidence_level)
+                        self.add_node(source)
+
 
 
 class OrganizationGraphGenerator(GraphGenerator):

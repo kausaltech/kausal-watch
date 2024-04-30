@@ -286,6 +286,22 @@ class PlanRelatedModel(PlanDefaultsModel, Generic[M]):
         return self.filter_by_plan(plans[0], qs)
 
 
+class RestrictedVisibilityModel(models.Model):
+    class VisibilityState(models.TextChoices):
+        INTERNAL = 'internal', _('Internal')
+        PUBLIC = 'public', _('Public')
+
+    visibility = models.CharField(
+        blank=False, null=False,
+        default=VisibilityState.PUBLIC,
+        choices=VisibilityState.choices,
+        max_length=20,
+        verbose_name=_('visibility'),
+    )
+
+    class Meta:
+        abstract = True
+
 class InstancesEditableByMixin(models.Model):
     """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes.
 

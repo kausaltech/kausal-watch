@@ -58,7 +58,7 @@ from aplans.graphql_types import (
 from aplans.cache import SerializedDictWithRelatedObjectCache
 from aplans.graphql_errors import ErrorCode
 from aplans.types import is_authenticated
-from aplans.utils import hyphenate_fi, public_fields
+from aplans.utils import RestrictedVisibilityModel, hyphenate_fi, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend
@@ -418,6 +418,9 @@ class PlanNode(DjangoNode):
     @staticmethod
     def resolve_superseded_plans(root: Plan, info, recursive=False):
         return root.get_superseded_plans(recursive)
+    
+    def resolve_indicator_levels(root: Plan, info):
+        return root.indicator_levels.visible_for_user(info.context.user)
 
     class Meta:
         model = Plan
@@ -1043,6 +1046,14 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     @staticmethod
     def resolve_previous_action(root: Action, info):
         return root.get_previous_action(info.context.user)
+
+    @staticmethod
+    def resolve_indicators(root: Action, info):
+        return root.get_visible_indicators(info.context.user)
+    
+    @staticmethod
+    def resolve_related_indicators(root: Action, info):
+        return root.get_visible_related_indicators(info.context.user)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
