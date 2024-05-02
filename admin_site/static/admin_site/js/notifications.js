@@ -4,5 +4,9 @@ document.addEventListener("DOMContentLoaded", function () {
     container.setAttribute("role", "alert");
     container.setAttribute("aria-live", "assertive");
     container.setAttribute("aria-atomic", "true");
+
+    if (container.innerText) {
+      container.setAttribute("aria-label", container.innerText);
+    }
   });
 });
