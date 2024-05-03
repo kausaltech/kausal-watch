@@ -45,7 +45,7 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
     )
     deactivated_by = models.ForeignKey(
         'self',
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         null=True
     )
 
