@@ -115,7 +115,7 @@ section[role="tabpanel"] .help-block {
 }
 /* Fix footer in, e.g., custom React-based action index view since Wagtail upgrade */
 .footer__container--hidden {
-  display: none;
+  display: block;
 }
 /* Fix space between action buttons */
 .listing .actions > li {
