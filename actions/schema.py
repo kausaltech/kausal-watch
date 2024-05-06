@@ -630,6 +630,19 @@ def prefetch_workflow_states(info, **_kwargs) -> Prefetch:
 
 class AttributesMixin:
     attributes = graphene.List(graphene.NonNull(AttributeInterface), id=graphene.ID(required=False), required=True)
+    attribute_choice_ids = graphene.List(
+        graphene.Int,
+        description='A flat list of all attribute choice ids to be used for filtering, instead of using the full attributes field.'
+    )
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        prefetch_related=['choice_attributes', 'choice_with_text_attributes']
+    )
+    def resolve_attribute_choice_ids(root: Category | Action, info: GQLInfo):
+        choice_ids = []
+        for relation_name in ('choice_attributes', 'choice_with_text_attributes'):
+            choice_ids.extend([x.choice_id for x in getattr(root, relation_name).all()])
+        return choice_ids
 
     @staticmethod
     @gql_optimizer.resolver_hints(
