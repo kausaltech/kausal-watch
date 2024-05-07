@@ -179,7 +179,7 @@ class PlanNode(DjangoNode):
     actions = graphene.List(
         graphene.NonNull('actions.schema.ActionNode'), identifier=graphene.ID(), id=graphene.ID(),
         only_mine=graphene.Boolean(default_value=False), responsible_organization=graphene.ID(required=False),
-        first=graphene.Int(required=False), required=True,
+        first=graphene.Int(required=False), restrict_to_publicly_visible=graphene.Boolean(default_value=True), required=True,
     )
     action_attribute_types = graphene.List(
         graphene.NonNull('actions.schema.AttributeTypeNode', required=True), required=True
@@ -305,11 +305,22 @@ class PlanNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(
-        root: Plan, info: GQLInfo, identifier=None, id=None, only_mine=False, responsible_organization=None, first: int | None = None
+            root: Plan,
+            info: GQLInfo,
+            identifier=None,
+            id=None,
+            only_mine=False,
+            restrict_to_publicly_visible=True,
+            responsible_organization=None,
+            first: int | None = None
     ):
         user = info.context.user
         qs = root.actions.get_queryset()
-        qs = qs.visible_for_user(user).filter(plan=root)
+        if restrict_to_publicly_visible:
+            qs = qs.visible_for_public()
+        else:
+            qs = qs.visible_for_user(user)
+        qs = qs.filter(plan=root)
         if identifier:
             qs = qs.filter(identifier=identifier)
         if id:
@@ -1192,8 +1203,13 @@ class ActionLinkNode(DjangoNode):
         return root.title_i18n
 
 
-def plans_actions_queryset(plans, category, first, order_by, user):
-    qs = Action.objects.get_queryset().visible_for_user(user).filter(plan__in=plans)
+def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_publicly_visible=True):
+    qs = Action.objects.get_queryset()
+    if restrict_to_publicly_visible:
+        qs = qs.visible_for_public()
+    else:
+        qs = qs.visible_for_user(user)
+    qs = qs.filter(plan__in=plans)
     if category is not None:
         # FIXME: This is sucky, maybe convert Category to a proper tree model?
         f = (
@@ -1263,7 +1279,7 @@ class Query:
 
     plan_actions = graphene.List(
         graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
-        category=graphene.ID(), order_by=graphene.String(),
+        category=graphene.ID(), order_by=graphene.String(), restrict_to_publicly_visible=graphene.Boolean(default_value=True),
     )
     related_plan_actions = graphene.List(
         graphene.NonNull(ActionNode), plan=graphene.ID(required=True), first=graphene.Int(),
@@ -1340,11 +1356,11 @@ class Query:
         return gql_optimizer.query(plans, info)
 
     @staticmethod
-    def resolve_plan_actions(root, info, plan, first=None, category=None, order_by=None, **kwargs):
+    def resolve_plan_actions(root, info, plan, first=None, category=None, order_by=None, restrict_to_publicly_visible=True, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
-        qs = plans_actions_queryset([plan_obj], category, first, order_by, info.context.user)
+        qs = plans_actions_queryset([plan_obj], category, first, order_by, info.context.user, restrict_to_publicly_visible=restrict_to_publicly_visible)
         result = gql_optimizer.query(qs, info)
         return result
 

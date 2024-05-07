@@ -90,11 +90,13 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
         return self.unmerged().exclude(status__is_completed=True)
 
     def visible_for_user(self, user: UserOrAnon | None, plan: Plan | None = None) -> Self:
-        """ A None value is interpreted identically
-        to a non-authenticated user"""
+        """ A None value is interpreted identically a non-authenticated user"""
         if user is None or not user.is_authenticated:
             return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
+
+    def visible_for_public(self) -> Self:
+        return self.visible_for_user(None)
 
     def complete_for_report(self, report):
         from reports.models import ActionSnapshot
