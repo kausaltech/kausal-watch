@@ -233,6 +233,14 @@ class ActionContactFormBlock(blocks.StaticBlock):
 
 
 @register_streamfield_block
+class IndicatorCausalChainBlock(blocks.StaticBlock):
+    graphql_interfaces = (FieldBlockMetaInterface, )
+
+    class Meta:
+        label = _("Indicator Causal Chain")
+
+
+@register_streamfield_block
 class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
     graphql_interfaces = (FieldBlockMetaInterface, )
 
@@ -361,6 +369,7 @@ ActionMainContentBlock = generate_stream_block(
         'related_indicators',
         ('contact_form', ActionContactFormBlock(required=True)),
         ('report_comparison', ReportComparisonBlock()),
+        ('indicator_causal_chain', IndicatorCausalChainBlock()),
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={
