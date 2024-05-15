@@ -71,6 +71,7 @@ class QuantityNode(DjangoNode):
             'id', 'name',
         ]
 
+
 class RelatedIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedIndicator
@@ -93,6 +94,7 @@ class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
+
 
 class DimensionNode(DjangoNode):
     class Meta:
@@ -129,6 +131,7 @@ class CommonIndicatorNode(DjangoNode):
     )
     def resolve_normalizations(root: CommonIndicator, info):
         return root.normalizations.all()
+
 
 class RelatedCommonIndicatorNode(DjangoNode):
     class Meta:
@@ -239,7 +242,7 @@ class IndicatorNode(DjangoNode):
     @gql_optimizer.resolver_hints(
         model_field='levels',
     )
-    def resolve_levels(self, info, plan):
+    def resolve_level(self, info, plan):
         if not self.is_visible_for_user(info.context.user):
             return None
         try:

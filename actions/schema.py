@@ -56,9 +56,8 @@ from aplans.graphql_types import (
     set_active_plan
 )
 from aplans.cache import SerializedDictWithRelatedObjectCache
-from aplans.graphql_errors import ErrorCode
 from aplans.types import is_authenticated
-from aplans.utils import RestrictedVisibilityModel, hyphenate_fi, public_fields
+from aplans.utils import hyphenate_fi, public_fields
 from pages import schema as pages_schema
 from pages.models import AplansPage, CategoryPage, Page, ActionListPage
 from search.backends import get_search_backend

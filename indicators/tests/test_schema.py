@@ -2,6 +2,7 @@ import json
 import pytest
 
 from actions.tests.factories import ActionFactory, CategoryFactory, PlanFactory
+from aplans.utils import RestrictedVisibilityModel
 from indicators.tests.factories import (
     ActionIndicatorFactory, CommonIndicatorFactory, DimensionCategoryFactory, DimensionFactory, IndicatorFactory,
     IndicatorDimensionFactory, IndicatorGoalFactory, IndicatorGraphFactory, IndicatorLevelFactory,
@@ -773,3 +774,118 @@ def test_plan_indicators_has_goals_parameter(graphql_client_query_data):
             ]
         }
         assert data == expected
+
+def test_indicator_visibility(graphql_client_query_data):
+    plan = PlanFactory()
+    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
+
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planIndicators(plan: $plan) {
+            id
+            name
+          }
+        }
+        ''', variables=dict(plan=plan.identifier,),
+    )
+
+    expected = {
+        'planIndicators': [
+            {
+                'id': str(public_indicator.id),
+                'name': public_indicator.name,
+            }
+        ]
+    }
+    assert data == expected
+
+def test_indicator_query_visibility(graphql_client_query_data):
+    plan = PlanFactory()
+    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
+
+
+    data = graphql_client_query_data(
+        '''
+        query($id: ID!) {
+          indicator(id: $id) {
+            id
+            name
+          }
+        }
+        ''',
+        variables={'id': public_indicator.id}
+    )
+
+    expected = {
+        'indicator': {
+            'id': str(public_indicator.id),
+            'name': public_indicator.name,
+        }
+    }
+    assert data == expected
+
+    data = graphql_client_query_data(
+        '''
+        query($id: ID!) {
+          indicator(id: $id) {
+            id
+            name
+          }
+        }
+        ''',
+        variables={'id': internal_indicator.id}
+    )
+
+    expected = {
+        'indicator': None
+    }
+    assert data == expected
+
+
+def test_related_indicators_visibility(graphql_client_query_data):
+    plan = PlanFactory()
+    public_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    internal_indicator = IndicatorFactory(visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    IndicatorLevelFactory(indicator=public_indicator, plan=plan)
+    IndicatorLevelFactory(indicator=internal_indicator, plan=plan)
+
+    public_cause = RelatedIndicatorFactory(effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    public_effect = RelatedIndicatorFactory(causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+    RelatedIndicatorFactory(effect_indicator=public_indicator, causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+    RelatedIndicatorFactory(causal_indicator=public_indicator, effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.INTERNAL)
+
+    data = graphql_client_query_data(
+        '''
+        query($id: ID!) {
+          indicator(id: $id) {
+            id
+            relatedCauses {
+              id
+            }
+            relatedEffects {
+              id
+            }
+          }
+        }
+        ''',
+        variables={'id': public_indicator.id}
+    )
+
+    expected = {
+        'indicator': {
+            'id': str(public_indicator.id),
+            'relatedCauses': [{'id': str(public_cause.id)}],
+            'relatedEffects': [{'id': str(public_effect.id)}]
+        }
+    }
+    assert data == expected

@@ -290,8 +290,7 @@ class IndicatorViewSet(BulkModelViewSet):
         if not plan_pk:
             return Indicator.objects.none()
         plan = Plan.objects.get(pk=plan_pk)
-        qs = Indicator.objects.available_for_plan(plan)
-        return qs
+        return Indicator.objects.available_for_plan(plan)
 
     def get_permissions(self):
         if self.action == 'update_values':
