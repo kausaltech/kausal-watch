@@ -28,13 +28,13 @@ class ActionGraphGenerator(GraphGenerator):
     def fetch_data(self):
         action_qs = self.plan.actions.unmerged()
         self.actions = {obj.id: obj for obj in action_qs}
-        action_indicators = ActionIndicator.objects.visible_for_user(self.request.user).filter(action__in=action_qs)
+        action_indicators = ActionIndicator.objects.visible_for_public().filter(action__in=action_qs)
         for ai in action_indicators:
             act = self.actions[ai.action_id]
             if not hasattr(act, '_indicators'):
                 act._indicators = []
             act._indicators.append(ai)
-        indicator_levels = self.plan.indicator_levels.visible_for_user(self.request.user).select_related(
+        indicator_levels = self.plan.indicator_levels.visible_for_public().select_related(
             'indicator', 'indicator__latest_value', 'indicator__unit'
         )
 
@@ -154,7 +154,7 @@ class ActionGraphGenerator(GraphGenerator):
                 if hasattr(obj, '_indicators'):
                     related_indicators = obj._indicators
                 else:
-                    related_indicators = obj.related_indicators.visible_for_user(self.request.user)
+                    related_indicators = obj.related_indicators.visible_for_public()
                 for ri in related_indicators:
                     if ri.indicator_id in self.indicators:
                         target = self.indicators[ri.indicator_id]
@@ -165,7 +165,7 @@ class ActionGraphGenerator(GraphGenerator):
                     )
                     self.add_node(target)
         elif isinstance(obj, Indicator):
-            if obj.is_visible_for_user(None):
+            if obj.is_visible_for_public():
                 if obj.id in self.indicators:
                     obj = self.indicators[obj.id]
                 if self.traverse_direction in ('forward', 'both'):

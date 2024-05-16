@@ -305,6 +305,9 @@ class IndicatorQuerySet(SearchableQuerySetMixin, models.QuerySet):
         if user is None or not user.is_authenticated:
             return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
+    
+    def visible_for_public(self) -> Self:
+        return self.visible_for_user(None)
 
 
 @reversion.register()
@@ -621,6 +624,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
             return False
         return True
+    
+    def is_visible_for_public(self) -> Self:
+        return self.is_visible_for_user(None)
 
     @property
     def latest_value_value(self):
@@ -746,6 +752,9 @@ class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet):
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
+    
+    def visible_for_public(self) -> Self:
+        return self.visible_for_user(None)
 
 
 class IndicatorLevel(ClusterableModel):
@@ -900,6 +909,9 @@ class ActionIndicatorQuerySet(models.QuerySet):
         if user is None or not user.is_authenticated:
             return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
         return self
+    
+    def visible_for_public(self) -> Self:
+        return self.visible_for_user(None)
 
 
 class ActionIndicator(models.Model):

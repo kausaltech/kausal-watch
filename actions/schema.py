@@ -1048,11 +1048,11 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
 
     @staticmethod
     def resolve_indicators(root: Action, info):
-        return root.get_visible_indicators(info.context.user)
+        return root.get_visible_indicators()
     
     @staticmethod
     def resolve_related_indicators(root: Action, info):
-        return root.get_visible_related_indicators(info.context.user)
+        return root.get_visible_related_indicators()
 
     @staticmethod
     @gql_optimizer.resolver_hints(

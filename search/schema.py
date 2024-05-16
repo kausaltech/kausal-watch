@@ -143,7 +143,7 @@ class Query:
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
-            querysets.append(Indicator.objects.visible_for_user(None).filter(plans__in=plan_ids))
+            querysets.append(Indicator.objects.visible_for_public().filter(plans__in=plan_ids))
 
 
         lang = get_language()

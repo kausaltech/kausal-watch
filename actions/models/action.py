@@ -478,11 +478,11 @@ class Action(  # type: ignore[django-manager-missing]
             .first()
         )
 
-    def get_visible_indicators(self, user: User):
-        return self.indicators.visible_for_user(user)
+    def get_visible_indicators(self):
+        return self.indicators.visible_for_public()
 
-    def get_visible_related_indicators(self, user: User):
-        indicator_ids = self.indicators.visible_for_user(user).values_list("id", flat=True)
+    def get_visible_related_indicators(self):
+        indicator_ids = self.indicators.visible_for_public().values_list("id", flat=True)
         return self.related_indicators.filter(indicator_id__in=indicator_ids)
 
     @property

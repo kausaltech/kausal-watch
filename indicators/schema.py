@@ -218,13 +218,13 @@ class IndicatorNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(self, info, plan=None):
-        qs = self.actions.visible_for_user(info.context.user)
+        qs = self.actions.visible_for_public()
         if plan is not None:
             qs = qs.filter(plan__identifier=plan)
         return qs
 
     def resolve_related_actions(self, info, plan=None):
-        actions = Action.objects.visible_for_user(info.context.user)
+        actions = Action.objects.visible_for_public()
         qs = ActionIndicator.objects.filter(action__in=actions).filter(indicator=self)
         if plan is not None:
             qs = qs.filter(indicator__plan__identifier=plan)
@@ -243,7 +243,7 @@ class IndicatorNode(DjangoNode):
         model_field='levels',
     )
     def resolve_level(self, info, plan):
-        if not self.is_visible_for_user(info.context.user):
+        if not self.is_visible_for_public():
             return None
         try:
             obj = self.levels.get(plan__identifier=plan)
@@ -264,19 +264,15 @@ class IndicatorNode(DjangoNode):
         model_field=('related_causes', 'i18n'),
     )
     def resolve_related_causes(self: Indicator, info):
-        user = info.context.user
-        if user is None or not user.is_authenticated:
-            return self.related_causes.filter(causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return self.related_causes
+        return self.related_causes.filter(causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+
 
     @gql_optimizer.resolver_hints(
         model_field=('related_effects', 'i18n'),
     )
     def resolve_related_effects(self: Indicator, info):
-        user = info.context.user
-        if user is None or not user.is_authenticated:
-            return self.related_effects.filter(effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return self.related_effects
+        return self.related_effects.filter(effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+
 
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
@@ -299,7 +295,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        qs = Indicator.objects.all().visible_for_user(info.context.user)
+        qs = Indicator.objects.all().visible_for_public()
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
@@ -322,7 +318,7 @@ class Query:
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
 
-        qs = Indicator.objects.visible_for_user(info.context.user)
+        qs = Indicator.objects.visible_for_public()
         if obj_id:
             try:
                 obj_id = int(obj_id)
