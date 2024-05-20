@@ -39,6 +39,7 @@ from aplans.utils import (
     get_default_language,
     get_supported_languages
 )
+from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
 
@@ -805,6 +806,12 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             if workflow_state == WorkflowStateEnum.APPROVED: return tasks.last().task
             return None
         return None
+
+    def has_indicator_relationships(self):
+        visible_levels = IndicatorLevel.objects.filter(plan=self).visible_for_public()
+        visible_indicators = Indicator.objects.filter(levels__in=visible_levels)
+        return RelatedIndicator.objects.filter(Q(causal_indicator__in=visible_indicators) &
+                                               Q(effect_indicator__in=visible_indicators)).exists()
 
 
 class PublicationStatus(models.TextChoices):

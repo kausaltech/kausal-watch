@@ -13,7 +13,7 @@ from django.contrib.admin import display
 from django.core.exceptions import FieldDoesNotExist, ValidationError
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import IntegerField, Max, Q
+from django.db.models import Count, IntegerField, Max, Q
 from django.db.models.functions import Cast
 from django.urls import reverse
 from django.utils import timezone, translation
@@ -35,6 +35,7 @@ from aplans.utils import (
     IdentifierField, OrderedModel, PlanRelatedModel, generate_identifier, get_available_variants_for_language,
     ConstantMetadata, DateFormatField, RestrictedVisibilityModel
 )
+from indicators.models import Indicator
 from orgs.models import Organization
 from users.models import User
 from search.backends import TranslatedSearchField, TranslatedAutocompleteField
@@ -108,6 +109,17 @@ class ActionQuerySet(SearchableQuerySetMixin, models.QuerySet):
             .values_list('action_id')
         )
         return self.filter(id__in=action_ids)
+
+    def annotate_related_indicator_counts(self, plan):
+        return self.annotate(
+            indicator_count=Count(
+                'related_indicators',filter=Q(
+                    related_indicators__indicator__in=Indicator.objects.available_for_plan(plan).visible_for_public())),
+            indicators_with_goals_count=Count(
+                'related_indicators', filter=Q(
+                    related_indicators__indicator__in=Indicator.objects.available_for_plan(plan).visible_for_public().filter(
+                        goals__isnull=False))),
+                )
 
 
 class HasGetValue(Protocol):
@@ -478,12 +490,10 @@ class Action(  # type: ignore[django-manager-missing]
             .first()
         )
 
-    def get_visible_indicators(self):
-        return self.indicators.visible_for_public()
-
     def get_visible_related_indicators(self):
         indicator_ids = self.indicators.visible_for_public().values_list("id", flat=True)
         return self.related_indicators.filter(indicator_id__in=indicator_ids)
+
 
     @property
     def visibility_display(self):

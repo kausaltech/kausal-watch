@@ -94,7 +94,10 @@ class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
-
+    
+    @staticmethod
+    def get_queryset(root, info):
+        return root.visible_for_public()
 
 class DimensionNode(DjangoNode):
     class Meta:
@@ -218,13 +221,13 @@ class IndicatorNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(self, info, plan=None):
-        qs = self.actions.visible_for_public()
+        qs = self.actions.visible_for_user(info.context.user)
         if plan is not None:
             qs = qs.filter(plan__identifier=plan)
         return qs
 
     def resolve_related_actions(self, info, plan=None):
-        actions = Action.objects.visible_for_public()
+        actions = Action.objects.visible_for_user(info.context.user)
         qs = ActionIndicator.objects.filter(action__in=actions).filter(indicator=self)
         if plan is not None:
             qs = qs.filter(indicator__plan__identifier=plan)
@@ -295,7 +298,7 @@ class Query:
         if plan_obj is None:
             return None
 
-        qs = Indicator.objects.all().visible_for_public()
+        qs = Indicator.objects.visible_for_public()
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
@@ -319,6 +322,7 @@ class Query:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
 
         qs = Indicator.objects.visible_for_public()
+
         if obj_id:
             try:
                 obj_id = int(obj_id)

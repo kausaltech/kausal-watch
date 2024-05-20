@@ -228,6 +228,8 @@ class PlanNode(DjangoNode):
         graphene.NonNull('actions.schema.ActionTimelinessNode'), required=True
     )
 
+    has_indicator_relationships = graphene.Boolean()
+
     @staticmethod
     def resolve_action_status_summaries(root: Plan, info):
         return list(a.get_data({'plan': root}) for a in ActionStatusSummaryIdentifier)
@@ -417,9 +419,11 @@ class PlanNode(DjangoNode):
     @staticmethod
     def resolve_superseded_plans(root: Plan, info, recursive=False):
         return root.get_superseded_plans(recursive)
-    
-    def resolve_indicator_levels(root: Plan, info):
-        return root.indicator_levels.visible_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_has_indicator_relationships(root: Plan, info):
+        return root.has_indicator_relationships()
+
 
     class Meta:
         model = Plan
@@ -1014,6 +1018,9 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     )
     workflow_status = graphene.Field('actions.schema.WorkflowInfoNode')
 
+    indicators_count = graphene.Int()
+    has_indicators_with_goals = graphene.Boolean()
+
     class Meta:
         model = Action
         fields = Action.public_fields
@@ -1046,10 +1053,6 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_previous_action(root: Action, info):
         return root.get_previous_action(info.context.user)
 
-    @staticmethod
-    def resolve_indicators(root: Action, info):
-        return root.get_visible_indicators()
-    
     @staticmethod
     def resolve_related_indicators(root: Action, info):
         return root.get_visible_related_indicators()
@@ -1184,6 +1187,17 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
             return None
         return root
 
+    @staticmethod
+    def resolve_indicators_count(root: Action, info):
+        inds_count = getattr(root, 'indicator_count', 0)
+        return inds_count
+
+    @staticmethod
+    def resolve_has_indicators_with_goals(root: Action, info):
+        goals_count = getattr(root, 'indicators_with_goals_count', 0)
+        return goals_count > 0
+
+
 
 class ActionScheduleNode(DjangoNode):
     class Meta:
@@ -1279,6 +1293,9 @@ def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_p
         )
         descendant_cats = Category.objects.filter(f)
         qs = qs.filter(categories__in=descendant_cats).distinct()
+    if isinstance(plans, list) and len(plans) == 1:
+        plan = plans[0]
+        qs = qs.annotate_related_indicator_counts(plan)
     qs = order_queryset(qs, ActionNode, order_by)
     if first is not None:
         qs = qs[0:first]
