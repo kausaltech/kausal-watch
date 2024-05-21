@@ -180,10 +180,9 @@ class Report(models.Model, PlanRelatedModel):
     def filter_by_plan(cls, plan, qs):
         return qs.filter(type__plan=plan)
 
-    def to_xlsx(self):
-        xlsx_exporter = ExcelReport(self)
-        self.xlsx_exporter = xlsx_exporter
-        return xlsx_exporter.generate_xlsx()
+    def get_xlsx_exporter(self) -> ExcelReport:
+        self.xlsx_exporter = ExcelReport(self)
+        return self.xlsx_exporter
 
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))

@@ -1,6 +1,8 @@
 from __future__ import annotations
 import inspect
+import pathlib
 import polars
+from typing import TypedDict
 import typing
 from typing import Sequence
 import xlsxwriter
@@ -9,6 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 from django.utils import translation
 from django.utils import timezone
+from django.utils.text import slugify
 from django.utils.translation import gettext as _, pgettext
 from io import BytesIO
 from reversion.models import Version
@@ -169,6 +172,7 @@ class ExcelReport:
     formats: ExcelFormats
     plan_current_related_objects: 'PlanRelatedObjects'
     field_to_column_labels: dict[str, set[str]]
+    has_macros: bool
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -204,9 +208,19 @@ class ExcelReport:
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
         self.formats = ExcelFormats(self.workbook)
+        if report.type.plan.features.output_report_action_print_layout:
+            # add macro to enable post-processing in Excel
+            self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
+            self.has_macros = True
+        else:
+            self.has_macros = False
         self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self.field_to_column_labels = dict()
         self._initialize_formats()
+
+    def get_filename(self) -> str:
+        suffix = '.xlsm' if self.has_macros else '.xlsx'
+        return slugify(self.report.name, allow_unicode=True) + suffix
 
     def generate_actions_dataframe(self) -> polars.DataFrame:
         with translation.override(self.language):

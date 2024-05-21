@@ -328,7 +328,19 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
         row_index += 1
 
     worksheet = excel_report.workbook.add_worksheet(_('Profiles'))
-    worksheet.set_column(0, MAX_COLUMNS - 1, 16)
+    COLUMN_WIDTH = 16
+    worksheet.set_column(0, MAX_COLUMNS - 1, COLUMN_WIDTH)
+    # The following empty columns need to be 2 columns wide and 4 columns wide (actually a little bit less) and are used when forcing excel
+    # to automatically adjust the row height to fit the texts (with a separate macro), since excel doesn't do that for merged cells
+    worksheet.set_column(MAX_COLUMNS + 1, MAX_COLUMNS + 2, COLUMN_WIDTH * 2 - 2)
+    worksheet.set_column(MAX_COLUMNS + 3, MAX_COLUMNS + 3, COLUMN_WIDTH * 4 - 2)
+    worksheet.insert_button('F1', {
+        'macro':   'ThisWorkbook.ProcessMergedCells',
+        'caption': _('Prepare for printing'),
+        'width':   320,
+        'height':  60
+    })
+
     cursor_writer = CursorWriter(
         worksheet,
         formats=excel_report.formats,

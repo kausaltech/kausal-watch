@@ -248,13 +248,13 @@ class ReportAdmin(AplansModelAdmin):
 
     def download_report_view(self, request, instance_pk):
         report = Report.objects.get(pk=instance_pk)
-        output = report.to_xlsx()
+        exporter = report.get_xlsx_exporter()
+        output = exporter.generate_xlsx()
         response = HttpResponse(
             output,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        filename = slugify(report.name, allow_unicode=True) + '.xlsx'
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'attachment; filename="{exporter.get_filename()}"'
         return response
 
     def mark_report_as_complete_view(self, request, instance_pk):

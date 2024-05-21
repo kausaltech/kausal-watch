@@ -20,7 +20,8 @@ def excel_file_from_report_factory(actions_having_attributes, report_with_all_at
     def _excel_factory():
         assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True
         assert report_with_all_attributes.fields == report_with_all_attributes.type.fields
-        output_excel = report_with_all_attributes.to_xlsx()
+        exporter = report_with_all_attributes.get_xlsx_exporter()
+        output_excel = exporter.generate_xlsx()
         return output_excel
     return _excel_factory
 
