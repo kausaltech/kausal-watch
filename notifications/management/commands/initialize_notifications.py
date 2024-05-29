@@ -7,7 +7,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 
 from actions.models import Plan
-from notifications.models import BaseTemplate, NotificationType, NotificationTemplate, ContentBlock
+from notifications.models import BaseTemplate, NotificationType, AutomaticNotificationTemplate, ContentBlock
 
 
 ALPHANUM = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -113,7 +113,7 @@ def initialize_notification_templates(
         defaults = {
             'subject': notification_type.verbose_name,
         }
-        template, created = NotificationTemplate.objects.get_or_create(
+        template, created = AutomaticNotificationTemplate.objects.get_or_create(
             base=base_template, type=notification_type.identifier, defaults=defaults)
         ContentBlock.objects.get_or_create(
             template=template, identifier='intro', base=base_template,

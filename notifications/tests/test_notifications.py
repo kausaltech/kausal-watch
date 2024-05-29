@@ -9,9 +9,9 @@ from admin_site.tests.factories import ClientPlanFactory
 from feedback.tests.factories import UserFeedbackFactory
 from indicators.tests.factories import IndicatorContactFactory, IndicatorFactory, IndicatorLevelFactory
 from orgs.tests.factories import OrganizationPlanAdminFactory
-from notifications.models import NotificationTemplate, NotificationType, SentNotification
+from notifications.models import AutomaticNotificationTemplate, NotificationType, SentNotification
 from notifications.management.commands.send_plan_notifications import NotificationEngine
-from notifications.tests.factories import NotificationTemplateFactory, ManuallyScheduledNotificationTemplateFactory
+from notifications.tests.factories import AutomaticNotificationTemplateFactory, ManuallyScheduledNotificationTemplateFactory
 from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
@@ -19,7 +19,7 @@ pytestmark = pytest.mark.django_db
 
 def test_task_late():
     plan = PlanFactory()
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.TASK_LATE.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     today = now.date()
@@ -35,7 +35,7 @@ def test_task_late():
 
 def test_task_due_soon():
     plan = PlanFactory()
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.TASK_DUE_SOON.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     today = now.date()
@@ -52,7 +52,7 @@ def test_task_due_soon():
 def test_not_enough_tasks():
     plan = PlanFactory()
     ClientPlanFactory(plan=plan)
-    NotificationTemplateFactory(
+    AutomaticNotificationTemplateFactory(
         base__plan=plan,
         type=NotificationType.NOT_ENOUGH_TASKS.identifier,
     )
@@ -73,7 +73,7 @@ def test_not_enough_tasks():
 
 def test_updated_indicator_values_late():
     plan = PlanFactory()
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.UPDATED_INDICATOR_VALUES_LATE.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     today = now.date()
@@ -90,7 +90,7 @@ def test_updated_indicator_values_late():
 
 def test_updated_indicator_values_due_soon():
     plan = PlanFactory()
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     today = now.date()
@@ -108,7 +108,7 @@ def test_updated_indicator_values_due_soon():
 @pytest.mark.parametrize('action_is_stale', [False, True])
 def test_action_not_updated(action_is_stale):
     plan = PlanFactory()
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.ACTION_NOT_UPDATED.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     updated_at = now - timedelta(days=plan.get_action_days_until_considered_stale())
@@ -187,12 +187,12 @@ def test_manually_scheduled_notification(
 
 def test_indicator_notification_bubbles_to_org_admin():
     plan = PlanFactory()
-    NotificationTemplateFactory(
+    AutomaticNotificationTemplateFactory(
         base__plan=plan,
         type=NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON.identifier,
         custom_email='',
         send_to_custom_email=False,
-        send_to_contact_persons=NotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
+        send_to_contact_persons=AutomaticNotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
     )
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     due_at = now.date() + timedelta(days=1)
@@ -209,12 +209,12 @@ def test_indicator_notification_bubbles_to_org_admin():
 
 def test_action_notification_bubbles_to_org_admin_responsible_party():
     plan = PlanFactory()
-    NotificationTemplateFactory(
+    AutomaticNotificationTemplateFactory(
         base__plan=plan,
         type=NotificationType.ACTION_NOT_UPDATED.identifier,
         custom_email='',
         send_to_custom_email=False,
-        send_to_contact_persons=NotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
+        send_to_contact_persons=AutomaticNotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
     )
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     updated_at = now - timedelta(days=plan.get_action_days_until_considered_stale())
@@ -233,12 +233,12 @@ def test_action_notification_bubbles_to_org_admin_responsible_party():
 
 def test_action_notification_bubbles_to_org_admin_main_organization():
     plan = PlanFactory()
-    NotificationTemplateFactory(
+    AutomaticNotificationTemplateFactory(
         base__plan=plan,
         type=NotificationType.ACTION_NOT_UPDATED.identifier,
         custom_email='',
         send_to_custom_email=False,
-        send_to_contact_persons=NotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
+        send_to_contact_persons=AutomaticNotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS,
     )
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     updated_at = now - timedelta(days=plan.get_action_days_until_considered_stale())
@@ -258,12 +258,12 @@ def test_action_notification_bubbles_to_org_admin_main_organization():
 
 def test_indicator_notification_bubbles_to_plan_admin():
     plan = PlanFactory()
-    NotificationTemplateFactory(
+    AutomaticNotificationTemplateFactory(
         base__plan=plan,
         type=NotificationType.UPDATED_INDICATOR_VALUES_DUE_SOON.identifier,
         custom_email='',
         send_to_custom_email=False,
-        send_to_contact_persons=NotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS,
+        send_to_contact_persons=AutomaticNotificationTemplate.ContactPersonFallbackChain.CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS,
     )
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     due_at = now.date() + timedelta(days=1)
@@ -279,7 +279,7 @@ def test_indicator_notification_bubbles_to_plan_admin():
 
 
 def test_user_feedback_received(plan, plan_admin_person):
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.USER_FEEDBACK_RECEIVED.identifier)
     ClientPlanFactory(plan=plan)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
@@ -294,7 +294,7 @@ def test_user_feedback_received(plan, plan_admin_person):
 
 def test_i18n(plan, plan_admin_person):
     plan = PlanFactory(primary_language='de')
-    NotificationTemplateFactory(base__plan=plan,
+    AutomaticNotificationTemplateFactory(base__plan=plan,
                                 type=NotificationType.TASK_LATE.identifier)
     now = plan.to_local_timezone(datetime(2000, 1, 1, 0, 0))
     today = now.date()

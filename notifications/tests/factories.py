@@ -5,7 +5,7 @@ from factory import SubFactory
 from factory.django import DjangoModelFactory
 
 from actions.tests.factories import PlanFactory
-from notifications.models import NotificationTemplate, NotificationType
+from notifications.models import AutomaticNotificationTemplate, NotificationType
 
 
 class BaseTemplateFactory(DjangoModelFactory):
@@ -15,9 +15,9 @@ class BaseTemplateFactory(DjangoModelFactory):
     plan = SubFactory(PlanFactory)
 
 
-class NotificationTemplateFactory(DjangoModelFactory):
+class AutomaticNotificationTemplateFactory(DjangoModelFactory):
     class Meta:
-        model = 'notifications.NotificationTemplate'
+        model = 'notifications.AutomaticNotificationTemplate'
 
     base = SubFactory(BaseTemplateFactory)
     subject = "Test"
@@ -26,7 +26,7 @@ class NotificationTemplateFactory(DjangoModelFactory):
     custom_email = 'test@example.com'
     send_to_plan_admins = False
     send_to_custom_email = True
-    send_to_contact_persons = NotificationTemplate.ContactPersonFallbackChain.DO_NOT_SEND
+    send_to_contact_persons = AutomaticNotificationTemplate.ContactPersonFallbackChain.DO_NOT_SEND
 
 
 class ManuallyScheduledNotificationTemplateFactory(DjangoModelFactory):

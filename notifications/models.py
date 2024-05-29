@@ -269,7 +269,7 @@ class NotificationTemplateBase(models.Model, IndirectPlanRelatedModel):
         return EmailRecipient(email=self.custom_email, client=client)
 
 
-class NotificationTemplate(NotificationTemplateBase):
+class AutomaticNotificationTemplate(NotificationTemplateBase):
     base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
 
     class ContactPersonFallbackChain(models.TextChoices):
@@ -443,7 +443,7 @@ class ContentBlock(models.Model):
 
     base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
     template = models.ForeignKey(
-        NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
+        AutomaticNotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
         verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
     )
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'), choices=(
@@ -463,7 +463,7 @@ class ContentBlock(models.Model):
     def natural_key(self):
         return (self.base, self.template, self.identifier)
     natural_key.dependencies = [
-        'notifications.BaseTemplate', 'notifications.NotificationTemplate'
+        'notifications.BaseTemplate', 'notifications.AutomaticNotificationTemplate'
     ]
 
     def save(self, *args, **kwargs):

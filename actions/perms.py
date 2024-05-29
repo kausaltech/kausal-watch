@@ -10,7 +10,7 @@ from indicators.models import (
     ActionIndicator, Dataset, DatasetLicense, Dimension, DimensionCategory, Indicator, IndicatorContactPerson,
     IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedIndicator, Unit
 )
-from notifications.models import BaseTemplate, ContentBlock, NotificationTemplate
+from notifications.models import BaseTemplate, ContentBlock, AutomaticNotificationTemplate
 from orgs.models import Organization
 from people.models import Person
 from reports.models import Report, ReportType
@@ -251,7 +251,7 @@ PLAN_ADMIN_PERMS = (
     (SiteGeneralContent, ('add', 'view', 'change')),
 
     (BaseTemplate, ('add', 'view', 'change')),
-    (NotificationTemplate, ALL_PERMS),
+    (AutomaticNotificationTemplate, ALL_PERMS),
     (ContentBlock, ALL_PERMS),
 
     (User, ('view',))
