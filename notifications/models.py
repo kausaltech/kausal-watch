@@ -198,7 +198,7 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplateBase(models.Model, IndirectPlanRelatedModel):
+class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     type = models.CharField(
         verbose_name=_('type'), choices=notification_type_choice_builder(include_manual=False),
         max_length=100,
@@ -269,7 +269,7 @@ class NotificationTemplateBase(models.Model, IndirectPlanRelatedModel):
         return EmailRecipient(email=self.custom_email, client=client)
 
 
-class AutomaticNotificationTemplate(NotificationTemplateBase):
+class AutomaticNotificationTemplate(NotificationTemplate):
     base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
 
     class ContactPersonFallbackChain(models.TextChoices):
@@ -347,7 +347,7 @@ class AutomaticNotificationTemplate(NotificationTemplateBase):
 
         return recipients
 
-    class Meta(NotificationTemplateBase.Meta):
+    class Meta(NotificationTemplate.Meta):
         ordering = ('type', 'subject')
         verbose_name = _('notification template')
         verbose_name_plural = _('notification templates')
@@ -363,7 +363,7 @@ class AutomaticNotificationTemplate(NotificationTemplateBase):
         ]
 
 
-class ManuallyScheduledNotificationTemplate(NotificationTemplateBase):
+class ManuallyScheduledNotificationTemplate(NotificationTemplate):
     type = models.CharField(
         verbose_name=_('type'),
         max_length=100,
@@ -413,7 +413,7 @@ class ManuallyScheduledNotificationTemplate(NotificationTemplateBase):
             recipients += [recipient]
         return recipients
 
-    class Meta(NotificationTemplateBase.Meta):
+    class Meta(NotificationTemplate.Meta):
         ordering = ('date', 'subject')
         verbose_name = _('scheduled notification')
         verbose_name_plural = _('scheduled notifications')
