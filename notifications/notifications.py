@@ -1,7 +1,11 @@
 from __future__ import annotations
+import datetime
 import typing
 
-from .models import NotificationType
+from django.db.models import Q
+from markupsafe import Markup
+
+from .models import NotificationType, ManuallyScheduledNotificationTemplate
 from actions.models import Plan, ActionTask, Action
 from feedback.models import UserFeedback
 from indicators.models import Indicator
@@ -19,7 +23,7 @@ class Notification:
     plan: Plan
     obj: NotificationObject
 
-    def __init__(self, type: NotificationType, plan: Plan, obj):
+    def __init__(self, type: NotificationType, plan: Plan, obj: typing.Any):
         self.type = type
         self.plan = plan
         self.obj = obj
@@ -44,6 +48,13 @@ class Notification:
             return None
         else:
             return (now - last_notification.sent_at).days
+
+    def get_content_blocks(self, base_template, template) -> dict[str, Markup]:
+        cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
+        return {cb.identifier: Markup(cb.content) for cb in cb_qs}
+
+    def get_identifier(self) -> str | None:
+        return None
 
 
 class DeadlinePassedNotification(Notification):
@@ -184,3 +195,35 @@ class UserFeedbackReceivedNotification(Notification):
         if self.notification_last_sent(now=now) is None:
             for recipient in recipients:
                 engine.queue_notification(self, recipient)
+
+
+class ManuallyScheduledNotification(Notification):
+    def __init__(self, plan: Plan, template: ManuallyScheduledNotificationTemplate):
+        super().__init__(NotificationType.MANUALLY_SCHEDULED, plan, template)
+
+    def get_context(self):
+        obj = typing.cast(ManuallyScheduledNotificationTemplate, self.obj)
+        return {'content': obj.content}
+
+    def generate_notifications(self, engine: NotificationEngine, recipients: typing.Sequence[NotificationRecipient], now=None):
+        if now is None:
+            now = self.plan.now_in_local_timezone()
+        trigger_datetime = datetime.datetime.combine(
+            self.obj.date, datetime.datetime.min.time()
+        ).replace(tzinfo=self.plan.tzinfo)
+        if self.notification_last_sent(now=now) is None:
+            if now >= trigger_datetime:
+                for recipient in recipients:
+                    engine.queue_notification(self, recipient)
+
+    def get_identifier(self) -> str | None:
+        return f'{self.obj.date.isoformat()}-{self.obj.subject}'
+
+    def get_content_blocks(self, base_template, template) -> dict[str, Markup]:
+        cb_qs = base_template.content_blocks.filter(template__isnull=True)
+        result = {cb.identifier: Markup(cb.content) for cb in cb_qs}
+        result['intro'] = template.content
+        return result
+
+    def __str__(self):
+        return f'ManuallyScheduledNotification(date={self.obj.date.isoformat()}, subject="{self.obj.subject}")'

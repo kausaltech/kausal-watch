@@ -1,7 +1,6 @@
 from datetime import timedelta
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db.models import Q
 from django.utils import translation
 from logging import getLogger
 from markupsafe import Markup
@@ -11,9 +10,9 @@ from typing import Dict, Sequence
 from .mjml import render_mjml_from_template
 from aplans.email_sender import EmailSender
 
-from .models import NotificationType
+from .models import NotificationType, ManuallyScheduledNotificationTemplate
 from .notifications import (
-    ActionNotUpdatedNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
+    ActionNotUpdatedNotification, ManuallyScheduledNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
     TaskLateNotification, UpdatedIndicatorValuesDueSoonNotification, UpdatedIndicatorValuesLateNotification,
     UserFeedbackReceivedNotification,
 )
@@ -186,6 +185,14 @@ class NotificationEngine:
             )
             notification.generate_notifications(self, recipients, now=self.now)
 
+    def generate_manually_scheduled_notification(self, template: ManuallyScheduledNotificationTemplate):
+        notification = ManuallyScheduledNotification(self.plan, template)
+        recipients = template.get_recipients(
+            self.action_contact_person_recipients, self.indicator_contact_person_recipients,
+            self.plan_admin_recipients, self.organization_plan_admin_recipients
+        )
+        notification.generate_notifications(self, recipients, now=self.now)
+
     def render(self, template, context, language_code=None):
         if not language_code:
             language_code = self.plan.primary_language
@@ -240,23 +247,30 @@ class NotificationEngine:
         for user_feedback in self.plan.user_feedbacks.all():
             self.generate_user_feedback_notifications(user_feedback)
 
+        for manually_scheduled_notification_template in ManuallyScheduledNotificationTemplate.objects.filter(base__plan=self.plan):
+            self.generate_manually_scheduled_notification(manually_scheduled_notification_template)
+
         notification_count = 0
         email_sender = EmailSender(plan=self.plan)
 
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
                 continue
-            for notification_type, queue_items in items_for_type.items():
+            for notification_type, queue_items_by_identifier in items_for_type.items():
+              for _, queue_items in queue_items_by_identifier.items():
                 ttype = notification_type.identifier
                 if self.only_type and ttype != self.only_type:
                     continue
-                template = self.templates_by_type.get(ttype)
-                if template is None:
-                    logger.debug('No template for %s' % ttype)
-                    continue
+                if notification_type == NotificationType.MANUALLY_SCHEDULED:
+                    template = queue_items[0].notification.obj
+                else:
+                    template = self.templates_by_type.get(ttype)
+                    if template is None:
+                        logger.debug('No template for %s' % ttype)
+                        continue
 
-                cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
-                content_blocks = {cb.identifier: Markup(cb.content) for cb in cb_qs}
+                notification = queue_items[0].notification
+                content_blocks = notification.get_content_blocks(base_template, template)
 
                 context = {
                     'items': [item.notification.get_context() for item in queue_items],

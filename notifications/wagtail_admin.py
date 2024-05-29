@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.forms import Select
 from django.utils.translation import gettext_lazy as _
+from django.utils import formats
+
 from wagtail.admin.panels import (
     FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
 )
@@ -56,6 +58,28 @@ class BaseTemplateAdmin(AplansModelAdmin):
         FieldPanel('identifier')
     ]
 
+    def get_manually_scheduled_notification_panels(self, send_at_time):
+        panels = [
+            FieldPanel('subject'),
+            FieldPanel('date', help_text=_(
+                "The email message will be sent on the specified day at %(time)s." % {
+                    'time': send_at_time
+                }
+            )),
+            FieldPanel('content'),
+            MultiFieldPanel([
+                FieldRowPanel([
+                    FieldPanel('send_to_plan_admins'),
+                    FieldPanel('send_to_action_contact_persons'),
+                    FieldPanel('send_to_indicator_contact_persons'),
+                    FieldPanel('send_to_organization_admins'),
+                    FieldPanel('send_to_custom_email'),
+                ]),
+                FieldPanel('custom_email'),
+            ], classname='collapsible'),
+        ]
+        return panels
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         user = request.user
@@ -76,16 +100,25 @@ class BaseTemplateAdmin(AplansModelAdmin):
             additional_panels.append(FieldPanel('font_family'))
             additional_panels.append(FieldPanel('font_css_url'))
 
+        plan = request.user.get_active_admin_plan()
+        time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
+
         return AplansTabbedInterface([
             ObjectList(
                 self.panels + additional_panels,
                 heading=_('Basic information')),
             ObjectList([
                 InlinePanel(
+                    'manually_scheduled_notification_templates',
+                    panels=self.get_manually_scheduled_notification_panels(time)
+                )],
+                heading=_('Single notifications')),
+            ObjectList([
+                InlinePanel(
                     'templates',
                     panels=self.templates_panels
                 )],
-                heading=_('Notification types')),
+                heading=_('Automatic notifications')),
             ObjectList([
                 CondensedInlinePanel(
                     'content_blocks',

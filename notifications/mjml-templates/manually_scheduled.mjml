@@ -1,0 +1,4 @@
+{% extends "bookended_base.mjml" %}
+
+{% block notification_content %}
+{% endblock %}
