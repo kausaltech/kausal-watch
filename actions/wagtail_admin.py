@@ -3,7 +3,6 @@ import re
 
 from dal import autocomplete
 from django.core.exceptions import ValidationError
-from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from wagtail.admin.panels import (
@@ -373,6 +372,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('enable_search'),
         FieldPanel('enable_indicator_comparison'),
+        FieldPanel('indicator_ordering'),
     ]
 
     def get_queryset(self, request):

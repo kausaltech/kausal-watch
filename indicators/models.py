@@ -13,6 +13,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
+from django.db.models.functions import Collate
 from django.urls import reverse
 from django.utils import timezone, translation
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
@@ -20,11 +21,15 @@ from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualManager
+
 from typing import Optional, Self
+
 from wagtail.fields import RichTextField
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
+from actions.models.features import OrderBy
+from aplans import utils
 from aplans.utils import (
     IdentifierField, OrderedModel, TranslatedModelMixin, ModificationTracking, PlanDefaultsModel, get_available_variants_for_language,
     RestrictedVisibilityModel
@@ -901,8 +906,6 @@ class RelatedIndicator(IndicatorRelationship):
         return "%s %s %s" % (self.causal_indicator, self.effect_type, self.effect_indicator)
 
 class ActionIndicatorQuerySet(models.QuerySet):
-
-
     def visible_for_user(self, user: UserOrAnon | None) -> Self:
         """ A None value is interpreted identically
         to a non-authenticated user"""
@@ -913,6 +916,17 @@ class ActionIndicatorQuerySet(models.QuerySet):
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
 
+    def order_by_setting(self, plan: "Plan"):
+        indicator_ordering = plan.features.indicator_ordering
+        if indicator_ordering == OrderBy.NAME:
+            lang = plan.primary_language
+            collator = utils.get_collator(lang)
+
+            return self.order_by(
+                Collate("indicator__name", collator),
+            )
+
+        return self
 
 class ActionIndicator(models.Model):
     """Link between an action and an indicator."""

@@ -662,3 +662,23 @@ def convert_html_to_text(html):
     # which can't be turned off!
     text = re.sub(r'\\-', '-', text)
     return text
+
+LANGUAGE_COLLATORS = {
+    'da': 'da-x-icu',
+    'de': 'de-x-icu',
+    'de-CH': 'de-CH-x-icu',
+    'en': 'en-US-x-icu',
+    'en-AU': 'en-AU-x-icu',
+    'en-GB': 'en-GB-x-icu',
+    'es': 'es-x-icu',
+    'es-US': 'es-US-x-icu',
+    'fi': 'fi-FI-x-icu',
+    'lv': 'lv-LV-x-icu',
+    'sv': 'sv-SE-x-icu',
+    'sv-FI': 'sv-FI-x-icu',
+    'pt': 'pt-x-icu',
+    'pt-BR': 'pt-BR-x-icu',
+}
+
+def get_collator(lang: str) -> str:
+    return LANGUAGE_COLLATORS.get(lang, 'en-US-x-icu')

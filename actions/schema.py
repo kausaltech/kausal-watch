@@ -1052,10 +1052,13 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     @staticmethod
     def resolve_previous_action(root: Action, info):
         return root.get_previous_action(info.context.user)
-
-    @staticmethod
+    
+    @gql_optimizer.resolver_hints(
+        model_field='related_indicators',
+    )
     def resolve_related_indicators(root: Action, info):
-        return root.get_visible_related_indicators()
+        plan = root.plan
+        return root.get_visible_related_indicators().order_by_setting(plan)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -1197,6 +1200,7 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         goals_count = getattr(root, 'indicators_with_goals_count', 0)
         return goals_count > 0
 
+    
 
 
 class ActionScheduleNode(DjangoNode):
