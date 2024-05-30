@@ -26,10 +26,17 @@ from .action_print_layout import write_action_summaries
 from .cursor_writer import CursorWriter, Cell
 
 
+from typing import Any
 if typing.TYPE_CHECKING:
     from reports.models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
     from reports.blocks.action_content import ReportFieldBlock
 
+
+def clean(value: Any) -> Any:
+    '''Translate Windows linefeeds to \n for Excel'''
+    if not isinstance(value, str):
+        return value
+    return value.replace("\r\n", "\n")
 
 class ExcelFormats(dict):
     workbook: xlsxwriter.Workbook
@@ -396,6 +403,7 @@ class ExcelReport:
                     field_name = f'{field_name}.{field.value.get("attribute_type").identifier}'
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
+                values = [clean(v) for v in values]
                 for label, value in zip(labels, values):
                     append_to_key(label, value, field_name)
             append_to_key(COMPLETED_BY_LABEL, completed_by or '', 'completed_by')
