@@ -257,64 +257,64 @@ class NotificationEngine:
             if self.only_email and recipient.get_email() != self.only_email:
                 continue
             for notification_type, queue_items_by_identifier in items_for_type.items():
-              for _, queue_items in queue_items_by_identifier.items():
-                ttype = notification_type.identifier
-                if self.only_type and ttype != self.only_type:
-                    continue
-                if notification_type == NotificationType.MANUALLY_SCHEDULED:
-                    template = queue_items[0].notification.obj
-                else:
-                    template = self.templates_by_type.get(ttype)
-                    if template is None:
-                        logger.debug('No template for %s' % ttype)
+                for _, queue_items in queue_items_by_identifier.items():
+                    ttype = notification_type.identifier
+                    if self.only_type and ttype != self.only_type:
+                        continue
+                    if notification_type == NotificationType.MANUALLY_SCHEDULED:
+                        template = queue_items[0].notification.obj
+                    else:
+                        template = self.templates_by_type.get(ttype)
+                        if template is None:
+                            logger.debug('No template for %s' % ttype)
+                            continue
+
+                    notification = queue_items[0].notification
+                    content_blocks = notification.get_content_blocks(base_template, template)
+
+                    context = {
+                        'items': [item.notification.get_context() for item in queue_items],
+                        'content_blocks': content_blocks,
+                        'site': self.plan.get_site_notification_context(),
+                        **recipient.get_notification_context(),
+                    }
+
+                    # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
+                    # For now, use primary language of plan instead of the recipient's preferred language
+                    rendered = self.render(template, context)
+
+                    if self.force_to:
+                        to_email = self.force_to
+                    else:
+                        to_email = recipient.get_email()  # can be None if the recipient has no corresponding email address
+                    if not to_email:
                         continue
 
-                notification = queue_items[0].notification
-                content_blocks = notification.get_content_blocks(base_template, template)
+                    msg = EmailMessage(
+                        subject=rendered['subject'],
+                        body=rendered['html_body'],
+                        to=[to_email]
+                    )
+                    msg.content_subtype = "html"  # Main content is now text/html
 
-                context = {
-                    'items': [item.notification.get_context() for item in queue_items],
-                    'content_blocks': content_blocks,
-                    'site': self.plan.get_site_notification_context(),
-                    **recipient.get_notification_context(),
-                }
-
-                # rendered = self.render(template, context, language_code=recipient.get_preferred_language())
-                # For now, use primary language of plan instead of the recipient's preferred language
-                rendered = self.render(template, context)
-
-                if self.force_to:
-                    to_email = self.force_to
-                else:
-                    to_email = recipient.get_email()  # can be None if the recipient has no corresponding email address
-                if not to_email:
-                    continue
-
-                msg = EmailMessage(
-                    subject=rendered['subject'],
-                    body=rendered['html_body'],
-                    to=[to_email]
-                )
-                msg.content_subtype = "html"  # Main content is now text/html
-
-                nstr = []
-                for item in queue_items:
-                    if isinstance(item.notification.obj, ActionTask):
-                        s = '\t%s: %s' % (item.notification.obj.action, item.notification.obj)
-                    else:
-                        s = '\t%s' % str(item.notification.obj)
-                    nstr.append(s)
-                logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
-
-                email_sender.queue(msg)
-                if not self.force_to and not self.noop:
+                    nstr = []
                     for item in queue_items:
-                        item.notification.mark_sent(recipient)
-                notification_count += 1
-                if self.limit and notification_count >= self.limit:
-                    if not self.noop:
-                        email_sender.send_all()
-                    return
+                        if isinstance(item.notification.obj, ActionTask):
+                            s = '\t%s: %s' % (item.notification.obj.action, item.notification.obj)
+                        else:
+                            s = '\t%s' % str(item.notification.obj)
+                        nstr.append(s)
+                    logger.info('Sending notification %s to %s\n%s' % (ttype, to_email, '\n'.join(nstr)))
+
+                    email_sender.queue(msg)
+                    if not self.force_to and not self.noop:
+                        for item in queue_items:
+                            item.notification.mark_sent(recipient)
+                    notification_count += 1
+                    if self.limit and notification_count >= self.limit:
+                        if not self.noop:
+                            email_sender.send_all()
+                        return
         if self.noop:
             return
         email_sender.send_all()
