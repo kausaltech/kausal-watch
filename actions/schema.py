@@ -1297,6 +1297,8 @@ def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_p
         plan = plans[0]
         qs = qs.annotate_related_indicator_counts(plan)
     qs = order_queryset(qs, ActionNode, order_by)
+    if not order_by:
+        qs = qs.order_by('plan', 'order')
     if first is not None:
         qs = qs[0:first]
     return qs
