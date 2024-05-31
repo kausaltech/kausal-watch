@@ -1,5 +1,6 @@
 import pytest
 
+from actions.models.features import OrderBy
 from actions.tests.factories import (
     ActionFactory, ActionContactFactory, ActionImpactFactory, ActionImplementationPhaseFactory,
     ActionResponsiblePartyFactory, ActionScheduleFactory, ActionStatusFactory, ActionStatusUpdateFactory,
@@ -1376,6 +1377,72 @@ def test_action_node_next_previous(graphql_client_query_data):
             }
         }]
     }
+    assert data == expected
+
+@pytest.mark.parametrize('ordering',
+  [
+    OrderBy.NONE,
+    OrderBy.NAME    
+  ])
+def test_action_node_related_indicators_ordering(graphql_client_query_data, ordering):
+    plan = PlanFactory()
+    action = ActionFactory(plan=plan)
+    indicator1 = IndicatorFactory(name="c", organization=plan.organization)
+    indicator2 = IndicatorFactory(name="a", organization=plan.organization)
+    indicator3 = IndicatorFactory(name="b", organization=plan.organization)
+    action_indicator1 = ActionIndicatorFactory(action=action, indicator=indicator1)
+    action_indicator2 = ActionIndicatorFactory(action=action, indicator=indicator2)
+    action_indicator3 = ActionIndicatorFactory(action=action, indicator=indicator3)
+    plan.features.indicator_ordering = ordering
+    plan.features.save()
+    data = graphql_client_query_data(
+        '''
+        query($action: ID!) {
+          action(id: $action) {
+            __typename
+            id
+            relatedIndicators {
+              __typename
+              id
+            }
+          }
+        }
+        ''',
+        variables={'action': action.id}
+    )
+    expected = {
+        'action': {
+              '__typename': 'Action',
+              'id': str(action.id),
+        }
+    }
+    if ordering == OrderBy.NONE:
+      expected["action"]["relatedIndicators"] = [{
+                  '__typename': 'ActionIndicator',
+                  'id': str(action_indicator3.id),
+                },
+                {
+                  '__typename': 'ActionIndicator',
+                  'id': str(action_indicator2.id),
+                },
+                {
+                    '__typename': 'ActionIndicator',
+                    'id': str(action_indicator1.id),
+                }]
+    elif ordering == OrderBy.NAME:
+        expected["action"]["relatedIndicators"] = [{
+                  '__typename': 'ActionIndicator',
+                  'id': str(action_indicator2.id),
+                },
+                {
+                  '__typename': 'ActionIndicator',
+                  'id': str(action_indicator3.id),
+                },
+                {
+                    '__typename': 'ActionIndicator',
+                    'id': str(action_indicator1.id),
+                }]
+
     assert data == expected
 
 

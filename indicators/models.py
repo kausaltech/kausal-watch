@@ -956,6 +956,7 @@ class ActionIndicator(models.Model):
         unique_together = (('action', 'indicator'),)
         verbose_name = _('action indicator')
         verbose_name_plural = _('action indicators')
+        ordering = ["indicator"]
 
     def __str__(self):
         return "%s ➜ %s ➜ %s" % (self.action, self.get_effect_type_display(), self.indicator)

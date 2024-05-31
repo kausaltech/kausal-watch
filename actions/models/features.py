@@ -88,15 +88,13 @@ class PlanFeatures(models.Model):
         default=True, verbose_name=_('Enable indicator comparison'),
         help_text=_("Set to enable comparing indicators between organizations")
     )
-
     indicator_ordering = models.CharField(
         max_length=50,
         choices=OrderBy.choices,
         default=OrderBy.NONE,
         verbose_name=_("Indicator order"),
-        help_text=_("Choose how to order Indicators in the public UI"),
+        help_text=_("Choose how to order indicators in the action pages"),
     )
-
     moderation_workflow = models.ForeignKey(
         'wagtailcore.WorkFlow', default=None, null=True, blank=True,
         help_text=_("Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"),
