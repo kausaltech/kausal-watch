@@ -1,8 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLString
+from grapple.models import GraphQLForeignKey, GraphQLString
 from wagtail import blocks
 import graphene
+from actions.models.attributes import AttributeType
+
+from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 
 
 class DashboardColumnInterface(graphene.Interface):
@@ -80,6 +83,16 @@ class ImpactColumnBlock(ColumnBlockBase):
     class Meta:
         label = _("Impact")
 
+@register_streamfield_block
+class FieldColumnBlock(ColumnBlockBase):
+    attribute_type = ActionAttributeTypeChooserBlock()
+    class Meta:
+        label = _("Field")
+
+    graphql_fields = ColumnBlockBase.graphql_fields + [
+        GraphQLForeignKey('attribute_type', AttributeType)
+    ]
+
 
 @register_streamfield_block
 class ActionDashboardColumnBlock(blocks.StreamBlock):
@@ -93,9 +106,10 @@ class ActionDashboardColumnBlock(blocks.StreamBlock):
     updated_at = UpdatedAtColumnBlock()
     organization = OrganizationColumnBlock()
     imact = ImpactColumnBlock()
+    field = FieldColumnBlock()
 
     graphql_types = [
         IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
         ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, OrganizationColumnBlock,
-        ImpactColumnBlock
+        ImpactColumnBlock, FieldColumnBlock
     ]

@@ -27,7 +27,7 @@ from actions.blocks.action_content import (
 from actions.blocks.action_dashboard import (
     IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
     ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, OrganizationColumnBlock,
-    ImpactColumnBlock, ActionDashboardColumnBlock
+    ImpactColumnBlock, ActionDashboardColumnBlock, FieldColumnBlock
 )
 from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
 from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock
@@ -138,5 +138,5 @@ __all__ = [
     'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
     'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
     'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
-    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock'
+    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock', FieldColumnBlock
 ]
