@@ -2,9 +2,11 @@ from typing import Any, Mapping
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from django.utils.text import capfirst
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
+from admin_site.wagtail import execute_admin_post_save_tasks
 from aplans.types import WatchAdminRequest
 
 from . import wagtail_admin  # noqa
@@ -33,3 +35,8 @@ def add_actions_summary_item(request, items):
 @hooks.register('insert_editor_js')
 def editor_js():
     return f'<script src="{static("actions/action-tasks-wagtail.js")}"></script>'
+
+
+@hooks.register('after_edit_snippet')
+def after_edit_snippet(request, snippet):
+    execute_admin_post_save_tasks(snippet, request.user)

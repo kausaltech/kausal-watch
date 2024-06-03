@@ -1,3 +1,4 @@
+from __future__ import annotations
 from contextlib import contextmanager
 from typing import List, TYPE_CHECKING
 from urllib.parse import urljoin
@@ -43,6 +44,8 @@ from .utils import FieldLabelRenderer
 
 if TYPE_CHECKING:
     from wagtail_modeladmin.views import ModelFormView
+    from users.models import User
+    from django.db.models import Model
 
 
 def insert_model_translation_panels(model, panels, request, plan=None) -> List:
@@ -404,6 +407,23 @@ class SetInstanceMixin:
             return super().dispatch(*args, **kwargs)
 
 
+def execute_admin_post_save_tasks(instance: Model, user: User):
+    handle_admin_save = getattr(instance, 'handle_admin_save', None)
+    if handle_admin_save:
+        handle_admin_save(context={
+            'user': user,
+            'operation': 'edit'
+        })
+    success_message = _("%(model_name)s '%(object)s' updated.") % {
+        "model_name": capfirst(instance._meta.verbose_name),
+        "object": instance,
+    }
+    with create_revision():
+        set_comment(success_message)
+        add_to_revision(instance)
+        set_user(user)
+
+
 class AplansEditView(
     PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin,
     SetInstanceMixin, EditView
@@ -420,17 +440,7 @@ class AplansEditView(
             messages.validation_error(self.request, self.get_error_message(), form)
             return self.render_to_response(self.get_context_data(form=form))
 
-        if hasattr(form.instance, 'handle_admin_save'):
-            form.instance.handle_admin_save(context={
-                'user': self.request.user,
-                'operation': 'edit'
-            })
-
-        with create_revision():
-            set_comment(self.get_success_message(self.instance))
-            add_to_revision(self.instance)
-            set_user(self.request.user)
-
+        execute_admin_post_save_tasks(form.instance, self.request.user, self.get_success_message(self.instance))
         return form_valid_return
 
     def get_error_message(self):
