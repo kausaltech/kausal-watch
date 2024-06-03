@@ -256,6 +256,12 @@ class NotificationEngine:
         for recipient, items_for_type in self.queue.items_for_recipient.items():
             if self.only_email and recipient.get_email() != self.only_email:
                 continue
+            try:
+                recipient_context = recipient.get_notification_context()
+            except ValueError as e:
+                capture_exception(e)
+                logger.error(str(e))
+                continue
             for notification_type, queue_items_by_identifier in items_for_type.items():
                 for _, queue_items in queue_items_by_identifier.items():
                     ttype = notification_type.identifier
@@ -276,7 +282,7 @@ class NotificationEngine:
                         'items': [item.notification.get_context() for item in queue_items],
                         'content_blocks': content_blocks,
                         'site': self.plan.get_site_notification_context(),
-                        **recipient.get_notification_context(),
+                        **recipient_context,
                     }
 
                     # rendered = self.render(template, context, language_code=recipient.get_preferred_language())

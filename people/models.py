@@ -363,7 +363,8 @@ class Person(index.Indexed, ClusterableModel):
 
     def get_notification_context(self):
         client = self.get_admin_client()
-        assert client is not None
+        if client is None:
+            raise ValueError('Unable to find client for person when sending notifications')
         context = {
             'person': {
                 'first_name': self.first_name,
