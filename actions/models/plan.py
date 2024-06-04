@@ -771,12 +771,13 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         if not self.notification_settings.notifications_enabled:
             return False
         if self.daily_notifications_triggered_at is None:
-            return True
-        sent_at = self.to_local_timezone(self.daily_notifications_triggered_at)
-        send_at_or_after = datetime.combine(sent_at.date(), self.notification_settings.send_at_time, sent_at.tzinfo)
-        if sent_at.time() >= self.notification_settings.send_at_time:
-            send_at_or_after += timedelta(days=1)
-        return now >= send_at_or_after
+            should_send_at_or_after = datetime.combine(now.date(), self.notification_settings.send_at_time, self.tzinfo)
+        else:
+            last_sent_at = self.to_local_timezone(self.daily_notifications_triggered_at)
+            should_send_at_or_after = datetime.combine(last_sent_at.date(), self.notification_settings.send_at_time, last_sent_at.tzinfo)
+            if last_sent_at.time() >= self.notification_settings.send_at_time:
+                should_send_at_or_after += timedelta(days=1)
+        return now >= should_send_at_or_after
 
     def get_workflow_tasks(self):
         tasks = WorkflowTask.objects.filter(workflow=self.features.moderation_workflow)
