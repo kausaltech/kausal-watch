@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.forms import Select
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django.utils import formats
 
@@ -61,10 +62,12 @@ class BaseTemplateAdmin(AplansModelAdmin):
     def get_manually_scheduled_notification_panels(self, send_at_time):
         panels = [
             FieldPanel('subject'),
-            FieldPanel('date', help_text=_(
-                "The email message will be sent on the specified day at %(time)s." % {
-                    'time': send_at_time
-                }
+            FieldPanel('date', help_text=(
+                format_lazy(
+                    '{msg} {time}.',
+                    msg=_("The email message will be sent on the specified day at"),
+                    time=send_at_time
+                )
             )),
             FieldPanel('content'),
             MultiFieldPanel([
