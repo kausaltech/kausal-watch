@@ -46,7 +46,7 @@ class Notification:
             return None
         return last_notification.sent_at
 
-    def notification_last_sent(self, recipient: NotificationRecipient | None = None, now=None) -> int | None:
+    def days_since_notification_last_sent(self, recipient: NotificationRecipient | None = None, now=None) -> int | None:
         last_notification_sent_at = self.notification_last_sent_datetime(recipient)
         if last_notification_sent_at is None:
             return None
@@ -71,7 +71,7 @@ class DeadlinePassedNotification(Notification):
         if now is None:
             now = self.plan.now_in_local_timezone()
         for recipient in recipients:
-            days = self.notification_last_sent(recipient, now=now)
+            days = self.days_since_notification_last_sent(recipient, now=now)
             if days is not None:
                 if days < MINIMUM_NOTIFICATION_PERIOD:
                     # We don't want to remind too often
@@ -113,7 +113,7 @@ class DeadlineSoonNotification(Notification):
         if now is None:
             now = self.plan.now_in_local_timezone()
         for recipient in recipients:
-            days = self.notification_last_sent(recipient, now=now)
+            days = self.days_since_notification_last_sent(recipient, now=now)
             if days is not None:
                 if days < MINIMUM_NOTIFICATION_PERIOD:
                     # We don't want to remind too often
@@ -157,7 +157,7 @@ class NotEnoughTasksNotification(Notification):
         if now is None:
             now = self.plan.now_in_local_timezone()
         for recipient in recipients:
-            days_since = self.notification_last_sent(recipient, now=now)
+            days_since = self.days_since_notification_last_sent(recipient, now=now)
             if days_since is not None:
                 if days_since < 30:
                     # We don't want to remind too often
@@ -177,7 +177,7 @@ class ActionNotUpdatedNotification(Notification):
         if now is None:
             now = self.plan.now_in_local_timezone()
         for recipient in recipients:
-            days_since = self.notification_last_sent(recipient, now=now)
+            days_since = self.days_since_notification_last_sent(recipient, now=now)
             if days_since is not None:
                 if days_since < 30:
                     # We don't want to remind too often
@@ -197,7 +197,7 @@ class UserFeedbackReceivedNotification(Notification):
         if now is None:
             now = self.plan.now_in_local_timezone()
         # Send user feedback received notifications only if they haven't been sent yet to anybody
-        if self.notification_last_sent(now=now) is None:
+        if self.days_since_notification_last_sent(now=now) is None:
             for recipient in recipients:
                 engine.queue_notification(self, recipient)
 
