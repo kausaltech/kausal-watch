@@ -24,6 +24,7 @@ class Dimension(ClusterableModel):
     class Meta:  # pyright:ignore
         verbose_name = _('dimension')
         verbose_name_plural = _('dimensions')
+        ordering = ['name']
 
     def __str__(self):
         return self.name
@@ -109,6 +110,7 @@ class DataPoint(models.Model):
     class Meta:  # pyright:ignore
         verbose_name = _('data point')
         verbose_name_plural = _('data points')
+        ordering = ['date']
         # TODO: Enforce uniqueness constraint.
         # This doesn't work because dimension_categories is a many-to-many field.
         # constraints = [

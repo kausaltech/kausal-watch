@@ -39,6 +39,7 @@ from indicators.autocomplete import (
 )
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
+from budget.api import all_routers as budget_api_routers
 from indicators.api import all_views as indicators_api_views
 from insight.api import all_views as insight_api_views
 from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
@@ -77,7 +78,7 @@ class KausalLogoutView(LogoutView):
 
 
 api_urls = []
-for router in [api_router] + actions_api_routers:
+for router in [api_router] + actions_api_routers + budget_api_routers:
     api_urls += router.urls
 
 api_urlconf = [
