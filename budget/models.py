@@ -67,6 +67,7 @@ class Dataset(models.Model):
         # DAILY = 'daily', _('Daily')
         # HOURLY = 'hourly', _('Hourly')
 
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     time_resolution = models.CharField(
         max_length=16, choices=TimeResolution.choices,
         help_text=_('Time resolution of the time stamps of data points in this dataset'),
@@ -78,29 +79,6 @@ class Dataset(models.Model):
     class Meta:  # pyright:ignore
         verbose_name = _('dataset')
         verbose_name_plural = _('datasets')
-
-    def table(self):
-        # data = []
-        # for data_point in self.data_points:
-        #     data.append()
-        # return {'data': data}
-        import polars as pl
-        df = pl.DataFrame({
-            'name': ['Alice', 'Bob', 'Charlie'],
-            'age': [25, 30, 35],
-            'city': ['New York', 'London', 'Paris']
-        })
-        schema = {
-            'fields': [{
-                'name': col,
-                'type': str(dtype),
-                # TODO: unit, format
-            } for col, dtype in df.schema.items()],
-        }
-        return {
-            'data': df.to_dicts(),
-            'schema': schema,
-        }
 
 
 class DatasetScope(models.Model):
@@ -115,6 +93,7 @@ class DatasetScope(models.Model):
 
 
 class DataPoint(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     dataset = models.ForeignKey(
         Dataset, related_name='data_points', on_delete=models.CASCADE, verbose_name=_('dataset')
     )
