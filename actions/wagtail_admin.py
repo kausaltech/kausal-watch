@@ -354,6 +354,7 @@ class PlanFeaturesAdmin(AplansModelAdmin):
         FieldPanel('show_admin_link'),
         FieldPanel('allow_public_site_login'),
         FieldPanel('contact_persons_public_data'),
+        FieldPanel('contact_persons_show_picture'),
         FieldPanel('contact_persons_show_organization_ancestors'),
         FieldPanel('contact_persons_hide_moderators'),
         FieldPanel('has_action_identifiers'),
