@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import reversion
 import uuid
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -15,6 +16,7 @@ from actions.models.plan import Plan
 from aplans.utils import OrderedModel
 
 
+@reversion.register()
 class Dimension(ClusterableModel):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     name = models.CharField(max_length=100, verbose_name=_('name'))
