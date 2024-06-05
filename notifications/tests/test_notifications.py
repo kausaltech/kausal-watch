@@ -185,6 +185,46 @@ def test_manually_scheduled_notification(
     assert len(mail.outbox) == outbox_count
 
 
+def test_manually_scheduled_notification_reschedule(
+        person,
+        plan,
+):
+    trigger_date = date.fromisoformat('2000-01-01')
+    person.general_admin_plans.add(plan)
+
+    manually_scheduled_notification = ManuallyScheduledNotificationTemplateFactory(
+        base__plan=plan,
+        date=trigger_date,
+        send_to_plan_admins=True,
+        send_to_custom_email=False,
+        custom_email='',
+        send_to_action_contact_persons=False,
+        send_to_indicator_contact_persons=False,
+        send_to_organization_admins=False
+    )
+    ClientPlanFactory(plan=plan)
+
+    # To be comparable to the trigger date, now is already taken to be in the plan timezone
+    now = datetime(2000, 1, 1, 0, 0).replace(tzinfo=plan.tzinfo)
+    engine = NotificationEngine(plan, only_type=NotificationType.MANUALLY_SCHEDULED.identifier, now=now)
+
+    assert len(mail.outbox) == 0
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
+
+    # Reschedule for the next day
+    manually_scheduled_notification.date = manually_scheduled_notification.date + timedelta(days=1)
+    manually_scheduled_notification.save()
+
+    # Notification was scheduled for the next day but now is still the previous day
+    engine.generate_notifications()
+    assert len(mail.outbox) == 1
+
+    now = now + timedelta(days=1)
+    engine = NotificationEngine(plan, only_type=NotificationType.MANUALLY_SCHEDULED.identifier, now=now)
+    engine.generate_notifications()
+    assert len(mail.outbox) == 2
+
 def test_indicator_notification_bubbles_to_org_admin():
     plan = PlanFactory()
     AutomaticNotificationTemplateFactory(

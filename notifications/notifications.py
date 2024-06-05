@@ -37,17 +37,22 @@ class Notification:
             now = self.plan.now_in_local_timezone()
         recipient.create_sent_notification(self.obj, sent_at=now, type=self.type.identifier)
 
-    def notification_last_sent(self, recipient: typing.Optional[NotificationRecipient] = None, now=None) -> typing.Optional[int]:
-        if now is None:
-            now = self.plan.now_in_local_timezone()
+    def notification_last_sent_datetime(self, recipient: NotificationRecipient | None = None) -> datetime.datetime | None:
         notifications = self.obj.sent_notifications.filter(type=self.type.identifier)
         if recipient:
             notifications = notifications.recipient(recipient)
         last_notification = notifications.order_by('-sent_at').first()
-        if not last_notification:
+        if last_notification is None:
             return None
-        else:
-            return (now - last_notification.sent_at).days
+        return last_notification.sent_at
+
+    def notification_last_sent(self, recipient: NotificationRecipient | None = None, now=None) -> int | None:
+        last_notification_sent_at = self.notification_last_sent_datetime(recipient)
+        if last_notification_sent_at is None:
+            return None
+        if now is None:
+            now = self.plan.now_in_local_timezone()
+        return (now - last_notification_sent_at).days
 
     def get_content_blocks(self, base_template, template) -> dict[str, Markup]:
         cb_qs = base_template.content_blocks.filter(Q(template__isnull=True) | Q(template=template))
@@ -211,10 +216,20 @@ class ManuallyScheduledNotification(Notification):
         trigger_datetime = datetime.datetime.combine(
             self.obj.date, datetime.datetime.min.time()
         ).replace(tzinfo=self.plan.tzinfo)
-        if self.notification_last_sent(now=now) is None:
-            if now >= trigger_datetime:
-                for recipient in recipients:
-                    engine.queue_notification(self, recipient)
+
+        last_sent = self.notification_last_sent_datetime()
+        if last_sent is None:
+            notification_has_been_rescheduled = False
+        else:
+            notification_has_been_rescheduled = trigger_datetime > last_sent
+
+        if now < trigger_datetime:
+            return
+        if last_sent is not None and not notification_has_been_rescheduled:
+            # The notification has already been sent
+            return
+        for recipient in recipients:
+            engine.queue_notification(self, recipient)
 
     def get_identifier(self) -> str | None:
         return f'{self.obj.date.isoformat()}-{self.obj.subject}'

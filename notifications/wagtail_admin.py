@@ -1,5 +1,7 @@
+from typing import reveal_type
 from django.conf import settings
-from django.forms import Select
+from django.core.exceptions import ValidationError
+from django.forms import BaseFormSet, Select
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
 from django.utils import formats
@@ -15,13 +17,40 @@ from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin,
+    AplansAdminModelForm
 )
 from aplans.context_vars import ctx_request
 
 
 class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
-    pass
+    def get_error_message(self):
+        if self.instance.pk:
+            return _("Notifications could not be modified due to errors.")
+        return _("Notifications could not be set up due to errors.")
+
+
+class BaseTemplateForm(AplansAdminModelForm):
+    def _clean_manually_scheduled_notification_templates(self, formset: BaseFormSet):
+        for i, item in enumerate(formset.cleaned_data):
+            plan = self.instance.plan
+            new_date = item['date']
+            local_current_date = plan.now_in_local_timezone().date()
+            if item['id'] is None:
+                if new_date < local_current_date:
+                    formset[i].add_error('date', _('Cannot schedule a notification for the past'))
+                continue
+            instance = item['id']
+            if new_date != instance.date:
+                # Rescheduling old notification
+                if new_date < local_current_date:
+                    formset[i].add_error('date', _('Cannot reschedule a notification for the past'))
+
+    def clean(self):
+        formset = self.formsets.get('manually_scheduled_notification_templates', None)
+        if formset is not None:
+            self._clean_manually_scheduled_notification_templates(formset)
+        return super().clean()
 
 
 @modeladmin_register
@@ -106,7 +135,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
         plan = request.user.get_active_admin_plan()
         time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
 
-        return AplansTabbedInterface([
+        handler = AplansTabbedInterface([
             ObjectList(
                 self.panels + additional_panels,
                 heading=_('Basic information')),
@@ -130,6 +159,8 @@ class BaseTemplateAdmin(AplansModelAdmin):
                 heading=_('Notification contents')
             )
         ])
+        handler.base_form_class = BaseTemplateForm
+        return handler
 
 
 class ActivePlanMenuItem(ModelAdminMenuItem):
