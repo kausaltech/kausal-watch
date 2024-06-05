@@ -315,7 +315,7 @@ class NotificationEngine:
                     email_sender.queue(msg)
                     if not self.force_to and not self.noop:
                         for item in queue_items:
-                            item.notification.mark_sent(recipient)
+                            item.notification.mark_sent(recipient, now=self.now)
                     notification_count += 1
                     if self.limit and notification_count >= self.limit:
                         if not self.noop:
