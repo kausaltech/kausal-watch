@@ -12,7 +12,6 @@ from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail import hooks
 
-
 from aplans.types import WatchAdminRequest
 
 from .models import Client

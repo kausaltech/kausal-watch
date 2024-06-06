@@ -128,4 +128,3 @@ def account(request):
             "media": media,
         },
     )
-

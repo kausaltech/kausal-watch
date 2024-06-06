@@ -335,7 +335,6 @@ class User(AbstractUser):  # type: ignore[django-manager-missing]
             q |= Q(actions__in=self._org_admin_for_actions)
             q |= Q(indicators__in=self._org_admin_for_indicators)
             plans = Plan.objects.filter(q).distinct()
-
         self._adminable_plans = plans
         return plans
 

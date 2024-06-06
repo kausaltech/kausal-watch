@@ -10,11 +10,10 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import transaction, models
 from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField, ChoiceField
-from django.urls import re_path, reverse
+from django.urls import re_path
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.middleware.csrf import get_token
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.helpers import ButtonHelper
@@ -32,9 +31,8 @@ from aplans.types import WatchAdminRequest
 from aplans.utils import naturaltime
 
 from .models import Person
-from .views import ResetPasswordView
+from .views import ImpersonateUserView, ResetPasswordView
 from orgs.models import Organization, OrganizationPlanAdmin
-from actions.models import Plan
 
 if typing.TYPE_CHECKING:
     from users.models import User
@@ -307,6 +305,13 @@ class PersonButtonHelper(ButtonHelper):
             'classname': self.finalise_classname(['button-secondary', 'button-small']),
         }
 
+    def impersonation_button(self, pk, **kwargs):
+        return {
+            'label': _("View as User"),
+            'title': _("View site on behalf of User"),
+            'url': self.url_helper.get_action_url('view_as_user', quote(pk)),
+            'classname': self.finalise_classname(['button-secondary', 'button-small']),
+        }
 
     def get_buttons_for_obj(self, obj, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
@@ -324,7 +329,12 @@ class PersonButtonHelper(ButtonHelper):
                 **kwargs
             )
             buttons.append(reset_password_button)
-
+        if user.is_superuser and obj.user != user:
+            impersonation_button = self.impersonation_button(
+                pk=getattr(obj, self.opts.pk.attname),
+                **kwargs
+                )
+            buttons.append(impersonation_button)
         return buttons
     
 
@@ -526,25 +536,6 @@ class PersonAdmin(AplansModelAdmin):
         elif contact_person_filter == 'indicator':
             fields.append(contact_for_indicators)
 
-        def impersonate_button(obj):
-            user_pk = obj.user.pk
-            if request.user.has_perm('hijack.permissions.superusers_only') and not request.user.is_hijacked and not request.user.pk == obj.user.pk:
-                impersonate_url = reverse('hijack:acquire')
-                csrf_token = get_token(request)
-                return format_html(
-                    '<form method="post" action="{}">'
-                    '<input type="hidden" name="csrfmiddlewaretoken" value="{}">'
-                    '<input type="hidden" name="user_pk" value="{}">'
-                    '<input type="hidden" name="next" value="{}">'
-                    '<button type="submit" class="button button-secondary button-small">{}</button>'
-                    '</form>',
-                    impersonate_url, csrf_token, user_pk, request.path, _("View as User")
-                )
-            return ''
-        impersonate_button.short_description = ''
-
-        fields.append(impersonate_button)
-
         request._person_list_display = fields
         return fields
 
@@ -609,6 +600,9 @@ class PersonAdmin(AplansModelAdmin):
         """Generate a class-based view to provide 'reset password' functionality."""
         return ResetPasswordView.as_view(model_admin=self, target_person_pk=instance_pk)(request)
 
+    def impersonation_view(self, request, instance_pk):
+        return ImpersonateUserView.as_view(model_admin=self, target_person_pk=instance_pk)(request)
+
     def get_admin_urls_for_registration(self):
         """Add the new url for reset password page to the registered URLs."""
         urls = super().get_admin_urls_for_registration()
@@ -617,8 +611,14 @@ class PersonAdmin(AplansModelAdmin):
             self.reset_password_view,
             name=self.url_helper.get_action_url_name('reset_password')
         )
+        impersonation_url = re_path(
+            self.url_helper.get_action_url_pattern('view_as_user'),
+            self.impersonation_view,
+            name=self.url_helper.get_action_url_name('view_as_user')
+        )
         return urls + (
             reset_password_url,
+            impersonation_url,
         )
 
 

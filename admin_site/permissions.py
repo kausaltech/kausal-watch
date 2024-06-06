@@ -97,6 +97,6 @@ class PlanRelatedPermissionPolicy(ModelPermissionPolicy):
         return self._obj_matches_active_plan(user, instance)
 
 
-def has_admin_impersonation_permission(*, hijacker, hijacked):
+def superusers_only_hijack(*, hijacker, hijacked):
     """Only superusers may hijack other users."""
     return hijacked.is_active and hijacker.is_superuser and not hijacker.is_hijacked and not hijacker == hijacked

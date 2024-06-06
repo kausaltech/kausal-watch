@@ -958,5 +958,5 @@ WAGTAILADMIN_RICH_TEXT_EDITORS = {
     },
 }
 
-HIJACK_PERMISSION_CHECK = "hijack.permissions.superusers_only"
+HIJACK_PERMISSION_CHECK = "admin_site.permissions.superusers_only_hijack"
 HIJACK_INSERT_BEFORE = None

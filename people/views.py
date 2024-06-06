@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
@@ -93,3 +93,36 @@ class ResetPasswordView(WMABaseView):
             'days_until_expiration': int(settings.PASSWORD_RESET_TIMEOUT / (60 * 60 * 24)),
         })
         return redirect(self.index_url)
+
+class ImpersonateUserView(WMABaseView):
+    page_title = gettext_lazy("View as User")
+    target_person_pk = None
+    template_name = 'people/view_as_user.html'
+    post_url = reverse_lazy('hijack:acquire')
+
+    def __init__(self, model_admin, target_person_pk):
+        self.target_person_pk = unquote(target_person_pk)
+        self.target_person = get_object_or_404(Person, pk=self.target_person_pk)
+        super().__init__(model_admin)
+
+    def check_action_permitted(self, user):
+        impersonate_themselves = user.pk == self.target_person.user.pk
+        target_is_active = self.target_person.user.is_active
+
+        return (
+            user.is_superuser and not impersonate_themselves and target_is_active
+        )
+
+    @method_decorator(login_required)
+    def dispatch(self, request, *args, **kwargs):
+        if not self.check_action_permitted(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_meta_title(self):
+        msg = _("Confirm viewing the site as user %(person)s")
+        return msg % {'person': self.target_person}
+
+    def confirmation_message(self):
+        msg = _("Do you really want to view the site as %(person)s?")
+        return msg % {'person': self.target_person}
