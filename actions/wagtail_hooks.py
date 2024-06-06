@@ -1,8 +1,6 @@
 from typing import Any, Mapping
 from django.templatetags.static import static
-from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
-from django.utils.text import capfirst
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem
 
