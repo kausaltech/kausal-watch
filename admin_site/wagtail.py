@@ -25,7 +25,8 @@ from wagtail.admin.panels import (
 )
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.options import ModelAdmin
-from wagtail_modeladmin.views import CreateView, EditView, IndexView
+from wagtail_modeladmin.views import CreateView, EditView as ModelAdminEditView, IndexView
+from wagtail.snippets.views.snippets import EditView
 
 from reversion.revisions import (
     add_to_revision, create_revision, set_comment, set_user
@@ -419,15 +420,15 @@ class AplansEditView(
             })
 
         with create_revision():
-            set_comment(self.get_success_message(self.instance))
-            add_to_revision(self.instance)
+            set_comment(self.get_success_message())
+            add_to_revision(self.object)
             set_user(self.request.user)
 
         return form_valid_return
 
     def get_error_message(self):
-        if hasattr(self.instance, 'verbose_name_partitive'):
-            model_name = self.instance.verbose_name_partitive
+        if hasattr(self.object, 'verbose_name_partitive'):
+            model_name = self.object.verbose_name_partitive
         else:
             model_name = self.verbose_name
 

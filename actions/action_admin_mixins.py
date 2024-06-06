@@ -682,60 +682,60 @@ class PermissionCheckedMixin:
         )
 
 
-class SnippetsEditViewCompatibilityMixin(
-    CreateEditViewOptionalFeaturesMixin,
-    GenericModelEditViewMixin,
-    PermissionCheckedMixin,
-):
-    # Source: wagtail.snippets.views.snippets.EditView and other classes
-    view_name = "edit"
-    pk_url_kwarg = 'instance_pk'
-    permission_required = 'change'
-
-    def __init__(self, *args, **kwargs):
-        # Our own hack
-        super().__init__(*args, **kwargs)
-        self.edit_url_name = self.url_helper.get_action_url_name('edit')
-        self.confirm_workflow_cancellation_url_name = self.url_helper.get_action_url_name('confirm_workflow_cancellation')
-
-    def setup(self, request, *args, **kwargs):
-        # Our own hack
-        super().setup(request, *args, **kwargs)
-        self.instance = self.object
-        # Only use some of the hacks if the plan uses workflows
-        if not self.instance.plan.features.enable_moderation_workflow:
-            # FIXME: Some code in super().setup() already ran with other values for this. Hopefully nothing breaks.
-            self.revision_enabled = False
-            self.draftstate_enabled = False
-            self.locking_enabled = False
-
-    def run_before_hook(self):
-        return self.run_hook("before_edit_snippet", self.request, self.object)
-
-    def run_after_hook(self):
-        return self.run_hook("after_edit_snippet", self.request, self.object)
-
-    # Stuff from other classes
-    def get(self, request, *args, **kwargs):
-        # Copied from django.views.generic.edit.BaseUpdateView; omitting causes problems with
-        # CreateEditViewOptionalFeaturesMixin
-        self.object = self.get_object()
-        return super().get(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        # Copied from django.views.generic.edit.BaseUpdateView; omitting causes problems with
-        # CreateEditViewOptionalFeaturesMixin
-        self.object = self.get_object()
-        return super().post(request, *args, **kwargs)
-
-    def get_object(self, queryset=None):
-        # Copied and adapted from wagtail.admin.views.generic.models.EditView.get_object()
-        if 'instance_pk' not in self.kwargs:
-            self.kwargs['instance_pk'] = self.instance_pk
-        self.kwargs['instance_pk'] = unquote(str(self.kwargs['instance_pk']))
-        return super().get_object(queryset)
-
-    @property
-    def permission_policy(self):
-        # Copied from wagtail.snippets.views.snippets.SnippetViewSet
-        return ModelPermissionPolicy(self.model)
+# class SnippetsEditViewCompatibilityMixin(
+#     CreateEditViewOptionalFeaturesMixin,
+#     GenericModelEditViewMixin,
+#     PermissionCheckedMixin,
+# ):
+#     # Source: wagtail.snippets.views.snippets.EditView and other classes
+#     view_name = "edit"
+#     pk_url_kwarg = 'instance_pk'
+#     permission_required = 'change'
+#
+#     def __init__(self, *args, **kwargs):
+#         # Our own hack
+#         super().__init__(*args, **kwargs)
+#         self.edit_url_name = self.url_helper.get_action_url_name('edit')
+#         self.confirm_workflow_cancellation_url_name = self.url_helper.get_action_url_name('confirm_workflow_cancellation')
+#
+#     def setup(self, request, *args, **kwargs):
+#         # Our own hack
+#         super().setup(request, *args, **kwargs)
+#         self.instance = self.object
+#         # Only use some of the hacks if the plan uses workflows
+#         if not self.instance.plan.features.enable_moderation_workflow:
+#             # FIXME: Some code in super().setup() already ran with other values for this. Hopefully nothing breaks.
+#             self.revision_enabled = False
+#             self.draftstate_enabled = False
+#             self.locking_enabled = False
+#
+#     def run_before_hook(self):
+#         return self.run_hook("before_edit_snippet", self.request, self.object)
+#
+#     def run_after_hook(self):
+#         return self.run_hook("after_edit_snippet", self.request, self.object)
+#
+#     # Stuff from other classes
+#     def get(self, request, *args, **kwargs):
+#         # Copied from django.views.generic.edit.BaseUpdateView; omitting causes problems with
+#         # CreateEditViewOptionalFeaturesMixin
+#         self.object = self.get_object()
+#         return super().get(request, *args, **kwargs)
+#
+#     def post(self, request, *args, **kwargs):
+#         # Copied from django.views.generic.edit.BaseUpdateView; omitting causes problems with
+#         # CreateEditViewOptionalFeaturesMixin
+#         self.object = self.get_object()
+#         return super().post(request, *args, **kwargs)
+#
+#     def get_object(self, queryset=None):
+#         # Copied and adapted from wagtail.admin.views.generic.models.EditView.get_object()
+#         if 'instance_pk' not in self.kwargs:
+#             self.kwargs['instance_pk'] = self.instance_pk
+#         self.kwargs['instance_pk'] = unquote(str(self.kwargs['instance_pk']))
+#         return super().get_object(queryset)
+#
+#     @property
+#     def permission_policy(self):
+#         # Copied from wagtail.snippets.views.snippets.SnippetViewSet
+#         return ModelPermissionPolicy(self.model)

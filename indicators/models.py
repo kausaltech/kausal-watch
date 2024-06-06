@@ -263,7 +263,7 @@ class RelatedCommonIndicator(IndicatorRelationship):
         verbose_name=_('effect indicator')
     )
 
-    public_fields: typing.ClassVar = ['id', 'causal_indicator', 'effect_indicator']
+    public_fields: typing.ClassVar = ['id', 'causal_indicator', 'effect_indicator', 'effect_type']
 
     class Meta:
         unique_together = (('causal_indicator', 'effect_indicator'),)

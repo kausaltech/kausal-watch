@@ -5,8 +5,10 @@ from django.urls import re_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import SnippetViewSet
 from wagtail_modeladmin.helpers import ButtonHelper
-from wagtail_modeladmin.menus import ModelAdminMenuItem
+# from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
@@ -184,19 +186,20 @@ class ReportTypeFilter(admin.SimpleListFilter):
             return queryset
 
 
-class ReportAdminMenuItem(ModelAdminMenuItem):
-    def is_shown(self, request):
-        # Hide it because we will have menu items for listing reports of specific types.
-        # Note that we need to register ReportAdmin nonetheless, otherwise the URLs wouldn't be set up.
-        return False
+# class ReportAdminMenuItem(ModelAdminMenuItem):
+#     def is_shown(self, request):
+#         # Hide it because we will have menu items for listing reports of specific types.
+#         # Note that we need to register ReportAdmin nonetheless, otherwise the URLs wouldn't be set up.
+#         return False
 
 
-@modeladmin_register
-class ReportAdmin(AplansModelAdmin):
+@register_snippet
+class ReportViewSet(SnippetViewSet):
     model = Report
     menu_label = _('Reports')
     list_display= ('name', 'is_complete', 'is_public')
     list_filter = (ReportTypeFilter,)
+    add_to_admin_menu = True
 
     panels = [
         FieldPanel('name'),
@@ -211,8 +214,9 @@ class ReportAdmin(AplansModelAdmin):
     delete_view_class = ReportDeleteView
     button_helper_class = ReportAdminButtonHelper
 
-    def get_menu_item(self, order=None):
-        return ReportAdminMenuItem(self, order or self.get_menu_order())
+    # TODO
+    # def get_menu_item(self, order=None):
+    #     return ReportAdminMenuItem(self, order or self.get_menu_order())
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)

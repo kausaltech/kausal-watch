@@ -43,7 +43,6 @@ from orgs.models import Organization
 from people.chooser import PersonChooser
 from people.models import Person
 
-from .action_admin_mixins import SnippetsEditViewCompatibilityMixin
 from .models.action import Action, ActionContactPerson, ActionResponsibleParty, ActionTask, ModelWithRole
 from reports.views import MarkActionAsCompleteView
 
@@ -651,7 +650,7 @@ class ActionButtonHelper(AplansButtonHelper):
         return buttons
 
 
-class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
+class ActionEditView(AplansEditView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.instance.plan.features.enable_moderation_workflow:

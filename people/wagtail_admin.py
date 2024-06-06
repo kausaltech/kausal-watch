@@ -12,12 +12,14 @@ from django.db.models import F, Q, ManyToManyField, OneToOneRel, Prefetch
 from django.forms import BooleanField, ModelMultipleChoiceField, ChoiceField
 from django.urls import re_path
 from django.utils import timezone
+from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
-from wagtail_modeladmin.options import modeladmin_register
+from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface, get_form_for_model
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.views import DeleteView
+from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import EditView, IndexView, SnippetViewSet
 
 from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
 from admin_site.wagtail import (
@@ -42,59 +44,63 @@ if typing.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class IsContactPersonFilter(SimpleListFilter):
-    title = _('Is contact person')
-    parameter_name = 'contact_person'
+# TODO: Wagtail documentation on migration from modeladmin: filtering is built on top of the django-filter package under
+# the hood, which behaves differently to ModelAdmin’s filters. See documentation for SnippetViewSet.list_filter and
+# filterset_class for more details.
 
-    def lookups(self, request, model_admin):
-        plan = request.user.get_active_admin_plan()
-        related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
-        # If there are related plans that have action contact persons, show a filter for each of these plans
-        related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
-        filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
-        if filter_plans.exists():
-            action_filters = [(f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n})
-                              for plan in filter_plans]
-        else:
-            action_filters = [('action', _('For an action'))]
-        choices = [
-            *action_filters,
-            ('peer_contact_persons', _('For same actions or indicators as me')),
-            ('indicator', _('For an indicator')),
-            ('none', _('Not a contact person')),
-        ]
-        return choices
-
-    def queryset(self, request, queryset):
-        user = request.user
-        plan = user.get_active_admin_plan()
-        queryset = queryset.prefetch_related(
-            Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
-        )
-        queryset = queryset.prefetch_related(
-            Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators')
-        )
-        if self.value() is None:
-            return queryset
-        if self.value() == 'action':
-            queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
-        elif self.value().startswith('action_in_plan__'):
-            plan_pk = int(self.value()[16:])
-            queryset = queryset.filter(contact_for_actions__plan=plan_pk)
-        elif self.value() == 'indicator':
-            queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
-        elif self.value() == 'peer_contact_persons':
-            person = user.person
-            my_actions = plan.actions.filter(contact_persons__person=person)
-            my_indicators = plan.indicators.filter(contact_persons__person=person)
-            queryset = queryset.filter(
-                Q(contact_for_actions__pk__in=my_actions) |
-                Q(contact_for_indicators__pk__in=my_indicators)
-            )
-        else:
-            queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
-                .exclude(contact_for_indicators__in=plan.indicators.all())
-        return queryset.distinct()
+# class IsContactPersonFilter(SimpleListFilter):
+#     title = _('Is contact person')
+#     parameter_name = 'contact_person'
+#
+#     def lookups(self, request, model_admin):
+#         plan = request.user.get_active_admin_plan()
+#         related_plans = Plan.objects.filter(pk=plan.pk) | plan.get_all_related_plans().all()
+#         # If there are related plans that have action contact persons, show a filter for each of these plans
+#         related_plans_contact_persons = ActionContactPerson.objects.filter(action__plan__in=related_plans)
+#         filter_plans = related_plans.filter(pk__in=related_plans_contact_persons.values_list('action__plan'))
+#         if filter_plans.exists():
+#             action_filters = [(f'action_in_plan__{plan.pk}', _('For an action in %(plan)s') % {'plan': plan.name_i18n})
+#                               for plan in filter_plans]
+#         else:
+#             action_filters = [('action', _('For an action'))]
+#         choices = [
+#             *action_filters,
+#             ('peer_contact_persons', _('For same actions or indicators as me')),
+#             ('indicator', _('For an indicator')),
+#             ('none', _('Not a contact person')),
+#         ]
+#         return choices
+#
+#     def queryset(self, request, queryset):
+#         user = request.user
+#         plan = user.get_active_admin_plan()
+#         queryset = queryset.prefetch_related(
+#             Prefetch('contact_for_actions', queryset=plan.actions.all(), to_attr='plan_contact_for_actions')
+#         )
+#         queryset = queryset.prefetch_related(
+#             Prefetch('contact_for_indicators', queryset=plan.indicators.all(), to_attr='plan_contact_for_indicators')
+#         )
+#         if self.value() is None:
+#             return queryset
+#         if self.value() == 'action':
+#             queryset = queryset.filter(contact_for_actions__in=plan.actions.all())
+#         elif self.value().startswith('action_in_plan__'):
+#             plan_pk = int(self.value()[16:])
+#             queryset = queryset.filter(contact_for_actions__plan=plan_pk)
+#         elif self.value() == 'indicator':
+#             queryset = queryset.filter(contact_for_indicators__in=plan.indicators.all())
+#         elif self.value() == 'peer_contact_persons':
+#             person = user.person
+#             my_actions = plan.actions.filter(contact_persons__person=person)
+#             my_indicators = plan.indicators.filter(contact_persons__person=person)
+#             queryset = queryset.filter(
+#                 Q(contact_for_actions__pk__in=my_actions) |
+#                 Q(contact_for_indicators__pk__in=my_indicators)
+#             )
+#         else:
+#             queryset = queryset.exclude(contact_for_actions__in=plan.actions.all())\
+#                 .exclude(contact_for_indicators__in=plan.indicators.all())
+#         return queryset.distinct()
 
 
 def smart_truncate(content, length=100, suffix='...'):
@@ -127,6 +133,7 @@ class PersonForm(AplansAdminModelForm):
             self.instance.image_cropping = None
         return super().save(commit)
 
+
 class PersonFormForGeneralAdmin(PersonForm):
     class AccessLevel(models.TextChoices):
         PUBLIC_SITE_ONLY = "public_site_only", _('Access to public site only')
@@ -151,6 +158,7 @@ class PersonFormForGeneralAdmin(PersonForm):
             is_public_site_viewer = instance.plans_with_public_site_access.filter(plan=plan).exists()
             initial['access_level'] = self.AccessLevel.PUBLIC_SITE_ONLY if is_public_site_viewer else self.AccessLevel.FULL_ACCESS
 
+        import pdb;pdb.set_trace()
         super().__init__(*args, **kwargs)
         assert self.user.is_general_admin_for_plan(self.plan)
         if plan.features.allow_public_site_login:
@@ -220,31 +228,60 @@ class PersonCreateView(
         return super().form_valid(form, *args, **kwargs)
 
 
-class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansEditView):
-    pass
+class PersonEditView(InitializeFormWithPlanMixin, InitializeFormWithUserMixin, EditView):
+# class PersonEditView(EditView):
+    def __init__(self, *args, **kwargs) -> None:
+        # The class Wagtail put into `kwargs['form_class']` is created before any request, so it does not have the proper
+        # fields, which can only be determined per request as they depend on the user. We remove `form_class` from
+        # `kwargs` so later on the method `get_form_class()` is called on `self.panel` (the edit handler), which should
+        # give us what we want.
+        kwargs.pop('form_class')
+        super().__init__(*args, **kwargs)
+
+    def get_form_class(self):
+        # `super().get_form_class()` would determine the class by calling `get_form_class()` on the edit handler, which
+        # does, however, not have access to the request. So we need to construct the form class here.
+        user = self.request.user
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            base_form_class = PersonFormForGeneralAdmin
+        else:
+            base_form_class = PersonForm
+        form_options = self.panel.get_form_options()
+        import pdb;pdb.set_trace()
+        return get_form_for_model(
+            self.model,
+            form_class=base_form_class,
+            **form_options,
+        )
 
 
-class PersonIndexView(AplansIndexView):
-    def get_ordering(self, request, queryset):
-        ret = super().get_ordering(request, queryset)
-        out = []
-        for order in ret:
-            field = order
-            if order[0] == '-':
-                field = field[1:]
-                desc = True
-            else:
-                desc = False
-            if field != 'user__last_login':
-                out.append(order)
-                continue
-            order = F('user__last_login')
-            if desc:
-                order = order.desc(nulls_last=True)
-            else:
-                order = order.asc(nulls_first=True)
-            out.append(order)
-        return out
+class PersonIndexView(IndexView):
+    def get_base_queryset(self):
+        plan = self.request.user.get_active_admin_plan()
+        qs = super().get_base_queryset().available_for_plan(plan).select_related('user')
+        return qs
+    # TODO
+    # def get_ordering(self, request, queryset):
+    #     ret = super().get_ordering(request, queryset)
+    #     out = []
+    #     for order in ret:
+    #         field = order
+    #         if order[0] == '-':
+    #             field = field[1:]
+    #             desc = True
+    #         else:
+    #             desc = False
+    #         if field != 'user__last_login':
+    #             out.append(order)
+    #             continue
+    #         order = F('user__last_login')
+    #         if desc:
+    #             order = order.desc(nulls_last=True)
+    #         else:
+    #             order = order.asc(nulls_first=True)
+    #         out.append(order)
+    #     return out
 
 
 class PersonPermissionHelper(PlanContextPermissionHelper):
@@ -368,20 +405,153 @@ class PersonDeleteView(ActivatePermissionHelperPlanContextMixin, DeleteView):
         self.instance.delete_and_deactivate_corresponding_user(acting_admin_user)
 
 
-class PersonAdmin(AplansModelAdmin):
+class PersonEditHandler(TabbedInterface):
+    def get_bound_panel(self, instance=None, request=None, form=None, prefix="panel"):
+        import pdb;pdb.set_trace()
+        basic_panels = [
+            FieldPanel('first_name'),
+            FieldPanel('last_name'),
+            FieldPanel('email'),
+            FieldPanel('title'),
+            FieldPanel(
+                'organization',
+                widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
+            ),
+            FieldPanel('image', widget=AvatarWidget),
+        ]
+
+        user = request.user
+        plan = user.get_active_admin_plan()
+        if user.is_general_admin_for_plan(plan):
+            form_class = PersonFormForGeneralAdmin
+            basic_panels.append(FieldPanel('access_level'))
+            basic_panels.append(FieldPanel('participated_in_training'))
+            basic_panels.append(FieldPanel('is_admin_for_active_plan'))
+            basic_panels.append(FieldPanel(
+                'organization_plan_admin_orgs',
+                widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+            ))
+            # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of
+            # the default value.
+            # TODO: No way to specify `primary_contact`.
+            # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
+            # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
+            # ordering because the order as displayed in the person admin view is not what we want -- the order we want
+            # should rather be the one as specified in the action edit view.
+            basic_panels.append(FieldPanel(
+                'contact_for_actions_unordered',
+                widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
+            ))
+        else:
+            form_class = PersonForm
+
+        tabs = [ObjectList(basic_panels, heading=_('General'))]
+
+        i18n_tabs = get_translation_tabs(instance, request)
+        tabs += i18n_tabs
+
+        kwargs = {
+            **self.clone_kwargs(),
+            'base_form_class': form_class,
+            'children': tabs,
+        }
+        clone = TabbedInterface(**kwargs).bind_to_model(self.model)
+        import pdb;pdb.set_trace()
+        return clone.get_bound_panel(instance, request, form, prefix)
+
+    class BoundPanel(TabbedInterface.BoundPanel):
+        pass
+        # def __init__(self, panel, instance, request, form, prefix):
+        #     import pdb;pdb.set_trace()
+        #     super().__init__(panel, instance, request, form, prefix)
+
+        # @cached_property
+        # def children(self):
+        #     # request = ctx_request.get()
+        #     # instance = ctx_instance.get()
+        #     basic_panels = [
+        #         FieldPanel('first_name'),
+        #         FieldPanel('last_name'),
+        #         FieldPanel('email'),
+        #         FieldPanel('title'),
+        #         FieldPanel(
+        #             'organization',
+        #             widget=autocomplete.ModelSelect2(url='organization-autocomplete'),
+        #         ),
+        #         FieldPanel('image', widget=AvatarWidget),
+        #     ]
+        #
+        #     user = self.request.user
+        #     plan = user.get_active_admin_plan()
+        #     if user.is_general_admin_for_plan(plan):
+        #         form_class = PersonFormForGeneralAdmin
+        #         basic_panels.append(FieldPanel('access_level'))
+        #         basic_panels.append(FieldPanel('participated_in_training'))
+        #         basic_panels.append(FieldPanel('is_admin_for_active_plan'))
+        #         basic_panels.append(FieldPanel(
+        #             'organization_plan_admin_orgs',
+        #             widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+        #         ))
+        #         # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of
+        #         # the default value.
+        #         # TODO: No way to specify `primary_contact`.
+        #         # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
+        #         # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
+        #         # ordering because the order as displayed in the person admin view is not what we want -- the order we want
+        #         # should rather be the one as specified in the action edit view.
+        #         basic_panels.append(FieldPanel(
+        #             'contact_for_actions_unordered',
+        #             widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
+        #         ))
+        #     else:
+        #         form_class = PersonForm
+        #
+        #     tabs = [ObjectList(basic_panels, heading=_('General'))]
+        #
+        #     i18n_tabs = get_translation_tabs(self.instance, self.request)
+        #     tabs += i18n_tabs
+        #
+        #     # return TabbedInterface(tabs, base_form_class=form_class)
+        #
+        #     return [
+        #         child.get_bound_panel(
+        #             instance=self.instance,
+        #             request=self.request,
+        #             form=self.form,
+        #             prefix=(f"{self.prefix}-child-TODO:identifier"),
+        #         )
+        #         for child in tabs
+        #     ]
+        #     # return [
+        #     #     child.get_bound_panel(
+        #     #         instance=self.instance,
+        #     #         request=self.request,
+        #     #         form=self.form,
+        #     #         prefix=(f"{self.prefix}-child-{identifier}"),
+        #     #     )
+        #     #     for child, identifier in zip(
+        #     #         self.panel.children, self.panel.child_identifiers
+        #     #     )
+        #     # ]
+
+
+class PersonViewSet(SnippetViewSet):
     model = Person
+    add_to_admin_menu = True
     create_view_class = PersonCreateView
     edit_view_class = PersonEditView
     index_view_class = PersonIndexView
     delete_view_class = PersonDeleteView
     delete_template_name = "people/delete.html"
     permission_helper_class = PersonPermissionHelper
-    menu_icon = 'user'
+    icon = 'user'
     menu_label = _('People')
     menu_order = 210
     exclude_from_explorer = False
+    # TODO: search_fields used?
     search_fields = ('first_name', 'last_name', 'title', 'organization__name', 'organization__abbreviation')
-    list_filter = (IsContactPersonFilter,)
+    # TODO bring back filter
+    # list_filter = (IsContactPersonFilter,)
     button_helper_class = PersonButtonHelper
     index_view_extra_css = ('css/modeladmin-index.css',)
     permission_helper: PersonPermissionHelper
@@ -389,10 +559,11 @@ class PersonAdmin(AplansModelAdmin):
     def get_permission_helper_class(self):
         return super().get_permission_helper_class()
 
-    def get_queryset(self, request: WatchAdminRequest):
-        plan = request.user.get_active_admin_plan()
-        qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
-        return qs
+    # TODO: filter by active plan
+    # def get_queryset(self, request: WatchAdminRequest):
+    #     plan = request.user.get_active_admin_plan()
+    #     qs = super().get_queryset(request).available_for_plan(plan).select_related('user')
+    #     return qs
 
     def get_empty_value_display(self, field=None):
         if getattr(field, '_name', field) == 'last_logged_in':
@@ -539,40 +710,42 @@ class PersonAdmin(AplansModelAdmin):
     ]
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
-        basic_panels = list(self.basic_panels)
-        user = request.user
-        plan = user.get_active_admin_plan()
-        if user.is_general_admin_for_plan(plan):
-            form_class = PersonFormForGeneralAdmin
-            basic_panels.append(FieldPanel('access_level'))
-            basic_panels.append(FieldPanel('participated_in_training'))
-            basic_panels.append(FieldPanel('is_admin_for_active_plan'))
-            basic_panels.append(FieldPanel(
-                'organization_plan_admin_orgs',
-                widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
-            ))
-            # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of
-            # the default value.
-            # TODO: No way to specify `primary_contact`.
-            # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
-            # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
-            # ordering because the order as displayed in the person admin view is not what we want -- the order we want
-            # should rather be the one as specified in the action edit view.
-            basic_panels.append(FieldPanel(
-                'contact_for_actions_unordered',
-                widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
-            ))
-        else:
-            form_class = PersonForm
-
-        tabs = [ObjectList(basic_panels, heading=_('General'))]
-
-        i18n_tabs = get_translation_tabs(instance, request)
-        tabs += i18n_tabs
-
-        return TabbedInterface(tabs, base_form_class=form_class)
+        # request = ctx_request.get()
+        # instance = ctx_instance.get()
+        # basic_panels = list(self.basic_panels)
+        # user = request.user
+        # plan = user.get_active_admin_plan()
+        # if user.is_general_admin_for_plan(plan):
+        #     form_class = PersonFormForGeneralAdmin
+        #     basic_panels.append(FieldPanel('access_level'))
+        #     basic_panels.append(FieldPanel('participated_in_training'))
+        #     basic_panels.append(FieldPanel('is_admin_for_active_plan'))
+        #     basic_panels.append(FieldPanel(
+        #         'organization_plan_admin_orgs',
+        #         widget=autocomplete.ModelSelect2Multiple(url='organization-autocomplete'),
+        #     ))
+        #     # FIXME: This saves ActionContactPerson instances without specifying `order`, which leads to duplicates of
+        #     # the default value.
+        #     # TODO: No way to specify `primary_contact`.
+        #     # Recall that we tried using inline panels (changing the other ForeignKey in the model to a ParentalKey and
+        #     # adding some workarounds) for `actioncontactperson_set`, but came across the problem that it screws up the
+        #     # ordering because the order as displayed in the person admin view is not what we want -- the order we want
+        #     # should rather be the one as specified in the action edit view.
+        #     basic_panels.append(FieldPanel(
+        #         'contact_for_actions_unordered',
+        #         widget=autocomplete.ModelSelect2Multiple(url='action-autocomplete'),
+        #     ))
+        # else:
+        #     form_class = PersonForm
+        #
+        # tabs = [ObjectList(basic_panels, heading=_('General'))]
+        #
+        # i18n_tabs = get_translation_tabs(instance, request)
+        # tabs += i18n_tabs
+        #
+        # return TabbedInterface(tabs, base_form_class=form_class)
+        # FIXME
+        return PersonEditHandler().bind_to_model(self.model)
 
     def get_extra_attrs_for_row(self, obj, context):
         assert isinstance(obj, Person)
@@ -600,4 +773,4 @@ class PersonAdmin(AplansModelAdmin):
         )
 
 
-modeladmin_register(PersonAdmin)
+register_snippet(PersonViewSet)
