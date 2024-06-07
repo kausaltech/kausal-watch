@@ -60,7 +60,7 @@ drf-spectacular
 wagtailgeowidget
 django-countries
 tzdata
-django-storages
+django-storages[s3]
 django-autoslug
 unidecode  # for decoding non-ASCII characters nicely in slugs, used optionally by django-autoslug
 xlsxwriter

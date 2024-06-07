@@ -87,6 +87,7 @@ elif os.path.exists(os.path.join(BASE_DIR, '.env')):
     environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 
 DEBUG = env('DEBUG')
+DEPLOYMENT_TYPE = env('DEPLOYMENT_TYPE')
 ALLOWED_HOSTS = env('ALLOWED_HOSTS')
 INTERNAL_IPS = env.list('INTERNAL_IPS',
                         default=(['127.0.0.1'] if DEBUG else []))
@@ -688,13 +689,15 @@ AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
 AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
 if AWS_S3_ENDPOINT_URL:
-    STORAGES['default']['BACKEND'] = 'storages.backends.s3boto3.S3Boto3Storage'
+    if DEPLOYMENT_TYPE == 'production':
+        STORAGES['default']['BACKEND'] = 'storages.backends.s3boto3.S3Boto3Storage'
+    else:
+        STORAGES['default']['BACKEND'] = 'aplans.storage.LocalMediaStorageWithS3Fallback'
 
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-DEPLOYMENT_TYPE = env('DEPLOYMENT_TYPE')
 SENTRY_DSN = env('SENTRY_DSN')
 
 SILENCED_SYSTEM_CHECKS = [
