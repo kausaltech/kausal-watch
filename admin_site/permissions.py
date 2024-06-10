@@ -99,4 +99,4 @@ class PlanRelatedPermissionPolicy(ModelPermissionPolicy):
 
 def superusers_only_hijack(*, hijacker, hijacked):
     """Only superusers may hijack other users."""
-    return hijacked.is_active and hijacker.is_superuser and not hijacker.is_hijacked and not hijacker == hijacked
+    return hijacked.is_active and hijacker.is_superuser and not hijacker.is_hijacked and hijacker != hijacked
