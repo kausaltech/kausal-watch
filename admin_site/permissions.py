@@ -10,6 +10,7 @@ from wagtail.permission_policies.collections import (
 from actions.models.plan import Plan
 from aplans.types import WatchAdminRequest
 from aplans.utils import PlanRelatedModel
+from users.models import User
 
 
 class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissionPolicy):
@@ -97,6 +98,6 @@ class PlanRelatedPermissionPolicy(ModelPermissionPolicy):
         return self._obj_matches_active_plan(user, instance)
 
 
-def superusers_only_hijack(*, hijacker, hijacked):
+def superusers_only_hijack(*, hijacker: User, hijacked: User):
     """Only superusers may hijack other users."""
-    return hijacked.is_active and hijacker.is_superuser and not hijacker.is_hijacked and hijacker != hijacked
+    return hijacked.is_active and hijacker.is_superuser and not getattr(hijacker, 'is_hijacked', False) and hijacker != hijacked

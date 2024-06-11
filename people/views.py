@@ -16,6 +16,7 @@ from wagtail_modeladmin.views import WMABaseView
 
 from people.models import Person
 
+from users.models import User
 
 class ResetPasswordView(WMABaseView):
     page_title = gettext_lazy("Reset password")
@@ -105,9 +106,13 @@ class ImpersonateUserView(WMABaseView):
         self.target_person = get_object_or_404(Person, pk=self.target_person_pk)
         super().__init__(model_admin)
 
-    def check_action_permitted(self, user):
-        impersonate_themselves = user.pk == self.target_person.user.pk
-        target_is_active = self.target_person.user.is_active
+    def check_action_permitted(self, user: User) -> bool:
+        target_user = self.target_person.user
+        if target_user is None:
+            return False
+
+        impersonate_themselves = user.pk == target_user.pk
+        target_is_active = target_user.is_active
 
         return (
             user.is_superuser and not impersonate_themselves and target_is_active

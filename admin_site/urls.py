@@ -6,7 +6,7 @@ from .api import check_login_method
 
 urlpatterns = [
     path('login/check/', check_login_method, name='admin_check_login_method'),
-    path('hijack/', include('hijack.urls')),
+    path('impersonate/', include('hijack.urls')),
 ]
 
 if not settings.LOGOUT_REDIRECT_URL:
