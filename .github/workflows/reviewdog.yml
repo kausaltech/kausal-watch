@@ -50,7 +50,7 @@ jobs:
         id: push_diff
         run: |
           # Check if the "before" hash exists
-          if [ "$(git cat-file -t ${{github.event.before}}" = "commit" ] ; then
+          if [ "$(git cat-file -t ${{ github.event.before }})" = "commit" ] ; then
             echo Diffing ${{ github.event.before }}..${{ github.sha }}
             git diff --find-renames --submodule=diff ${{ github.event.before }} ${{ github.sha }} > ${{ runner.temp }}/changes.diff
             echo has_diff=true >> $GITHUB_OUTPUT
