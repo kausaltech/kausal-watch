@@ -3,12 +3,31 @@ from django.core.files.storage import Storage
 from django.core.files.storage import FileSystemStorage
 from django.utils.deconstruct import deconstructible
 from storages.backends.s3boto3 import S3Boto3Storage
+from storages.utils import setting
+
+
+class MediaFilesS3Storage(S3Boto3Storage):
+    access_key_names = ['MEDIA_FILES_S3_ACCESS_KEY_ID']
+    secret_key_names = ['MEDIA_FILES_S3_SECRET_ACCESS_KEY']
+    security_token_names = ['MEDIA_FILES_S3_SESSION_TOKEN']
+    default_acl = 'public-read'
+
+    def get_default_settings(self):
+        defaults = super().get_default_settings()
+        # Rename some settings to avoid conflicts with other S3 backends
+        defaults['access_key'] = setting('MEDIA_FILES_S3_ACCESS_KEY')
+        defaults['secret_key'] = setting('MEDIA_FILES_S3_SECRET_ACCESS_KEY')
+        defaults['bucket_name'] = setting('MEDIA_FILES_S3_BUCKET')
+        defaults['endpoint_url'] = setting('MEDIA_FILES_S3_ENDPOINT')
+        defaults['custom_domain'] = setting('MEDIA_FILES_S3_CUSTOM_DOMAIN')
+        return defaults
+
 
 @deconstructible
 class LocalMediaStorageWithS3Fallback(Storage):
     """Storage that writes everything to disk and reads files from disk, falling back to S3."""
-    def __init__(self):
-        self.s3_storage = S3Boto3Storage()
+    def __init__(self, **settings):
+        self.s3_storage = MediaFilesS3Storage(**settings)
         self.fs_storage = FileSystemStorage()
 
     def _open(self, name: str, mode: str = 'rb') -> File:

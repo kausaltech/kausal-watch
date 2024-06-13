@@ -14,11 +14,12 @@ import os
 import sys
 import importlib.util
 from celery.schedules import crontab
-from typing import Literal
+from typing import Any, Literal
 
 import environ
 from corsheaders.defaults import default_headers as default_cors_headers  # noqa
 from django.utils.translation import gettext_lazy as _
+from environ.environ import ImproperlyConfigured, ParseResult, parse_qs
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(
@@ -70,10 +71,7 @@ env = environ.FileAwareEnv(
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
     LOG_GRAPHQL_QUERIES=(bool, False),
-    AWS_S3_ENDPOINT_URL=(str, ''),
-    AWS_STORAGE_BUCKET_NAME=(str, ''),
-    AWS_ACCESS_KEY_ID=(str, ''),
-    AWS_SECRET_ACCESS_KEY=(str, ''),
+    S3_MEDIA_STORAGE_URL=(str, ''),
     REQUEST_LOG_MAX_DAYS=(int, 90),
     REQUEST_LOG_METHODS=(list, ['POST', 'PUT', 'PATCH', 'DELETE']),
     REQUEST_LOG_IGNORE_PATHS=(list, ['/v1/graphql/']),
@@ -243,7 +241,7 @@ TEMPLATES = [
 
 WAGTAILADMIN_STATIC_FILE_VERSION_STRINGS = False
 
-STORAGES = {
+STORAGES: dict[str, dict[str, Any]] = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
@@ -251,6 +249,32 @@ STORAGES = {
         'BACKEND': 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage',
     },
 }
+
+media_storage_url: ParseResult = env.url('S3_MEDIA_STORAGE_URL')
+if media_storage_url.scheme:
+    url = media_storage_url
+    if url.scheme != 's3':
+        raise ImproperlyConfigured('S3_MEDIA_STORAGE_URL only supports s3 scheme')
+    opts = {
+        'bucket_name': url.path.lstrip('/'),
+    }
+    if url.hostname:
+        opts['endpoint_url'] = f'https://{url.hostname}'
+    if url.username:
+        opts['access_key'] = url.username
+    if url.password:
+        opts['secret_key'] = url.password
+    for key, val in parse_qs(url.query).items():
+        assert len(val) == 1
+        opts[key] = val[0]
+    if DEPLOYMENT_TYPE == 'production':
+        backend = 'aplans.storage.MediaFilesS3Storage'
+    else:
+        backend = 'aplans.storage.LocalMediaStorageWithS3Fallback'
+    STORAGES['default'] = {
+        'BACKEND': backend,
+        'OPTIONS': opts,
+    }
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -683,16 +707,6 @@ STATIC_URL = env('STATIC_URL')
 MEDIA_URL = env('MEDIA_URL')
 STATIC_ROOT = env('STATIC_ROOT')
 MEDIA_ROOT = env('MEDIA_ROOT')
-
-AWS_S3_ENDPOINT_URL = env('AWS_S3_ENDPOINT_URL')
-AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME')
-AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY')
-if AWS_S3_ENDPOINT_URL:
-    if DEPLOYMENT_TYPE == 'production':
-        STORAGES['default']['BACKEND'] = 'storages.backends.s3boto3.S3Boto3Storage'
-    else:
-        STORAGES['default']['BACKEND'] = 'aplans.storage.LocalMediaStorageWithS3Fallback'
 
 # Reverse proxy stuff
 USE_X_FORWARDED_HOST = True
