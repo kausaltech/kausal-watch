@@ -35,12 +35,12 @@ class LocalMediaStorageWithS3Fallback(Storage):
         # actually ever called for anything else but reading?
         assert mode == 'rb'
         try:
-            return self.fs_storage._open(name, mode)
+            return self.fs_storage._open(name, mode)  # type: ignore
         except FileNotFoundError:
             return self.s3_storage._open(name, mode)
 
     def _save(self, name: str, content: File) -> str:
-        return self.fs_storage._save(name, content)
+        return self.fs_storage._save(name, content)  # type: ignore
 
     def path(self, name: str) -> str:
         # The path returned by `self.fs_storage.path(name)` might not exist, so check if it does first
@@ -72,7 +72,7 @@ class LocalMediaStorageWithS3Fallback(Storage):
             return self.fs_storage.size(name)
         return self.s3_storage.size(name)
 
-    def url(self, name: str) -> str:
+    def url(self, name: str) -> str:  # type: ignore
         if self.fs_storage.exists(name):
             return self.fs_storage.url(name)
         return self.s3_storage.url(name)

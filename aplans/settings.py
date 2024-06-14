@@ -10,16 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
+import environ
 import os
 import sys
 import importlib.util
 from celery.schedules import crontab
-from typing import Any, Literal
-
-import environ
 from corsheaders.defaults import default_headers as default_cors_headers  # noqa
 from django.utils.translation import gettext_lazy as _
-from environ.environ import ImproperlyConfigured, ParseResult, parse_qs
+from environ.environ import ImproperlyConfigured
+from typing import Any, Literal
+from urllib.parse import parse_qs, ParseResult
 
 root = environ.Path(__file__) - 2  # two folders back
 env = environ.FileAwareEnv(

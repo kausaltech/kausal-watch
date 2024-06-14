@@ -59,7 +59,8 @@ module = [
     "colored.*", "dvc_pandas.*", "factory.*", "pint.*", "pint_pandas.*", "oauth2_provider.*", "modelcluster.*",
     "modeltrans.*", "wagtail.*", "networkx.*", "plotext.*", "graphene_django.*", "grapple.*", "willow.*",
     "reversion.*", "wagtail_modeladmin.*", "rest_framework_nested.*", "dal_admin_filters.*", "social_core.*",
-    "taggit.*", "dal.*", "social_django.*", "easy_thumbnails.*", "graphene_django_optimizer.*"
+    "taggit.*", "dal.*", "social_django.*", "easy_thumbnails.*", "graphene_django_optimizer.*", "environ.*",
+    "storages.*",
 ]
 ignore_missing_imports = true
 
