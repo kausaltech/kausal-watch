@@ -93,6 +93,18 @@ def initialize_notification_templates(
             "A user has submitted feedback."),
     }
 
+    base_template, created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
+    for notification_type in NotificationType:
+        defaults = {
+            'subject': notification_type.verbose_name,
+        }
+        template, created = AutomaticNotificationTemplate.objects.get_or_create(
+            base=base_template, type=notification_type.identifier, defaults=defaults)
+        ContentBlock.objects.get_or_create(
+            template=template, identifier='intro', base=base_template,
+            defaults={'content': split_into_draftail_paragraphs(
+                default_intro_texts_for_notification_type.get(notification_type.identifier))})
+
     default_shared_texts = {
         'motivation': pgettext(
             'motivation',
@@ -107,18 +119,6 @@ def initialize_notification_templates(
             "Thank you for taking part in implementing the action plan!\n\n"
             "Kind regards,\nthe action plan administrators"),
     }
-
-    base_template, created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
-    for notification_type in NotificationType:
-        defaults = {
-            'subject': notification_type.verbose_name,
-        }
-        template, created = AutomaticNotificationTemplate.objects.get_or_create(
-            base=base_template, type=notification_type.identifier, defaults=defaults)
-        ContentBlock.objects.get_or_create(
-            template=template, identifier='intro', base=base_template,
-            defaults={'content': split_into_draftail_paragraphs(
-                default_intro_texts_for_notification_type.get(notification_type.identifier))})
 
     for block_type in ['motivation', 'outro']:
         ContentBlock.objects.get_or_create(
