@@ -11,7 +11,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils.translation import pgettext_lazy, gettext_lazy as _
-from enum import Enum
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
 from typing import Dict, Sequence
@@ -19,6 +18,8 @@ from wagtail.fields import RichTextField
 
 from aplans.utils import PlanRelatedModel
 from people.models import Person
+
+from .notifications import NotificationType
 
 if typing.TYPE_CHECKING:
     from .recipients import EmailRecipient, NotificationRecipient
@@ -29,25 +30,6 @@ DEFAULT_FONT_FAMILY = (
 )
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
-
-
-class NotificationType(Enum):
-    TASK_LATE = _("Task is late")
-    TASK_DUE_SOON = _("Task is due soon")
-    ACTION_NOT_UPDATED = _("Action metadata has not been updated recently")
-    NOT_ENOUGH_TASKS = _("Action doesn't have enough in-progress tasks")
-    UPDATED_INDICATOR_VALUES_LATE = _("Updated indicator values are late")
-    UPDATED_INDICATOR_VALUES_DUE_SOON = _("Updated indicator values are due soon")
-    USER_FEEDBACK_RECEIVED = _("User feedback received")
-    MANUALLY_SCHEDULED = _("Manually scheduled notification")
-
-    @property
-    def identifier(self):
-        return self.name.lower()
-
-    @property
-    def verbose_name(self):
-        return self.value
 
 
 ACTION_NOTIFICATION_TYPES = {

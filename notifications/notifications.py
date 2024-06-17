@@ -1,11 +1,13 @@
 from __future__ import annotations
+from abc import ABC, abstractmethod
 import datetime
+from enum import Enum
 import typing
 
 from django.db.models import Q
+from django.utils.translation import pgettext, gettext_lazy as _
 from markupsafe import Markup
 
-from .models import NotificationType, ManuallyScheduledNotificationTemplate
 from actions.models import Plan, ActionTask, Action
 from feedback.models import UserFeedback
 from indicators.models import Indicator
@@ -14,11 +16,13 @@ if typing.TYPE_CHECKING:
     from . import NotificationObject
     from .engine import NotificationEngine
     from .recipients import NotificationRecipient
+    from .models import ManuallyScheduledNotificationTemplate
+    from django_stubs_ext import StrPromise
 
 MINIMUM_NOTIFICATION_PERIOD = 5  # days
 
 
-class Notification:
+class Notification(ABC):
     type: NotificationType
     plan: Plan
     obj: NotificationObject
@@ -61,6 +65,18 @@ class Notification:
     def get_identifier(self) -> str | None:
         return None
 
+    @classmethod
+    @abstractmethod
+    def get_default_intro_text(cls) -> str | None:
+        '''Return None if this notification type does not need a default text
+        when initializing the default notification templates, otherwise a string'''
+        pass
+
+    @classmethod
+    @abstractmethod
+    def get_verbose_name(cls) -> StrPromise:
+        pass
+
 
 class DeadlinePassedNotification(Notification):
     def __init__(self, type: NotificationType, plan: Plan, obj, days_late: int):
@@ -95,6 +111,21 @@ class TaskLateNotification(DeadlinePassedNotification):
     def get_context(self):
         return dict(task=self.obj.get_notification_context(self.plan), days_late=self.days_late)
 
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'task_late',
+            "This is an automatic reminder about updating "
+            "the task information of your action in the action plan. "
+            "There is an action whose deadline has passed. The action "
+            "is shown to be late until you mark it as done and fill in "
+            "some details."
+        )
+
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Task is late")
+
 
 class UpdatedIndicatorValuesLateNotification(DeadlinePassedNotification):
     def __init__(self, plan: Plan, indicator: Indicator, days_late: int):
@@ -103,6 +134,20 @@ class UpdatedIndicatorValuesLateNotification(DeadlinePassedNotification):
     def get_context(self):
         return dict(indicator=self.obj.get_notification_context(self.plan), days_late=self.days_late)
 
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Updated indicator values are late")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'updated_indicator_values_late',
+            "This is an automatic "
+            "reminder about updating indicator details in the action "
+            "plan.  The deadline for updating the indicator values has "
+            "passed. Please go and update the indicator with the latest "
+            "values."
+        )
 
 class DeadlineSoonNotification(Notification):
     def __init__(self, type: NotificationType, plan: Plan, obj, days_left: int):
@@ -137,6 +182,23 @@ class TaskDueSoonNotification(DeadlineSoonNotification):
     def get_context(self):
         return dict(task=self.obj.get_notification_context(self.plan), days_left=self.days_left)
 
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Task is due soon")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'task_due_soon',
+            "This is an automatic reminder about "
+            "updating the task information of your action in the action "
+            "plan.  There is an action in the action plan with a "
+            "deadline approaching. Please remember to mark the task as "
+            "done as soon as it has been completed. After the deadline "
+            "has gone, the action will be marked as late. You can edit "
+            "the task details from the link below."
+        )
+
 
 class UpdatedIndicatorValuesDueSoonNotification(DeadlineSoonNotification):
     def __init__(self, plan: Plan, indicator: Indicator, days_left: int):
@@ -144,6 +206,21 @@ class UpdatedIndicatorValuesDueSoonNotification(DeadlineSoonNotification):
 
     def get_context(self):
         return dict(indicator=self.obj.get_notification_context(self.plan), days_left=self.days_left)
+
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Updated indicator values are due soon")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'updated_indicator_values_due_soon',
+            "This is an automatic "
+            "reminder about updating indicator details in the action "
+            "plan.  The deadline for updating the indicator values is "
+            "approaching. Please go and update the indicator with the "
+            "latest values."
+        )
 
 
 class NotEnoughTasksNotification(Notification):
@@ -165,6 +242,24 @@ class NotEnoughTasksNotification(Notification):
 
             engine.queue_notification(self, recipient)
 
+    @classmethod
+    def get_verbose_name(cls) -> StrPromise:
+        return _("Action doesn't have enough in-progress tasks")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'not_enough_tasks',
+            "This is an automatic reminder about "
+            "updating the action details in the action plan.  You can "
+            "see on the action plan watch site what has already been "
+            "done to further the actions and what has been planned for "
+            "the future.  This means that it would be preferrable for "
+            "each action to have at least one upcoming task within the "
+            "next year. Please go and add tasks for the action which "
+            "show what the next planned steps for the action are."
+        )
+
 
 class ActionNotUpdatedNotification(Notification):
     def __init__(self, plan: Plan, action: Action):
@@ -185,6 +280,24 @@ class ActionNotUpdatedNotification(Notification):
 
             engine.queue_notification(self, recipient)
 
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Action metadata has not been updated recently")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'action_not_updated',
+            "This is an automatic reminder about "
+            "updating the action details in the action plan.  You can "
+            "see on the action plan watch site what has already been done "
+            "to further the actions and what has been planned for the "
+            "future.  It's already six months since you last updated an "
+            "action. Please go and update the action with the latest "
+            "information. You can add an upcoming task to the action at "
+            "the same time."
+        )
+
 
 class UserFeedbackReceivedNotification(Notification):
     def __init__(self, plan: Plan, user_feedback: UserFeedback):
@@ -201,14 +314,24 @@ class UserFeedbackReceivedNotification(Notification):
             for recipient in recipients:
                 engine.queue_notification(self, recipient)
 
+    @classmethod
+    def get_verbose_name(cls):
+        return _("User feedback received")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return pgettext(
+            'user_feedback_received',
+            "A user has submitted feedback."
+        )
+
 
 class ManuallyScheduledNotification(Notification):
     def __init__(self, plan: Plan, template: ManuallyScheduledNotificationTemplate):
         super().__init__(NotificationType.MANUALLY_SCHEDULED, plan, template)
 
     def get_context(self):
-        obj = typing.cast(ManuallyScheduledNotificationTemplate, self.obj)
-        return {'content': obj.content}
+        return {'content': self.obj.content}
 
     def generate_notifications(self, engine: NotificationEngine, recipients: typing.Sequence[NotificationRecipient], now=None):
         if now is None:
@@ -240,5 +363,36 @@ class ManuallyScheduledNotification(Notification):
         result['intro'] = template.content
         return result
 
+    @classmethod
+    def get_verbose_name(cls):
+        return _("Manually scheduled notification")
+
+    @classmethod
+    def get_default_intro_text(cls):
+        return None
+
     def __str__(self):
         return f'ManuallyScheduledNotification(date={self.obj.date.isoformat()}, subject="{self.obj.subject}")'
+
+
+class NotificationType(Enum):
+    TASK_LATE = TaskLateNotification
+    TASK_DUE_SOON = TaskDueSoonNotification
+    ACTION_NOT_UPDATED = ActionNotUpdatedNotification
+    NOT_ENOUGH_TASKS = NotEnoughTasksNotification
+    UPDATED_INDICATOR_VALUES_LATE = UpdatedIndicatorValuesLateNotification
+    UPDATED_INDICATOR_VALUES_DUE_SOON = UpdatedIndicatorValuesDueSoonNotification
+    USER_FEEDBACK_RECEIVED = UserFeedbackReceivedNotification
+    MANUALLY_SCHEDULED = ManuallyScheduledNotification
+
+    @property
+    def identifier(self):
+        return self.name.lower()
+
+    @property
+    def default_intro_text(self):
+        return self.value.get_default_intro_text()
+
+    @property
+    def verbose_name(self):
+        return self.value.get_verbose_name()

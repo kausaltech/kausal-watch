@@ -4,8 +4,7 @@ import typing
 from dataclasses import dataclass
 from typing import Dict, List
 
-from .models import NotificationType
-from .notifications import Notification
+from .notifications import Notification, NotificationType
 
 if typing.TYPE_CHECKING:
     from .recipients import NotificationRecipient

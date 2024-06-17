@@ -10,9 +10,9 @@ from typing import Dict, Sequence
 from .mjml import render_mjml_from_template
 from aplans.email_sender import EmailSender
 
-from .models import NotificationType, ManuallyScheduledNotificationTemplate
+from .models import ManuallyScheduledNotificationTemplate
 from .notifications import (
-    ActionNotUpdatedNotification, ManuallyScheduledNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
+    NotificationType, ActionNotUpdatedNotification, ManuallyScheduledNotification, Notification, NotEnoughTasksNotification, TaskDueSoonNotification,
     TaskLateNotification, UpdatedIndicatorValuesDueSoonNotification, UpdatedIndicatorValuesLateNotification,
     UserFeedbackReceivedNotification,
 )

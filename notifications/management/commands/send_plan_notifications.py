@@ -3,7 +3,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import translation
 
 from notifications.engine import NotificationEngine
-from notifications.models import NotificationType
+from notifications.notifications import NotificationType
 from actions.models import Plan
 
 

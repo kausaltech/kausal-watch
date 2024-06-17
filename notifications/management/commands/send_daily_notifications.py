@@ -4,7 +4,7 @@ from django.utils import translation
 from logging import getLogger
 
 from actions.models import Plan
-from notifications.models import NotificationType
+from notifications.notifications import NotificationType
 from .send_plan_notifications import NotificationEngine
 
 logger = getLogger(__name__)

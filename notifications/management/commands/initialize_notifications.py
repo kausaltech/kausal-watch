@@ -37,64 +37,12 @@ def initialize_notification_templates(
         'font_family': None,
         'font_css_url': None
     }
-    default_intro_texts_for_notification_type = {
-        'action_not_updated': pgettext(
-            'action_not_updated',
-            "This is an automatic reminder about "
-            "updating the action details in the action plan.  You can "
-            "see on the action plan watch site what has already been done "
-            "to further the actions and what has been planned for the "
-            "future.  It's already six months since you last updated an "
-            "action. Please go and update the action with the latest "
-            "information. You can add an upcoming task to the action at "
-            "the same time."),
-        'not_enough_tasks': pgettext(
-            'not_enough_tasks',
-            "This is an automatic reminder about "
-            "updating the action details in the action plan.  You can "
-            "see on the action plan watch site what has already been "
-            "done to further the actions and what has been planned for "
-            "the future.  This means that it would be preferrable for "
-            "each action to have at least one upcoming task within the "
-            "next year. Please go and add tasks for the action which "
-            "show what the next planned steps for the action are."),
-        'task_due_soon': pgettext(
-            'task_due_soon',
-            "This is an automatic reminder about "
-            "updating the task information of your action in the action "
-            "plan.  There is an action in the action plan with a "
-            "deadline approaching. Please remember to mark the task as "
-            "done as soon as it has been completed. After the deadline "
-            "has gone, the action will be marked as late. You can edit "
-            "the task details from the link below."),
-        'task_late': pgettext(
-            'task_late',
-            "This is an automatic reminder about updating "
-            "the task information of your action in the action plan. "
-            "There is an action whose deadline has passed. The action "
-            "is shown to be late until you mark it as done and fill in "
-            "some details."),
-        'updated_indicator_values_due_soon': pgettext(
-            'updated_indicator_values_due_soon',
-            "This is an automatic "
-            "reminder about updating indicator details in the action "
-            "plan.  The deadline for updating the indicator values is "
-            "approaching. Please go and update the indicator with the "
-            "latest values."),
-        'updated_indicator_values_late': pgettext(
-            'updated_indicator_values_late',
-            "This is an automatic "
-            "reminder about updating indicator details in the action "
-            "plan.  The deadline for updating the indicator values has "
-            "passed. Please go and update the indicator with the latest "
-            "values."),
-        'user_feedback_received': pgettext(
-            'user_feedback_received',
-            "A user has submitted feedback."),
-    }
-
     base_template, created = BaseTemplate.objects.get_or_create(plan=plan, defaults=base_template_defaults)
     for notification_type in NotificationType:
+        default_intro_text = notification_type.default_intro_text
+        if default_intro_text is None:
+            continue
+
         defaults = {
             'subject': notification_type.verbose_name,
         }
@@ -102,8 +50,8 @@ def initialize_notification_templates(
             base=base_template, type=notification_type.identifier, defaults=defaults)
         ContentBlock.objects.get_or_create(
             template=template, identifier='intro', base=base_template,
-            defaults={'content': split_into_draftail_paragraphs(
-                default_intro_texts_for_notification_type.get(notification_type.identifier))})
+            defaults={'content': split_into_draftail_paragraphs(default_intro_text)}
+        )
 
     default_shared_texts = {
         'motivation': pgettext(
