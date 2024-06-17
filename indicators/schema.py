@@ -284,7 +284,12 @@ class IndicatorDimensionNode(DjangoNode):
 
 
 class Query:
-    indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
+    indicator = graphene.Field(
+        IndicatorNode,
+        id=graphene.ID(),
+        identifier=graphene.ID(),
+        plan=graphene.ID(),
+        restrict_to_publicly_visible=graphene.Boolean(default_value=True))
     plan_indicators = graphene.List(
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
@@ -313,15 +318,15 @@ class Query:
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_indicator(self, info, **kwargs):
+    def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
-
+        
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
-
-        qs = Indicator.objects.visible_for_public()
+        user = info.context.user
+        qs = Indicator.objects.all()
 
         if obj_id:
             try:
@@ -334,7 +339,15 @@ class Query:
             plan_obj = get_plan_from_context(info, plan)
             if not plan_obj:
                 return None
+            if not restrict_to_publicly_visible and user.can_access_admin(plan_obj):
+                qs = qs.visible_for_user(user)
+            else:
+                qs = qs.visible_for_public()
+
             qs = qs.filter(levels__plan=plan_obj).distinct()
+        else:
+            qs = qs.visible_for_public()
+
 
         if identifier:
             qs = qs.filter(identifier=identifier)
