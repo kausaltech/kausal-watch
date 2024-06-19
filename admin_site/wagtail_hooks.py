@@ -10,7 +10,6 @@ from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, Men
 from wagtail.admin.ui.components import Component
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
 from wagtail import hooks
 
 from aplans.types import WatchAdminRequest
@@ -218,12 +217,13 @@ def remove_default_site_summary_items(request, items: list):
     items.clear()
 
 
-class ClientAdmin(ModelAdmin):
+class ClientViewSet(SnippetViewSet):
     model = Client
-    menu_icon = 'globe'
+    icon = 'globe'
     menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
+    add_to_admin_menu = True
 
     panels = [
         FieldPanel('name'),
@@ -234,7 +234,7 @@ class ClientAdmin(ModelAdmin):
     ]
 
 
-modeladmin_register(ClientAdmin)
+register_snippet(ClientViewSet)
 
 
 @hooks.register("insert_global_admin_css")
