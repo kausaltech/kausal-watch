@@ -1,3 +1,5 @@
+from datetime import date
+from decimal import Decimal
 import pytest
 
 from actions.models.features import OrderBy
@@ -7,6 +9,7 @@ from actions.tests.factories import (
     ActionTaskFactory, CategoryFactory, CategoryTypeFactory, ImpactGroupFactory,
     ImpactGroupActionFactory, PlanFactory, PlanDomainFactory, MonitoringQualityPointFactory, ScenarioFactory
 )
+from budget.tests.factories import DataPointFactory, DatasetFactory, DatasetScopeFactory, DimensionCategoryFactory, DimensionFactory
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 from pages.tests.factories import CategoryPageFactory
 
@@ -800,6 +803,149 @@ def test_category_node(
             },
         }]
     }
+    assert data == expected
+
+def test_category_datasets_node(graphql_client_query_data, plan_with_pages, category):
+    plan = plan_with_pages
+    dimension = DimensionFactory()
+    dim_category1 = DimensionCategoryFactory(dimension=dimension)
+    dim_category2 = DimensionCategoryFactory(dimension=dimension)
+
+    dataset1 = DatasetFactory()
+    dataset2 = DatasetFactory()
+    DatasetScopeFactory(dataset=dataset1, scope=category)
+    DatasetScopeFactory(dataset=dataset2, scope=category)
+
+    data_point1 = DataPointFactory(dataset=dataset1, date=date(2024, 1, 1), value=10.51)
+    data_point1.dimension_categories.set([dim_category1])
+    data_point2 = DataPointFactory(dataset=dataset1, date=date(2024, 2, 1), value=15.22)
+    data_point2.dimension_categories.set([dim_category2])
+    data_point3 = DataPointFactory(dataset=dataset2, date=date(2024, 3, 1), value=8)
+    data_point3.dimension_categories.set([dim_category1, dim_category2])
+
+    data = graphql_client_query_data(
+        '''
+        query($plan: ID!) {
+          planCategories(plan: $plan) {
+            datasets {
+              __typename
+              uuid
+              timeResolution
+              unit
+              dataPoints {
+                __typename
+                uuid
+                date
+                value
+                dimensionCategories {
+                  __typename
+                  uuid
+                  label
+                }
+              }
+              scopes {
+                __typename
+                scope {
+                  __typename
+                  ... on Category {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'plan': plan.identifier}
+    )
+
+    expected = {
+        'planCategories': [
+            {
+                'datasets': [
+                    {
+                        '__typename': 'Dataset',
+                        'uuid': str(dataset1.uuid),
+                        'timeResolution': 'YEARLY',
+                        'unit': dataset1.unit,
+                        'dataPoints': [
+                            {
+                                '__typename': 'DataPoint',
+                                'uuid': str(data_point1.uuid),
+                                'date': data_point1.date.isoformat(),
+                                'value': str(Decimal(data_point1.value).quantize(Decimal('0.0001'))),
+                                'dimensionCategories': [
+                                    {
+                                        '__typename': 'DatasetDimensionCategory',
+                                        'uuid': str(dim_category1.uuid),
+                                        'label': dim_category1.label,
+                                    },
+                                ],
+                            },
+                            {
+                                '__typename': 'DataPoint',
+                                'uuid': str(data_point2.uuid),
+                                'date': data_point2.date.isoformat(),
+                                'value': str(Decimal(data_point2.value).quantize(Decimal('0.0001'))),
+                                'dimensionCategories': [
+                                    {
+                                        '__typename': 'DatasetDimensionCategory',
+                                        'uuid': str(dim_category2.uuid),
+                                        'label': dim_category2.label,
+                                    },
+                                ],
+                            },
+                        ],
+                        'scopes': [
+                            {
+                                '__typename': 'DatasetScope',
+                                'scope': {
+                                    '__typename': 'Category',
+                                    'id': str(category.id),
+                                },
+                            },
+                        ],
+                    },
+                    {
+                        '__typename': 'Dataset',
+                        'uuid': str(dataset2.uuid),
+                        'timeResolution': 'YEARLY',
+                        'unit': dataset2.unit,
+                        'dataPoints': [
+                            {
+                                '__typename': 'DataPoint',
+                                'uuid': str(data_point3.uuid),
+                                'date': data_point3.date.isoformat(),
+                                'value': str(Decimal(data_point3.value).quantize(Decimal('0.0001'))),
+                                'dimensionCategories': [
+                                    {
+                                        '__typename': 'DatasetDimensionCategory',
+                                        'uuid': str(dim_category1.uuid),
+                                        'label': dim_category1.label,
+                                    },
+                                    {
+                                        '__typename': 'DatasetDimensionCategory',
+                                        'uuid': str(dim_category2.uuid),
+                                        'label': dim_category2.label,
+                                    },
+                                ],
+                            },
+                        ],
+                        'scopes': [
+                            {
+                                '__typename': 'DatasetScope',
+                                'scope': {
+                                    '__typename': 'Category',
+                                    'id': str(category.id),
+                                },
+                            },
+                        ],
+                    },
+                ]
+            }
+        ]
+    }
+
     assert data == expected
 
 
@@ -1756,4 +1902,146 @@ def test_action_status_update_node(graphql_client_query_data):
             }]
         }
     }
+    assert data == expected
+
+
+def test_action_datasets_node(graphql_client_query_data):
+    action = ActionFactory()
+    dimension = DimensionFactory()
+    dim_category1 = DimensionCategoryFactory(dimension=dimension)
+    dim_category2 = DimensionCategoryFactory(dimension=dimension)
+
+    dataset1 = DatasetFactory()
+    dataset2 = DatasetFactory()
+    DatasetScopeFactory(dataset=dataset1, scope=action)
+    DatasetScopeFactory(dataset=dataset2, scope=action)
+
+    data_point1 = DataPointFactory(dataset=dataset1, date=date(2024, 1, 1), value=10.51)
+    data_point1.dimension_categories.set([dim_category1])
+    data_point2 = DataPointFactory(dataset=dataset1, date=date(2024, 2, 1), value=15.22)
+    data_point2.dimension_categories.set([dim_category2])
+    data_point3 = DataPointFactory(dataset=dataset2, date=date(2024, 3, 1), value=8)
+    data_point3.dimension_categories.set([dim_category1, dim_category2])
+
+    data = graphql_client_query_data(
+        '''
+        query($actionId: ID!) {
+          action(id: $actionId) {
+            datasets {
+              __typename
+              uuid
+              timeResolution
+              unit
+              dataPoints {
+                __typename
+                uuid
+                date
+                value
+                dimensionCategories {
+                  __typename
+                  uuid
+                  label
+                }
+              }
+              scopes {
+                __typename
+                scope {
+                  __typename
+                  ... on Action {
+                    id
+                  }
+                }
+              }
+            }
+          }
+        }
+        ''',
+        variables={'actionId': action.id}
+    )
+
+    expected = {
+        'action': {
+            'datasets': [
+                {
+                    '__typename': 'Dataset',
+                    'uuid': str(dataset1.uuid),
+                    'timeResolution': 'YEARLY',
+                    'unit': dataset1.unit,
+                    'dataPoints': [
+                        {
+                            '__typename': 'DataPoint',
+                            'uuid': str(data_point1.uuid),
+                            'date': data_point1.date.isoformat(),
+                            'value': str(Decimal(data_point1.value).quantize(Decimal('0.0001'))),
+                            'dimensionCategories': [
+                                {
+                                    '__typename': 'DatasetDimensionCategory',
+                                    'uuid': str(dim_category1.uuid),
+                                    'label': dim_category1.label,
+                                },
+                            ],
+                        },
+                        {
+                            '__typename': 'DataPoint',
+                            'uuid': str(data_point2.uuid),
+                            'date': data_point2.date.isoformat(),
+                            'value': str(Decimal(data_point2.value).quantize(Decimal('0.0001'))),
+                            'dimensionCategories': [
+                                {
+                                    '__typename': 'DatasetDimensionCategory',
+                                    'uuid': str(dim_category2.uuid),
+                                    'label': dim_category2.label,
+                                },
+                            ],
+                        },
+                    ],
+                    'scopes': [
+                        {
+                            '__typename': 'DatasetScope',
+                            'scope': {
+                                '__typename': 'Action',
+                                'id': str(action.id),
+                            },
+                        },
+                    ],
+                },
+                {
+                    '__typename': 'Dataset',
+                    'uuid': str(dataset2.uuid),
+                    'timeResolution': 'YEARLY',
+                    'unit': dataset2.unit,
+                    'dataPoints': [
+                        {
+                            '__typename': 'DataPoint',
+                            'uuid': str(data_point3.uuid),
+                            'date': data_point3.date.isoformat(),
+                            'value': str(Decimal(data_point3.value).quantize(Decimal('0.0001'))),
+                            'dimensionCategories': [
+                                {
+                                    '__typename': 'DatasetDimensionCategory',
+                                    'uuid': str(dim_category1.uuid),
+                                    'label': dim_category1.label,
+                                },
+                                {
+                                    '__typename': 'DatasetDimensionCategory',
+                                    'uuid': str(dim_category2.uuid),
+                                    'label': dim_category2.label,
+                                },
+                            ],
+                        },
+                    ],
+                    'scopes': [
+                        {
+                            '__typename': 'DatasetScope',
+                            'scope': {
+                                '__typename': 'Action',
+                                'id': str(action.id),
+                            },
+                        },
+                    ],
+                },
+            ]
+        }
+    }
+
     assert data == expected

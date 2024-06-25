@@ -82,6 +82,7 @@ class Dataset(models.Model):
     class Meta:  # pyright:ignore
         verbose_name = _('dataset')
         verbose_name_plural = _('datasets')
+        ordering = ['id']
 
 
 class DatasetScope(models.Model):
