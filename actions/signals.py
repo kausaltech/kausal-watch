@@ -1,11 +1,12 @@
 import logging
 from anymail.signals import pre_send, post_send
-from django.db.models.signals import post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from wagtail.signals import task_submitted, task_cancelled
 
 from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
-from .models import Plan, PlanFeatures
+from .models import Action, Plan, PlanFeatures
+from .models.attributes import AttributeType
 from notifications.models import NotificationSettings
 
 logger = logging.getLogger(__name__)
@@ -35,6 +36,13 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
             f"Email send status '{recipient_status.status}' (message ID {recipient_status.message_id}) from {esp_name} for "
             f"email with subject '{message.subject}' to recipient {email}"
         )
+
+
+@receiver(post_save, sender=AttributeType)
+@receiver(post_delete, sender=AttributeType)
+def invalidate_attribute_type_cache(sender, instance, **kwargs):
+    # Attribute type cache may get stale when creating, editing or deleting attribute types
+    Action.get_attribute_types_for_plan.cache_clear()
 
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
