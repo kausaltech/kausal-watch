@@ -501,6 +501,10 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     'SCHEMA_PATH_PREFIX': '^/v1',
     'SCHEMA_COERCE_PATH_PK_SUFFIX': True,
+    # Strictly speaking, this results in the wrong type for eg. Action.date_format,
+    # but js typeconv cannot handle the null value for an enum
+    # https://github.com/grantila/typeconv/issues/39
+    'ENUM_ADD_EXPLICIT_BLANK_NULL_CHOICE': False,
     'ENUM_NAME_OVERRIDES': {
         'OtherLanguagesEnum': LANGUAGES,
     },
