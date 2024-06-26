@@ -1,25 +1,39 @@
-from django.contrib.admin.utils import unquote
-from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
-from django.utils.decorators import method_decorator
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from django.shortcuts import redirect
+from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.translation import gettext as _
+from django.views.generic import TemplateView
 from wagtail.admin import messages
-from wagtail_modeladmin.views import WMABaseView
+from wagtail.admin.views.generic.base import (
+    BaseObjectMixin, WagtailAdminTemplateMixin
+)
+from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
 
 from feedback.models import UserFeedback
 
+if TYPE_CHECKING:
+    from feedback.wagtail_admin import UserFeedbackPermissionPolicy
 
-class SetUserFeedbackProcessedView(WMABaseView):
-    user_feedback_pk = None
+
+class SetUserFeedbackProcessedView(
+    BaseObjectMixin,
+    PermissionCheckedMixin,
+    WagtailAdminTemplateMixin,
+    TemplateView
+):
+    model = UserFeedback
+    permission_policy: UserFeedbackPermissionPolicy
+    permission_required = 'set_is_processed'
     set_processed = True
     template_name = 'aplans/confirmation.html'
+    index_url_name = None
 
-    def __init__(self, model_admin, user_feedback_pk, set_processed=True):
-        self.user_feedback_pk = unquote(user_feedback_pk)
-        self.user_feedback = get_object_or_404(UserFeedback, pk=self.user_feedback_pk)
-        self.set_processed = set_processed
-        super().__init__(model_admin)
+    def user_has_permission(self, permission):
+        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
 
     def get_page_title(self):
         if self.set_processed:
@@ -27,40 +41,31 @@ class SetUserFeedbackProcessedView(WMABaseView):
         else:
             return _("Mark user feedback as unprocessed")
 
-    def check_action_permitted(self, user):
-        return self.user_feedback.user_can_change_is_processed(user)
-
-    @method_decorator(login_required)
-    def dispatch(self, request, *args, **kwargs):
-        if not self.check_action_permitted(request.user):
-            raise PermissionDenied
-        return super().dispatch(request, *args, **kwargs)
-
     def get_meta_title(self):
         if self.set_processed:
             msg = _("Confirm marking %(user_feedback)s as processed")
         else:
             msg = _("Confirm marking %(user_feedback)s as unprocessed")
-        return msg % {'user_feedback': self.user_feedback}
+        return msg % {'user_feedback': self.object}
 
     def confirmation_message(self):
         if self.set_processed:
             msg = _("Do you really want to mark the user feedback '%(user_feedback)s' as processed?")
         else:
             msg = _("Do you really want to mark the user feedback '%(user_feedback)s' as unprocessed?")
-        return msg % {'user_feedback': self.user_feedback}
+        return msg % {'user_feedback': self.object}
 
     def mark_processed(self):
-        if self.user_feedback.is_processed:
+        if self.object.is_processed:
             raise ValueError(_("The user feedback is already processed"))
-        self.user_feedback.is_processed = True
-        self.user_feedback.save()
+        self.object.is_processed = True
+        self.object.save()
 
     def mark_unprocessed(self):
-        if not self.user_feedback.is_processed:
+        if not self.object.is_processed:
             raise ValueError(_("The user feedback is already unprocessed"))
-        self.user_feedback.is_processed = False
-        self.user_feedback.save()
+        self.object.is_processed = False
+        self.object.save()
 
     def post(self, request, *args, **kwargs):
         try:
@@ -75,5 +80,9 @@ class SetUserFeedbackProcessedView(WMABaseView):
             msg = _("User feedback '%(user_feedback)s' has been marked as processed.")
         else:
             msg = _("User feedback '%(user_feedback)s' has been marked as unprocessed.")
-        messages.success(request, msg % {'user_feedback': self.user_feedback})
+        messages.success(request, msg % {'user_feedback': self.object})
         return redirect(self.index_url)
+
+    @cached_property
+    def index_url(self):
+        return reverse(self.index_url_name)
