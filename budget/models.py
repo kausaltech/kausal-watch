@@ -76,6 +76,9 @@ class Dataset(models.Model):
         help_text=_('Time resolution of the time stamps of data points in this dataset'),
     )
     unit = models.CharField(max_length=100, blank=True, verbose_name=_('unit'))
+    dimension_categories = models.ManyToManyField(
+        DimensionCategory, related_name='datasets', blank=True, verbose_name=_('dimension categories')
+    )
 
     i18n = TranslationField(fields=['unit'])
 
