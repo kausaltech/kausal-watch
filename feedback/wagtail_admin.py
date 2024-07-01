@@ -1,6 +1,7 @@
 from django.contrib.admin.utils import quote
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.ui.tables import BooleanColumn
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
@@ -98,14 +99,13 @@ class UserFeedbackIndexView(IndexView):
 
         return buttons + [process_button]
 
-
 class UserFeedbackViewSet(SnippetViewSet):
     model = UserFeedback
     add_to_admin_menu = True
     icon = 'mail'
     menu_label = _('User feedback')
     menu_order = 240
-    list_display = ['created_at', 'type', 'action', 'name', 'comment', 'is_processed']
+    list_display = ['created_at', 'type', 'action', 'name', 'comment', BooleanColumn('is_processed')]
     list_filter = {'created_at': ['gte'], 'type': ['exact'], 'is_processed': ['exact']}
     inspect_view_enabled = True
     index_view_class = UserFeedbackIndexView
