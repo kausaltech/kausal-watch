@@ -60,7 +60,7 @@ class DimensionScope(OrderedModel):
     )
 
 
-class Dataset(models.Model):
+class DatasetSchema(models.Model):
     class TimeResolution(models.TextChoices):
         """Time resolution of all data points.
 
@@ -78,28 +78,57 @@ class Dataset(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     time_resolution = models.CharField(
         max_length=16, choices=TimeResolution.choices,
+        default=TimeResolution.YEARLY,
         help_text=_('Time resolution of the time stamps of data points in this dataset'),
     )
     unit = models.CharField(max_length=100, blank=True, verbose_name=_('unit'))
+    name = models.CharField(max_length=100, blank=True, verbose_name=_('name'))
+
+    # FIXME: move to join table with ordering
     dimension_categories = models.ManyToManyField(
-        DimensionCategory, related_name='datasets', blank=True, verbose_name=_('dimension categories')
+        DimensionCategory, related_name='+', blank=True, verbose_name=_('dimension categories')
     )
 
-    i18n = TranslationField(fields=['unit'])
+    i18n = TranslationField(fields=['unit', 'name'])
 
+
+def schema_default():
+    '''
+    By default, new datasets will have their own unique schema.
+    '''
+    schema = DatasetSchema.objects.create()
+    return schema.pk
+
+
+class Dataset(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    schema = models.ForeignKey(
+        DatasetSchema, null=False, blank=False, related_name='datasets',
+        verbose_name=_('schema'), on_delete=models.PROTECT,
+        default=schema_default
+    )
+    # The "scope" generic foreign key links this dataset to an action or category
+    scope_content_type = models.ForeignKey(
+        ContentType, on_delete=models.CASCADE, related_name='+',
+        null=True, blank=True
+    )
+    scope_id = models.PositiveIntegerField(null=True, blank=True)
+    scope: models.ForeignKey[Action, Action] | models.ForeignKey[Category, Category] = GenericForeignKey(
+        'scope_content_type', 'scope_id'
+    )
     class Meta:  # pyright:ignore
         verbose_name = _('dataset')
         verbose_name_plural = _('datasets')
         ordering = ['id']
 
 
-class DatasetScope(models.Model):
-    """Link a dataset to a context in which it can be used, such as an action or a category."""
-
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='+')
+class DatasetSchemaScope(models.Model):
+    """Link a dataset schema to a context in which it can be used, such as a plan."""
+    schema = models.ForeignKey(DatasetSchema, on_delete=models.CASCADE, related_name='+')
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
-    scope: models.ForeignKey[Action, Action] | models.ForeignKey[Category, Category] = GenericForeignKey(
+    # If scope is a Plan, this schema can be used for Actions in that plan
+    scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(
         'scope_content_type', 'scope_id'
     )
 
