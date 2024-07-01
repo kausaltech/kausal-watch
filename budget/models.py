@@ -43,6 +43,11 @@ class DimensionCategory(OrderedModel):
         verbose_name = _('dimension category')
         verbose_name_plural = _('dimension categories')
 
+    def __str__(self):
+        if self.label:
+            return f'{self.label} ({self.uuid})'
+        return str(self.uuid)
+
 
 class DimensionScope(OrderedModel):
     """Link a dimension to a context in which it can be used, such as a plan or a category type."""

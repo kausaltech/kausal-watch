@@ -83,11 +83,14 @@ class DataPointViewSet(viewsets.ModelViewSet):
 
 
 class DatasetSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
+    dimension_categories = serializers.SlugRelatedField(
+        slug_field='uuid', many=True, queryset=DimensionCategory.objects.all()
+    )
     data_points = serializers.SlugRelatedField(slug_field='uuid', read_only=True, many=True)
 
     class Meta:
         model = Dataset
-        fields = ['uuid', 'time_resolution', 'unit', 'data_points']
+        fields = ['uuid', 'time_resolution', 'unit', 'dimension_categories', 'data_points']
 
 
 class DatasetViewSet(viewsets.ModelViewSet):
