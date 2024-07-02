@@ -29,7 +29,7 @@ class Dimension(ClusterableModel):
         ordering = ['name']
 
     def __str__(self):
-        return self.name
+        return self.name_i18n
 
 
 class DimensionCategory(OrderedModel):
@@ -45,7 +45,7 @@ class DimensionCategory(OrderedModel):
 
     def __str__(self):
         if self.label:
-            return f'{self.label} ({self.uuid})'
+            return f'{self.label_i18n} ({self.uuid})'
         return str(self.uuid)
 
 
@@ -91,6 +91,11 @@ class DatasetSchema(models.Model):
 
     i18n = TranslationField(fields=['unit', 'name'])
 
+    def __str__(self):
+        if self.name_i18n:
+            return f'{self.name_i18n} ({self.uuid})'
+        return str(self.uuid)
+
 
 def schema_default():
     '''
@@ -116,6 +121,7 @@ class Dataset(models.Model):
     scope: models.ForeignKey[Action, Action] | models.ForeignKey[Category, Category] = GenericForeignKey(
         'scope_content_type', 'scope_id'
     )
+
     class Meta:  # pyright:ignore
         verbose_name = _('dataset')
         verbose_name_plural = _('datasets')

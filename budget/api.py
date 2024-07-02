@@ -7,7 +7,7 @@ from rest_framework_nested import routers
 from typing import Any
 
 from aplans.api_router import router
-from .models import DataPoint, Dataset, Dimension, DimensionCategory
+from .models import DataPoint, Dataset, DatasetSchema, Dimension, DimensionCategory
 
 
 all_routers = []
@@ -58,7 +58,7 @@ class DataPointSerializer(serializers.ModelSerializer):
         data_point = super().create(validated_data)
         dataset = data_point.dataset
         assert dataset == validated_data['dataset']
-        allowed_dimension_categories = list(dataset.dimension_categories.all())
+        allowed_dimension_categories = list(dataset.schema.dimension_categories.all())
         for dimension_category in dimension_categories:
             # TODO: Do proper validation instead
             assert dimension_category in allowed_dimension_categories
@@ -82,15 +82,32 @@ class DataPointViewSet(viewsets.ModelViewSet):
         serializer.save(dataset=dataset)
 
 
-class DatasetSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
+class DatasetSchemaSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
     dimension_categories = serializers.SlugRelatedField(
         slug_field='uuid', many=True, queryset=DimensionCategory.objects.all()
     )
+
+    class Meta:
+        model = DatasetSchema
+        fields = ['uuid', 'time_resolution', 'unit', 'name', 'dimension_categories']
+
+
+class DatasetSchemaViewSet(viewsets.ModelViewSet):
+    queryset = DatasetSchema.objects.all()
+    lookup_field = 'uuid'
+    serializer_class = DatasetSchemaSerializer
+    permission_classes = (
+        permissions.DjangoModelPermissions,
+    )
+
+
+class DatasetSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
     data_points = serializers.SlugRelatedField(slug_field='uuid', read_only=True, many=True)
+    schema = serializers.SlugRelatedField(slug_field='uuid', queryset=DatasetSchema.objects.all())
 
     class Meta:
         model = Dataset
-        fields = ['uuid', 'time_resolution', 'unit', 'dimension_categories', 'data_points']
+        fields = ['uuid', 'schema', 'data_points']
 
 
 class DatasetViewSet(viewsets.ModelViewSet):
@@ -136,6 +153,7 @@ class DimensionCategoryViewSet(viewsets.ModelViewSet):
         serializer.save(dimension=dimension)
 
 
+router.register(r'dataset_schemas', DatasetSchemaViewSet, basename='datasetschema')
 router.register(r'datasets', DatasetViewSet, basename='dataset')
 dataset_router = routers.NestedSimpleRouter(router, r'datasets', lookup='dataset')
 all_routers.append(dataset_router)
