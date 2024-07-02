@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 import reversion
 import typing
 from typing import Any, Self, Tuple, Iterable, Sequence
@@ -630,6 +631,24 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
                 raise Exception("Maximum category hierarchy depth exceeded")
             c = c.parent
         return self.type.levels.filter(order=level).first()
+
+    @classmethod
+    @lru_cache
+    def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+        category_ct = ContentType.objects.get_for_model(cls)
+        category_type_content_type = ContentType.objects.get_for_model(CategoryType)
+        category_types = plan.category_types.values_list('pk', flat=True)
+        at_qs: models.QuerySet[AttributeTypeModel] = AttributeTypeModel.objects.filter(
+            object_content_type=category_ct,
+            scope_content_type=category_type_content_type,
+            scope_id__in=category_types,
+        )
+        if only_in_reporting_tab:
+            at_qs = at_qs.filter(show_in_reporting_tab=True)
+        if unless_in_reporting_tab:
+            at_qs = at_qs.filter(show_in_reporting_tab=False)
+        # Convert to wrapper objects
+        return [AttributeType.from_model_instance(at) for at in at_qs]
 
 
 class Icon(models.Model):

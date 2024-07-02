@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from functools import cache
+from functools import lru_cache
 import logging
 import reversion
 import typing
@@ -741,7 +741,7 @@ class Action(  # type: ignore[django-manager-missing]
         return [at for at in attribute_types if at.instance.is_instance_visible_for(user, self.plan, self)]
 
     @classmethod
-    @cache
+    @lru_cache
     def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
         action_ct = ContentType.objects.get_for_model(Action)
         plan_ct = ContentType.objects.get_for_model(plan)

@@ -394,6 +394,10 @@ class ModelWithAttributes(models.Model):
         raise NotImplementedError("Implement in subclass")
 
     @classmethod
+    def get_attribute_types_for_plan(cls, plan: Plan, only_in_reporting_tab=False, unless_in_reporting_tab=False):
+        raise NotImplementedError("Implement in subclass")
+
+    @classmethod
     def from_serializable_data(cls, data, check_fks=True, strict_fks=False):
         """Called by Wagtail when editing a draft, and by the GraphQL implementation when resolving attributes."""
         from actions.attributes import DraftAttributes

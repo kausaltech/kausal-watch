@@ -478,3 +478,14 @@ def test_organization_bulk_serializer_move_roots(org_hierarchy, order):
     expected = subtrees[order[0]] + subtrees[order[1]] + subtrees[order[2]]
     update_org_hierarchy(expected)
     assert_org_hierarchy(expected)
+
+
+def test_category_api_get(api_client, category_list_url, category):
+    response = api_client.get(category_list_url)
+    data = response.json_data
+    assert data['count'] == 1
+    assert len(data['results']) == 1
+
+    obj = data['results'][0]
+    assert obj['name'] == category.name
+    assert obj['identifier'] == category.identifier

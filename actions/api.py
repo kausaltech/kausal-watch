@@ -4,7 +4,7 @@ import copy
 import rest_framework.fields
 import typing
 from collections import Counter
-from typing import Optional, Dict, Any, Set, Tuple
+from typing import Optional, Dict, Any, Set, Tuple, Protocol, Callable
 from uuid import UUID
 
 from django.core.exceptions import FieldDoesNotExist
@@ -670,6 +670,43 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
         'rich_text_attributes', 'category_choice_attributes',
     ]
 
+    context: dict[str, Any]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initialize_cache_context()
+
+    def initialize_cache_context(self):
+        plan = self.context.get('plan')
+        if plan is None:
+            return
+        Model = self.Meta.model
+        attribute_types = Model.get_attribute_types_for_plan(plan)
+        attribute_types_by_identifier = {
+            at.instance.identifier: at for at in attribute_types
+        }
+        prepopulated_attributes: Dict[str, Dict] = {}
+        content_type = ContentType.objects.get_for_model(Model)
+        for at in attribute_types:
+            prepopulated_attributes.setdefault(at.instance.format, {})
+            for a in at.attributes.filter(content_type=content_type):
+                prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
+
+        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
+        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
+        persons_by_id = {p.pk: p for p in Person.objects.all()}
+        organizations_by_id = {o.pk: o for o in Organization.objects.all()}
+
+        for field_name in self._attribute_fields:
+            self.fields[field_name].context['_cache'] = {
+                'attribute_values': prepopulated_attributes,
+                'attribute_types': attribute_types_by_identifier,
+                'available_organization_ids': available_organization_ids,
+                'available_person_ids':  available_person_ids,
+                'persons_by_id': persons_by_id,
+                'organizations_by_id': organizations_by_id
+            }
+
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
         fields += self._attribute_fields
@@ -907,7 +944,6 @@ class ActionSerializer(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initialize_cache_context()
         must_generate_identifiers = not self.plan.features.has_action_identifiers
         if must_generate_identifiers:
             actions_data = getattr(self, 'initial_data', [])
@@ -918,36 +954,6 @@ class ActionSerializer(
                     # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so
                     # to avoid an error when we omit an identifier, we need to do it here
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
-
-    def initialize_cache_context(self):
-        plan = self.context.get('plan')
-        if plan is None:
-            return
-        attribute_types = Action.get_attribute_types_for_plan(plan)
-        attribute_types_by_identifier = {
-            at.instance.identifier: at for at in attribute_types
-        }
-        prepopulated_attributes: Dict[str, Dict] = {}
-        action_content_type = ContentType.objects.get(app_label='actions', model='action')
-        for at in attribute_types:
-            prepopulated_attributes.setdefault(at.instance.format, {})
-            for a in at.attributes.filter(content_type=action_content_type):
-                prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
-
-        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
-        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
-        persons_by_id = {p.pk: p for p in Person.objects.all()}
-        organizations_by_id = {o.pk: o for o in Organization.objects.all()}
-
-        for field_name in self._attribute_fields:
-            self.fields[field_name].context['_cache'] = {
-                'attribute_values': prepopulated_attributes,
-                'attribute_types': attribute_types_by_identifier,
-                'available_organization_ids': available_organization_ids,
-                'available_person_ids':  available_person_ids,
-                'persons_by_id': persons_by_id,
-                'organizations_by_id': organizations_by_id
-            }
 
     def get_fields(self):
         fields = super().get_fields()
@@ -1054,10 +1060,35 @@ class ActionSerializer(
         read_only_fields = ['plan']
 
 
+class PlanRelatedSerializer(Protocol):
+    kwargs: dict[str, Any]
+    get_serializer_context: Callable
+    def get_plan(self) -> Plan: ...
+
+
+class ViewSetWithPlanContext:
+    def get_plan(self: PlanRelatedSerializer):
+        plan_pk = self.kwargs.get('plan_pk')
+        if plan_pk is None:
+            return None
+        try:
+            return Plan.objects.get(pk=plan_pk)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+
+    def get_serializer_context(self: PlanRelatedSerializer):
+        context = super().get_serializer_context()
+        plan = self.get_plan()
+        if plan is None:
+            return context
+        context.update({'plan': plan})
+        return context
+
+
 @extend_schema(
     tags=['action']
 )
-class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
+class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = ActionSerializer
 
     def get_permissions(self):
@@ -1081,23 +1112,6 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         return plan.actions.all().prefetch_related(
             'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions'
         )
-
-    def get_plan(self):
-        plan_pk = self.kwargs.get('plan_pk')
-        if plan_pk is None:
-            return None
-        try:
-            return Plan.objects.get(pk=plan_pk)
-        except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        plan = self.get_plan()
-        if plan is None:
-            return context
-        context.update({'plan': plan})
-        return context
 
 
 plan_router.register(
@@ -1291,7 +1305,7 @@ class CategorySerializer(
         OpenApiParameter(name='category_type_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
+class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = CategorySerializer
 
     def get_permissions(self):

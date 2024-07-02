@@ -5,7 +5,7 @@ from django.dispatch import receiver
 from wagtail.signals import task_submitted, task_cancelled
 
 from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
-from .models import Action, Plan, PlanFeatures
+from .models import Action, Category, Plan, PlanFeatures
 from .models.attributes import AttributeType
 from notifications.models import NotificationSettings
 
@@ -43,6 +43,7 @@ def log_email_send_status(sender, message, status, esp_name, **kwargs):
 def invalidate_attribute_type_cache(sender, instance, **kwargs):
     # Attribute type cache may get stale when creating, editing or deleting attribute types
     Action.get_attribute_types_for_plan.cache_clear()
+    Category.get_attribute_types_for_plan.cache_clear()
 
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()

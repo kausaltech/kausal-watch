@@ -45,6 +45,11 @@ def person_list_url():
 
 
 @pytest.fixture
+def category_list_url(plan, category_type):
+    return reverse('category-list', args=(plan.pk, category_type.pk))
+
+
+@pytest.fixture
 def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_task_factory, action_factory):
     plan = plan_factory()
     workflow = workflow_factory()
