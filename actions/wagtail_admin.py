@@ -74,7 +74,7 @@ class PlanForm(AplansAdminModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data['primary_language'] in cleaned_data['other_languages']:
+        if cleaned_data.get('primary_language') in cleaned_data.get('other_languages', []):
             raise ValidationError(_(
                 'A plan\'s other language cannot be the same as its primary language'),
                                   code='plan-language-duplicate'
