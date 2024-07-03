@@ -94,10 +94,11 @@ class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
         fields = public_fields(IndicatorLevel)
-    
+
     @staticmethod
     def get_queryset(root, info):
         return root.visible_for_public()
+
 
 class DimensionNode(DjangoNode):
     class Meta:
@@ -262,7 +263,7 @@ class IndicatorNode(DjangoNode):
         if description is None:
             return None
         return RichText(description)
-    
+
     @gql_optimizer.resolver_hints(
         model_field=('related_causes', 'i18n'),
     )
@@ -322,7 +323,7 @@ class Query:
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
-        
+
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
         user = info.context.user

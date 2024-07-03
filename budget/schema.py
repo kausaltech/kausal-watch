@@ -1,26 +1,26 @@
 import graphene
-from actions.schema import ActionNode, CategoryNode, PlanNode, CategoryTypeNode
+from actions.schema import ActionNode, PlanNode, CategoryNode, CategoryTypeNode
 from aplans.graphql_types import DjangoNode
-from budget.models import DataPoint, Dataset, DatasetScope, Dimension, DimensionCategory, DimensionScope
+from budget.models import (
+    DataPoint, Dataset, DatasetSchema, DatasetSchemaScope, Dimension, DimensionCategory, DimensionScope
+)
 
-class DatasetDimensionNode(DjangoNode):
-    categories = graphene.List(lambda: DatasetDimensionCategoryNode)
-
+class DimensionNode(DjangoNode):
     class Meta:
         model = Dimension
-        fields = ('id', 'uuid', 'name')
+        name = 'BudgetDimension'  # clashes otherwise with type name in indicators.schema
+        fields = ('uuid', 'name', 'categories', 'scopes')
 
-    @staticmethod
-    def resolve_categories(root, info):
-        return root.categories.all()
 
-class DatasetDimensionCategoryNode(DjangoNode):
+class DimensionCategoryNode(DjangoNode):
     class Meta:
         model = DimensionCategory
-        fields = ('id', 'uuid', 'dimension', 'label')
+        name = 'BudgetDimensionCategory'  # clashes otherwise with type name in indicators.schema
+        fields = ('uuid', 'dimension', 'label')
 
-class DatasetDimensionScopeNode(DjangoNode):
-    scope = graphene.Field(lambda: DatasetDimensionScopeTypeNode)
+
+class DimensionScopeNode(DjangoNode):
+    scope = graphene.Field(lambda: DimensionScopeTypeNode)
 
     class Meta:
         model = DimensionScope
@@ -30,33 +30,38 @@ class DatasetDimensionScopeNode(DjangoNode):
     def resolve_scope(root, info):
         return root.scope
 
-class DatasetDimensionScopeTypeNode(graphene.Union):
+
+class DimensionScopeTypeNode(graphene.Union):
     class Meta:
         types = (
             PlanNode, CategoryTypeNode,
         )
 
-class DataPointNode(DjangoNode):
-    dimension_categories = graphene.List(DatasetDimensionCategoryNode)
 
+class DataPointNode(DjangoNode):
     class Meta:
         model = DataPoint
-        fields = ('uuid', 'dataset', 'date', 'value')
+        fields = ('uuid', 'dataset', 'date', 'value', 'dimension_categories')
 
-    @staticmethod
-    def resolve_dimension_categories(root, info):
-        return root.dimension_categories.all()
 
-class DatasetScopeNode(DjangoNode):
-    scope = graphene.Field(lambda: DatasetScopeTypeNode)
+class DatasetSchemaScopeNode(DjangoNode):
+    scope = graphene.Field(lambda: DatasetSchemaScopeTypeNode)
 
     class Meta:
-        model = DatasetScope
+        model = DatasetSchemaScope
         fields = '__all__'
 
     @staticmethod
     def resolve_scope(root, info):
         return root.scope
+
+
+class DatasetSchemaScopeTypeNode(graphene.Union):
+    class Meta:
+        types = (
+            PlanNode, CategoryTypeNode,
+        )
+
 
 class DatasetScopeTypeNode(graphene.Union):
     class Meta:
@@ -64,18 +69,20 @@ class DatasetScopeTypeNode(graphene.Union):
             ActionNode, CategoryNode,
         )
 
+
+class DatasetSchemaNode(DjangoNode):
+    class Meta:
+        model = DatasetSchema
+        fields = ('uuid', 'time_resolution', 'unit', 'name', 'scopes', 'dimension_categories')
+
+
 class DatasetNode(DjangoNode):
-    data_points = graphene.List(DataPointNode)
-    scopes = graphene.List(DatasetScopeNode)
+    scope = graphene.Field(lambda: DatasetScopeTypeNode)
 
     class Meta:
         model = Dataset
-        fields = ('uuid', 'time_resolution', 'unit')
+        fields = ('uuid', 'schema', 'data_points')
 
     @staticmethod
-    def resolve_data_points(root, info):
-        return root.data_points.order_by('date').all()
-
-    @staticmethod
-    def resolve_scopes(root, info):
-        return DatasetScope.objects.filter(dataset=root)
+    def resolve_scope(root, info):
+        return root.scope

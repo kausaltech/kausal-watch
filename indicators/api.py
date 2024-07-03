@@ -230,7 +230,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
         assert level in [v for v, _ in Indicator.LEVELS]
         instance.levels.create(plan=plan, level=level)
         return instance
-    
+
 
     def get_fields(self):
         fields = super().get_fields()

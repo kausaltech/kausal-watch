@@ -52,7 +52,7 @@ class DimensionCategory(OrderedModel):
 class DimensionScope(OrderedModel):
     """Link a dimension to a context in which it can be used, such as a plan or a category type."""
 
-    dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE, related_name='+')
+    dimension = models.ForeignKey(Dimension, on_delete=models.CASCADE, related_name='scopes')
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
     scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(
@@ -130,7 +130,7 @@ class Dataset(models.Model):
 
 class DatasetSchemaScope(models.Model):
     """Link a dataset schema to a context in which it can be used, such as a plan."""
-    schema = models.ForeignKey(DatasetSchema, on_delete=models.CASCADE, related_name='+')
+    schema = models.ForeignKey(DatasetSchema, on_delete=models.CASCADE, related_name='scopes')
     scope_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     scope_id = models.PositiveIntegerField()
     # If scope is a Plan, this schema can be used for Actions in that plan
