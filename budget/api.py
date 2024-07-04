@@ -12,27 +12,32 @@ all_routers = []
 
 
 class I18nFieldSerializerMixin:
+    Meta: object
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        i18n_field = get_i18n_field(self.Meta.model)
+        i18n_field = get_i18n_field(self.Meta.model)  # type: ignore[attr-defined]
         if i18n_field:
             for source_field in i18n_field.fields:
-                if source_field not in self.Meta.fields:
+                if source_field not in self.Meta.fields:  # type: ignore[attr-defined]
                     continue
                 # When reading, serialize the field using `<x>_i18n` to display the value in currently active language.
                 current_language_field = build_localized_fieldname(source_field, 'i18n')
-                self.fields[source_field] = serializers.CharField(source=current_language_field, read_only=True)
+                self.fields[source_field] = serializers.CharField(  # type: ignore[attr-defined]
+                    source=current_language_field, read_only=True
+                )
                 # Require language to be explicit when writing to a translatable field. That is, when writing, we expect
                 # that `<x>_en` is present, for example; `<x>` should not work.
                 for lang in get_available_languages():
                     translated_field = build_localized_fieldname(source_field, lang)
-                    self.fields[translated_field] = serializers.CharField(write_only=True, required=False)
+                    self.fields[translated_field] = serializers.CharField(  # type: ignore[attr-defined]
+                        write_only=True, required=False
+                    )
 
 
 class DimensionCategorySerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
     # Reference dimension by UUID instead of PK
     # dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # implicit as router is nested
-    label = serializers.CharField(source='label_i18n')
+    label = serializers.CharField(source='label_i18n')  # type: ignore[assignment]
 
     class Meta:
         model = DimensionCategory

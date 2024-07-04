@@ -22,6 +22,7 @@ class Dimension(ClusterableModel):
     name = models.CharField(max_length=100, verbose_name=_('name'))
 
     i18n = TranslationField(fields=['name'])
+    name_i18n: str
 
     class Meta:  # pyright:ignore
         verbose_name = _('dimension')
@@ -38,6 +39,7 @@ class DimensionCategory(OrderedModel):
     label = models.CharField(max_length=100, verbose_name=_('label'))
 
     i18n = TranslationField(fields=['label'])
+    label_i18n: str
 
     class Meta:  # pyright:ignore
         verbose_name = _('dimension category')
@@ -57,7 +59,7 @@ class DimensionScope(OrderedModel):
     scope_id = models.PositiveIntegerField()
     scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(
         'scope_content_type', 'scope_id'
-    )
+    ) # type: ignore[assignment]
 
 
 class DatasetSchema(models.Model):
@@ -90,6 +92,8 @@ class DatasetSchema(models.Model):
     )
 
     i18n = TranslationField(fields=['unit', 'name'])
+    unit_i18n: str
+    name_i18n: str
 
     def __str__(self):
         if self.name_i18n:
@@ -120,7 +124,7 @@ class Dataset(models.Model):
     scope_id = models.PositiveIntegerField(null=True, blank=True)
     scope: models.ForeignKey[Action, Action] | models.ForeignKey[Category, Category] = GenericForeignKey(
         'scope_content_type', 'scope_id'
-    )
+    ) # type: ignore[assignment]
 
     class Meta:  # pyright:ignore
         verbose_name = _('dataset')
@@ -136,7 +140,7 @@ class DatasetSchemaScope(models.Model):
     # If scope is a Plan, this schema can be used for Actions in that plan
     scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(
         'scope_content_type', 'scope_id'
-    )
+    ) # type: ignore[assignment]
 
 
 class DataPoint(models.Model):
