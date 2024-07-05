@@ -36,8 +36,7 @@ class I18nFieldSerializerMixin:
 
 
 class DimensionCategorySerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
-    # Reference dimension by UUID instead of PK
-    dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # implicit as router is nested
+    dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # type: ignore[assingment]
     label = serializers.CharField(source='label_i18n')  # type: ignore[assignment]
 
     class Meta:
@@ -54,7 +53,6 @@ class DatasetSchemaDimensionCategorySerializer(serializers.ModelSerializer):
 
 
 class DataPointSerializer(serializers.ModelSerializer):
-    # Reference dataset by UUID instead of PK
     dataset: Field = serializers.SlugRelatedField(slug_field='uuid', read_only=True)
     dimension_categories = serializers.SlugRelatedField(
         # FIXME: Restrict queryset to dimension categories available to the dataset
