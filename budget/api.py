@@ -35,8 +35,8 @@ class I18nFieldSerializerMixin:
                     )
 
 
-class DimensionCategorySerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
-    dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # type: ignore[assingment]
+class DimensionCategorySerializer(I18nFieldSerializerMixin, serializers.ModelSerializer[DimensionCategory]):
+    dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # type: ignore[var-annotated]
     label = serializers.CharField(source='label_i18n')  # type: ignore[assignment]
 
     class Meta:
