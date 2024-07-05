@@ -2,7 +2,7 @@ import graphene
 from actions.schema import ActionNode, PlanNode, CategoryNode, CategoryTypeNode
 from aplans.graphql_types import DjangoNode
 from budget.models import (
-    DataPoint, Dataset, DatasetSchema, DatasetSchemaScope, Dimension, DimensionCategory, DimensionScope
+    DataPoint, Dataset, DatasetSchema, DatasetSchemaScope, Dimension, DimensionCategory, DimensionScope, DatasetSchemaDimensionCategory
 )
 
 class DimensionNode(DjangoNode):
@@ -17,6 +17,12 @@ class DimensionCategoryNode(DjangoNode):
         model = DimensionCategory
         name = 'BudgetDimensionCategory'  # clashes otherwise with type name in indicators.schema
         fields = ('uuid', 'dimension', 'label')
+
+
+class DatasetSchemaDimensionCategoryNode(DjangoNode):
+    class Meta:
+        model = DatasetSchemaDimensionCategory
+        fields = ('order', 'category', 'schema')
 
 
 class DimensionScopeNode(DjangoNode):

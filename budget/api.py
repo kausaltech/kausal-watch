@@ -6,7 +6,7 @@ from rest_framework.fields import Field
 from rest_framework_nested import routers
 
 from aplans.api_router import router
-from .models import DataPoint, Dataset, DatasetSchema, Dimension, DimensionCategory
+from .models import DataPoint, Dataset, DatasetSchema, Dimension, DimensionCategory, DatasetSchemaDimensionCategory
 
 
 all_routers = []
@@ -37,12 +37,20 @@ class I18nFieldSerializerMixin:
 
 class DimensionCategorySerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
     # Reference dimension by UUID instead of PK
-    # dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # implicit as router is nested
+    dimension = serializers.SlugRelatedField(slug_field='uuid', read_only=True)  # implicit as router is nested
     label = serializers.CharField(source='label_i18n')  # type: ignore[assignment]
 
     class Meta:
         model = DimensionCategory
-        fields = ['uuid', 'label']
+        fields = ['uuid', 'label', 'dimension']
+
+
+class DatasetSchemaDimensionCategorySerializer(serializers.ModelSerializer):
+    category = DimensionCategorySerializer(many=False, required=False)
+
+    class Meta:
+        model = DatasetSchemaDimensionCategory
+        fields = ['order', 'category']
 
 
 class DataPointSerializer(serializers.ModelSerializer):
@@ -87,8 +95,8 @@ class DataPointViewSet(viewsets.ModelViewSet):
 
 
 class DatasetSchemaSerializer(I18nFieldSerializerMixin, serializers.ModelSerializer):
-    dimension_categories = serializers.SlugRelatedField(
-        slug_field='uuid', many=True, queryset=DimensionCategory.objects.all()
+    dimension_categories = DatasetSchemaDimensionCategorySerializer(
+        many=True, required=False
     )
 
     class Meta:

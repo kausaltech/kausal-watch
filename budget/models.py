@@ -86,11 +86,6 @@ class DatasetSchema(models.Model):
     unit = models.CharField(max_length=100, blank=True, verbose_name=_('unit'))
     name = models.CharField(max_length=100, blank=True, verbose_name=_('name'))
 
-    # FIXME: move to join table with ordering
-    dimension_categories = models.ManyToManyField(
-        DimensionCategory, related_name='+', blank=True, verbose_name=_('dimension categories')
-    )
-
     i18n = TranslationField(fields=['unit', 'name'])
     unit_i18n: str
     name_i18n: str
@@ -99,6 +94,14 @@ class DatasetSchema(models.Model):
         if self.name_i18n:
             return f'{self.name_i18n} ({self.uuid})'
         return str(self.uuid)
+
+
+class DatasetSchemaDimensionCategory(OrderedModel):
+    schema = models.ForeignKey(DatasetSchema, on_delete=models.PROTECT, related_name='dimension_categories', null=False, blank=False)
+    category = models.ForeignKey(DimensionCategory, related_name='schemas', on_delete=models.PROTECT, null=False, blank=False)
+
+    def filter_siblings(self, qs: models.QuerySet[DatasetSchemaDimensionCategory]) -> models.QuerySet[DatasetSchemaDimensionCategory]:
+        return qs.filter(schema=self.schema, category__dimension=self.category.dimension)
 
 
 def schema_default():

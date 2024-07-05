@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from budget.tests.factories import (
     DataPointFactory, DatasetFactory, DatasetSchemaFactory, DatasetSchemaScopeFactory, DimensionFactory,
-    DimensionCategoryFactory, DimensionScopeFactory
+    DimensionCategoryFactory, DimensionScopeFactory, DatasetSchemaDimensionCategoryFactory
 )
 
 pytestmark = pytest.mark.django_db
@@ -14,7 +14,7 @@ def test_dimension_node(graphql_client_query_data, plan, category):
     dataset = DatasetFactory(scope=category)
     schema = dataset.schema
     dimension_category = DimensionCategoryFactory()
-    schema.dimension_categories.add(dimension_category)
+    DatasetSchemaDimensionCategoryFactory(schema=schema, category=dimension_category)
     dimension = dimension_category.dimension
     data = graphql_client_query_data(
         '''
@@ -23,10 +23,12 @@ def test_dimension_node(graphql_client_query_data, plan, category):
             datasets {
               schema {
                 dimensionCategories {
-                  dimension {
-                     __typename
-                     uuid
-                     name
+                  category {
+                    dimension {
+                      __typename
+                      uuid
+                      name
+                    }
                   }
                 }
               }
@@ -41,10 +43,12 @@ def test_dimension_node(graphql_client_query_data, plan, category):
             'datasets': [{
                 'schema': {
                     'dimensionCategories': [{
-                        'dimension': {
-                            '__typename': 'BudgetDimension',
-                            'uuid': str(dimension.uuid),
-                            'name': dimension.name,
+                        'category': {
+                            'dimension': {
+                                '__typename': 'BudgetDimension',
+                                'uuid': str(dimension.uuid),
+                                'name': dimension.name,
+                            }
                         },
                     }],
                 },
@@ -58,7 +62,7 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
     dataset = DatasetFactory(scope=category)
     schema = dataset.schema
     dimension_category = DimensionCategoryFactory()
-    schema.dimension_categories.add(dimension_category)
+    DatasetSchemaDimensionCategoryFactory(schema=schema, category=dimension_category)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -66,12 +70,14 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
             datasets {
               schema {
                 dimensionCategories {
-                  __typename
-                  uuid
-                  dimension {
-                     __typename
+                  category {
+                    __typename
+                    uuid
+                    dimension {
+                       __typename
+                    }
+                    label
                   }
-                  label
                 }
               }
             }
@@ -85,12 +91,14 @@ def test_dimension_category_node(graphql_client_query_data, plan, category):
             'datasets': [{
                 'schema': {
                     'dimensionCategories': [{
-                        '__typename': 'BudgetDimensionCategory',
-                        'uuid': str(dimension_category.uuid),
-                        'dimension': {
-                            '__typename': 'BudgetDimension',
-                        },
-                        'label': dimension_category.label,
+                        'category': {
+                            '__typename': 'BudgetDimensionCategory',
+                            'uuid': str(dimension_category.uuid),
+                            'dimension': {
+                                '__typename': 'BudgetDimension',
+                            },
+                            'label': dimension_category.label,
+                        }
                     }],
                 },
             }],
@@ -104,7 +112,7 @@ def test_dimension_scope_node(graphql_client_query_data, plan, category):
     dimension = scope.dimension
     dimension_category = DimensionCategoryFactory(dimension=dimension)
     dataset = DatasetFactory(scope=category)
-    dataset.schema.dimension_categories.add(dimension_category)
+    DatasetSchemaDimensionCategoryFactory(schema=dataset.schema, category=dimension_category)
     data = graphql_client_query_data(
         '''
         query($plan: ID!) {
@@ -112,11 +120,13 @@ def test_dimension_scope_node(graphql_client_query_data, plan, category):
             datasets {
               schema {
                 dimensionCategories {
-                  dimension {
-                    scopes {
-                      __typename
-                      scope {
+                  category {
+                    dimension {
+                      scopes {
                         __typename
+                        scope {
+                          __typename
+                        }
                       }
                     }
                   }
@@ -133,14 +143,16 @@ def test_dimension_scope_node(graphql_client_query_data, plan, category):
             'datasets': [{
                 'schema': {
                     'dimensionCategories': [{
-                        'dimension': {
-                            'scopes': [{
-                                '__typename': 'DimensionScope',
-                                'scope': {
-                                    '__typename': 'CategoryType',
-                                },
-                            }],
-                        },
+                        'category': {
+                            'dimension': {
+                                'scopes': [{
+                                    '__typename': 'DimensionScope',
+                                    'scope': {
+                                        '__typename': 'CategoryType',
+                                    },
+                                }],
+                            },
+                        }
                     }],
                 },
             }],

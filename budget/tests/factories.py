@@ -5,7 +5,7 @@ from factory import SubFactory, Sequence, LazyFunction, LazyAttribute
 
 from actions.tests.factories import ActionFactory, PlanFactory
 from aplans.factories import ModelFactory
-from budget.models import Dimension, DimensionCategory, DimensionScope, DataPoint, Dataset, DatasetSchema, DatasetSchemaScope
+from budget.models import DatasetSchemaDimensionCategory, Dimension, DimensionCategory, DimensionScope, DataPoint, Dataset, DatasetSchema, DatasetSchemaScope
 
 class DimensionFactory(ModelFactory[Dimension]):
     uuid = LazyFunction(uuid.uuid4)
@@ -41,6 +41,14 @@ class DatasetSchemaFactory(ModelFactory[DatasetSchema]):
 
     class Meta:
         model = DatasetSchema
+
+
+class DatasetSchemaDimensionCategoryFactory(ModelFactory[DatasetSchemaDimensionCategory]):
+    category = SubFactory(DimensionCategoryFactory)
+    schema = SubFactory(DatasetSchemaFactory)
+
+    class Meta:
+        model = DatasetSchemaDimensionCategory
 
 
 class DatasetFactory(ModelFactory[Dataset]):
