@@ -158,7 +158,7 @@ class DataPoint(models.Model):
         verbose_name=_('date'),
         help_text=_("Date of this data point in context of the dataset's time resolution"),
     )
-    value = models.DecimalField(max_digits=10, decimal_places=4, verbose_name=_('value'))
+    value = models.DecimalField(max_digits=12, decimal_places=2, verbose_name=_('value'))
 
     class Meta:  # pyright:ignore
         verbose_name = _('data point')
