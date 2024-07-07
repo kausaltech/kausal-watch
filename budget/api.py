@@ -68,7 +68,7 @@ class DataPointSerializer(serializers.ModelSerializer):
         data_point = super().create(validated_data)
         dataset = data_point.dataset
         assert dataset == validated_data['dataset']
-        allowed_dimension_categories = list(dataset.schema.dimension_categories.all())
+        allowed_dimension_categories = [dsdc.category for dsdc in dataset.schema.dimension_categories.all()]
         for dimension_category in dimension_categories:
             # TODO: Do proper validation instead
             assert dimension_category in allowed_dimension_categories
