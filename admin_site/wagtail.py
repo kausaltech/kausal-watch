@@ -452,6 +452,9 @@ class AplansEditView(
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class SuccessUrlEditPageMixin:
     """After editing a model instance, redirect to the edit page again instead of the index page."""
     def get_success_url(self):

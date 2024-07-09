@@ -299,7 +299,9 @@ class ActivePlanPermissionHelper(PermissionHelper):
         return user.is_general_admin_for_plan(obj)
 
 
-# FIXME: This is mostly duplicated in content/admin.py.
+# TODO: Reimplemented in admin_site/menu.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         # Implement in subclass
