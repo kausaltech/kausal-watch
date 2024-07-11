@@ -15,13 +15,13 @@ from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
 from admin_site.wagtail import (
     AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin,
+    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageModelAdminMixin,
     AplansAdminModelForm
 )
 from aplans.context_vars import ctx_request
 
 
-class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
+class BaseTemplateEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
     def get_error_message(self):
         if self.instance.pk:
             return _("Notifications could not be modified due to errors.")

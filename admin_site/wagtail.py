@@ -455,13 +455,13 @@ class AplansEditView(
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class SuccessUrlEditPageMixin:
+class SuccessUrlEditPageModelAdminMixin:
     """After editing a model instance, redirect to the edit page again instead of the index page."""
     def get_success_url(self):
         return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
-class ActivePlanEditView(SuccessUrlEditPageMixin, AplansEditView):
+class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
     @transaction.atomic()
     def form_valid(self, form):
         old_common_category_types = self.instance.common_category_types.all()

@@ -21,7 +21,8 @@ from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
-    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin, CondensedInlinePanel, SuccessUrlEditPageMixin,
+    ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
+    CondensedInlinePanel, SuccessUrlEditPageModelAdminMixin,
     insert_model_translation_panels
 )
 from aplans.context_vars import ctx_instance, ctx_request
@@ -302,7 +303,7 @@ class ActivePlanPermissionHelper(PermissionHelper):
 # TODO: Reimplemented in admin_site/menu.py to make this work without
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
+class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         # Implement in subclass
         raise NotImplementedError()
@@ -328,7 +329,7 @@ class PlanSpecificSingletonModelMenuItem(ModelAdminMenuItem):
         return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
 
 
-class ActivePlanMenuItem(PlanSpecificSingletonModelMenuItem):
+class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         return plan
 
@@ -404,12 +405,12 @@ class PlanFeaturesAdmin(AplansModelAdmin):
 # modeladmin_register(PlanFeaturesAdmin)
 
 
-class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
+class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         return plan.features
 
 
-class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, EditView):
+class ActivePlanFeaturesEditView(SuccessUrlEditPageModelAdminMixin, EditView):
     pass
 
 
@@ -454,12 +455,12 @@ class NotificationSettingsAdmin(AplansModelAdmin):
         return handler
 
 
-class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem):
+class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelAdminMenuItem):
     def get_one_to_one_field(self, plan):
         return plan.notification_settings
 
 
-class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, EditView):
+class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageModelAdminMixin, EditView):
     pass
 
 
