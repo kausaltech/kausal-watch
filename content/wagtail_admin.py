@@ -51,21 +51,34 @@ class SiteGeneralContentViewSet(WatchViewSet):
     icon = 'cogs'
     menu_label = _('Site settings')
     menu_order = 503
-    panels = [
-        TranslatedFieldPanel('site_title'),
-        TranslatedFieldPanel('site_description'),
-        TranslatedFieldPanel('owner_url'),
-        TranslatedFieldPanel('owner_name'),
-        TranslatedFieldPanel('official_name_description'),
-        TranslatedFieldPanel('copyright_text'),
-        TranslatedFieldPanel('creative_commons_license'),
-        FieldPanel('github_api_repository'),
-        FieldPanel('github_ui_repository'),
-        FieldPanel('action_term'),
-        FieldPanel('action_task_term'),
-        FieldPanel('organization_term'),
-        FieldPanel('sitewide_announcement'),
-    ]
+
+    @property
+    def panels(self):
+        panels = [
+            'site_title',
+            'site_description',
+            'owner_url',
+            'owner_name',
+            'official_name_description',
+            'copyright_text',
+            'creative_commons_license',
+            'github_api_repository',
+            'github_ui_repository',
+            'action_term',
+            'action_task_term',
+            'organization_term',
+            'sitewide_announcement',
+        ]
+
+        i18n_fields = self.model._meta.get_field("i18n").fields
+        result = []
+        for panel in panels:
+            if panel in i18n_fields:
+                result.append(TranslatedFieldPanel(panel))
+            else:
+                result.append(FieldPanel(panel))
+
+        return result
 
     def get_queryset(self, request):
         qs = self.model.objects.get_queryset()
