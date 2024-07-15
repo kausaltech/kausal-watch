@@ -283,7 +283,10 @@ class PlanAdmin(AplansModelAdmin):
 
 
 # FIXME: This is partly duplicated in content/admin.py.
-class ActivePlanPermissionHelper(PermissionHelper):
+# TODO: Reimplemented in admin_site/permissions.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class ActivePlanModelAdminPermissionHelper(PermissionHelper):
     def user_can_list(self, user):
         return user.is_superuser
 
@@ -336,7 +339,7 @@ class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
 
 class ActivePlanAdmin(PlanAdmin):
     edit_view_class = ActivePlanEditView
-    permission_helper_class = ActivePlanPermissionHelper
+    permission_helper_class = ActivePlanModelAdminPermissionHelper
     menu_label = _('Plan')
     add_to_settings_menu = True
 
@@ -416,7 +419,7 @@ class ActivePlanFeaturesEditView(SuccessUrlEditPageModelAdminMixin, EditView):
 
 class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
     edit_view_class = ActivePlanFeaturesEditView
-    permission_helper_class = ActivePlanPermissionHelper
+    permission_helper_class = ActivePlanModelAdminPermissionHelper
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
@@ -466,7 +469,7 @@ class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageModelAdminMixin, 
 
 class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
     edit_view_class = ActivePlanNotificationSettingsEditView
-    permission_helper_class = ActivePlanPermissionHelper
+    permission_helper_class = ActivePlanModelAdminPermissionHelper
     menu_label = _('Plan notification settings')
     add_to_settings_menu = True
 

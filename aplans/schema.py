@@ -20,7 +20,7 @@ from actions.models import Plan
 from aplans.cache import OrganizationActionCountCache
 from aplans.utils import public_fields
 from aplans.graphql_types import WorkflowStateGrapheneEnum
-from admin_site.wagtail import PlanRelatedPermissionHelper
+from admin_site.wagtail import PlanRelatedModelAdminPermissionHelper
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema

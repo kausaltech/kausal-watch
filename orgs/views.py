@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy
 from wagtail.admin import messages
 from wagtail_modeladmin.views import EditView, WMABaseView
 
-from admin_site.wagtail import SetInstanceMixin
+from admin_site.wagtail import SetInstanceModelAdminMixin
 from admin_site.wagtail import AplansCreateView
 from orgs.models import Organization
 
@@ -55,7 +55,7 @@ class OrganizationCreateView(OrganizationViewMixin, AplansCreateView):
         return result
 
 
-class OrganizationEditView(OrganizationViewMixin, SetInstanceMixin, EditView):
+class OrganizationEditView(OrganizationViewMixin, SetInstanceModelAdminMixin, EditView):
     pass
 
 

@@ -8,7 +8,7 @@ from graphql.error import GraphQLError
 from graphql.utilities.ast_to_dict import ast_to_dict
 
 from .graphql_types import AdminButton, AuthenticatedUserNode, GQLInfo
-from admin_site.wagtail import AplansModelAdmin, PlanRelatedPermissionHelper
+from admin_site.wagtail import AplansModelAdmin, PlanRelatedModelAdminPermissionHelper
 
 
 def collect_fields(node, fragments):
@@ -131,7 +131,7 @@ class AdminButtonsMixin:
         index_view = adm.index_view_class(adm)
         helper_class = adm.get_button_helper_class()
         helper = helper_class(index_view, info.context)
-        if isinstance(helper.permission_helper, PlanRelatedPermissionHelper):
+        if isinstance(helper.permission_helper, PlanRelatedModelAdminPermissionHelper):
             helper.permission_helper.disable_admin_plan_check()
         buttons = helper.get_buttons_for_obj(root)
         return buttons

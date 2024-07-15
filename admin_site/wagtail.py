@@ -111,7 +111,10 @@ def get_translation_tabs(instance, request, include_all_languages: bool = False,
     return tabs
 
 
-class PlanRelatedPermissionHelper(PermissionHelper):
+# TODO: Reimplemented in admin_site/permissions.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class PlanRelatedModelAdminPermissionHelper(PermissionHelper):
     check_admin_plan = True
 
     def disable_admin_plan_check(self):
@@ -150,7 +153,10 @@ class PlanRelatedPermissionHelper(PermissionHelper):
         return self._obj_matches_active_plan(user, obj)
 
 
-class PlanContextPermissionHelper(PermissionHelper):
+# TODO: Reimplemented in admin_site/permissions.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class PlanContextModelAdminPermissionHelper(PermissionHelper):
     plan: Plan | None
 
     def __init__(self, model, inspect_view_enabled=False):
@@ -300,7 +306,10 @@ class AplansTabbedInterface(TabbedInterface):
         return super().get_bound_panel(instance, request, form, prefix)
 
 
-class PersistFiltersEditingMixin:
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class PersistFiltersEditingModelAdminMixin:
     def get_success_url(self):
         if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():
             return super().get_success_url()
@@ -317,7 +326,10 @@ class PersistFiltersEditingMixin:
         return urljoin(url, filter_qs)
 
 
-class ContinueEditingMixin():
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class ContinueEditingModelAdminMixin():
     def continue_editing_active(self):
         return '_continue' in self.request.POST
 
@@ -347,7 +359,10 @@ class ContinueEditingMixin():
         ]
 
 
-class PlanRelatedViewMixin:
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class PlanRelatedViewModelAdminMixin:
     request: WatchAdminRequest
 
     def form_valid(self, form, *args, **kwargs):
@@ -380,12 +395,15 @@ class PlanRelatedViewMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-class ActivatePermissionHelperPlanContextMixin:
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class ActivatePermissionHelperPlanContextModelAdminMixin:
     @method_decorator(login_required)
     def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
         """Set the plan context for permission helper before dispatching request."""
 
-        if isinstance(self.permission_helper, PlanContextPermissionHelper):
+        if isinstance(self.permission_helper, PlanContextModelAdminPermissionHelper):
             with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
                 ret = super().dispatch(request, *args, **kwargs)
                 # We trigger render here, because the plan context is needed
@@ -397,7 +415,10 @@ class ActivatePermissionHelperPlanContextMixin:
             return super().dispatch(request, *args, **kwargs)
 
 
-class SetInstanceMixin:
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class SetInstanceModelAdminMixin:
     def setup(self, *args, **kwargs):
         with set_instance(self.instance):
             super().setup(*args, **kwargs)
@@ -424,9 +445,12 @@ def execute_admin_post_save_tasks(instance: Model, user: User):
         set_user(user)
 
 
+# TODO: Partly reimplemented in admin_site/viewsets.py. Use that when
+# implementing new classes or migrating away from ModelAdmin. Remove this class
+# when ModelAdmin migration is finished.
 class AplansEditView(
-    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, ActivatePermissionHelperPlanContextMixin,
-    SetInstanceMixin, EditView
+    PersistFiltersEditingModelAdminMixin, ContinueEditingModelAdminMixin, PlanRelatedViewModelAdminMixin, ActivatePermissionHelperPlanContextModelAdminMixin,
+    SetInstanceModelAdminMixin, EditView
 ):
     def form_valid(self, form, *args, **kwargs):
         try:
@@ -486,7 +510,7 @@ class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
 
 
 class AplansCreateView(
-    PersistFiltersEditingMixin, ContinueEditingMixin, PlanRelatedViewMixin, SetInstanceMixin, CreateView
+    PersistFiltersEditingModelAdminMixin, ContinueEditingModelAdminMixin, PlanRelatedViewModelAdminMixin, SetInstanceModelAdminMixin, CreateView
 ):
     request: WatchAdminRequest
 
@@ -512,10 +536,13 @@ class AplansCreateView(
         return ret
 
 
-class AplansIndexView(ActivatePermissionHelperPlanContextMixin, IndexView):
+class AplansIndexView(ActivatePermissionHelperPlanContextModelAdminMixin, IndexView):
     pass
 
 
+# TODO: Partly reimplemented in admin_site/viewsets.py as SnippetViewSet. Use
+# that when implementing new classes or migrating away from ModelAdmin. Remove
+# this class when ModelAdmin migration is finished.
 class AplansModelAdmin(ModelAdmin):
     edit_view_class = AplansEditView
     create_view_class = AplansCreateView
@@ -524,7 +551,7 @@ class AplansModelAdmin(ModelAdmin):
 
     def __init__(self, *args, **kwargs):
         if not self.permission_helper_class and issubclass(self.model, PlanRelatedModel):
-            self.permission_helper_class = PlanRelatedPermissionHelper
+            self.permission_helper_class = PlanRelatedModelAdminPermissionHelper
         super().__init__(*args, **kwargs)
 
     def get_index_view_extra_js(self):

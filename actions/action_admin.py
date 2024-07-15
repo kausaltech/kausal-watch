@@ -30,7 +30,7 @@ from wagtail_modeladmin.views import IndexView
 from admin_site.wagtail import (
     AplansEditView, AdminOnlyPanel, AplansButtonHelper, AplansCreateView, AplansModelAdmin, AplansTabbedInterface,
     CondensedInlinePanel, CustomizableBuiltInFieldPanel, CustomizableBuiltInPlanFilteredFieldPanel,
-    PlanFilteredFieldPanel, PlanRelatedPermissionHelper, insert_model_translation_panels, get_translation_tabs
+    PlanFilteredFieldPanel, PlanRelatedModelAdminPermissionHelper, insert_model_translation_panels, get_translation_tabs
 )
 from actions.chooser import ActionChooser
 from admin_site.utils import FieldLabelRenderer
@@ -84,7 +84,7 @@ class ReadOnlyInlinePanel(Panel):
             return context
 
 
-class ActionPermissionHelper(PlanRelatedPermissionHelper):
+class ActionPermissionHelper(PlanRelatedModelAdminPermissionHelper):
     def get_plans(self, obj):
         return [obj.plan]
 

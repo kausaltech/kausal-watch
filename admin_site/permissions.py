@@ -1,8 +1,15 @@
+from contextlib import contextmanager
 from typing import Optional
-from django.conf import settings
-from wagtail.permission_policies.collections import CollectionOwnershipPermissionPolicy
 
+from django.conf import settings
+from wagtail.permission_policies.base import ModelPermissionPolicy
+from wagtail.permission_policies.collections import (
+    CollectionOwnershipPermissionPolicy
+)
+
+from actions.models.plan import Plan
 from aplans.types import WatchAdminRequest
+from aplans.utils import PlanRelatedModel
 
 
 class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissionPolicy):
@@ -25,3 +32,79 @@ class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissi
         collections = plan.root_collection.get_descendants(inclusive=True)
         qs = qs.filter(collection__in=collections)
         return qs
+
+
+class ActivePlanPermissionPolicy(ModelPermissionPolicy):
+    def user_has_permission(self, user, action):
+        if action == 'view':
+            return user.is_superuser
+        if action == 'add':
+            return user.is_superuser
+        if action == 'change':
+            return user.is_general_admin_for_plan(user.get_active_admin_plan())
+        if action == 'delete':
+            return False
+        return super().user_has_permission(user, action)
+
+    def user_has_permission_for_instance(self, user, action, instance):
+        if action == 'change':
+            if isinstance(instance, Plan):
+                return user.is_general_admin_for_plan(instance)
+            else:
+                return user.is_general_admin_for_plan(instance.plan)
+
+        return super().user_has_permission_for_instance(user, action, instance)
+
+
+class PlanContextPermissionPolicy(ModelPermissionPolicy):
+    plan: Plan | None
+
+    def __init__(self, model, inspect_view_enabled=False):
+        self.plan = None
+        super().__init__(model, inspect_view_enabled)
+
+    def prefetch_cache(self):
+        """Prefetch plan-related content for permission checking."""
+        pass
+
+    def clean_cache(self):
+        pass
+
+    @contextmanager
+    def activate_plan_context(self, plan: Plan):
+        self.plan = plan
+        self.prefetch_cache()
+        try:
+            yield
+        finally:
+            self.clean_cache()
+            self.plan = None
+
+
+class PlanRelatedPermissionPolicy(ModelPermissionPolicy):
+    check_admin_plan = True
+
+    def disable_admin_plan_check(self):
+        self.check_admin_plan = False
+
+    def get_plans(self, obj):
+        if isinstance(obj, PlanRelatedModel):
+            return obj.get_plans()
+        else:
+            raise NotImplementedError('implement in subclass')
+
+    def _obj_matches_active_plan(self, user, obj):
+        if not self.check_admin_plan:
+            return True
+
+        obj_plans = self.get_plans(obj)
+        active_plan = user.get_active_admin_plan()
+        for obj_plan in obj_plans:
+            if obj_plan == active_plan:
+                return True
+        return False
+
+    def user_has_permission_for_instance(self, user, action, instance):
+        if not super().user_has_permission_for_instance(user, action, instance):
+            return False
+        return self._obj_matches_active_plan(user, instance)

@@ -22,8 +22,8 @@ from wagtail_modeladmin.views import DeleteView
 from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
 from admin_site.wagtail import (
     AplansIndexView, AplansModelAdmin, AplansAdminModelForm, AplansCreateView, AplansEditView,
-    InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextPermissionHelper,
-    ActivatePermissionHelperPlanContextMixin,
+    InitializeFormWithPlanMixin, InitializeFormWithUserMixin, PlanContextModelAdminPermissionHelper,
+    ActivatePermissionHelperPlanContextModelAdminMixin,
     get_translation_tabs
 )
 from aplans.context_vars import ctx_instance, ctx_request
@@ -204,7 +204,7 @@ class PersonFormForGeneralAdmin(PersonForm):
 
 
 class PersonCreateView(
-        ActivatePermissionHelperPlanContextMixin, InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView
+        ActivatePermissionHelperPlanContextModelAdminMixin, InitializeFormWithPlanMixin, InitializeFormWithUserMixin, AplansCreateView
 ):
     def form_valid(self, form, *args, **kwargs):
         # Make sure form only contains is_admin_for_active_plan
@@ -247,7 +247,7 @@ class PersonIndexView(AplansIndexView):
         return out
 
 
-class PersonPermissionHelper(PlanContextPermissionHelper):
+class PersonPermissionHelper(PlanContextModelAdminPermissionHelper):
     _org_map: dict[int, Organization] | None
 
     def __init__(self, model, inspect_view_enabled=False):
@@ -326,7 +326,7 @@ class PersonButtonHelper(ButtonHelper):
         return buttons
 
 
-class PersonDeleteView(ActivatePermissionHelperPlanContextMixin, DeleteView):
+class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin, DeleteView):
     instance: Person
     model: typing.Type[Person]
 
