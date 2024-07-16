@@ -3,10 +3,12 @@ from urllib.parse import urljoin
 
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.decorators import login_required
+from django.db.models import Model
 from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from wagtail.permission_policies.base import ModelPermissionPolicy
 
 from admin_site.permissions import PlanContextPermissionPolicy
 from aplans.context_vars import set_instance
@@ -33,21 +35,25 @@ class SuccessUrlEditPageMixin:
 
 
 class SetInstanceMixin:
+    object: Model
+
     def setup(self, *args, **kwargs):
         with set_instance(self.object):
-            super().setup(*args, **kwargs)
+            super().setup(*args, **kwargs)  # type: ignore[misc]
 
     def dispatch(self, *args, **kwargs):
         with set_instance(self.object):
-            return super().dispatch(*args, **kwargs)
+            return super().dispatch(*args, **kwargs)  # type: ignore[misc]
 
 
 class PersistFiltersEditingMixin:
+    request: WatchAdminRequest
+
     def get_success_url(self):
-        if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():
-            return super().get_success_url()
+        if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():  # type: ignore[misc]
+            return super().get_success_url()  # type: ignore[misc]
         model = getattr(self, 'model_name')
-        url = super().get_success_url()
+        url = super().get_success_url()  # type: ignore[misc]
         if model is None:
             return url
         filter_qs = self.request.session.get(f'{model}_filter_querystring')
@@ -61,6 +67,7 @@ class PersistFiltersEditingMixin:
 
 class ContinueEditingMixin:
     request: WatchAdminRequest
+    get_edit_url: Callable
 
     def continue_editing_active(self):
         return '_continue' in self.request.POST
@@ -70,14 +77,14 @@ class ContinueEditingMixin:
             # Save and continue editing
             return self.get_edit_url()
 
-        return super().get_success_url()
+        return super().get_success_url()  # type: ignore[misc]
 
     def get_success_buttons(self):
         if self.continue_editing_active():
             # Save and continue editing -> No edit button required
             return []
 
-        return super().get_success_buttons()
+        return super().get_success_buttons()  # type: ignore[misc]
 
 
 class PlanRelatedViewMixin:
@@ -92,7 +99,7 @@ class PlanRelatedViewMixin:
             plans = obj.get_plans()
             assert active_plan in plans
 
-        return super().form_valid(form, *args, **kwargs)
+        return super().form_valid(form, *args, **kwargs)  # type: ignore[misc]
 
     def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
         user = request.user
@@ -110,21 +117,23 @@ class PlanRelatedViewMixin:
                 url = reverse('change-admin-plan', kwargs=dict(plan_id=instance_plans[0].id))
                 return HttpResponseRedirect(url + '?' + querystring.urlencode())
 
-        return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
 class ActivatePermissionHelperPlanContextMixin:
+    permission_policy: ModelPermissionPolicy
+
     @method_decorator(login_required)
     def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
         """Set the plan context for permission helper before dispatching request."""
 
         if isinstance(self.permission_policy, PlanContextPermissionPolicy):
             with self.permission_policy.activate_plan_context(request.get_active_admin_plan()):
-                ret = super().dispatch(request, *args, **kwargs)
+                ret = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
                 # We trigger render here, because the plan context is needed
                 # still in the render stage.
                 if hasattr(ret, 'render'):
                     ret = ret.render()
             return ret
         else:
-            return super().dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]

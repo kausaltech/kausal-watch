@@ -399,20 +399,22 @@ class PlanRelatedViewModelAdminMixin:
 # ModelAdmin. Use that when implementing new classes or migrating away from
 # ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class ActivatePermissionHelperPlanContextModelAdminMixin:
+    permission_helper: PermissionHelper
+
     @method_decorator(login_required)
     def dispatch(self, request: WatchAdminRequest, *args, **kwargs):
         """Set the plan context for permission helper before dispatching request."""
 
         if isinstance(self.permission_helper, PlanContextModelAdminPermissionHelper):
             with self.permission_helper.activate_plan_context(request.get_active_admin_plan()):
-                ret = super().dispatch(request, *args, **kwargs)
+                ret = super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
                 # We trigger render here, because the plan context is needed
                 # still in the render stage.
                 if hasattr(ret, 'render'):
                     ret = ret.render()
             return ret
         else:
-            return super().dispatch(request, *args, **kwargs)
+            return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
