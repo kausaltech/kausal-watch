@@ -26,6 +26,11 @@ class SuccessUrlEditPageMixin:
         # success message, since we're redirecting back to the edit view already
         return []
 
+    def get_breadcrumbs_items(self):
+        # As the idea is to stay only on the edit page, hide the breadcrumb trail
+        # that gives access e.g. to the index view
+        return []
+
 
 class SetInstanceMixin:
     def setup(self, *args, **kwargs):

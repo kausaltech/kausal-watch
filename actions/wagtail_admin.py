@@ -8,6 +8,7 @@ from django.urls import reverse
 from wagtail.admin.panels import (
     FieldPanel, InlinePanel, ObjectList, TabbedInterface
 )
+from wagtail.snippets.models import register_snippet
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import modeladmin_register, ModelAdminMenuItem
 from wagtail_modeladmin.views import EditView
@@ -33,6 +34,10 @@ from pages.models import PlanLink
 from people.chooser import PersonChooser
 from admin_site.wagtail import AplansCreateView
 from admin_site.chooser import ClientChooser
+from admin_site.viewsets import WatchEditView, WatchViewSet
+from admin_site.menu import PlanSpecificSingletonModelMenuItem
+from admin_site.mixins import SuccessUrlEditPageMixin
+from admin_site.permissions import ActivePlanPermissionPolicy
 
 import typing
 if typing.TYPE_CHECKING:
@@ -430,9 +435,9 @@ class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
 modeladmin_register(ActivePlanFeaturesAdmin)
 
 
-class NotificationSettingsAdmin(AplansModelAdmin):
+class NotificationSettingsViewSet(WatchViewSet):
     model = NotificationSettings
-    menu_icon = 'fontawesome-bell'
+    icon = 'fontawesome-bell'
     menu_label = _('Plan notification settings')
     menu_order = 502
 
@@ -442,43 +447,41 @@ class NotificationSettingsAdmin(AplansModelAdmin):
     ]
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = self.model.objects.get_queryset()
         user = request.user
         person = user.get_corresponding_person()
         if not user.is_superuser and person:
             qs = qs.filter(plan__general_admins=person).distinct()
         return qs
 
-    def user_can_create(self):
-        return False
 
-    def get_edit_handler(self):
-        panels = list(self.panels)
-        handler = ObjectList(panels)
-        return handler
-
-
-class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelAdminMenuItem):
+class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem):
     def get_one_to_one_field(self, plan):
         return plan.notification_settings
 
 
-class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageModelAdminMixin, EditView):
-    pass
+class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, WatchEditView):
+    permission_policy: ActivePlanPermissionPolicy
+
+    def user_has_permission(self, permission):
+        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
 
 
-class ActivePlanNotificationSettingsAdmin(NotificationSettingsAdmin):
+class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
     edit_view_class = ActivePlanNotificationSettingsEditView
-    permission_helper_class = ActivePlanModelAdminPermissionHelper
     menu_label = _('Plan notification settings')
     add_to_settings_menu = True
 
+    @property
+    def permission_policy(self):
+        return ActivePlanPermissionPolicy(self.model)
+
     def get_menu_item(self, order=None):
-        item = ActivePlanNotificationSettingsMenuItem(self, order or self.get_menu_order())
+        item = ActivePlanNotificationSettingsMenuItem(self, order or self.menu_order)
         return item
 
 
-modeladmin_register(ActivePlanNotificationSettingsAdmin)
+register_snippet(ActivePlanNotificationSettingsViewSet)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

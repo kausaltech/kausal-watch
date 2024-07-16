@@ -52,6 +52,7 @@ def notification_type_choice_builder(include_manual: bool = False):
         yield (val.identifier, val.verbose_name)
 
 
+@reversion.register()
 class NotificationSettings(ClusterableModel, PlanRelatedModel):
     plan = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_settings',
