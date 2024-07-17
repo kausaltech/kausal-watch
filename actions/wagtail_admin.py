@@ -11,7 +11,6 @@ from wagtail.admin.panels import (
 from wagtail.snippets.models import register_snippet
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import modeladmin_register, ModelAdminMenuItem
-from wagtail_modeladmin.views import EditView
 
 from aplans.types import WatchAdminRequest
 
@@ -23,8 +22,7 @@ from actions.chooser import CategoryTypeChooser, PlanChooser
 from actions.models.action import ActionSchedule
 from admin_site.wagtail import (
     ActivePlanEditView, AplansAdminModelForm, AplansModelAdmin,
-    CondensedInlinePanel, SuccessUrlEditPageModelAdminMixin,
-    insert_model_translation_panels
+    CondensedInlinePanel, insert_model_translation_panels
 )
 from aplans.context_vars import ctx_instance, ctx_request
 from notifications.models import NotificationSettings
@@ -356,83 +354,76 @@ class ActivePlanAdmin(PlanAdmin):
 modeladmin_register(ActivePlanAdmin)
 
 
-class PlanFeaturesAdmin(AplansModelAdmin):
+class PlanFeaturesViewSet(WatchViewSet):
     model = PlanFeatures
-    menu_icon = 'tasks'
+    icon = 'tasks'
     menu_label = _('Plan features')
     menu_order = 501
-
-    superuser_panels = [
-        FieldPanel('allow_images_for_actions'),
-        FieldPanel('show_admin_link'),
-        FieldPanel('allow_public_site_login'),
-        FieldPanel('contact_persons_public_data'),
-        FieldPanel('contact_persons_show_picture'),
-        FieldPanel('contact_persons_show_organization_ancestors'),
-        FieldPanel('contact_persons_hide_moderators'),
-        FieldPanel('has_action_identifiers'),
-        FieldPanel('show_action_identifiers'),
-        FieldPanel('has_action_official_name'),
-        FieldPanel('has_action_lead_paragraph'),
-        FieldPanel('has_action_primary_orgs'),
-        FieldPanel('has_action_contact_person_roles'),
-        FieldPanel('minimal_statuses'),
-        FieldPanel('moderation_workflow'),
-        FieldPanel('display_field_visibility_restrictions'),
-        FieldPanel('output_report_action_print_layout'),
-        FieldPanel('password_protected'),
-    ]
 
     panels = [
         FieldPanel('enable_search'),
         FieldPanel('enable_indicator_comparison'),
         FieldPanel('indicator_ordering'),
+        # Arbitrary string as the 'permission' parameter, here 'superuser', can
+        # be used as a way to restrict a panel only to superusers. This is the
+        # recommended approach given in Wagtail docs as of writing:
+        # https://docs.wagtail.org/en/v6.1.3/reference/pages/panels.html#wagtail.admin.panels.FieldPanel.permission
+        FieldPanel('allow_images_for_actions', permission='superuser'),
+        FieldPanel('show_admin_link', permission='superuser'),
+        FieldPanel('allow_public_site_login', permission='superuser'),
+        FieldPanel('contact_persons_public_data', permission='superuser'),
+        FieldPanel('contact_persons_show_picture', permission='superuser'),
+        FieldPanel('contact_persons_show_organization_ancestors', permission='superuser'),
+        FieldPanel('contact_persons_hide_moderators', permission='superuser'),
+        FieldPanel('has_action_identifiers', permission='superuser'),
+        FieldPanel('show_action_identifiers', permission='superuser'),
+        FieldPanel('has_action_official_name', permission='superuser'),
+        FieldPanel('has_action_lead_paragraph', permission='superuser'),
+        FieldPanel('has_action_primary_orgs', permission='superuser'),
+        FieldPanel('has_action_contact_person_roles', permission='superuser'),
+        FieldPanel('minimal_statuses', permission='superuser'),
+        FieldPanel('moderation_workflow', permission='superuser'),
+        FieldPanel('display_field_visibility_restrictions', permission='superuser'),
+        FieldPanel('output_report_action_print_layout', permission='superuser'),
+        FieldPanel('password_protected', permission='superuser'),
     ]
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
+        qs = self.model.objects.get_queryset()
         user = request.user
         person = user.get_corresponding_person()
         if not user.is_superuser and person:
             qs = qs.filter(plan__general_admins=person).distinct()
         return qs
 
-    def user_can_create(self):
-        return False
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        panels = list(self.panels)
-        if request.user.is_superuser:
-            panels += self.superuser_panels
-        handler = ObjectList(panels)
-        return handler
-
 
 # TBD: We might want to keep this for superusers.
-# modeladmin_register(PlanFeaturesAdmin)
+# register_snippet(PlanFeaturesViewSet)
 
 
-class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelAdminMenuItem):
+class ActivePlanFeaturesMenuItem(PlanSpecificSingletonModelMenuItem):
     def get_one_to_one_field(self, plan):
         return plan.features
 
 
-class ActivePlanFeaturesEditView(SuccessUrlEditPageModelAdminMixin, EditView):
-    pass
+class ActivePlanFeaturesEditView(SuccessUrlEditPageMixin, WatchEditView):
+    def user_has_permission(self, permission):
+        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
 
 
-class ActivePlanFeaturesAdmin(PlanFeaturesAdmin):
+class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
     edit_view_class = ActivePlanFeaturesEditView
-    permission_helper_class = ActivePlanModelAdminPermissionHelper
     add_to_settings_menu = True
 
     def get_menu_item(self, order=None):
-        item = ActivePlanFeaturesMenuItem(self, order or self.get_menu_order())
-        return item
+        return ActivePlanFeaturesMenuItem(self, order or self.menu_order)
+
+    @property
+    def permission_policy(self):
+        return ActivePlanPermissionPolicy(self.model)
 
 
-modeladmin_register(ActivePlanFeaturesAdmin)
+register_snippet(ActivePlanFeaturesViewSet)
 
 
 class NotificationSettingsViewSet(WatchViewSet):
