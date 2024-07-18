@@ -34,26 +34,13 @@ class PlanRelatedCollectionOwnershipPermissionPolicy(CollectionOwnershipPermissi
         return qs
 
 
-class ActivePlanPermissionPolicy(ModelPermissionPolicy):
+class PlanSpecificSingletonModelSuperuserPermissionPolicy(ModelPermissionPolicy):
+    """Allow access to edit a plan specific singleton model only if user is superuser."""
+
     def user_has_permission(self, user, action):
-        if action == 'view':
-            return user.is_superuser
-        if action == 'add':
-            return user.is_superuser
-        if action == 'change':
-            return user.is_general_admin_for_plan(user.get_active_admin_plan())
-        if action == 'delete':
-            return False
-        return super().user_has_permission(user, action)
-
-    def user_has_permission_for_instance(self, user, action, instance):
-        if action == 'change':
-            if isinstance(instance, Plan):
-                return user.is_general_admin_for_plan(instance)
-            else:
-                return user.is_general_admin_for_plan(instance.plan)
-
-        return super().user_has_permission_for_instance(user, action, instance)
+        if action == 'change' and user.is_superuser:
+            return True
+        return False
 
 
 class PlanContextPermissionPolicy(ModelPermissionPolicy):

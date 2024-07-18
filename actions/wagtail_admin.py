@@ -35,7 +35,7 @@ from admin_site.chooser import ClientChooser
 from admin_site.viewsets import WatchEditView, WatchViewSet
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
-from admin_site.permissions import ActivePlanPermissionPolicy
+from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
 
 import typing
 if typing.TYPE_CHECKING:
@@ -286,9 +286,6 @@ class PlanAdmin(AplansModelAdmin):
 
 
 # FIXME: This is partly duplicated in content/admin.py.
-# TODO: Reimplemented in admin_site/permissions.py to make this work without
-# ModelAdmin. Use that when implementing new classes or migrating away from
-# ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class ActivePlanModelAdminPermissionHelper(PermissionHelper):
     def user_can_list(self, user):
         return user.is_superuser
@@ -420,7 +417,12 @@ class ActivePlanFeaturesViewSet(PlanFeaturesViewSet):
 
     @property
     def permission_policy(self):
-        return ActivePlanPermissionPolicy(self.model)
+        # TODO: Commit history looks like this viewset was meant to be open for
+        # plan admins, but due to a bug was really open only for superusers.
+        # Restrict access to superusers to keep the functionality same for now.
+        # Check in the future if this viewset should be opened up for plan
+        # admins.
+        return PlanSpecificSingletonModelSuperuserPermissionPolicy(self.model)
 
 
 register_snippet(ActivePlanFeaturesViewSet)
@@ -452,10 +454,7 @@ class ActivePlanNotificationSettingsMenuItem(PlanSpecificSingletonModelMenuItem)
 
 
 class ActivePlanNotificationSettingsEditView(SuccessUrlEditPageMixin, WatchEditView):
-    permission_policy: ActivePlanPermissionPolicy
-
-    def user_has_permission(self, permission):
-        return self.permission_policy.user_has_permission_for_instance(self.request.user, permission, self.object)
+    pass
 
 
 class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
@@ -465,7 +464,12 @@ class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
 
     @property
     def permission_policy(self):
-        return ActivePlanPermissionPolicy(self.model)
+        # TODO: Commit history looks like this viewset was meant to be open for
+        # plan admins, but due to a bug was really open only for superusers.
+        # Restrict access to superusers to keep the functionality same for now.
+        # Check in the future if this viewset should be opened up for plan
+        # admins.
+        return PlanSpecificSingletonModelSuperuserPermissionPolicy(self.model)
 
     def get_menu_item(self, order=None):
         item = ActivePlanNotificationSettingsMenuItem(self, order or self.menu_order)
