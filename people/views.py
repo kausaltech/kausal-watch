@@ -95,8 +95,9 @@ class ResetPasswordView(WMABaseView):
         })
         return redirect(self.index_url)
 
+
 class ImpersonateUserView(WMABaseView):
-    page_title = gettext_lazy("View as User")
+    page_title = gettext_lazy("View as user")
     target_person_pk = None
     template_name = 'people/view_as_user.html'
     post_url = reverse_lazy('hijack:acquire')

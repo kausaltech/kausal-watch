@@ -5,7 +5,7 @@
             `<div class="release-impersonation">
                 <form method="POST" action="{% url 'hijack:release' %}">
                     {% csrf_token %}
-                    <button type="submit" class="button bicolor icon icon-warning">{% trans 'Back to own User' %}</button>
+                    <button type="submit" class="button bicolor icon icon-warning">{% trans 'Back to own user' %}</button>
                     <input type="hidden" name="next" value="{{ request.path }}">
                 </form>
             </div>`

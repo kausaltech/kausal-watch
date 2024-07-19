@@ -307,8 +307,8 @@ class PersonButtonHelper(ButtonHelper):
 
     def impersonation_button(self, pk, **kwargs):
         return {
-            'label': _("View as User"),
-            'title': _("View site on behalf of User"),
+            'label': _("View as user"),
+            'title': _("View site as it looks for this user"),
             'url': self.url_helper.get_action_url('view_as_user', quote(pk)),
             'classname': self.finalise_classname(['button-secondary', 'button-small']),
         }
@@ -329,7 +329,7 @@ class PersonButtonHelper(ButtonHelper):
                 **kwargs
             )
             buttons.append(reset_password_button)
-        if user.is_superuser and obj.user != user:
+        if user.is_superuser and obj.user != user and obj.user.can_access_admin():
             impersonation_button = self.impersonation_button(
                 pk=getattr(obj, self.opts.pk.attname),
                 **kwargs
@@ -337,7 +337,6 @@ class PersonButtonHelper(ButtonHelper):
             buttons.append(impersonation_button)
         return buttons
     
-
 
 class PersonDeleteView(ActivatePermissionHelperPlanContextModelAdminMixin, DeleteView):
     instance: Person
