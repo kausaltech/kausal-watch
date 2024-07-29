@@ -19,7 +19,7 @@ def on_hijack_started(sender, hijacker: User, hijacked: User, request: WatchAdmi
 def on_hijack_ended(sender, hijacker: User, hijacked: User, request: WatchAdminRequest, **kwargs):
     hijack_log.bind(impersonation_actor=hijacker.email, impersonation_target=hijacked.email).info(
         f"{hijacker} has ended impersonation for user {hijacked}")
-    message = _(f"You have stopped viewing the site as %(user)s and have returned to your original account.") % {
+    message = _("You have stopped viewing the site as %(user)s and have returned to your original account.") % {
         'user': hijacked,
     }
     messages.success(request, message)
