@@ -127,9 +127,6 @@ class AplansPage(Page):
     class Meta:
         abstract = True
 
-    @property
-    def preview_modes(self):
-        return []
 
     @classmethod
     def get_subclasses(cls):

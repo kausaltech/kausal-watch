@@ -5,6 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from actions.models import Action, Plan
+from actions.models.category import Category
 
 
 class UserFeedback(models.Model):
@@ -12,6 +13,7 @@ class UserFeedback(models.Model):
         GENERAL = '', _('General')
         ACCESSIBILITY = 'accessibility', _('Accessibility')
         ACTION = 'action', _('Action')
+        CATEGORY = "category", _("Category")
 
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='user_feedbacks', verbose_name=_("plan"))
     type = models.CharField(
@@ -20,6 +22,10 @@ class UserFeedback(models.Model):
     action = models.ForeignKey(
         Action, blank=True, null=True, on_delete=models.SET_NULL, related_name='user_feedbacks',
         verbose_name=_("action"),
+    )
+    category = models.ForeignKey(
+        Category, blank=True, null=True, on_delete=models.SET_NULL, related_name='user_feedbacks',
+        verbose_name=_("category"),
     )
 
     name = models.CharField(max_length=100, null=True, blank=True, verbose_name=_("name"))
