@@ -8,7 +8,7 @@ from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 from typing import Tuple, Type
 from wagtail import blocks
 
-from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
+from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
@@ -240,6 +240,37 @@ class IndicatorCausalChainBlock(blocks.StaticBlock):
         label = _("Indicator Causal Chain")
 
 
+
+class BaseDatasetsBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(
+        required=False,
+        help_text=_("What label should be used in the public UI for the official name?"),
+        default='',
+        label=_("Field label"),
+    )
+    field_help_text = blocks.CharBlock(
+        required=False,
+        help_text=_("Help text for the field to be shown in the UI"),
+        default='',
+        label = _("Help text"),
+    )
+
+    class Meta:
+        label = _("Datasets")
+
+    graphql_fields = [
+        GraphQLString('field_label'),
+        GraphQLString('field_help_text'),
+    ]
+
+@register_streamfield_block
+class PlanDatasetsBlock(BaseDatasetsBlock):
+    dataset_schema = PlanDatasetSchemaChooserBlock(required=True)
+
+    graphql_fields = BaseDatasetsBlock.graphql_fields + [
+        GraphQLString('dataset_schema'),
+    ]
+
 @register_streamfield_block
 class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
     graphql_interfaces = (FieldBlockMetaInterface, )
@@ -370,6 +401,7 @@ ActionMainContentBlock = generate_stream_block(
         ('contact_form', ActionContactFormBlock(required=True)),
         ('report_comparison', ReportComparisonBlock()),
         ('indicator_causal_chain', IndicatorCausalChainBlock()),
+        ('datasets', PlanDatasetsBlock()),
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={

@@ -4,6 +4,7 @@ from wagtail import blocks
 
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryLevel, CategoryType
+from budget.models import DatasetSchema
 
 
 class CategoryChooserBlock(blocks.ChooserBlock):
@@ -93,3 +94,33 @@ class CategoryAttributeTypeChooserBlock(AttributeTypeChooserBlock):
     def widget(self):
         from actions.chooser import AttributeTypeChooser
         return AttributeTypeChooser(scope='category')
+
+class DatasetSchemaChooserBlock(blocks.ChooserBlock):
+    class Meta:
+        label = _('Dataset Schema')
+
+    @cached_property
+    def target_model(self):
+        return DatasetSchema
+
+    @cached_property
+    def widget(self):
+        from actions.chooser import DatasetSchemaChooser
+        return DatasetSchemaChooser()
+
+    def get_form_state(self, value):
+        return self.widget.get_value_data(value)
+
+
+class PlanDatasetSchemaChooserBlock(DatasetSchemaChooserBlock):
+    @cached_property
+    def widget(self):
+        from actions.chooser import DatasetSchemaChooser
+        return DatasetSchemaChooser(scope='plan')
+
+
+class CategoryTypeDatasetSchemaChooserBlock(DatasetSchemaChooserBlock):
+    @cached_property
+    def widget(self):
+        from actions.chooser import DatasetSchemaChooser
+        return DatasetSchemaChooser(scope='categorytype')

@@ -3,7 +3,8 @@ from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey, GraphQLString
 from wagtail import blocks
 
-from actions.blocks.choosers import CategoryAttributeTypeChooserBlock
+from actions.blocks.action_content import BaseDatasetsBlock
+from actions.blocks.choosers import CategoryAttributeTypeChooserBlock, CategoryTypeDatasetSchemaChooserBlock
 from actions.models.attributes import AttributeType
 
 
@@ -50,6 +51,14 @@ class CategoryPageContactFormBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
+class CategoryTypeDatasetsBlock(BaseDatasetsBlock):
+    dataset_schema = CategoryTypeDatasetSchemaChooserBlock(required=True)
+
+    graphql_fields = BaseDatasetsBlock.graphql_fields + [
+        GraphQLString('dataset_schema'),
+    ]
+
+@register_streamfield_block
 class CategoryPageProgressBlock(blocks.StructBlock):
     basis = blocks.ChoiceBlock(label=_('Basis'), choices=[
         ('implementation_phase', _('Implementation phase')),
@@ -77,6 +86,7 @@ class CategoryPageMainBottomBlock(blocks.StreamBlock):
     body = CategoryPageBodyBlock()
     category_list = CategoryPageCategoryListBlock()
     contact_form = CategoryPageContactFormBlock()
+    datasets = CategoryTypeDatasetsBlock()
     # TODO: CategoryPageSectionBlock
 
     graphql_types = [

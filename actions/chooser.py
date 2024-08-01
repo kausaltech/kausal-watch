@@ -12,6 +12,9 @@ from .models.category import Category, CategoryLevel, CategoryType
 from .models.plan import Plan
 from aplans.types import WatchAdminRequest
 
+from budget.models import DatasetSchema
+from django.contrib.contenttypes.models import ContentType
+
 
 class WatchModelChooserBase(ModelChooserMixin):
     def get_object_list(self, search_term=None, **kwargs):
@@ -268,3 +271,64 @@ class AttributeTypeChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_attribute_type_chooser_viewset():
     return AttributeTypeChooserViewSet('attribute_type_chooser', url_prefix='attribute-type-chooser')
+
+
+
+class DatasetSchemaChooserMixin(WatchModelChooserBase):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        scope = self.request.GET.get('scope')
+
+        if scope == 'plan':
+            content_type = ContentType.objects.get_for_model(Plan)
+            return DatasetSchema.objects.filter(
+                scopes__scope_content_type=content_type,
+                scopes__scope_id=plan.id
+            ).distinct()
+        elif scope == 'categorytype':
+            content_type = ContentType.objects.get_for_model(CategoryType)
+            return DatasetSchema.objects.filter(
+                scopes__scope_content_type=content_type,
+                scopes__scope_id__in=plan.category_types.values_list('id', flat=True)
+            ).distinct()
+        else:
+            return DatasetSchema.objects.none()
+
+    def user_can_create(self, user):
+        return False
+
+
+class DatasetSchemaChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = DatasetSchemaChooserMixin
+    icon = 'table'
+    model = DatasetSchema
+    page_title = _("Choose a dataset schema")
+    per_page = 30
+    fields = ['name', 'unit', 'time_resolution']
+
+    def get_chooser_mixin_kwargs(self):
+        kwargs = super().get_chooser_mixin_kwargs()
+        kwargs['scope'] = self.request.GET.get('scope', 'plan')
+        return kwargs
+
+class DatasetSchemaChooser(AdminChooser):
+    choose_one_text = _('Choose a dataset schema')
+    choose_another_text = _('Choose another dataset schema')
+    model = DatasetSchema
+    choose_modal_url_name = 'dataset_schema_chooser:choose'
+
+    def __init__(self, /, scope: Literal['plan', 'categorytype'] = 'plan', **kwargs):
+        self.scope = scope
+        super().__init__(**kwargs)
+
+    def get_choose_modal_url(self):
+        url = super().get_choose_modal_url()
+        return f"{url}?scope={self.scope}"
+
+
+
+@hooks.register('register_admin_viewset')
+def register_dataset_schema_chooser_viewset():
+    return DatasetSchemaChooserViewSet('dataset_schema_chooser', url_prefix='dataset-schema-chooser')
