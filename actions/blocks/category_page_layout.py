@@ -95,6 +95,7 @@ class CategoryPageMainBottomBlock(blocks.StreamBlock):
         CategoryPageBodyBlock,
         CategoryPageCategoryListBlock,
         CategoryPageContactFormBlock,
+        CategoryTypeDatasetsBlock,
     ]
 
 

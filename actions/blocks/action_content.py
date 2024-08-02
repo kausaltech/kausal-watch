@@ -245,7 +245,7 @@ class IndicatorCausalChainBlock(blocks.StaticBlock):
 class BaseDatasetsBlock(blocks.StructBlock):
     field_label = blocks.CharBlock(
         required=False,
-        help_text=_("What label should be used in the public UI for the official name?"),
+        help_text=_("What label should be used in the public UI for the Dataset field?"),
         default='',
         label=_("Field label"),
     )
