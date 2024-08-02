@@ -84,7 +84,7 @@ class DatasetSchema(models.Model):
         help_text=_('Time resolution of the time stamps of data points in this dataset'),
     )
     unit = models.CharField(max_length=100, blank=True, verbose_name=_('unit'))
-    name = models.CharField(max_length=100, blank=True, verbose_name=_('name'))
+    name = models.CharField(max_length=100, blank=False, verbose_name=_('name'))
 
     i18n = TranslationField(fields=['unit', 'name'])
     unit_i18n: str

@@ -299,6 +299,8 @@ class DatasetSchemaChooserMixin(WatchModelChooserBase):
     def user_can_create(self, user):
         return False
 
+    def get_object_string(self, obj):
+        return obj.name_i18n
 
 class DatasetSchemaChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = DatasetSchemaChooserMixin
@@ -307,6 +309,7 @@ class DatasetSchemaChooserViewSet(ModelChooserViewSet):
     page_title = _("Choose a dataset schema")
     per_page = 30
     fields = ['name', 'unit', 'time_resolution']
+
 
     def get_chooser_mixin_kwargs(self):
         kwargs = super().get_chooser_mixin_kwargs()
@@ -326,6 +329,9 @@ class DatasetSchemaChooser(AdminChooser):
     def get_choose_modal_url(self):
         url = super().get_choose_modal_url()
         return f"{url}?scope={self.scope}"
+
+    def get_title(self, instance):
+        return instance.name_i18n
 
 
 
