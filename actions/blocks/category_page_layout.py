@@ -6,6 +6,7 @@ from wagtail import blocks
 from actions.blocks.action_content import BaseDatasetsBlock
 from actions.blocks.choosers import CategoryAttributeTypeChooserBlock, CategoryTypeDatasetSchemaChooserBlock
 from actions.models.attributes import AttributeType
+from budget.models import DatasetSchema
 
 
 @register_streamfield_block
@@ -55,7 +56,7 @@ class CategoryTypeDatasetsBlock(BaseDatasetsBlock):
     dataset_schema = CategoryTypeDatasetSchemaChooserBlock(required=True)
 
     graphql_fields = BaseDatasetsBlock.graphql_fields + [
-        GraphQLString('dataset_schema'),
+        GraphQLForeignKey('dataset_schema', DatasetSchema, required=True),
     ]
 
 @register_streamfield_block

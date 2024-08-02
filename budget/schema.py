@@ -1,6 +1,6 @@
 import graphene
 from actions.schema import ActionNode, PlanNode, CategoryNode, CategoryTypeNode
-from aplans.graphql_types import DjangoNode
+from aplans.graphql_types import DjangoNode, register_django_node
 from budget.models import (
     DataPoint, Dataset, DatasetSchema, DatasetSchemaScope, Dimension, DimensionCategory, DimensionScope, DatasetSchemaDimensionCategory
 )
@@ -75,7 +75,7 @@ class DatasetScopeTypeNode(graphene.Union):
             ActionNode, CategoryNode,
         )
 
-
+@register_django_node
 class DatasetSchemaNode(DjangoNode):
     class Meta:
         model = DatasetSchema
@@ -92,3 +92,7 @@ class DatasetNode(DjangoNode):
     @staticmethod
     def resolve_scope(root, info):
         return root.scope
+
+
+class Query:
+    pass

@@ -15,6 +15,7 @@ from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 from aplans.graphql_types import register_graphene_interface
 from aplans.utils import underscore_to_camelcase
+from budget.models import DatasetSchema
 from reports.blocks.report_comparison_block import ReportComparisonBlock
 from reports.report_formatters import ActionReportContentField, ActionTasksFormatter
 
@@ -266,9 +267,10 @@ class BaseDatasetsBlock(blocks.StructBlock):
 @register_streamfield_block
 class PlanDatasetsBlock(BaseDatasetsBlock):
     dataset_schema = PlanDatasetSchemaChooserBlock(required=True)
+    graphql_interfaces = (FieldBlockMetaInterface, )
 
     graphql_fields = BaseDatasetsBlock.graphql_fields + [
-        GraphQLString('dataset_schema'),
+        GraphQLForeignKey('dataset_schema', DatasetSchema, required=True),
     ]
 
 @register_streamfield_block

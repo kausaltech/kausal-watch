@@ -90,6 +90,7 @@ class DatasetSchema(models.Model):
     unit_i18n: str
     name_i18n: str
 
+
     def __str__(self):
         if self.name_i18n:
             return f'{self.name_i18n} ({self.uuid})'
