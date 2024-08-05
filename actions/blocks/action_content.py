@@ -243,15 +243,15 @@ class IndicatorCausalChainBlock(blocks.StaticBlock):
 
 
 class BaseDatasetsBlock(blocks.StructBlock):
-    field_label = blocks.CharBlock(
+    heading = blocks.CharBlock(
         required=False,
-        help_text=_("What label should be used in the public UI for the Dataset field?"),
+        help_text=_("What heading should be used in the public UI for the Dataset?"),
         default='',
-        label=_("Field label"),
+        label=_("Heading"),
     )
-    field_help_text = blocks.CharBlock(
+    help_text = blocks.CharBlock(
         required=False,
-        help_text=_("Help text for the field to be shown in the UI"),
+        help_text=_("Help text for the Dataset to be shown in the public UI"),
         default='',
         label = _("Help text"),
     )
@@ -260,14 +260,13 @@ class BaseDatasetsBlock(blocks.StructBlock):
         label = _("Datasets")
 
     graphql_fields = [
-        GraphQLString('field_label'),
-        GraphQLString('field_help_text'),
+        GraphQLString('heading'),
+        GraphQLString('help_text'),
     ]
 
 @register_streamfield_block
 class PlanDatasetsBlock(BaseDatasetsBlock):
     dataset_schema = PlanDatasetSchemaChooserBlock(required=True)
-    graphql_interfaces = (FieldBlockMetaInterface, )
 
     graphql_fields = BaseDatasetsBlock.graphql_fields + [
         GraphQLForeignKey('dataset_schema', DatasetSchema, required=True),
