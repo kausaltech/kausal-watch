@@ -1,6 +1,5 @@
 import pytest
 from datetime import date
-from decimal import Decimal
 
 from budget.tests.factories import (
     DataPointFactory, DatasetFactory, DatasetSchemaFactory, DatasetSchemaScopeFactory, DimensionFactory,
@@ -194,7 +193,7 @@ def test_data_point_node(graphql_client_query_data, plan, category):
                         '__typename': 'Dataset',
                     },
                     'date': data_point.date.isoformat(),
-                    'value': str(Decimal(data_point.value).quantize(Decimal('0.0001'))),
+                    'value': data_point.value,
                 }],
             }],
         }],
@@ -397,7 +396,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 '__typename': 'DataPoint',
                                 'uuid': str(data_point1.uuid),
                                 'date': data_point1.date.isoformat(),
-                                'value': str(Decimal(data_point1.value).quantize(Decimal('0.0001'))),
+                                'value': data_point1.value,
                                 'dimensionCategories': [
                                     {
                                         '__typename': 'BudgetDimensionCategory',
@@ -410,7 +409,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 '__typename': 'DataPoint',
                                 'uuid': str(data_point2.uuid),
                                 'date': data_point2.date.isoformat(),
-                                'value': str(Decimal(data_point2.value).quantize(Decimal('0.0001'))),
+                                'value': data_point2.value,
                                 'dimensionCategories': [
                                     {
                                         '__typename': 'BudgetDimensionCategory',
@@ -440,7 +439,7 @@ def test_integration_for_category(graphql_client_query_data, plan, category):
                                 '__typename': 'DataPoint',
                                 'uuid': str(data_point3.uuid),
                                 'date': data_point3.date.isoformat(),
-                                'value': str(Decimal(data_point3.value).quantize(Decimal('0.0001'))),
+                                'value': data_point3.value,
                                 'dimensionCategories': [
                                     {
                                         '__typename': 'BudgetDimensionCategory',
@@ -539,7 +538,7 @@ def test_integration_for_action(graphql_client_query_data, action):
                             '__typename': 'DataPoint',
                             'uuid': str(data_point1.uuid),
                             'date': data_point1.date.isoformat(),
-                            'value': str(Decimal(data_point1.value).quantize(Decimal('0.0001'))),
+                            'value': data_point1.value,
                             'dimensionCategories': [
                                 {
                                     '__typename': 'BudgetDimensionCategory',
@@ -552,7 +551,7 @@ def test_integration_for_action(graphql_client_query_data, action):
                             '__typename': 'DataPoint',
                             'uuid': str(data_point2.uuid),
                             'date': data_point2.date.isoformat(),
-                            'value': str(Decimal(data_point2.value).quantize(Decimal('0.0001'))),
+                            'value': data_point2.value,
                             'dimensionCategories': [
                                 {
                                     '__typename': 'BudgetDimensionCategory',
@@ -582,7 +581,7 @@ def test_integration_for_action(graphql_client_query_data, action):
                             '__typename': 'DataPoint',
                             'uuid': str(data_point3.uuid),
                             'date': data_point3.date.isoformat(),
-                            'value': str(Decimal(data_point3.value).quantize(Decimal('0.0001'))),
+                            'value': data_point3.value,
                             'dimensionCategories': [
                                 {
                                     '__typename': 'BudgetDimensionCategory',

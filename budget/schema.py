@@ -45,6 +45,7 @@ class DimensionScopeTypeNode(graphene.Union):
 
 
 class DataPointNode(DjangoNode):
+    value = graphene.Float()
     class Meta:
         model = DataPoint
         fields = ('uuid', 'dataset', 'date', 'value', 'dimension_categories')
