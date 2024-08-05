@@ -58,6 +58,7 @@ class DataPointSerializer(serializers.ModelSerializer):
         # FIXME: Restrict queryset to dimension categories available to the dataset
         slug_field='uuid', many=True, queryset=DimensionCategory.objects.all(),
     )
+    value = serializers.DecimalField(max_digits=10, decimal_places=4, coerce_to_string=False)
 
     class Meta:
         model = DataPoint
