@@ -1,4 +1,4 @@
-from dal import autocomplete
+from dal import autocomplete, forward as dal_forward
 from django import forms
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
@@ -385,7 +385,12 @@ class IndicatorAdmin(AplansModelAdmin):
         InlinePanel(
             'related_actions',
             panels=[
-                CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(url='action-autocomplete')),
+                CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(
+                    url='action-autocomplete',
+                    forward=(
+                        dal_forward.Const(True, 'only_modifiable'),
+                    ),
+                )),
                 CustomizableBuiltInFieldPanel('effect_type'),
                 CustomizableBuiltInFieldPanel('indicates_action_progress'),
             ],
