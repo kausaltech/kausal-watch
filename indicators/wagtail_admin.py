@@ -388,7 +388,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(
                     url='action-autocomplete',
                     forward=(
-                        dal_forward.Const(True, 'only_modifiable'),
+                        dal_forward.Const(val=True, dst='only_modifiable'),
                     ),
                 )),
                 CustomizableBuiltInFieldPanel('effect_type'),
