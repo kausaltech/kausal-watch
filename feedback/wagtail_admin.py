@@ -108,7 +108,7 @@ class UserFeedbackViewSet(SnippetViewSet):
     icon = 'mail'
     menu_label = _('User feedback')
     menu_order = 240
-    list_display = ['created_at', 'type', 'action', 'name', 'comment', BooleanColumn('is_processed')]
+    list_display = ['created_at', 'type', 'action', 'category', 'name', 'comment', BooleanColumn('is_processed')]
     list_filter = {'created_at': ['gte'], 'type': ['exact'], 'is_processed': ['exact']}
     inspect_view_enabled = True
     index_view_class = UserFeedbackIndexView
