@@ -100,7 +100,7 @@ class UserFeedbackIndexView(IndexView):
         else:
             process_button = self.set_processed_button(instance)
 
-        return buttons + [process_button]
+        return [*buttons, process_button]
 
 class UserFeedbackViewSet(SnippetViewSet):
     model = UserFeedback
@@ -166,10 +166,7 @@ class UserFeedbackViewSet(SnippetViewSet):
             view=self.set_user_feedback_unprocessed_view,
             name=self.set_user_feedback_unprocessed_url_name,
         )
-        return urls + [
-            set_user_feedback_processed_url,
-            set_user_feedback_unprocessed_url,
-        ]
+        return [*urls, set_user_feedback_processed_url, set_user_feedback_unprocessed_url]
 
 
 register_snippet(UserFeedbackViewSet)
