@@ -165,4 +165,4 @@ ENV \
 USER root
 
 EXPOSE 8000/tcp ${CADDY_PORT}/tcp
-ENTRYPOINT ["/scripts/docker-entrypoint.sh", "uwsgi"]
+ENTRYPOINT ["/scripts/docker-entrypoint.sh"]
