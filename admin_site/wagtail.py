@@ -20,6 +20,7 @@ from django.utils.decorators import method_decorator
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
+import reversion
 from reversion.revisions import (
     add_to_revision,
     create_revision,
@@ -550,6 +551,8 @@ def execute_admin_post_save_tasks(instance: Model, user: User):
         "model_name": capfirst(instance._meta.verbose_name),
         "object": instance,
     }
+    if not reversion.is_registered(instance):
+        return
     with create_revision():
         set_comment(success_message)
         add_to_revision(instance)
