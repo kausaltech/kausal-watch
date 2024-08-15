@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import importlib
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Callable, List, Protocol
+from typing import TYPE_CHECKING, Callable, Protocol
 from urllib.parse import urljoin
 
+import reversion
 from django import forms
 from django.conf import settings
 from django.contrib.admin.utils import quote
@@ -20,21 +21,10 @@ from django.utils.decorators import method_decorator
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from modeltrans.translator import get_i18n_field
-import reversion
-from reversion.revisions import (
-    add_to_revision,
-    create_revision,
-    set_comment,
-    set_user,
-)
+from reversion.revisions import add_to_revision, create_revision, set_comment, set_user
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.admin.panels import (
-    FieldPanel,
-    InlinePanel,
-    ObjectList,
-    TabbedInterface,
-)
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList, TabbedInterface
 
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.options import ModelAdmin
@@ -225,6 +215,7 @@ class BoundCustomizableBuiltInFieldPanelMixin:
 
     def __init__(self, **kwargs):
         from admin_site.models import BuiltInFieldCustomization
+
         super().__init__(**kwargs)
         plan = self.request.get_active_admin_plan()
         is_public_field = True
@@ -257,10 +248,12 @@ class CustomizableBuiltInPlanFilteredFieldPanel(FieldPanel):  # Ugh...
 
 
 class BuiltInFieldCustomizationAwareEditHandlerMixin:
-    """Mixin to make an edit handler take instances of BuiltInFieldCustomization into account.
+    """
+    Mixin to make an edit handler take instances of BuiltInFieldCustomization into account.
 
     It will delete all fields from the edit handler's form that are not visible to the current user.
     """
+
     def get_form_class(self):
         from admin_site.models import BuiltInFieldCustomization
 
@@ -302,11 +295,14 @@ class ButtonHelperProtocol(Protocol):
 
 class DatasetButtonMixin:
     def dataset_buttons(
-            self: ButtonHelperProtocol,
-            obj: Model,
-            classnames_add: list[str] = [],
-            classnames_exclude: list[str] | None = None) -> list[dict]:
+        self: ButtonHelperProtocol,
+        obj: Model,
+        classnames_add: list[str] | None = None,
+        classnames_exclude: list[str] | None = None,
+    ) -> list[dict]:
         buttons: list[dict] = []
+        if classnames_add is None:
+            classnames_add = []
         if importlib.util.find_spec('kausal_watch_extensions') is not None:
             from kausal_watch_extensions.dataset_editor import DatasetViewSet
         else:
@@ -316,12 +312,19 @@ class DatasetButtonMixin:
             return buttons
         for schema in DatasetSchema.get_for_model(obj):
             dataset_cache = self.request.admin_cache.datasets_by_scope_by_schema
-            matching_dataset = dataset_cache.get(
-                self.model._meta.label, {},
-            ).get(
-                obj.pk, {},
-            ).get(
-                str(schema.uuid), None,
+            matching_dataset = (
+                dataset_cache.get(
+                    self.model._meta.label,
+                    {},
+                )
+                .get(
+                    obj.pk,
+                    {},
+                )
+                .get(
+                    str(schema.uuid),
+                    None,
+                )
             )
             classname = self.finalise_classname(
                 classnames_add=classnames_add,
@@ -329,7 +332,7 @@ class DatasetButtonMixin:
             )
             if matching_dataset:
                 edit_url = reverse(DatasetViewSet().get_url_name('edit'), args=[matching_dataset.pk])
-                label = _("Edit %(schema_name)s") % {"schema_name": schema.name}
+                label = _('Edit %(schema_name)s') % {'schema_name': schema.name}
                 button = {
                     'url': edit_url,
                     'label': label,
@@ -338,12 +341,8 @@ class DatasetButtonMixin:
                 }
             else:
                 add_url = reverse(DatasetViewSet().get_url_name('add'))
-                add_url += (
-                    f'?dataset_schema_uuid={schema.uuid}'
-                    f'&model={self.model._meta.label}'
-                    f'&object_id={obj.pk}'
-                )
-                label = _("Add %(schema_name)s") % {"schema_name": schema.name}
+                add_url += f'?dataset_schema_uuid={schema.uuid}&model={self.model._meta.label}&object_id={obj.pk}'
+                label = _('Add %(schema_name)s') % {'schema_name': schema.name}
                 button = {
                     'url': add_url,
                     'label': label,
@@ -391,7 +390,9 @@ class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
     def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
         buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
         view_live_button = self.view_live_button(
-            obj, classnames_add=classnames_add, classnames_exclude=classnames_exclude,
+            obj,
+            classnames_add=classnames_add,
+            classnames_exclude=classnames_exclude,
         )
         if view_live_button:
             buttons.append(view_live_button)
@@ -401,7 +402,7 @@ class AplansButtonHelper(DatasetButtonMixin, ButtonHelper):
 
 
 class AplansTabbedInterface(TabbedInterface):
-    def get_bound_panel(self, instance=None, request: WatchAdminRequest | None = None, form=None, prefix="panel"):
+    def get_bound_panel(self, instance=None, request: WatchAdminRequest | None = None, form=None, prefix='panel'):
         if request is not None:
             plan = request.get_active_admin_plan()
             user = request.user
@@ -492,8 +493,7 @@ class PlanRelatedViewModelAdminMixin:
         # Check if we need to change the active action plan to be able to modify
         # the instance. This might happen e.g. when the user clicks on an edit link
         # in the email notification.
-        if (instance is not None and isinstance(instance, PlanRelatedModel) and
-                user is not None and user.is_authenticated):
+        if instance is not None and isinstance(instance, PlanRelatedModel) and user is not None and user.is_authenticated:
             plan = user.get_active_admin_plan()
             instance_plans = instance.get_plans()
             if plan not in instance_plans:
@@ -543,13 +543,15 @@ class SetInstanceModelAdminMixin:
 def execute_admin_post_save_tasks(instance: Model, user: User):
     handle_admin_save = getattr(instance, 'handle_admin_save', None)
     if handle_admin_save:
-        handle_admin_save(context={
-            'user': user,
-            'operation': 'edit',
-        })
+        handle_admin_save(
+            context={
+                'user': user,
+                'operation': 'edit',
+            },
+        )
     success_message = _("%(model_name)s '%(object)s' updated.") % {
-        "model_name": capfirst(instance._meta.verbose_name),
-        "object": instance,
+        'model_name': capfirst(instance._meta.verbose_name),
+        'object': instance,
     }
     if not reversion.is_registered(instance):
         return
@@ -563,8 +565,12 @@ def execute_admin_post_save_tasks(instance: Model, user: User):
 # implementing new classes or migrating away from ModelAdmin. Remove this class
 # when ModelAdmin migration is finished.
 class AplansEditView(
-    PersistFiltersEditingModelAdminMixin, ContinueEditingModelAdminMixin, PlanRelatedViewModelAdminMixin, ActivatePermissionHelperPlanContextModelAdminMixin,
-    SetInstanceModelAdminMixin, EditView,
+    PersistFiltersEditingModelAdminMixin,
+    ContinueEditingModelAdminMixin,
+    PlanRelatedViewModelAdminMixin,
+    ActivatePermissionHelperPlanContextModelAdminMixin,
+    SetInstanceModelAdminMixin,
+    EditView,
 ):
     def form_valid(self, form, *args, **kwargs):
         try:
@@ -572,7 +578,7 @@ class AplansEditView(
         except ProtectedError as e:
             for o in e.protected_objects:
                 name = type(o)._meta.verbose_name_plural
-                error = _("Error deleting items. Try first deleting any %(name)s that are in use.") % {'name': name}
+                error = _('Error deleting items. Try first deleting any %(name)s that are in use.') % {'name': name}
                 form.add_error(None, error)
                 form.add_error(None, _('In use: "%(instance)s".') % {'instance': str(o)})
             messages.validation_error(self.request, self.get_error_message(), form)
@@ -587,7 +593,7 @@ class AplansEditView(
         else:
             model_name = self.verbose_name
 
-        return _("%s could not be created due to errors.") % capfirst(model_name)
+        return _('%s could not be created due to errors.') % capfirst(model_name)
 
 
 # TODO: Reimplemented in admin_site/mixins.py to make this work without
@@ -616,8 +622,10 @@ class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
                 self.instance.category_types.filter(common=removed_cct).delete()
             except ProtectedError:
                 # Actually validation should have been done before this method is called, but it seems to work for now
-                error = _(f"Could not remove common category type '{removed_cct}' from the plan because categories "
-                          "with the corresponding category type exist.")
+                error = _(
+                    'Could not remove common category type "%(removed_cct)" from the plan because categories '
+                    'with the corresponding category type exist.',
+                ) % {'removed_cct': removed_cct}
                 form.add_error('common_category_types', error)
                 messages.validation_error(self.request, self.get_error_message(), form)
                 return self.render_to_response(self.get_context_data(form=form))
@@ -625,7 +633,11 @@ class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
 
 
 class AplansCreateView(
-    PersistFiltersEditingModelAdminMixin, ContinueEditingModelAdminMixin, PlanRelatedViewModelAdminMixin, SetInstanceModelAdminMixin, CreateView,
+    PersistFiltersEditingModelAdminMixin,
+    ContinueEditingModelAdminMixin,
+    PlanRelatedViewModelAdminMixin,
+    SetInstanceModelAdminMixin,
+    CreateView,
 ):
     request: WatchAdminRequest
 
@@ -643,10 +655,12 @@ class AplansCreateView(
         ret = super().form_valid(form, *args, **kwargs)
 
         if hasattr(form.instance, 'handle_admin_save'):
-            form.instance.handle_admin_save(context={
-                'user': self.request.user,
-                'operation': 'create',
-            })
+            form.instance.handle_admin_save(
+                context={
+                    'user': self.request.user,
+                    'operation': 'create',
+                },
+            )
 
         return ret
 
@@ -707,7 +721,8 @@ class AutocompletePanel(WagtailAutocompletePanel):
             ret = old_render_js_init(self, id)
             if self.placeholder_text:
                 ret += "\nsetTimeout(function() { $('#%s').attr('placeholder', '%s'); }, 5000);" % (
-                    id, quote(self.placeholder_text),
+                    id,
+                    quote(self.placeholder_text),
                 )
             return ret
 
@@ -735,13 +750,13 @@ class ActionListPageBlockFormMixin(forms.Form):
         ('', _('[not included]')),
         ('primary_filters', _('in primary filters')),
         ('main_filters', _('in main filters')),
-        ('advanced_filters',  _('in advanced filters')),
+        ('advanced_filters', _('in advanced filters')),
     ]
     ACTION_DETAIL_CONTENT_SECTION_CHOICES = [
         ('', _('[not included]')),
         ('details_main_top', _('in main column (top)')),
         ('details_main_bottom', _('in main column (bottom)')),
-        ('details_aside',  _('in side column')),
+        ('details_aside', _('in side column')),
     ]
 
     action_list_filter_section = forms.ChoiceField(choices=ACTION_LIST_FILTER_SECTION_CHOICES, required=False)
