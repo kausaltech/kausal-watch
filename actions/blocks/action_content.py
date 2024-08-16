@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString
+from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString, GraphQLBoolean
 
 from aplans.graphql_types import register_graphene_interface
 from aplans.utils import underscore_to_camelcase
@@ -226,6 +226,43 @@ class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blo
         GraphQLString('heading'),
     ]
 
+@register_streamfield_block
+class FormChoiceBlock(blocks.StructBlock):
+    choice_label = blocks.CharBlock(required=True, label=_('Label'))
+    choice_value = blocks.CharBlock(required=True, label=_('Value'))
+
+    class Meta:
+        label = _('Choice')
+
+    graphql_fields = [
+        GraphQLString('choice_label'),
+        GraphQLString('choice_value'),
+    ]
+
+@register_streamfield_block
+class FormFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(required=True, label=_('Field Label'))
+    field_type = blocks.ChoiceBlock(choices=[
+        ('text', _('Text')),
+        ('checkbox', _('Checkbox')),
+        ('dropdown', _('Dropdown')),
+    ], required=True, label=_('Field Type'))
+    required = blocks.BooleanBlock(required=False, label=_('Required'))
+    default_value = blocks.CharBlock(required=False, label=_('Default Value'))
+    help_text = blocks.CharBlock(required=False, label=_('Help Text'))
+    choices = blocks.ListBlock(FormChoiceBlock(), required=False, label=_('Choices'))
+
+    class Meta:
+        label = _('Form Field')
+
+    graphql_fields = [
+        GraphQLString('field_label'),
+        GraphQLString('field_type'),
+        GraphQLBoolean('required'),
+        GraphQLString('default_value'),
+        GraphQLString('help_text'),
+        GraphQLStreamfield('choices'),
+    ]
 
 @register_streamfield_block
 class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
@@ -233,14 +270,18 @@ class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.Str
 
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
+    fields = blocks.StreamBlock([
+        ('form_field', FormFieldBlock()),
+    ], label=_('Form Fields'))
+
     class Meta:
         label = _("Contact form")
 
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('description'),
+        GraphQLStreamfield('fields'),
     ]
-
 
 
 @register_streamfield_block
