@@ -228,11 +228,19 @@ class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blo
 
 
 @register_streamfield_block
-class ActionContactFormBlock(blocks.StaticBlock):
+class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
     graphql_interfaces = (FieldBlockMetaInterface, )
 
+    heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
+    description = blocks.CharBlock(required=False, default="", label=_('Description'))
     class Meta:
         label = _("Contact form")
+
+    graphql_fields = [
+        GraphQLString('heading'),
+        GraphQLString('description'),
+    ]
+
 
 
 @register_streamfield_block
