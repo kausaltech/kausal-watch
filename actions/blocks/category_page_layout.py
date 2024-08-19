@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLString
+from grapple.models import GraphQLForeignKey, GraphQLString, GraphQLBoolean, GraphQLStreamfield
 
 from actions.blocks.action_content import BaseDatasetsBlock
 from actions.blocks.choosers import CategoryAttributeTypeChooserBlock, CategoryTypeDatasetSchemaChooserBlock
@@ -37,18 +37,61 @@ class CategoryPageCategoryListBlock(blocks.StructBlock):
     class Meta:
         label = _('Category list')
 
+@register_streamfield_block
+class FormChoiceBlock(blocks.StructBlock):
+    choice_label = blocks.CharBlock(required=True, label=_('Label'))
+    choice_value = blocks.CharBlock(required=True, label=_('Value'))
+
+    class Meta:
+        label = _('Choice')
+
+    graphql_fields = [
+        GraphQLString('choice_label'),
+        GraphQLString('choice_value'),
+    ]
+
+@register_streamfield_block
+class FormFieldBlock(blocks.StructBlock):
+    field_label = blocks.CharBlock(required=True, label=_('Field Label'))
+    field_type = blocks.ChoiceBlock(choices=[
+        ('text', _('Text')),
+        ('checkbox', _('Checkbox')),
+        ('dropdown', _('Dropdown')),
+    ], required=True, label=_('Field Type'))
+    required = blocks.BooleanBlock(required=False, label=_('Required'))
+    default_value = blocks.CharBlock(required=False, label=_('Default Value'))
+    help_text = blocks.CharBlock(required=False, label=_('Help Text'))
+    choices = blocks.StreamBlock([
+        ('choice_field', FormChoiceBlock()),
+    ], required=False, min_num=0, label=_('Choices'))
+
+    class Meta:
+        label = _('Form Field')
+
+    graphql_fields = [
+        GraphQLString('field_label'),
+        GraphQLString('field_type'),
+        GraphQLBoolean('required'),
+        GraphQLString('default_value'),
+        GraphQLString('help_text'),
+        GraphQLStreamfield('choices'),
+    ]
 
 @register_streamfield_block
 class CategoryPageContactFormBlock(blocks.StructBlock):
-    heading = blocks.CharBlock(required=False, label=_('Heading'))
-    description = blocks.CharBlock(required=False, label=_('Description'))
+    heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
+    description = blocks.CharBlock(required=False, default="", label=_('Description'))
+    fields = blocks.StreamBlock([
+        ('form_field', FormFieldBlock()),
+    ], required=False, min_num=0, label=_('Form Fields'))
 
     class Meta:
-        label = _('Contact form')
+        label = _("Contact form")
 
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('description'),
+        GraphQLStreamfield('fields'),
     ]
 
 
