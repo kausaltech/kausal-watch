@@ -33,6 +33,8 @@ class UserFeedback(models.Model):
     comment = models.TextField(verbose_name=_("comment"))
 
     url = models.URLField(verbose_name=_("URL"))
+
+    additional_fields = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("created at"))
     is_processed = models.BooleanField(default=False, verbose_name=_("is processed"))
 

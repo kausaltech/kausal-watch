@@ -1,5 +1,6 @@
 from typing import Tuple, Type
 
+from django.forms import ValidationError
 import graphene
 from django.apps import apps
 from django.db import models
@@ -247,12 +248,28 @@ class FormFieldBlock(blocks.StructBlock):
         ('checkbox', _('Checkbox')),
         ('dropdown', _('Dropdown')),
     ], required=True, label=_('Field Type'))
-    required = blocks.BooleanBlock(required=False, label=_('Required'))
-    default_value = blocks.CharBlock(required=False, label=_('Default Value'))
-    help_text = blocks.CharBlock(required=False, label=_('Help Text'))
+    field_required = blocks.BooleanBlock(required=False, label=_('Required'))
     choices = blocks.StreamBlock([
         ('choice_field', FormChoiceBlock()),
     ], required=False, min_num=0, label=_('Choices'))
+
+    def clean(self, value):
+        cleaned_data = super().clean(value)
+        field_type = cleaned_data.get('field_type')
+        choices = cleaned_data.get('choices')
+
+        errors = {}
+        if field_type == 'text' and choices:
+            errors['choices'] = ValidationError(_("Choices are only allowed for 'Dropdown' or 'Checkbox' field types."))
+
+        # Check that 'choices' are provided when field_type is 'dropdown' or 'checkbox'
+        if field_type in ['dropdown', 'checkbox'] and not choices:
+            errors['choices'] = ValidationError(_("Choices must be provided for 'Dropdown' or 'Checkbox' field types."))
+
+        if errors:
+            raise blocks.StructBlockValidationError(errors)
+
+        return cleaned_data
 
     class Meta:
         label = _('Form Field')
@@ -260,24 +277,19 @@ class FormFieldBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('field_label'),
         GraphQLString('field_type'),
-        GraphQLBoolean('required'),
-        GraphQLString('default_value'),
-        GraphQLString('help_text'),
+        GraphQLBoolean('field_required'),
         GraphQLStreamfield('choices'),
     ]
 
-@register_streamfield_block
-class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
-    graphql_interfaces = (FieldBlockMetaInterface, )
 
+class BaseContactFormBlock(blocks.StructBlock):
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
     fields = blocks.StreamBlock([
         ('form_field', FormFieldBlock()),
-    ], required=False, min_num=0, label=_('Form Fields'))
-
-    class Meta:
-        label = _("Contact form")
+    ], required=False, min_num=0, label=_('Additional form fields'),
+    help_text=_("Form fields to be shown in addition to Name, Email and Comment fields"),
+    )
 
     graphql_fields = [
         GraphQLString('heading'),
@@ -285,6 +297,11 @@ class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.Str
         GraphQLStreamfield('fields'),
     ]
 
+@register_streamfield_block
+class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, BaseContactFormBlock):
+    graphql_interfaces = (FieldBlockMetaInterface, )
+    class Meta:
+        label = _("Contact form")
 
 @register_streamfield_block
 class IndicatorCausalChainBlock(blocks.StaticBlock):
