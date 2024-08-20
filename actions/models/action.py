@@ -233,7 +233,7 @@ class Action(
     )
     manual_status_reason = models.TextField(
         blank=True, null=True, verbose_name=_('specifier for status'),
-        help_text=_('Describe the reason why this action has has this status'),
+        help_text=_('Describe the reason why this action has this status'),
     )
 
     merged_with: FK[Action | None] = models.ForeignKey(
