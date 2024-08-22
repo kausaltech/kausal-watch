@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _, ngettext_lazy
 from wagtail import hooks
 from wagtail.admin.panels import (
     FieldPanel,
+    FieldRowPanel,
     HelpPanel,
     InlinePanel,
     MultiFieldPanel,
@@ -382,123 +383,184 @@ class IndicatorAdmin(AplansModelAdmin):
     edit_handler = IndicatorEditHandler
     base_form_class = IndicatorForm
 
-    basic_panels = [
-        CustomizableBuiltInFieldPanel('name'),
-        CustomizableBuiltInFieldPanel('time_resolution'),
-        CustomizableBuiltInFieldPanel('updated_values_due_at'),
-        CustomizableBuiltInFieldPanel('min_value'),
-        CustomizableBuiltInFieldPanel('max_value'),
-        CustomizableBuiltInFieldPanel('level'),
-        CustomizableBuiltInFieldPanel('reference'),
-        CustomizableBuiltInFieldPanel('internal_notes'),
-        InlinePanel(
-            'related_actions',
-            panels=[
-                CustomizableBuiltInFieldPanel('action', widget=autocomplete.ModelSelect2(url='action-autocomplete')),
-                CustomizableBuiltInFieldPanel('effect_type'),
-                CustomizableBuiltInFieldPanel('indicates_action_progress'),
-            ],
-            heading=_('Indicator for actions'),
-        ),
-        CustomizableBuiltInFieldPanel('description'),
-    ]
-
-    advanced_panels: list[Panel[Any]] = []
-
-    def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = cast(Indicator, ctx_instance.get())  # FIXME: Fails when creating a new indicator
-        basic_panels = list(self.basic_panels)
-        advanced_panels = list(self.advanced_panels)
+    def _get_basic_information_tab(self, instance, request) -> ObjectList:
+        """Get basic information tab for edit view."""
+        panels: list[Panel] = []
         plan = request.user.get_active_admin_plan()
+        is_general_admin = request.user.is_general_admin_for_plan(plan)
+        is_linked_to_common_indicator = bool(instance and instance.common)
         dimensions_str = ', '.join(instance.dimensions.values_list('dimension__name', flat=True))
         if not dimensions_str:
             dimensions_str = _("none")
 
-        # Some fields should only be editable if the indicator is not linked to a common indicator
-        is_general_admin = request.user.is_general_admin_for_plan(plan)
-        if not instance or not instance.common:
-            basic_panels.insert(
-                1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete')),
-            )
-            basic_panels.insert(
-                2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete')),
-            )
-            if is_general_admin:
-                basic_panels.append(CustomizableBuiltInFieldPanel('visibility'))
-                advanced_panels.append(CondensedInlinePanel[Indicator]('dimensions', panels=[
-                    FieldPanel('dimension'),
-                ], heading=_("Dimensions")))
-                # If the indicator has values, show a warning that these would be deleted by changing dimensions
-                num_values = instance.values.count() if instance else 0
-                if num_values:
-                    assert instance
-                    warning_text = ngettext_lazy("If you change the dimensions of this indicator (currently "
-                                                 "%(dimensions)s), its single value will be deleted.",
-                                                 "If you change the dimensions of this indicator (currently "
-                                                 "%(dimensions)s), all its %(num)d values will be deleted.",
-                                                 num_values) % {'dimensions': dimensions_str, 'num': num_values}
-                    # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
-                    # the ugly gap, but it seems nontrivial to do properly.
-                    advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
-        else:
-            info_text = _("This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be "
-                          "edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s") % {
-                              'quantity': instance.quantity, 'unit': instance.unit, 'dimensions': dimensions_str,
-                          }
-            basic_panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
-
-        advanced_panels.insert(
-            1, FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
-        )
-        advanced_panels.insert(
-            2, FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
-        )
-        advanced_panels.append(InlinePanel(
-            'related_effects',
-            panels=[
-                FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                FieldPanel('effect_type'),
-                FieldPanel('confidence_level'),
-            ],
-            heading=_('Effects'),
-        ))
-        advanced_panels.append(InlinePanel(
-            'related_causes',
-            panels=[
-                FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
-                FieldPanel('effect_type'),
-                FieldPanel('confidence_level'),
-            ],
-            heading=_('Causes'),
-        ))
-
-        cat_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
-        cat_panels = []
-        for key, field in cat_fields.items():
-            cat_panels.append(FieldPanel(key, heading=field.label))
-        if cat_panels:
-            basic_panels.append(MultiFieldPanel(cat_panels, heading=_('Categories')))
-
-        basic_panels.append(
-            MultiFieldPanel(
-                children=advanced_panels, heading=_('Advanced options'), classname='collapsible collapsed',
-            ),
-        )
-        tabs = [
-            ObjectList(basic_panels, heading=_('Basic information')),
-            ObjectList([
-                CondensedInlinePanel(
-                    'contact_persons',
-                    panels=[
-                        FieldPanel('person', widget=PersonChooser),
-                    ],
-                ),
-            ], heading=_('Contact persons')),
+        # Basic panels
+        panels += [
+            CustomizableBuiltInFieldPanel('name'),
+            CustomizableBuiltInFieldPanel('time_resolution'),
+            CustomizableBuiltInFieldPanel('level'),
         ]
 
-        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
-        tabs += i18n_tabs
+        if is_linked_to_common_indicator:
+            info_text = _(
+                "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. "
+                "Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s",
+            ) % {
+                'quantity': instance.quantity,
+                'unit': instance.unit,
+                'dimensions': dimensions_str,
+            }
+            panels.insert(0, HelpPanel(f'<p class="help-block help-info">{info_text}</p>'))
+        else:
+            panels.insert(1, FieldPanel('quantity', widget=autocomplete.ModelSelect2(url='quantity-autocomplete')))
+            panels.insert(2, FieldPanel('unit', widget=autocomplete.ModelSelect2(url='unit-autocomplete')))
+            if is_general_admin:
+                panels.insert(4, CustomizableBuiltInFieldPanel('visibility'))
+
+        # Further information
+        panels.append(
+            MultiFieldPanel(
+                children=[
+                    CustomizableBuiltInFieldPanel('description'),
+                    CustomizableBuiltInFieldPanel('reference'),
+                ],
+                heading=_("Further information"),
+                classname='collapsed',
+            ),
+        )
+
+        # Categories
+        category_fields = _get_category_fields(plan, Indicator, instance, with_initial=True)
+        category_panels = [FieldPanel(key, heading=field.label) for key, field in category_fields.items()]
+        if category_panels:
+            panels.append(MultiFieldPanel(category_panels, heading=_('Categories'), classname='collapsed'))
+
+        # Visualisation settings
+        visualisation_settings_panels = [
+            FieldRowPanel(
+                children=[
+                    CustomizableBuiltInFieldPanel('min_value'),
+                    CustomizableBuiltInFieldPanel('max_value'),
+                ],
+                heading=_('Value bounds'),
+            )
+        ]
+        panels.append(
+            MultiFieldPanel(
+                visualisation_settings_panels,
+                heading=_('Visualization settings'),
+                classname='collapsed',
+            ),
+        )
+
+        # Advanced settings
+        advanced_panels: list[Panel] = [
+            FieldPanel('organization', widget=autocomplete.ModelSelect2(url='organization-autocomplete')),
+        ]
+
+        if not is_linked_to_common_indicator and is_general_admin:
+            advanced_panels.append(
+                CondensedInlinePanel('dimensions', panels=[FieldPanel('dimension')], heading=_("Dimensions")),
+            )
+
+            # If the indicator has values, show a warning that these would be deleted by changing dimensions
+            num_values = instance.values.count() if instance else 0
+            if num_values:
+                warning_text = ngettext_lazy(
+                    "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will "
+                    "be deleted.",
+                    "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d "
+                    "values will be deleted.",
+                    num_values,
+                ) % {
+                    'dimensions': dimensions_str,
+                    'num': num_values,
+                }
+                # Actually the warning shouldn't be a separate panel for logical reasons and because it would avoid
+                # the ugly gap, but it seems nontrivial to do properly.
+                advanced_panels.append(HelpPanel(f'<p class="help-block help-warning">{warning_text}</p>'))
+
+        panels.append(
+            MultiFieldPanel(advanced_panels, heading=_('Advanced settings'), classname='collapsed'),
+        )
+
+        return ObjectList(panels, heading=_('Basic information'))
+
+    def _get_contact_persons_tab(self) -> ObjectList:
+        """Get contact persons tab for edit view."""
+        panels: list[Panel] = [
+            CondensedInlinePanel(
+                'contact_persons',
+                panels=[
+                    FieldPanel('person', widget=PersonChooser),
+                ],
+            ),
+        ]
+        return ObjectList(panels, heading=_('Contact persons'))
+
+    def _get_reporting_tab(self) -> ObjectList:
+        """Get reporting tab for edit view."""
+        panels: list[Panel] = [
+            CustomizableBuiltInFieldPanel('internal_notes'),
+            CustomizableBuiltInFieldPanel('updated_values_due_at'),
+        ]
+        return ObjectList(panels, heading=_('Reporting'))
+
+    def _get_relationships_tab(self) -> ObjectList:
+        """Get relationships tab for edit view."""
+        actions_panels: list[Panel] = [
+            InlinePanel(
+                'related_actions',
+                panels=[
+                    CustomizableBuiltInFieldPanel(
+                        'action', widget=autocomplete.ModelSelect2(url='action-autocomplete'),
+                    ),
+                    CustomizableBuiltInFieldPanel('effect_type'),
+                    CustomizableBuiltInFieldPanel('indicates_action_progress'),
+                ],
+                heading=_('Indicator for actions'),
+            ),
+        ]
+
+        other_indicators_panels = [
+            InlinePanel(
+                'related_effects',
+                panels=[
+                    FieldPanel('effect_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Effects'),
+            ),
+            InlinePanel(
+                'related_causes',
+                panels=[
+                    FieldPanel('causal_indicator', widget=autocomplete.ModelSelect2(url='indicator-autocomplete')),
+                    FieldPanel('effect_type'),
+                    FieldPanel('confidence_level'),
+                ],
+                heading=_('Causes'),
+            ),
+        ]
+
+        panels = [
+            FieldPanel('common', widget=autocomplete.ModelSelect2(url='common-indicator-autocomplete')),
+            MultiFieldPanel(actions_panels, heading=_('Actions')),
+            MultiFieldPanel(other_indicators_panels, heading=_('Other indicators')),
+        ]
+
+        return ObjectList(panels, heading=_('Relationships'))
+
+    def get_edit_handler(self):
+        request = ctx_request.get()
+        instance = cast(Indicator, ctx_instance.get())  # FIXME: Fails when creating a new indicator
+
+        tabs = [
+            self._get_basic_information_tab(instance, request),
+            self._get_contact_persons_tab(),
+            self._get_reporting_tab(),
+            self._get_relationships_tab(),
+            *get_translation_tabs(instance, request, include_all_languages=True),
+        ]
 
         return IndicatorEditHandler(tabs)
 
