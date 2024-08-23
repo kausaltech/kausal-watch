@@ -612,6 +612,12 @@ WAGTAILEMBEDS_FINDERS = [
     },
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'PowerBI',
+        'domain_whitelist': ('app.powerbi.com',),
+        'title': 'Chart',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'Sharepoint',
         'domain_whitelist': ('sharepoint.com', ),
         'title': 'Document',
