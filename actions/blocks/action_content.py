@@ -1,15 +1,15 @@
-from typing import Tuple, Type
+from __future__ import annotations
 
-from django.forms import ValidationError
 import graphene
 from django.apps import apps
 from django.db import models
+from django.forms import ValidationError
 from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLStreamfield, GraphQLString, GraphQLBoolean
+from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 
 from aplans.graphql_types import register_graphene_interface
 from aplans.utils import underscore_to_camelcase
