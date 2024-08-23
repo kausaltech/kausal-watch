@@ -13,7 +13,7 @@ class UserFeedbackForm(forms.ModelForm):
     plan = forms.ModelChoiceField(queryset=Plan.objects.all(), to_field_name='identifier')
     class Meta:
         model = UserFeedback
-        fields = ('plan', 'type', 'action', 'category', 'name', 'email', 'comment', 'url', 'additional_fields')
+        fields = ('plan', 'type', 'action', 'category', 'name', 'email', 'comment', 'url', 'additional_fields', 'page_id')
 
 
 class UserFeedbackNode(DjangoObjectType):
