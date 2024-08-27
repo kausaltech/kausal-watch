@@ -442,7 +442,8 @@ class IndicatorAdmin(AplansModelAdmin):
                     CustomizableBuiltInFieldPanel('max_value'),
                 ],
                 heading=_('Value bounds'),
-            )
+            ),
+            CustomizableBuiltInFieldPanel('show_trendline'),
         ]
         panels.append(
             MultiFieldPanel(

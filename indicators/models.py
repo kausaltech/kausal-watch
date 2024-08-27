@@ -440,6 +440,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         features=['link'],
     )
 
+    show_trendline = models.BooleanField(
+        default=True, verbose_name=_('show trendline'),
+    )
+
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
@@ -456,7 +460,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
-        'related_causes', 'related_effects', 'dimensions', 'reference',
+        'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline',
     ]
 
     wagtail_reference_index_ignore = True

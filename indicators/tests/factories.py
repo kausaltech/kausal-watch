@@ -60,6 +60,7 @@ class IndicatorFactory(DjangoModelFactory):
     description = "Indicator description"
     min_value = 0.0
     max_value = 100.0
+    show_trendline = False
     time_resolution = indicators.models.Indicator.TIME_RESOLUTIONS[0][0]
     updated_values_due_at = None
     internal_notes = "Indicator internal note"
