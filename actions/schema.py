@@ -1102,6 +1102,8 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_related_indicators(root: Action, info):
         plan = root.plan
         indicators = root.get_visible_related_indicators()
+        #  When accessing as Action draft revision, indicators are a FakeQuerySet without the
+        #  features of ActionIndicatorQuerySet
         if hasattr(indicators, 'order_by_setting'):
             return indicators.order_by_setting(plan)
         return indicators
