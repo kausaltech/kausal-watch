@@ -444,6 +444,7 @@ class IndicatorAdmin(AplansModelAdmin):
                 heading=_('Value bounds'),
             ),
             CustomizableBuiltInFieldPanel('show_trendline'),
+            CustomizableBuiltInFieldPanel('desired_trend'),
         ]
         panels.append(
             MultiFieldPanel(

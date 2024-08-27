@@ -444,6 +444,19 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         default=True, verbose_name=_('show trendline'),
     )
 
+    desired_trend = models.CharField(
+        blank=True, null=False, verbose_name=_('desired trend'), max_length=20, default='',
+        choices=(
+            ('increasing', _('increasing')),
+            ('decreasing', _('decreasing')),
+            ('', _('attempt to detect automatically')),
+        ),
+        help_text=_(
+            "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing "
+            "or decreasing?",
+        ),
+    )
+
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
@@ -460,7 +473,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'id', 'uuid', 'common', 'organization', 'identifier', 'name', 'quantity', 'unit', 'description',
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
-        'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline',
+        'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline', 'desired_trend',
     ]
 
     wagtail_reference_index_ignore = True

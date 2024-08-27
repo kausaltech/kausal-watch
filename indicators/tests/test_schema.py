@@ -550,6 +550,7 @@ def test_indicator_node(graphql_client_query_data):
             minValue
             maxValue
             showTrendline
+            desiredTrend
             categories {
               __typename
               id
@@ -630,6 +631,7 @@ def test_indicator_node(graphql_client_query_data):
             'minValue': indicator.min_value,
             'maxValue': indicator.max_value,
             'showTrendline': indicator.show_trendline,
+            'desiredTrend': indicator.desired_trend.upper(),
             'categories': [{
                 '__typename': 'Category',
                 'id': str(category.id),
