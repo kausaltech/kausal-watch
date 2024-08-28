@@ -152,7 +152,7 @@ ADMIN_BASE_URL = env('ADMIN_BASE_URL')
 WAGTAILADMIN_BASE_URL = ADMIN_BASE_URL
 WAGTAILADMIN_COMMENTS_ENABLED = True
 
-# Information needed to authentiacte as a GitHub App
+# Information needed to authenticate as a GitHub App
 GITHUB_APP_ID = env('GITHUB_APP_ID')
 GITHUB_APP_PRIVATE_KEY = env('GITHUB_APP_PRIVATE_KEY')
 
