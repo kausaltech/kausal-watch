@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -8,17 +11,19 @@ from rest_framework.response import Response
 
 import django_filters as filters
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 
 from aplans.rest_api import BulkListSerializer, BulkModelViewSet
 from aplans.utils import register_view_helper
 
 from actions.api import plan_router
 from actions.models import Plan
+from people.models import Person
 
 from .models import (
     ActionIndicator,
     Indicator,
+    IndicatorContactPerson,
     IndicatorGoal,
     IndicatorLevel,
     IndicatorValue,
@@ -144,7 +149,6 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
 
         return created_objs
 
-
 class IndicatorGoalListSerializer(serializers.ListSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
@@ -221,27 +225,194 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
         fields = ['date', 'value', 'categories']
         list_serializer_class = IndicatorValueListSerializer
 
+@extend_schema_field(dict(
+    type='object',
+    title=_('Contact persons'),
+))
+class IndicatorContactPersonSerializer(serializers.ListSerializer):
+    child = serializers.PrimaryKeyRelatedField(queryset=Person.objects.all())
+    class Meta:
+        model = IndicatorContactPerson
+        fields = ('id', 'person', 'order')
+        read_only_fields = ('id', 'order')
+
+    def update(self, instance: Indicator, validated_data):
+        assert isinstance(instance, Indicator)
+        assert instance.pk is not None
+        instance.set_contact_persons(validated_data)
+
+    def to_representation(self, value):
+        key = self.get_type_label()
+        fk_id_label = f'{key}_id'
+        return [{
+            key: getattr(v, fk_id_label),
+        } for v in value.all()]
+
+    def to_internal_value(self, data):
+        if isinstance(data, dict) and 'contact_persons' in data:
+            data = data['contact_persons']
+        return [{'person': item['person']} for item in data]
+
+    def get_type_label(self):
+        return 'person'
+
+    def get_available_instances(self, plan) -> set[int]:
+        cache = self.context.get('_cache')
+        if cache is None or 'available_person_ids' not in cache:
+            return Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True)
+        return cache['available_person_ids']
+
+    def get_instance_by_id(self, pk):
+        cache = self.context.get('_cache')
+        if cache is None or 'persons_by_id' not in cache:
+            return Person.objects.get(id=pk)
+        return cache['persons_by_id'][pk]
+
+
+    def get_multiple_error(self):
+        return _("Person occurs multiple times as contact person")
+
+
+def _validate_cat(ct_id, cat_val, ct_by_identifier) -> list:
+    if ct_id not in ct_by_identifier:
+            raise ValidationError('category type %s not found' % ct_id)
+    ct = ct_by_identifier[ct_id]
+    if not ct.usable_for_indicators or not ct.editable_for_indicators:
+        raise ValidationError('category type %s not editable' % ct_id)
+    cats = []
+    if ct.select_widget == ct.SelectWidget.SINGLE:
+        if cat_val is None:
+            cat_ids = []
+        else:
+            if not isinstance(cat_val, int):
+                raise ValidationError('invalid cat id: %s' % cat_val)
+            cat_ids = [cat_val]
+    else:
+        if not isinstance(cat_val, list):
+            raise ValidationError('expecting a list for %s' % ct_id)
+        cat_ids = cat_val
+
+    for cat_id in cat_ids:
+        if not isinstance(cat_id, int):
+            raise ValidationError('invalid cat id: %s' % cat_id)
+        cat = ct.categories.filter(id=cat_id).first()
+        if cat is None:
+            raise ValidationError(
+                'category %d not found in %s' % (cat_id, ct_id),
+            )
+        cats.append(cat)
+    return cats
+
+
+@extend_schema_field(dict(
+    type='object',
+    additionalProperties=dict(
+        type='array',
+        title='categories',
+        items=dict(type='integer'),
+    ),
+))
+class IndicatorCategoriesSerializer(serializers.Serializer):
+    parent: IndicatorSerializer
+
+    def to_representation(self, instance):
+        request: AuthenticatedWatchRequest = self.context.get('request')
+        user = None
+        plan = None
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+            plan = user.get_active_admin_plan()
+        else:
+            return {}
+        out = {}
+        cats = instance.all()
+
+        for ct in plan.category_types.all():
+            if not ct.usable_for_indicators:
+                continue
+            ct_cats = [cat.id for cat in cats if cat.type_id == ct.pk]
+            if ct.select_widget == ct.SelectWidget.SINGLE:
+                val = ct_cats[0] if len(ct_cats) else None
+            else:
+                val = ct_cats
+            out[ct.identifier] = val
+        return out
+
+
+
+    def to_internal_value(self, data):
+        if not data:
+            return {}
+        request: AuthenticatedWatchRequest = self.context.get('request')
+        user = None
+        plan = None
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+            plan = user.get_active_admin_plan()
+        else:
+            return {}
+        out = {}
+        if not isinstance(data, dict):
+            raise ValidationError('expecting a dict')
+        ct_by_identifier = {ct.identifier: ct for ct in plan.category_types.all()}
+        for ct_id, cat_val in data.items():
+            cats = _validate_cat(ct_id, cat_val, ct_by_identifier)
+            out[ct_id] = cats
+        return out
+
+
+    def update(self, instance: Indicator, validated_data):
+        assert isinstance(instance, Indicator)
+        assert instance.pk is not None
+        request: AuthenticatedWatchRequest = self.context.get('request')
+        user = None
+        plan = None
+        if request is not None and request.user and request.user.is_authenticated:
+            user = request.user
+            plan = user.get_active_admin_plan()
+        for ct_id, cats in validated_data.items():
+            instance.set_categories(ct_id, cats, plan)
+
 
 class IndicatorSerializer(serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
     latest_value = IndicatorValueSerializer(read_only=True, required=False)
+    contact_persons = IndicatorContactPersonSerializer(required=False, label=_('Contact persons'))
+    categories = IndicatorCategoriesSerializer(required=False)
 
     class Meta:
         model = Indicator
         list_serializer_class = BulkListSerializer
         fields = (
             'id', 'uuid', 'name', 'quantity', 'unit', 'time_resolution', 'organization', 'updated_values_due_at',
-            'latest_value', 'reference', 'internal_notes', 'visibility',
+            'latest_value', 'reference', 'internal_notes', 'visibility', 'contact_persons', 'categories',
         )
 
     def create(self, validated_data: dict):
+        contact_persons_data = validated_data.pop('contact_persons', None)
+        categories_data = validated_data.pop('categories', None)
         instance = super().create(validated_data)
+        if categories_data is not None:
+            self.fields['categories'].update(instance, categories_data)
+        if contact_persons_data is not None:
+            self.fields['contact_persons'].update(instance, contact_persons_data)
         assert not instance.levels.exists()
         plan = self.context['request'].user.get_active_admin_plan()
         level = 'strategic'
         assert level in [v for v, _ in Indicator.LEVELS]
         instance.levels.create(plan=plan, level=level)
         return instance
+
+    def update(self, instance, validated_data):
+        contact_persons_data = validated_data.pop('contact_persons', None)
+        categories_data = validated_data.pop('categories', None)
+        instance = super().update(instance, validated_data)
+        if categories_data is not None:
+            self.fields['categories'].update(instance, categories_data)
+        if contact_persons_data is not None:
+            self.fields['contact_persons'].update(instance, contact_persons_data)
+        return instance
+
 
 
     def get_fields(self):
@@ -257,6 +428,7 @@ class IndicatorSerializer(serializers.ModelSerializer):
             # Remove fields that are only for admins
             del fields['internal_notes']
         return fields
+
 
 
 class IndicatorGoalSerializer(serializers.ModelSerializer, IndicatorDataPointMixin):
@@ -285,6 +457,7 @@ class IndicatorEditValuesPermission(permissions.DjangoObjectPermissions):
         return user.can_modify_indicator(obj)
 
 
+
 @extend_schema(
     # Get rid of some warnings
     parameters=[
@@ -302,7 +475,7 @@ class IndicatorViewSet(BulkModelViewSet):
         if not plan_pk:
             return Indicator.objects.none()
         plan = Plan.objects.get(pk=plan_pk)
-        return Indicator.objects.available_for_plan(plan)
+        return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')
 
     def get_permissions(self):
         if self.action == 'update_values':
@@ -321,13 +494,12 @@ class IndicatorViewSet(BulkModelViewSet):
                     message='No permission to modify indicator',
                     code='no_indicator_permission',
                 )
-        else:
-            if not user.can_create_indicator(plan=None):
-                self.permission_denied(
-                    request,
-                    message='No permission to modify indicator',
-                    code='no_indicator_permission',
-                )
+        elif not user.can_create_indicator(plan=None):
+            self.permission_denied(
+                request,
+                message='No permission to modify indicator',
+                code='no_indicator_permission',
+            )
 
     @action(detail=True, methods=['get'])
     def values(self, request, pk=None):

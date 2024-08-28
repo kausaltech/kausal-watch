@@ -600,7 +600,11 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                                                  % self.common.unit)})
             # Unfortunately it seems we need to check whether dimensions are equal in the form
 
-    def set_categories(self, ctype: CategoryType, categories: list[int | Category]):
+    def set_categories(self, ctype: CategoryType, categories: list[int | Category], plan: Plan | None = None):
+        if plan is None:
+            plan = self.plans.first()
+        if isinstance(ctype, str):
+            ctype = plan.category_types.get(identifier=ctype)
         all_cats = {x.id: x for x in ctype.categories.all()}
         existing_cats = set(self.categories.filter(type=ctype))
         new_cats: set[Category] = set()
@@ -612,6 +616,19 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
             self.categories.remove(cat)
         for cat in new_cats - existing_cats:
             self.categories.add(cat)
+
+    def set_contact_persons(self, data: list):
+        existing_persons = {p.person for p in self.contact_persons.all()}
+        new_persons = {d['person'] for d in data}
+        IndicatorContactPerson.objects.filter(
+            indicator=self, person__in=(existing_persons - new_persons),
+        ).delete()
+        for d in data:
+            IndicatorContactPerson.objects.update_or_create(
+                indicator=self,
+                person_id=d['person'],
+            )
+
 
     def generate_normalized_values(self, cin: CommonIndicatorNormalizator):
         assert cin.normalizable == self.common
