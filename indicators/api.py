@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
@@ -208,8 +208,8 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
 
         found_dims = set()
         for cat in cats:
-            cat = cat_by_id.get(cat.id)
-            if cat is None:
+            c = cat_by_id.get(cat.id)
+            if c is None:
                 raise ValidationError("category %d not found in indicator dimensions" % cat.id)
             if cat.dimension_id in found_dims:
                 raise ValidationError("dimension already present for category %s" % cat.id)
@@ -256,18 +256,30 @@ class IndicatorContactPersonSerializer(serializers.ListSerializer):
     def get_type_label(self):
         return 'person'
 
+    def _cache_available_persons(self, plan) -> set[int]:
+        cache = self.context.get('_cache', {})
+        available_persons = cache.get('available_person_ids')
+        if available_persons is None:
+            available_persons = set(Person.objects.get_queryset().available_for_plan(
+                plan, include_contact_persons=True).values_list('id', flat=True))
+            cache['available_person_ids'] = available_persons
+        return available_persons
+
     def get_available_instances(self, plan) -> set[int]:
-        cache = self.context.get('_cache')
-        if cache is None or 'available_person_ids' not in cache:
-            return Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True)
-        return cache['available_person_ids']
+        available_persons = self._cache_available_persons(plan)
+        return available_persons
+
+    def _cache_persons(self, pk) -> dict:
+        cache = self.context.get('_cache', {})
+        persons = cache.get('persons_by_id')
+        if persons is None:
+            persons = {p.pk: p for p in Person.objects.all()}
+            cache['persons_by_id'] = persons
+        return persons
 
     def get_instance_by_id(self, pk):
-        cache = self.context.get('_cache')
-        if cache is None or 'persons_by_id' not in cache:
-            return Person.objects.get(id=pk)
-        return cache['persons_by_id'][pk]
-
+        persons = self._cache_persons(pk)
+        return persons[pk]
 
     def get_multiple_error(self):
         return _("Person occurs multiple times as contact person")
@@ -304,6 +316,7 @@ def _validate_cat(ct_id, cat_val, ct_by_identifier) -> list:
     return cats
 
 
+
 @extend_schema_field(dict(
     type='object',
     additionalProperties=dict(
@@ -327,7 +340,9 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
         out = {}
         cats = instance.all()
 
-        for ct in plan.category_types.all():
+        category_types = self._cache_cat_types(plan)
+
+        for ct in category_types:
             if not ct.usable_for_indicators:
                 continue
             ct_cats = [cat.id for cat in cats if cat.type_id == ct.pk]
@@ -354,7 +369,10 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
         out = {}
         if not isinstance(data, dict):
             raise ValidationError('expecting a dict')
-        ct_by_identifier = {ct.identifier: ct for ct in plan.category_types.all()}
+
+        category_types = self._cache_cat_types(plan)
+
+        ct_by_identifier = {ct.identifier: ct for ct in category_types}
         for ct_id, cat_val in data.items():
             cats = _validate_cat(ct_id, cat_val, ct_by_identifier)
             out[ct_id] = cats
@@ -373,8 +391,51 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
         for ct_id, cats in validated_data.items():
             instance.set_categories(ct_id, cats, plan)
 
+    def _cache_cat_types(self, plan) -> list:
+        cache = self.context.get('_cache', {})
+        category_types = cache.get('category_types')
+        if category_types is None:
+            category_types = list(plan.category_types.all().prefetch_related('categories'))
+            cache['category_types'] = category_types
+        return category_types
 
-class IndicatorSerializer(serializers.ModelSerializer):
+
+class IndicatorSerializerMixin:
+    context: dict[str, Any]
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.initialize_cache_context()
+
+    def initialize_cache_context(self) -> None:
+        plan = self.context['request'].user.get_active_admin_plan()
+        if plan is None:
+            return
+        cache: dict[str, Any] = {}
+
+        # # Cache category types
+        # category_types: list[Any] = list(plan.category_types.all().prefetch_related('categories'))
+        # cache['category_types'] = category_types
+        # cache['category_types_by_identifier'] = {ct.identifier: ct for ct in category_types}
+
+        # # Cache categories by type
+        # cache['categories_by_type'] = {
+        #     ct.id: list(ct.categories.all()) for ct in category_types
+        # }
+
+        # # Cache persons
+        # available_persons = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
+        # cache['available_person_ids'] = available_persons
+        # cache['persons_by_id'] = {p.pk: p for p in Person.objects.all()}
+
+        # self.context['_cache'] = cache
+
+        for field_name in ['categories', 'contact_persons']:
+            if field_name in self.fields:
+                self.fields[field_name].context['_cache'] = cache
+
+
+class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer):
     uuid = serializers.UUIDField(required=False)
     latest_value = IndicatorValueSerializer(read_only=True, required=False)
     contact_persons = IndicatorContactPersonSerializer(required=False, label=_('Contact persons'))

@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 from datetime import date
 
 from django.urls import reverse
 
 import pytest
 
-from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorFactory
+from actions.tests.factories import CategoryFactory, CategoryTypeFactory
+from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 
