@@ -561,7 +561,7 @@ class IndicatorAdmin(AplansModelAdmin):
             self._get_contact_persons_tab(),
             self._get_reporting_tab(),
             self._get_relationships_tab(),
-            *get_translation_tabs(instance, request, include_all_languages=True),
+            *get_translation_tabs(instance, request),
         ]
 
         return IndicatorEditHandler(tabs)

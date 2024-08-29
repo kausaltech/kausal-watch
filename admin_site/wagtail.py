@@ -90,7 +90,16 @@ def insert_model_translation_panels[M: Model](
 
 
 def get_translation_tabs[M: Model](instance: M, request, include_all_languages: bool = False, extra_panels=None):
-    # extra_panels maps a language code to a list of panels that should be put on the tab of that language
+    """
+    Get tabs for entering translated strings.
+
+    If `include_all_languages` is true, a tab is shown for each language that is not the default for the given instance.
+    This default language is determined by the `default_language` argument of the model's i18n field. If there is no
+    such argument, the global default language from `settings.LANGUAGE_CODE` is used.
+    If `include_all_languages` is false, a tab is shown for each language supported by the currently active plan except,
+    just like before, the default language of the instance.
+    `extra_panels` maps a language code to a list of panels that should be put on the tab of that language.
+    """
     if extra_panels is None:
         extra_panels = {}
 
@@ -105,11 +114,14 @@ def get_translation_tabs[M: Model](instance: M, request, include_all_languages: 
 
     languages_by_code = {x[0].lower(): x[1] for x in settings.LANGUAGES}
     if include_all_languages:
-        # Omit default language because it's stored in the model field without a modeltrans language suffix
-        default_language = get_language_from_default_language_field(instance, i18n_field)
-        languages = [lang for lang in languages_by_code.keys() if lang != default_language]
+        languages = list(languages_by_code.keys())
     else:
-        languages = [lang.lower() for lang in plan.other_languages]
+        languages = [plan.primary_language_lowercase] + [lang.lower() for lang in plan.other_languages]
+
+    # Omit default language because it's stored in the model field without a modeltrans language suffix
+    default_language = get_language_from_default_language_field(instance, i18n_field)
+    languages = [lang for lang in languages if lang != default_language]
+
     for lang_code in languages:
         assert lang_code == lang_code.lower()
         panels = []
