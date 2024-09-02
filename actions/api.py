@@ -1339,7 +1339,7 @@ class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkMod
             # Called during schema generation
             return Category.objects.none()
         category_type_pk = self.kwargs['category_type_pk']
-        return Category.objects.filter(type=category_type_pk)
+        return Category.objects.filter(type=category_type_pk).select_related("type")
 
 
 category_type_router.register('categories', CategoryViewSet, basename='category')

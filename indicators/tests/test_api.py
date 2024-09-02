@@ -201,3 +201,126 @@ def test_add_value_updates_due_date(client, plan, plan_admin_user):
     indicator = IndicatorFactory(updated_values_due_at=date(2020, 3, 1))
     post(client, plan, plan_admin_user, 'indicator-values', indicator, [VALUE_2019])
     assert indicator.updated_values_due_at == date(2021, 3, 1)
+
+
+
+def test_update_contact_persons(api_client, plan, plan_admin_user, indicator):
+    contact1 = IndicatorContactFactory()
+    contact2 = IndicatorContactFactory()
+
+    api_client.force_login(plan_admin_user)
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+    data = {
+        "name": indicator.name,
+        "unit": indicator.unit.id,
+        "organization": indicator.organization.id,
+        "contact_persons": [
+            {"person": contact1.person.id},
+            {"person": contact2.person.id},
+        ],
+    }
+
+    response = api_client.put(url, data)
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert indicator.contact_persons.count() == 2
+    assert set(indicator.contact_persons.values_list('person_id', flat=True)) == {contact1.person.id, contact2.person.id}
+
+
+def test_update_categories(api_client, plan, plan_admin_user, indicator):
+
+    category_type = CategoryTypeFactory(
+        plan=plan,
+        usable_for_indicators=True,
+        editable_for_indicators=True,
+        select_widget='multiple')
+    category1 = CategoryFactory(type=category_type)
+    category2 = CategoryFactory(type=category_type)
+
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    data = {
+        "name": indicator.name,
+        "unit": indicator.unit.id,
+        "organization": indicator.organization.id,
+        'categories': {
+            category_type.identifier: [category1.id, category2.id],
+        },
+    }
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.put(url, data)
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert indicator.categories.count() == 2
+    assert set(indicator.categories.values_list('id', flat=True)) == {category1.id, category2.id}
+
+
+def test_update_single_select_category(api_client, plan, plan_admin_user, indicator):
+    category_type = CategoryTypeFactory(
+        plan=plan,
+        usable_for_indicators=True,
+        editable_for_indicators=True,
+        select_widget='single')
+    category = CategoryFactory(type=category_type)
+
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+    data = {
+        "name": indicator.name,
+        "unit": indicator.unit.id,
+        "organization": indicator.organization.id,
+        'categories': {
+            category_type.identifier: category.id,
+        },
+    }
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.put(url, data)
+    assert response.status_code == 200
+
+    indicator.refresh_from_db()
+    assert indicator.categories.count() == 1
+    assert indicator.categories.first().id == category.id
+
+
+def test_update_categories_invalid_type(api_client, plan, plan_admin_user, indicator):
+    category_type = CategoryTypeFactory(plan=plan, usable_for_indicators=False, select_widget='single')
+    category = CategoryFactory(type=category_type)
+
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+    data = {
+        'categories': {
+            category_type.identifier: [category.id],
+        },
+    }
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.put(url, data)
+    assert response.status_code == 400
+
+
+def test_get_indicator_with_categories(api_client, plan, plan_admin_user, indicator):
+
+    category_type = CategoryTypeFactory(plan=plan, usable_for_indicators=True)
+    category = CategoryFactory(type=category_type)
+    indicator.categories.add(category)
+
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['categories'][category_type.identifier] == category.id
+
+
+def test_get_indicator_with_contact_persons(api_client, plan, plan_admin_user, indicator):
+    contact = IndicatorContactFactory(indicator=indicator)
+
+    url = reverse('indicator-detail', kwargs={'plan_pk': plan.pk, 'pk': indicator.pk})
+
+    api_client.force_login(plan_admin_user)
+    response = api_client.get(url)
+    assert response.status_code == 200
+    assert response.data['contact_persons'] == [{'person': contact.person.id}]
