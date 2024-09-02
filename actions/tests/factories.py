@@ -70,6 +70,7 @@ class PlanFactory(ModelFactory[Plan]):
     notification_settings = RelatedFactory(
         'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan',
     )
+    kausal_paths_instance_uuid = 'paths_uuid'
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Plan:
@@ -182,6 +183,7 @@ class CategoryFactory(ModelFactory[Category]):
     common = SubFactory(CommonCategoryFactory)
     lead_paragraph = "foo"
     help_text = "bar"
+    kausal_paths_node_uuid = "kausal_paths_node_uuid"
 
 
 class AttributeCategoryChoiceFactory(ModelFactory[AttributeCategoryChoice]):

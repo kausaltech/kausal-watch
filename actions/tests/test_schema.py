@@ -152,6 +152,7 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             additionalLinks {
               __typename
             }
+            kausalPathsInstanceUuid
           }
         }
         """,
@@ -246,6 +247,7 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             'additionalLinks': {
                 '__typename': 'AdditionalLinks',
             },
+            'kausalPathsInstanceUuid': plan.kausal_paths_instance_uuid,
         },
     }
     assert data == expected
@@ -774,6 +776,7 @@ def test_category_node(
             level {
               __typename
             }
+            kausalPathsNodeUuid
           }
         }
         """,
@@ -814,6 +817,7 @@ def test_category_node(
             'level': {
                 '__typename': 'CategoryLevel',
             },
+            'kausalPathsNodeUuid': category.kausal_paths_node_uuid,
         }],
     }
     assert data == expected

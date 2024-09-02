@@ -355,10 +355,15 @@ class CategoryBase(OrderedModel):
         help_text=_('Set if the category has a theme color'),
         validators=[validate_css_color],
     )
+    kausal_paths_node_uuid = models.CharField(
+        max_length=36, blank=True, null=False, default='', verbose_name=_('Kausal Paths node UUID'),
+        help_text=_('Kausal Paths node to link this category to'),
+    )
     help_text = models.TextField(verbose_name=_('help text'), blank=True)
 
     public_fields: ClassVar = [
         'id', 'uuid', 'identifier', 'name', 'lead_paragraph', 'image', 'color', 'help_text', 'order',
+        'kausal_paths_node_uuid',
     ]
 
     class Meta:

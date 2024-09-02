@@ -335,6 +335,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     country = CountryField(blank=True)
     daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
 
+    kausal_paths_instance_uuid = models.CharField(
+        blank=True, max_length=100, default='', verbose_name=_('Kausal Paths instance UUID'),
+        help_text=_('UUID of the corresponding Kausal Paths instance for Kausal Paths integration'),
+    )
+
     cache_invalidated_at = models.DateTimeField(auto_now=True)
     i18n = TranslationField(fields=['name', 'short_name'], default_language_field='primary_language_lowercase')
 
@@ -354,7 +359,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
-        'report_types', 'external_feedback_url', 'action_dependency_roles',
+        'report_types', 'external_feedback_url', 'action_dependency_roles', 'kausal_paths_instance_uuid',
     ]
 
     objects: ClassVar[PlanManager] = PlanManager()

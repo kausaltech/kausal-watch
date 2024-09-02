@@ -445,6 +445,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
                 FieldPanel('language'),
                 FieldPanel('image'),
             ]))
+            all_panels.append(FieldPanel('kausal_paths_node_uuid'))
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
