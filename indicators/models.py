@@ -600,9 +600,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
                                                  % self.common.unit)})
             # Unfortunately it seems we need to check whether dimensions are equal in the form
 
-    def set_categories(self, ctype: CategoryType, categories: list[int | Category], plan: Plan | None = None):
+    def set_categories(self, ctype: CategoryType | str, categories: list[int | Category], plan: Plan | None = None):
         if plan is None:
             plan = self.plans.first()
+        assert plan, "No default plan found."
         if isinstance(ctype, str):
             ctype = plan.category_types.get(identifier=ctype)
         all_cats = {x.id: x for x in ctype.categories.all()}

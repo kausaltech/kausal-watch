@@ -8,7 +8,6 @@ import pytest
 
 from actions.tests.factories import CategoryFactory, CategoryTypeFactory
 from indicators.tests.factories import CommonIndicatorNormalizatorFactory, IndicatorContactFactory, IndicatorFactory
-from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 

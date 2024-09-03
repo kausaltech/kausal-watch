@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
@@ -226,6 +226,7 @@ class IndicatorValueSerializer(serializers.ModelSerializer, IndicatorDataPointMi
         fields = ['date', 'value', 'categories']
         list_serializer_class = IndicatorValueListSerializer
 
+
 @extend_schema_field(dict(
     type='object',
     title=_('Contact persons'),
@@ -317,7 +318,6 @@ def _validate_cat(ct_id, cat_val, ct_by_identifier) -> list:
     return cats
 
 
-
 @extend_schema_field(dict(
     type='object',
     additionalProperties=dict(
@@ -354,8 +354,6 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
             out[ct.identifier] = val
         return out
 
-
-
     def to_internal_value(self, data):
         if not data:
             return {}
@@ -378,7 +376,6 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
             cats = _validate_cat(ct_id, cat_val, ct_by_identifier)
             out[ct_id] = cats
         return out
-
 
     def update(self, instance: Indicator, validated_data):
         assert isinstance(instance, Indicator)
@@ -404,7 +401,7 @@ class IndicatorCategoriesSerializer(serializers.Serializer):
 class IndicatorSerializerMixin:
     context: dict[str, Any]
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.initialize_cache_context()
 
@@ -414,9 +411,13 @@ class IndicatorSerializerMixin:
             return
         cache: dict[str, Any] = {}
 
+        # Ensure fields is a dictionary
+        fields = cast(dict[str, serializers.Field], self.fields) # type: ignore[attr-defined]
+
+
         for field_name in ['categories', 'contact_persons']:
-            if field_name in self.fields:
-                self.fields[field_name].context['_cache'] = cache
+            if field_name in fields:
+                fields[field_name].context['_cache'] = cache
 
 
 class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer):
@@ -437,10 +438,13 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
         instance = super().create(validated_data)
-        if categories_data is not None:
-            self.fields['categories'].update(instance, categories_data)
-        if contact_persons_data is not None:
-            self.fields['contact_persons'].update(instance, contact_persons_data)
+
+        fields = cast(dict[str, serializers.Field], self.fields)
+
+        if categories_data is not None and hasattr(fields['categories'], 'update'):
+            fields['categories'].update(instance, categories_data)
+        if contact_persons_data is not None and hasattr(fields['contact_persons'], 'update'):
+            fields['contact_persons'].update(instance, contact_persons_data)
         assert not instance.levels.exists()
         plan = self.context['request'].user.get_active_admin_plan()
         level = 'strategic'
@@ -452,12 +456,14 @@ class IndicatorSerializer(IndicatorSerializerMixin, serializers.ModelSerializer)
         contact_persons_data = validated_data.pop('contact_persons', None)
         categories_data = validated_data.pop('categories', None)
         instance = super().update(instance, validated_data)
-        if categories_data is not None:
-            self.fields['categories'].update(instance, categories_data)
-        if contact_persons_data is not None:
-            self.fields['contact_persons'].update(instance, contact_persons_data)
-        return instance
 
+        fields = cast(dict[str, serializers.Field], self.fields)
+
+        if categories_data is not None and hasattr(fields['categories'], 'update'):
+            fields['categories'].update(instance, categories_data)
+        if contact_persons_data is not None and hasattr(fields['contact_persons'], 'update'):
+            fields['contact_persons'].update(instance, contact_persons_data)
+        return instance
 
     def get_fields(self):
         fields = super().get_fields()
@@ -517,7 +523,7 @@ class IndicatorViewSet(BulkModelViewSet):
         if not plan_pk:
             return Indicator.objects.none()
         plan = Plan.objects.get(pk=plan_pk)
-        return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')
+        return Indicator.objects.available_for_plan(plan).prefetch_related('contact_persons', 'categories')  # type: ignore[attr-defined]
 
     def get_permissions(self):
         if self.action == 'update_values':
