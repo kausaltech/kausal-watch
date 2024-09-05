@@ -459,6 +459,8 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'related_causes', 'related_effects', 'dimensions', 'reference',
     ]
 
+    wagtail_reference_index_ignore = True
+
     objects: ClassVar[IndicatorManager] = IndicatorManager()  # pyright: ignore
 
     # type annotations
