@@ -123,26 +123,45 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
 
     def create(self, validated_data):
         indicator = self.context['indicator']
-        created_objs = []
+        created_or_updated_objects = []
 
+        indicator_values = indicator.values.all().prefetch_related('categories').select_for_update()
         with transaction.atomic():
-            indicator.values.all().delete()
-            indicator.latest_value = None
+            existing_values_by_date_and_categories = dict()
+            for val in indicator_values:
+                date = val.date.isoformat()
+                categories = tuple(sorted(val.categories.values_list('pk', flat=True)))
+                existing_values_by_date_and_categories[(date,) + categories] = val
 
             for data in validated_data:
                 categories = data.pop('categories', [])
-                obj = IndicatorValue(indicator=indicator, **data)
-                obj.save()
-                if categories:
-                    obj.categories.set(categories)
-                created_objs.append(obj)
+                date = data.get('date').isoformat()
 
+                sorted_category_pks = tuple(sorted([c.pk for c in categories]))
+                try:
+                    existing_indicator_value = existing_values_by_date_and_categories.pop((date,) + sorted_category_pks)
+                except KeyError:
+                    obj = IndicatorValue.objects.create(indicator=indicator, **data)
+                    if categories:
+                        obj.categories.set(categories)
+                        created_or_updated_objects.append(obj)
+                    continue
+                existing_indicator_value.value = data['value']
+                existing_indicator_value.save()
+                created_or_updated_objects.append(existing_indicator_value)
+                continue
+
+
+            # If there are values in the database not in the data, delete them
+            for indicator_value in existing_values_by_date_and_categories.values():
+                indicator_value.delete()
+            indicator.latest_value = None
             indicator.handle_values_update()
 
             for plan in indicator.plans.all():
                 plan.invalidate_cache()
 
-        return created_objs
+        return created_or_updated_objects
 
 
 class IndicatorGoalListSerializer(serializers.ListSerializer):
