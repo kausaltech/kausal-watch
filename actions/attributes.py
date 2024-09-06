@@ -662,10 +662,6 @@ class GenericTextAttributeType(AttributeType[T]):
                 initial_text = draft_attribute.text_vals.get(attribute_text_field_name)
             elif committed_attribute:
                 initial_text = getattr(committed_attribute, attribute_text_field_name)
-                # If this is a rich text field, wrap the pseudo-HTML in a RichTextObject
-                # https://docs.wagtail.org/en/v5.1.1/extending/rich_text_internals.html#data-format
-                if isinstance(committed_attribute._meta.get_field(attribute_text_field_name), RichTextField):
-                    initial_text = WagtailRichText(initial_text)
 
             form_field_kwargs: dict[str, Any] = dict(initial=initial_text, required=False, help_text=self.instance.help_text_i18n)
             if self.instance.max_length:

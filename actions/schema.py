@@ -548,7 +548,7 @@ class AttributeRichTextNode(DjangoNode):
 
     @staticmethod
     def resolve_value(root: AttributeRichText, info):
-        return root.text_i18n
+        return RichText(root.text_i18n)
 
     class Meta:
         model = AttributeRichText
