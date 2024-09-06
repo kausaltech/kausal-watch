@@ -149,8 +149,6 @@ class IndicatorValueListSerializer(serializers.ListSerializer):
                 existing_indicator_value.value = data['value']
                 existing_indicator_value.save()
                 created_or_updated_objects.append(existing_indicator_value)
-                continue
-
 
             # If there are values in the database not in the data, delete them
             for indicator_value in existing_values_by_date_and_categories.values():
