@@ -285,6 +285,7 @@ class FormFieldBlock(blocks.StructBlock):
 class BaseContactFormBlock(blocks.StructBlock):
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
+    email_required = blocks.BooleanBlock(required=False, default=True, label=_('Email required') )
     fields = blocks.StreamBlock([
         ('form_field', FormFieldBlock()),
     ], required=False, min_num=0, label=_('Additional form fields'),
@@ -294,6 +295,7 @@ class BaseContactFormBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('description'),
+        GraphQLBoolean("email_required"),
         GraphQLStreamfield('fields'),
     ]
 
