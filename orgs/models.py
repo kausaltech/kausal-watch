@@ -224,7 +224,8 @@ class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet],
         blank=True,
         on_delete=models.SET_NULL,
         related_name='+',
-        help_text=_('An optional logo for this organization'),
+        help_text=_("Organization logo. Please provide a square image (min. 250x250px). "
+                    "The logo used for organization's social media often works here best."),
     )
     description = RichTextField(blank=True, verbose_name=_('description'))
     url = models.URLField(blank=True, verbose_name=_('URL'))
