@@ -18,9 +18,9 @@ class ReportComparisonBlock(blocks.StructBlock):
         label = _('Report comparison')
 
     def reports_to_compare(self, info, values):
-        num_compare = 2  # TODO: Make this configurable in block
+        max_reports_to_compare = 5  # TODO: Make this configurable in block
         report_type = values['report_type']
-        reports = report_type.reports.order_by('-start_date')[:num_compare]
+        reports = report_type.reports.filter(is_public=True).order_by('-start_date')[:max_reports_to_compare]
         return reports
 
     graphql_fields = [
