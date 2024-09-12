@@ -118,10 +118,20 @@ class PlanFeatures(models.Model):
             'In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing.',
         ),
     )
-
     password_protected = models.BooleanField(
         default=False, verbose_name=_("Password protected"),
         help_text=_("Is this plan password protected?"),
+    )
+
+    class AccessibilityConformanceLevel(models.TextChoices):
+        DEFAULT = 'default', 'No extra accessibility fixes active'
+        HIGH = 'high', 'This plan requires extra accessibility fixes'
+
+    # This feature is intentionally hidden from the admin UI.
+    # Only change from the default if the plan needs this.
+    admin_accessibility_conformance_level = models.CharField(
+        choices=AccessibilityConformanceLevel.choices,
+        default=AccessibilityConformanceLevel.DEFAULT,
     )
 
     @property
