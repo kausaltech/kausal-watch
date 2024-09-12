@@ -130,6 +130,7 @@ class PlanFeatures(models.Model):
     # This feature is intentionally hidden from the admin UI.
     # Only change from the default if the plan needs this.
     admin_accessibility_conformance_level = models.CharField(
+        max_length=50,
         choices=AccessibilityConformanceLevel.choices,
         default=AccessibilityConformanceLevel.DEFAULT,
     )
