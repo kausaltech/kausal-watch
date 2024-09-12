@@ -27,7 +27,15 @@
 {% endblock %}
 
 {% block js %}
-    <script src="{% static 'admin_site/js/notifications.js' %}"></script>
+    {% comment %}
+        The following script injects various fixes to accessibility problems.
+        The more intrusive of the fixes required for some customers are only enabled
+        if plan.features.admin_accessibility_conformance_level is "high"
+    {% endcomment %}
+    <script
+      src="{% static 'admin_site/js/accessibility.js' %}"
+      data-active-plan-accessibility-level="{{ active_plan.features.admin_accessibility_conformance_level|default:"default" }}">
+    </script>
     {{ block.super }}
     {% sentry_init %}
     {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
