@@ -900,16 +900,43 @@ class Action(
 
     def get_workflow_progress(self) -> tuple[int, int]:
         """
-        Return a numerical digest of where in the moderation workflow the latest available action revision is.
+        A workflow with n amount of tasks can be used for moderating
+        action revisions in a plan. (Currently only n=1 and n=2 are actually
+        in use.)
 
-        From 0 to n, including the maximum n as the second element in the tuple.
+        The tasks of the workflow form a sequence and the action revision
+        must go through each task in the sequence to be finally
+        published (after the last task has been completed, ie. approved).
+        Initially, before being submitted and hence before having reached
+        the first task in the sequence, the action revision is just a draft revision
+        without a corresponding task.
 
-        0         there is a draft not yet in moderation
-        1         the draft has been sent to moderation
-        2...(n-1) the action is somewhere in moderation
-                  with at least one approval
-                  (if n == 2, this state does not exist)
-        n         there is only the public live version
+        This method returns a tuple of integers(i, n).
+
+        The integer i indicates how far the current latest action revision has
+        progressed in the sequence of moderation tasks in use in this plan.
+        The integer n indicates the final stage in the workflow task sequence,
+        in other words a published action. It is the amount of moderation tasks
+        in use in this plan.
+
+        For a moderation workflow with n tasks, the integer i is interpreted like this:
+
+        0         Initial state; a draft revision has been saved
+                  but not submitted to moderation.
+        1         The revision has been sent to the first moderation task.
+        i (where i < n)
+                  The revision has progressed to the i'th moderation task,
+                  with approvals from all the previous tasks.
+        n         The public live version of the action
+                  is the latest revision available for the action,
+                  ie. the action revision has received an approval
+                  in all the tasks of the moderation workflow.
+
+        Notice that an action can also be sent backwards in the sequence
+        if a moderator requests changes to the revision, rejecting the
+        revision while in a task t. When this happens, the first integer
+        of the tuple is decremented by 1 compared to when the revision was
+        in moderation in that specific task t, before the rejection.
         """
         workflow = self.get_workflow()
         workflow_tasks = [t.specific for t in workflow.tasks.all()]
@@ -926,7 +953,7 @@ class Action(
         if task_state.status in [TaskState.STATUS_REJECTED, TaskState.STATUS_CANCELLED]:
             # After rejection or cancellation, we consider the workflow state
             # to be in the previous state compared to the the task itself
-            # (ie. in the same state as if it had not been submitted yet at all)
+            # (ie. in the same state as if it had not been submitted yet to that task)
             task_index -= 1
         return (task_index + 1, max_progress)
 
