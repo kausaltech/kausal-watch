@@ -29,7 +29,7 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from wagtail.admin.panels.base import Panel
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, WorkflowMixin
+from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, WorkflowMixin, TaskState
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -917,10 +917,17 @@ class Action(
         max_progress = len(workflow_tasks) + 1
         if not self.has_unpublished_changes:
             return (max_progress, max_progress)
-        if self.current_workflow_state is None:
+        workflow_state = self.current_workflow_state
+        if workflow_state is None:
             return (min_progress, max_progress)
-        task = self.current_workflow_task
+        task_state = workflow_state.current_task_state
+        task = task_state.task.specific
         task_index = workflow_tasks.index(task)
+        if task_state.status in [TaskState.STATUS_REJECTED, TaskState.STATUS_CANCELLED]:
+            # After rejection or cancellation, we consider the workflow state
+            # to be in the previous state compared to the the task itself
+            # (ie. in the same state as if it had not been submitted yet at all)
+            task_index -= 1
         return (task_index + 1, max_progress)
 
     def get_dependency_relationships(self, user: UserOrAnon | None, plan: Plan | None) -> ActionDependencyRelationshipQuerySet:
