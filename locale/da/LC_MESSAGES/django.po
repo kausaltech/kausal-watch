@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
+"POT-Creation-Date: 2024-09-18 11:07+0300\n"
 "PO-Revision-Date: 2024-06-04 13:08+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
@@ -41,7 +41,7 @@ msgstr "Uspecificeret"
 msgid "Responsible parties"
 msgstr "Ansvarlige parter"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Kontaktpersoner"
@@ -110,7 +110,7 @@ msgstr "interne noter"
 msgid "Internal notes for plan administrators"
 msgstr "interne notater til planadministratorer"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Rapportering"
 
@@ -271,7 +271,7 @@ msgstr "Over %d dage"
 msgid "Organization occurs multiple times as responsible party"
 msgstr "Organisation optræder flere gange som ansvarlig part"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 #, fuzzy
 #| msgid "Organization occurs multiple times as responsible party"
 msgid "Person occurs multiple times as contact person"
@@ -316,8 +316,8 @@ msgid "Cancel moderation"
 msgstr "Aflyst eller udskudt"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
 msgstr "Handlinger"
 
@@ -401,12 +401,105 @@ msgid "Field"
 msgstr "felter"
 
 #: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
 msgid "Category"
 msgstr "Kategori"
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "value"
+msgid "Value"
+msgstr "værdi"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choice"
+msgstr "valgmuligheder for attributter"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "fields"
+msgid "Field Label"
+msgstr "felter"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Tekst"
+
+#: actions/blocks/action_content.py
+msgid "Checkbox"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Dropdown"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "fields"
+msgid "Field Type"
+msgstr "felter"
+
+#: actions/blocks/action_content.py
+msgid "Required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "attribute choice options"
+msgid "Choices"
+msgstr "valgmuligheder for attributter"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Unit must only be used for numeric attribute types"
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Enhed må kun bruges til numeriske attributtyper"
+
+#: actions/blocks/action_content.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "fields"
+msgid "Form Field"
+msgstr "felter"
+
+#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: pages/blocks.py
+msgid "Heading"
+msgstr "Overskrift"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "description"
+msgid "Description"
+msgstr "beskrivelse"
+
+#: actions/blocks/action_content.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Action list"
+msgid "Additional form fields"
+msgstr "Handlingsliste"
+
+#: actions/blocks/action_content.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -418,6 +511,28 @@ msgstr "Kontaktformular"
 #| msgid "Indicator action"
 msgid "Indicator Causal Chain"
 msgstr "Indikator Kausalkæde"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name"
+msgid "What heading should be used in the public UI for the Dataset?"
+msgstr "Hvilken etiket skal bruges i den offentlige brugergrænseflade til det officielle navn"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Indstil, om handlingsidentifikatorer skal være synlige i den offentlige brugergrænseflade"
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "hjælpetekst"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Datasets"
+msgstr "datasæt"
 
 #: actions/blocks/action_content.py
 #, fuzzy
@@ -452,10 +567,6 @@ msgid "Help text for the field to be shown in the UI"
 msgstr ""
 
 #: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "hjælpetekst"
-
-#: actions/blocks/action_content.py
 #, python-format
 msgid "Content block: %(label)s"
 msgstr "Indholdsblok: %(label)s"
@@ -488,11 +599,6 @@ msgstr "Fuld bredde"
 msgid "Grid"
 msgstr "Grid"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
-msgid "Heading"
-msgstr "Overskrift"
-
 #: actions/blocks/action_content.py
 msgid "Blocks"
 msgstr "Blokke"
@@ -500,10 +606,6 @@ msgstr "Blokke"
 #: actions/blocks/action_content.py
 msgid "Section"
 msgstr "Afsnit"
-
-#: actions/blocks/action_dashboard.py
-msgid "Label"
-msgstr ""
 
 #: actions/blocks/action_dashboard.py
 msgid "Label for the column to be used instead of the default"
@@ -598,22 +700,18 @@ msgid "Body"
 msgstr ""
 
 #: actions/blocks/category_page_layout.py
-#, fuzzy
-#| msgid "description"
-msgid "Description"
-msgstr "beskrivelse"
-
-#: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr ""
+
+#: actions/blocks/choosers.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "Dataset Schema"
+msgstr "datasætlicens"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
 msgstr "Etiket for \"vis alle\""
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
-msgstr "Dropdown"
 
 #: actions/blocks/filters.py
 msgid "Buttons"
@@ -744,6 +842,18 @@ msgstr "Vælg en plan"
 #| msgid "Choose another plan"
 msgid "Choose another field"
 msgstr "Vælg en anden plan"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category type"
+msgid "Choose a dataset schema"
+msgstr "Vælg en kategoritype"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another attribute"
+msgid "Choose another dataset schema"
+msgstr "Vælg en anden attribut"
 
 #: actions/defaults.py
 msgid "Cancelled or postponed"
@@ -914,7 +1024,7 @@ msgstr "ansvarlige organisationer"
 msgid "updated at"
 msgstr "opdateret kl"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
 msgstr "start dato"
 
@@ -1283,16 +1393,6 @@ msgid "Optional choice with optional text"
 msgstr "Valgfrit valg med valgfri tekst"
 
 #: actions/models/attributes.py
-#, fuzzy
-#| msgid "attribute choice options"
-msgid "Choice"
-msgstr "valgmuligheder for attributter"
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr "Tekst"
-
-#: actions/models/attributes.py
 msgid "Rich text"
 msgstr "Rig tekst"
 
@@ -1494,6 +1594,14 @@ msgid "Set if the category has a theme color"
 msgstr "Indstil hvis kategorien har en temafarve"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 msgid "common category"
 msgstr "fælles kategori"
 
@@ -1507,7 +1615,7 @@ msgstr "Fælles kategorier"
 msgid "parent category"
 msgstr "forældrekategori"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
 msgstr "kategori"
 
@@ -1942,6 +2050,14 @@ msgstr "afløst af"
 msgid "Set if this plan is superseded by another plan"
 msgstr "Indstil, hvis denne plan er afløst af en anden plan"
 
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr "planer"
@@ -2006,10 +2122,14 @@ msgid "Production"
 msgstr "Beliggenhed"
 
 #: actions/models/plan.py
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
 #, fuzzy
-#| msgid "Question"
-msgid "Testing"
-msgstr "Spørgsmål"
+#| msgid "document"
+msgid "Development"
+msgstr "dokument"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -2482,10 +2602,6 @@ msgstr "Publiceret"
 msgid "Non-public field"
 msgstr "Publiceret"
 
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr "Dine kontoindstillinger er blevet ændret med succes!"
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2502,6 +2618,17 @@ msgid "%s could not be created due to errors."
 msgstr "%s kunne ikke oprettes på grund af fejl."
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, fuzzy, python-format
+#| msgid "Add %(related_verbose_name)s"
+msgid "Add %(schema_name)s"
+msgstr "Tilføj %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
 msgid "View live"
 msgstr "Se live"
 
@@ -2511,8 +2638,9 @@ msgid "View %s live"
 msgstr "Se %s live"
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr "Den fælles kategoritype '{removed_cct}' kunne ikke fjernes fra planen, fordi der findes kategorier med den tilsvarende kategoritype."
 
 #: admin_site/wagtail.py
@@ -2675,7 +2803,7 @@ msgstr ""
 msgid "Year (2020)"
 msgstr ""
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
 msgstr "bestille"
 
@@ -2767,6 +2895,10 @@ msgstr ""
 #: budget/models.py indicators/models.py
 msgid "unit"
 msgstr "enhed"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr ""
 
 #: budget/models.py
 msgid "schema"
@@ -2973,6 +3105,12 @@ msgid "Report this error to your webmaster with the following information:"
 msgstr "Rapporter denne fejl til din webmaster med følgende oplysninger:"
 
 #: documents/models.py
+#, fuzzy
+#| msgid "updated by"
+msgid "uploaded by user"
+msgstr "opdateret af"
+
+#: documents/models.py
 msgid "document"
 msgstr "dokument"
 
@@ -2983,6 +3121,16 @@ msgstr "dokumenter"
 #: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
 msgstr "email adresse"
+
+#: feedback/models.py
+#, fuzzy
+#| msgid "action link"
+msgid "page id"
+msgstr "handlingslink"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr ""
 
 #: feedback/models.py
 msgid "is processed"
@@ -3287,6 +3435,34 @@ msgid "What is the reference or source for this indicator?"
 msgstr "Hvad er referencen eller kilden til denne indikator?"
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr ""
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "increases"
+msgid "increasing"
+msgstr "stiger"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "decreases"
+msgid "decreasing"
+msgstr "falder"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
 msgid "indicator"
 msgstr "indikator"
 
@@ -3498,12 +3674,31 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Dimensioner skal være de samme som i fælles indikator"
 
 #: indicators/wagtail_admin.py
-msgid "Indicator for actions"
-msgstr "Indikator for handlinger"
-
-#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "ingen"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Denne indikator er knyttet til en fælles indikator, så mængde, enhed og dimensioner kan ikke redigeres. Aktuel mængde: %(quantity)s; enhed: %(unit)s; dimensioner: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Basic information"
+msgid "Further information"
+msgstr "Grundlæggende oplysninger"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "fields"
+msgid "Value bounds"
+msgstr "felter"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Visualization settings"
+msgstr "meddelelsesindstillinger"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3519,9 +3714,14 @@ msgstr[0] "Hvis du ændrer dimensionerne af denne indikator (i øjeblikket %(dim
 msgstr[1] "Hvis du ændrer dimensionerne af denne indikator (i øjeblikket %(dimensions)s), vil alle dens %(num)d værdier blive slettet."
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr "Denne indikator er knyttet til en fælles indikator, så mængde, enhed og dimensioner kan ikke redigeres. Aktuel mængde: %(quantity)s; enhed: %(unit)s; dimensioner: %(dimensions)s"
+#, fuzzy
+#| msgid "Advanced options"
+msgid "Advanced settings"
+msgstr "Avancerede indstillinger"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Indikator for handlinger"
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
@@ -3532,8 +3732,16 @@ msgid "Causes"
 msgstr "Årsager"
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
-msgstr "Avancerede indstillinger"
+#, fuzzy
+#| msgid "other indicators"
+msgid "Other indicators"
+msgstr "andre indikatorer"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "related actions"
+msgid "Relationships"
+msgstr "relaterede handlinger"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
@@ -3551,6 +3759,28 @@ msgstr "Fælles indikatorer"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Denne fælles indikator har indikatorer knyttet til sig, så mængde, enhed og dimensioner kan ikke redigeres. Aktuel mængde: %(quantity)s; enhed: %(unit)s; dimensioner: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "created at"
+msgid "Created at"
+msgstr "oprettet kl"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified by"
+msgstr "Sidst ændret"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified at"
+msgstr "Sidst ændret"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
@@ -3793,11 +4023,6 @@ msgid "send to organization admins"
 msgstr "send til organisationsadministratorer"
 
 #: notifications/models.py
-#, fuzzy, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr "Typen skal være \"%(t)s\"."
-
-#: notifications/models.py
 msgid "scheduled notification"
 msgstr "planlagt meddelelse"
 
@@ -3806,6 +4031,11 @@ msgstr "planlagt meddelelse"
 #| msgid "notification settings"
 msgid "scheduled notifications"
 msgstr "meddelelsesindstillinger"
+
+#: notifications/models.py
+#, fuzzy, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr "Typen skal være \"%(t)s\"."
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -4039,8 +4269,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Et særskilt navn for denne organisation (genereret automatisk)"
 
 #: orgs/models.py
-msgid "An optional logo for this organization"
-msgstr "Et valgfrit logo for denne organisation"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr ""
 
 #: orgs/models.py
 msgid "A date of founding"
@@ -5187,6 +5417,17 @@ msgstr "Brugere"
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke administrerer."
 
+#, fuzzy
+#~| msgid "Question"
+#~ msgid "Testing"
+#~ msgstr "Spørgsmål"
+
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "Dine kontoindstillinger er blevet ændret med succes!"
+
+#~ msgid "An optional logo for this organization"
+#~ msgstr "Et valgfrit logo for denne organisation"
+
 #~ msgid "Notification types"
 #~ msgstr "Underretningstyper"
 
@@ -5383,9 +5624,6 @@ msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke
 #~ msgid "Choose an attribute"
 #~ msgstr "Vælg en attribut"
 
-#~ msgid "Choose another attribute"
-#~ msgstr "Vælg en anden attribut"
-
 #~ msgid "Azure AD tenant id"
 #~ msgstr "Azure AD lejer-id"
 
@@ -5430,10 +5668,6 @@ msgstr "Ingen tilladelse til at fjerne den bruger, der tilhører planer, du ikke
 
 #~ msgid "You have been successfully logged out."
 #~ msgstr "Du er blevet logget ud."
-
-#, python-format
-#~ msgid "Add %(related_verbose_name)s"
-#~ msgstr "Tilføj %(related_verbose_name)s"
 
 #, python-format
 #~ msgid "New %(related_verbose_name)s"

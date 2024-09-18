@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
+"POT-Creation-Date: 2024-09-18 11:07+0300\n"
 "PO-Revision-Date: 2020-09-07 15:50+0000\n"
 "Language-Team: English (Australia) (https://www.transifex.com/kausal-tech/teams/113123/en_AU/)\n"
 "Language: en_AU\n"
@@ -35,7 +35,7 @@ msgstr ""
 msgid "Responsible parties"
 msgstr ""
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr ""
@@ -100,7 +100,7 @@ msgstr ""
 msgid "Internal notes for plan administrators"
 msgstr ""
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr ""
 
@@ -245,7 +245,7 @@ msgstr ""
 msgid "Organization occurs multiple times as responsible party"
 msgstr ""
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 msgid "Person occurs multiple times as contact person"
 msgstr ""
 
@@ -283,8 +283,8 @@ msgid "Cancel moderation"
 msgstr ""
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
 msgstr ""
 
@@ -357,12 +357,87 @@ msgid "Field"
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
 msgid "Category"
 msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Value"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+msgid "Choice"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Field Label"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Checkbox"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Field Type"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Choices"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Form Field"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: pages/blocks.py
+msgid "Heading"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Description"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Additional form fields"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -371,6 +446,22 @@ msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Indicator Causal Chain"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "What heading should be used in the public UI for the Dataset?"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Datasets"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -395,10 +486,6 @@ msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Help text for the field to be shown in the UI"
-msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Help text"
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -430,21 +517,12 @@ msgstr ""
 msgid "Grid"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
-msgid "Heading"
-msgstr ""
-
 #: actions/blocks/action_content.py
 msgid "Blocks"
 msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Section"
-msgstr ""
-
-#: actions/blocks/action_dashboard.py
-msgid "Label"
 msgstr ""
 
 #: actions/blocks/action_dashboard.py
@@ -534,19 +612,15 @@ msgid "Body"
 msgstr ""
 
 #: actions/blocks/category_page_layout.py
-msgid "Description"
+msgid "Basis"
 msgstr ""
 
-#: actions/blocks/category_page_layout.py
-msgid "Basis"
+#: actions/blocks/choosers.py
+msgid "Dataset Schema"
 msgstr ""
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
-msgstr ""
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
 msgstr ""
 
 #: actions/blocks/filters.py
@@ -666,6 +740,16 @@ msgstr ""
 #: actions/chooser.py
 msgid "Choose another field"
 msgstr ""
+
+#: actions/chooser.py
+msgid "Choose a dataset schema"
+msgstr ""
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "organization"
+msgid "Choose another dataset schema"
+msgstr "organisation"
 
 #: actions/defaults.py
 msgid "Cancelled or postponed"
@@ -836,7 +920,7 @@ msgstr "responsible organisations"
 msgid "updated at"
 msgstr ""
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
 msgstr ""
 
@@ -1189,14 +1273,6 @@ msgid "Optional choice with optional text"
 msgstr ""
 
 #: actions/models/attributes.py
-msgid "Choice"
-msgstr ""
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr ""
-
-#: actions/models/attributes.py
 msgid "Rich text"
 msgstr ""
 
@@ -1388,6 +1464,14 @@ msgid "Set if the category has a theme color"
 msgstr "Set if the category has a theme colour"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 msgid "common category"
 msgstr ""
 
@@ -1399,7 +1483,7 @@ msgstr ""
 msgid "parent category"
 msgstr ""
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
 msgstr ""
 
@@ -1789,6 +1873,14 @@ msgstr ""
 msgid "Set if this plan is superseded by another plan"
 msgstr ""
 
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr ""
@@ -1850,7 +1942,11 @@ msgid "Production"
 msgstr ""
 
 #: actions/models/plan.py
-msgid "Testing"
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "Development"
 msgstr ""
 
 #: actions/models/plan.py
@@ -2272,10 +2368,6 @@ msgstr ""
 msgid "Non-public field"
 msgstr ""
 
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr ""
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2292,6 +2384,16 @@ msgid "%s could not be created due to errors."
 msgstr ""
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
 msgid "View live"
 msgstr ""
 
@@ -2301,8 +2403,7 @@ msgid "View %s live"
 msgstr ""
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr ""
 
 #: admin_site/wagtail.py
@@ -2458,7 +2559,7 @@ msgstr ""
 msgid "Year (2020)"
 msgstr ""
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
 msgstr ""
 
@@ -2537,6 +2638,10 @@ msgstr ""
 
 #: budget/models.py indicators/models.py
 msgid "unit"
+msgstr ""
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
 msgstr ""
 
 #: budget/models.py
@@ -2728,6 +2833,10 @@ msgid "Report this error to your webmaster with the following information:"
 msgstr ""
 
 #: documents/models.py
+msgid "uploaded by user"
+msgstr ""
+
+#: documents/models.py
 msgid "document"
 msgstr ""
 
@@ -2737,6 +2846,14 @@ msgstr ""
 
 #: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
+msgstr ""
+
+#: feedback/models.py
+msgid "page id"
+msgstr ""
+
+#: feedback/models.py
+msgid "latest revision"
 msgstr ""
 
 #: feedback/models.py
@@ -3036,6 +3153,30 @@ msgid "What is the reference or source for this indicator?"
 msgstr ""
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr ""
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+msgid "increasing"
+msgstr ""
+
+#: indicators/models.py
+msgid "decreasing"
+msgstr ""
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
 msgid "indicator"
 msgstr ""
 
@@ -3231,12 +3372,27 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "Indicator for actions"
+msgid "none"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "none"
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Further information"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Value bounds"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "organizations"
+msgid "Visualization settings"
+msgstr "organisations"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions"
@@ -3250,8 +3406,11 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgid "Advanced settings"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -3263,7 +3422,11 @@ msgid "Causes"
 msgstr ""
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
+msgid "Other indicators"
+msgstr ""
+
+#: indicators/wagtail_admin.py
+msgid "Relationships"
 msgstr ""
 
 #: indicators/wagtail_admin.py
@@ -3281,6 +3444,22 @@ msgstr ""
 #: indicators/wagtail_admin.py
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr ""
+
+#: kausal_common/models/modification_tracking.py
+msgid "Created at"
+msgstr ""
+
+#: kausal_common/models/modification_tracking.py
+msgid "Last modified by"
+msgstr ""
+
+#: kausal_common/models/modification_tracking.py
+msgid "Last modified at"
+msgstr ""
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
 msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
@@ -3487,11 +3666,6 @@ msgid "send to organization admins"
 msgstr "organisation"
 
 #: notifications/models.py
-#, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr ""
-
-#: notifications/models.py
 msgid "scheduled notification"
 msgstr ""
 
@@ -3500,6 +3674,11 @@ msgstr ""
 #| msgid "organizations"
 msgid "scheduled notifications"
 msgstr "organisations"
+
+#: notifications/models.py
+#, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr ""
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -3726,8 +3905,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "A distinct name for this organisation (generated automatically)"
 
 #: orgs/models.py
-msgid "An optional logo for this organization"
-msgstr "An optional logo for this organisation"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr ""
 
 #: orgs/models.py
 msgid "A date of founding"
@@ -4765,6 +4944,9 @@ msgstr ""
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr ""
+
+#~ msgid "An optional logo for this organization"
+#~ msgstr "An optional logo for this organisation"
 
 #, fuzzy
 #~| msgid "main organization for the plan"

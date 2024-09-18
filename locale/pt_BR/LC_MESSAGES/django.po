@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
+"POT-Creation-Date: 2024-09-18 11:07+0300\n"
 "PO-Revision-Date: 2024-05-28 07:20+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -36,7 +36,7 @@ msgstr "Não especificado"
 msgid "Responsible parties"
 msgstr "Partes responsáveis"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Pessoas de contato"
@@ -105,7 +105,7 @@ msgstr "Notas internas"
 msgid "Internal notes for plan administrators"
 msgstr "Notas internas para administradores de planos"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 #, fuzzy
 msgid "Reporting"
 msgstr "Relatórios"
@@ -266,7 +266,7 @@ msgstr "Mais de %d dias"
 msgid "Organization occurs multiple times as responsible party"
 msgstr "A organização aparece várias vezes como parte responsável"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 #, fuzzy
 msgid "Person occurs multiple times as contact person"
 msgstr "A pessoa ocorre várias vezes como pessoa de contato"
@@ -312,8 +312,8 @@ msgid "Cancel moderation"
 msgstr "Cancelar a moderação"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 #, fuzzy
 msgid "Actions"
 msgstr "Ações"
@@ -398,7 +398,8 @@ msgid "Field"
 msgstr "Campo"
 
 #: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
 #, fuzzy
 msgid "Category"
 msgstr "Categoria"
@@ -407,6 +408,93 @@ msgstr "Categoria"
 #, fuzzy
 msgid "Heading to show instead of the default"
 msgstr "Título a ser exibido em vez do padrão"
+
+#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
+#, fuzzy
+msgid "Label"
+msgstr "Rótulo"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Value"
+msgstr "valor"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#, fuzzy
+msgid "Choice"
+msgstr "Escolha"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Field Label"
+msgstr "Etiqueta do campo"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+#, fuzzy
+msgid "Text"
+msgstr "Texto"
+
+#: actions/blocks/action_content.py
+msgid "Checkbox"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/filters.py
+#, fuzzy
+msgid "Dropdown"
+msgstr "Menu suspenso"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Field Type"
+msgstr "Etiqueta do campo"
+
+#: actions/blocks/action_content.py
+msgid "Required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Choices"
+msgstr "Escolha"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Esse valor só é permitido para campos de ação"
+
+#: actions/blocks/action_content.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Form Field"
+msgstr "Campo"
+
+#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: pages/blocks.py
+#, fuzzy
+msgid "Heading"
+msgstr "Título"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Description"
+msgstr "Descrição"
+
+#: actions/blocks/action_content.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Additional form fields"
+msgstr "Campo de ação"
+
+#: actions/blocks/action_content.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
 #, fuzzy
@@ -417,6 +505,26 @@ msgstr "Formulário de contato"
 #, fuzzy
 msgid "Indicator Causal Chain"
 msgstr "Dados do indicador"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Dataset?"
+msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Help text"
+msgstr "Texto de ajuda"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Datasets"
+msgstr "conjuntos de dados"
 
 #: actions/blocks/action_content.py
 #, fuzzy
@@ -447,11 +555,6 @@ msgstr "Nome oficial"
 #, fuzzy
 msgid "Help text for the field to be shown in the UI"
 msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
-
-#: actions/blocks/action_content.py
-#, fuzzy
-msgid "Help text"
-msgstr "Texto de ajuda"
 
 #: actions/blocks/action_content.py
 #, fuzzy, python-format
@@ -488,12 +591,6 @@ msgstr "Largura total"
 msgid "Grid"
 msgstr "Grade"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
-#, fuzzy
-msgid "Heading"
-msgstr "Título"
-
 #: actions/blocks/action_content.py
 #, fuzzy
 msgid "Blocks"
@@ -503,11 +600,6 @@ msgstr "Blocos"
 #, fuzzy
 msgid "Section"
 msgstr "Seção"
-
-#: actions/blocks/action_dashboard.py
-#, fuzzy
-msgid "Label"
-msgstr "Rótulo"
 
 #: actions/blocks/action_dashboard.py
 #, fuzzy
@@ -617,23 +709,18 @@ msgstr "Corpo"
 
 #: actions/blocks/category_page_layout.py
 #, fuzzy
-msgid "Description"
-msgstr "Descrição"
-
-#: actions/blocks/category_page_layout.py
-#, fuzzy
 msgid "Basis"
 msgstr "Base"
+
+#: actions/blocks/choosers.py
+#, fuzzy
+msgid "Dataset Schema"
+msgstr "licença do conjunto de dados"
 
 #: actions/blocks/filters.py
 #, fuzzy
 msgid "Label for 'show all'"
 msgstr "Rótulo para \"mostrar tudo"
-
-#: actions/blocks/filters.py
-#, fuzzy
-msgid "Dropdown"
-msgstr "Menu suspenso"
 
 #: actions/blocks/filters.py
 #, fuzzy
@@ -775,6 +862,16 @@ msgstr "Escolha um campo"
 #, fuzzy
 msgid "Choose another field"
 msgstr "Escolha outro campo"
+
+#: actions/chooser.py
+#, fuzzy
+msgid "Choose a dataset schema"
+msgstr "Escolha um tipo de categoria"
+
+#: actions/chooser.py
+#, fuzzy
+msgid "Choose another dataset schema"
+msgstr "Escolha outro tipo de categoria"
 
 #: actions/defaults.py
 #, fuzzy
@@ -985,7 +1082,7 @@ msgstr "organizações responsáveis"
 msgid "updated at"
 msgstr "atualizado em"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 #, fuzzy
 msgid "start date"
 msgstr "data de início"
@@ -1416,16 +1513,6 @@ msgstr "Escolha opcional com texto opcional"
 
 #: actions/models/attributes.py
 #, fuzzy
-msgid "Choice"
-msgstr "Escolha"
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-#, fuzzy
-msgid "Text"
-msgstr "Texto"
-
-#: actions/models/attributes.py
-#, fuzzy
 msgid "Rich text"
 msgstr "Texto rico"
 
@@ -1660,6 +1747,14 @@ msgid "Set if the category has a theme color"
 msgstr "Definir se a categoria tem uma cor de tema"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 #, fuzzy
 msgid "common category"
 msgstr "categoria comum"
@@ -1674,7 +1769,7 @@ msgstr "categorias comuns"
 msgid "parent category"
 msgstr "categoria pai"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 #, fuzzy
 msgid "category"
 msgstr "categoria"
@@ -2128,6 +2223,14 @@ msgstr "substituído por"
 msgid "Set if this plan is superseded by another plan"
 msgstr "Definir se este plano for substituído por outro plano"
 
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 #, fuzzy
 msgid "plans"
@@ -2204,9 +2307,13 @@ msgid "Production"
 msgstr "Localização"
 
 #: actions/models/plan.py
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
 #, fuzzy
-msgid "Testing"
-msgstr "Pergunta"
+msgid "Development"
+msgstr "Documento"
 
 #: actions/models/plan.py
 #, fuzzy
@@ -2704,11 +2811,6 @@ msgstr "Campo público"
 msgid "Non-public field"
 msgstr "Campo não público"
 
-#: admin_site/views.py
-#, fuzzy
-msgid "Your account settings have been changed successfully!"
-msgstr "As configurações de sua conta foram alteradas com sucesso!"
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, fuzzy, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2725,6 +2827,16 @@ msgid "%s could not be created due to errors."
 msgstr "%s não pôde ser criado devido a erros."
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
 #, fuzzy
 msgid "View live"
 msgstr "Ver ao vivo"
@@ -2735,8 +2847,8 @@ msgid "View %s live"
 msgstr "Veja %s ao vivo"
 
 #: admin_site/wagtail.py
-#, fuzzy, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+#, fuzzy
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr "Não foi possível remover o tipo de categoria comum '{removed_cct}' do plano porque existem categorias com o tipo de categoria correspondente."
 
 #: admin_site/wagtail.py
@@ -2927,7 +3039,7 @@ msgstr "Mês e ano (12.2020)"
 msgid "Year (2020)"
 msgstr "Ano (2020)"
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 #, fuzzy
 msgid "order"
 msgstr "ordem"
@@ -3025,6 +3137,10 @@ msgstr ""
 #, fuzzy
 msgid "unit"
 msgstr "unidade"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr ""
 
 #: budget/models.py
 msgid "schema"
@@ -3256,6 +3372,11 @@ msgstr "Informe esse erro ao seu webmaster com as seguintes informações:"
 
 #: documents/models.py
 #, fuzzy
+msgid "uploaded by user"
+msgstr "atualizado por"
+
+#: documents/models.py
+#, fuzzy
 msgid "document"
 msgstr "documento"
 
@@ -3268,6 +3389,15 @@ msgstr "documentos"
 #, fuzzy
 msgid "email address"
 msgstr "endereço de e-mail"
+
+#: feedback/models.py
+#, fuzzy
+msgid "page id"
+msgstr "Link da página"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr ""
 
 #: feedback/models.py
 #, fuzzy
@@ -3630,6 +3760,32 @@ msgid "What is the reference or source for this indicator?"
 msgstr ""
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr ""
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+msgid "increasing"
+msgstr "aumentos"
+
+#: indicators/models.py
+#, fuzzy
+msgid "decreasing"
+msgstr "diminuições"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
 #, fuzzy
 msgid "indicator"
 msgstr "indicador"
@@ -3869,13 +4025,29 @@ msgstr "As dimensões devem ser as mesmas do indicador comum"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
-msgid "Indicator for actions"
-msgstr "Indicador para ações"
+msgid "none"
+msgstr "nenhum"
+
+#: indicators/wagtail_admin.py
+#, fuzzy, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Esse indicador está vinculado a um indicador comum, portanto, a quantidade, a unidade e as dimensões não podem ser editadas. Quantidade atual: %(quantity)s; unidade: %(unit)s; dimensões: %(dimensions)s"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
-msgid "none"
-msgstr "nenhum"
+#| msgid "Basic information"
+msgid "Further information"
+msgstr "Informações básicas"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Value bounds"
+msgstr "Campo de valor"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Visualization settings"
+msgstr "configurações de notificação"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3890,9 +4062,14 @@ msgstr[0] ""
 msgstr[1] "Se você alterar as dimensões desse indicador (atualmente %(dimensions)s), todos os seus valores %(num)d serão excluídos."
 
 #: indicators/wagtail_admin.py
-#, fuzzy, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr "Esse indicador está vinculado a um indicador comum, portanto, a quantidade, a unidade e as dimensões não podem ser editadas. Quantidade atual: %(quantity)s; unidade: %(unit)s; dimensões: %(dimensions)s"
+#, fuzzy
+msgid "Advanced settings"
+msgstr "Opções avançadas"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Indicator for actions"
+msgstr "Indicador para ações"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3906,8 +4083,13 @@ msgstr "Causas"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
-msgid "Advanced options"
-msgstr "Opções avançadas"
+msgid "Other indicators"
+msgstr "outros indicadores"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Relationships"
+msgstr "Ações relacionadas"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3928,6 +4110,25 @@ msgstr "Indicadores comuns"
 #, fuzzy, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Esse indicador comum tem indicadores vinculados a ele, portanto, a quantidade, a unidade e as dimensões não podem ser editadas. Quantidade atual: %(quantity)s; unidade: %(unit)s; dimensões: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Created at"
+msgstr "criado em"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Last modified by"
+msgstr "Última modificação"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+msgid "Last modified at"
+msgstr "Última modificação"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
 #, fuzzy
@@ -4176,11 +4377,6 @@ msgid "send to organization admins"
 msgstr "enviar para os administradores do plano"
 
 #: notifications/models.py
-#, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr ""
-
-#: notifications/models.py
 #, fuzzy
 msgid "scheduled notification"
 msgstr "As notificações devem ser enviadas?"
@@ -4189,6 +4385,11 @@ msgstr "As notificações devem ser enviadas?"
 #, fuzzy
 msgid "scheduled notifications"
 msgstr "As notificações devem ser enviadas?"
+
+#: notifications/models.py
+#, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr ""
 
 #: notifications/models.py
 #, fuzzy
@@ -4452,9 +4653,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Um nome distinto para essa organização (gerado automaticamente)"
 
 #: orgs/models.py
-#, fuzzy
-msgid "An optional logo for this organization"
-msgstr "Um logotipo opcional para esta organização"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr ""
 
 #: orgs/models.py
 #, fuzzy
@@ -5678,6 +5878,18 @@ msgstr "Usuários"
 #, fuzzy
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nenhuma permissão para remover o usuário pertencente a planos que você não está gerenciando."
+
+#, fuzzy
+#~ msgid "Testing"
+#~ msgstr "Pergunta"
+
+#, fuzzy
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "As configurações de sua conta foram alteradas com sucesso!"
+
+#, fuzzy
+#~ msgid "An optional logo for this organization"
+#~ msgstr "Um logotipo opcional para esta organização"
 
 #, fuzzy
 #~ msgid "Notification types"

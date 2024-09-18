@@ -10,7 +10,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
+"POT-Creation-Date: 2024-09-18 11:07+0300\n"
 "PO-Revision-Date: 2024-06-04 14:20+0000\n"
 "Last-Translator: Jan-Erik Sundman <jan-erik.sundman@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv/>\n"
@@ -39,7 +39,7 @@ msgstr "Ospecificerad"
 msgid "Responsible parties"
 msgstr "Ansvariga parter"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Kontaktpersoner"
@@ -104,7 +104,7 @@ msgstr "Interna anteckningar"
 msgid "Internal notes for plan administrators"
 msgstr "Interna anteckningar för planadministratörer"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Rapportering"
 
@@ -253,7 +253,7 @@ msgstr "Över %d dagar"
 msgid "Organization occurs multiple times as responsible party"
 msgstr "Organisation förekommer flera gånger som ansvarig part"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 msgid "Person occurs multiple times as contact person"
 msgstr "Personen förekommer flera gånger som kontaktperson"
 
@@ -291,8 +291,8 @@ msgid "Cancel moderation"
 msgstr "Avbryt moderering"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
 msgstr "Åtgärder"
 
@@ -367,13 +367,102 @@ msgid "Field"
 msgstr "Fält"
 
 #: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
 msgid "Category"
 msgstr "Kategori"
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
 msgstr "Rubrik som ska visas istället för standardrubriken"
+
+#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr "Etikett"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "value"
+msgid "Value"
+msgstr "värde"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+msgid "Choice"
+msgstr "Val"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Label"
+msgstr "Fältetikett"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Text"
+
+#: actions/blocks/action_content.py
+msgid "Checkbox"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Rullgardinsmeny"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Type"
+msgstr "Fältetikett"
+
+#: actions/blocks/action_content.py
+msgid "Required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Choice"
+msgid "Choices"
+msgstr "Val"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "This value is only allowed for action fields"
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Detta värde är endast tillåtet för åtgärdsfält"
+
+#: actions/blocks/action_content.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field"
+msgid "Form Field"
+msgstr "Fält"
+
+#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: pages/blocks.py
+msgid "Heading"
+msgstr "Rubrik"
+
+#: actions/blocks/action_content.py
+msgid "Description"
+msgstr "Beskrivning"
+
+#: actions/blocks/action_content.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Additional form fields"
+msgstr "Åtgärdsfält"
+
+#: actions/blocks/action_content.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
 msgid "Contact form"
@@ -384,6 +473,27 @@ msgstr "Kontaktformulär"
 #| msgid "Indicator action"
 msgid "Indicator Causal Chain"
 msgstr "Indikatoråtgärd"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Dataset?"
+msgstr "Vilken etikett ska användas i den offentliga användargränssnittet för det officiella namnet?"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Hjälptext för fältet som ska visas i användargränssnittet"
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Hjälptext"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Datasets"
+msgstr "datauppsättningar"
 
 #: actions/blocks/action_content.py
 msgid "What label should be used in the public UI for the official name?"
@@ -409,10 +519,6 @@ msgstr "Officiellt namn"
 #, fuzzy
 msgid "Help text for the field to be shown in the UI"
 msgstr "Hjälptext för fältet som ska visas i användargränssnittet"
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Hjälptext"
 
 #: actions/blocks/action_content.py
 #, python-format
@@ -445,11 +551,6 @@ msgstr "Full bredd"
 msgid "Grid"
 msgstr "Nät"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
-msgid "Heading"
-msgstr "Rubrik"
-
 #: actions/blocks/action_content.py
 msgid "Blocks"
 msgstr "Block"
@@ -457,10 +558,6 @@ msgstr "Block"
 #: actions/blocks/action_content.py
 msgid "Section"
 msgstr "Sektion"
-
-#: actions/blocks/action_dashboard.py
-msgid "Label"
-msgstr "Etikett"
 
 #: actions/blocks/action_dashboard.py
 msgid "Label for the column to be used instead of the default"
@@ -549,20 +646,18 @@ msgid "Body"
 msgstr "Kropp"
 
 #: actions/blocks/category_page_layout.py
-msgid "Description"
-msgstr "Beskrivning"
-
-#: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr "Grund"
+
+#: actions/blocks/choosers.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "Dataset Schema"
+msgstr "dataset-licens"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
 msgstr "Etikett för 'visa alla'"
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
-msgstr "Rullgardinsmeny"
 
 #: actions/blocks/filters.py
 msgid "Buttons"
@@ -679,6 +774,18 @@ msgstr "Välj ett fält"
 #: actions/chooser.py
 msgid "Choose another field"
 msgstr "Välj ett annat fält"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category type"
+msgid "Choose a dataset schema"
+msgstr "Välj en typ av kategori"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "Choose another dataset schema"
+msgstr "Välj en annan typ av kategori"
 
 #: actions/defaults.py
 msgid "Cancelled or postponed"
@@ -849,7 +956,7 @@ msgstr "ansvariga organisationer"
 msgid "updated at"
 msgstr "uppdaterad kl"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
 msgstr "Startdatum för implementering"
 
@@ -1211,14 +1318,6 @@ msgid "Optional choice with optional text"
 msgstr "Valfritt val med valfri text"
 
 #: actions/models/attributes.py
-msgid "Choice"
-msgstr "Val"
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr "Text"
-
-#: actions/models/attributes.py
 msgid "Rich text"
 msgstr "Rik text"
 
@@ -1415,6 +1514,14 @@ msgid "Set if the category has a theme color"
 msgstr "Ange om kategorin har en temafärg"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 #, fuzzy
 msgid "common category"
 msgstr "gemensam indikator"
@@ -1428,7 +1535,7 @@ msgstr "gemensamma indikatorer"
 msgid "parent category"
 msgstr "Föräldrakategori"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
 msgstr "kategori"
 
@@ -1855,6 +1962,14 @@ msgstr "skapad av"
 msgid "Set if this plan is superseded by another plan"
 msgstr "Ange om den här åtgärden slås samman med en annan åtgärd"
 
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr "planer"
@@ -1921,10 +2036,13 @@ msgid "Production"
 msgstr "åtgärd"
 
 #: actions/models/plan.py
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
 #, fuzzy
-#| msgid "Question"
-msgid "Testing"
-msgstr "Fråga"
+msgid "Development"
+msgstr "dokumentera"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -2373,10 +2491,6 @@ msgstr "Offentlig"
 msgid "Non-public field"
 msgstr "Offentlig"
 
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr "Dina kontoinställningar har ändrats framgångsrikt!"
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2393,6 +2507,17 @@ msgid "%s could not be created due to errors."
 msgstr "%s kunde inte skapas på grund av fel."
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, fuzzy, python-format
+#| msgid "Add %(related_verbose_name)s"
+msgid "Add %(schema_name)s"
+msgstr "Lägg till %(related_verbose_name)s"
+
+#: admin_site/wagtail.py
 msgid "View live"
 msgstr "Visa live"
 
@@ -2402,8 +2527,9 @@ msgid "View %s live"
 msgstr "Visa %s live"
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr "Kunde inte ta bort den gemensamma kategoritypen '{removed_cct}' från planen eftersom kategorier med motsvarande kategorityp finns."
 
 #: admin_site/wagtail.py
@@ -2568,7 +2694,7 @@ msgstr "Månad och år (12.2020)"
 msgid "Year (2020)"
 msgstr "År (2020)"
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
 msgstr "ordning"
 
@@ -2657,6 +2783,10 @@ msgstr ""
 #: budget/models.py indicators/models.py
 msgid "unit"
 msgstr "enhet"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr ""
 
 #: budget/models.py
 msgid "schema"
@@ -2862,6 +2992,11 @@ msgid "Report this error to your webmaster with the following information:"
 msgstr "Rapportera felet till din webbmaster med följande information:"
 
 #: documents/models.py
+#, fuzzy
+msgid "uploaded by user"
+msgstr "uppdaterad kl"
+
+#: documents/models.py
 msgid "document"
 msgstr "dokumentera"
 
@@ -2872,6 +3007,16 @@ msgstr "dokument"
 #: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
 msgstr "e-postadress"
+
+#: feedback/models.py
+#, fuzzy
+#| msgid "Page link"
+msgid "page id"
+msgstr "Sidolänk"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr ""
 
 #: feedback/models.py
 #, fuzzy
@@ -3174,6 +3319,34 @@ msgid "What is the reference or source for this indicator?"
 msgstr "Vilken är referensen eller källan för denna indikator?"
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr ""
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "increases"
+msgid "increasing"
+msgstr "ökar"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "decreases"
+msgid "decreasing"
+msgstr "minskar"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
 msgid "indicator"
 msgstr "indikator"
 
@@ -3380,12 +3553,30 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Mått måste vara samma som i gemensam indikator"
 
 #: indicators/wagtail_admin.py
-msgid "Indicator for actions"
-msgstr "Indikator för åtgärder"
-
-#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "ingen"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Denna indikator är kopplad till en gemensam indikator, så kvantitet, enhet och mått kan inte redigeras. Aktuell kvantitet: %(quantity)s; enhet: %(unit)s; dimensioner: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Basic information"
+msgid "Further information"
+msgstr "Grundläggande information"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Value field"
+msgid "Value bounds"
+msgstr "Värde fält"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+msgid "Visualization settings"
+msgstr "anmälningsmallar"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
@@ -3400,9 +3591,13 @@ msgstr[0] "Om du ändrar måtten på denna indikator (för närvarande %(dimensi
 msgstr[1] "Om du ändrar dimensionerna för denna indikator (för närvarande %(dimensions)s), kommer alla dess %(num)d värden att raderas."
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr "Denna indikator är kopplad till en gemensam indikator, så kvantitet, enhet och mått kan inte redigeras. Aktuell kvantitet: %(quantity)s; enhet: %(unit)s; dimensioner: %(dimensions)s"
+#, fuzzy
+msgid "Advanced settings"
+msgstr "Avancerade alternativ"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Indikator för åtgärder"
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
@@ -3414,8 +3609,15 @@ msgstr "Orsaker"
 
 #: indicators/wagtail_admin.py
 #, fuzzy
-msgid "Advanced options"
-msgstr "Avancerade alternativ"
+#| msgid "other indicators"
+msgid "Other indicators"
+msgstr "andra indikatorer"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Related actions"
+msgid "Relationships"
+msgstr "Relaterade åtgärder"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
@@ -3434,6 +3636,28 @@ msgstr "gemensamma indikatorer"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Denna gemensamma indikator har indikatorer kopplade till sig, så kvantitet, enhet och mått kan inte redigeras. Aktuell kvantitet: %(quantity)s; enhet: %(unit)s; dimensioner: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "created at"
+msgid "Created at"
+msgstr "skapad vid"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified by"
+msgstr "Senast ändrad"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified at"
+msgstr "Senast ändrad"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
@@ -3653,17 +3877,17 @@ msgid "send to organization admins"
 msgstr "skicka till organisationsadministratörer"
 
 #: notifications/models.py
-#, fuzzy, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr "Typen måste vara \"%(t)s\"."
-
-#: notifications/models.py
 msgid "scheduled notification"
 msgstr "schemalagd avisering"
 
 #: notifications/models.py
 msgid "scheduled notifications"
 msgstr "schemalagda aviseringar"
+
+#: notifications/models.py
+#, fuzzy, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr "Typen måste vara \"%(t)s\"."
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -3900,9 +4124,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Ett tydligt namn för denna organisation (genereras automatiskt)"
 
 #: orgs/models.py
-#, fuzzy
-msgid "An optional logo for this organization"
-msgstr "admin för organisation"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr ""
 
 #: orgs/models.py
 msgid "A date of founding"
@@ -4992,6 +5215,18 @@ msgid "No permission to remove the user belonging to plans you are not managing.
 msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte hanterar."
 
 #, fuzzy
+#~| msgid "Question"
+#~ msgid "Testing"
+#~ msgstr "Fråga"
+
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "Dina kontoinställningar har ändrats framgångsrikt!"
+
+#, fuzzy
+#~ msgid "An optional logo for this organization"
+#~ msgstr "admin för organisation"
+
+#, fuzzy
 #~ msgid "Notification types"
 #~ msgstr "Meddelanden"
 
@@ -5239,10 +5474,6 @@ msgstr "Inget tillstånd att ta bort användaren som tillhör planer som du inte
 
 #~ msgid "You have been successfully logged out."
 #~ msgstr "Du har loggat ut."
-
-#, python-format
-#~ msgid "Add %(related_verbose_name)s"
-#~ msgstr "Lägg till %(related_verbose_name)s"
 
 #, python-format
 #~ msgid "New %(related_verbose_name)s"

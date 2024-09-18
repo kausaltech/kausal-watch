@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-22 20:00+0200\n"
+"POT-Creation-Date: 2024-09-18 11:07+0300\n"
 "PO-Revision-Date: 2024-05-27 09:31+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -36,7 +36,7 @@ msgstr "Nav norādīts"
 msgid "Responsible parties"
 msgstr "Atbildīgās puses"
 
-#: actions/action_admin.py actions/api.py aplans/utils.py
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
 #: indicators/wagtail_admin.py
 msgid "Contact persons"
 msgstr "Kontaktpersonas"
@@ -105,7 +105,7 @@ msgstr "iekšējās piezīmes"
 msgid "Internal notes for plan administrators"
 msgstr "iekšējās piezīmes plānu administratoriem"
 
-#: actions/action_admin.py
+#: actions/action_admin.py indicators/wagtail_admin.py
 msgid "Reporting"
 msgstr "Ziņošana"
 
@@ -253,7 +253,7 @@ msgstr "Vairāk nekā %d dienas"
 msgid "Organization occurs multiple times as responsible party"
 msgstr "Organizācija kā atbildīgā puse parādās vairākas reizes"
 
-#: actions/api.py
+#: actions/api.py indicators/api.py
 msgid "Person occurs multiple times as contact person"
 msgstr "Persona vairākkārt parādās kā kontaktpersona"
 
@@ -291,8 +291,8 @@ msgid "Cancel moderation"
 msgstr "Atcelt moderēšanu"
 
 #: actions/apps.py actions/models/plan.py content/models.py
-#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
-#: templates/modeladmin/create.html
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
 msgid "Actions"
 msgstr "Rīcības"
 
@@ -367,13 +367,102 @@ msgid "Field"
 msgstr "Laukums"
 
 #: actions/blocks/action_content.py actions/blocks/choosers.py
-#: actions/blocks/filters.py actions/models/attributes.py pages/models.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
 msgid "Category"
 msgstr "Kategorija"
 
 #: actions/blocks/action_content.py
 msgid "Heading to show instead of the default"
 msgstr "Virsraksts, kas tiek rādīts noklusējuma vietā"
+
+#: actions/blocks/action_content.py actions/blocks/action_dashboard.py
+msgid "Label"
+msgstr "Etiķete"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "value"
+msgid "Value"
+msgstr "vērtība"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+msgid "Choice"
+msgstr "Izvēle"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Label"
+msgstr "Lauka etiķete"
+
+#: actions/blocks/action_content.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Teksts"
+
+#: actions/blocks/action_content.py
+msgid "Checkbox"
+msgstr ""
+
+#: actions/blocks/action_content.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Izlaižamais"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Type"
+msgstr "Lauka etiķete"
+
+#: actions/blocks/action_content.py
+msgid "Required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Choice"
+msgid "Choices"
+msgstr "Izvēle"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "This value is only allowed for action fields"
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Šī vērtība ir atļauta tikai rīcības laukiem"
+
+#: actions/blocks/action_content.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Field"
+msgid "Form Field"
+msgstr "Laukums"
+
+#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: pages/blocks.py
+msgid "Heading"
+msgstr "Virsraksts"
+
+#: actions/blocks/action_content.py
+msgid "Description"
+msgstr "Apraksts"
+
+#: actions/blocks/action_content.py
+msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Additional form fields"
+msgstr "Rīcības lauks"
+
+#: actions/blocks/action_content.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
 msgid "Contact form"
@@ -384,6 +473,28 @@ msgstr "Kontaktinformācija"
 #| msgid "Indicator data"
 msgid "Indicator Causal Chain"
 msgstr "Indikatoru dati"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Dataset?"
+msgstr "Kāds marķējums būtu jāizmanto publiskajā UI oficiālajam nosaukumam?"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+
+#: actions/blocks/action_content.py
+msgid "Help text"
+msgstr "Palīdzības teksts"
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Datasets"
+msgstr "datu kopas"
 
 #: actions/blocks/action_content.py
 msgid "What label should be used in the public UI for the official name?"
@@ -408,10 +519,6 @@ msgstr "Oficiālais nosaukums"
 #: actions/blocks/action_content.py
 msgid "Help text for the field to be shown in the UI"
 msgstr ""
-
-#: actions/blocks/action_content.py
-msgid "Help text"
-msgstr "Palīdzības teksts"
 
 #: actions/blocks/action_content.py
 #, python-format
@@ -444,11 +551,6 @@ msgstr "Pilns platums"
 msgid "Grid"
 msgstr "Tīkls"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
-#: actions/blocks/category_page_layout.py pages/blocks.py
-msgid "Heading"
-msgstr "Virsraksts"
-
 #: actions/blocks/action_content.py
 msgid "Blocks"
 msgstr "Bloki"
@@ -456,10 +558,6 @@ msgstr "Bloki"
 #: actions/blocks/action_content.py
 msgid "Section"
 msgstr "Sadaļa"
-
-#: actions/blocks/action_dashboard.py
-msgid "Label"
-msgstr "Etiķete"
 
 #: actions/blocks/action_dashboard.py
 msgid "Label for the column to be used instead of the default"
@@ -548,20 +646,18 @@ msgid "Body"
 msgstr "Ķermenis"
 
 #: actions/blocks/category_page_layout.py
-msgid "Description"
-msgstr "Apraksts"
-
-#: actions/blocks/category_page_layout.py
 msgid "Basis"
 msgstr "Pamats"
+
+#: actions/blocks/choosers.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "Dataset Schema"
+msgstr "datu kopas licence"
 
 #: actions/blocks/filters.py
 msgid "Label for 'show all'"
 msgstr "\"Rādīt visus\" etiķete"
-
-#: actions/blocks/filters.py
-msgid "Dropdown"
-msgstr "Izlaižamais"
 
 #: actions/blocks/filters.py
 msgid "Buttons"
@@ -678,6 +774,18 @@ msgstr "Izvēlēties lauku"
 #: actions/chooser.py
 msgid "Choose another field"
 msgstr "Izvēlieties citu lauku"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category type"
+msgid "Choose a dataset schema"
+msgstr "Izvēlieties kategorijas veidu"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "Choose another dataset schema"
+msgstr "Izvēlieties citu kategorijas veidu"
 
 #: actions/defaults.py
 msgid "Cancelled or postponed"
@@ -848,7 +956,7 @@ msgstr "atbildīgās organizācijas"
 msgid "updated at"
 msgstr "atjaunināts vietnē"
 
-#: actions/models/action.py reports/models.py
+#: actions/models/action.py budget/models.py reports/models.py
 msgid "start date"
 msgstr "sākuma datums"
 
@@ -1209,14 +1317,6 @@ msgid "Optional choice with optional text"
 msgstr "Neobligāta izvēle ar neobligātu tekstu"
 
 #: actions/models/attributes.py
-msgid "Choice"
-msgstr "Izvēle"
-
-#: actions/models/attributes.py documentation/models.py pages/models.py
-msgid "Text"
-msgstr "Teksts"
-
-#: actions/models/attributes.py
 msgid "Rich text"
 msgstr "Bagātīgais teksts"
 
@@ -1406,6 +1506,14 @@ msgid "Set if the category has a theme color"
 msgstr "Iestatīts, ja kategorijai ir tēmas krāsa"
 
 #: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr ""
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr ""
+
+#: actions/models/category.py
 msgid "common category"
 msgstr "kopējā kategorija"
 
@@ -1417,7 +1525,7 @@ msgstr "kopīgas kategorijas"
 msgid "parent category"
 msgstr "vecāku kategorija"
 
-#: actions/models/category.py
+#: actions/models/category.py feedback/models.py
 msgid "category"
 msgstr "kategorija"
 
@@ -1817,6 +1925,14 @@ msgstr "aizstāts ar"
 msgid "Set if this plan is superseded by another plan"
 msgstr "Iestatīt, ja šo plānu aizstāj ar citu plānu"
 
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr ""
+
 #: actions/models/plan.py indicators/models.py
 msgid "plans"
 msgstr "plāni"
@@ -1880,10 +1996,14 @@ msgid "Production"
 msgstr "Atrašanās vieta"
 
 #: actions/models/plan.py
+msgid "Preview"
+msgstr ""
+
+#: actions/models/plan.py
 #, fuzzy
-#| msgid "Question"
-msgid "Testing"
-msgstr "Jautājums"
+#| msgid "Document"
+msgid "Development"
+msgstr "Dokuments"
 
 #: actions/models/plan.py
 msgid "host name"
@@ -2311,10 +2431,6 @@ msgstr "Publiski"
 msgid "Non-public field"
 msgstr ""
 
-#: admin_site/views.py
-msgid "Your account settings have been changed successfully!"
-msgstr "Jūsu konta iestatījumi ir veiksmīgi mainīti!"
-
 #: admin_site/viewsets.py admin_site/wagtail.py
 #, python-format
 msgid "Error deleting items. Try first deleting any %(name)s that are in use."
@@ -2331,6 +2447,16 @@ msgid "%s could not be created due to errors."
 msgstr "%s nevarēja izveidot kļūdu dēļ."
 
 #: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(schema_name)s"
+msgstr ""
+
+#: admin_site/wagtail.py
 msgid "View live"
 msgstr "Skatīt tiešraidē"
 
@@ -2340,8 +2466,9 @@ msgid "View %s live"
 msgstr "Skatīt %s tiešraidē"
 
 #: admin_site/wagtail.py
-#, python-brace-format
-msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
 msgstr "Nevarēja no plāna dzēst kopējo kategorijas tipu '{removed_cct}', jo pastāv kategorijas ar atbilstošo kategorijas tipu."
 
 #: admin_site/wagtail.py
@@ -2499,7 +2626,7 @@ msgstr ""
 msgid "Year (2020)"
 msgstr ""
 
-#: aplans/utils.py
+#: aplans/utils.py kausal_common/models/ordered.py
 msgid "order"
 msgstr "pasūtījums"
 
@@ -2583,6 +2710,10 @@ msgstr ""
 #: budget/models.py indicators/models.py
 msgid "unit"
 msgstr "vienība"
+
+#: budget/models.py
+msgid "First applicable date for datapoints in these datasets"
+msgstr ""
 
 #: budget/models.py
 msgid "schema"
@@ -2781,6 +2912,12 @@ msgid "Report this error to your webmaster with the following information:"
 msgstr "Ziņojiet par šo kļūdu tīmekļa pārzinim, norādot šādu informāciju:"
 
 #: documents/models.py
+#, fuzzy
+#| msgid "updated by"
+msgid "uploaded by user"
+msgstr "atjaunināja"
+
+#: documents/models.py
 msgid "document"
 msgstr "dokuments"
 
@@ -2791,6 +2928,16 @@ msgstr "dokumenti"
 #: feedback/models.py orgs/models.py people/models.py users/models.py
 msgid "email address"
 msgstr "e-pasta adrese"
+
+#: feedback/models.py
+#, fuzzy
+#| msgid "Page link"
+msgid "page id"
+msgstr "Lapas saite"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr ""
 
 #: feedback/models.py
 msgid "is processed"
@@ -3089,6 +3236,34 @@ msgid "What is the reference or source for this indicator?"
 msgstr ""
 
 #: indicators/models.py
+msgid "show trendline"
+msgstr ""
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "increases"
+msgid "increasing"
+msgstr "palielina"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "decreases"
+msgid "decreasing"
+msgstr "samazinās"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr ""
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
 msgid "indicator"
 msgstr "indikators"
 
@@ -3285,12 +3460,31 @@ msgid "Dimensions must be the same as in common indicator"
 msgstr "Izmēriem jābūt tādiem pašiem kā kopīgajā rādītājā"
 
 #: indicators/wagtail_admin.py
-msgid "Indicator for actions"
-msgstr "Pasākumu rādītājs"
-
-#: indicators/wagtail_admin.py
 msgid "none"
 msgstr "nav"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Šis rādītājs ir saistīts ar kopējo rādītāju, tāpēc daudzumu, vienību un izmērus nevar rediģēt. Pašreizējais daudzums: %(quantity)s; vienība: %(unit)s; izmēri: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Basic information"
+msgid "Further information"
+msgstr "Pamatinformācija"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Value field"
+msgid "Value bounds"
+msgstr "Vērtību lauks"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Visualization settings"
+msgstr "paziņojumu iestatījumi"
 
 #: indicators/wagtail_admin.py
 msgid "Dimensions"
@@ -3305,9 +3499,14 @@ msgstr[1] ""
 msgstr[2] "Ja mainīsiet šī rādītāja izmērus (pašlaik %(dimensions)s), visas tā %(num)d vērtības tiks dzēstas."
 
 #: indicators/wagtail_admin.py
-#, python-format
-msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
-msgstr "Šis rādītājs ir saistīts ar kopējo rādītāju, tāpēc daudzumu, vienību un izmērus nevar rediģēt. Pašreizējais daudzums: %(quantity)s; vienība: %(unit)s; izmēri: %(dimensions)s"
+#, fuzzy
+#| msgid "Advanced options"
+msgid "Advanced settings"
+msgstr "Paplašinātās opcijas"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Pasākumu rādītājs"
 
 #: indicators/wagtail_admin.py
 msgid "Effects"
@@ -3318,8 +3517,16 @@ msgid "Causes"
 msgstr "Cēloņi"
 
 #: indicators/wagtail_admin.py
-msgid "Advanced options"
-msgstr "Paplašinātās opcijas"
+#, fuzzy
+#| msgid "other indicators"
+msgid "Other indicators"
+msgstr "citi rādītāji"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Related actions"
+msgid "Relationships"
+msgstr "Saistītās rīcības"
 
 #: indicators/wagtail_admin.py
 msgid "Unit"
@@ -3337,6 +3544,28 @@ msgstr "Kopējie rādītāji"
 #, python-format
 msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
 msgstr "Šim kopējam rādītājam ir piesaistīti rādītāji, tāpēc daudzumu, vienību un izmērus nevar rediģēt. Pašreizējais daudzums: %(quantity)s; vienība: %(unit)s; izmēri: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "created at"
+msgid "Created at"
+msgstr "izveidots vietnē"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified by"
+msgstr "Pēdējo reizi mainīts"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified at"
+msgstr "Pēdējo reizi mainīts"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr ""
 
 #: notifications/apps.py notifications/wagtail_admin.py
 msgid "Notifications"
@@ -3550,11 +3779,6 @@ msgid "send to organization admins"
 msgstr "nosūtīt plāna administratoriem"
 
 #: notifications/models.py
-#, python-format
-msgid "The type must be \"%(t)s\"."
-msgstr ""
-
-#: notifications/models.py
 #, fuzzy
 #| msgid "Should notifications be sent?"
 msgid "scheduled notification"
@@ -3565,6 +3789,11 @@ msgstr "Vai ir jānosūta paziņojumi?"
 #| msgid "Should notifications be sent?"
 msgid "scheduled notifications"
 msgstr "Vai ir jānosūta paziņojumi?"
+
+#: notifications/models.py
+#, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr ""
 
 #: notifications/models.py
 msgid "HTML content for the block"
@@ -3793,8 +4022,8 @@ msgid "A distinct name for this organization (generated automatically)"
 msgstr "Atšķirīgs šīs organizācijas nosaukums (tiek ģenerēts automātiski)"
 
 #: orgs/models.py
-msgid "An optional logo for this organization"
-msgstr "Šīs organizācijas logotips pēc izvēles"
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr ""
 
 #: orgs/models.py
 msgid "A date of founding"
@@ -4824,6 +5053,17 @@ msgstr "Lietotāji"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nav atļauts noņemt lietotājus, kas pieder pie plāniem, kurus jūs neapsaimniekojat."
+
+#, fuzzy
+#~| msgid "Question"
+#~ msgid "Testing"
+#~ msgstr "Jautājums"
+
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "Jūsu konta iestatījumi ir veiksmīgi mainīti!"
+
+#~ msgid "An optional logo for this organization"
+#~ msgstr "Šīs organizācijas logotips pēc izvēles"
 
 #~ msgid "Notification types"
 #~ msgstr "Paziņojumu veidi"
