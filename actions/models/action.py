@@ -29,7 +29,7 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from wagtail.admin.panels.base import Panel
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, WorkflowMixin, TaskState
+from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, TaskState, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -55,7 +55,7 @@ from users.models import User
 from ..action_status_summary import ActionStatusSummaryIdentifier, ActionTimelinessIdentifier, SummaryContext
 from ..attributes import AttributeFieldPanel, AttributeType
 from ..monitoring_quality import determine_monitoring_quality
-from .attributes import Attribute, AttributeType as AttributeTypeModel, ModelWithAttributes
+from .attributes import AttributeType as AttributeTypeModel, ModelWithAttributes
 
 if typing.TYPE_CHECKING:
     from collections.abc import Sequence
@@ -357,8 +357,9 @@ class Action(
 
     def commit_attributes(self, attributes: dict[str, Any], user):
         """
-        Called when the serialized draft contents of attribute values must be persisted to the actual Attribute models
-        when publishing an action from a draft
+        Persist unpublished serialized draft contents to Attribute models.
+
+        Called when when publishing an action from a draft.
         """
         from actions.attributes import DraftAttributes
         draft_attributes = DraftAttributes.from_revision_content(attributes)
@@ -819,7 +820,7 @@ class Action(
                 if i == 0:
                     return None
                 return all_actions[i - 1]
-        assert False  # should have returned above at some point
+        raise AssertionError()  # should have returned above at some point
 
     def get_snapshots(self, report=None):
         """Return the snapshots of this action, optionally restricted to those for the given report."""
@@ -900,31 +901,31 @@ class Action(
 
     def get_workflow_progress(self) -> tuple[int, int]:
         """
+        Return a tuple of integers (i, n) showing how far in moderation the action is.
+
+        In the sequence of all the moderation tasks, for a workflow with n tasks,
+        shows in which task of the sequence the latest revision of this action is.
+
         A workflow with n amount of tasks can be used for moderating
         action revisions in a plan. (Currently only n=1 and n=2 are actually
-        in use.)
-
-        The tasks of the workflow form a sequence and the action revision
+        in use.). The tasks of the workflow form a sequence and the action revision
         must go through each task in the sequence to be finally
         published (after the last task has been completed, ie. approved).
         Initially, before being submitted and hence before having reached
         the first task in the sequence, the action revision is just a draft revision
         without a corresponding task.
 
-        This method returns a tuple of integers(i, n).
-
-        The integer i indicates how far the current latest action revision has
-        progressed in the sequence of moderation tasks in use in this plan.
-        The integer n indicates the final stage in the workflow task sequence,
-        in other words a published action. It is the amount of moderation tasks
-        in use in this plan.
+        The integer i in the returned tuple indicates how far the current latest action
+        revision has progressed in the sequence of moderation tasks in use in this plan.
+        If i==n, this indicates the revision is in the final stage in the workflow task
+        sequence, in other words it is a published action.
 
         For a moderation workflow with n tasks, the integer i is interpreted like this:
 
         0         Initial state; a draft revision has been saved
                   but not submitted to moderation.
         1         The revision has been sent to the first moderation task.
-        i (where i < n)
+        i, where i < n
                   The revision has progressed to the i'th moderation task,
                   with approvals from all the previous tasks.
         n         The public live version of the action
@@ -1237,7 +1238,8 @@ class ActionRelatedModelTransModelMixin:
             del data['i18n']
         kwargs = {}
         to_delete = set()
-        meta = cast(Options, getattr(cls, '_meta'))
+        assert hasattr(cls, '_meta')
+        meta = cast(Options, cls._meta)
         for field_name, value in data.items():
             field = None
             try:
