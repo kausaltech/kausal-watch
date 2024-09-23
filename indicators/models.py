@@ -597,7 +597,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         if plan is None:
             plan = self.plans.first()
         assert plan is not None
-        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url), self.id)
+        return '%s/indicators/%s' % (plan.get_view_url(client_url=client_url, active_locale=translation.get_language()), self.id)
 
     def clean(self):
         if self.updated_values_due_at:

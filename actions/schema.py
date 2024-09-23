@@ -326,7 +326,7 @@ class PlanNode(DjangoNode):
                 urlparse(client_url)
             except Exception:
                 raise GraphQLError('clientUrl must be a valid URL')
-        return root.get_view_url(client_url=client_url)
+        return root.get_view_url(client_url=client_url, active_locale=get_language())
 
     @staticmethod
     def resolve_admin_url(root: Plan, info):
