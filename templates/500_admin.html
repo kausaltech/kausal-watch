@@ -1,0 +1,20 @@
+{% extends "wagtailadmin/base.html" %}
+{% load sentry %}
+{% block content %}
+    {% block header %}
+        {% include "wagtailadmin/shared/header.html" with title="Something seems to have gone wrong!" %}
+    {% endblock %}
+
+    {% block content_main %}
+        <div class="nice-padding">
+            <h1> Sorry, there seems to be an error. Please try again soon. </h1>
+            {% if sentry_error_id %}
+            <p>Our team has been notified. Error ID: {{sentry_error_id}} </p>
+        {% endif %}
+        </div>
+        {% endblock %}
+{% endblock %}
+
+{% block js %}
+    {% sentry_init flush_replay=True event_id=sentry_error_id %}
+{% endblock %}
