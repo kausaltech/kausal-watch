@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import re
-import typing
 import zoneinfo
 from datetime import datetime, timedelta
 from functools import cache
@@ -197,6 +196,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         null=True, blank=True,
         help_text=_('A shorter version of the plan name'),
     )
+    short_identifier = models.CharField(
+        max_length=3,
+        null=True,
+        blank=True,
+        verbose_name=_("short identifier"),
+        help_text=_("A unique short identifier for the plan to be shown in UI. Could be eg. a number or an abbreviation"),
+    )
+
     version_name = models.CharField(
         max_length=100, blank=True, verbose_name=_('version name'),
         help_text=_('If this plan has multiple versions, name of this version'),
@@ -351,7 +358,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     )
 
     public_fields: ClassVar = [
-        'id', 'name', 'short_name', 'version_name', 'identifier', 'image', 'action_schedules',
+        'id', 'name', 'short_name', 'version_name', 'identifier', 'short_identifier', 'image', 'action_schedules',
         'actions', 'category_types', 'action_statuses', 'indicator_levels',
         'action_impacts', 'general_content', 'impact_groups',
         'monitoring_quality_points', 'scenarios',
@@ -395,6 +402,17 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         verbose_name_plural = _('plans')
         get_latest_by = 'created_at'
         ordering = ('created_at',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['short_identifier', 'parent'],
+                name='unique_short_identifier_within_parent',
+            ),
+            models.UniqueConstraint(
+                fields=['short_identifier', 'organization'],
+                condition=models.Q(parent__isnull=True),
+                name='unique_short_identifier_for_top_level_plans',
+            ),
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -430,6 +448,28 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             raise ValidationError({'secondary_action_classification': _(
                 'Primary and secondary classification cannot be the same')})
 
+        if self.parent:
+            if Plan.objects.filter(
+                parent=self.parent,
+                short_identifier=self.short_identifier,
+            ).exclude(pk=self.pk).exists():
+                raise ValidationError({
+                    'short_identifier': _(
+                        'This short identifier is already in use within the parent plan.',
+                    ),
+                })
+
+        # Check uniqueness within organization for top-level plans
+        elif Plan.objects.filter(
+            organization=self.organization,
+            short_identifier=self.short_identifier,
+            parent__isnull=True,
+        ).exclude(pk=self.pk).exists():
+            raise ValidationError({
+                'short_identifier': _(
+                    'This short identifier is already in use for a top-level plan within this organization.',
+                ),
+            })
     @property
     def root_page(self) -> Page:
         if self.site_id is None or self.site is None:

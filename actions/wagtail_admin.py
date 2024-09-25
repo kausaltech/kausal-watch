@@ -126,6 +126,7 @@ class PlanAdmin(AplansModelAdmin):
         FieldPanel('name'),
         FieldPanel('short_name'),
         FieldPanel('identifier'),
+        FieldPanel('short_identifier'),
         FieldPanel('version_name'),
         FieldPanel('actions_locked'),
         FieldPanel('site_url'),
