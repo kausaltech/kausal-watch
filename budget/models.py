@@ -154,18 +154,11 @@ class DatasetSchemaDimensionCategory(OrderedModel):
         return qs.filter(schema=self.schema, category__dimension=self.category.dimension)
 
 
-def schema_default():
-    """By default, new datasets will have their own unique schema."""
-    schema = DatasetSchema.objects.create()
-    return schema.pk
-
-
 class Dataset(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     schema = models.ForeignKey(
-        DatasetSchema, null=False, blank=False, related_name='datasets',
+        DatasetSchema, null=True, blank=True, related_name='datasets',
         verbose_name=_('schema'), on_delete=models.PROTECT,
-        default=schema_default,
     )
     # The "scope" generic foreign key links this dataset to an action or category
     scope_content_type = models.ForeignKey(
@@ -190,6 +183,11 @@ class Dataset(models.Model):
 
     def __str__(self):
         return f'Dataset {self.uuid}'
+
+    def save(self, *args, **kwargs):
+        if self.schema is None:
+            self.schema = DatasetSchema.objects.create()
+        super().save(*args, **kwargs)
 
 
 class DatasetSchemaScope(models.Model):
