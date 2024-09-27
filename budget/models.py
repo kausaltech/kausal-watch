@@ -138,10 +138,19 @@ class DatasetSchema(models.Model):
 
 
 class DatasetSchemaDimensionCategory(OrderedModel):
-    schema = models.ForeignKey(DatasetSchema, on_delete=models.PROTECT, related_name='dimension_categories', null=False, blank=False)
+    schema = models.ForeignKey(
+        DatasetSchema,
+        on_delete=models.PROTECT,
+        related_name='dimension_categories',
+        null=False,
+        blank=False,
+    )
     category = models.ForeignKey(DimensionCategory, related_name='schemas', on_delete=models.PROTECT, null=False, blank=False)
 
-    def filter_siblings(self, qs: models.QuerySet[DatasetSchemaDimensionCategory]) -> models.QuerySet[DatasetSchemaDimensionCategory]:
+    def filter_siblings(
+        self,
+        qs: models.QuerySet[DatasetSchemaDimensionCategory],
+    ) -> models.QuerySet[DatasetSchemaDimensionCategory]:
         return qs.filter(schema=self.schema, category__dimension=self.category.dimension)
 
 
@@ -179,6 +188,9 @@ class Dataset(models.Model):
             ),
         )
 
+    def __str__(self):
+        return f'Dataset {self.uuid}'
+
 
 class DatasetSchemaScope(models.Model):
     """Link a dataset schema to a context in which it can be used, such as a plan."""
@@ -190,6 +202,9 @@ class DatasetSchemaScope(models.Model):
     scope: models.ForeignKey[Plan, Plan] | models.ForeignKey[CategoryType, CategoryType] = GenericForeignKey(  # pyright: ignore
         'scope_content_type', 'scope_id',
     ) # type: ignore[assignment]
+
+    def __str__(self):
+        return f'DatasetSchemaScope schema:{self.schema.uuid} scope:{self.scope}'
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -234,3 +249,6 @@ class DataPoint(models.Model):
         #     models.UniqueConstraint(fields=['dataset', 'dimension_categories', 'date'],
         #                             name='unique_data_point_value')
         # ]
+
+    def __str__(self):
+        return f'Datapoint {self.uuid} / dataset {self.dataset.uuid}'
