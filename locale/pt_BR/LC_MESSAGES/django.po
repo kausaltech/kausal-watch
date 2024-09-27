@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-18 16:54+0300\n"
+"POT-Creation-Date: 2024-09-27 14:19+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
-"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/"
-"watch/django/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -2080,6 +2079,15 @@ msgstr "Uma versão mais curta do nome do plano"
 
 #: actions/models/plan.py
 #, fuzzy
+msgid "short identifier"
+msgstr "identificador"
+
+#: actions/models/plan.py
+msgid "A unique short identifier for the plan to be shown in UI. Could be eg. a number or an abbreviation"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
 msgid "version name"
 msgstr "nome da versão"
 
@@ -2256,6 +2264,15 @@ msgstr "Você deve criar e selecionar um tipo de categoria primária para classi
 #, fuzzy
 msgid "Primary and secondary classification cannot be the same"
 msgstr "A classificação primária e secundária não pode ser a mesma"
+
+#: actions/models/plan.py
+#, fuzzy
+msgid "This short identifier is already in use within the parent plan."
+msgstr "A organização já está incluída no plano"
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
+msgstr ""
 
 #: actions/models/plan.py
 #, fuzzy

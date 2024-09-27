@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-18 16:54+0300\n"
+"POT-Creation-Date: 2024-09-27 14:19+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
-"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/"
-">\n"
+"Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
 "Language: fi\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -1808,6 +1807,16 @@ msgid "A shorter version of the plan name"
 msgstr "Lyhyt versio toimenpideohjelman nimestä"
 
 #: actions/models/plan.py
+#, fuzzy
+#| msgid "identifier"
+msgid "short identifier"
+msgstr "tunniste"
+
+#: actions/models/plan.py
+msgid "A unique short identifier for the plan to be shown in UI. Could be eg. a number or an abbreviation"
+msgstr ""
+
+#: actions/models/plan.py
 msgid "version name"
 msgstr "version nimi"
 
@@ -1958,6 +1967,16 @@ msgstr "Toimenpiteiden pääluokitteluun on valittava luokan tyyppi"
 #: actions/models/plan.py
 msgid "Primary and secondary classification cannot be the same"
 msgstr "Toissijainen luokittelu ei voi olla sama kuin pääluokittelu"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "The organization is already included in the plan"
+msgid "This short identifier is already in use within the parent plan."
+msgstr "Organisaatio on jo toimenpideohjelmassa"
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
+msgstr ""
 
 #: actions/models/plan.py
 msgid "Privacy"

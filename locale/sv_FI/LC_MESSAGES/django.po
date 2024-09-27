@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-18 16:54+0300\n"
+"POT-Creation-Date: 2024-09-27 14:19+0300\n"
 "PO-Revision-Date: 2024-04-29 10:20+0000\n"
 "Last-Translator: Ida Sihvonen <ida.sihvonen@kausal.tech>\n"
 "Language-Team: Swedish <https://weblate.kausal.tech/projects/watch/django/sv_FI/>\n"
@@ -1731,6 +1731,14 @@ msgid "A shorter version of the plan name"
 msgstr ""
 
 #: actions/models/plan.py
+msgid "short identifier"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "A unique short identifier for the plan to be shown in UI. Could be eg. a number or an abbreviation"
+msgstr ""
+
+#: actions/models/plan.py
 msgid "version name"
 msgstr ""
 
@@ -1874,6 +1882,14 @@ msgstr ""
 
 #: actions/models/plan.py
 msgid "Primary and secondary classification cannot be the same"
+msgstr ""
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use within the parent plan."
+msgstr ""
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
 msgstr ""
 
 #: actions/models/plan.py
