@@ -825,7 +825,7 @@ if env('CONFIGURE_LOGGING'):
         log_format = None
     else:
         log_format = 'logfmt'
-    init_logging_django(log_format, log_sql_queries=LOG_SQL_QUERIES)
+    LOGGING=init_logging_django(log_format, log_sql_queries=LOG_SQL_QUERIES)
 
 
 REQUEST_LOG_MAX_DAYS = env('REQUEST_LOG_MAX_DAYS')
