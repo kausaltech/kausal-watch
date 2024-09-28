@@ -369,7 +369,7 @@ class Person(index.Indexed, ClusterableModel):
             clients = Client.objects.filter(plans__plan__in=plans).distinct()
             if len(clients) == 1:
                 client = clients[0]
-            else:
+            elif not user.is_superuser:
                 logger.warning('Invalid number of clients found for %s [Person-%d]: %d' % (
                     self.email, self.id, len(clients),  # pyright: ignore
                 ))
