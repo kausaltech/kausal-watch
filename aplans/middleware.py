@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+import json
 import re
+from collections.abc import Mapping
 
 from django.conf import settings
+from django.contrib import messages
 from django.db import connection, transaction
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.translation import activate, gettext_lazy as _
-from wagtail.admin import messages
 from wagtail.users.models import UserProfile
 
 import sentry_sdk
@@ -101,23 +103,42 @@ class RequestMiddleware:
             return self.get_response(request)
 
 
+QUERIES_TO_IGNORE = ['BEGIN', 'COMMIT', 'ROLLBACK']
+
+
 class PrintQueryCountMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
         response = self.get_response(request)
+        queries = [q for q in connection.queries if q['sql'] not in QUERIES_TO_IGNORE]
 
         sqltime = 0.0
-        for query in connection.queries:
+        for query in queries:
             sqltime += float(query["time"])
         sqltime = round(1000 * sqltime)
 
-        query_count = len(connection.queries)
-        level = 'DEBUG'
-        if query_count >= 50:
-            level = 'WARNING'
+        query_count = len(queries)
+        if query_count == 0:
+            return response
         if query_count >= 100:
             level = 'ERROR'
-        logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms")
+        elif query_count >= 50:
+            level = 'WARNING'
+        elif query_count >= 20:
+            level = 'INFO'
+        else:
+            level = 'DEBUG'
+
+        graphql_operation_name = '-'
+        try:
+            body = json.loads(request.body)
+        except json.JSONDecodeError:
+            pass
+        else:
+            if isinstance(body, Mapping) and 'operationName' in body:
+                graphql_operation_name = str(body.get('operationName', '-'))
+
+        logger.log(level, f"⛁ {query_count} SQL queries took {sqltime} ms {request.path} {graphql_operation_name}")
         return response
