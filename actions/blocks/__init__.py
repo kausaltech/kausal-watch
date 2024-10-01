@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from django.utils.translation import gettext_lazy as _
@@ -39,7 +41,7 @@ from actions.blocks.action_dashboard import (
     UpdatedAtColumnBlock,
 )
 from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
-from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock
+from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock
 from actions.blocks.choosers import (
     ActionAttributeTypeChooserBlock,
     AttributeTypeChooserBlock,
@@ -152,9 +154,9 @@ __all__ = [
     'ActionListBlock', 'ActionMergedActionsBlock', 'ActionOfficialNameBlock', 'ActionRelatedActionsBlock', 'ActionDependenciesBlock',
     'ActionRelatedIndicatorsBlock', 'ActionResponsiblePartiesBlock', 'ActionScheduleBlock', 'ActionScheduleFilterBlock',
     'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
-    'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeChooserBlock', 'PrimaryOrganizationFilterBlock',
-    'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
+    'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeLevelListBlock', 'CategoryTypeChooserBlock',
+    'PrimaryOrganizationFilterBlock', 'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
     'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
     'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
-    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock', FieldColumnBlock,
+    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock', 'FieldColumnBlock',
 ]

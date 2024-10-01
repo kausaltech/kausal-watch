@@ -574,6 +574,7 @@ class AttributeNumericValueNode(DjangoNode):
         fields = public_fields(AttributeNumericValue)
 
 
+@register_django_node
 class CategoryLevelNode(DjangoNode):
     class Meta:
         model = CategoryLevel

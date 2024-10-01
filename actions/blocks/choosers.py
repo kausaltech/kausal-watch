@@ -42,17 +42,6 @@ class CategoryTypeChooserBlock(blocks.ChooserBlock):
 
 
 class CategoryLevelChooserBlock(blocks.ChooserBlock):
-    DEFAULT_LINKED_FIELDS = {
-        'type': {
-            'match': r'^fields-\d+-value-',
-            'append': 'category_type',
-        },
-    }
-
-    def __init__(self, *args, **kwargs):
-        self.linked_fields = kwargs.pop('linked_fields', self.DEFAULT_LINKED_FIELDS)
-        super().__init__(*args, **kwargs)
-
     class Meta:
         label = CategoryLevel._meta.verbose_name
 
@@ -63,11 +52,17 @@ class CategoryLevelChooserBlock(blocks.ChooserBlock):
     @cached_property
     def widget(self):
         from actions.chooser import CategoryLevelChooser
-
-        return CategoryLevelChooser(linked_fields=self.linked_fields)
+        linked_fields = {
+            'type': {
+                'match': r'^fields-\d+-value-',
+                'append': 'category_type',
+            },
+        }
+        return CategoryLevelChooser(linked_fields=linked_fields)
 
     def get_form_state(self, value):
         return self.widget.get_value_data(value)
+
 
 class AttributeTypeChooserBlock(blocks.ChooserBlock):
     class Meta:

@@ -46,11 +46,13 @@ from actions.blocks import (
     get_default_action_filter_blocks,
 )
 from actions.blocks.action_dashboard import ActionDashboardColumnBlock
+from actions.blocks.category_list import CategoryTypeLevelListBlock
 from actions.blocks.category_page_layout import (
     CategoryPageAsideBlock,
     CategoryPageMainBottomBlock,
     CategoryPageMainTopBlock,
 )
+from actions.blocks.paths_content import PathsOutcomeBlock
 from actions.chooser import CategoryChooser, CategoryLevelChooser, CategoryTypeChooser
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
@@ -247,6 +249,8 @@ class StaticPage(AplansPage):
         ('paragraph', blocks.RichTextBlock(label=_('Paragraph'))),
         ('qa_section', QuestionAnswerBlock(icon='help')),
         ('category_list', CategoryListBlock()),
+        ('category_level_list', CategoryTypeLevelListBlock()),
+        ('paths_outcome', PathsOutcomeBlock()),
         ('indicator_group', IndicatorGroupBlock()),
         ('embed', AdaptiveEmbedBlock()),
         ('category_tree_map', CategoryTreeMapBlock()),
