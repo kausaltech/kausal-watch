@@ -76,6 +76,15 @@ env = environ.FileAwareEnv(
     ADMIN_BASE_URL=(str, 'http://localhost:8000'),
     LOG_SQL_QUERIES=(bool, False),
     LOG_GRAPHQL_QUERIES=(bool, False),
+    LOG_PEOPLE_VERBOSE=(bool, True),
+    LOG_DJANGO_RUNSERVER_MINIMIZE_NOISE=(bool, False),
+    LOG_DJANGO_RUNSERVER_REQUESTS_MEDIA=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_STATIC=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_FAVICON=(bool, True),
+    LOG_DJANGO_RUNSERVER_REQUESTS_BROKEN_PIPE=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_MEDIA=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_STATIC=(bool, True),
+    LOG_DJANGO_RUNSERVER_ERRORS_FAVICON=(bool, True),
     S3_MEDIA_STORAGE_URL=(str, ''),
     REQUEST_LOG_MAX_DAYS=(int, 90),
     REQUEST_LOG_METHODS=(list, ['POST', 'PUT', 'PATCH', 'DELETE']),
@@ -814,9 +823,10 @@ if DEBUG:  # noqa: SIM102
 LOG_SQL_QUERIES = env('LOG_SQL_QUERIES') and DEBUG
 LOG_GRAPHQL_QUERIES = env('LOG_GRAPHQL_QUERIES') and DEBUG
 
+
 # Logging
 if env('CONFIGURE_LOGGING'):
-    from kausal_common.logging.init import LogFormat, init_logging_django
+    from kausal_common.logging.init import LogFormat, UserLoggingOptions, init_logging_django
 
     is_kube = env.bool('KUBERNETES_MODE') or env.bool('KUBERNETES_LOGGING', False) # type: ignore
     log_format: LogFormat | None
@@ -825,7 +835,27 @@ if env('CONFIGURE_LOGGING'):
         log_format = None
     else:
         log_format = 'logfmt'
-    LOGGING=init_logging_django(log_format, log_sql_queries=LOG_SQL_QUERIES)
+
+    if DEBUG:
+        runserver_logging = dict(
+            django_runserver_minimize_noise=env('LOG_DJANGO_RUNSERVER_MINIMIZE_NOISE'),
+            django_runserver_requests_media=env('LOG_DJANGO_RUNSERVER_REQUESTS_MEDIA'),
+            django_runserver_requests_static=env('LOG_DJANGO_RUNSERVER_REQUESTS_STATIC'),
+            django_runserver_requests_favicon=env('LOG_DJANGO_RUNSERVER_REQUESTS_FAVICON'),
+            django_runserver_errors_media=env('LOG_DJANGO_RUNSERVER_ERRORS_MEDIA'),
+            django_runserver_errors_static=env('LOG_DJANGO_RUNSERVER_ERRORS_STATIC'),
+            django_runserver_errors_favicon=env('LOG_DJANGO_RUNSERVER_ERRORS_FAVICON'),
+            django_runserver_requests_broken_pipe=env('LOG_DJANGO_RUNSERVER_REQUESTS_BROKEN_PIPE'),
+            people_verbose=env('LOG_PEOPLE_VERBOSE'),
+        )
+    else:
+        runserver_logging = dict()
+
+    options = UserLoggingOptions(
+        sql_queries=LOG_SQL_QUERIES,
+        **runserver_logging,
+    )
+    LOGGING=init_logging_django(log_format, options=options)
 
 
 REQUEST_LOG_MAX_DAYS = env('REQUEST_LOG_MAX_DAYS')
