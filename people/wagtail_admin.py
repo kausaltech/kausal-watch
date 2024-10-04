@@ -22,11 +22,11 @@ from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
-from admin_site.utils import admin_req
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import naturaltime
 
 from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
+from admin_site.utils import admin_req
 from admin_site.wagtail import (
     ActivatePermissionHelperPlanContextModelAdminMixin,
     AplansAdminModelForm,
@@ -112,8 +112,7 @@ class IsContactPersonFilter(SimpleListFilter):
 def smart_truncate(content, length=100, suffix='...'):
     if len(content) <= length:
         return content
-    else:
-        return ' '.join(content[:length + 1].split(' ')[0:-1]) + suffix
+    return ' '.join(content[:length + 1].split(' ')[0:-1]) + suffix
 
 
 class AvatarWidget(AdminFileWidget):
@@ -171,10 +170,9 @@ class PersonFormForGeneralAdmin(PersonForm):
                 del self.fields['is_admin_for_active_plan']
                 del self.fields['contact_for_actions_unordered']
                 del self.fields['participated_in_training']
-        else:
+        elif initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
             # Allow removing lingering public site restriction if public site login was recently removed
-            if initial.get('access_level') != self.AccessLevel.PUBLIC_SITE_ONLY:
-                del self.fields['access_level']
+            del self.fields['access_level']
         if 'organization_plan_admin_orgs' in self.fields:
             self.fields['organization_plan_admin_orgs'].queryset = (
                 Organization.objects.available_for_plan(self.plan).filter(dissolution_date=None)
@@ -421,7 +419,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_empty_value_display(self, field=None):
         if getattr(field, '_name', field) == 'last_logged_in':
-            return display_for_value(False, None, boolean=True)
+            return display_for_value(value=False, empty_value_display='', boolean=True)
         return super().get_empty_value_display(field)
 
     def get_list_display(self, request: WatchAdminRequest):
@@ -455,7 +453,7 @@ class PersonAdmin(AplansModelAdmin):
                 return img
         avatar.short_description = ''
 
-        def cannot_access_admin_warning(obj):
+        def cannot_access_admin_warning(obj: Person) -> str:
             if obj.user and not obj.user.can_access_admin():
                 tooltip = _(
                     "This person has no access to the admin interface. This is commonly because no actions or "
