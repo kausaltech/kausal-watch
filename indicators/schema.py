@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import graphene
+from django.db.models import Q
 from django.forms import ModelForm
 from graphql.error import GraphQLError
 from wagtail.rich_text import RichText
@@ -10,6 +13,7 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, order_querys
 from aplans.utils import RestrictedVisibilityModel, public_fields
 
 from actions.models import Action
+from actions.models.category import Category
 from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator,
@@ -23,6 +27,7 @@ from indicators.models import (
     IndicatorGoal,
     IndicatorGraph,
     IndicatorLevel,
+    IndicatorQuerySet,
     IndicatorValue,
     Quantity,
     RelatedCommonIndicator,
@@ -310,6 +315,10 @@ class Query:
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
     )
+    related_plan_indicators = graphene.List(
+        graphene.NonNull(IndicatorNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
+    )
 
     def resolve_plan_indicators(
         self, info, plan, first=None, order_by=None, has_data=None,
@@ -333,6 +342,19 @@ class Query:
             qs = qs[0:first]
 
         return gql_optimizer.query(qs, info)
+
+
+    @staticmethod
+    def resolve_related_plan_indicators(
+        root, info, plan, first=None, category=None, order_by=None, **kwargs) -> IndicatorQuerySet | None:
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        plans = plan_obj.get_all_related_plans()
+        qs = plans_indicators_queryset(plans, category, first, order_by, info.context.user)
+        return gql_optimizer.query(qs, info)
+
 
     def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
         obj_id = kwargs.get('id')
@@ -376,6 +398,33 @@ class Query:
             return None
 
         return obj
+
+
+def plans_indicators_queryset(plans, category, first, order_by, user, restrict_to_publicly_visible=True):
+    qs = Indicator.objects.get_queryset()
+    if restrict_to_publicly_visible:
+        qs = qs.visible_for_public()
+    else:
+        qs = qs.visible_for_user(user)
+    qs = qs.filter(plans__in=plans)
+    if category is not None:
+        # FIXME: This is sucky, maybe convert Category to a proper tree model?
+        f = (
+            Q(id=category) |
+            Q(parent=category) |
+            Q(parent__parent=category) |
+            Q(parent__parent__parent=category) |
+            Q(parent__parent__parent__parent=category)
+        )
+        descendant_cats = Category.objects.filter(f)
+        qs = qs.filter(categories__in=descendant_cats).distinct()
+    if isinstance(plans, list) and len(plans) == 1:
+        plan = plans[0]
+        qs = qs.annotate_related_indicator_counts(plan)
+    qs = order_queryset(qs, IndicatorNode, order_by)
+    if first is not None:
+        qs = qs[0:first]
+    return qs
 
 
 class IndicatorForm(ModelForm):
