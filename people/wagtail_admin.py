@@ -26,6 +26,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import naturaltime
 
 from actions.models import ActionContactPerson, Plan, PlanPublicSiteViewer
+from actions.perms import get_people_with_login_rights
 from admin_site.utils import admin_req
 from admin_site.wagtail import (
     ActivatePermissionHelperPlanContextModelAdminMixin,
@@ -301,6 +302,11 @@ class PersonPermissionHelper(PlanContextModelAdminPermissionHelper):
             return False
         return super().user_can_create(user)
 
+
+def _person_can_access_admin(person) -> bool:
+    return person.pk in get_people_with_login_rights()
+
+
 class PersonButtonHelper(ButtonHelper):
     def delete_button(self, *args, **kwargs):
         button = super().delete_button(*args, **kwargs)
@@ -340,7 +346,7 @@ class PersonButtonHelper(ButtonHelper):
                 **kwargs,
             )
             buttons.append(reset_password_button)
-        if user.is_superuser and obj.user != user and obj.user.can_access_admin():
+        if user.is_superuser and obj.user != user and _person_can_access_admin(obj):
             impersonation_button = self.impersonation_button(
                 pk=getattr(obj, self.opts.pk.attname),
                 **kwargs,
@@ -454,7 +460,7 @@ class PersonAdmin(AplansModelAdmin):
         avatar.short_description = ''
 
         def cannot_access_admin_warning(obj: Person) -> str:
-            if obj.user and not obj.user.can_access_admin():
+            if not _person_can_access_admin(obj):
                 tooltip = _(
                     "This person has no access to the admin interface. This is commonly because no actions or "
                     "indicators are assigned to them.",
@@ -504,6 +510,7 @@ class PersonAdmin(AplansModelAdmin):
         organization.admin_order_field = 'organization__name'
 
         fields = [avatar, cannot_access_admin_warning, first_name, last_name, 'title', organization]
+        #fields = [avatar, first_name, last_name, 'title', organization]
 
         def last_logged_in(obj):
             user = obj.user
@@ -599,7 +606,7 @@ class PersonAdmin(AplansModelAdmin):
 
     def get_extra_attrs_for_row(self, obj, context):
         assert isinstance(obj, Person)
-        if obj.user and not obj.user.can_access_admin():
+        if not _person_can_access_admin(obj):
             # Add CSS class to highlight rows of users without admin access
             return {
                 'class': 'user-without-admin-access',

@@ -83,6 +83,13 @@ class Node[QS: MP_NodeQuerySet](MP_Node[QS], ClusterableModel):
     def __str__(self) -> str:
         return self.name
 
+    def get_parent_path(self, update=False) -> str | None:
+        depth = int(len(self.path) / self.steplen)
+        if depth <= 1:
+            return None
+        parentpath = self._get_basepath(self.path, depth - 1)
+        return parentpath
+
 
 class OrganizationClass(models.Model):
     identifier = models.CharField(max_length=255, unique=True, editable=False)

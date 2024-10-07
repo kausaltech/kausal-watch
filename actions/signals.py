@@ -6,11 +6,15 @@ from wagtail.signals import task_cancelled, task_submitted
 
 from anymail.signals import post_send, pre_send
 
+from indicators.models import Indicator, IndicatorContactPerson
 from notifications.models import NotificationSettings
+from orgs.models import Organization, OrganizationPlanAdmin
+from people.models import Person
 
 from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
-from .models import Action, Category, Plan, PlanFeatures
+from .models import Action, ActionContactPerson, ActionResponsibleParty, Category, GeneralPlanAdmin, Plan, PlanFeatures
 from .models.attributes import AttributeType
+from .perms import get_people_with_login_rights
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +55,28 @@ def invalidate_attribute_type_cache(sender, instance, **kwargs):
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
+
+
+MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
+    Person,
+    GeneralPlanAdmin,
+    ActionContactPerson,
+    IndicatorContactPerson,
+    ActionResponsibleParty,
+    Action,
+    Indicator,
+    OrganizationPlanAdmin,
+    Organization,
+)
+
+
+def clear_login_rights_cache(sender, instance, **kwargs):
+    get_people_with_login_rights.cache_clear()
+
+
+for model in MODELS_WHICH_AFFECT_LOGIN_RIGHTS:
+    post_save.connect(clear_login_rights_cache, sender=model)
+    post_delete.connect(clear_login_rights_cache, sender=model)
 
 
 def register_signal_handlers():
