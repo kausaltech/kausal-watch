@@ -346,13 +346,13 @@ class Query:
 
     @staticmethod
     def resolve_related_plan_indicators(
-        root, info, plan, first=None, category=None, order_by=None, **kwargs) -> IndicatorQuerySet | None:
+        root, info, plan, category=None, **kwargs) -> IndicatorQuerySet | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
         plans = plan_obj.get_all_related_plans()
-        qs = plans_indicators_queryset(plans, category, first, order_by, info.context.user)
+        qs = plans_indicators_queryset(plans=plans, category=category, user=info.context.user, kwargs=kwargs)
         return gql_optimizer.query(qs, info)
 
 
@@ -399,8 +399,10 @@ class Query:
 
         return obj
 
-
-def plans_indicators_queryset(plans, category, first, order_by, user, restrict_to_publicly_visible=True):
+def plans_indicators_queryset(plans, category, user, **kwargs):
+    first = kwargs.get('first')
+    order_by = kwargs.get('order_by')
+    restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)
     qs = Indicator.objects.get_queryset()
     if restrict_to_publicly_visible:
         qs = qs.visible_for_public()
