@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 
 class Tree:
     def __init__(self, name: str, indent: int):
@@ -19,7 +17,7 @@ class Tree:
             if sibling == self:
                 return prev_node
             prev_node = sibling
-        assert False
+        raise AssertionError('Unexpected tree state: self.parent.children does not contain self')
 
     def add_child(self, child: Tree):
         self.children.append(child)
@@ -31,7 +29,7 @@ class Tree:
         """Determine equality of structure and names, ignoring indentation."""
         return (self.name == other.name
                 and len(self.children) == len(other.children)
-                and all(x.equals(y) for (x, y) in zip(self.children, other.children)))
+                and all(x.equals(y) for (x, y) in zip(self.children, other.children, strict=True)))
 
     def reset_indent(self, indent=0, shiftwidth=4):
         """Make indentation nice."""
@@ -77,7 +75,8 @@ def parse_tree_string(tree_string: str, reset_indent=True):
         while indent <= stack[-1].indent:
             last_popped = stack.pop()
         if last_popped and indent < last_popped.indent:
-            raise ValueError(f"Invalid indentation for '{name}' at line {i}")
+            msg = f"Invalid indentation for '{name}' at line {i}"
+            raise ValueError(msg)
         child = Tree(name, indent)
         stack[-1].add_child(child)
         stack.append(child)
