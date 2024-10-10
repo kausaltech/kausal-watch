@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import graphene
-from django.db.models import Q
 from django.forms import ModelForm
 from graphql.error import GraphQLError
 from wagtail.rich_text import RichText
@@ -13,7 +12,6 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, order_querys
 from aplans.utils import RestrictedVisibilityModel, public_fields
 
 from actions.models import Action
-from actions.models.category import Category
 from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator,
@@ -346,13 +344,13 @@ class Query:
 
     @staticmethod
     def resolve_related_plan_indicators(
-        root, info, plan, category=None, **kwargs) -> IndicatorQuerySet | None:
+        root, info, plan, **kwargs) -> IndicatorQuerySet | None:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
         plans = plan_obj.get_all_related_plans()
-        qs = plans_indicators_queryset(plans=plans, category=category, user=info.context.user, kwargs=kwargs)
+        qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
         return gql_optimizer.query(qs, info)
 
 
@@ -399,7 +397,7 @@ class Query:
 
         return obj
 
-def plans_indicators_queryset(plans, category, user, **kwargs):
+def plans_indicators_queryset(plans, user, **kwargs):
     first = kwargs.get('first')
     order_by = kwargs.get('order_by')
     restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)
@@ -409,17 +407,7 @@ def plans_indicators_queryset(plans, category, user, **kwargs):
     else:
         qs = qs.visible_for_user(user)
     qs = qs.filter(plans__in=plans)
-    if category is not None:
-        # FIXME: This is sucky, maybe convert Category to a proper tree model?
-        f = (
-            Q(id=category) |
-            Q(parent=category) |
-            Q(parent__parent=category) |
-            Q(parent__parent__parent=category) |
-            Q(parent__parent__parent__parent=category)
-        )
-        descendant_cats = Category.objects.filter(f)
-        qs = qs.filter(categories__in=descendant_cats).distinct()
+
     if isinstance(plans, list) and len(plans) == 1:
         plan = plans[0]
         qs = qs.annotate_related_indicator_counts(plan)
