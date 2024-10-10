@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from functools import lru_cache
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.query import QuerySet
-from treelib import Tree
 from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
+
+from treelib import Tree
 
 from content.models import SiteGeneralContent
 from indicators.models import (
@@ -54,9 +57,7 @@ from .models import (
 
 User = get_user_model()
 
-
 ACTIONS_APP = 'actions'
-
 ALL_PERMS = ('view', 'change', 'publish', 'delete', 'add')
 
 
