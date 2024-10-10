@@ -32,6 +32,7 @@ ignore = [
 "kausal_common/typings/*" = ["D"]
 "kausal_common/typings/django/*" = ["ALL"]
 "**/migrations/*" = ["I002"]
+"**/tests/test_*" = ["PLR0913"]
 
 [tool.ruff.lint.isort]
 split-on-trailing-comma = true
