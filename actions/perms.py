@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import typing
 from functools import lru_cache
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.query import QuerySet
 from wagtail.models import PAGE_PERMISSION_TYPES, GroupPagePermission
 
 from treelib import Tree
@@ -54,6 +54,10 @@ from .models import (
     MonitoringQualityPoint,
     Plan,
 )
+
+if typing.TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+
 
 User = get_user_model()
 
