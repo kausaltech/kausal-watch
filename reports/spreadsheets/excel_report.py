@@ -425,11 +425,10 @@ class ExcelReport:
             raise ValueError('Only one or two dimensional pivot tables supported')
         action_df = action_df.fill_null('[' + _('Unknown') + ']')
         if len(labels) == 1:
-            return action_df\
-                .groupby(labels)\
-                .count()\
-                .sort(reversed(labels), descending=False)\
-                .rename({'count': _('Actions')})
+            return (action_df
+                    .groupby(labels)
+                    .count()
+                    .rename({'count': _('Actions')}))
         return action_df.pivot(
             values=_("Identifier"),
             index=labels[0],
@@ -455,6 +454,8 @@ class ExcelReport:
                 'type': 'column',
             },
         ]
+        # Work around problems if none of the actions have an implementation phase and that column would have type null
+        action_df = action_df.with_columns(polars.col(_('Implementation phase')).cast(polars.String))
 
         # Pivot sheet: Category (level) x Implementation phase
         category_labels = self.report.type.get_field_labels_for_type('category')
