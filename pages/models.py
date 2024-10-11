@@ -198,6 +198,7 @@ class PlanRootPage(AplansPage):
         ('category_tree_map', CategoryTreeMapBlock()),
         ('large_image', LargeImageBlock()),
         ('embed', AdaptiveEmbedBlock()),
+        ('paths_outcome', PathsOutcomeBlock()),
     ])
 
     content_panels = [
