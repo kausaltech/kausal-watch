@@ -706,14 +706,22 @@ class IndicatorListPage(FixedSlugPage):
         verbose_name=_('Display level'),
     )
 
+    include_related_plans = models.BooleanField(
+        verbose_name=_('Include related plans'),
+        help_text=_('Enable to make this page include indicators from related plans.'),
+        default=False,
+    )
+
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('display_insights'),
         FieldPanel('display_level'),
+        FieldPanel('include_related_plans'),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLBoolean('display_insights'),
         GraphQLBoolean('display_level'),
+        GraphQLBoolean('include_related_plans'),
     ]
 
     class Meta:
