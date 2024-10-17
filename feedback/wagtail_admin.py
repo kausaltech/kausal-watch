@@ -58,6 +58,12 @@ class UserFeedbackInspectView(InspectView):
     # (and the whole class) can be deleted
     any_permission_required = ["add", "change", "delete", "view"]
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        for field in context['fields']:
+            if field['value'] == '' or field['value'] is None:
+                field['value'] = 'None'
+        return context
 
 class UserFeedbackIndexView(IndexView):
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line

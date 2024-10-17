@@ -282,10 +282,29 @@ class FormFieldBlock(blocks.StructBlock):
     ]
 
 
+
+
 class BaseContactFormBlock(blocks.StructBlock):
+    FEEDBACK_FIELD_CHOICES = [
+    ('required', _('Required')),
+    ('optional', _('Optional')),
+    ('excluded', _('Excluded')),
+]
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
-    email_required = blocks.BooleanBlock(required=False, default=True, label=_('Email required') )
+    feedback_setting = blocks.ChoiceBlock(
+        choices=FEEDBACK_FIELD_CHOICES,
+        default='required',
+        label=_('Feedback field setting'),
+        help_text=_('Configure the feedback field visibility and requirement.'),
+    )
+
+    email_setting = blocks.ChoiceBlock(
+        choices=FEEDBACK_FIELD_CHOICES,
+        default='required',
+        label=_('Email field setting'),
+        help_text=_('Configure the email field visibility and requirement.'),
+    )
     fields = blocks.StreamBlock([
         ('form_field', FormFieldBlock()),
     ], required=False, min_num=0, label=_('Additional form fields'),
@@ -295,7 +314,8 @@ class BaseContactFormBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('description'),
-        GraphQLBoolean("email_required"),
+        GraphQLString("feedback_setting"),
+        GraphQLString("email_setting"),
         GraphQLStreamfield('fields'),
     ]
 
