@@ -71,9 +71,19 @@ class UserFeedback(models.Model):
 
     def clean(self):
         super().clean()
+
         page_id = self.page_id
         latest_revision = get_latest_revision(page_id)
         self.latest_revision = latest_revision
+
+        comment = self.comment
+        additional_fields = self.additional_fields
+
+        if additional_fields and not any(additional_fields.values()):
+            additional_fields = None
+
+        if not comment and not additional_fields:
+            raise ValidationError(_("At least one field must be filled."))
         self.save()
 
 
