@@ -282,28 +282,32 @@ class FormFieldBlock(blocks.StructBlock):
     ]
 
 
-
-
 class BaseContactFormBlock(blocks.StructBlock):
-    FEEDBACK_FIELD_CHOICES = [
-    ('required', _('Required')),
-    ('optional', _('Optional')),
-    ('excluded', _('Excluded')),
-]
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
-    feedback_setting = blocks.ChoiceBlock(
-        choices=FEEDBACK_FIELD_CHOICES,
-        default='required',
-        label=_('Feedback field setting'),
-        help_text=_('Configure the feedback field visibility and requirement.'),
+    feedback_visible = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_('Feedback field visible'),
+        help_text=_('Toggle visibility of the feedback field.'),
     )
-
-    email_setting = blocks.ChoiceBlock(
-        choices=FEEDBACK_FIELD_CHOICES,
-        default='required',
-        label=_('Email field setting'),
-        help_text=_('Configure the email field visibility and requirement.'),
+    feedback_required = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_('Feedback required'),
+        help_text=_('Make the feedback field required when visible.'),
+    )
+    email_visible = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_('Email field visible'),
+        help_text=_('Toggle visibility of the email field.'),
+    )
+    email_required = blocks.BooleanBlock(
+        default=True,
+        required=False,
+        label=_('Email required'),
+        help_text=_('Make the email field required when visible.'),
     )
     fields = blocks.StreamBlock([
         ('form_field', FormFieldBlock()),
@@ -314,10 +318,28 @@ class BaseContactFormBlock(blocks.StructBlock):
     graphql_fields = [
         GraphQLString('heading'),
         GraphQLString('description'),
-        GraphQLString("feedback_setting"),
-        GraphQLString("email_setting"),
+        GraphQLBoolean('feedback_visible'),
+        GraphQLBoolean('feedback_required'),
+        GraphQLBoolean('email_visible'),
+        GraphQLBoolean('email_required'),
         GraphQLStreamfield('fields'),
     ]
+
+    def clean(self, value):
+        cleaned_data = super().clean(value)
+
+        errors = {}
+
+        if cleaned_data.get('feedback_required') and not cleaned_data.get('feedback_visible'):
+            errors['feedback_required'] = ValidationError(_("Feedback can't be required if it's not visible."))
+
+        if cleaned_data.get('email_required') and not cleaned_data.get('email_visible'):
+            errors['email_required'] = ValidationError(_("Email can't be required if it's not visible."))
+
+        if errors:
+            raise blocks.StructBlockValidationError(errors)
+
+        return cleaned_data
 
 @register_streamfield_block
 class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, BaseContactFormBlock):
@@ -331,7 +353,6 @@ class IndicatorCausalChainBlock(blocks.StaticBlock):
 
     class Meta:
         label = _("Indicator Causal Chain")
-
 
 
 class BaseDatasetsBlock(blocks.StructBlock):
