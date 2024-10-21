@@ -153,13 +153,13 @@ class BaseTemplateAdmin(AplansModelAdmin):
                     'manually_scheduled_notification_templates',
                     panels=self.get_manually_scheduled_notification_panels(time),
                 )],
-                heading=_('Single notifications')),
+                heading=_('One-off notifications')),
             ObjectList([
                 InlinePanel(
                     'templates',
                     panels=self.templates_panels,
                 )],
-                heading=_('Automatic notifications')),
+                heading=_('Event-based notifications')),
             ObjectList([
                 CondensedInlinePanel(
                     'content_blocks',
