@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-27 14:19+0300\n"
+"POT-Creation-Date: 2024-10-21 15:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -420,7 +420,8 @@ msgstr ""
 msgid "Form Field"
 msgstr ""
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #: pages/blocks.py
 msgid "Heading"
 msgstr ""
@@ -430,7 +431,35 @@ msgid "Description"
 msgstr ""
 
 #: actions/blocks/action_content.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Feedback required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Make the email field required when visible."
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -439,6 +468,14 @@ msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email can't be required if it's not visible."
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -457,7 +494,8 @@ msgstr ""
 msgid "Help text for the Dataset to be shown in the public UI"
 msgstr ""
 
-#: actions/blocks/action_content.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 msgid "Help text"
 msgstr ""
 
@@ -572,7 +610,23 @@ msgid "Action highlights"
 msgstr ""
 
 #: actions/blocks/action_list.py
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr ""
+
+#: actions/blocks/action_list.py
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr ""
+
+#: actions/blocks/action_list.py
 msgid "Filter on category"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Use category level for tabbed grouping in the public UI"
 msgstr ""
 
 #: actions/blocks/action_list.py
@@ -606,6 +660,22 @@ msgstr ""
 
 #: actions/blocks/category_list.py
 msgid "Category tree map"
+msgstr ""
+
+#: actions/blocks/category_list.py
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr ""
+
+#: actions/blocks/category_list.py
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr ""
+
+#: actions/blocks/category_list.py
+msgid "Filter by level"
+msgstr ""
+
+#: actions/blocks/category_list.py
+msgid "Category level list"
 msgstr ""
 
 #: actions/blocks/category_page_layout.py
@@ -660,6 +730,26 @@ msgstr ""
 
 #: actions/blocks/filters.py
 msgid "Continuous Action"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
 msgstr ""
 
 #: actions/category_admin.py
@@ -859,7 +949,7 @@ msgid "specifier for status"
 msgstr ""
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
 msgstr ""
 
 #: actions/models/action.py
@@ -2851,6 +2941,10 @@ msgstr ""
 msgid "user feedbacks"
 msgstr ""
 
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
+
 #: feedback/views.py
 msgid "Mark user feedback as processed"
 msgstr ""
@@ -3789,11 +3883,11 @@ msgid "The email message will be sent on the specified day at"
 msgstr ""
 
 #: notifications/wagtail_admin.py
-msgid "Single notifications"
+msgid "One-off notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py
-msgid "Automatic notifications"
+msgid "Event-based notifications"
 msgstr ""
 
 #: notifications/wagtail_admin.py

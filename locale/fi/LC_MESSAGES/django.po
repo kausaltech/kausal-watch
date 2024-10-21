@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-27 14:19+0300\n"
+"POT-Creation-Date: 2024-10-21 15:28+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
 "Language-Team: Finnish <https://weblate.kausal.tech/projects/watch/django/fi/>\n"
@@ -442,7 +442,8 @@ msgstr ""
 msgid "Form Field"
 msgstr "kentät"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #: pages/blocks.py
 msgid "Heading"
 msgstr "Otsikko"
@@ -453,7 +454,37 @@ msgid "Description"
 msgstr "kuvaus"
 
 #: actions/blocks/action_content.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "Feedback required"
+msgstr "Palautetta vastaanotettu"
+
+#: actions/blocks/action_content.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Make the email field required when visible."
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -464,6 +495,14 @@ msgstr "Toimenpiteen kenttä"
 
 #: actions/blocks/action_content.py
 msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email can't be required if it's not visible."
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -487,7 +526,8 @@ msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
 msgid "Help text for the Dataset to be shown in the public UI"
 msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
 
-#: actions/blocks/action_content.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 msgid "Help text"
 msgstr "Ohjeteksti"
 
@@ -607,8 +647,28 @@ msgid "Action highlights"
 msgstr "Toimenpidenostot"
 
 #: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Rajaa luokan mukaan"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
 
 #: actions/blocks/action_list.py
 msgid "Action list"
@@ -643,6 +703,29 @@ msgstr "kentät"
 #: actions/blocks/category_list.py
 msgid "Category tree map"
 msgstr "Luokkien puuvisualisaatio"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "category level"
+msgid "Filter by level"
+msgstr "luokan taso"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Category levels"
+msgid "Category level list"
+msgstr "Kategorian tasot"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
@@ -704,6 +787,29 @@ msgstr "Julkaisu ajastettu"
 #| msgid "continuous action"
 msgid "Continuous Action"
 msgstr "jatkuva toimenpide"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "Mitä selitettä julkisella sivustolla käytään virallisesta nimestä"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Käyttöliittymässä näytettävän kentän ohjeteksti"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -907,7 +1013,9 @@ msgid "specifier for status"
 msgstr "tilan tarkenne"
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
+#, fuzzy
+#| msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
 msgstr "Kuvaa minkä takia toimenpiteellä on tämä tila"
 
 #: actions/models/action.py
@@ -2998,6 +3106,10 @@ msgstr "käyttäjän palaute"
 msgid "user feedbacks"
 msgstr "käyttäjien palautteet"
 
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
+
 #: feedback/views.py
 msgid "Mark user feedback as processed"
 msgstr "Merkitse palaute käsitellyksi"
@@ -4026,12 +4138,16 @@ msgid "The email message will be sent on the specified day at"
 msgstr "Sähköpostiviesti lähetetään valittuna päivänä klo"
 
 #: notifications/wagtail_admin.py
-msgid "Single notifications"
+#, fuzzy
+#| msgid "Single notifications"
+msgid "One-off notifications"
 msgstr "Yksittäiset herätteet"
 
 #: notifications/wagtail_admin.py
-msgid "Automatic notifications"
-msgstr "Automaattiset herätteet"
+#, fuzzy
+#| msgid "Single notifications"
+msgid "Event-based notifications"
+msgstr "Yksittäiset herätteet"
 
 #: notifications/wagtail_admin.py
 msgid "Notification contents"
@@ -5153,6 +5269,9 @@ msgstr "Käyttäjät"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Ei oikeuksia poistaa käyttäjä joka kuuluu toimenpideohjelmiin, joita et hallinnoi."
+
+#~ msgid "Automatic notifications"
+#~ msgstr "Automaattiset herätteet"
 
 #, fuzzy
 #~| msgid "Question"

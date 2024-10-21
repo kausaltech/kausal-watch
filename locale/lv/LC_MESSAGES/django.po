@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-27 14:19+0300\n"
+"POT-Creation-Date: 2024-10-21 15:28+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
 "Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
@@ -441,7 +441,8 @@ msgstr ""
 msgid "Form Field"
 msgstr "Laukums"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #: pages/blocks.py
 msgid "Heading"
 msgstr "Virsraksts"
@@ -451,7 +452,37 @@ msgid "Description"
 msgstr "Apraksts"
 
 #: actions/blocks/action_content.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "Feedback required"
+msgstr "Saņemtās lietotāju atsauksmes"
+
+#: actions/blocks/action_content.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Make the email field required when visible."
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -462,6 +493,14 @@ msgstr "Rīcības lauks"
 
 #: actions/blocks/action_content.py
 msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email can't be required if it's not visible."
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -486,7 +525,8 @@ msgstr "Kāds marķējums būtu jāizmanto publiskajā UI oficiālajam nosaukuma
 msgid "Help text for the Dataset to be shown in the public UI"
 msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
 
-#: actions/blocks/action_content.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 msgid "Help text"
 msgstr "Palīdzības teksts"
 
@@ -605,8 +645,30 @@ msgid "Action highlights"
 msgstr "Pasākuma svarīgākie notikumi"
 
 #: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "Kāds marķējums būtu jāizmanto publiskajā UI oficiālajam nosaukumam?"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+
+#: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Filtrēt pēc kategorijas"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
 
 #: actions/blocks/action_list.py
 msgid "Action list"
@@ -640,6 +702,30 @@ msgstr "Vērtību lauks"
 #: actions/blocks/category_list.py
 msgid "Category tree map"
 msgstr "Kategoriju koku karte"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "Kāds marķējums būtu jāizmanto publiskajā UI oficiālajam nosaukumam?"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "category level"
+msgid "Filter by level"
+msgstr "kategorijas līmenis"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Category levels"
+msgid "Category level list"
+msgstr "Kategorijas līmeņi"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
@@ -698,6 +784,30 @@ msgstr "Grafiks"
 #| msgid "continuous action"
 msgid "Continuous Action"
 msgstr "nepārtraukta rīcība"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "Kāds marķējums būtu jāizmanto publiskajā UI oficiālajam nosaukumam?"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Set if action identifiers should be visible in the public UI"
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Iestatiet, vai rīcību identifikatoriem jābūt redzamiem publiskajā lietotāja saskarnē"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -900,7 +1010,9 @@ msgid "specifier for status"
 msgstr "statusa specifikators"
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
+#, fuzzy
+#| msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
 msgstr "Aprakstiet iemeslu, kāpēc šai rīcībai ir šāds statuss"
 
 #: actions/models/action.py
@@ -2971,6 +3083,10 @@ msgstr "lietotāju atsauksmes"
 msgid "user feedbacks"
 msgstr "lietotāju atsauksmes"
 
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
+
 #: feedback/views.py
 msgid "Mark user feedback as processed"
 msgstr "Atzīmēt lietotāja atsauksmes kā apstrādātas"
@@ -3961,14 +4077,14 @@ msgstr ""
 #: notifications/wagtail_admin.py
 #, fuzzy
 #| msgid "Notifications"
-msgid "Single notifications"
+msgid "One-off notifications"
 msgstr "Paziņojumi"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-#| msgid "Subject for email notifications"
-msgid "Automatic notifications"
-msgstr "E-pasta paziņojumu temats"
+#| msgid "Notifications"
+msgid "Event-based notifications"
+msgstr "Paziņojumi"
 
 #: notifications/wagtail_admin.py
 msgid "Notification contents"
@@ -5073,6 +5189,11 @@ msgstr "Lietotāji"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nav atļauts noņemt lietotājus, kas pieder pie plāniem, kurus jūs neapsaimniekojat."
+
+#, fuzzy
+#~| msgid "Subject for email notifications"
+#~ msgid "Automatic notifications"
+#~ msgstr "E-pasta paziņojumu temats"
 
 #, fuzzy
 #~| msgid "Question"

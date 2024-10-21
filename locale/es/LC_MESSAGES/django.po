@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-27 14:19+0300\n"
+"POT-Creation-Date: 2024-10-21 15:28+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
 "Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
@@ -420,7 +420,8 @@ msgstr "Se deben proporcionar opciones para los tipos de campo \"Desplegable\" o
 msgid "Form Field"
 msgstr "Campo de formulario"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #: pages/blocks.py
 msgid "Heading"
 msgstr "Rúbrica"
@@ -430,8 +431,38 @@ msgid "Description"
 msgstr "Descripción"
 
 #: actions/blocks/action_content.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "Feedback required"
+msgstr "Comentarios de los usuarios"
+
+#: actions/blocks/action_content.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Email required"
 msgstr "Correo electrónico requerido"
+
+#: actions/blocks/action_content.py
+msgid "Make the email field required when visible."
+msgstr ""
 
 #: actions/blocks/action_content.py
 msgid "Additional form fields"
@@ -440,6 +471,14 @@ msgstr "Campos de formulario adicionales"
 #: actions/blocks/action_content.py
 msgid "Form fields to be shown in addition to Name, Email and Comment fields"
 msgstr "Campos de formulario que se mostrarán además de los campos Nombre, Correo electrónico y Comentario"
+
+#: actions/blocks/action_content.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email can't be required if it's not visible."
+msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
 msgid "Contact form"
@@ -457,7 +496,8 @@ msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública
 msgid "Help text for the Dataset to be shown in the public UI"
 msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
 
-#: actions/blocks/action_content.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 msgid "Help text"
 msgstr "Texto de ayuda"
 
@@ -572,8 +612,30 @@ msgid "Action highlights"
 msgstr "Acciones destacadas"
 
 #: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/action_list.py
 msgid "Filter on category"
 msgstr "Filtrar por categoría"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
 
 #: actions/blocks/action_list.py
 msgid "Action list"
@@ -607,6 +669,30 @@ msgstr "Campo de valor"
 #: actions/blocks/category_list.py
 msgid "Category tree map"
 msgstr "Mapa del árbol de categorías"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "category level"
+msgid "Filter by level"
+msgstr "nivel de categoría"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Category levels"
+msgid "Category level list"
+msgstr "Categorías"
 
 #: actions/blocks/category_page_layout.py
 msgid "Body"
@@ -661,6 +747,34 @@ msgstr "Programar"
 #: actions/blocks/filters.py
 msgid "Continuous Action"
 msgstr "Acción continua"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "What heading should be used in the public UI for the Dataset?"
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "¿Qué encabezamiento debe utilizarse en la interfaz de usuario pública para el conjunto de datos?"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Help text for the Dataset to be shown in the public UI"
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Texto de ayuda para el conjunto de datos que se mostrará en la interfaz de usuario pública"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Kausal Paths node UUID"
+msgid "Kausal Paths outcome node ID"
+msgstr "UUID del nodo Kausal Paths"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Kausal Paths node UUID"
+msgid "Kausal Paths outcome node to be used"
+msgstr "UUID del nodo Kausal Paths"
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr ""
 
 #: actions/category_admin.py
 msgid "Common category type"
@@ -859,7 +973,9 @@ msgid "specifier for status"
 msgstr "especificador de estado"
 
 #: actions/models/action.py
-msgid "Describe the reason why this action has has this status"
+#, fuzzy
+#| msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
 msgstr "Describa la razón por la que esta acción tiene este estatus"
 
 #: actions/models/action.py
@@ -2861,6 +2977,10 @@ msgstr "comentarios de los usuarios"
 msgid "user feedbacks"
 msgstr "opiniones de los usuarios"
 
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
+
 #: feedback/views.py
 msgid "Mark user feedback as processed"
 msgstr "Marcar los comentarios de los usuarios como procesados"
@@ -3811,12 +3931,16 @@ msgid "The email message will be sent on the specified day at"
 msgstr "El mensaje de correo electrónico se enviará el día especificado a las"
 
 #: notifications/wagtail_admin.py
-msgid "Single notifications"
+#, fuzzy
+#| msgid "Single notifications"
+msgid "One-off notifications"
 msgstr "Notificaciones únicas"
 
 #: notifications/wagtail_admin.py
-msgid "Automatic notifications"
-msgstr "Notificaciones automáticas"
+#, fuzzy
+#| msgid "Single notifications"
+msgid "Event-based notifications"
+msgstr "Notificaciones únicas"
 
 #: notifications/wagtail_admin.py
 msgid "Notification contents"
@@ -4905,3 +5029,6 @@ msgstr "Usuarios"
 #: users/models.py
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Sin permiso para eliminar el usuario perteneciente a planes que no gestiona."
+
+#~ msgid "Automatic notifications"
+#~ msgstr "Notificaciones automáticas"

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-09-27 14:19+0300\n"
+"POT-Creation-Date: 2024-10-21 15:28+0300\n"
 "PO-Revision-Date: 2024-09-23 10:20+0000\n"
 "Last-Translator: Liliia Sviridova <liliia.sviridova@kausal.tech>\n"
 "Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
@@ -472,7 +472,8 @@ msgstr ""
 msgid "Form Field"
 msgstr "Campo"
 
-#: actions/blocks/action_content.py actions/blocks/category_list.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #: pages/blocks.py
 #, fuzzy
 msgid "Heading"
@@ -484,7 +485,36 @@ msgid "Description"
 msgstr "Descrição"
 
 #: actions/blocks/action_content.py
+msgid "Feedback field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the feedback field."
+msgstr ""
+
+#: actions/blocks/action_content.py
+#, fuzzy
+msgid "Feedback required"
+msgstr "Feedback do usuário recebido"
+
+#: actions/blocks/action_content.py
+msgid "Make the feedback field required when visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email field visible"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Toggle visibility of the email field."
+msgstr ""
+
+#: actions/blocks/action_content.py
 msgid "Email required"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Make the email field required when visible."
 msgstr ""
 
 #: actions/blocks/action_content.py
@@ -494,6 +524,14 @@ msgstr "Campo de ação"
 
 #: actions/blocks/action_content.py
 msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Feedback can't be required if it's not visible."
+msgstr ""
+
+#: actions/blocks/action_content.py
+msgid "Email can't be required if it's not visible."
 msgstr ""
 
 #: actions/blocks/action_content.py actions/blocks/category_page_layout.py
@@ -516,7 +554,8 @@ msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
 msgid "Help text for the Dataset to be shown in the public UI"
 msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
 
-#: actions/blocks/action_content.py
+#: actions/blocks/action_content.py actions/blocks/action_list.py
+#: actions/blocks/category_list.py actions/blocks/paths_content.py
 #, fuzzy
 msgid "Help text"
 msgstr "Texto de ajuda"
@@ -658,8 +697,27 @@ msgstr "Destaques da ação"
 
 #: actions/blocks/action_list.py
 #, fuzzy
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
+
+#: actions/blocks/action_list.py
+#, fuzzy
 msgid "Filter on category"
 msgstr "Filtrar por categoria"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr ""
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
 
 #: actions/blocks/action_list.py
 #, fuzzy
@@ -701,6 +759,26 @@ msgstr "Campo de valor"
 #, fuzzy
 msgid "Category tree map"
 msgstr "Mapa da árvore de categorias"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Filter by level"
+msgstr "nível de categoria"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+msgid "Category level list"
+msgstr "Níveis de categoria"
 
 #: actions/blocks/category_page_layout.py
 #, fuzzy
@@ -767,6 +845,28 @@ msgstr "Cronograma"
 #, fuzzy
 msgid "Continuous Action"
 msgstr "ação contínua"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "Qual rótulo deve ser usado na IU pública para o nome oficial?"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Texto de ajuda para o campo a ser mostrado na interface do usuário"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr ""
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr ""
 
 #: actions/category_admin.py
 #, fuzzy
@@ -1013,7 +1113,7 @@ msgstr "especificador de status"
 
 #: actions/models/action.py
 #, fuzzy
-msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
 msgstr "Descreva o motivo pelo qual essa ação tem esse status"
 
 #: actions/models/action.py
@@ -3432,6 +3532,10 @@ msgstr "feedback do usuário"
 msgid "user feedbacks"
 msgstr "feedbacks dos usuários"
 
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr ""
+
 #: feedback/views.py
 #, fuzzy
 msgid "Mark user feedback as processed"
@@ -4575,13 +4679,13 @@ msgstr ""
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-msgid "Single notifications"
+msgid "One-off notifications"
 msgstr "Notificações"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
-msgid "Automatic notifications"
-msgstr "Assunto para notificações por e-mail"
+msgid "Event-based notifications"
+msgstr "Notificações"
 
 #: notifications/wagtail_admin.py
 #, fuzzy
@@ -5895,6 +5999,10 @@ msgstr "Usuários"
 #, fuzzy
 msgid "No permission to remove the user belonging to plans you are not managing."
 msgstr "Nenhuma permissão para remover o usuário pertencente a planos que você não está gerenciando."
+
+#, fuzzy
+#~ msgid "Automatic notifications"
+#~ msgstr "Assunto para notificações por e-mail"
 
 #, fuzzy
 #~ msgid "Testing"
