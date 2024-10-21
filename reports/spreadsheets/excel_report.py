@@ -454,9 +454,6 @@ class ExcelReport:
                 'type': 'column',
             },
         ]
-        # Work around problems if none of the actions have an implementation phase and that column would have type null
-        action_df = action_df.with_columns(polars.col(_('Implementation phase')).cast(polars.String))
-
         # Pivot sheet: Category (level) x Implementation phase
         category_labels = self.report.type.get_field_labels_for_type('category')
         implementation_phase_fields = self.report.type.get_fields_for_type('implementation_phase')
@@ -469,8 +466,15 @@ class ExcelReport:
                     'subtype': 'stacked',
                 })
         sheet_number = 1
+
+        def is_column_data_missing(field_label: str) -> bool:
+            return field_label not in action_df or action_df.get_column(field_label).dtype.is_(polars.datatypes.Null)
+
         for spec in pivot_specs:
             grouping = spec['group']
+            if any(is_column_data_missing(field_label) for field_label in grouping):
+                continue
+
             aggregated = self._get_aggregates(grouping, action_df)
             if aggregated is None:
                 continue
