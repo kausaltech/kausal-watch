@@ -700,12 +700,20 @@ class IndicatorListPage(FixedSlugPage):
         verbose_name=_('Display insights'),
     )
 
+    display_level = models.BooleanField(
+        default=True,
+        help_text=_('Should the indicator level be shown for indicators? (Displayed in the column "Type")'),
+        verbose_name=_('Display level'),
+    )
+
     content_panels = FixedSlugPage.content_panels + [
         FieldPanel('display_insights'),
+        FieldPanel('display_level'),
     ]
 
     graphql_fields = FixedSlugPage.graphql_fields + [
         GraphQLBoolean('display_insights'),
+        GraphQLBoolean('display_level'),
     ]
 
     class Meta:
