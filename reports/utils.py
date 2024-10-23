@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+from datetime import datetime
 
 if typing.TYPE_CHECKING:
     from typing import Any, Literal
@@ -47,3 +48,6 @@ def group_by_model(serialized_versions: list[SerializedVersion]) -> dict[str, li
         result.setdefault(key, [])
         result[key].append(version)
     return result
+
+
+type ReportCellValue = str | datetime | float | None
