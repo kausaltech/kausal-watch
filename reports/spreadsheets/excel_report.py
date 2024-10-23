@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 import pathlib
 import typing
-from datetime import datetime
 from io import BytesIO
 from typing import Any, Sequence, TypedDict
 
@@ -254,6 +253,7 @@ class ExcelReport:
         complete_label = _('complete')
         not_complete_label = _('in progress')
         completed = complete_label if self.report.is_complete else not_complete_label
+        datetime_now = timezone.make_naive(timezone.now(), timezone=self.report.type.plan.tzinfo)
         cells: Sequence[Sequence[Cell]] = [
             [Cell(plan.name, 'title')],
             [Cell(self.report.type.name, 'sub_title')],
@@ -262,7 +262,7 @@ class ExcelReport:
             [Cell(complete_key, 'metadata_label'), Cell(completed, 'metadata_value')],
             [Cell(str(self.report._meta.get_field('start_date').verbose_name), 'metadata_label'), Cell(start, 'date')],
             [Cell(str(self.report._meta.get_field('end_date').verbose_name), 'metadata_label'), Cell(end, 'date')],
-            [Cell(_('updated at'), 'metadata_label'), Cell(plan.to_local_timezone(datetime.now()).replace(tzinfo=None), 'date')],
+            [Cell(_('updated at'), 'metadata_label'), Cell(datetime_now, 'date')],
             [],
             [Cell(_('Exported from Kausal Watch'), 'metadata_value')],
             [Cell('kausal.tech', 'metadata_value', url='https://kausal.tech')],
