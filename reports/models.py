@@ -61,7 +61,7 @@ class SerializedVersion:
         model = version.content_type.model_class()
         if issubclass(model, Attribute):
             return SerializedAttributeVersion.from_version(version)
-        elif issubclass(model, Action):
+        if issubclass(model, Action):
             return SerializedActionVersion.from_version(version)
         return cls.from_version(version)
 

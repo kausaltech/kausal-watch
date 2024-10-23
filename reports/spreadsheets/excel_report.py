@@ -4,7 +4,7 @@ import inspect
 import pathlib
 import typing
 from io import BytesIO
-from typing import Any, Sequence, TypedDict
+from typing import Any, Iterable, Sequence
 
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone, translation
@@ -12,28 +12,28 @@ from django.utils.text import slugify
 from django.utils.translation import gettext as _, pgettext
 from reversion.models import Version
 
-import polars
+import polars as pl
 import xlsxwriter
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from orgs.models import Organization
-from reports.utils import group_by_model
+from reports.utils import ReportCellValue, group_by_model
 
 from .action_print_layout import write_action_summaries
 from .cursor_writer import Cell, CursorWriter
 
 if typing.TYPE_CHECKING:
-    from django.db.models import QuerySet
+    from django.db.models import Model, QuerySet
 
     from xlsxwriter.format import Format
 
     from actions.models.category import Category, CategoryType
     from reports.blocks.action_content import ReportFieldBlock
-    from reports.models import ActionSnapshot, Report, SerializedActionVersion, SerializedVersion
+    from reports.models import Report, SerializedActionVersion, SerializedVersion
 
 
-def clean(value: Any) -> Any:
-    """Translate Windows linefeeds to \n for Excel"""
+def clean(value: ReportCellValue) -> ReportCellValue:
+    r"""Translate Windows linefeeds to \n for Excel."""
     if not isinstance(value, str):
         return value
     return value.replace("\r\n", "\n")
@@ -163,13 +163,16 @@ class ExcelFormats(dict):
         for label in labels:
             self._formats_for_fields[label] = cell_format
 
-    def set_for_label(self, label: str, format: Format) -> None:
+    def set_for_label(self, label: str, xlsx_format: Format) -> None:
         cell_format = self._formats_for_fields.get(label)
         if not cell_format:
-            self._formats_for_fields[label] = format
+            self._formats_for_fields[label] = xlsx_format
 
     def get_for_label(self, label):
         return self._formats_for_fields.get(label)
+
+
+# T = TypeVar('T')
 
 
 class ExcelReport:
@@ -202,8 +205,8 @@ class ExcelReport:
             }
 
         @staticmethod
-        def _keyed_dict(seq, key='pk'):
-            return {getattr(el, key): el for el in seq}
+        def _keyed_dict[T: Model](seq: Iterable[T]) -> dict[int, T]:
+            return {el.pk: el for el in seq}
 
     def __init__(self, report: Report, language: str|None = None):
         # Currently only language None is properly supported, defaulting
@@ -229,7 +232,7 @@ class ExcelReport:
         suffix = '.xlsm' if self.has_macros else '.xlsx'
         return slugify(self.report.name, allow_unicode=True) + suffix
 
-    def generate_actions_dataframe(self) -> polars.DataFrame:
+    def generate_actions_dataframe(self) -> pl.DataFrame:
         with translation.override(self.language):
             action_version_data, related_versions = self._prepare_serialized_report_data()
             return self.create_populated_actions_dataframe(action_version_data, related_versions)
@@ -280,10 +283,15 @@ class ExcelReport:
         worksheet.autofit()
         worksheet.set_column(1, 1, 40)
 
-    def _write_actions_sheet(self, df: polars.DataFrame):
+    def _write_actions_sheet(self, df: pl.DataFrame) -> xlsxwriter.worksheet.Worksheet:
         return self._write_sheet(self.workbook.add_worksheet(_('Actions')), df)
 
-    def _write_sheet(self, worksheet: xlsxwriter.worksheet.Worksheet, df: polars.DataFrame, small: bool = False):
+    def _write_sheet(
+            self,
+            worksheet: xlsxwriter.worksheet.Worksheet,
+            df: pl.DataFrame,
+            small: bool = False,
+    ) -> xlsxwriter.worksheet.Worksheet:
 
         # col_width = 40 if small else 50
         # first_col_width = col_width if small else 10
@@ -301,9 +309,9 @@ class ExcelReport:
             worksheet.set_row(i + 1, row_height)
         i = 0
         for label in df.columns:
-            format = self.formats.get_for_label(label)
-            if format is None:
-                format = self.formats.all_rows
+            _format = self.formats.get_for_label(label)
+            if _format is None:
+                _format = self.formats.all_rows
             width: int | None = col_width
             if i == 0:
                 width = first_col_width
@@ -311,7 +319,7 @@ class ExcelReport:
                 width = last_col_width
             if small:
                 width = None
-            worksheet.set_column(i, i, width, format)
+            worksheet.set_column(i, i, width, _format)
             i += 1
         worksheet.conditional_format(1, 0, df.height, df.width-1, {
             'type': 'formula',
@@ -342,7 +350,6 @@ class ExcelReport:
                 .select_related('action_version__revision__user')
                 .prefetch_related('action_version__revision__version_set')
             )
-            snapshots = typing.cast(typing.Iterable['ActionSnapshot'], snapshots)
             related_versions: QuerySet[Version] = Version.objects.none()
             for snapshot in snapshots:
                 action_version_data = snapshot.get_serialized_data()
@@ -366,14 +373,14 @@ class ExcelReport:
             all_related_versions: list[SerializedVersion],
     ):
         from reports.models import SerializedAttributeVersion
-        data = {}
+        data: dict[str, list[Any]] = {}
 
-        def append_to_key(key, value, field_name):
+        def append_to_key(key: str, value: ReportCellValue, field_name: str) -> None:
             self.field_to_column_labels.setdefault(field_name, set()).add(key)
             data.setdefault(key, []).append(value)
 
-        COMPLETED_BY_LABEL = _('Marked as complete by')
-        COMPLETED_AT_LABEL = _('Marked as complete at')
+        completed_by_label = _('Marked as complete by')
+        completed_at_label = _('Marked as complete at')
 
         related_objects = group_by_model(all_related_versions)
         attribute_versions = {
@@ -395,7 +402,7 @@ class ExcelReport:
             append_to_key(_('Identifier'), action_identifier, 'identifier')
             append_to_key(_('Action'), action_name, 'name')
             for field in self.report.type.fields:
-                labels = [label for label in field.block.xlsx_column_labels(field.value, plan=self.report.type.plan)]
+                labels = list(field.block.xlsx_column_labels(field.value, plan=self.report.type.plan))
                 values = field.block.extract_action_values(
                     self, field.value, action.data, related_objects, attribute_versions,
                 )
@@ -405,19 +412,19 @@ class ExcelReport:
                 assert len(labels) == len(values)
                 self.formats.set_for_field(field, labels)
                 values = [clean(v) for v in values]
-                for label, value in zip(labels, values):
+                for label, value in zip(labels, values, strict=False):
                     append_to_key(label, value, field_name)
-            append_to_key(COMPLETED_BY_LABEL, completed_by or '', 'completed_by')
-            append_to_key(COMPLETED_AT_LABEL, completed_at, 'completed_at')
-            self.formats.set_for_label(COMPLETED_AT_LABEL, self.formats.timestamp)
-        if data and set(data.get(COMPLETED_AT_LABEL)) == {None}:
-            if COMPLETED_AT_LABEL in data:
-                del data[COMPLETED_AT_LABEL]
-            if COMPLETED_BY_LABEL in data:
-                del data[COMPLETED_BY_LABEL]
-        return polars.DataFrame(data)
+            append_to_key(completed_by_label, completed_by or '', 'completed_by')
+            append_to_key(completed_at_label, completed_at, 'completed_at')
+            self.formats.set_for_label(completed_at_label, self.formats.timestamp)
+        if data and set(data.get(completed_at_label) or [None]) == {None}:
+            if completed_at_label in data:
+                del data[completed_at_label]
+            if completed_by_label in data:
+                del data[completed_by_label]
+        return pl.DataFrame(data)
 
-    def _get_aggregates(self, labels: tuple[str], action_df: polars.DataFrame):
+    def _get_aggregates(self, labels: Sequence[str], action_df: pl.DataFrame) -> pl.DataFrame | None:
         for label in labels:
             if label not in action_df.columns:
                 return None
@@ -429,14 +436,14 @@ class ExcelReport:
                     .groupby(labels)
                     .count()
                     .rename({'count': _('Actions')}))
-        return action_df.pivot(
+        return action_df.pivot(  # noqa: PD010
             values=_("Identifier"),
             index=labels[0],
             columns=labels[1],
-            aggregate_function="count",
+            aggregate_function="len",
             ).sort(labels[0])
 
-    def post_process(self, action_df: polars.DataFrame):
+    def post_process(self, action_df: pl.DataFrame):
         if getattr(self.report.type.plan.features, 'output_report_action_print_layout', False):
             write_action_summaries(self, action_df)
 
@@ -468,7 +475,7 @@ class ExcelReport:
         sheet_number = 1
 
         def is_column_data_missing(field_label: str) -> bool:
-            return field_label not in action_df or action_df.get_column(field_label).dtype.is_(polars.datatypes.Null)
+            return field_label not in action_df or action_df.get_column(field_label).dtype.is_(pl.datatypes.Null)
 
         for spec in pivot_specs:
             grouping = spec['group']
@@ -493,18 +500,13 @@ class ExcelReport:
                 chart.add_series(series)
             if chart_type == 'column':
                 chart.set_size({'width': 720, 'height': 576})
-            # The gradient is ugly on native Excel, some color design is needed before this should be enabled again
-            #
-            # chart.set_plotarea({
-            #     'gradient': {'colors': ['#FFEFD1', '#F0EBD5', '#B69F66']}
-            # })
             worksheet.insert_chart('A' + str(aggregated.height + 2), chart)
 
-    def _initialize_format(self, key, initializer):
-        format = self.workbook.add_format()
-        self.formats[key] = format
-        initializer(format)
+    def _initialize_format(self, key, initializer) -> None:
+        _format = self.workbook.add_format()
+        self.formats[key] = _format
+        initializer(_format)
 
-    def _initialize_formats(self):
+    def _initialize_formats(self) -> None:
         for name, callback in inspect.getmembers(ExcelFormats.StyleSpecifications, inspect.ismethod):
             self._initialize_format(name, callback)
