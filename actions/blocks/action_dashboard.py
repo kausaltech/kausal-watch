@@ -74,6 +74,18 @@ class UpdatedAtColumnBlock(ColumnBlockBase):
 
 
 @register_streamfield_block
+class StartDateColumnBlock(ColumnBlockBase):
+    class Meta:
+        label = _("Start date")
+
+
+@register_streamfield_block
+class EndDateColumnBlock(ColumnBlockBase):
+    class Meta:
+        label = _("End date")
+
+
+@register_streamfield_block
 class OrganizationColumnBlock(ColumnBlockBase):
     class Meta:
         label = _("Organization")
@@ -105,12 +117,14 @@ class ActionDashboardColumnBlock(blocks.StreamBlock):
     responsible_parties = ResponsiblePartiesColumnBlock()
     indicators = IndicatorsColumnBlock()
     updated_at = UpdatedAtColumnBlock()
+    start_date = StartDateColumnBlock()
+    end_date = EndDateColumnBlock()
     organization = OrganizationColumnBlock()
     imact = ImpactColumnBlock()
     field = FieldColumnBlock()
 
     graphql_types = [
         IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
-        ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, OrganizationColumnBlock,
-        ImpactColumnBlock, FieldColumnBlock,
+        ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, StartDateColumnBlock,
+        EndDateColumnBlock, OrganizationColumnBlock, ImpactColumnBlock, FieldColumnBlock,
     ]

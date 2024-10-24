@@ -28,6 +28,7 @@ from actions.blocks.action_content import (
 )
 from actions.blocks.action_dashboard import (
     ActionDashboardColumnBlock,
+    EndDateColumnBlock,
     FieldColumnBlock,
     IdentifierColumnBlock,
     ImpactColumnBlock,
@@ -36,6 +37,7 @@ from actions.blocks.action_dashboard import (
     NameColumnBlock,
     OrganizationColumnBlock,
     ResponsiblePartiesColumnBlock,
+    StartDateColumnBlock,
     StatusColumnBlock,
     TasksColumnBlock,
     UpdatedAtColumnBlock,
@@ -156,7 +158,8 @@ __all__ = [
     'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
     'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeLevelListBlock', 'CategoryTypeChooserBlock',
     'PrimaryOrganizationFilterBlock', 'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
-    'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
-    'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
-    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock', 'FieldColumnBlock',
+    'EndDateColumnBlock', 'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock',
+    'StartDateColumnBlock', 'StatusColumnBlock', 'TasksColumnBlock', 'ResponsiblePartiesColumnBlock',
+    'IndicatorsColumnBlock', 'UpdatedAtColumnBlock', 'OrganizationColumnBlock', 'ImpactColumnBlock',
+    'ActionDashboardColumnBlock', 'FieldColumnBlock',
 ]
