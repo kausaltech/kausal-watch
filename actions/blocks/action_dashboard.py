@@ -122,11 +122,10 @@ class ActionDashboardColumnBlock(blocks.StreamBlock):
     start_date = StartDateColumnBlock()
     end_date = EndDateColumnBlock()
     organization = OrganizationColumnBlock()
-    imact = ImpactColumnBlock()
     field = FieldColumnBlock()
 
     graphql_types = [
         IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
         ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, StartDateColumnBlock,
-        EndDateColumnBlock, OrganizationColumnBlock, ImpactColumnBlock, FieldColumnBlock,
+        EndDateColumnBlock, OrganizationColumnBlock, FieldColumnBlock,
     ]
