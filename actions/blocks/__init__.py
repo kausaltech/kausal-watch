@@ -148,18 +148,3 @@ def get_default_action_filter_blocks(plan: Plan) -> dict[str, blocks.StreamValue
 class RelatedPlanListBlock(blocks.StaticBlock):  # type: ignore[misc]
     class Meta:
         label = _('Related plans')
-
-
-__all__ = [
-    'ActionAttributeTypeChooserBlock', 'ActionContactPersonsBlock', 'ActionDescriptionBlock', 'ActionContactFormBlock',
-    'ActionHighlightsBlock', 'ActionImplementationPhaseFilterBlock', 'ActionLeadParagraphBlock', 'ActionLinksBlock',
-    'ActionListBlock', 'ActionMergedActionsBlock', 'ActionOfficialNameBlock', 'ActionRelatedActionsBlock', 'ActionDependenciesBlock',
-    'ActionRelatedIndicatorsBlock', 'ActionResponsiblePartiesBlock', 'ActionScheduleBlock', 'ActionScheduleFilterBlock',
-    'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
-    'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeLevelListBlock', 'CategoryTypeChooserBlock',
-    'PrimaryOrganizationFilterBlock', 'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
-    'EndDateColumnBlock', 'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock',
-    'StartDateColumnBlock', 'StatusColumnBlock', 'TasksColumnBlock', 'ResponsiblePartiesColumnBlock',
-    'IndicatorsColumnBlock', 'UpdatedAtColumnBlock', 'OrganizationColumnBlock', 'ImpactColumnBlock',
-    'ActionDashboardColumnBlock', 'FieldColumnBlock',
-]
