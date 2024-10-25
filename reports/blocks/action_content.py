@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
-from django.apps import apps
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 from wagtail.admin.panels import HelpPanel
@@ -85,12 +84,10 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
 
 @register_streamfield_block
 class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    """
-    FIXME: Note that this block is currently actually exporting only the primary
-    responsible parties. That's why the label is set accordingly.
-    There should be a field to configure which role(s) should
-    be exported and that should affect the label(s)
-    """
+    # FIXME: Note that this block is currently actually exporting only the primary
+    # responsible parties. That's why the label is set accordingly.
+    # There should be a field to configure which role(s) should
+    # be exported and that should affect the label(s)
 
     target_ancestor_depth = blocks.IntegerBlock(
         label=_('Level of containing organization'),
