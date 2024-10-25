@@ -735,3 +735,12 @@ LANGUAGE_COLLATORS = {
 
 def get_collator(lang: str) -> str:
     return LANGUAGE_COLLATORS.get(lang, 'en-US-x-icu')
+
+
+class StaticBlockToStructBlockWorkaroundMixin:
+    # Workaround for migration from StaticBlock to StructBlock
+    def bulk_to_python(self, values):
+        li = list(values)
+        if len(li) == 1 and li[0] is None:
+            values = [{}]
+        return super().bulk_to_python(values)
