@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import graphene
-from django.apps import apps
 from django.db import models
 from django.forms import ValidationError
-from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
 
-from aplans.graphql_types import register_graphene_interface
-from aplans.utils import underscore_to_camelcase
+from aplans.dynamic_blocks import generate_block_for_field
+from aplans.graphql_interfaces import FieldBlockMetaInterface
+from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
@@ -21,7 +20,7 @@ from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 from budget.models import DatasetSchema
 from reports.blocks.report_comparison_block import ReportComparisonBlock
-from reports.report_formatters import ActionReportContentField, ActionTasksFormatter
+from reports.report_formatters import ActionTasksFormatter
 
 # Attention: Defines several block classes via metaprogramming.
 # See `action_attribute_blocks` which should currently contain:
@@ -38,63 +37,6 @@ from reports.report_formatters import ActionReportContentField, ActionTasksForma
 # ActionTasksBlock
 
 
-class StaticBlockToStructBlockWorkaroundMixin:
-    # Workaround for migration from StaticBlock to StructBlock
-    def bulk_to_python(self, values):
-        li = list(values)
-        if len(li) == 1 and li[0] is None:
-            values = [{}]
-        return super().bulk_to_python(values)
-
-
-def get_field_label(model: type[models.Model], field_name: str) -> str | None:
-    if not apps.ready:
-        return 'label'
-    field = model._meta.get_field(field_name)
-    if isinstance(field, (models.ForeignObjectRel,)):
-        # It's a relation field
-        label = str(field.related_model._meta.verbose_name_plural).capitalize()
-    else:
-        label = str(field.verbose_name).capitalize()
-    return label
-
-
-lazy_field_label = lazy(get_field_label, str)
-
-
-
-
-
-def generate_block_for_field(model: type[models.Model], field_name: str, params: dict = {}):
-    camel_field = underscore_to_camelcase(field_name)
-    class_name = '%s%sBlock' % (model._meta.object_name, camel_field)
-
-    # Fields need to be evaluated lazily, because when this function is called,
-    # the model registry is not yet fully initialized.
-    field_label = lazy_field_label(model, field_name)
-    Meta = type(
-        'Meta',
-        (),
-        {'label': params.get('label', field_label),
-         'field_name': field_name})
-
-    superclasses = (
-        ActionListContentBlock,
-        ActionReportContentField,
-    )
-    attrs = {
-        'Meta': Meta,
-        '__module__': __name__,
-        'graphql_interfaces': (FieldBlockMetaInterface, ),
-    }
-    if 'report_value_formatter_class' in params:
-        attrs['report_value_formatter_class'] = params['report_value_formatter_class']
-    klass = type(class_name, superclasses, attrs)
-    globals()[class_name] = klass
-    register_streamfield_block(klass)
-    return klass
-
-
 def generate_blocks_for_fields(model: type[models.Model], fields: list[str | tuple[str, dict]]):
     out = {}
     for field_name in fields:
@@ -103,45 +45,9 @@ def generate_blocks_for_fields(model: type[models.Model], fields: list[str | tup
         else:
             params = {}
         klass = generate_block_for_field(model, field_name, params)
+        globals()[klass.__name__] = klass
         out[field_name] = klass
     return out
-
-
-class FieldBlockMetaData(graphene.ObjectType):
-    restricted = graphene.Boolean()
-    hidden = graphene.Boolean()
-
-    @staticmethod
-    def resolve_restricted(root: dict[str, bool], *args, **kwargs):
-        return root['restricted']
-
-    @staticmethod
-    def resolve_hidden(root, *args, **kwargs):
-        return root['hidden']
-
-
-@register_graphene_interface
-class FieldBlockMetaInterface(graphene.Interface):
-    meta = graphene.Field(FieldBlockMetaData)
-
-    @staticmethod
-    def resolve_meta(root, info, *args, **kwargs):
-        attribute_type = root.value.get('attribute_type') if root.value else None
-        user = info.context.user
-        plan = info.context._graphql_active_plan
-        restricted = hidden = False
-        if attribute_type:
-            # TODO: implement for builtin fields as well
-            hidden = not attribute_type.is_instance_visible_for(user, plan, None)
-            restricted = attribute_type.instances_visible_for != attribute_type.VisibleFor.PUBLIC
-        return {
-            'restricted': restricted,
-            'hidden': hidden,
-        }
-
-
-class FieldBlockMetaField:
-    meta = graphene.Field(FieldBlockMetaData)
 
 
 def generate_stream_block(
@@ -411,32 +317,6 @@ class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.St
     ]
 
 
-class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
-    block_label: str
-
-    field_label = blocks.CharBlock(
-        required=False,
-        help_text=_("Heading to show instead of the default"),
-        default='',
-        label=_("Field label"),
-    )
-
-    field_help_text = blocks.CharBlock(
-        required=False,
-        help_text=_("Help text for the field to be shown in the UI"),
-        default='',
-        label = _("Help text"),
-    )
-
-    graphql_fields = [
-        GraphQLString('field_label'),
-        GraphQLString('field_help_text'),
-    ]
-
-    def get_admin_text(self):
-        return _("Content block: %(label)s") % dict(label=self.label)
-
-
 action_attribute_blocks = generate_blocks_for_fields(Action, [
     ('lead_paragraph', {'label': _('Lead paragraph')}),
     'description',
@@ -455,7 +335,9 @@ def get_action_block_for_field(field_name):
     global action_attribute_blocks
     if field_name in action_attribute_blocks:
         return action_attribute_blocks[field_name]
-    return generate_block_for_field(Action, field_name)
+    klass = generate_block_for_field(Action, field_name)
+    globals()[klass.__name__] = klass
+    return klass
 
 
 action_content_extra_args = {
