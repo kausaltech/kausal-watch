@@ -7,17 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-21 15:28+0300\n"
+"POT-Creation-Date: 2024-10-28 13:42+0200\n"
 "PO-Revision-Date: 2024-10-22 12:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/"
-">\n"
+"Language-Team: Latvian <https://weblate.kausal.tech/projects/watch/django/lv/>\n"
 "Language: lv\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= "
-"19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n % 10 == 0 || n % 100 >= 11 && n % 100 <= 19) ? 0 : ((n % 10 == 1 && n % 100 != 11) ? 1 : 2);\n"
 "X-Generator: Weblate 5.4.2\n"
 
 #: actions/action_admin.py
@@ -632,6 +630,18 @@ msgstr "Rādītāji"
 #: actions/blocks/action_dashboard.py
 msgid "Updated at"
 msgstr "Atjaunināts vietnē"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "start date"
+msgid "Start date"
+msgstr "sākuma datums"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "end date"
+msgid "End date"
+msgstr "beigu datums"
 
 #: actions/blocks/action_dashboard.py content/models.py
 #: indicators/wagtail_admin.py people/templates/people/chooser_results.html
@@ -4657,6 +4667,22 @@ msgstr "Vai rādītājiem ir jāparāda ieskatu tīkls?"
 #: pages/models.py
 msgid "Display insights"
 msgstr "Rādīt ieskatu"
+
+#: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "category level"
+msgid "Display level"
+msgstr "kategorijas līmenis"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Enable to make this page include actions from related plans."
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Iespēja šajā lapā iekļaut rīcības no saistītiem plāniem."
 
 #: pages/models.py
 msgid "Indicator list page"

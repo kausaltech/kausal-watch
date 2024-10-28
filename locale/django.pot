@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-21 15:28+0300\n"
+"POT-Creation-Date: 2024-10-28 13:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -594,6 +594,14 @@ msgstr ""
 
 #: actions/blocks/action_dashboard.py
 msgid "Updated at"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "Start date"
+msgstr ""
+
+#: actions/blocks/action_dashboard.py
+msgid "End date"
 msgstr ""
 
 #: actions/blocks/action_dashboard.py content/models.py
@@ -4450,6 +4458,18 @@ msgstr ""
 
 #: pages/models.py
 msgid "Display insights"
+msgstr ""
+
+#: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr ""
+
+#: pages/models.py
+msgid "Display level"
+msgstr ""
+
+#: pages/models.py
+msgid "Enable to make this page include indicators from related plans."
 msgstr ""
 
 #: pages/models.py

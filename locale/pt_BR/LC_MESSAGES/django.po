@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-21 15:28+0300\n"
+"POT-Creation-Date: 2024-10-28 13:42+0200\n"
 "PO-Revision-Date: 2024-10-22 12:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/"
-"watch/django/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -679,6 +678,16 @@ msgstr "Indicadores"
 #, fuzzy
 msgid "Updated at"
 msgstr "Atualizado em"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+msgid "Start date"
+msgstr "data de início"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+msgid "End date"
+msgstr "data final"
 
 #: actions/blocks/action_dashboard.py content/models.py
 #: indicators/wagtail_admin.py people/templates/people/chooser_results.html
@@ -5376,6 +5385,20 @@ msgstr "A rede de insights deve ser mostrada para os indicadores?"
 #, fuzzy
 msgid "Display insights"
 msgstr "Exibir percepções"
+
+#: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+msgid "Display level"
+msgstr "nível de categoria"
+
+#: pages/models.py
+#, fuzzy
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Habilite para que essa página inclua ações de planos relacionados."
 
 #: pages/models.py
 #, fuzzy

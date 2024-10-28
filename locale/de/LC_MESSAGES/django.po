@@ -10,11 +10,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-21 15:28+0300\n"
+"POT-Creation-Date: 2024-10-28 13:42+0200\n"
 "PO-Revision-Date: 2024-10-22 12:20+0000\n"
 "Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
-"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>"
-"\n"
+"Language-Team: German <https://weblate.kausal.tech/projects/watch/django/de/>\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -621,6 +620,18 @@ msgstr "Indikatoren"
 #: actions/blocks/action_dashboard.py
 msgid "Updated at"
 msgstr "Aktualisiert am"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "start date"
+msgid "Start date"
+msgstr "Beginndatum"
+
+#: actions/blocks/action_dashboard.py
+#, fuzzy
+#| msgid "end date"
+msgid "End date"
+msgstr "Enddatum"
 
 #: actions/blocks/action_dashboard.py content/models.py
 #: indicators/wagtail_admin.py people/templates/people/chooser_results.html
@@ -4557,6 +4568,22 @@ msgstr "Soll ein Überblicksnetz für Indikatoren angezeigt werden?"
 #: pages/models.py
 msgid "Display insights"
 msgstr "Überblick anzeigen"
+
+#: pages/models.py
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr ""
+
+#: pages/models.py
+#, fuzzy
+#| msgid "category level"
+msgid "Display level"
+msgstr "Kategoriestufe"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Enable to make this page include actions from related plans."
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Aktivieren, damit diese Seite Maßnahmen aus verbundenen Plänen enthält."
 
 #: pages/models.py
 msgid "Indicator list page"
