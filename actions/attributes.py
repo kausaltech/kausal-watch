@@ -9,7 +9,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Field, ForeignKey, Model, QuerySet
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel
+from wagtail.admin.panels import FieldPanel, field_panel
 from wagtail.fields import RichTextField
 from wagtail.rich_text import RichText as WagtailRichText
 
@@ -29,7 +29,30 @@ if typing.TYPE_CHECKING:
 
 
 class AttributeFieldPanel[M: Model](FieldPanel[M]):
-    pass
+    """Add compatibility for Wagtail read_only field panels for attributes."""
+
+    attribute_type: AttributeType | None
+
+    def __init__(self, *args, attribute_type: AttributeType, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.attribute_type = attribute_type
+        self.icon = 'placeholder'
+        self.help_text = attribute_type.instance.help_text
+
+    def clone_kwargs(self):
+        kwargs = super().clone_kwargs()
+        kwargs['attribute_type'] = self.attribute_type
+        return kwargs
+
+    class BoundPanel(field_panel.FieldPanel.BoundPanel):
+        def value_from_instance(self):
+            attributes = " ".join(
+                str(x) for x in self.panel.attribute_type.get_attributes(self.instance)
+            )
+            return attributes
+
+    def format_value_for_display(self, value):
+        return value()
 
 
 @dataclass
@@ -42,6 +65,7 @@ class FormField[M: Model]:
     # If the field refers to a modeltrans field and `language` is not empty, use localized virtual field for `language`.
     language: str = ''
     is_public: bool = False
+    read_only: bool = False
 
     def get_panel(self) -> AttributeFieldPanel[M]:
         if self.label:
@@ -51,7 +75,12 @@ class FormField[M: Model]:
         if self.language:
             heading += f' ({self.language})'
         heading = FieldLabelRenderer(self.plan)(heading, public=self.is_public)
-        return AttributeFieldPanel[M](self.name, heading=heading)
+        return AttributeFieldPanel[M](
+            self.name,
+            heading=heading,
+            read_only=self.read_only,
+            attribute_type=self.attribute_type,
+        )
 
 
 class AttributeValue(ABC):
@@ -412,6 +441,7 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
             django_field=field,
             name=self.form_field_name,
             is_public=is_public,
+            read_only=not self.is_editable(user, plan, obj),
         )]
 
     def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> OrderedChoiceAttributeValue | None:
@@ -484,6 +514,7 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
             django_field=field,
             name=self.form_field_name,
             is_public=is_public,
+            read_only=not self.is_editable(user, plan, obj),
         )]
 
     def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> CategoryChoiceAttributeValue | None:
@@ -589,6 +620,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
                 language=language,
                 label=_('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
                 is_public=is_public,
+                read_only=not self.is_editable(user, plan, obj),
             ))
         return fields
 
@@ -678,6 +710,7 @@ class GenericTextAttributeType(AttributeType[T]):
                 name=self.get_form_field_name(language),
                 language=language,
                 is_public=is_public,
+                read_only=not editable,
             ))
         return fields
 
@@ -760,6 +793,7 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
             django_field=field,
             name=self.form_field_name,
             is_public=is_public,
+            read_only=not self.is_editable(user, plan, obj),
         )]
 
     def get_value_from_form_data(self, cleaned_data: dict[str, Any]) -> NumericAttributeValue | None:
