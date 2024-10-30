@@ -325,6 +325,8 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
+        if not plan_obj.is_visible_for_user(info.context.user):
+            return None
 
         qs = Indicator.objects.get_queryset().visible_for_public()
         qs = qs.filter(levels__plan=plan_obj).distinct()

@@ -860,7 +860,8 @@ class CommonCategoryNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNod
 
     @staticmethod
     def resolve_category_instances(root: CommonCategory, info: GQLInfo):
-        return root.category_instances.filter(type__plan=Plan.objects.get_queryset().available_for_request(info.context))
+        return root.category_instances.filter(
+            type__plan=Plan.objects.get_queryset().available_for_request(info.context).visible_for_user(info.context.user))
 
     class Meta:
         model = CommonCategory
@@ -1369,13 +1370,17 @@ def _resolve_published_action(
         plan_identifier: str | None,
         info,
 ) -> Action | None:
-    qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
+    user = info.context.user
+    qs = Action.objects.get_queryset().visible_for_user(user).all()
     if obj_id:
         qs = qs.filter(id=obj_id)
     if identifier:
         plan_obj = get_plan_from_context(info, plan_identifier)
         if not plan_obj:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
+
+        if not plan_obj.is_visible_for_user(user):
+            return None
         qs = qs.filter(identifier=identifier, plan=plan_obj)
     qs = gql_optimizer.query(qs, info)
 
@@ -1478,7 +1483,7 @@ class Query:
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
 
-        qs = Plan.objects.get_queryset()
+        qs = Plan.objects.get_queryset().visible_for_user(info.context.user)
         if id:
             qs = qs.filter(identifier=id.lower())
         if domain:
@@ -1495,7 +1500,7 @@ class Query:
     @staticmethod
     def resolve_plans_for_hostname(root, info: GQLInfo, hostname: str):
         info.context._plan_hostname = hostname.lower()
-        plans = Plan.objects.for_hostname(info.context._plan_hostname, request=info.context)
+        plans = Plan.objects.for_hostname(info.context._plan_hostname, request=info.context).visible_for_user(info.context.user)
         ret = list(gql_optimizer.query(plans, info))
         req = info.context
         if not ret:
@@ -1558,6 +1563,11 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
+
+        user = info.context.user
+        if not plan_obj.is_visible_for_user(user):
+            return None
+
         workflow_state = info.context.watch_cache.query_workflow_state
         qs = gql_optimizer.query(
             plans_actions_queryset(
@@ -1570,7 +1580,7 @@ class Query:
             ),
             info,
         )
-        user = info.context.user
+
         cache = info.context.watch_cache.for_plan(plan_obj)
         persons_queryset = Person.objects.filter(actioncontactperson__action__plan=plan_obj)
         cache.populate_persons(persons_queryset)
@@ -1595,14 +1605,21 @@ class Query:
         if plan_obj is None:
             return None
 
+        user = info.context.user
+        if not plan_obj.is_visible_for_user(user):
+            return None
+
         plans = plan_obj.get_all_related_plans()
-        qs = plans_actions_queryset(plans, category, first, order_by, info.context.user)
+        qs = plans_actions_queryset(plans, category, first, order_by, user)
         return gql_optimizer.query(qs, info)
 
     @staticmethod
     def resolve_plan_categories(root, info, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
+            return None
+
+        if not plan_obj.is_visible_for_user(info.context.user):
             return None
 
         qs = Category.objects.filter(type__plan=plan_obj)
@@ -1650,6 +1667,10 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if not plan_obj:
             return None
+
+        if not plan_obj.is_visible_for_user(info.context.user):
+            return None
+
         return Category.objects.get(
             type__plan=plan_obj, type__identifier=category_type, external_identifier=external_identifier,
         )

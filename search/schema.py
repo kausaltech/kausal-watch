@@ -110,6 +110,8 @@ class Query:
         plan_obj: Plan | None = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
             raise GraphQLError("Plan %s not found" % plan)
+        if not plan_obj.is_visible_for_user(info.context.user):
+            raise GraphQLError("Plan %s not found" % plan)
         related_plans = plan_obj.get_all_related_plans().all()
         if plan_obj.is_live():
             # For live plans, restrict the related plans to be live also, preventing unreleased plans from showing up in the production site
@@ -120,7 +122,7 @@ class Query:
             qs = Q(id=plan_obj.id)
             if include_related_plans:
                 qs |= Q(id__in=related_plans.values_list('id', flat=True))
-            plans = Plan.objects.filter(qs)
+            plans = Plan.objects.visible_for_user(info.context.user).filter(qs)
 
         plan_ids = list(plans.values_list('id', flat=True))
 
