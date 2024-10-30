@@ -431,9 +431,6 @@ class OrderedChoice(AttributeType[models.AttributeChoice]):
         field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n,
         )
-        if not self.is_editable(user, plan, obj):
-            field.disabled = True
-
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         return [FormField(
             plan=plan,
@@ -505,8 +502,6 @@ class CategoryChoice(AttributeType[models.AttributeCategoryChoice]):
                 ),
             ),
         )
-        if not self.is_editable(user, plan, obj):
-            field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         return [FormField(
             plan=plan,
@@ -585,8 +580,6 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
         choice_field = forms.ModelChoiceField(
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n,
         )
-        if not editable:
-            choice_field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         fields: list[FormField] = [FormField(
             plan=plan,
@@ -595,6 +588,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             name=self.choice_form_field_name,
             is_public=is_public,
             label=_('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
+            read_only=not editable,
         )]
 
         # Text (one field for each language)
@@ -609,9 +603,6 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)  # type: ignore[union-attr]
-            if not editable:
-                text_field.disabled = True
-                is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
                 plan=plan,
                 attribute_type=self,
@@ -620,7 +611,7 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
                 language=language,
                 label=_('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
                 is_public=is_public,
-                read_only=not self.is_editable(user, plan, obj),
+                read_only=not editable,
             ))
         return fields
 
@@ -700,8 +691,6 @@ class GenericTextAttributeType(AttributeType[T]):
                 form_field_kwargs.update(max_length=self.instance.max_length)
             db_field = cast(Field, self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name))
             field = db_field.formfield(**form_field_kwargs)
-            if not editable:
-                field.disabled = True
             is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
             fields.append(FormField(
                 plan=plan,
@@ -784,8 +773,6 @@ class Numeric(AttributeType[models.AttributeNumericValue]):
             if committed_attribute:
                 initial_value = committed_attribute.value
         field = forms.FloatField(initial=initial_value, required=False, help_text=self.instance.help_text_i18n)
-        if not self.is_editable(user, plan, obj):
-            field.disabled = True
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
         return [FormField(
             plan=plan,
