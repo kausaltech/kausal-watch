@@ -506,14 +506,16 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
 
         if instance is not None:
             attribute_types = instance.get_visible_attribute_types(user)
-            attribute_fields = {field.name: field.django_field
-                                for attribute_type in attribute_types
-                                for field in attribute_type.get_form_fields(
-                                    user, plan, instance, draft_attributes=self.draft_attributes,
-                                )
-                                # The wagtail implementation of read_only panels assumes
-                                # those are not added to the forms as fields
-                                if not field.read_only}
+            attribute_fields = {
+                field.name: field.django_field
+                for attribute_type in attribute_types
+                for field in attribute_type.get_form_fields(
+                        user, plan, instance, draft_attributes=self.draft_attributes,
+                )
+                # The wagtail implementation of read_only panels assumes
+                # those are not added to the forms as fields
+                if not field.read_only
+            }
         else:
             attribute_fields = {}
         self.base_form_class = type(
