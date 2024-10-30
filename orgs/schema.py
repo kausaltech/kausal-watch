@@ -109,7 +109,7 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
     def resolve_plans_with_action_responsibilities(
         root: Organization, info: GQLInfo, except_plan: str | None = None,
     ) -> PlanQuerySet:
-        qs = Plan.objects.qs.filter(
+        qs = Plan.objects.qs.visible_for_user(info.context.user).filter(
             id__in=root.responsible_for_actions.values_list('plan'),
         )
         qs = qs.live()

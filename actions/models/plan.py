@@ -43,6 +43,7 @@ from aplans.utils import (
     ModelWithPrimaryLanguage,
     OrderedModel,
     PlanRelatedModel,
+    RestrictedVisibilityModel,
     get_default_language,
     get_supported_languages,
     validate_css_color,
@@ -135,6 +136,15 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
 
+    def visible_for_user(self, user: UserOrAnon | None) -> Self:
+        """
+        Filter by visibility for the current user.
+
+        A None value is interpreted identically a non-authenticated user.
+        """
+        if user is None or not user.is_authenticated:
+            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return self
 
 if TYPE_CHECKING:
     _PlanManager = models.Manager.from_queryset(PlanQuerySet)
@@ -174,7 +184,7 @@ class UsageStatus(models.TextChoices):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel, ModelWithPrimaryLanguage):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel):
     """
     The Action Plan under monitoring.
 
@@ -688,6 +698,16 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     def is_live(self):
         now = self.now_in_local_timezone()
         return self.published_at is not None and self.published_at <= now and self.archived_at is None
+
+    def is_visible_for_user(self, user: UserOrAnon | None):
+        """
+        Determine if this plan is visible for a user.
+
+        A None value is interpreted identically to a non-authenticated user.
+        """
+        if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
+            return False
+        return True
 
     def get_optional_locale_prefix(self, locale: str):
         if locale.lower() == self.primary_language.lower():
