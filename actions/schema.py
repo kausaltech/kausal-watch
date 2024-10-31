@@ -1370,17 +1370,13 @@ def _resolve_published_action(
         plan_identifier: str | None,
         info,
 ) -> Action | None:
-    user = info.context.user
-    qs = Action.objects.get_queryset().visible_for_user(user).all()
+    qs = Action.objects.get_queryset().visible_for_user(info.context.user).all()
     if obj_id:
         qs = qs.filter(id=obj_id)
     if identifier:
         plan_obj = get_plan_from_context(info, plan_identifier)
         if not plan_obj:
             raise GraphQLError("You must supply the 'plan' argument when using 'identifier'")
-
-        if not plan_obj.is_visible_for_user(user):
-            return None
         qs = qs.filter(identifier=identifier, plan=plan_obj)
     qs = gql_optimizer.query(qs, info)
 
@@ -1609,7 +1605,7 @@ class Query:
         if not plan_obj.is_visible_for_user(user):
             return None
 
-        plans = plan_obj.get_all_related_plans()
+        plans = plan_obj.get_all_related_plans().visible_for_user(user)
         qs = plans_actions_queryset(plans, category, first, order_by, user)
         return gql_optimizer.query(qs, info)
 
@@ -1650,6 +1646,8 @@ class Query:
             return action
 
         user = info.context.user
+        if not plan_obj.is_visible_for_user(user):
+            return None
 
         if not is_authenticated(user):
             workflow_state = WorkflowStateEnum.PUBLISHED

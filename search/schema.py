@@ -40,11 +40,12 @@ class SearchHit(graphene.ObjectType):
         object = root.get('object')
         page = root.get('page')
         plan = root['plan']
-        if object is not None:
-            return object.get_view_url(plan=plan, client_url=client_url)
-        elif page is not None:
-            parts = page.get_url_parts(request=info.context)
-            return '%s%s' % (plan.get_view_url(client_url=client_url), parts[2])
+        if plan and plan.is_visible_for_user(info.context.user):
+            if object is not None:
+                return object.get_view_url(plan=plan, client_url=client_url)
+            if page is not None:
+                parts = page.get_url_parts(request=info.context)
+                return '%s%s' % (plan.get_view_url(client_url=client_url), parts[2])
         return None
 
 

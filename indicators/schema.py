@@ -241,14 +241,16 @@ class IndicatorNode(DjangoNode):
     )
     def resolve_actions(self, info, plan=None):
         qs = self.actions.visible_for_user(info.context.user)
-        if plan is not None:
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is not None and plan_obj.is_visible_for_user(info.context.user):
             qs = qs.filter(plan__identifier=plan)
         return qs
 
     def resolve_related_actions(self, info, plan=None):
         actions = Action.objects.visible_for_user(info.context.user)
         qs = ActionIndicator.objects.filter(action__in=actions).filter(indicator=self)
-        if plan is not None:
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is not None and plan_obj.is_visible_for_user(info.context.user):
             qs = qs.filter(indicator__plan__identifier=plan)
         return qs
 
@@ -266,6 +268,9 @@ class IndicatorNode(DjangoNode):
     )
     def resolve_level(self, info, plan):
         if not self.is_visible_for_public():
+            return None
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj and not plan_obj.is_visible_for_user(info.context.user):
             return None
         try:
             obj = self.levels.get(plan__identifier=plan)
@@ -350,8 +355,9 @@ class Query:
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
-
-        plans = plan_obj.get_all_related_plans()
+        if not plan_obj.is_visible_for_user(info.context.user):
+            return None
+        plans = plan_obj.get_all_related_plans().visible_for_user(info.context.user)
         qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
         return gql_optimizer.query(qs, info)
 
@@ -376,6 +382,8 @@ class Query:
         if plan:
             plan_obj = get_plan_from_context(info, plan)
             if not plan_obj:
+                return None
+            if not plan_obj.is_visible_for_user(user):
                 return None
             if not restrict_to_publicly_visible and user.can_access_admin(plan_obj):
                 qs = qs.visible_for_user(user)

@@ -90,7 +90,7 @@ class Query(
             return None
 
         if include_related_plans:
-            plans = list(plan_obj.get_all_related_plans(inclusive=True))
+            plans = list(plan_obj.get_all_related_plans(inclusive=True).visible_for_user(info.context.user))
         else:
             plans = [plan_obj]
 
