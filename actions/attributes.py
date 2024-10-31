@@ -108,9 +108,11 @@ class AttributeValue(ABC):
     @abstractmethod
     def should_exist_in_database(self) -> bool:
         """
-        If this returns true, committing an attribute will create or update an attribute model instance; otherwise,
-        committing will delete any existing attribute model instance for the respective attribute type.
+        If this returns true, committing an attribute will create or update an attribute model instance.
+
+        Otherwise, committing will delete any existing attribute model instance for the respective attribute type.
         """
+
         pass
 
     def instantiate_attribute(self, type: AttributeType[T], obj: models.ModelWithAttributes) -> T:
