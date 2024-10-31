@@ -37,15 +37,17 @@ class SearchHit(graphene.ObjectType):
     page = graphene.Field('grapple.types.interfaces.PageInterface', required=False)
 
     def resolve_url(root, info, client_url=None):
-        object = root.get('object')
-        page = root.get('page')
         plan = root['plan']
+        if not plan or not plan.is_visible_for_user(info.context.user):
+            return None
 
         # Check if this is a search result from other plans, we want to use the site_url for these.
         only_other_plans = getattr(info.context, 'only_other_plans', False)
         if only_other_plans:
             client_url = None
 
+        object = root.get('object')
+        page = root.get('page')
         if object is not None:
             return object.get_view_url(plan=plan, client_url=client_url)
         elif page is not None:
