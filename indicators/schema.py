@@ -255,8 +255,11 @@ class IndicatorNode(DjangoNode):
     )
     def resolve_actions(self, info, plan=None):
         qs = self.actions.visible_for_user(info.context.user)
-        plan_obj = get_plan_from_context(info, plan)
-        if plan_obj is not None and plan_obj.is_visible_for_user(info.context.user):
+
+        if plan is not None:
+            plan_obj = get_plan_from_context(info, plan)
+            if plan_obj.is_visible_for_user(info.context.user):
+                return None
             qs = qs.filter(plan__identifier=plan)
         return qs
 
@@ -264,10 +267,14 @@ class IndicatorNode(DjangoNode):
     def resolve_related_actions(root: Indicator, info, plan=None) -> Iterable[ActionIndicator]:
         actions = Action.objects.visible_for_user(info.context.user)
         qs = ActionIndicator.objects.filter(action__in=actions, indicator=root)
+        if plan is None:
+            return qs
         plan_obj = get_plan_from_context(info, plan)
-        if plan_obj is not None and plan_obj.is_visible_for_user(info.context.user):
+        if plan_obj is None:
+            return qs
+        if plan_obj.is_visible_for_user(info.context.user):
             qs = qs.filter(indicator__plan__identifier=plan)
-        return qs
+        return qs.none()
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -286,9 +293,10 @@ class IndicatorNode(DjangoNode):
     def resolve_level(root: Indicator, info, plan) -> str | None:
         if not root.is_visible_for_public():
             return None
-        plan_obj = get_plan_from_context(info, plan)
-        if plan_obj and not plan_obj.is_visible_for_user(info.context.user):
-            return None
+        if plan is not None:
+            plan_obj = get_plan_from_context(info, plan)
+            if plan_obj.is_visible_for_user(info.context.user):
+                return None
         try:
             obj = root.levels.get(plan__identifier=plan)
         except IndicatorLevel.DoesNotExist:
