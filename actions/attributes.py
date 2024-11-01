@@ -46,10 +46,17 @@ class AttributeFieldPanel[M: Model](FieldPanel[M]):
 
     class BoundPanel(field_panel.FieldPanel.BoundPanel):
         def value_from_instance(self):
-            attributes = " ".join(
+            if self.instance.has_unpublished_changes:
+                rev = self.instance.get_latest_revision()
+                draft_attributes = DraftAttributes.from_revision_content(rev.content.get('attributes'))
+                attribute_value = draft_attributes.get_value_for_attribute_type(self.panel.attribute_type)
+                if attribute_value.should_exist_in_database():
+                    attribute = attribute_value.instantiate_attribute(self.panel.attribute_type, self.instance)
+                    return str(attribute)
+                return ''
+            return " ".join(
                 str(x) for x in self.panel.attribute_type.get_attributes(self.instance)
             )
-            return attributes
 
     def format_value_for_display(self, value):
         return value()
