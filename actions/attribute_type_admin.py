@@ -26,7 +26,6 @@ from aplans.utils import OrderedModelChildFormSet
 
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
-    ActionListPageBlockFormMixin,
     AplansAdminModelForm,
     AplansCreateView,
     AplansEditView,
@@ -37,6 +36,7 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 
+from actions.blocks.mixins import ActionListPageBlockFormMixin
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 
