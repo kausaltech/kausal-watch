@@ -594,7 +594,7 @@ class IndicatorAdmin(AplansModelAdmin):
 
 class CommonIndicatorForm(AplansAdminModelForm):
     def clean(self):
-        if self.instance and 'dimensions' in self.formsets:
+        if self.instance.pk and 'dimensions' in self.formsets:
             # Dimensions cannot be accessed from self.instance.dimensions yet
             sorted_form_data = sorted(self.formsets['dimensions'].cleaned_data, key=lambda d: d.get('ORDER'))
             new_dimensions = [d['dimension'].id for d in sorted_form_data if not d.get('DELETE')]
@@ -630,7 +630,7 @@ class CommonIndicatorAdmin(AplansModelAdmin):
         basic_panels = list(self.basic_panels)
 
         # Some fields should only be editable if no indicator is linked to the common indicator
-        if not instance or not instance.indicators.exists():
+        if not instance.pk or not instance.indicators.exists():
             basic_panels.insert(1, FieldPanel('quantity'))
             basic_panels.insert(2, FieldPanel('unit'))
             basic_panels.append(CondensedInlinePanel('dimensions', panels=[
