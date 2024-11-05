@@ -16,6 +16,8 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
 
+
+
 class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[misc]
     plan: FK[Plan] = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='documentation_root_pages')
 
