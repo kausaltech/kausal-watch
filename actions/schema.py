@@ -1495,8 +1495,10 @@ class Query:
 
     @staticmethod
     def resolve_plans_for_hostname(root, info: GQLInfo, hostname: str):
-        info.context._plan_hostname = hostname.lower()
-        plans = Plan.objects.for_hostname(info.context._plan_hostname, request=info.context).visible_for_user(info.context.user)
+        info.context._plan_hostname = hostname.lower() # type: ignore
+        plans = Plan.objects.for_hostname(
+            info.context._plan_hostname, request=info.context, #type: ignore
+            ).visible_for_user(info.context.user)
         ret = list(gql_optimizer.query(plans, info))
         req = info.context
         if not ret:

@@ -30,7 +30,6 @@ from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 
 from django_countries.fields import CountryField
-from wagtail_localize.operations import TranslationCreator  # type: ignore
 
 from kausal_common.models.types import MLModelManager
 
@@ -49,8 +48,10 @@ from aplans.utils import (
 from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
+from wagtail_localize.operations import TranslationCreator  # type: ignore
 
 if TYPE_CHECKING:
+    from kausal_common.graphene import GQLContext
     from kausal_common.models.types import FK, M2M, RevMany, RevOne
 
     from aplans.graphql_types import WorkflowStateEnum
@@ -115,7 +116,7 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
     def live(self):
         return self.filter(published_at__isnull=False, archived_at__isnull=True)
 
-    def available_for_request(self, request: WatchRequest):
+    def available_for_request(self, request: GQLContext):
         # FIXME later: support for logged-in users
         return self.live()
 
