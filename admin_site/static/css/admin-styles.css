@@ -43,6 +43,10 @@
   padding: 10px 0;
 }
 
+.sidebar--slim .active-plan {
+  display: none;
+}
+
 .login .login-logo {
   width: 3.5rem;
 }
