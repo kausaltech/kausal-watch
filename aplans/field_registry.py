@@ -34,7 +34,7 @@ class ModelFieldProperties:
     field_name: str
     field_type: FieldType | None = None
     model: type[Model] | None = None
-    field_name_verbose: str | None = None  # TODO: strpromise too?
+    #field_name_verbose: str | None = None  # TODO: strpromise too?
     custom_label: _StrPromise | None = None
 
     has_dashboard_column_block: bool = True
@@ -52,7 +52,8 @@ class ModelFieldProperties:
         if self.field_type is None and self.model is None:
             raise ValueError('Either field_type or model has to be set.')
         if self.field_type is None:
-            self.field_type = self.get_field_type_for_field_name(self.field_name)
+            self.field_type = 'DEFAULT'
+        #     self.field_type = self.get_field_type_for_field_name(self.field_name)
 
     @staticmethod
     def get_field_type(field) -> FieldType:
@@ -74,12 +75,14 @@ class ModelFieldProperties:
         return ModelFieldProperties.get_field_type(field)
 
     @staticmethod
-    def create_with_defaults(model, field) -> ModelFieldProperties:
-        field_type = ModelFieldProperties.get_field_type(field)
+    def create_with_defaults(model, name) -> ModelFieldProperties:
+        #field_type = ModelFieldProperties.get_field_type(field)
+        field_type = 'DEFAULT'
         return ModelFieldProperties(
             field_type=field_type,
-            field_name=field.name,
-            field_name_verbose=getattr(field, 'verbose_name', None),
+            field_name=name,
+            #field_name_verbose=getattr(field, 'verbose_name', None),  ##  ! verbose name ..
+            # ( by the way this is lazy anyway :D)
         )
 
     def get_report_block_class(self) -> type[ActionReportContentField] | None:
@@ -120,7 +123,7 @@ class ModelFieldProperties:
         try:
             return getattr(module, class_name)
         except AttributeError as e:
-            msg = 'Class name {class_name} not found within module {module}'
+            msg = f'Class name {class_name} not found within module {module}'
             raise ValueError(msg) from e
 
     def _not_implemented(self):  # noqa: ANN202
@@ -147,11 +150,17 @@ class ModelFieldRegistry[T: type[Model]]:
     model: T
     _registry: RegistryDict
     disabled_fields: set[str]
+    _details_block_class_cache: dict[str, type[blocks.Block]]
+    _dashboard_block_class_cache: dict[str, type[blocks.Block]]
+    _report_block_class_cache: dict[str, type[blocks.Block]]
 
     def __init__(self, model: T):
         self.model = model
         self._registry: RegistryDict = dict()
         self.disabled_fields = set()
+        self._details_block_class_cache = dict()
+        self._dashboard_block_class_cache = dict()
+        self._report_block_class_cache = dict()
 
     def disable_fields(self, *fields: str) -> None:
         self.disabled_fields.update(fields)
@@ -163,13 +172,10 @@ class ModelFieldRegistry[T: type[Model]]:
         except AttributeError as e:
             # TODO remove once static type checking is strict
             raise TypeError('Model must have public_fields specified in order to build field registry.') from e
-        for field in self.model._meta.get_fields():
-            name = field.name
-            if name not in public_fields:
-                continue
+        for name in public_fields:
             if name in self._registry:
                 continue
-            props = ModelFieldProperties.create_with_defaults(self.model, field)
+            props = ModelFieldProperties.create_with_defaults(self.model, name)
             if name in self.disabled_fields:
                 props.has_dashboard_column_block = False
                 props.has_report_block = False
@@ -208,27 +214,35 @@ class ModelFieldRegistry[T: type[Model]]:
             if details_block:
                 details_block()
             if props.has_dashboard_column_block and not props.has_report_block:
-                logger.error(
-                    f'Reporting block missing for field "{self.model.__name__}.{props.field_name}" with Dashboard column block',
-                )
+                field = f'{self.model.__name__}.{props.field_name}'
+                msg = f'Field {field} has dashboard column block without corresponding report block.'
+                logger.error(msg)
                 result = False
         return result
 
-    def get_report_block(self, field_name: str) -> ActionReportContentField | None:
+    def get_report_block_class(self, field_name: str) -> type[blocks.Block]:
+        cached = self._report_block_class_cache.get(field_name)
+        if cached:
+            return cached
         props = self[field_name]
         if not props.has_report_block:
             return None
         cls_ = props.get_report_block_class()
+        if cls_ is not None:
+            return cls_
         formatter_cls_ = props.get_report_formatter_class()
         params = {}
         if formatter_cls_:
             params['report_value_formatter_class'] = formatter_cls_
-        if cls_ is None:
-            cls_ = generate_block_for_field(self.model, field_name, params)
-        block = cls_()
-        return block
+        value = generate_block_for_field(self.model, field_name, params)
+        self._report_block_class_cache[field_name] = value
+        return value
 
-    def get_dashboard_column_block(self, field_name: str):
+    def get_dashboard_column_block_class(self, field_name: str) -> type[blocks.Block]:
+        cached = self._dashboard_block_class_cache.get(field_name)
+        if cached:
+            return cached
+
         props = self[field_name]
         if not props.has_dashboard_column_block:
             return None
@@ -239,30 +253,49 @@ class ModelFieldRegistry[T: type[Model]]:
         class_name = props.dashboard_column_block_class_name
         if class_name is None:
             class_name = f'{underscore_to_camelcase(field_name)}ColumnBlock'
-        if cls_ is None:
-            cls_ = generate_block_for_field(
-                self.model,
-                field_name,
-                params,
-                superclasses=(ColumnBlockBase,),
-                class_name=class_name,
-                graphql_interfaces=(DashboardColumnInterface,),
-            )
-        block = cls_()
-        return block
+        if cls_ is not None:
+            return cls_
+        value = generate_block_for_field(
+            self.model,
+            field_name,
+            params,
+            superclasses=(ColumnBlockBase,),
+            class_name=class_name,
+            graphql_interfaces=(DashboardColumnInterface,),
+        )
+        self._dashboard_block_class_cache[field_name] = value
+        return value
 
-    def get_details_block(self, field_name: str):
+    def get_details_block_class(self, field_name: str) -> type[blocks.Block]:
+        cached = self._details_block_class_cache.get(field_name)
+        if cached:
+            return cached
+
         props = self[field_name]
         if not props.has_details_block:
             return None
         cls_ = props.get_details_block_class()
+        if cls_ is not None:
+            return cls_
         params = {}
         if props.custom_label:
             params['label'] = props.custom_label
-        if cls_ is None:
-            cls_ = generate_block_for_field(self.model, field_name, params)
+        value = generate_block_for_field(self.model, field_name, params)
+        self._details_block_class_cache[field_name] = value
+        return value
+
+    def get_report_block(self, field_name: str) -> ActionReportContentField | None:
+        cls_ = self.get_report_block_class(field_name)
         block = cls_()
         return block
+
+    def get_dashboard_column_block(self, field_name: str):
+        cls_ = self.get_dashboard_column_class()
+        return cls_()
+
+    def get_details_block(self, field_name: str) -> blocks.Block:
+        cls_ = self.get_details_block_class(field_name)
+        return cls_()
 
 
 def sort_key(p: ModelFieldProperties) -> tuple[Any, Any, Any, Any, Any]:
