@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import graphene
-from django.db import models
 from django.forms import ValidationError
 from django.utils.translation import gettext_lazy as _
+import typing
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
@@ -15,6 +14,7 @@ from aplans.utils import StaticBlockToStructBlockWorkaroundMixin
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, PlanDatasetSchemaChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
+from actions.action_fields import action_registry
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
@@ -22,40 +22,25 @@ from budget.models import DatasetSchema
 from reports.blocks.report_comparison_block import ReportComparisonBlock
 from reports.report_formatters import ActionTasksFormatter
 
-# Attention: Defines several block classes via metaprogramming.
-# See `action_attribute_blocks` which should currently contain:
-#
-# ActionContactPersonsBlock
-# ActionDescriptionBlock
-# ActionLeadParagraphBlock
-# ActionLinksBlock
-# ActionMergedActionsBlock,
-# ActionRelatedActionsBlock
-# ActionRelatedIndicatorsBlock
-# ActionResponsiblePartiesBlock
-# ActionScheduleBlock
-# ActionTasksBlock
 
-
-def generate_blocks_for_fields(model: type[models.Model], fields: list[str | tuple[str, dict]]):
-    out = {}
-    for field_name in fields:
-        if isinstance(field_name, tuple):
-            field_name, params = field_name
-        else:
-            params = {}
-        klass = generate_block_for_field(model, field_name, params)
-        globals()[klass.__name__] = klass
-        out[field_name] = klass
-    return out
+# def generate_blocks_for_fields(model: type[models.Model], fields: list[str | tuple[str, dict]]):
+#     out = {}
+#     for field_name in fields:
+#         if isinstance(field_name, tuple):
+#             field_name, params = field_name
+#         else:
+#             params = {}
+#         klass = generate_block_for_field(model, field_name, params)
+#         globals()[klass.__name__] = klass
+#         out[field_name] = klass
+#     return out
 
 
 def generate_stream_block(
-    name: str, all_blocks: dict[str, type[blocks.Block]], fields: list[str | tuple[str, blocks.Block]],
-    mixins=None, extra_args=None,
+    name: str, fields: typing.Iterable[str | tuple[str, blocks.Block]],
+    mixins: tuple[type[blocks.Block], ...] = tuple(),
+    extra_args=None,
 ):
-    if mixins is None:
-        mixins = ()
     if extra_args is None:
         extra_args = {}
     field_blocks = {}
@@ -66,7 +51,7 @@ def generate_stream_block(
             field_blocks[field_name] = block
         else:
             field_name = field
-            block = all_blocks[field]()
+            block = action_registry.get_details_block(field_name)
 
         block_cls = type(block)
         if block_cls not in graphql_types:
@@ -85,7 +70,7 @@ def generate_stream_block(
 
 
 @register_streamfield_block
-class ActionContentAttributeTypeBlock(blocks.StructBlock):
+class ActionContentAttributeTypeBlock(blocks.StructBlock):  # block.details
     attribute_type = ActionAttributeTypeChooserBlock(required=True)
     graphql_interfaces = (FieldBlockMetaInterface, )
 
@@ -102,7 +87,7 @@ class ActionContentAttributeTypeBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
-class ActionContentCategoryTypeBlock(blocks.StructBlock):
+class ActionContentCategoryTypeBlock(blocks.StructBlock):  # block.details
     category_type = CategoryTypeChooserBlock(required=True)
     graphql_interfaces = (FieldBlockMetaInterface, )
 
@@ -119,7 +104,7 @@ class ActionContentCategoryTypeBlock(blocks.StructBlock):
 
 
 @register_streamfield_block
-class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):  # block.details
     graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
@@ -134,7 +119,7 @@ class ActionResponsiblePartiesBlock(StaticBlockToStructBlockWorkaroundMixin, blo
     ]
 
 @register_streamfield_block
-class FormChoiceBlock(blocks.StructBlock):
+class FormChoiceBlock(blocks.StructBlock):  # child
     choice_label = blocks.CharBlock(required=True, label=_('Label'))
     choice_value = blocks.CharBlock(required=True, label=_('Value'))
 
@@ -147,7 +132,7 @@ class FormChoiceBlock(blocks.StructBlock):
     ]
 
 @register_streamfield_block
-class FormFieldBlock(blocks.StructBlock):
+class FormFieldBlock(blocks.StructBlock):  # child
     field_label = blocks.CharBlock(required=True, label=_('Field Label'))
     field_type = blocks.ChoiceBlock(choices=[
         ('text', _('Text')),
@@ -188,7 +173,7 @@ class FormFieldBlock(blocks.StructBlock):
     ]
 
 
-class BaseContactFormBlock(blocks.StructBlock):
+class BaseContactFormBlock(blocks.StructBlock):  # block.details custom
     heading = blocks.CharBlock(required=False, default="", label=_('Heading'))
     description = blocks.CharBlock(required=False, default="", label=_('Description'))
     feedback_visible = blocks.BooleanBlock(
@@ -248,13 +233,14 @@ class BaseContactFormBlock(blocks.StructBlock):
         return cleaned_data
 
 @register_streamfield_block
-class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, BaseContactFormBlock):
+class ActionContactFormBlock(StaticBlockToStructBlockWorkaroundMixin, BaseContactFormBlock): # block.details
     graphql_interfaces = (FieldBlockMetaInterface, )
     class Meta:
         label = _("Contact form")
 
+
 @register_streamfield_block
-class IndicatorCausalChainBlock(blocks.StaticBlock):
+class IndicatorCausalChainBlock(blocks.StaticBlock):  # block.details.custom (into default!)  !!!
     graphql_interfaces = (FieldBlockMetaInterface, )
 
     class Meta:
@@ -284,7 +270,7 @@ class BaseDatasetsBlock(blocks.StructBlock):
     ]
 
 @register_streamfield_block
-class PlanDatasetsBlock(BaseDatasetsBlock):
+class PlanDatasetsBlock(BaseDatasetsBlock):  # block.details.custom
     dataset_schema = PlanDatasetSchemaChooserBlock(required=True)
 
     graphql_fields = BaseDatasetsBlock.graphql_fields + [
@@ -292,7 +278,7 @@ class PlanDatasetsBlock(BaseDatasetsBlock):
     ]
 
 @register_streamfield_block
-class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
+class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock): # block.details.custom
     graphql_interfaces = (FieldBlockMetaInterface, )
 
     field_label = blocks.CharBlock(
@@ -317,43 +303,33 @@ class ActionOfficialNameBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.St
     ]
 
 
-action_attribute_blocks = generate_blocks_for_fields(Action, [
-    ('lead_paragraph', {'label': _('Lead paragraph')}),
-    'description',
-    'schedule',
-    'links',
-    ('tasks', {'report_value_formatter_class': ActionTasksFormatter}),
-    ('merged_actions', {'label': _('Merged actions')}),
-    ('related_actions', {'label': _('Related actions')}),
-    ('dependencies', {'label': _('Action dependencies')}),
-    'related_indicators',
-    'contact_persons',
-])
+# action_attribute_blocks = generate_blocks_for_fields(Action, [
+#     ('lead_paragraph', {'label': _('Lead paragraph')}),                 # blocks.details.default
+#     'description',                                                      # blocks.details.default
+#     'schedule',                                                         # blocks.details.default
+#     'links',                                                            # blocks.details.default
+#     ('tasks', {'report_value_formatter_class': ActionTasksFormatter}),  # blocks.details.default (custom formatter!)
+#     ('merged_actions', {'label': _('Merged actions')}),                 # blocks.details.default
+#     ('related_actions', {'label': _('Related actions')}),               # blocks.details.default
+#     ('dependencies', {'label': _('Action dependencies')}),              # blocks.details.default
+#     'related_indicators',                                               # blocks.details.default
+#     'contact_persons',                                                  # blocks.details.default
+# ])
 
+# def get_action_block_for_field(field_name):  # blocks.report called from there!
+#     if field_name in action_attribute_blocks:
+#         return action_attribute_blocks[field_name]
+#     klass = generate_block_for_field(Action, field_name)
+#     globals()[klass.__name__] = klass
+#     return klass
 
-def get_action_block_for_field(field_name):
-    global action_attribute_blocks
-    if field_name in action_attribute_blocks:
-        return action_attribute_blocks[field_name]
-    klass = generate_block_for_field(Action, field_name)
-    globals()[klass.__name__] = klass
-    return klass
-
-
-action_content_extra_args = {
-    'model_instance_container_blocks': {
-        AttributeType: 'attribute',
-        CategoryType: 'categories',
-    },
-}
 
 ActionContentSectionElementBlock = generate_stream_block(
     'ActionMainContentSectionElementBlock',
-    action_attribute_blocks,
-    fields = [
+    fields = (
         ('attribute', ActionContentAttributeTypeBlock()),
         ('categories', ActionContentCategoryTypeBlock()),
-    ],
+    ),
 )
 
 
@@ -378,16 +354,23 @@ class ActionContentSectionBlock(blocks.StructBlock):
     ]
 
 
+action_content_extra_args = {
+    'model_instance_container_blocks': {
+        AttributeType: 'attribute',
+        CategoryType: 'categories',
+    },
+}
+
+
 ActionMainContentBlock = generate_stream_block(
     'ActionMainContentBlock',
-    action_attribute_blocks,
-    fields=[
+    fields=(
         ('section', ActionContentSectionBlock(required=True)),
         'lead_paragraph',
         'description',
-        ('official_name', ActionOfficialNameBlock()),
-        ('attribute', ActionContentAttributeTypeBlock()),
-        ('categories', ActionContentCategoryTypeBlock()),
+        'official_name',
+        'attribute',
+        'categories'
         'links',
         'tasks',
         'merged_actions',
@@ -398,7 +381,7 @@ ActionMainContentBlock = generate_stream_block(
         ('report_comparison', ReportComparisonBlock()),
         ('indicator_causal_chain', IndicatorCausalChainBlock()),
         ('datasets', PlanDatasetsBlock()),
-    ],
+    ),
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={
         **action_content_extra_args,
@@ -407,13 +390,12 @@ ActionMainContentBlock = generate_stream_block(
 
 ActionAsideContentBlock = generate_stream_block(
     'ActionAsideContentBlock',
-    action_attribute_blocks,
     fields=[
         'schedule',
         'contact_persons',
-        ('responsible_parties', ActionResponsiblePartiesBlock(required=True)),
-        ('attribute', ActionContentAttributeTypeBlock(required=True)),
-        ('categories', ActionContentCategoryTypeBlock(required=True)),
+        'responsible_parties',
+        'attribute',
+        'categories',
     ],
     mixins=(ActionListPageBlockPresenceMixin,),
     extra_args={
