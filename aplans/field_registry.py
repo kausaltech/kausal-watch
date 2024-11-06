@@ -67,23 +67,8 @@ class ModelFieldProperties:
     def get_dashboard_column_block(self):
         pass
 
-    def _import[C](self, path: str) -> type[C]:
-        names = re.match(r'^(.+)\.([^.]+)$', path)
-        if not names:
-            raise ValueError('Supply path.to.module.and.ClassName as a period-separated Python module path')
-        module_name = names.group(1)
-        class_name = names.group(2)
-        module = importlib.import_module(module_name)
-        try:
-            return getattr(module, class_name)
-        except AttributeError as e:
-            msg = 'Class name {class_name} not found within module {module}'
-            raise ValueError(msg) from e
-
-    def _not_implemented(self):  # noqa: ANN202
-        # Reminder to implement the default case
-        return None
-        #raise NotImplementedError('Implement default class generation!')
+    def get_details_block(self):
+        pass
 
     def get_report_block_class(self) -> type[ActionReportContentField] | None:
         if not self.has_report_block:
@@ -112,6 +97,24 @@ class ModelFieldProperties:
         if self.details_block_class:
             return self._import(self.details_block_class)
         return self._not_implemented()
+
+    def _import[C](self, path: str) -> type[C]:
+        names = re.match(r'^(.+)\.([^.]+)$', path)
+        if not names:
+            raise ValueError('Supply path.to.module.and.ClassName as a period-separated Python module path')
+        module_name = names.group(1)
+        class_name = names.group(2)
+        module = importlib.import_module(module_name)
+        try:
+            return getattr(module, class_name)
+        except AttributeError as e:
+            msg = 'Class name {class_name} not found within module {module}'
+            raise ValueError(msg) from e
+
+    def _not_implemented(self):  # noqa: ANN202
+        # Reminder to implement the default case
+        return None
+        #raise NotImplementedError('Implement default class generation!')
 
 
 class ModelFieldRegistry[T: type[Model]]:
