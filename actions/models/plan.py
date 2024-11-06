@@ -33,6 +33,7 @@ from wagtail.models import Collection, Page, Site, WorkflowTask
 from wagtail.models.i18n import Locale
 
 from django_countries.fields import CountryField
+from wagtail_localize.operations import TranslationCreator  # type: ignore
 
 from kausal_common.models.types import MLModelManager, OneToOne, RevManyToMany
 
@@ -51,7 +52,6 @@ from aplans.utils import (
 from indicators.models import Indicator, IndicatorLevel, RelatedIndicator
 from orgs.models import Organization
 from people.models import Person
-from wagtail_localize.operations import TranslationCreator  # type: ignore
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
@@ -78,7 +78,6 @@ if TYPE_CHECKING:
 
 
 logger = logging.getLogger(__name__)
-
 
 @cache
 def get_timezones() -> list[tuple[str, str]]:
