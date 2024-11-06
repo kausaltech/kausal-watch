@@ -10,12 +10,13 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 
 if TYPE_CHECKING:
+    from kausal_common.models.types import FK
+
     from actions.models.plan import Plan
 
 
-
 class DocumentationRootPage(Page):
-    plan: models.ForeignKey[Plan, Plan] = models.ForeignKey(  # pyright: ignore
+    plan: FK[Plan] = models.ForeignKey(
         'actions.Plan', on_delete=models.CASCADE, related_name='documentation_root_pages')
 
     content_panels = [
