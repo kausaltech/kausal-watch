@@ -16,8 +16,6 @@ if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
 
-
-
 class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[misc]
     plan: FK[Plan] = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='documentation_root_pages')
 
@@ -25,6 +23,8 @@ class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):  # type: ignore[m
         FieldPanel('title'),
     ]
     promote_panels = []
+
+    _default_manager: ClassVar[PageManager[DocumentationRootPage]]
 
     parent_page_types = ['wagtailcore.Page']  # Can only be under the global root page
     subpage_types = ['DocumentationPage']
