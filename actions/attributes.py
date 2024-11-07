@@ -7,12 +7,11 @@ from typing import Any, Generic, TypeVar, cast
 
 from django import forms
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Field, ForeignKey, Model, QuerySet
+from django.db.models import Field, ForeignKey, QuerySet
+from django.utils import translation
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, field_panel
-from wagtail.fields import RichTextField
 from wagtail.models import DraftStateMixin, RevisionMixin
-from wagtail.rich_text import RichText as WagtailRichText
 
 from dal import autocomplete, forward as dal_forward
 
@@ -33,9 +32,11 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
     """Add compatibility for Wagtail read_only field panels for attributes."""
 
     attribute_type: AttributeType | None
+    language: str
 
-    def __init__(self, *args, attribute_type: AttributeType, **kwargs):
+    def __init__(self, *args, attribute_type: AttributeType, language: str, **kwargs):
         super().__init__(*args, **kwargs)
+        self.language = language
         self.attribute_type = attribute_type
         # Important! Icon and placeholder must exist and be Truthy in this object
         # or otherwise Wagtail starts introspecting for a modelfield
@@ -46,6 +47,7 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
     def clone_kwargs(self):
         kwargs = super().clone_kwargs()
         kwargs['attribute_type'] = self.attribute_type
+        kwargs['language'] = self.language
         return kwargs
 
     class BoundPanel[_M: models.ModelWithAttributes](field_panel.FieldPanel.BoundPanel):
@@ -65,11 +67,20 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
                     return ''
                 if attribute_value.should_exist_in_database():
                     attribute = attribute_value.instantiate_attribute(self.panel.attribute_type, self.instance)
-                    return str(attribute)
+                    if not self.panel.language:
+                        return str(attribute)
+                    with translation.override(self.panel.language):
+                        return str(attribute)
+
                 return ''
-            return " ".join(
-                str(x) for x in self.panel.attribute_type.get_attributes(self.instance)
-            )
+            def get_value() -> str:
+                return " ".join(
+                    str(x) for x in self.panel.attribute_type.get_attributes(self.instance)
+                )
+            if not self.panel.language:
+                return get_value()
+            with translation.override(self.panel.language):
+                return get_value()
 
     def format_value_for_display(self, value):
         return value()
@@ -100,6 +111,7 @@ class FormField[M: models.ModelWithAttributes]:
             heading=heading,
             read_only=self.read_only,
             attribute_type=self.attribute_type,
+            language=self.language,
         )
 
 
@@ -603,15 +615,17 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             choice_options, initial=initial_choice, required=False, help_text=self.instance.help_text_i18n,
         )
         is_public = self.instance.instances_visible_for == self.instance.VisibleFor.PUBLIC
-        fields: list[FormField] = [FormField(
-            plan=plan,
-            attribute_type=self,
-            django_field=choice_field,
-            name=self.choice_form_field_name,
-            is_public=is_public,
-            label=_('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
-            read_only=not editable,
-        )]
+        fields: list[FormField] = []
+        if editable:
+            fields.append(FormField(
+                plan=plan,
+                attribute_type=self,
+                django_field=choice_field,
+                name=self.choice_form_field_name,
+                is_public=is_public,
+                label=_('%(attribute_type)s (choice)') % {'attribute_type': self.instance.name_i18n},
+                read_only=False,
+            ))
 
         # Text (one field for each language)
         for language in ('', *self.instance.other_languages):
@@ -625,13 +639,17 @@ class OptionalChoiceWithText(AttributeType[models.AttributeChoiceWithText]):
             if self.instance.max_length:
                 form_field_kwargs.update(max_length=self.instance.max_length)
             text_field = self.ATTRIBUTE_MODEL._meta.get_field(attribute_text_field_name).formfield(**form_field_kwargs)  # type: ignore[union-attr]
+            if editable:
+                label = _('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n}
+            else:
+                label = _('%(attribute_type)s') % {'attribute_type': self.instance.name_i18n}
             fields.append(FormField(
                 plan=plan,
                 attribute_type=self,
                 django_field=text_field,
                 name=self.get_text_form_field_name(language),
                 language=language,
-                label=_('%(attribute_type)s (text)') % {'attribute_type': self.instance.name_i18n},
+                label=label,
                 is_public=is_public,
                 read_only=not editable,
             ))

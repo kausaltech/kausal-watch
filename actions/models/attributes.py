@@ -315,6 +315,7 @@ class AttributeChoiceWithText(Attribute):
         related_name='choice_with_text_attributes',
     )
     text = RichTextField(verbose_name=_('Text'), blank=True, null=True)
+    text_i18n: str
 
     i18n = TranslationField(
         fields=('text',),
