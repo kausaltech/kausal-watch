@@ -37,8 +37,11 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
     def __init__(self, *args, attribute_type: AttributeType, **kwargs):
         super().__init__(*args, **kwargs)
         self.attribute_type = attribute_type
+        # Important! Icon and placeholder must exist and be Truthy in this object
+        # or otherwise Wagtail starts introspecting for a modelfield
+        # for this attribute
         self.icon = 'placeholder'
-        self.help_text = attribute_type.instance.help_text
+        self.help_text = attribute_type.instance.help_text or ' '
 
     def clone_kwargs(self):
         kwargs = super().clone_kwargs()
