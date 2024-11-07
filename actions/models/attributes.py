@@ -325,7 +325,9 @@ class AttributeChoiceWithText(Attribute):
         unique_together = ('type', 'content_type', 'object_id')
 
     def __str__(self):
-        return f'{self.choice}; {self.text}'
+        text_field = typing.cast(RichTextField, self._meta.get_field('text'))
+        text = " ".join(text_field.get_searchable_content(str(self.text_i18n)))
+        return f'{self.choice}; {text}'
 
 
 @reversion.register()
