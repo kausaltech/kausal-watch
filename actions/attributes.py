@@ -59,7 +59,10 @@ class AttributeFieldPanel[M: models.ModelWithAttributes](FieldPanel[M]):
             ):
                 rev = self.instance.get_latest_revision()
                 draft_attributes = DraftAttributes.from_revision_content(rev.content.get('attributes'))
-                attribute_value = draft_attributes.get_value_for_attribute_type(self.panel.attribute_type)
+                try:
+                    attribute_value = draft_attributes.get_value_for_attribute_type(self.panel.attribute_type)
+                except KeyError:
+                    return ''
                 if attribute_value.should_exist_in_database():
                     attribute = attribute_value.instantiate_attribute(self.panel.attribute_type, self.instance)
                     return str(attribute)
