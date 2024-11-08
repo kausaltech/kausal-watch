@@ -25,7 +25,7 @@ action_registry.register_all(
     ),
     field(
         field_name='categories',
-        field_type='ManyToManyRel',
+        field_type='ManyToManyField',
         report_block_class='reports.blocks.action_content.ActionCategoryReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionCategoryReportFieldFormatter',
         has_dashboard_column_block=False,

@@ -11,6 +11,8 @@ from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.db.models.fields.reverse_related import ManyToOneRel
 
+from .dynamic_blocks import generate_block_for_field
+
 if typing.TYPE_CHECKING:
     from wagtail import blocks
 
@@ -58,11 +60,10 @@ class ModelFieldProperties:
             field_name_verbose=getattr(field, 'verbose_name', None),
         )
 
-    def get_report_formatter(self):
-        pass
-
-    def get_report_block(self):
-        pass
+    def get_report_block(self, field_name: str) -> ActionReportContentField:
+        cls_ = self.get_report_block_class()
+        block = cls_()
+        return block
 
     def get_dashboard_column_block(self):
         pass
@@ -247,6 +248,27 @@ class ModelFieldRegistry[T: type[Model]]:
                 details_block()
             print(key, report_block or '-', report_formatter or '-', dashboard_column_block or '-', details_block or '-')
         return True
+
+    def get_report_block(self, field_name: str) -> ActionReportContentField | None:
+        props = self[field_name]
+        if not props.has_report_block:
+            return None
+        cls_ = props.get_report_block_class()
+        formatter_cls_ = props.get_report_formatter_class()
+        params = {}
+        if formatter_cls_:
+            params['report_value_formatter_class'] = formatter_cls_
+        if cls_ is None:
+            cls_ = generate_block_for_field(self.model, field_name, params)
+        block = cls_()
+        return block
+
+    def get_dashboard_column_block(self):
+        pass
+
+    def get_details_block(self):
+        pass
+
 
 def debug_registry(registry: ModelFieldRegistry):
     from rich.console import Console
