@@ -57,7 +57,6 @@ class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.Str
 
 
 def generate_block_for_field(model: type[models.Model], field_name: str, params: dict = {}):
-    from rich import print
     camel_field = underscore_to_camelcase(field_name)
     class_name = '%s%sBlock' % (model._meta.object_name, camel_field)
 
