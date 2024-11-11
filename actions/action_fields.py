@@ -92,7 +92,7 @@ register(
 
 register(
     field_name='primary_org',
-    has_dashboard_column_block=False,
+    has_dashboard_column_block=True,
     dashboard_column_block_class_name='OrganizationColumnBlock',
 )
 
