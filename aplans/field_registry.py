@@ -14,7 +14,7 @@ from django.db.models.fields.reverse_related import ManyToOneRel
 from loguru import logger
 
 from aplans.utils import underscore_to_camelcase
-from actions.blocks.column_block_base import ColumnBlockBase
+from actions.blocks.column_block_base import ColumnBlockBase, DashboardColumnInterface
 from .dynamic_blocks import generate_block_for_field
 
 
@@ -306,6 +306,7 @@ class ModelFieldRegistry[T: type[Model]]:
                 params,
                 superclasses=(ColumnBlockBase,),
                 class_name=class_name,
+                graphql_interfaces=(DashboardColumnInterface,),
             )
         block = cls_()
         return block

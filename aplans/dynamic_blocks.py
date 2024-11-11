@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import typing
+
 from django.apps import apps
 from django.db import models
 from django.utils.functional import lazy
@@ -13,6 +15,9 @@ from aplans.graphql_interfaces import FieldBlockMetaInterface
 from aplans.utils import StaticBlockToStructBlockWorkaroundMixin, underscore_to_camelcase
 
 from reports.report_formatters import ActionReportContentField
+
+if typing.TYPE_CHECKING:
+    import graphene
 
 
 def get_field_label(model: type[models.Model], field_name: str) -> str | None:
@@ -70,6 +75,7 @@ def generate_block_for_field(
             ActionListContentBlock,
             ActionReportContentField,
         ),
+        graphql_interfaces: tuple[type[graphene.Interface], ...] = tuple(),
         class_name: str | None = None,
 ):
     if params is None:
@@ -90,7 +96,7 @@ def generate_block_for_field(
     attrs = {
         'Meta': meta,
         '__module__': __name__,
-        'graphql_interfaces': (FieldBlockMetaInterface, ),
+        'graphql_interfaces': (FieldBlockMetaInterface, ) + graphql_interfaces,
     }
     if 'report_value_formatter_class' in params:
         attrs['report_value_formatter_class'] = params['report_value_formatter_class']
