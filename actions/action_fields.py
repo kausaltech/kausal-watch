@@ -24,10 +24,11 @@ from .models.action import Action
 
 action_registry = ModelFieldRegistry(Action)
 
-def register(field_name, **kwargs):
-    action_registry.register(
-        ModelFieldProperties(field_name=field_name, **kwargs, model=Action),
-    )
+def register(*field_names, **kwargs):
+    for field_name in field_names:
+        action_registry.register(
+            ModelFieldProperties(field_name=field_name, **kwargs, model=Action),
+        )
 
 def initialize():
     # The following fields will have no blocks created for them whatsoever
@@ -103,49 +104,18 @@ def initialize():
     )
     register(
         'contact_persons',
-        has_dashboard_column_block=False,
-        has_report_block=False,
-    )
-    register(
         'lead_paragraph',
-        has_dashboard_column_block=False,
-        has_report_block=False,
-    )
-    register(
         'links',
-        has_dashboard_column_block=False,
-        has_report_block=False,
-    )
-    register(
         'related_actions',
-        has_dashboard_column_block=False,
-        has_report_block=False,
-    )
-    register(
         'schedule',
         has_dashboard_column_block=False,
         has_report_block=False,
     )
     register(
         'start_date',
-        has_details_block=False,
-        has_report_block=False,
-    )
-    register(
         'end_date',
-        has_details_block=False,
-        has_report_block=False,
-    )
-    register(
         'identifier',
-        has_details_block=False,
-        has_report_block=False,
-    )
-    register(
-        'implementation_phase',
-        has_details_block=False,
-    )
-    register(
+        'updated_at',
         'name',
         has_details_block=False,
         has_report_block=False,
@@ -157,14 +127,9 @@ def initialize():
     )
     register(
         'status',
+        'implementation_phase',
         has_details_block=False,
     )
-    register(
-        'updated_at',
-        has_details_block=False,
-        has_report_block=False,
-    )
-
 
     action_registry.update_with_defaults()
 
