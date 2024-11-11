@@ -42,7 +42,7 @@ def initialize():
         field_type='ManyToOneRel',
         report_block_class='reports.blocks.action_content.ActionResponsiblePartyReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionResponsiblePartyReportFieldFormatter',
-        details_block_class='actions.blocks.action_content.ActionResponsiblePartiesBlock',
+        details_block_class='actions.blocks.action_content_blocks.ActionResponsiblePartiesBlock',
     )
     register(
         'tasks',
@@ -56,7 +56,7 @@ def initialize():
         report_block_class='reports.blocks.action_content.ActionCategoryReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionCategoryReportFieldFormatter',
         has_dashboard_column_block=False,
-        details_block_class='actions.blocks.action_content.ActionContentCategoryTypeBlock',
+        details_block_class='actions.blocks.action_content_blocks.ActionContentCategoryTypeBlock',
     )
     register(
         'dependencies',
@@ -72,14 +72,14 @@ def initialize():
         has_report_block=True,
         has_dashboard_column_block=True,
         has_details_block=True,
-        details_block_class='actions.blocks.action_content.ActionContentAttributeTypeBlock',
+        details_block_class='actions.blocks.action_content_blocks.ActionContentAttributeTypeBlock',
         report_block_class='reports.blocks.action_content.ActionAttributeTypeReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionAttributeTypeReportFieldFormatter',
         dashboard_column_block_class='actions.blocks.action_dashboard.FieldColumnBlock',
     )
     register(
         'official_name',
-        details_block_class='actions.blocks.action_content.ActionOfficialNameBlock',
+        details_block_class='actions.blocks.action_content_blocks.ActionOfficialNameBlock',
         has_dashboard_column_block=False,
         has_report_block=False,
     )
