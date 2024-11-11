@@ -14,9 +14,10 @@ from django.db.models.fields.reverse_related import ManyToOneRel
 from loguru import logger
 
 from aplans.utils import underscore_to_camelcase
-from actions.blocks.column_block_base import ColumnBlockBase, DashboardColumnInterface
-from .dynamic_blocks import generate_block_for_field
 
+from actions.blocks.column_block_base import ColumnBlockBase, DashboardColumnInterface
+
+from .dynamic_blocks import generate_block_for_field
 
 if typing.TYPE_CHECKING:
     from django.utils.functional import _StrPromise
@@ -80,17 +81,6 @@ class ModelFieldProperties:
             field_name=field.name,
             field_name_verbose=getattr(field, 'verbose_name', None),
         )
-
-    def get_report_block(self, field_name: str) -> ActionReportContentField:
-        cls_ = self.get_report_block_class()
-        block = cls_()
-        return block
-
-    def get_dashboard_column_block(self):
-        pass
-
-    def get_details_block(self):
-        pass
 
     def get_report_block_class(self) -> type[ActionReportContentField] | None:
         if not self.has_report_block:
@@ -156,68 +146,15 @@ class ModelFieldRegistry[T: type[Model]]:
 
     model: T
     _registry: RegistryDict
-
-    DISABLE = (
-        'date_format',
-        'decision_level',
-        'dependency_role',
-        'dependent_relationships',
-        'id',
-        'impact',
-        'impact_groups',
-        'merged_with',
-        'monitoring_quality_points',
-        'order',
-        'plan',
-        'schedule_continuous',
-        'status_updates',
-        'superseded_actions',
-        'superseded_by',
-        'uuid',
-        'visibility',
-    )
-
-    DISABLE_DASHBOARD_COLUMN_BLOCKS = DISABLE + (
-        # For these fields we do not want to generate blocks for the
-        # action dashboard page
-        'categories',
-        'completion',
-        'contact_persons',
-        'dependencies',
-        'description',
-        'lead_paragraph',
-        'links',
-        'manual_status_reason',
-        'merged_actions',
-        'monitoring_quality_points',
-        'official_name',
-        'plan',  # TODO: wasn't this added?
-        'related_actions',
-        'related_indicators',
-        'schedule',
-    )
-    # For these fields we do not want to generate blocks for the reports
-    DISABLE_REPORT_BLOCKS = DISABLE_DASHBOARD_COLUMN_BLOCKS + (
-        'indicators',
-    )
-
-    DISABLE_DETAILS_BLOCKS = DISABLE + (
-        'completion',
-        'end_date',
-        'identifier',
-        'implementation_phase',
-        'indicators',
-        'manual_status_reason',
-        'name',
-        'primary_org',
-        'start_date',
-        'status',
-        'updated_at',
-    )
+    disabled_fields: set[str]
 
     def __init__(self, model: T):
         self.model = model
         self._registry: RegistryDict = dict()
+        self.disabled_fields = set()
+
+    def disable_fields(self, *fields: str) -> None:
+        self.disabled_fields.update(fields)
 
     def update_with_defaults(self) -> None:
         """Fill in missing fields with defaults, keeping already registered fields."""
@@ -233,11 +170,9 @@ class ModelFieldRegistry[T: type[Model]]:
             if name in self._registry:
                 continue
             props = ModelFieldProperties.create_with_defaults(self.model, field)
-            if name in self.DISABLE_DASHBOARD_COLUMN_BLOCKS:
+            if name in self.disabled_fields:
                 props.has_dashboard_column_block = False
-            if name in self.DISABLE_REPORT_BLOCKS:
                 props.has_report_block = False
-            if name in self.DISABLE_DETAILS_BLOCKS:
                 props.has_details_block = False
             self._registry[name] = props
 
@@ -245,6 +180,10 @@ class ModelFieldRegistry[T: type[Model]]:
         return self._registry[name]
 
     def register(self, props: ModelFieldProperties) -> None:
+        props.model = self.model
+        if props.field_name in self._registry:
+            msg = f'Trying to register {props.field_name} twice'
+            raise ValueError(msg)
         self._registry[props.field_name] = props
 
     def register_all(self, *args) -> None:
@@ -253,7 +192,8 @@ class ModelFieldRegistry[T: type[Model]]:
         self.update_with_defaults()
 
     def is_valid(self) -> bool:
-        for key, props in self._registry.items():
+        result = True
+        for props in self._registry.values():
             report_block = props.get_report_block_class()
             report_formatter = props.get_report_formatter_class()
             if report_block:
@@ -271,8 +211,8 @@ class ModelFieldRegistry[T: type[Model]]:
                 logger.error(
                     f'Reporting block missing for field "{self.model.__name__}.{props.field_name}" with Dashboard column block',
                 )
-                return False
-        return True
+                result = False
+        return result
 
     def get_report_block(self, field_name: str) -> ActionReportContentField | None:
         props = self[field_name]
@@ -325,66 +265,73 @@ class ModelFieldRegistry[T: type[Model]]:
         return block
 
 
+def sort_key(p: ModelFieldProperties) -> tuple[Any, Any, Any, Any, Any]:
+    return (
+        -1 if p.has_details_block else 1,
+        -1 if p.has_dashboard_column_block else 1,
+        -1 if p.has_report_block else 1,
+        p.field_type,
+        p.field_name,
+    )
+
+NOT_IMPLEMENTED = '○'
+DEFAULT_IMPLEMENTATION = '●'
+CUSTOM_IMPLEMENTATION = '❄'
+
 def debug_registry(registry: ModelFieldRegistry):
     from rich.console import Console
     from rich.table import Table
 
-    table = Table()
-    table.add_column('Field name')
-    table.add_column('Field type')
-    table.add_column('Details page')
-    table.add_column('Dashboard')
-    table.add_column('Reporting')
-    table.add_column('Custom formatter')
-
-    def sort_key(p: ModelFieldProperties) -> tuple[Any, Any, Any, Any, Any]:
-        return (
-            -1 if p.has_details_block else 1,
-            -1 if p.has_dashboard_column_block else 1,
-            -1 if p.has_report_block else 1,
-            p.field_type,
-            p.field_name,
-        )
+    table = Table(
+        'Field name',
+        'Field type',
+        'Details page',
+        'Dashboard',
+        'Reporting',
+        'Custom formatter',
+    )
 
     missing = set()
-    not_implemented = '○'
-    default_implementation = '●'
-    custom_implementation = '❄'
 
     for props in sorted(
         registry._registry.values(),
         key=sort_key,
     ):
-        dashboard = report = details = not_implemented
+        dashboard = report = details = NOT_IMPLEMENTED
         formatter = ''
         if props.has_dashboard_column_block:
-            dashboard = default_implementation
+            dashboard = DEFAULT_IMPLEMENTATION
         if props.dashboard_column_block_class:
-            dashboard = custom_implementation
+            dashboard = CUSTOM_IMPLEMENTATION
         if props.has_report_block:
-            report = default_implementation
+            report = DEFAULT_IMPLEMENTATION
         if props.report_block_class:
-            report = custom_implementation
+            report = CUSTOM_IMPLEMENTATION
         if props.has_details_block:
-            details = default_implementation
+            details = DEFAULT_IMPLEMENTATION
         if props.details_block_class:
-            details = custom_implementation
+            details = CUSTOM_IMPLEMENTATION
         if props.report_formatter_class:
-            formatter = custom_implementation
+            formatter = CUSTOM_IMPLEMENTATION
 
-        if not all((x == not_implemented) for x in (dashboard, report, details)):
-            table.add_row(
-                props.field_name,
-                props.field_type,
-                details,
-                dashboard,
-                report,
-                formatter,
-            )
-        else:
+        if all((x == NOT_IMPLEMENTED) for x in (dashboard, report, details)):
             missing.add(props.field_name)
+            continue
+
+        table.add_row(
+            props.field_name,
+            props.field_type,
+            details,
+            dashboard,
+            report,
+            formatter,
+        )
+
 
     console = Console()
     console.print(table)
-    console.print(f" {default_implementation} yes\n {not_implemented} no\n {custom_implementation} custom implementation")
+    console.print(f"""
+ {DEFAULT_IMPLEMENTATION} ───yes
+ {NOT_IMPLEMENTED} ───no
+ {CUSTOM_IMPLEMENTATION} ───custom implementation""")
     console.print("\n", "\n    ".join(['No block implementations for:'] + sorted(missing)))
