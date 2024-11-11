@@ -13,13 +13,15 @@ from django.db.models.fields.reverse_related import ManyToOneRel
 
 from loguru import logger
 
+from aplans.utils import underscore_to_camelcase
+from actions.blocks.column_block_base import ColumnBlockBase
 from .dynamic_blocks import generate_block_for_field
+
 
 if typing.TYPE_CHECKING:
     from django.utils.functional import _StrPromise
     from wagtail import blocks
 
-    from actions.blocks.action_dashboard import ColumnBlockBase
     from reports.report_formatters import ActionReportContentField, ReportFieldFormatter
 
 
@@ -42,6 +44,8 @@ class ModelFieldProperties:
     details_block_class: str | None = None
     report_block_class: str | None = None
     report_formatter_class: str | None = None
+
+    dashboard_column_block_class_name: str | None = None
 
     def __post_init__(self):
         if self.field_type is None and self.model is None:
@@ -284,8 +288,27 @@ class ModelFieldRegistry[T: type[Model]]:
         block = cls_()
         return block
 
-    def get_dashboard_column_block(self):
-        pass
+    def get_dashboard_column_block(self, field_name: str):
+        props = self[field_name]
+        if not props.has_dashboard_column_block:
+            return None
+        cls_ = props.get_dashboard_column_block_class()
+        params = {}
+        if props.custom_label:
+            params['label'] = props.custom_label
+        class_name = props.dashboard_column_block_class_name
+        if class_name is None:
+            class_name = f'{underscore_to_camelcase(field_name)}ColumnBlock'
+        if cls_ is None:
+            cls_ = generate_block_for_field(
+                self.model,
+                field_name,
+                params,
+                superclasses=(ColumnBlockBase,),
+                class_name=class_name,
+            )
+        block = cls_()
+        return block
 
     def get_details_block(self, field_name: str):
         props = self[field_name]

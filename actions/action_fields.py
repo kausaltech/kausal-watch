@@ -11,7 +11,8 @@ for blocks to be used in:
     - The action dashboard table columns
     - The action excel report types
 
-These share as much of the implementation as possible with each other.
+In the end, we would like these different blocks to share as much of the implementation
+as possible with each other.
 """
 from __future__ import annotations
 
@@ -69,21 +70,30 @@ register(
     field_name='attribute',
     field_type='Custom',
     has_report_block=True,
-    has_dashboard_column_block=False,
+    has_dashboard_column_block=True,
     has_details_block=True,
     details_block_class='actions.blocks.action_content.ActionContentAttributeTypeBlock',
     report_block_class='reports.blocks.action_content.ActionAttributeTypeReportFieldBlock',
     report_formatter_class='reports.report_formatters.ActionAttributeTypeReportFieldFormatter',
+    dashboard_column_block_class='actions.blocks.action_dashboard.FieldColumnBlock',
 )
 
 register(
     field_name='merged_actions',
     custom_label=_('Merged actions'),
+    has_dashboard_column_block=False,
 )
 
 register(
     field_name='official_name',
     details_block_class='actions.blocks.action_content.ActionOfficialNameBlock',
+    has_dashboard_column_block=False,
+)
+
+register(
+    field_name='primary_org',
+    has_dashboard_column_block=False,
+    dashboard_column_block_class_name='OrganizationColumnBlock',
 )
 
 is_valid = action_registry.is_valid()
