@@ -386,5 +386,5 @@ def debug_registry(registry: ModelFieldRegistry):
 
     console = Console()
     console.print(table)
-    console.print(f" Legend: yes {default_implementation}   no {not_implemented}   custom implementation {custom_implementation}")
+    console.print(f" {default_implementation} yes\n {not_implemented} no\n {custom_implementation} custom implementation")
     console.print("\n", "\n    ".join(['No block implementations for:'] + sorted(missing)))
