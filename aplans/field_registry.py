@@ -11,9 +11,12 @@ from django.db.models.fields import Field
 from django.db.models.fields.related import ForeignKey, ManyToManyField
 from django.db.models.fields.reverse_related import ManyToOneRel
 
+from loguru import logger
+
 from .dynamic_blocks import generate_block_for_field
 
 if typing.TYPE_CHECKING:
+    from django.utils.functional import _StrPromise
     from wagtail import blocks
 
     from actions.blocks.action_dashboard import ColumnBlockBase
@@ -26,8 +29,10 @@ type RegistryDict = dict[str, ModelFieldProperties]
 @dataclass
 class ModelFieldProperties:
     field_name: str
-    field_type: FieldType
-    field_name_verbose: str | None = None
+    field_type: FieldType | None = None
+    model: type[Model] | None = None
+    field_name_verbose: str | None = None  # TODO: strpromise too?
+    custom_label: _StrPromise | None = None
 
     has_dashboard_column_block: bool = True
     has_details_block: bool = True
@@ -37,6 +42,12 @@ class ModelFieldProperties:
     details_block_class: str | None = None
     report_block_class: str | None = None
     report_formatter_class: str | None = None
+
+    def __post_init__(self):
+        if self.field_type is None and self.model is None:
+            raise ValueError('Either field_type or model has to be set.')
+        if self.field_type is None:
+            self.field_type = self.get_field_type_for_field_name(self.field_name)
 
     @staticmethod
     def get_field_type(field) -> FieldType:
@@ -50,6 +61,12 @@ class ModelFieldProperties:
             return 'Field'
         msg = f'Unknown field type for {field}'
         raise TypeError(msg)
+
+    def get_field_type_for_field_name(self, field_name: str) -> FieldType:
+        if self.model is None:
+            raise ValueError('Cannot get field type without model')
+        field = self.model._meta.get_field(field_name)
+        return ModelFieldProperties.get_field_type(field)
 
     @staticmethod
     def create_with_defaults(model, field) -> ModelFieldProperties:
@@ -246,7 +263,11 @@ class ModelFieldRegistry[T: type[Model]]:
             details_block = props.get_details_block_class()
             if details_block:
                 details_block()
-            print(key, report_block or '-', report_formatter or '-', dashboard_column_block or '-', details_block or '-')
+            if props.has_dashboard_column_block and not props.has_report_block:
+                logger.error(
+                    f'Reporting block missing for field "{self.model.__name__}.{props.field_name}" with Dashboard column block',
+                )
+                return False
         return True
 
     def get_report_block(self, field_name: str) -> ActionReportContentField | None:
@@ -266,8 +287,18 @@ class ModelFieldRegistry[T: type[Model]]:
     def get_dashboard_column_block(self):
         pass
 
-    def get_details_block(self):
-        pass
+    def get_details_block(self, field_name: str):
+        props = self[field_name]
+        if not props.has_details_block:
+            return None
+        cls_ = props.get_details_block_class()
+        params = {}
+        if props.custom_label:
+            params['label'] = props.custom_label
+        if cls_ is None:
+            cls_ = generate_block_for_field(self.model, field_name, params)
+        block = cls_()
+        return block
 
 
 def debug_registry(registry: ModelFieldRegistry):
@@ -280,7 +311,7 @@ def debug_registry(registry: ModelFieldRegistry):
     table.add_column('Details page')
     table.add_column('Dashboard')
     table.add_column('Reporting')
-    table.add_column('Reporting formatter')
+    table.add_column('Custom formatter')
 
     def sort_key(p: ModelFieldProperties) -> tuple[Any, Any, Any, Any, Any]:
         return (
@@ -294,13 +325,14 @@ def debug_registry(registry: ModelFieldRegistry):
     missing = set()
     not_implemented = '○'
     default_implementation = '●'
-    custom_implementation = '◑ custom'
+    custom_implementation = '❄'
 
     for props in sorted(
         registry._registry.values(),
         key=sort_key,
     ):
         dashboard = report = details = not_implemented
+        formatter = ''
         if props.has_dashboard_column_block:
             dashboard = default_implementation
         if props.dashboard_column_block_class:
@@ -313,6 +345,8 @@ def debug_registry(registry: ModelFieldRegistry):
             details = default_implementation
         if props.details_block_class:
             details = custom_implementation
+        if props.report_formatter_class:
+            formatter = custom_implementation
 
         if not all((x == not_implemented) for x in (dashboard, report, details)):
             table.add_row(
@@ -321,12 +355,12 @@ def debug_registry(registry: ModelFieldRegistry):
                 details,
                 dashboard,
                 report,
-                props.report_formatter_class,
+                formatter,
             )
         else:
             missing.add(props.field_name)
 
     console = Console()
     console.print(table)
-    console.print()
-    console.print("\n    ".join(['No block implementations for:'] + sorted(missing)))
+    console.print(f" Legend: yes {default_implementation}   no {not_implemented}   custom implementation {custom_implementation}")
+    console.print("\n", "\n    ".join(['No block implementations for:'] + sorted(missing)))
