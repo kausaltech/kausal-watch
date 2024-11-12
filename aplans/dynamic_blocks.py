@@ -70,6 +70,7 @@ def _get_default_block_class_name_(model: type[models.Model], field_name: str) -
 def generate_block_for_field(
         model: type[models.Model],
         field_name: str,
+        target_module: object,
         params: dict | None = None,
         superclasses: tuple[type[blocks.Block], ...] = (
             ActionListContentBlock,
@@ -102,5 +103,6 @@ def generate_block_for_field(
         attrs['report_value_formatter_class'] = params['report_value_formatter_class']
 
     klass = type(class_name, superclasses, attrs)
+    setattr(target_module, class_name, klass)
     register_streamfield_block(klass)
     return klass

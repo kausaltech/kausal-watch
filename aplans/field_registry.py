@@ -150,12 +150,14 @@ class ModelFieldRegistry[T: type[Model]]:
     model: T
     _registry: RegistryDict
     disabled_fields: set[str]
+    target_module: object
     _details_block_class_cache: dict[str, type[blocks.Block]]
     _dashboard_block_class_cache: dict[str, type[blocks.Block]]
     _report_block_class_cache: dict[str, type[blocks.Block]]
 
-    def __init__(self, model: T):
+    def __init__(self, model: T, target_module: object):
         self.model = model
+        self.target_module = target_module
         self._registry: RegistryDict = dict()
         self.disabled_fields = set()
         self._details_block_class_cache = dict()
@@ -234,11 +236,11 @@ class ModelFieldRegistry[T: type[Model]]:
         params = {}
         if formatter_cls_:
             params['report_value_formatter_class'] = formatter_cls_
-        value = generate_block_for_field(self.model, field_name, params)
+        value = generate_block_for_field(self.model, field_name, target_module=self.target_module, params=params)
         self._report_block_class_cache[field_name] = value
         return value
 
-    def get_dashboard_column_block_class(self, field_name: str) -> type[blocks.Block]:
+    def get_dashboard_column_block_class(self, field_name: str) -> type[blocks.Block] | None:
         cached = self._dashboard_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -258,7 +260,8 @@ class ModelFieldRegistry[T: type[Model]]:
         value = generate_block_for_field(
             self.model,
             field_name,
-            params,
+            target_module=self.target_module,
+            params=params,
             superclasses=(ColumnBlockBase,),
             class_name=class_name,
             graphql_interfaces=(DashboardColumnInterface,),
@@ -266,7 +269,7 @@ class ModelFieldRegistry[T: type[Model]]:
         self._dashboard_block_class_cache[field_name] = value
         return value
 
-    def get_details_block_class(self, field_name: str) -> type[blocks.Block]:
+    def get_details_block_class(self, field_name: str) -> type[blocks.Block] | None:
         cached = self._details_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -280,7 +283,12 @@ class ModelFieldRegistry[T: type[Model]]:
         params = {}
         if props.custom_label:
             params['label'] = props.custom_label
-        value = generate_block_for_field(self.model, field_name, params)
+        value = generate_block_for_field(
+            self.model,
+            field_name,
+            target_module=self.target_module,
+            params=params,
+        )
         self._details_block_class_cache[field_name] = value
         return value
 
@@ -290,11 +298,15 @@ class ModelFieldRegistry[T: type[Model]]:
         return block
 
     def get_dashboard_column_block(self, field_name: str):
-        cls_ = self.get_dashboard_column_class()
+        cls_ = self.get_dashboard_column_block_class(field_name)
+        if cls_ is None:
+            return None
         return cls_()
 
     def get_details_block(self, field_name: str) -> blocks.Block:
         cls_ = self.get_details_block_class(field_name)
+        if cls_ is None:
+            return None
         return cls_()
 
 
