@@ -34,26 +34,26 @@ def register(*field_names, **kwargs):
 def initialize():
     # The following fields will have no blocks created for them whatsoever
     action_registry.disable_fields(
-        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact',
-        'impact_groups', 'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous',
-        'status_updates', 'superseded_actions', 'superseded_by', 'uuid', 'visibility',
+        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact_groups',
+        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
+        'superseded_actions', 'superseded_by', 'uuid', 'visibility',
     )
 
     register(
         'responsible_parties',
-        field_type='ManyToOneRel',
+        field_type='many',
         report_block_class='reports.blocks.action_content.ActionResponsiblePartyReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionResponsiblePartyReportFieldFormatter',
         details_block_class='actions.blocks.action_content_blocks.ActionResponsiblePartiesBlock',
     )
     register(
         'tasks',
-        field_type='ManyToOneRel',
+        field_type='many',
         report_formatter_class='reports.report_formatters.ActionTasksFormatter',
     )
     register(
         'categories',
-        field_type='ManyToManyField',
+        field_type='many',
         report_block_class='reports.blocks.action_content.ActionCategoryReportFieldBlock',
         report_formatter_class='reports.report_formatters.ActionCategoryReportFieldFormatter',
         has_dashboard_column_block=False,
@@ -61,7 +61,7 @@ def initialize():
     )
     register(
         'dependencies',
-        field_type='Custom',
+        field_type='custom',
         has_report_block=False,
         has_dashboard_column_block=False,
         has_details_block=True,
@@ -69,7 +69,7 @@ def initialize():
     )
     register(
         'attribute',
-        field_type='Custom',
+        field_type='custom',
         has_report_block=True,
         has_dashboard_column_block=True,
         has_details_block=True,
@@ -93,7 +93,7 @@ def initialize():
     )
     register(
         'related_indicators',
-        dashboard_column_block_class_name='InidicatorsColumnBlock',
+        dashboard_column_block_class_name='IndicatorsColumnBlock',
         has_report_block=False,
     )
     register(
@@ -117,6 +117,7 @@ def initialize():
         'identifier',
         'updated_at',
         'name',
+        'impact',  # deprecated
         has_details_block=False,
         has_report_block=False,
     )

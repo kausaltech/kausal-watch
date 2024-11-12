@@ -28,6 +28,7 @@ ActionDashboardColumnBlock = generate_stream_block(
     fields = (
         'identifier',
         'name',
+        'impact',
         'implementation_phase',
         'status',
         'tasks',

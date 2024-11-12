@@ -96,7 +96,7 @@ def generate_block_for_field(
 
     attrs = {
         'Meta': meta,
-        '__module__': __name__,
+        #'__module__': target_module,
         'graphql_interfaces': (FieldBlockMetaInterface, ) + graphql_interfaces,
     }
     if 'report_value_formatter_class' in params:
