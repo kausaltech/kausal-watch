@@ -15,9 +15,12 @@ from actions.models.category import CategoryType
 from reports.blocks.report_comparison_block import ReportComparisonBlock
 
 from .action_content_blocks import (
+    # These are here for migration compatibility
     ActionContactFormBlock,
     ActionContentAttributeTypeBlock,
     ActionContentCategoryTypeBlock,
+    ActionOfficialNameBlock,  # noqa: F401
+    ActionResponsiblePartiesBlock,  # noqa: F401
     IndicatorCausalChainBlock,
     PlanDatasetsBlock,
 )
