@@ -20,9 +20,10 @@ from django.utils.translation import gettext_lazy as _
 
 from aplans.field_registry import ModelFieldProperties, ModelFieldRegistry
 
+from .blocks import generated
 from .models.action import Action
 
-action_registry = ModelFieldRegistry(Action)
+action_registry = ModelFieldRegistry(Action, generated)
 
 def register(*field_names, **kwargs):
     for field_name in field_names:
