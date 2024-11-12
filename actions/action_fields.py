@@ -33,9 +33,9 @@ def register(*field_names, **kwargs):
 def initialize():
     # The following fields will have no blocks created for them whatsoever
     action_registry.disable_fields(
-        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact', 'impact_groups',
-        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
-        'superseded_actions', 'superseded_by', 'uuid', 'visibility',
+        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact',
+        'impact_groups', 'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous',
+        'status_updates', 'superseded_actions', 'superseded_by', 'uuid', 'visibility',
     )
 
     register(
