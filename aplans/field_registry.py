@@ -161,6 +161,7 @@ class ModelFieldRegistry[T: type[Model]]:
         self._details_block_class_cache = dict()
         self._dashboard_block_class_cache = dict()
         self._report_block_class_cache = dict()
+        self._common_block_class_cache = dict()
 
     def disable_fields(self, *fields: str) -> None:
         self.disabled_fields.update(fields)
@@ -220,7 +221,7 @@ class ModelFieldRegistry[T: type[Model]]:
                 result = False
         return result
 
-    def get_report_block_class(self, field_name: str) -> type[blocks.Block] | None:
+    def get_report_block_class(self, field_name: str) -> type[blocks.Block]:
         cached = self._report_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -234,11 +235,16 @@ class ModelFieldRegistry[T: type[Model]]:
         params = {}
         if formatter_cls_:
             params['report_value_formatter_class'] = formatter_cls_
-        value = generate_block_for_field(self.model, field_name, target_module=self.target_module, params=params)
+        if props.custom_label:
+            params['label'] = props.custom_label
+        value = self._common_block_class_cache.get(field_name)
+        if value is None:
+            value = generate_block_for_field(self.model, field_name, target_module=self.target_module, params=params)
         self._report_block_class_cache[field_name] = value
+        self._common_block_class_cache[field_name] = value
         return value
 
-    def get_dashboard_column_block_class(self, field_name: str) -> type[blocks.Block] | None:
+    def get_dashboard_column_block_class(self, field_name: str) -> type[blocks.Block]:
         cached = self._dashboard_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -267,7 +273,7 @@ class ModelFieldRegistry[T: type[Model]]:
         self._dashboard_block_class_cache[field_name] = value
         return value
 
-    def get_details_block_class(self, field_name: str) -> type[blocks.Block] | None:
+    def get_details_block_class(self, field_name: str) -> type[blocks.Block]:
         cached = self._details_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -279,15 +285,21 @@ class ModelFieldRegistry[T: type[Model]]:
         if cls_ is not None:
             return cls_
         params = {}
+        formatter_cls_ = props.get_report_formatter_class()
+        if formatter_cls_:
+            params['report_value_formatter_class'] = formatter_cls_
         if props.custom_label:
             params['label'] = props.custom_label
-        value = generate_block_for_field(
-            self.model,
-            field_name,
-            target_module=self.target_module,
-            params=params,
-        )
+        value = self._common_block_class_cache.get(field_name)
+        if value is None:
+            value = generate_block_for_field(
+                self.model,
+                field_name,
+                target_module=self.target_module,
+                params=params,
+            )
         self._details_block_class_cache[field_name] = value
+        self._common_block_class_cache[field_name] = value
         return value
 
     def get_report_block(self, field_name: str) -> ActionReportContentField | None:

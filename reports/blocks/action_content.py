@@ -9,7 +9,7 @@ from wagtail.admin.panels import HelpPanel
 
 from grapple.helpers import register_streamfield_block
 
-#from actions.blocks.action_content import get_action_block_for_field
+from actions.action_fields import action_registry
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
 from reports import report_formatters as formatters
 from reports.report_formatters import ActionReportContentField
@@ -115,7 +115,7 @@ We are reusing generated action field block classes from the action app
 If adding reporting support for a block, the block should be explicitly added here
 and correct report generation should be verified.
 """
-from actions.action_fields import action_registry
+
 ActionDescriptionBlock = action_registry.get_report_block_class('description')
 ActionManualStatusReasonBlock = action_registry.get_report_block_class('manual_status_reason')
 ActionTasksBlock = action_registry.get_report_block_class('tasks')
