@@ -7,25 +7,11 @@ from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
 
-# from actions.blocks.action_content import (
-#     ActionAsideContentBlock,
-#     ActionContactFormBlock,
-#     # If you're wondering about unknown import symbol errors:
-#     # The types below are defined by metaprogramming
-#     #ActionContactPersonsBlock,  # type: ignore
-#     ActionDependenciesBlock,  # type: ignore
-#     ActionDescriptionBlock,  # type: ignore
-#     ActionLeadParagraphBlock,  # type: ignore
-#     ActionLinksBlock,  # type: ignore
-#     ActionMainContentBlock,
-#     ActionMergedActionsBlock,  # type: ignore
-#     ActionOfficialNameBlock,
-#     ActionRelatedActionsBlock,  # type: ignore
-#     ActionRelatedIndicatorsBlock,  # type: ignore
-#     ActionResponsiblePartiesBlock,
-#     ActionScheduleBlock,  # type: ignore
-#     ActionTasksBlock,  # type: ignore
-# )
+from actions.blocks.action_content import (
+    ActionAsideContentBlock,
+    ActionMainContentBlock,
+)
+
 # from actions.blocks.action_dashboard import (
 #     ActionDashboardColumnBlock,
 #     EndDateColumnBlock,
