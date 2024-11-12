@@ -26,13 +26,13 @@ if typing.TYPE_CHECKING:
     from reports.report_formatters import ActionReportContentField, ReportFieldFormatter
 
 
-type FieldType = Literal['Field', 'ManyToOneRel', 'ForeignKey', 'ManyToManyField', 'Custom']
+type FieldType = Literal['primitive', 'single', 'many']
 type RegistryDict = dict[str, ModelFieldProperties]
 
 @dataclass
 class ModelFieldProperties:
     field_name: str
-    field_type: FieldType | None = None
+    field_type: FieldType = 'primitive'
     model: type[Model] | None = None
     #field_name_verbose: str | None = None  # TODO: strpromise too?
     custom_label: _StrPromise | None = None
@@ -58,13 +58,13 @@ class ModelFieldProperties:
     @staticmethod
     def get_field_type(field) -> FieldType:
         if isinstance(field, ForeignKey):
-            return 'ForeignKey'
+            return 'single'
         if isinstance(field, ManyToOneRel):
-            return 'ManyToOneRel'
+            return 'many'
         if isinstance(field, ManyToManyField):
-            return 'ManyToManyField'
+            return 'many'
         if isinstance(field, Field):
-            return 'Field'
+            return 'primitive'
         msg = f'Unknown field type for {field}'
         raise TypeError(msg)
 
@@ -77,9 +77,7 @@ class ModelFieldProperties:
     @staticmethod
     def create_with_defaults(model, name) -> ModelFieldProperties:
         #field_type = ModelFieldProperties.get_field_type(field)
-        field_type = 'DEFAULT'
         return ModelFieldProperties(
-            field_type=field_type,
             field_name=name,
             #field_name_verbose=getattr(field, 'verbose_name', None),  ##  ! verbose name ..
             # ( by the way this is lazy anyway :D)
@@ -222,7 +220,7 @@ class ModelFieldRegistry[T: type[Model]]:
                 result = False
         return result
 
-    def get_report_block_class(self, field_name: str) -> type[blocks.Block]:
+    def get_report_block_class(self, field_name: str) -> type[blocks.Block] | None:
         cached = self._report_block_class_cache.get(field_name)
         if cached:
             return cached
@@ -294,8 +292,9 @@ class ModelFieldRegistry[T: type[Model]]:
 
     def get_report_block(self, field_name: str) -> ActionReportContentField | None:
         cls_ = self.get_report_block_class(field_name)
-        block = cls_()
-        return block
+        if cls_ is None:
+            return None
+        return cls_()
 
     def get_dashboard_column_block(self, field_name: str):
         cls_ = self.get_dashboard_column_block_class(field_name)

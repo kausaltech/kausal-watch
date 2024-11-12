@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from django.utils.translation import gettext_lazy as _
-from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLForeignKey
@@ -10,78 +9,78 @@ from actions.blocks.choosers import ActionAttributeTypeChooserBlock
 from actions.models.attributes import AttributeType
 
 from .column_block_base import ColumnBlockBase
+from .stream_block import generate_stream_block
+
+# @register_streamfield_block
+# class IdentifierColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Identifier")
 
 
-@register_streamfield_block
-class IdentifierColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Identifier")
+# @register_streamfield_block
+# class NameColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Name")
 
 
-@register_streamfield_block
-class NameColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Name")
+# @register_streamfield_block
+# class ImplementationPhaseColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Implementation phase")
 
 
-@register_streamfield_block
-class ImplementationPhaseColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Implementation phase")
+# @register_streamfield_block
+# class StatusColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Status")
 
 
-@register_streamfield_block
-class StatusColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Status")
+# @register_streamfield_block
+# class TasksColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Tasks")
 
 
-@register_streamfield_block
-class TasksColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Tasks")
+# @register_streamfield_block
+# class ResponsiblePartiesColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Responsible parties")
 
 
-@register_streamfield_block
-class ResponsiblePartiesColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Responsible parties")
+# @register_streamfield_block
+# class IndicatorsColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Indicators")
 
 
-@register_streamfield_block
-class IndicatorsColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Indicators")
+# @register_streamfield_block
+# class UpdatedAtColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Updated at")
 
 
-@register_streamfield_block
-class UpdatedAtColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Updated at")
+# @register_streamfield_block
+# class StartDateColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Start date")
 
 
-@register_streamfield_block
-class StartDateColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Start date")
+# @register_streamfield_block
+# class EndDateColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("End date")
 
 
-@register_streamfield_block
-class EndDateColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("End date")
+# @register_streamfield_block
+# class OrganizationColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Organization")
 
 
-@register_streamfield_block
-class OrganizationColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Organization")
-
-
-@register_streamfield_block
-class ImpactColumnBlock(ColumnBlockBase):
-    class Meta:
-        label = _("Impact")
+# @register_streamfield_block
+# class ImpactColumnBlock(ColumnBlockBase):
+#     class Meta:
+#         label = _("Impact")
 
 @register_streamfield_block
 class FieldColumnBlock(ColumnBlockBase):
@@ -94,23 +93,46 @@ class FieldColumnBlock(ColumnBlockBase):
     ]
 
 
-@register_streamfield_block
-class ActionDashboardColumnBlock(blocks.StreamBlock):
-    identifier = IdentifierColumnBlock()
-    name = NameColumnBlock()
-    implementation_phase = ImplementationPhaseColumnBlock()
-    status = StatusColumnBlock()
-    tasks = TasksColumnBlock()
-    responsible_parties = ResponsiblePartiesColumnBlock()
-    indicators = IndicatorsColumnBlock()
-    updated_at = UpdatedAtColumnBlock()
-    start_date = StartDateColumnBlock()
-    end_date = EndDateColumnBlock()
-    organization = OrganizationColumnBlock()
-    field = FieldColumnBlock()
 
-    graphql_types = [
-        IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
-        ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, StartDateColumnBlock,
-        EndDateColumnBlock, OrganizationColumnBlock, FieldColumnBlock,
-    ]
+
+
+ActionDashboardColumnBlock = generate_stream_block(
+    'ActionDashboardColumnBlock',
+    fields = (
+        'identifier',
+        'name',
+        'implementation_phase',
+        'status',
+        'tasks',
+        'responsible_parties',
+        'updated_at',
+        'start_date',
+        'end_date',
+        ('fields', 'attribute'),
+        ('indicators', 'related_indicators'),
+        ('organization', 'primary_org'),
+    ),
+    support_editing_from_other_form=False,
+    block_type='dashboard',
+)
+
+# @register_streamfield_block
+# class ActionDashboardColumnBlock(blocks.StreamBlock):
+#     identifier = IdentifierColumnBlock()
+#     name = NameColumnBlock()
+#     implementation_phase = ImplementationPhaseColumnBlock()
+#     status = StatusColumnBlock()
+#     tasks = TasksColumnBlock()
+#     responsible_parties = ResponsiblePartiesColumnBlock()
+#--     indicators = IndicatorsColumnBlock()
+#     updated_at = UpdatedAtColumnBlock()
+#     start_date = StartDateColumnBlock()
+#     end_date = EndDateColumnBlock()
+#--     organization = OrganizationColumnBlock()
+#--     field = FieldColumnBlock()
+
+#     graphql_types = [
+#         IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
+#         ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, StartDateColumnBlock,
+#         EndDateColumnBlock, OrganizationColumnBlock, FieldColumnBlock,
+#     ]

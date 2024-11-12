@@ -50,7 +50,6 @@ def initialize():
         'tasks',
         field_type='ManyToOneRel',
         report_formatter_class='reports.report_formatters.ActionTasksFormatter',
-        dashboard_column_block_class='actions.blocks.action_dashboard.TasksColumnBlock',
     )
     register(
         'categories',
