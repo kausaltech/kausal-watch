@@ -11,76 +11,6 @@ from actions.models.attributes import AttributeType
 from .column_block_base import ColumnBlockBase
 from .stream_block import generate_stream_block
 
-# @register_streamfield_block
-# class IdentifierColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Identifier")
-
-
-# @register_streamfield_block
-# class NameColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Name")
-
-
-# @register_streamfield_block
-# class ImplementationPhaseColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Implementation phase")
-
-
-# @register_streamfield_block
-# class StatusColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Status")
-
-
-# @register_streamfield_block
-# class TasksColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Tasks")
-
-
-# @register_streamfield_block
-# class ResponsiblePartiesColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Responsible parties")
-
-
-# @register_streamfield_block
-# class IndicatorsColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Indicators")
-
-
-# @register_streamfield_block
-# class UpdatedAtColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Updated at")
-
-
-# @register_streamfield_block
-# class StartDateColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Start date")
-
-
-# @register_streamfield_block
-# class EndDateColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("End date")
-
-
-# @register_streamfield_block
-# class OrganizationColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Organization")
-
-
-# @register_streamfield_block
-# class ImpactColumnBlock(ColumnBlockBase):
-#     class Meta:
-#         label = _("Impact")
 
 @register_streamfield_block
 class FieldColumnBlock(ColumnBlockBase):
@@ -91,9 +21,6 @@ class FieldColumnBlock(ColumnBlockBase):
     graphql_fields = ColumnBlockBase.graphql_fields + [
         GraphQLForeignKey('attribute_type', AttributeType),
     ]
-
-
-
 
 
 ActionDashboardColumnBlock = generate_stream_block(
@@ -115,24 +42,3 @@ ActionDashboardColumnBlock = generate_stream_block(
     support_editing_from_other_form=False,
     block_type='dashboard',
 )
-
-# @register_streamfield_block
-# class ActionDashboardColumnBlock(blocks.StreamBlock):
-#     identifier = IdentifierColumnBlock()
-#     name = NameColumnBlock()
-#     implementation_phase = ImplementationPhaseColumnBlock()
-#     status = StatusColumnBlock()
-#     tasks = TasksColumnBlock()
-#     responsible_parties = ResponsiblePartiesColumnBlock()
-#--     indicators = IndicatorsColumnBlock()
-#     updated_at = UpdatedAtColumnBlock()
-#     start_date = StartDateColumnBlock()
-#     end_date = EndDateColumnBlock()
-#--     organization = OrganizationColumnBlock()
-#--     field = FieldColumnBlock()
-
-#     graphql_types = [
-#         IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
-#         ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, StartDateColumnBlock,
-#         EndDateColumnBlock, OrganizationColumnBlock, FieldColumnBlock,
-#     ]
