@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
     from reports.report_formatters import ActionReportContentField, ReportFieldFormatter
 
 
-type FieldType = Literal['primitive', 'single', 'many']
+type FieldType = Literal['primitive', 'single', 'many', 'custom']
 type RegistryDict = dict[str, ModelFieldProperties]
 
 @dataclass
