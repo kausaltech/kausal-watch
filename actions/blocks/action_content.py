@@ -1,46 +1,61 @@
 from __future__ import annotations
 
-from django.utils.translation import gettext_lazy as _
 import typing
+
+from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLStreamfield, GraphQLString
 
-from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.action_fields import action_registry
+from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 from reports.blocks.report_comparison_block import ReportComparisonBlock
+
 from .action_content_blocks import (
-    PlanDatasetsBlock,
-    IndicatorCausalChainBlock,
     ActionContactFormBlock,
     ActionContentAttributeTypeBlock,
     ActionContentCategoryTypeBlock,
+    IndicatorCausalChainBlock,
+    PlanDatasetsBlock,
 )
 
 
-# def generate_blocks_for_fields(model: type[models.Model], fields: list[str | tuple[str, dict]]):
-#     out = {}
-#     for field_name in fields:
-#         if isinstance(field_name, tuple):
-#             field_name, params = field_name
-#         else:
-#             params = {}
-#         klass = generate_block_for_field(model, field_name, params)
-#         globals()[klass.__name__] = klass
-#         out[field_name] = klass
-#     return out
-
-
 def generate_stream_block(
-    name: str, fields: typing.Iterable[str | tuple[str, blocks.Block]],
-    mixins: tuple[type[blocks.Block], ...] = tuple(),
-    extra_args=None,
+    name: str,
+    fields: typing.Iterable[str | tuple[str, blocks.Block]],
+    support_editing_from_other_form: bool = False,
 ):
-    if extra_args is None:
-        extra_args = {}
+    """
+    Dynamically generates a stream block based on desired action fields.
+
+    If an element in the fields iterable is a tuple, the first of the pair is the field name
+    and the last of the pair is an already instantiated block that can be directly used.
+
+    If an element is a string, the action field registry will be used to
+    retrieve the correct block for that action field. (Those might be dynamically
+    created classes or customized static classes.)
+
+    If support_editing_from_other_form is True, add support to edit
+    part of this block from a related model instance's edit form.
+    Currently we support editing
+      - an AttributeType's block from within the AttributeType's edit form and
+      - a CategoryType's block from within the CategoryType's edit form.
+    """
+    mixins: tuple[type[typing.Any], ...] = tuple()
+    extra_args = dict()
+
+    if support_editing_from_other_form:
+        mixins += (ActionListPageBlockPresenceMixin,)
+        extra_args = {
+            'model_instance_container_blocks': {
+                AttributeType: 'attribute',
+                CategoryType: 'categories',
+            },
+        }
+
     field_blocks = {}
     graphql_types = list()
     for field in fields:
@@ -65,27 +80,6 @@ def generate_stream_block(
 
     register_streamfield_block(block_class)
     return block_class
-
-
-# action_attribute_blocks = generate_blocks_for_fields(Action, [
-#     ('lead_paragraph', {'label': _('Lead paragraph')}),                 # blocks.details.default
-#     'description',                                                      # blocks.details.default
-#     'schedule',                                                         # blocks.details.default
-#     'links',                                                            # blocks.details.default
-#     ('tasks', {'report_value_formatter_class': ActionTasksFormatter}),  # blocks.details.default (custom formatter!)
-#     ('merged_actions', {'label': _('Merged actions')}),                 # blocks.details.default
-#     ('related_actions', {'label': _('Related actions')}),               # blocks.details.default
-#     ('dependencies', {'label': _('Action dependencies')}),              # blocks.details.default
-#     'related_indicators',                                               # blocks.details.default
-#     'contact_persons',                                                  # blocks.details.default
-# ])
-
-# def get_action_block_for_field(field_name):  # blocks.report called from there!
-#     if field_name in action_attribute_blocks:
-#         return action_attribute_blocks[field_name]
-#     klass = generate_block_for_field(Action, field_name)
-#     globals()[klass.__name__] = klass
-#     return klass
 
 
 ActionContentSectionElementBlock = generate_stream_block(
@@ -118,14 +112,6 @@ class ActionContentSectionBlock(blocks.StructBlock):
     ]
 
 
-action_content_extra_args = {
-    'model_instance_container_blocks': {
-        AttributeType: 'attribute',
-        CategoryType: 'categories',
-    },
-}
-
-
 ActionMainContentBlock = generate_stream_block(
     'ActionMainContentBlock',
     fields=(
@@ -146,10 +132,7 @@ ActionMainContentBlock = generate_stream_block(
         ('indicator_causal_chain', IndicatorCausalChainBlock()),
         ('datasets', PlanDatasetsBlock()),
     ),
-    mixins=(ActionListPageBlockPresenceMixin,),
-    extra_args={
-        **action_content_extra_args,
-    },
+    support_editing_from_other_form=True,
 )
 
 ActionAsideContentBlock = generate_stream_block(
@@ -161,8 +144,5 @@ ActionAsideContentBlock = generate_stream_block(
         'attribute',
         'categories',
     ],
-    mixins=(ActionListPageBlockPresenceMixin,),
-    extra_args={
-        **action_content_extra_args,
-    },
+    support_editing_from_other_form=True,
 )
