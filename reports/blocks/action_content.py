@@ -110,10 +110,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
 
 """
-We are reusing generated action field block classes from the action app
-
-If adding reporting support for a block, the block should be explicitly added here
-and correct report generation should be verified.
+Whenever possible, try to use the existing report block classes
+that can be retrieved from the action_registry
 """
 
 ActionDescriptionBlock = action_registry.get_report_block_class('description')
@@ -130,6 +128,7 @@ class ReportFieldBlock(blocks.StreamBlock):
     responsible_party = ActionResponsiblePartyReportFieldBlock()
     category = ActionCategoryReportFieldBlock()
     status = ActionStatusReportFieldBlock()
+
     manual_status_reason = ActionManualStatusReasonBlock()
     description = ActionDescriptionBlock()
     tasks = ActionTasksBlock()
