@@ -28,7 +28,7 @@ action_registry = ModelFieldRegistry(Action, generated)
 def register(*field_names, **kwargs):
     for field_name in field_names:
         action_registry.register(
-            ModelFieldProperties(field_name=field_name, **kwargs, model=Action),
+            ModelFieldProperties(field_name=field_name, **kwargs),
         )
 
 def initialize():
@@ -132,6 +132,6 @@ def initialize():
         has_details_block=False,
     )
 
-    action_registry.update_with_defaults()
 
 initialize()
+action_registry.update_with_defaults()

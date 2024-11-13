@@ -11,12 +11,15 @@ from actions.blocks.mixins import ActionListPageBlockPresenceMixin
 from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 
+if typing.TYPE_CHECKING:
+    from aplans.field_registry import BlockContext
+
 
 def generate_stream_block(
     name: str,
     fields: typing.Iterable[str | tuple[str, blocks.Block] | tuple[str, str]],
     support_editing_from_other_form: bool = False,
-    block_type: typing.Literal['details', 'dashboard'] = 'details',
+    block_context: BlockContext = 'details',
 ):
     """
     Dynamically generates a stream block based on desired action fields.
@@ -65,11 +68,7 @@ def generate_stream_block(
             else:
                 field_name = field
                 target_field_name = field_name
-            if block_type == 'details':
-                block = action_registry.get_details_block(field_name)
-            else:
-                assert block_type == 'dashboard'
-                block = action_registry.get_dashboard_column_block(field_name)
+            block = action_registry.get_block(block_context, field_name)
 
         block_cls = type(block)
         if block_cls not in graphql_types:
