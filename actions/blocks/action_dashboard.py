@@ -41,5 +41,5 @@ ActionDashboardColumnBlock = generate_stream_block(
         ('organization', 'primary_org'),
     ),
     support_editing_from_other_form=False,
-    block_type='dashboard',
+    block_context='dashboard',
 )

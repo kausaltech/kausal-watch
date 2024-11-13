@@ -111,12 +111,13 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
 """
 Whenever possible, try to use the existing report block classes
-that can be retrieved from the action_registry
+that can be retrieved from the action_registry instead of implenting
+a custom ReportFieldBlock from scratch.
 """
 
-ActionDescriptionBlock = action_registry.get_report_block_class('description')
-ActionManualStatusReasonBlock = action_registry.get_report_block_class('manual_status_reason')
-ActionTasksBlock = action_registry.get_report_block_class('tasks')
+ActionDescriptionBlock = action_registry.get_block_class('report', 'description')
+ActionManualStatusReasonBlock = action_registry.get_block_class('report', 'manual_status_reason')
+ActionTasksBlock = action_registry.get_block_class('report', 'tasks')
 
 
 @register_streamfield_block
