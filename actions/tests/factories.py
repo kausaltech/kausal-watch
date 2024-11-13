@@ -17,6 +17,7 @@ from factory.declarations import LazyAttribute, RelatedFactory, SelfAttribute, S
 from factory.helpers import post_generation
 
 from aplans.factories import ModelFactory
+from aplans.utils import RestrictedVisibilityModel
 
 from actions.blocks import ActionListBlock, CategoryListBlock
 from actions.models import (
@@ -79,6 +80,7 @@ class PlanFactory(ModelFactory[Plan]):
         'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan',
     )
     kausal_paths_instance_uuid = 'paths_uuid'
+    visibility = RestrictedVisibilityModel.VisibilityState.PUBLIC
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Plan:

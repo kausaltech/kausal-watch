@@ -111,7 +111,6 @@ PublicationStatusNode = graphene.Enum.from_enum(PublicationStatus)
 class PlanDomainNode(DjangoNode):
     status = PublicationStatusNode(source='status')
     status_message = graphene.String(required=False, source='status_message')
-
     class Meta:
         model = PlanDomain
         fields = (
@@ -124,6 +123,9 @@ class PlanDomainNode(DjangoNode):
             'status_message',
         )
 
+    @staticmethod
+    def resolve_plan(root: PlanDomain, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class PlanFeaturesNode(DjangoNode):
     public_contact_persons = graphene.Boolean(required=True)
@@ -269,6 +271,7 @@ class PlanNode(DjangoNode):
 
     has_indicator_relationships = graphene.Boolean()
 
+
     @staticmethod
     def resolve_action_status_summaries(root: Plan, info):
         return list(a.get_data({'plan': root}) for a in ActionStatusSummaryIdentifier)
@@ -340,7 +343,7 @@ class PlanNode(DjangoNode):
 
     @staticmethod
     def resolve_admin_url(root: Plan, info):
-        if not root.features.show_admin_link:
+        if not root.features.show_admin_link or not root.is_visible_for_user(info.context.user):
             return None
         client_plan = root.clients.first()
         if client_plan is None:
@@ -426,7 +429,7 @@ class PlanNode(DjangoNode):
         select_related=('parent',),
     )
     def resolve_all_related_plans(root: Plan, info):
-        return root.get_all_related_plans()
+        return root.get_all_related_plans().visible_for_user(info.context.user)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -462,11 +465,16 @@ class PlanNode(DjangoNode):
 
     @staticmethod
     def resolve_superseding_plans(root: Plan, info, recursive=False):
-        return root.get_superseding_plans(recursive)
+        return root.get_superseding_plans(recursive, info.context.user)
 
     @staticmethod
     def resolve_superseded_plans(root: Plan, info, recursive=False):
-        return root.get_superseded_plans(recursive)
+        return root.get_superseded_plans(recursive).visible_for_user(info.context.user)
+
+    @staticmethod
+    def resolve_superseded_by(root: Plan, info) -> Plan | None:
+        superseded_by = root.superseded_by
+        return superseded_by.get_if_visible(info.context.user) if superseded_by else None
 
     @staticmethod
     def resolve_has_indicator_relationships(root: Plan, info):
@@ -634,7 +642,6 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
         only_with_actions=graphene.Boolean(default_value=False),
         required=True,
     )
-
     class Meta:
         model = CategoryType
         fields = public_fields(CategoryType, remove_fields=['select_widget'])
@@ -674,6 +681,10 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
         if only_root:
             qs = qs.filter(parent__isnull=True)
         return qs
+
+    @staticmethod
+    def resolve_plan(root: CategoryType, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 
 @register_django_node
@@ -897,6 +908,9 @@ class ImpactGroupNode(DjangoNode):
         model = ImpactGroup
         fields = public_fields(ImpactGroup)
 
+    @staticmethod
+    def resolve_plan(root: ImpactGroup, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class ImpactGroupActionNode(DjangoNode):
     class Meta:
@@ -913,6 +927,9 @@ class MonitoringQualityPointNode(DjangoNode):
         model = MonitoringQualityPoint
         fields = public_fields(MonitoringQualityPoint)
 
+    @staticmethod
+    def resolve_plan(root: MonitoringQualityPoint, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class ActionTaskNode(DjangoNode):
     class Meta:
@@ -1126,6 +1143,9 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         return root.get_previous_action(info.context.user)
 
     @staticmethod
+    def resolve_plan(root: Action, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
+
     @gql_optimizer.resolver_hints(
         model_field='related_indicators',
     )
@@ -1190,6 +1210,8 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
 
     @staticmethod
     def resolve_edit_url(root: Action, info):
+        if not root.plan.is_visible_for_user(info.context.user):
+            return None
         client_plan = root.plan.clients.first()
         if client_plan is None:
             return None
@@ -1216,6 +1238,8 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     def resolve_contact_persons(root: Action, info: GQLInfo, show_all_contact_persons: bool):
         plan: Plan = get_plan_from_context(info)
         user = info.context.user
+        if not plan.is_visible_for_user(user):
+            return []
         cache = info.context.watch_cache.for_plan(plan)
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
 
@@ -1297,6 +1321,9 @@ class ActionScheduleNode(DjangoNode):
         model = ActionSchedule
         fields = public_fields(ActionSchedule)
 
+    @staticmethod
+    def resolve_plan(root: ActionSchedule, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class ActionStatusNode(DjangoNode):
     class Meta:
@@ -1307,12 +1334,19 @@ class ActionStatusNode(DjangoNode):
     def resolve_color(root: ActionStatus, info: GQLInfo):
         return root.get_color(cache=info.context.watch_cache)
 
+    @staticmethod
+    def resolve_plan(root: ActionStatus, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
+
 
 class ActionImplementationPhaseNode(DjangoNode):
     class Meta:
         model = ActionImplementationPhase
         fields = public_fields(ActionImplementationPhase)
 
+    @staticmethod
+    def resolve_plan(root: ActionImplementationPhase, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class ActionResponsiblePartyNode(DjangoNode):
     has_contact_person = graphene.Boolean(required=True)
@@ -1357,6 +1391,9 @@ class ActionImpactNode(DjangoNode):
         model = ActionImpact
         fields = public_fields(ActionImpact)
 
+    @staticmethod
+    def resolve_plan(root: ActionImpact, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class ActionStatusUpdateNode(DjangoNode):
     class Meta:

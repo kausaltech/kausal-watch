@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import graphene
 from graphql.error import GraphQLError
 
@@ -13,6 +15,9 @@ from actions.models import Action
 from reports.blocks.action_content import ReportFieldBlock
 from reports.graphene_types import ReportValueInterface
 from reports.models import ActionSnapshot, Report, ReportType
+
+if TYPE_CHECKING:
+    from actions.models.plan import Plan
 
 
 @register_django_node
@@ -33,6 +38,8 @@ class ReportNode(DjangoNode):
     def resolve_values_for_action(root, info, action_id=None, action_identifier=None):
         if (action_id and action_identifier) or not (action_id or action_identifier):
             raise GraphQLError("You must specify either actionId or actionIdentifier")
+        if not root.type.plan.is_visible_for_user(info.context.user):
+            return None
         plan_actions = Action.objects.filter(plan=root.type.plan)
         if action_id:
             action = plan_actions.get(id=action_id)
@@ -62,6 +69,9 @@ class ReportTypeNode(DjangoNode):
         model = ReportType
         fields = public_fields(ReportType)
 
+    @staticmethod
+    def resolve_plan(root: ReportType, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 class Query:
     pass

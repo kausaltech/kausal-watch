@@ -547,6 +547,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel
             return next(iter(root_pages.values()))
         return None
 
+    def get_if_visible(self, user):
+        return self if self and self.is_visible_for_user(user) else None
+
     def create_default_site(self, hostname=None):
         if hostname is None:
             parsed_url = urlparse(self.site_url)
@@ -884,14 +887,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel
                 result |= cast('PlanQuerySet', child.get_superseded_plans(recursive=True))
         return result
 
-    def get_superseding_plans(self, recursive=False):
+    def get_superseding_plans(self, recursive=False, user=None):
         if self.superseded_by is None:
             return []
-        result = [self.superseded_by]
+        result = [self.superseded_by] if self.superseded_by.is_visible_for_user(user) else []
         if recursive:
             # To optimize, use recursive queries as in https://stackoverflow.com/a/39933958/14595546
-            result += self.superseded_by.get_superseding_plans(recursive=True)
+            result += self.superseded_by.get_superseding_plans(recursive=True, user=user)
         return result
+
 
     def get_action_days_until_considered_stale(self):
         days = self.action_days_until_considered_stale

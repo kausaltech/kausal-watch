@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import itertools
+
 import pytest
+
+from aplans.utils import RestrictedVisibilityModel
 
 from actions.models.features import OrderBy, PlanFeatures
 from actions.tests.factories import (
@@ -25,7 +29,7 @@ from actions.tests.factories import (
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 from pages.tests.factories import CategoryPageFactory
 
-from .fixtures import *
+from .fixtures import *  # noqa: F403
 
 pytestmark = pytest.mark.django_db
 
@@ -60,9 +64,12 @@ def test_plan_domain_node(graphql_client_query_data):
     }
     assert data == expected
 
-
-def test_plan_node(graphql_client_query_data, plan_with_pages):
+@pytest.mark.parametrize('visible', [False, True])
+def test_plan_node(graphql_client_query_data, plan_with_pages, visible):
     plan = plan_with_pages
+    if not visible:
+        plan.visibility = RestrictedVisibilityModel.VisibilityState.INTERNAL
+        plan.save()
     domain = PlanDomainFactory(plan=plan)
     action_schedule = ActionScheduleFactory(plan=plan)
     action = ActionFactory(plan=plan, schedule=[action_schedule])
@@ -157,6 +164,7 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
         """,
         variables={'plan': plan.identifier, 'hostname': domain.hostname},
     )
+
     expected = {
         'plan': {
             '__typename': 'Plan',
@@ -249,12 +257,16 @@ def test_plan_node(graphql_client_query_data, plan_with_pages):
             'kausalPathsInstanceUuid': plan.kausal_paths_instance_uuid,
         },
     }
+    if not visible:
+      expected = {'plan': None} # type: ignore[dict-item]
+
     assert data == expected
 
-
-def test_plan_node_superseded_by(graphql_client_query_data):
-    plan1 = PlanFactory()
-    plan2 = PlanFactory(superseded_by=plan1)
+@pytest.mark.parametrize('visibility', itertools.product(('internal', 'public'), repeat=2))
+def test_plan_node_superseded_by(graphql_client_query_data, visibility):
+    visibility1, visibility2 = visibility
+    plan1 = PlanFactory(visibility=visibility1)
+    plan2 = PlanFactory(superseded_by=plan1, visibility=visibility2)
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -281,17 +293,22 @@ def test_plan_node_superseded_by(graphql_client_query_data):
             'supersededBy': {
                 '__typename': 'Plan',
                 'id': plan1.identifier,
-            },
+            } if visibility1 == 'public' else None,
             'supersededPlans': [],
-        },
+        } if visibility2 == 'public' else None,
     }
     assert data == expected
 
 
+
+
+
 @pytest.mark.parametrize('recursive', [False, True])
-def test_plan_node_superseding_plans(graphql_client_query_data, recursive):
-    plan1 = PlanFactory()
-    plan2 = PlanFactory(superseded_by=plan1)
+@pytest.mark.parametrize('visibility', itertools.product(('internal', 'public'), repeat=2))
+def test_plan_node_superseding_plans(graphql_client_query_data, recursive, visibility):
+    visibility1, visibility2 = visibility
+    plan1 = PlanFactory(visibility=visibility1)
+    plan2 = PlanFactory(superseded_by=plan1, visibility=visibility2)
     plan3 = PlanFactory(superseded_by=plan2)
     data = graphql_client_query_data(
         """
@@ -308,8 +325,10 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive):
         """,
         variables={'plan': plan3.identifier, 'recursive': recursive},
     )
-    expected_superseding_plans = [plan2]
-    if recursive:
+    expected_superseding_plans = []
+    if visibility2 == 'public':
+       expected_superseding_plans.append(plan2)
+    if recursive and visibility1 == 'public':
         expected_superseding_plans.append(plan1)
     expected = {
         'plan': {
@@ -325,10 +344,12 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive):
 
 
 @pytest.mark.parametrize('recursive', [False, True])
-def test_plan_node_superseded_plans(graphql_client_query_data, recursive):
+@pytest.mark.parametrize('visibility', itertools.product(('internal', 'public'), repeat=2))
+def test_plan_node_superseded_plans(graphql_client_query_data, recursive, visibility):
+    visibility1, visibility2 = visibility
     plan1 = PlanFactory()
-    plan2 = PlanFactory(superseded_by=plan1)
-    plan3 = PlanFactory(superseded_by=plan2)
+    plan2 = PlanFactory(superseded_by=plan1, visibility=visibility1)
+    plan3 = PlanFactory(superseded_by=plan2, visibility=visibility2)
     data = graphql_client_query_data(
         """
         query($plan: ID!, $recursive: Boolean!) {
@@ -348,8 +369,10 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive):
         """,
         variables={'plan': plan1.identifier, 'recursive': recursive},
     )
-    expected_superseded_plans = [plan2]
-    if recursive:
+    expected_superseded_plans = []
+    if visibility1 == "public":
+      expected_superseded_plans = [plan2]
+    if recursive and visibility2 == "public":
         expected_superseded_plans.append(plan3)
     expected = {
         'plan': {

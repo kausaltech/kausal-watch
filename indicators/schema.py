@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 import graphene
 from django.forms import ModelForm
@@ -14,6 +14,7 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, order_querys
 from aplans.utils import RestrictedVisibilityModel, public_fields
 
 from actions.models import Action
+from actions.models.plan import Plan, PlanQuerySet
 from actions.schema import ScenarioNode
 from indicators.models import (
     ActionIndicator,
@@ -127,6 +128,9 @@ class IndicatorLevelNode(DjangoNode):
     def get_queryset(root, info):
         return root.visible_for_public()
 
+    @staticmethod
+    def resolve_plan(root: IndicatorLevel, info) -> Plan | None:
+        return root.plan.get_if_visible(info.context.user)
 
 @register_django_node
 class DimensionNode(DjangoNode):
@@ -328,6 +332,10 @@ class IndicatorNode(DjangoNode):
     def resolve_related_effects(root: Indicator, info) -> Iterable[RelatedIndicator]:
         return root.related_effects.filter(effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
 
+    @staticmethod
+    def resolve_plans(root: Indicator, info) -> PlanQuerySet:
+        plans = cast(PlanQuerySet, root.plans.all())
+        return plans.visible_for_user(info.context.user)
 
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
