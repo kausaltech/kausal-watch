@@ -12,22 +12,6 @@ from actions.blocks.action_content import (
     ActionMainContentBlock,
 )
 
-# from actions.blocks.action_dashboard import (
-#     ActionDashboardColumnBlock,
-#     EndDateColumnBlock,
-#     FieldColumnBlock,
-#     IdentifierColumnBlock,
-#     ImpactColumnBlock,
-#     ImplementationPhaseColumnBlock,
-#     IndicatorsColumnBlock,
-#     NameColumnBlock,
-#     OrganizationColumnBlock,
-#     ResponsiblePartiesColumnBlock,
-#     StartDateColumnBlock,
-#     StatusColumnBlock,
-#     TasksColumnBlock,
-#     UpdatedAtColumnBlock,
-# )
 from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
 from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock
 from actions.blocks.choosers import (
