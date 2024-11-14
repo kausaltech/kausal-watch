@@ -51,6 +51,8 @@ class BlockConfig:
     has_block: bool = True
     block_class: str | None = None
 
+ALL_CONTEXTS: tuple[BlockContext] = ('dashboard', 'report', 'details')
+
 @dataclass
 class ModelFieldProperties:
     field_name: str
@@ -88,11 +90,8 @@ class ModelFieldProperties:
         if self.field_type is None:
             self.field_type = 'primitive'
 
-    @staticmethod
-    def create_with_defaults(model, name) -> ModelFieldProperties:
-        return ModelFieldProperties(
-            field_name=name,
-        )
+    def is_disabled(self):
+        return all(not self.get_config(b).has_block for b in ALL_CONTEXTS)
 
     def get_report_formatter_class(self) -> type[ReportFieldFormatter] | None:
         if not self.has_report_block:
@@ -184,11 +183,15 @@ class ModelFieldRegistry[T: type[Model]]:
         for name in public_fields:
             if name in self._registry:
                 continue
-            props = ModelFieldProperties.create_with_defaults(self.model, name)
             if name in self.disabled_fields:
-                props.has_dashboard_column_block = False
-                props.has_report_block = False
-                props.has_details_block = False
+                props = ModelFieldProperties(
+                    field_name=name,
+                    has_dashboard_column_block=False,
+                    has_report_block=False,
+                    has_details_block=False,
+                )
+            else:
+                props = ModelFieldProperties(field_name=name)
             self._registry[name] = props
 
     def __getitem__(self, name: str) -> ModelFieldProperties:
