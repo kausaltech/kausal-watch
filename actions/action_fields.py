@@ -86,6 +86,7 @@ def initialize():
     )
     register(
         'primary_org',
+        field_type='single',
         has_dashboard_column_block=True,
         dashboard_column_block_class_name='OrganizationColumnBlock',
         has_details_block=False,
@@ -93,22 +94,36 @@ def initialize():
     )
     register(
         'related_indicators',
+        field_type='many',
         dashboard_column_block_class_name='IndicatorsColumnBlock',
         has_report_block=False,
     )
     register(
         'merged_actions',
+        field_type='many',
         custom_label=_('Merged actions'),
         has_dashboard_column_block=False,
         has_report_block=False,
     )
     register(
-        'contact_persons',
         'lead_paragraph',
+        field_type='primitive',
+        has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'contact_persons',
         'links',
         'related_actions',
         'schedule',
+        field_type='many',
         has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'impact',  # deprecated
+        field_type='single',
+        has_details_block=False,
         has_report_block=False,
     )
     register(
@@ -117,7 +132,6 @@ def initialize():
         'identifier',
         'updated_at',
         'name',
-        'impact',  # deprecated
         has_details_block=False,
         has_report_block=False,
     )
@@ -129,6 +143,7 @@ def initialize():
     register(
         'status',
         'implementation_phase',
+        field_type='single',
         has_details_block=False,
     )
 
