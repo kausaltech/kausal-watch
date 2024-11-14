@@ -465,7 +465,7 @@ class Action(
 
     def __str__(self):
         s = ''
-        if self.plan is not None and self.plan.features.has_action_identifiers:
+        if self.plan is not None and hasattr(self.plan, 'features') and self.plan.features.has_action_identifiers:
             s += '%s. ' % self.identifier
         s += self.name_i18n
         return s

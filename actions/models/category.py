@@ -238,9 +238,9 @@ class CategoryType(
         return "%s (%s:%s)" % (self.name, self.plan.identifier, self.identifier)
 
     @transaction.atomic
-    def save(self, *args, **kwargs):
+    def save(self, *args, skip_page_synchronization=False, **kwargs):
         super().save(*args, **kwargs)
-        if self.synchronize_with_pages:
+        if self.synchronize_with_pages and not skip_page_synchronization:
             self.synchronize_pages()
 
     def clean(self):
@@ -571,9 +571,9 @@ class Category(ModelWithAttributes, CategoryBase, ClusterableModel, PlanRelatedM
         return page
 
     @transaction.atomic()
-    def save(self, *args, **kwargs):
+    def save(self, *args, skip_page_synchronization=False, **kwargs):
         super().save(*args, **kwargs)
-        if self.type.synchronize_with_pages:
+        if self.type.synchronize_with_pages and not skip_page_synchronization:
             # We need to synchronize multiple page trees if there are multiple languages
             if self.parent:
                 parent_pages = self.parent.category_pages.all()

@@ -243,6 +243,7 @@ INSTALLED_APPS += [
     'actions',
     'budget',
     'content',
+    'copying',
     'documentation',
     'feedback',
     'indicators',

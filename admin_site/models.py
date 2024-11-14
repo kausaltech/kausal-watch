@@ -135,7 +135,7 @@ class BuiltInFieldCustomization(
     PlanRelatedModel, InstancesEditableByMixin, InstancesVisibleForMixin,
 ):
     plan: FK[Plan] = models.ForeignKey(
-        'actions.Plan', on_delete=models.CASCADE, related_name='built_in_action_attribute_types',
+        'actions.Plan', on_delete=models.CASCADE, related_name='built_in_field_customizations',
     )
     # Model of the customized field
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')

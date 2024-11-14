@@ -167,6 +167,8 @@ django-permissionedforms==0.1
     # via wagtail
 django-redis==5.4.0
     # via -r requirements.in
+django-relations-iterator==0.0.5
+    # via -r requirements.in
 django-reversion==5.0.12
     # via -r requirements.in
 django-storages==1.14.3
