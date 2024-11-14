@@ -28,7 +28,7 @@ ActionDashboardColumnBlock = generate_stream_block(
     fields = (
         'identifier',
         'name',
-        ('imact', 'impact'), # TODO: deprecate
+        ('imact', 'impact'), # TODO: Deprecate. The typo is for compatibility.
         'implementation_phase',
         'status',
         'tasks',

@@ -218,7 +218,9 @@ class ModelFieldRegistry[T: type[Model]]:
             return cls_
 
         kwargs = props.get_block_class_kwargs(block_context)
-        value = self._common_block_class_cache.get(field_name)
+        value = None
+        if block_context != 'dashboard':
+            value = self._common_block_class_cache.get(field_name)
         if value is None:
             value = generate_block_for_field(
                 self.model,
@@ -226,7 +228,8 @@ class ModelFieldRegistry[T: type[Model]]:
                 target_module=self.target_module,
                 **kwargs,
             )
-            self._common_block_class_cache[field_name] = value
+            if block_context != 'dashboard':
+                self._common_block_class_cache[field_name] = value
         self._block_cache[block_context][field_name] = value
         return value
 
