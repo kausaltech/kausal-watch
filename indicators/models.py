@@ -400,6 +400,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
     description = RichTextField(null=True, blank=True, verbose_name=_('description'))
     categories: M2M[Category, Any] = models.ManyToManyField(
         'actions.Category', blank=True, related_name='indicators',
+        through='indicators.IndicatorCategoryThrough',
     )
     time_resolution = models.CharField(
         max_length=50, choices=TIME_RESOLUTIONS, default=TIME_RESOLUTIONS[0][0],
@@ -743,6 +744,15 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
     def autocomplete_label(self):
         return str(self)
+
+
+class IndicatorCategoryThrough(models.Model):
+    indicator = models.ForeignKey(Indicator, on_delete=models.CASCADE, related_name='indicator_category_through')
+    category = models.ForeignKey('actions.Category', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'indicators_indicator_categories'
+        unique_together = ['indicator', 'category']
 
 
 @reversion.register()

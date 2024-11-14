@@ -283,13 +283,17 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
 
     related_organizations: models.ManyToManyField[Organization, Organization] = models.ManyToManyField(
         Organization, blank=True, related_name='related_plans',
+        through='actions.PlanRelatedOrganizationsThrough',
     )
     related_plans: models.ManyToManyField[Plan, Plan] = models.ManyToManyField('self', blank=True)
     parent: FK[Plan | None] = models.ForeignKey(
         'self', verbose_name=pgettext_lazy('plan', 'parent'), blank=True, null=True, related_name='children',
         on_delete=models.SET_NULL,
     )
-    common_category_types: M2M[CommonCategoryType] = models.ManyToManyField('actions.CommonCategoryType', blank=True, related_name='plans')
+    common_category_types: M2M[CommonCategoryType] = models.ManyToManyField(
+        'actions.CommonCategoryType', blank=True, related_name='plans',
+        through='actions.PlanCommonCategoryTypesThrough',
+    )
 
     primary_action_classification = models.OneToOneField(
         # null=False would be nice, but we need to avoid on_delete=CASCADE and use on_delete=SET_NULL instead
@@ -910,6 +914,24 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         visible_indicators = Indicator.objects.qs.filter(levels__in=visible_levels)
         return RelatedIndicator.objects.filter(Q(causal_indicator__in=visible_indicators) &
                                                Q(effect_indicator__in=visible_indicators)).exists()
+
+
+class PlanRelatedOrganizationsThrough(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='plan_related_organizations_through')
+    organization = models.ForeignKey('orgs.Organization', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_plan_related_organizations'
+        unique_together = ['plan', 'organization']
+
+
+class PlanCommonCategoryTypesThrough(models.Model):
+    plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='plan_common_category_types_through')
+    commoncategorytype = models.ForeignKey('actions.CommonCategoryType', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_plan_common_category_types'
+        unique_together = ['plan', 'commoncategorytype']
 
 
 class PublicationStatus(models.TextChoices):

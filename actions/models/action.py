@@ -251,7 +251,7 @@ class Action(
         help_text=_('The completion percentage for this action'),
     )
     schedule = models.ManyToManyField(
-        'actions.ActionSchedule', blank=True, verbose_name=_('schedule'),
+        'actions.ActionSchedule', blank=True, verbose_name=_('schedule'), through='actions.ActionScheduleThrough',
     )
     schedule_continuous = models.BooleanField(
         default=False, verbose_name=_('continuous action'),
@@ -263,12 +263,15 @@ class Action(
     )
     categories: models.ManyToManyField[Category, Category] = models.ManyToManyField(
         'actions.Category', blank=True, verbose_name=_('categories'), related_name='actions',
+        through='actions.ActionCategoryThrough',
     )
     indicators: M2M[Indicator, ActionIndicator] = models.ManyToManyField(
         'indicators.Indicator', blank=True, verbose_name=_('indicators'),
         through='indicators.ActionIndicator', related_name='actions',
     )
-    related_actions: M2M[Self, Any] = models.ManyToManyField('self', blank=True, verbose_name=_('related actions'))
+    related_actions: M2M[Self, Any] = models.ManyToManyField(
+        'self', blank=True, verbose_name=_('related actions'), through='actions.RelatedActionsThrough',
+    )
 
     responsible_organizations = models.ManyToManyField[Organization, 'ActionResponsibleParty'](
         Organization, through='actions.ActionResponsibleParty', blank=True,
@@ -282,7 +285,7 @@ class Action(
 
     monitoring_quality_points: M2M[MonitoringQualityPoint, Any] = models.ManyToManyField(
         'actions.MonitoringQualityPoint', blank=True, related_name='actions',
-        editable=False,
+        editable=False, through='actions.ActionMonitoringQualityPointsThrough',
     )
 
     updated_at = models.DateTimeField(
@@ -969,6 +972,45 @@ class Action(
     def get_dependency_relationships(self, user: UserOrAnon | None, plan: Plan | None) -> ActionDependencyRelationshipQuerySet:
         from .action_deps import ActionDependencyRelationship
         return ActionDependencyRelationship.objects.qs.all_for_action(self).visible_for_user(user, plan)
+
+
+class ActionCategoryThrough(models.Model):
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_category_through')
+    category = models.ForeignKey('actions.Category', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_action_categories'
+        unique_together = ['action', 'category']
+
+
+class ActionScheduleThrough(models.Model):
+    action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_schedule_through')
+    actionschedule = models.ForeignKey('actions.ActionSchedule', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_action_schedule'
+        unique_together = ['action', 'actionschedule']
+
+
+class RelatedActionsThrough(models.Model):
+    from_action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='related_actions_through')
+    to_action = models.ForeignKey(Action, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_action_related_actions'
+        unique_together = ['from_action', 'to_action']
+
+
+
+class ActionMonitoringQualityPointsThrough(models.Model):
+    action = models.ForeignKey(
+        Action, on_delete=models.CASCADE, related_name='action_monitoring_quality_points_through',
+    )
+    monitoringqualitypoint = models.ForeignKey('actions.MonitoringQualityPoint', on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = 'actions_action_monitoring_quality_points'
+        unique_together = ['action', 'monitoringqualitypoint']
 
 
 class ModelWithRole[ModelRole: 'ModelWithRole.Role']:  # pyright: ignore
