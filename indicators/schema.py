@@ -126,7 +126,7 @@ class IndicatorLevelNode(DjangoNode):
 
     @staticmethod
     def get_queryset(root, info):
-        return root.visible_for_public()
+        return root.visible_for_user(info.context.user)
 
     @staticmethod
     def resolve_plan(root: IndicatorLevel, info) -> Plan | None:
@@ -295,7 +295,7 @@ class IndicatorNode(DjangoNode):
         model_field='levels',
     )
     def resolve_level(root: Indicator, info, plan) -> str | None:
-        if not root.is_visible_for_public():
+        if not self.is_visible_for_user(info.context.user):
             return None
         if plan is not None:
             plan_obj = get_plan_from_context(info, plan)
@@ -369,7 +369,7 @@ class Query:
         if not plan_obj.is_visible_for_user(info.context.user):
             return None
 
-        qs = Indicator.objects.get_queryset().visible_for_public()
+        qs = Indicator.objects.get_queryset().visible_for_user(info.context.user)
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:

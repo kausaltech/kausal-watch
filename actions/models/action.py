@@ -123,9 +123,16 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
 
         A None value is interpreted identically a non-authenticated user.
         """
+        if plan:
+            plans = [plan] if plan.is_visible_for_user(user) else []
+        else:
+            plans = list(Plan.objects.visible_for_user(user))
         if user is None or not user.is_authenticated:
-            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
-        return self
+            return self.filter(
+                visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
+                plan__in=plans,
+            )
+        return self.filter(plan__in=Plan.objects.visible_for_user(user))
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)
@@ -139,14 +146,14 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
         )
         return self.filter(id__in=action_ids)
 
-    def annotate_related_indicator_counts(self, plan):
+    def annotate_related_indicator_counts(self, plan, user):
         return self.annotate(
             indicator_count=Count(
                 'related_indicators',filter=Q(
-                    related_indicators__indicator__in=Indicator.objects.qs.available_for_plan(plan).visible_for_public())),
+                    related_indicators__indicator__in=Indicator.objects.qs.available_for_plan(plan).visible_for_user(user))),
             indicators_with_goals_count=Count(
                 'related_indicators', filter=Q(
-                    related_indicators__indicator__in=Indicator.objects.qs.available_for_plan(plan).visible_for_public().filter(
+                    related_indicators__indicator__in=Indicator.objects.qs.available_for_plan(plan).visible_for_user(user).filter(
                         goals__isnull=False))),
                 )
 
@@ -529,7 +536,7 @@ class Action(
     def get_next_action(self, user: User):
         return (
             Action.objects.get_queryset()
-            .visible_for_public()
+            .visible_for_user(user)
             .filter(plan=self.plan_id, order__gt=self.order)
             .unmerged()
             .first()
@@ -545,9 +552,9 @@ class Action(
             .first()
         )
 
-    def get_visible_related_indicators(self) -> ActionIndicatorQuerySet:
+    def get_visible_related_indicators(self, user: User | None = None) -> ActionIndicatorQuerySet:
         ind_qs: IndicatorQuerySet = self.indicators.get_queryset()  # pyright: ignore
-        indicator_ids = ind_qs.visible_for_public().values_list("id", flat=True)
+        indicator_ids = ind_qs.visible_for_user(user).values_list("id", flat=True)
         return self.related_indicators.get_queryset().filter(indicator_id__in=indicator_ids)
 
 

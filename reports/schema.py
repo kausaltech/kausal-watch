@@ -62,7 +62,6 @@ class ReportNode(DjangoNode):
                 values.append(value)
         return values
 
-
 @register_django_node
 class ReportTypeNode(DjangoNode):
     class Meta:

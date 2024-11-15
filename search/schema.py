@@ -130,9 +130,8 @@ class Query:
             qs = Q(id=plan_obj.id)
             if include_related_plans:
                 qs |= Q(id__in=related_plans.values_list('id', flat=True))
-            plans = Plan.objects.visible_for_user(info.context.user).filter(qs)
-        plans = plans.exclude(exclude_from_search=True)
-
+            plans = Plan.objects.filter(qs)
+        plans = plans.exclude(exclude_from_search=True).visible_for_user(info.context.user)
         plan_ids = list(plans.values_list('id', flat=True))
 
         #backend = get_search_backend()
@@ -148,12 +147,13 @@ class Query:
             page_filter |= Q(path__startswith=path)
 
         querysets = [
-            Action.objects.visible_for_user(None).filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
+            Action.objects.visible_for_user(
+                info.context.user).filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
             Page.objects.filter(page_filter).live().specific(),
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
-            querysets.append(Indicator.objects.visible_for_public().filter(plans__in=plan_ids))
+            querysets.append(Indicator.objects.visible_for_user(info.context.user).filter(plans__in=plan_ids))
 
 
         lang = get_language()

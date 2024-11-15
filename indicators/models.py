@@ -733,7 +733,9 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         A None value is interpreted identically to a non-authenticated user.
         """
-        if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
+        if (user is None or not user.is_authenticated) and \
+            self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC and \
+                not self.plans.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC).exists():
             return False
         return True
 
@@ -879,14 +881,19 @@ class CommonIndicatorDimension(OrderedModel):
         return "%s ∈ %s" % (str(self.dimension), str(self.common_indicator))
 
 class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet['IndicatorLevel']):
-    def visible_for_user(self, user: UserOrAnon | None) -> Self:
+    def visible_for_user(self, user: UserOrAnon | None, plan: Plan | None = None) -> Self:
         """
         Filter by visibility for a specific user.
 
         A None value is interpreted identically to a non-authenticated user
         """
+        if plan:
+            plans = [plan] if plan.is_visible_for_user(user) else []
+        else:
+            plans = list(Plan.objects.visible_for_user(user))
         if user is None or not user.is_authenticated:
-            return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+            return self.filter(indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
+                               plan__in=plans)
         return self
 
     def visible_for_public(self) -> Self:

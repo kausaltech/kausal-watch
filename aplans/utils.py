@@ -464,6 +464,8 @@ class InstancesVisibleForMixin(models.Model):
         assert not isinstance(user, AnonymousUser)
         if user.is_superuser:
             return True
+        if not plan.is_visible_for_user(user):
+            return False
         is_plan_admin = user.is_general_admin_for_plan(plan)
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
             return is_plan_admin

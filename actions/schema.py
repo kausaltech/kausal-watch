@@ -286,6 +286,8 @@ class PlanNode(DjangoNode):
 
     @staticmethod
     def resolve_category_type(root: Plan, info, id):
+        if not root.is_visible_for_user(info.context.user):
+            return None
         return root.category_types.get(id=id)
 
     @staticmethod
@@ -293,7 +295,10 @@ class PlanNode(DjangoNode):
         model_field='category_types',
     )
     def resolve_category_types(root: Plan, info, usable_for_indicators=None, usable_for_actions=None):
+        if not root.is_visible_for_user(info.context.user):
+            return root.category_types.none()
         qs = root.category_types.all()
+
         if usable_for_indicators is not None:
             qs = qs.filter(usable_for_indicators=usable_for_indicators)
         if usable_for_indicators is not None:
@@ -371,12 +376,8 @@ class PlanNode(DjangoNode):
             first: int | None = None,
     ):
         user = info.context.user
-        qs = cast('ActionQuerySet', root.actions.get_queryset())
-        if restrict_to_publicly_visible:
-            qs = qs.visible_for_public()
-        else:
-            qs = qs.visible_for_user(user)
-        qs = qs.filter(plan=root)
+        qs = cast(ActionQuerySet, root.actions.get_queryset())
+        qs = qs.visible_for_user(user).filter(plan=root)
         if identifier:
             qs = qs.filter(identifier=identifier)
         if id:
@@ -478,7 +479,7 @@ class PlanNode(DjangoNode):
 
     @staticmethod
     def resolve_has_indicator_relationships(root: Plan, info):
-        return root.has_indicator_relationships()
+        return root.has_indicator_relationships(info.context.user)
 
 
     class Meta:
@@ -1143,6 +1144,9 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
         return root.get_previous_action(info.context.user)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: Action, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1151,7 +1155,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
     )
     def resolve_related_indicators(root: Action, info) -> Iterable[ActionIndicator]:
         plan = root.plan
-        indicators = root.get_visible_related_indicators()
+        indicators = root.get_visible_related_indicators(info.context.user)
         #  When accessing as Action draft revision, indicators are a FakeQuerySet without the
         #  features of ActionIndicatorQuerySet
         if hasattr(indicators, 'order_by_setting'):
@@ -1322,6 +1326,9 @@ class ActionScheduleNode(DjangoNode):
         fields = public_fields(ActionSchedule)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ActionSchedule, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1335,6 +1342,9 @@ class ActionStatusNode(DjangoNode):
         return root.get_color(cache=info.context.watch_cache)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ActionStatus, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1345,6 +1355,9 @@ class ActionImplementationPhaseNode(DjangoNode):
         fields = public_fields(ActionImplementationPhase)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ActionImplementationPhase, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1392,6 +1405,9 @@ class ActionImpactNode(DjangoNode):
         fields = public_fields(ActionImpact)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ActionImpact, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1417,13 +1433,9 @@ class ActionLinkNode(DjangoNode):
         return root.title_i18n
 
 
-def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_publicly_visible=True):
+def plans_actions_queryset(plans, category, first, order_by, user):
     qs = Action.objects.get_queryset()
-    if restrict_to_publicly_visible:
-        qs = qs.visible_for_public()
-    else:
-        qs = qs.visible_for_user(user)
-    qs = qs.filter(plan__in=plans)
+    qs = qs.visible_for_user(user).filter(plan__in=plans)
     if category is not None:
         # FIXME: This is sucky, maybe convert Category to a proper tree model?
         f = (
@@ -1437,7 +1449,7 @@ def plans_actions_queryset(plans, category, first, order_by, user, restrict_to_p
         qs = qs.filter(categories__in=descendant_cats).distinct()
     if isinstance(plans, list) and len(plans) == 1:
         plan = plans[0]
-        qs = qs.annotate_related_indicator_counts(plan)
+        qs = qs.annotate_related_indicator_counts(plan, user)
     qs = order_queryset(qs, ActionNode, order_by)
     if not order_by:
         qs = qs.order_by('plan', 'order')
@@ -1667,7 +1679,6 @@ class Query:
                 first,
                 order_by,
                 info.context.user,
-                restrict_to_publicly_visible=restrict_to_publicly_visible,
             ),
             info,
         )

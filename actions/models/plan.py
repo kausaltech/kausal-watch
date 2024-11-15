@@ -142,7 +142,7 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
         A None value is interpreted identically a non-authenticated user.
         """
         if user is None or not user.is_authenticated:
-            return self.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+            return self.filter(published_at__isnull=False, published_at__lte=timezone.now())
         return self
 
 if TYPE_CHECKING:
@@ -183,7 +183,7 @@ class UsageStatus(models.TextChoices):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     """
     The Action Plan under monitoring.
 
@@ -707,8 +707,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel
 
         A None value is interpreted identically to a non-authenticated user.
         """
-        if (user is None or not user.is_authenticated) and self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC:
-            return False
+        if (user is None or not user.is_authenticated):
+            return self.published_at is not None and self.published_at <= timezone.now()
         return True
 
     def get_optional_locale_prefix(self, locale: str):
@@ -973,8 +973,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage, RestrictedVisibilityModel
             return None
         return None
 
-    def has_indicator_relationships(self):
-        visible_levels = IndicatorLevel.objects.qs.filter(plan=self).visible_for_public()
+    def has_indicator_relationships(self, user: UserOrAnon | None):
+        visible_levels = IndicatorLevel.objects.qs.filter(plan=self).visible_for_user(user)
         visible_indicators = Indicator.objects.qs.filter(levels__in=visible_levels)
         return RelatedIndicator.objects.filter(Q(causal_indicator__in=visible_indicators) &
                                                Q(effect_indicator__in=visible_indicators)).exists()

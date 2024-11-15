@@ -80,7 +80,6 @@ class PlanFactory(ModelFactory[Plan]):
         'notifications.tests.factories.NotificationSettingsFactory', factory_related_name='plan',
     )
     kausal_paths_instance_uuid = 'paths_uuid'
-    visibility = RestrictedVisibilityModel.VisibilityState.PUBLIC
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs) -> Plan:
