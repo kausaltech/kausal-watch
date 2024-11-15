@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing
 from contextlib import ExitStack
+from copy import copy as shallow_copy
 from datetime import date
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -20,6 +20,7 @@ from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
 from .utils import get_foreign_keys, get_generic_foreign_keys, temp_disconnect_signal, update_streamfield_block
+from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
@@ -98,6 +99,8 @@ class CloneVisitor(AbstractVisitor):
     # Identifier and name for the copy of the plan; overrides any suffix stuff
     plan_identifier: str | None
     plan_name: str | None
+    supersede_original_plan: bool
+    supersede_original_actions: bool
 
     def __init__(
         self,
@@ -105,6 +108,8 @@ class CloneVisitor(AbstractVisitor):
         plan_identifier: str | None = None,
         plan_name: str | None = None,
         copy_name_suffix: str | None = None,
+        supersede_original_plan: bool = False,
+        supersede_original_actions: bool = False,
     ):
         self.site_hostname = site_hostname
         self.plan_identifier = plan_identifier
@@ -115,6 +120,8 @@ class CloneVisitor(AbstractVisitor):
             self.copy_name_suffix = ''
         self.copies = {}
         self.removed_links = {}
+        self.supersede_original_plan = supersede_original_plan
+        self.supersede_original_actions = supersede_original_actions
 
     def get_copy(self, instance: Model) -> Model:
         """Get the copy that has been created for the given instance."""
@@ -126,8 +133,8 @@ class CloneVisitor(AbstractVisitor):
 
         Behavior can be customized for each instance type using the hooks `pre_visit` and `save_copy`.
         """
+        original_instance = shallow_copy(node.instance)
         self.pre_visit(node.instance)
-        original_pk = node.instance.pk
         node.instance.pk = None
         node.instance._state.adding = True
         if node.parent is not None:
@@ -139,9 +146,10 @@ class CloneVisitor(AbstractVisitor):
             )
         self.save_copy(node.instance)
         logger.info(f"Created {type(node.instance).__name__} {node.instance.pk}: {node.instance}")
-        key = (node.model_class, original_pk)
+        key = (node.model_class, original_instance.pk)
         assert key not in self.copies
         self.copies[key] = node.instance
+        self.post_visit(original_instance, node.instance)
 
     def remove_link(self, instance: Model, field: str):
         """
@@ -236,6 +244,31 @@ class CloneVisitor(AbstractVisitor):
     @save_copy.register
     def _(self, instance: CategoryType) -> None:
         instance.save(skip_page_synchronization=True)
+
+    @singledispatchmethod
+    def post_visit(self, original, copy) -> None:
+        """Do some stuff after creating the copy `copy` of `instance` and persisting it to the database."""
+        pass
+
+    @post_visit.register
+    def _(self, original: Plan, copy: Plan) -> None:
+        if self.supersede_original_plan:
+            if original.superseded_by:
+                raise ValueError(
+                    f"Cannot supersede plan '{original}': already superseded by '{original.superseded_by}'"
+                )
+            original.superseded_by = copy
+            original.save(update_fields=['superseded_by'])
+
+    @post_visit.register
+    def _(self, original: Action, copy: Action) -> None:
+        if self.supersede_original_actions:
+            if original.superseded_by:
+                raise ValueError(
+                    f"Cannot supersede action '{original}': already superseded by '{original.superseded_by}'"
+                )
+            original.superseded_by = copy
+            original.save(update_fields=['superseded_by'])
 
 
 class UpdateReferencesVisitor(AbstractVisitor):
@@ -358,6 +391,8 @@ def copy_plan(
     general_name_suffix: str | None = None,
     root_page_slug_suffix: str | None = None,
     root_page_title_suffix: str | None = None,
+    supersede_original_plan: bool = False,
+    supersede_original_actions: bool = False,
 ):
     """
     Copy the given plan.
@@ -370,6 +405,9 @@ def copy_plan(
     Adds the suffix given in `general_name_suffix` to the names of other models. (Defaults to no suffix.)
 
     Does what you expect for `root_page_slug_suffix` and `root_page_title_suffix`.
+
+    If `supersede_original_plan` is true, the copy will supersede the original plan; if
+    `supersede_original_actions` is true, each action copy will supersede its original.
     """
     if new_plan_identifier is None:
         new_plan_identifier = f'{plan.identifier}-copy'
@@ -383,6 +421,8 @@ def copy_plan(
         plan_identifier=new_plan_identifier,
         plan_name=new_plan_name,
         copy_name_suffix=general_name_suffix,
+        supersede_original_plan=supersede_original_plan,
+        supersede_original_actions=supersede_original_actions,
     )
     # A couple of hacks to avoid things breaking when creating a copy of the plan.
     # Work on fresh `Plan` objects because `clone` changes its first argument. We just want to get stuff into the

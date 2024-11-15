@@ -40,6 +40,16 @@ class Command(BaseCommand):
             '--root-page-title-suffix',
             help="Append the given suffix to the title of the plan root page and its translations (default: no suffix)",
         )
+        parser.add_argument(
+            '--supersede-original-plan',
+            help="Supersede original plan by its copy",
+            action='store_true',
+        )
+        parser.add_argument(
+            '--supersede-original-actions',
+            help="Supersede original actions by their copies",
+            action='store_true',
+        )
 
     def handle(self, *args, **options):
         plan = Plan.objects.get(identifier=options['identifier'])
@@ -52,4 +62,6 @@ class Command(BaseCommand):
                 general_name_suffix=options['name_suffix'],
                 root_page_slug_suffix=options['root_page_slug_suffix'],
                 root_page_title_suffix=options['root_page_title_suffix'],
+                supersede_original_plan=options['supersede_original_plan'],
+                supersede_original_actions=options['supersede_original_actions'],
             )
