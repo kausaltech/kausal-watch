@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import importlib
 import re
+import textwrap
 import typing
 from dataclasses import dataclass
 from typing import Any, Literal
 
 from django.db.models import Model
-
-from loguru import logger
 
 from aplans.utils import underscore_to_camelcase
 
@@ -51,7 +50,7 @@ class BlockConfig:
     has_block: bool = True
     block_class: str | None = None
 
-ALL_CONTEXTS: tuple[BlockContext] = ('dashboard', 'report', 'details')
+ALL_CONTEXTS: tuple[BlockContext, BlockContext, BlockContext] = ('dashboard', 'report', 'details')
 
 @dataclass
 class ModelFieldProperties:
@@ -154,7 +153,6 @@ class ModelFieldRegistry[T: type[Model]]:
 
     model: T
     _registry: RegistryDict
-    disabled_fields: set[str]
     target_module: object
     _block_cache: dict[BlockContext, dict[str, type[blocks.Block]]]
     _common_block_class_cache: dict[str, type[blocks.Block]]
@@ -163,7 +161,6 @@ class ModelFieldRegistry[T: type[Model]]:
         self.model = model
         self.target_module = target_module
         self._registry: RegistryDict = dict()
-        self.disabled_fields = set()
         self._block_cache = dict()
         key: BlockContext
         for key in ('dashboard', 'report', 'details'):
@@ -171,27 +168,13 @@ class ModelFieldRegistry[T: type[Model]]:
         self._common_block_class_cache = dict()
 
     def disable_fields(self, *fields: str) -> None:
-        self.disabled_fields.update(fields)
-
-    def update_with_defaults(self) -> None:
-        """Fill in missing fields with defaults, keeping already registered fields."""
-        try:
-            public_fields = self.model.public_fields  # type: ignore[attr-defined]
-        except AttributeError as e:
-            # TODO remove once static type checking is strict
-            raise TypeError('Model must have public_fields specified in order to build field registry.') from e
-        for name in public_fields:
-            if name in self._registry:
-                continue
-            if name in self.disabled_fields:
-                props = ModelFieldProperties(
-                    field_name=name,
-                    has_dashboard_column_block=False,
-                    has_report_block=False,
-                    has_details_block=False,
-                )
-            else:
-                props = ModelFieldProperties(field_name=name)
+        for name in fields:
+            props = ModelFieldProperties(
+                field_name=name,
+                has_dashboard_column_block=False,
+                has_report_block=False,
+                has_details_block=False,
+            )
             self._registry[name] = props
 
     def __getitem__(self, name: str) -> ModelFieldProperties:
@@ -202,11 +185,6 @@ class ModelFieldRegistry[T: type[Model]]:
             msg = f'Trying to register {props.field_name} twice'
             raise ValueError(msg)
         self._registry[props.field_name] = props
-
-    def register_all(self, *args) -> None:
-        for x in args:
-            self.register(x)
-        self.update_with_defaults()
 
     def get_block_class(self, block_context: BlockContext, field_name: str) -> type[blocks.Block]:
         cached = self._block_cache[block_context].get(field_name)
@@ -306,8 +284,13 @@ def debug_registry(registry: ModelFieldRegistry):
 
     console = Console()
     console.print(table)
-    console.print(f"""
- {DEFAULT_IMPLEMENTATION} ───yes
- {NOT_IMPLEMENTED} ───no
- {CUSTOM_IMPLEMENTATION} ───custom implementation""")
+    console.print(
+        textwrap.dedent(
+            f"""
+                {DEFAULT_IMPLEMENTATION} ───yes
+                {NOT_IMPLEMENTED} ───no
+                {CUSTOM_IMPLEMENTATION} ───custom implementation
+            """,
+        ),
+    )
     console.print("\n", "\n    ".join(['No block implementations for:'] + sorted(missing)))
