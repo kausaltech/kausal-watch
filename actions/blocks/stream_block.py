@@ -12,7 +12,9 @@ from actions.models.attributes import AttributeType
 from actions.models.category import CategoryType
 
 if typing.TYPE_CHECKING:
-    from aplans.field_registry import BlockContext
+    from aplans.field_registry import BlockContext, ModelFieldRegistry
+
+    from actions.models import Action
 
 
 def generate_stream_block(
@@ -20,6 +22,7 @@ def generate_stream_block(
     fields: typing.Iterable[str | tuple[str, blocks.Block] | tuple[str, str]],
     support_editing_from_other_form: bool = False,
     block_context: BlockContext = 'details',
+    action_registry: ModelFieldRegistry[type[Action]] = action_registry,
 ):
     """
     Dynamically generates a stream block based on desired action fields.
@@ -53,21 +56,27 @@ def generate_stream_block(
     graphql_types = list()
     for field in fields:
         target_field_name = None
-        if isinstance(field, tuple) and isinstance(field[1], blocks.Block):
-            # Second element is a block instance already, use it directly
-            field_name, block = field
-            target_field_name = field_name
-        else:
-            if isinstance(field, tuple):
+        block = None
+        if isinstance(field, tuple):
+            if isinstance(field[1], str):
+                # Rename a field in the block;
                 # Second element is a string which should find
                 # the standard block in the action field registry.
-                # The key used in the block itself is different from this
-                # and is saved to target_field_name
+                # The first element, the key used in the stream block itself,
+                # is different from this and is saved to target_field_name
                 field_name = field[1]
                 target_field_name = field[0]
             else:
-                field_name = field
+                # Second element is a block instance already, use it directly
+                field_name, block = field
                 target_field_name = field_name
+        else:
+            field_name = field
+            target_field_name = field_name
+        if action_registry is None:
+            from actions.action_fields import action_registry as imported_action_registry
+            action_registry = imported_action_registry
+        if not block:
             block = action_registry.get_block(block_context, field_name)
 
         block_cls = type(block)

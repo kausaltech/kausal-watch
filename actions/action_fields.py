@@ -146,7 +146,10 @@ def initialize():
         field_type='single',
         has_details_block=False,
     )
+    register(
+        'description',
+        has_dashboard_column_block=False,
+    )
 
 
 initialize()
-action_registry.update_with_defaults()
