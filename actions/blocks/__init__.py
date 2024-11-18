@@ -11,23 +11,22 @@ from actions.blocks.action_content import (
     ActionAsideContentBlock,
     ActionMainContentBlock,
 )
-
-from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
-from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock
+from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock  # noqa: F401
+from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock  # noqa: F401
 from actions.blocks.choosers import (
-    ActionAttributeTypeChooserBlock,
-    AttributeTypeChooserBlock,
-    CategoryAttributeTypeChooserBlock,
-    CategoryChooserBlock,
-    CategoryTypeChooserBlock,
+    ActionAttributeTypeChooserBlock,  # noqa: F401
+    AttributeTypeChooserBlock,  # noqa: F401
+    CategoryAttributeTypeChooserBlock,  # noqa: F401
+    CategoryChooserBlock,  # noqa: F401
+    CategoryTypeChooserBlock,  # noqa: F401
 )
 from actions.blocks.filters import (
-    ActionImplementationPhaseFilterBlock,
+    ActionImplementationPhaseFilterBlock,  # noqa: F401
     ActionListFilterBlock,
-    ActionScheduleFilterBlock,
-    ContinuousActionFilterBlock,
-    PrimaryOrganizationFilterBlock,
-    ResponsiblePartyFilterBlock,
+    ActionScheduleFilterBlock,  # noqa: F401
+    ContinuousActionFilterBlock,  # noqa: F401
+    PrimaryOrganizationFilterBlock,  # noqa: F401
+    ResponsiblePartyFilterBlock,  # noqa: F401
 )
 from actions.models.attributes import AttributeType, AttributeTypeQuerySet
 from actions.models.category import CategoryType
