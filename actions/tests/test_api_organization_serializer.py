@@ -14,7 +14,7 @@ from orgs.tests.utils import assert_org_hierarchy, orgs_to_trees
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def original_org_hierarchy(organization_hierarchy_factory):
     return organization_hierarchy_factory("""
         1

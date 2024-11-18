@@ -26,7 +26,7 @@ register(ReportActionPrintLayoutCustomizationFactory)
 KEYS = ['max_columns', 'width_needed', 'approximate_chars_per_line', 'approximate_lines_per_page']
 
 
-@pytest.fixture()
+@pytest.fixture
 def global_db_defaults():
     return ReportActionPrintLayoutCustomization.objects.get(plan=None)
 

@@ -30,7 +30,7 @@ from reports.blocks.action_content import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def populated_action_registry():
     action_registry = ModelFieldRegistry(Action, generated)
 
@@ -160,14 +160,14 @@ def populated_action_registry():
     return action_registry
 
 
-@pytest.fixture()
+@pytest.fixture
 def generated_block_class(populated_action_registry):
     def get(name, block_context):  # noqa: ANN202
         return populated_action_registry.get_block(block_context, name)
     return get
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_content_section_element_block():
     ActionContentSectionElementBlock = generate_stream_block(  # noqa: N806
         'ActionMainContentSectionElementBlock',
@@ -179,7 +179,7 @@ def action_content_section_element_block():
     return ActionContentSectionElementBlock
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_main_content_block():
     ActionMainContentBlock = generate_stream_block(  # noqa: N806
         'ActionMainContentBlock',
@@ -207,7 +207,7 @@ def action_main_content_block():
     return ActionMainContentBlock
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_aside_content_block():
     ActionAsideContentBlock = generate_stream_block(  # noqa: N806
         'ActionAsideContentBlock',
@@ -223,7 +223,7 @@ def action_aside_content_block():
     return ActionAsideContentBlock
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_dashboard_column_block():
     ActionDashboardColumnBlock = generate_stream_block(  # noqa: N806
         'ActionDashboardColumnBlock',
@@ -248,7 +248,7 @@ def action_dashboard_column_block():
     return ActionDashboardColumnBlock
 
 
-@pytest.fixture()
+@pytest.fixture
 def report_field_block(populated_action_registry):
     ActionDescriptionBlock = populated_action_registry.get_block_class('report', 'description')  # noqa: N806
     ActionManualStatusReasonBlock = populated_action_registry.get_block_class('report', 'manual_status_reason')  # noqa: N806

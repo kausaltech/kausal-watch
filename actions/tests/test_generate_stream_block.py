@@ -157,7 +157,7 @@ def test_expected_subblocks(fixturename, expected_subblocks, request, generated_
         for base in EXPECTED_SUBBLOCK_BASES[fixturename]:
             assert base in inspect.getmro(type(block))
 
-@pytest.fixture()
+@pytest.fixture
 def action_registry_factory():
     generated = importlib.import_module('actions.blocks.generated')
     def make_action_registry(*default_fields):

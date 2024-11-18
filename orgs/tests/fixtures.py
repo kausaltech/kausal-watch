@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
 from .utils import tree_to_org
 
 
-@pytest.fixture()
+@pytest.fixture
 def organization_hierarchy_factory():
     def _organization_hierachy_factory(tree_string: str) -> list[Organization]:
         trees = parse_tree_string(tree_string)
