@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from typing import TYPE_CHECKING
 
 from django.contrib.admin.utils import quote
 from django.urls import path, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.ui.tables import BooleanColumn
+from wagtail.coreutils import multigetattr
 from wagtail.permission_policies.base import ModelPermissionPolicy
 from wagtail.snippets import widgets as wagtailsnippets_widgets
 from wagtail.snippets.models import register_snippet
@@ -66,12 +68,84 @@ class UserFeedbackInspectView(InspectView):
         return context
 
 class UserFeedbackIndexView(IndexView):
+    request: WatchAdminRequest
     # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line
     # can be deleted
     any_permission_required = ["add", "change", "delete", "view"]
     permission_policy: UserFeedbackPermissionPolicy
     set_user_feedback_processed_url_name = None
     set_user_feedback_unprocessed_url_name = None
+    additional_fields_cache: list[str] | None = None
+
+    @property
+    def list_export(self) -> list[str]:
+        """List of fields to export to a spreadsheet."""
+        return [
+            'created_at',
+            'type',
+            'action',
+            'category',
+            'url',
+            'name',
+            'email',
+            'is_processed',
+            'comment',
+        ] + self._get_additional_fields()
+
+    @list_export.setter
+    def list_export(self, value) -> None:
+        # This setter is needed to be able to define list_export programmatically as property above
+        pass
+
+    @property
+    def export_filename(self) -> str:
+        """Filename given to the exported spreadsheet."""
+        return f'{self.get_page_title()} - {self.request.user.get_active_admin_plan()}'
+
+
+    @export_filename.setter
+    def export_filename(self, value) -> None:
+        # This setter is needed to be able to define export_filename programmatically as property above
+        pass
+
+    def _get_additional_fields(self) -> list[str]:
+        """Get a list of all user-defined additional fields of the feedback form present in the queryset."""
+        if self.additional_fields_cache is not None:
+            return self.additional_fields_cache
+
+        additional_fields = []
+        for feedback in self.get_queryset():
+            if feedback.additional_fields is not None:
+                additional_fields += feedback.additional_fields.keys()
+
+        duplicates_removed = list(dict.fromkeys(additional_fields))
+        self.additional_fields_cache = duplicates_removed
+        return self.additional_fields_cache
+
+    def to_row_dict(self, item) -> OrderedDict[str, str]:
+        """
+        Override the default implementation from SpreadsheetExportMixin.
+
+        Expands 'additional_fields' to individual columns in the exported spreadsheet.
+        """
+        row_dict = OrderedDict()
+
+        for field in self.list_export:
+            try:
+                value = multigetattr(item, field)
+            except AttributeError:
+                # If the field is not an attribute of the feedback model, check if it's one of all additional fields.
+                if field not in self._get_additional_fields():
+                    raise
+
+                # The field might still not exist in this particular item's additional_fields. Use N/A as a fallback.
+                value = _("N/A")
+                if item.additional_fields is not None:
+                    value = item.additional_fields.get(field, _("N/A"))
+
+            row_dict[field] = value
+
+        return row_dict
 
     def get_edit_url(self, instance: UserFeedback):
         # When the view would normally point to edit view, direct to inspect view instead
