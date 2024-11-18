@@ -33,11 +33,6 @@ from grapple.models import (
 from aplans.extensions import get_body_blocks
 from aplans.utils import DateFormatField, DateFormatOptions, OrderedModel
 
-from actions.blocks.action_content import (
-    ActionAsideContentBlock,
-    ActionMainContentBlock,
-
-)
 from actions.blocks import (
     ActionHighlightsBlock,
     ActionListBlock,
@@ -47,6 +42,10 @@ from actions.blocks import (
     RelatedPlanListBlock,
     get_default_action_content_blocks,
     get_default_action_filter_blocks,
+)
+from actions.blocks.action_content import (
+    ActionAsideContentBlock,
+    ActionMainContentBlock,
 )
 from actions.blocks.action_dashboard import ActionDashboardColumnBlock
 from actions.blocks.category_list import CategoryTypeLevelListBlock

@@ -24,6 +24,7 @@ from wagtailorderable.modeladmin.mixins import OrderableMixin
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import OrderedModelChildFormSet
 
+from actions.blocks.mixins import ActionListPageBlockFormMixin
 from actions.chooser import CategoryTypeChooser
 from admin_site.wagtail import (
     AplansAdminModelForm,
@@ -36,7 +37,6 @@ from admin_site.wagtail import (
     insert_model_translation_panels,
 )
 
-from actions.blocks.mixins import ActionListPageBlockFormMixin
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
 

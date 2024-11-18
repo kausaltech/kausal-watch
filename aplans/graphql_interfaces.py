@@ -10,11 +10,11 @@ class FieldBlockMetaData(graphene.ObjectType):
     hidden = graphene.Boolean()
 
     @staticmethod
-    def resolve_restricted(root: dict[str, bool], *args, **kwargs):
+    def resolve_restricted(root: dict[str, bool], *args, **kwargs) -> bool:
         return root['restricted']
 
     @staticmethod
-    def resolve_hidden(root, *args, **kwargs):
+    def resolve_hidden(root, *args, **kwargs) -> bool:
         return root['hidden']
 
 
@@ -27,7 +27,7 @@ class FieldBlockMetaInterface(graphene.Interface):
     meta = graphene.Field(FieldBlockMetaData)
 
     @staticmethod
-    def resolve_meta(root, info, *args, **kwargs):
+    def resolve_meta(root, info, *args, **kwargs) -> dict[str, bool]:
         attribute_type = root.value.get('attribute_type') if root.value else None
         user = info.context.user
         plan = info.context._graphql_active_plan

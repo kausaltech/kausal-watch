@@ -2,21 +2,16 @@ from __future__ import annotations
 
 import sys
 
-from django.db.models.fields import Field
-from django.db.models.fields.related import ForeignKey, ManyToManyField
-from django.db.models.fields.reverse_related import ManyToOneRel
 from wagtail import blocks
 
 import pytest
 
-from aplans.field_registry import ALL_CONTEXTS, ModelFieldProperties, ModelFieldRegistry, BlockContext
 from aplans import dynamic_blocks
+from aplans.field_registry import ALL_CONTEXTS, BlockContext, ModelFieldProperties, ModelFieldRegistry
+
 from actions.blocks import column_block_base
-from reports import report_formatters
-
 from actions.models import Action
-
-
+from reports import report_formatters
 
 pytestmark = pytest.mark.django_db
 

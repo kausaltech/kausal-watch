@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import typing
-
 from django.utils.translation import gettext_lazy as _
 from wagtail import blocks
 
