@@ -1005,6 +1005,17 @@ class Action(
         from .action_deps import ActionDependencyRelationship
         return ActionDependencyRelationship.objects.qs.all_for_action(self).visible_for_user(user, plan)
 
+    def has_contact_person_from_organization(
+        self,
+        organization: Organization,
+        include_suborganizations: bool = True,
+    ) -> bool:
+        if include_suborganizations:
+            filter_kwargs = {'organization__path__startswith': organization.path}
+        else:
+            filter_kwargs = {'organization': organization.path}
+        return self.contact_persons_unordered.filter(**filter_kwargs).exists()
+
 
 class ModelWithRole[ModelRole: 'ModelWithRole.Role']:  # pyright: ignore
     role: models.CharField[str | None, str | None]
