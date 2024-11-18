@@ -1,9 +1,8 @@
-from datetime import date
-from decimal import Decimal
+from __future__ import annotations
 
 import pytest
 
-from actions.models.features import OrderBy
+from actions.models.features import OrderBy, PlanFeatures
 from actions.tests.factories import (
     ActionContactFactory,
     ActionFactory,
@@ -25,8 +24,8 @@ from actions.tests.factories import (
 )
 from indicators.tests.factories import ActionIndicatorFactory, IndicatorFactory, IndicatorLevelFactory
 from pages.tests.factories import CategoryPageFactory
+
 from .fixtures import *
-from actions.models.features import PlanFeatures
 
 pytestmark = pytest.mark.django_db
 
@@ -1700,7 +1699,7 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
     person = action_contact.person
     assert person.email
     data = graphql_client_query_data(
-        '''
+        """
         query($action: ID!) {
           action(id: $action) {
             contactPersons {
@@ -1716,8 +1715,8 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
             }
           }
         }
-        ''',
-        variables={'action': action.id}
+        """,
+        variables={'action': action.id},
     )
     if public_data == PlanFeatures.ContactPersonsPublicData.NONE:
         expected_contact_persons = []
@@ -1727,7 +1726,7 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
         elif public_data == PlanFeatures.ContactPersonsPublicData.ALL:
             expected_email = person.email
         else:
-            assert False
+            pytest.fail("invalid ContactPersonsPublicData value")
         expected_contact_persons = [{
             'person': {
                 'firstName': person.first_name,
@@ -1741,8 +1740,8 @@ def test_action_contact_persons_redacted(graphql_client_query_data, public_data)
         }]
     expected = {
         'action': {
-            'contactPersons': expected_contact_persons
-        }
+            'contactPersons': expected_contact_persons,
+        },
     }
     assert data == expected
 

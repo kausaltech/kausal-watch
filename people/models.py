@@ -7,42 +7,46 @@ import io
 import logging
 import os
 import re
-import requests
-import reversion
 import uuid
-import willow
 from datetime import timedelta
+from typing import TYPE_CHECKING, ClassVar
+
+import reversion
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
-from easy_thumbnails.files import get_thumbnailer
-from image_cropping import ImageRatioField
 from modelcluster.models import ClusterableModel
 from modeltrans.fields import TranslationField
 from modeltrans.manager import MultilingualQuerySet
-from sentry_sdk import capture_exception
-from typing import TYPE_CHECKING, ClassVar
 from wagtail.admin.templatetags.wagtailadmin_tags import avatar_url as wagtail_avatar_url
 from wagtail.images.rect import Rect
 from wagtail.search import index
 
+import requests
+import willow
+from easy_thumbnails.files import get_thumbnailer
+from image_cropping import ImageRatioField
+from sentry_sdk import capture_exception
+
 from kausal_common.models.types import MLModelManager
+
+from aplans.utils import PlanDefaultsModel
 
 from actions.models import ActionContactPerson, PlanFeatures
 from admin_site.models import Client
-from aplans.utils import PlanDefaultsModel
 from orgs.models import Organization
 from users.models import User
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK, M2M, OneToOne, RevMany
 
+    from aplans.types import UserOrAnon, WatchRequest
+
     from actions.models.action import Action
     from actions.models.plan import Plan, PlanPublicSiteViewer
-    from aplans.types import UserOrAnon, WatchRequest
     from indicators.models import Indicator
     from orgs.models import OrganizationPlanAdmin
     from users.models import User as UserModel
@@ -463,7 +467,8 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
         return plan.pk in self.plans_with_public_site_access.values_list('plan_id', flat=True)
 
     def get_redacted_copy(self, plan: Plan):
-        """Return a copy of self with redacted information according to the configuration of the given plan.
+        """
+        Return a copy of self with redacted information according to the configuration of the given plan.
 
         You better not save the returned object.
         """
@@ -479,7 +484,7 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
             )
         if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE:
             return Person(id=self.id)
-        assert False, "Unexpected value for PlanFeatures.contact_persons_public_data"
+        raise AssertionError("Unexpected value for PlanFeatures.contact_persons_public_data")
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
