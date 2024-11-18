@@ -24,7 +24,7 @@ def get_field_label(model: type[models.Model], field_name: str) -> str | None:
     if not apps.ready:
         return 'label'
     field = model._meta.get_field(field_name)
-    if isinstance(field, (models.ForeignObjectRel,)):
+    if isinstance(field, models.ForeignObjectRel):
         # It's a relation field
         label = str(field.related_model._meta.verbose_name_plural).capitalize()
     else:
