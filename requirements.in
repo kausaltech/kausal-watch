@@ -16,7 +16,7 @@ cryptography
 django-image-cropping
 easy-thumbnails
 Pillow
-sentry-sdk
+sentry-sdk[opentelemetry]
 graphene-django
 https://github.com/kausaltech/graphene-django-optimizer/archive/f18d827d0d58c1148288b6b886c167dd2fc1931a.zip
 graphql-core>=3.2.0

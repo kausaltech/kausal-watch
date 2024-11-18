@@ -77,7 +77,10 @@ defusedxml==0.7.1
     #   social-auth-core
     #   willow
 deprecated==1.2.14
-    # via pygithub
+    # via
+    #   opentelemetry-api
+    #   opentelemetry-semantic-conventions
+    #   pygithub
 deprecation==2.1.0
     # via django-helusers
 diff-match-patch==20230430
@@ -227,6 +230,8 @@ humanize==4.9.0
     # via -r requirements.in
 idna==3.7
     # via requests
+importlib-metadata==8.5.0
+    # via opentelemetry-api
 inflection==0.5.1
     # via
     #   drf-spectacular
@@ -285,9 +290,26 @@ oauthlib==3.2.2
     #   social-auth-core
 openpyxl==3.1.2
     # via wagtail
+opentelemetry-api==1.28.1
+    # via
+    #   opentelemetry-distro
+    #   opentelemetry-instrumentation
+    #   opentelemetry-sdk
+    #   opentelemetry-semantic-conventions
+opentelemetry-distro==0.49b1
+    # via sentry-sdk
+opentelemetry-instrumentation==0.49b1
+    # via opentelemetry-distro
+opentelemetry-sdk==1.28.1
+    # via opentelemetry-distro
+opentelemetry-semantic-conventions==0.49b1
+    # via
+    #   opentelemetry-instrumentation
+    #   opentelemetry-sdk
 packaging==24.0
     # via
     #   deprecation
+    #   opentelemetry-instrumentation
     #   pytest
     #   pytest-factoryboy
 pillow==10.3.0
@@ -410,7 +432,7 @@ s3cmd==2.4.0
     # via -r requirements.in
 s3transfer==0.10.1
     # via boto3
-sentry-sdk==2.2.0
+sentry-sdk==2.18.0
     # via -r requirements.in
 six==1.16.0
     # via
@@ -443,6 +465,7 @@ typing-extensions==4.11.0
     #   django-countries
     #   django-stubs-ext
     #   jwcrypto
+    #   opentelemetry-sdk
     #   psycopg
     #   pygithub
     #   pytest-factoryboy
@@ -466,7 +489,7 @@ urllib3==1.26.18
     #   pygithub
     #   requests
     #   sentry-sdk
-uuid-utils==0.8.0
+uuid-utils==0.9.0
     # via -r kausal_common/requirements-common.txt
 vine==5.1.0
     # via
@@ -506,8 +529,12 @@ webencodings==0.5.1
 willow==1.8.0
     # via wagtail
 wrapt==1.16.0
-    # via deprecated
+    # via
+    #   deprecated
+    #   opentelemetry-instrumentation
 xlsx2csv==0.8.2
     # via polars
 xlsxwriter==3.2.0
     # via -r requirements.in
+zipp==3.21.0
+    # via importlib-metadata

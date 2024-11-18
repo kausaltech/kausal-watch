@@ -294,14 +294,6 @@ class PlanRelatedModel(PlanDefaultsModel, models.Model):
     class Meta:
         abstract = True
 
-    def __init_subclass__(cls) -> None:
-        from django.db.models.base import Model
-        meta = getattr(cls, 'Meta', None)
-        if Model not in cls.__mro__ and not getattr(meta, 'abstract', None):
-            msg = f'{cls} must also inherit from models.Model'
-            raise TypeError(msg)
-        return super().__init_subclass__()
-
     @classmethod
     def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         return qs.filter(plan=plan)

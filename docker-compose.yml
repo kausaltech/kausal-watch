@@ -53,9 +53,12 @@ x-django-environment: &django-environment
 
 x-django-build: &django-build
   context: .
-  dockerfile: docker/app/Dockerfile
+  dockerfile: kausal_common/docker/Dockerfile
   args:
     - STATIC_ROOT
+    - DJANGO_PROJECT=aplans
+    - SENTRY_PROJECT=watch-backend
+
   secrets:
     - EXTRA_PYPI_INDEX
 

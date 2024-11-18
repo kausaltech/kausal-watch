@@ -103,7 +103,6 @@ exclude = [
     'node_modules',
 ]
 check_untyped_defs = true
-enable_incomplete_feature = ['NewGenericSyntax']
 cache_fine_grained = true
 explicit_package_bases = true
 strict_optional = true

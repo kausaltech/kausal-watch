@@ -12,6 +12,8 @@ jobs:
     with:
       project_id: watch-backend
       project_type: django
+      django_project: aplans
+      dockerfile: ./kausal_common/docker/Dockerfile
 
   test:
     needs: [build]
