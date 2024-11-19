@@ -129,6 +129,9 @@ class IndicatorLevelNode(DjangoNode):
         return root.visible_for_user(info.context.user)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: IndicatorLevel, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 

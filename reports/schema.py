@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 import graphene
 from graphql.error import GraphQLError
 
+import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 from loguru import logger
 
@@ -69,6 +70,9 @@ class ReportTypeNode(DjangoNode):
         fields = public_fields(ReportType)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ReportType, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 

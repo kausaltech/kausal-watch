@@ -124,6 +124,9 @@ class PlanDomainNode(DjangoNode):
         )
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: PlanDomain, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -684,6 +687,9 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
         return qs
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: CategoryType, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -910,6 +916,9 @@ class ImpactGroupNode(DjangoNode):
         fields = public_fields(ImpactGroup)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: ImpactGroup, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -929,6 +938,9 @@ class MonitoringQualityPointNode(DjangoNode):
         fields = public_fields(MonitoringQualityPoint)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root: MonitoringQualityPoint, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
 
@@ -1571,6 +1583,9 @@ class Query:
 
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='plan',
+    )
     def resolve_plan(root, info: GQLInfo, id=None, domain=None, **kwargs):
         if not id and not domain:
             raise GraphQLError("You must supply either id or domain as arguments to 'plan'")
