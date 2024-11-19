@@ -13,11 +13,9 @@ from actions.models import Action
 
 
 def get_field_type(field):
-    if isinstance(field, ForeignKey):
+    if field.many_to_one or field.one_to_one:
         return 'single'
-    if isinstance(field, ManyToOneRel):
-        return 'many'
-    if isinstance(field, ManyToManyField):
+    if field.one_to_many or field.many_to_many:
         return 'many'
     if isinstance(field, Field):
         return 'primitive'
@@ -50,7 +48,7 @@ def test_action_field_registry_validity(field):
         # Blocks for non-public fields are not allowed
         with pytest.raises(KeyError):
             action_registry[field.name]
-        return True
+        return
 
     try:
         field_props = action_registry[field.name]
@@ -61,10 +59,10 @@ def test_action_field_registry_validity(field):
 
     default_field_type = get_field_type(field)
     if field_props.is_disabled():
-        return True
-    assert \
-        field_props.field_type in ('custom', default_field_type), \
+        return
+    assert field_props.field_type in ('custom', default_field_type), (
         f'Wrong type for field {field.name}'
+    )
 
     config = field_props.config
     assert config
@@ -72,4 +70,4 @@ def test_action_field_registry_validity(field):
         msg = (f'No report block configured for public field "{field.name}" of Action '
                'even though a dashboard block exists for it.')
         warnings.warn(msg, stacklevel=1)  # TODO: make this a test failure
-    return True
+    return
