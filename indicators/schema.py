@@ -258,12 +258,9 @@ class IndicatorNode(DjangoNode):
         model_field='actions',
     )
     def resolve_actions(self, info, plan=None):
-        qs = self.actions.visible_for_user(info.context.user)
+        qs = self.actions.visible_for_user(info.context.user, plan)
 
         if plan is not None:
-            plan_obj = get_plan_from_context(info, plan)
-            if plan_obj.is_visible_for_user(info.context.user):
-                return None
             qs = qs.filter(plan__identifier=plan)
         return qs
 

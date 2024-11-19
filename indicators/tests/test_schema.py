@@ -1,4 +1,7 @@
 import json
+from datetime import timedelta
+
+from django.utils import timezone
 
 import pytest
 
@@ -133,10 +136,12 @@ def test_related_indicator_node(graphql_client_query_data):
     }
     assert data == expected
 
-
-def test_action_indicator_node(graphql_client_query_data):
+@pytest.mark.parametrize('published_at', [None, timezone.now() - timedelta(days=1)])
+def test_action_indicator_node(graphql_client_query_data, published_at):
     indicator = IndicatorFactory()
-    action_indicator = ActionIndicatorFactory(indicator=indicator)
+    plan = PlanFactory(published_at=published_at)
+    action = ActionFactory(plan=plan)
+    action_indicator = ActionIndicatorFactory(indicator=indicator, action=action)
     data = graphql_client_query_data(
         """
         query($indicator: ID!) {
@@ -175,7 +180,7 @@ def test_action_indicator_node(graphql_client_query_data):
                 },
                 'effectType': action_indicator.effect_type.upper(),
                 'indicatesActionProgress': action_indicator.indicates_action_progress,
-            }],
+            }] if published_at else [],
         },
     }
     assert data == expected

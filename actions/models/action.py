@@ -123,6 +123,7 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
 
         A None value is interpreted identically a non-authenticated user.
         """
+        from actions.models.plan import Plan
         if plan:
             plans = [plan] if plan.is_visible_for_user(user) else []
         else:
