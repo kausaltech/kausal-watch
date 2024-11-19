@@ -20,7 +20,7 @@ pytestmark = pytest.mark.django_db
 def field_name():
     seq = 1
     def _field_name():
-        return f'field-{seq!s}'
+        return f'field-{seq}'
     return _field_name
 
 @pytest.fixture()
