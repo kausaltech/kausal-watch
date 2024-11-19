@@ -197,7 +197,7 @@ class IndicatorCausalChainBlock(blocks.StaticBlock):  # block.details.custom (in
 class BaseDatasetsBlock(blocks.StructBlock):
     heading = blocks.CharBlock(
         required=False,
-        help_text=_("What heading should be used in the public UI for the Dataset?"),
+        help_text=_("What heading should be used in the public UI for the dataset?"),
         default='',
         label=_("Heading"),
     )
