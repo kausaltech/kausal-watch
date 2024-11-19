@@ -193,7 +193,8 @@ class ModelFieldRegistry[T: type[Model]]:
         props = self[field_name]
         cfg = props.get_config(block_context)
         if not cfg.has_block:
-            raise TypeError('No {block_context} block registered for {self.model}.{field_name}.')
+            msg = f'No {block_context} block registered for {self.model}.{field_name}.'
+            raise TypeError(msg)
         cls_ = props.get_block_class(block_context)
         if cls_ is not None:
             return cls_
