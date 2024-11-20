@@ -3,8 +3,9 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from ...main import copy_plan
 from actions.models.plan import Plan
+
+from ...main import copy_plan
 
 
 class Command(BaseCommand):
@@ -41,6 +42,10 @@ class Command(BaseCommand):
             help="Append the given suffix to the title of the plan root page and its translations (default: no suffix)",
         )
         parser.add_argument(
+            '--version-name',
+            help="Set the version name of the plan copy",
+        )
+        parser.add_argument(
             '--supersede-original-plan',
             help="Supersede original plan by its copy",
             action='store_true',
@@ -62,6 +67,7 @@ class Command(BaseCommand):
                 general_name_suffix=options['name_suffix'],
                 root_page_slug_suffix=options['root_page_slug_suffix'],
                 root_page_title_suffix=options['root_page_title_suffix'],
+                version_name=options['version_name'],
                 supersede_original_plan=options['supersede_original_plan'],
                 supersede_original_actions=options['supersede_original_actions'],
             )

@@ -99,6 +99,7 @@ class CloneVisitor(AbstractVisitor):
     # Identifier and name for the copy of the plan; overrides any suffix stuff
     plan_identifier: str | None
     plan_name: str | None
+    version_name: str | None
     supersede_original_plan: bool
     supersede_original_actions: bool
 
@@ -108,6 +109,7 @@ class CloneVisitor(AbstractVisitor):
         plan_identifier: str | None = None,
         plan_name: str | None = None,
         copy_name_suffix: str | None = None,
+        version_name: str | None = None,
         supersede_original_plan: bool = False,
         supersede_original_actions: bool = False,
     ):
@@ -118,6 +120,7 @@ class CloneVisitor(AbstractVisitor):
             self.copy_name_suffix = ' ' + copy_name_suffix
         else:
             self.copy_name_suffix = ''
+        self.version_name = version_name
         self.copies = {}
         self.removed_links = {}
         self.supersede_original_plan = supersede_original_plan
@@ -206,6 +209,8 @@ class CloneVisitor(AbstractVisitor):
             instance.identifier = self.plan_identifier
         if self.plan_name:
             instance.name = self.plan_name
+        if self.version_name:
+            instance.version_name = self.version_name
         # Temporarily break cycles; to be restored after everything has been copied
         self.remove_link(instance, 'primary_action_classification')
         self.remove_link(instance, 'secondary_action_classification')
@@ -391,6 +396,7 @@ def copy_plan(
     general_name_suffix: str | None = None,
     root_page_slug_suffix: str | None = None,
     root_page_title_suffix: str | None = None,
+    version_name: str | None = None,
     supersede_original_plan: bool = False,
     supersede_original_actions: bool = False,
 ):
@@ -405,6 +411,8 @@ def copy_plan(
     Adds the suffix given in `general_name_suffix` to the names of other models. (Defaults to no suffix.)
 
     Does what you expect for `root_page_slug_suffix` and `root_page_title_suffix`.
+
+    The plan version name of the copy can be specified with `version_name`.
 
     If `supersede_original_plan` is true, the copy will supersede the original plan; if
     `supersede_original_actions` is true, each action copy will supersede its original.
@@ -421,6 +429,7 @@ def copy_plan(
         plan_identifier=new_plan_identifier,
         plan_name=new_plan_name,
         copy_name_suffix=general_name_suffix,
+        version_name=version_name,
         supersede_original_plan=supersede_original_plan,
         supersede_original_actions=supersede_original_actions,
     )
