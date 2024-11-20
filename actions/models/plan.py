@@ -43,7 +43,6 @@ from aplans.utils import (
     ModelWithPrimaryLanguage,
     OrderedModel,
     PlanRelatedModel,
-    RestrictedVisibilityModel,
     get_default_language,
     get_supported_languages,
     validate_css_color,

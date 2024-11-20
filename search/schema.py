@@ -147,13 +147,14 @@ class Query:
             page_filter |= Q(path__startswith=path)
 
         querysets = [
-            Action.objects.visible_for_user(
+            Action.objects.all().visible_for_user( # type: ignore[attr-defined]
                 info.context.user).filter(plan__in=plan_ids).select_related('plan', 'plan__organization'),
             Page.objects.filter(page_filter).live().specific(),
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
-            querysets.append(Indicator.objects.visible_for_user(info.context.user).filter(plans__in=plan_ids))
+            querysets.append(Indicator.objects.visible_for_user(info.context.user).filter(plans__in=plan_ids)) # type: ignore[attr-defined]
+
 
 
         lang = get_language()

@@ -17,7 +17,6 @@ from factory.declarations import LazyAttribute, RelatedFactory, SelfAttribute, S
 from factory.helpers import post_generation
 
 from aplans.factories import ModelFactory
-from aplans.utils import RestrictedVisibilityModel
 
 from actions.blocks import ActionListBlock, CategoryListBlock
 from actions.models import (
