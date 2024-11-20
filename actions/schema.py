@@ -123,13 +123,6 @@ class PlanDomainNode(DjangoNode):
             'status_message',
         )
 
-    @staticmethod
-    @gql_optimizer.resolver_hints(
-        model_field='plan',
-    )
-    def resolve_plan(root: PlanDomain, info) -> Plan | None:
-        return root.plan.get_if_visible(info.context.user)
-
 class PlanFeaturesNode(DjangoNode):
     public_contact_persons = graphene.Boolean(required=True)
     enable_moderation_workflow = graphene.Boolean()
@@ -688,7 +681,7 @@ class CategoryTypeNode(ResolveShortDescriptionFromLeadParagraphShim, DjangoNode)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan',),
     )
     def resolve_plan(root: CategoryType, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -917,7 +910,7 @@ class ImpactGroupNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: ImpactGroup, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -939,7 +932,7 @@ class MonitoringQualityPointNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: MonitoringQualityPoint, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1157,7 +1150,7 @@ class ActionNode(ModelAdminAdminButtonsMixin, AttributesMixin, DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: Action, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1339,7 +1332,7 @@ class ActionScheduleNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: ActionSchedule, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1355,7 +1348,7 @@ class ActionStatusNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: ActionStatus, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1368,7 +1361,7 @@ class ActionImplementationPhaseNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: ActionImplementationPhase, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1418,7 +1411,7 @@ class ActionImpactNode(DjangoNode):
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root: ActionImpact, info) -> Plan | None:
         return root.plan.get_if_visible(info.context.user)
@@ -1584,7 +1577,7 @@ class Query:
 
     @staticmethod
     @gql_optimizer.resolver_hints(
-        model_field='plan',
+        select_related=('plan'),
     )
     def resolve_plan(root, info: GQLInfo, id=None, domain=None, **kwargs):
         if not id and not domain:
@@ -1609,7 +1602,7 @@ class Query:
         info.context._plan_hostname = hostname.lower() # type: ignore
         plans = Plan.objects.get_queryset().for_hostname(
             info.context._plan_hostname, request=info.context, #type: ignore
-            ).visible_for_user(info.context.user)
+            )
         ret = list(gql_optimizer.query(plans, info))
         req = info.context
         if not ret:
@@ -1730,6 +1723,9 @@ class Query:
         return gql_optimizer.query(qs, info)
 
     @staticmethod
+    @gql_optimizer.resolver_hints(
+        select_related=('plan',),
+    )
     def resolve_plan_categories(root, info, plan, **kwargs):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:

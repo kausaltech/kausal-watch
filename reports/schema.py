@@ -20,7 +20,6 @@ from reports.models import ActionSnapshot, Report, ReportType
 if TYPE_CHECKING:
     from actions.models.plan import Plan
 
-
 @register_django_node
 class ReportNode(DjangoNode):
     fields = graphene.List(graphene.NonNull(lambda: grapple_registry.streamfield_blocks.get(ReportFieldBlock)))

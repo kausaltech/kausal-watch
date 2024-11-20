@@ -14,6 +14,7 @@ from aplans.graphql_types import DjangoNode, get_plan_from_context, order_querys
 from aplans.utils import RestrictedVisibilityModel, public_fields
 
 from actions.models import Action
+from actions.models.action import ActionQuerySet
 from actions.models.plan import Plan, PlanQuerySet
 from actions.schema import ScenarioNode
 from indicators.models import (
@@ -259,9 +260,12 @@ class IndicatorNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='actions',
+        select_related=('plan',),
     )
-    def resolve_actions(self, info, plan=None):
-        qs = self.actions.visible_for_user(info.context.user, plan)
+    @staticmethod
+    def resolve_actions(root: Indicator, info, plan=None) -> ActionQuerySet:
+        qs = cast(ActionQuerySet, root.actions.all())
+        qs = qs.visible_for_user(info.context.user, plan)
 
         if plan is not None:
             qs = qs.filter(plan__identifier=plan)

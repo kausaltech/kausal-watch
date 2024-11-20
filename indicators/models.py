@@ -733,9 +733,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
 
         A None value is interpreted identically to a non-authenticated user.
         """
+
         if (user is None or not user.is_authenticated) and \
             self.visibility != RestrictedVisibilityModel.VisibilityState.PUBLIC and \
-                not self.plans.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC).exists():
+                not self.plans.all().visible_for_user(user).exists():
             return False
         return True
 
