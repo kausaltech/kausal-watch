@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import importlib
 import importlib.util
@@ -11,7 +13,6 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.utils import translation
 from graphene_django.views import GraphQLView
-from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
 from graphql.error import GraphQLError
 from graphql.language.ast import StringValueNode, VariableNode
 
@@ -21,18 +22,20 @@ from rich.console import Console
 from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
 
-from rest_framework.authentication import TokenAuthentication
-
-from aplans.types import WatchAPIRequest
-
-from actions.models import Plan
+from actions.models.plan import Plan
 from users.models import User
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError
 from .graphql_types import AuthenticatedUserNode, WorkflowStateEnum
 
 if TYPE_CHECKING:
+    from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
+    from rest_framework.authentication import TokenAuthentication
+
+    from aplans.types import WatchAPIRequest
+
     from actions.models.plan import PlanQuerySet
+
 
 SUPPORTED_LANGUAGES = {x[0].lower() for x in settings.LANGUAGES}
 
