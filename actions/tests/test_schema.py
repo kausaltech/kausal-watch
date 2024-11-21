@@ -757,13 +757,18 @@ def test_category_type_node(
 # TODO: test_common_category_node
 
 
+@pytest.mark.parametrize('published', [False, True])
 def test_category_node(
-    graphql_client_query_data, plan_with_pages, category_type, category, category_level, attribute_rich_text,
-    attribute_choice,
+    graphql_client_query_data, plan_with_pages, category_type, category, category_level,
+    attribute_rich_text, attribute_choice, published
 ):
     plan = plan_with_pages
+    plan.published_at = timezone.now() - timedelta(days=1) if published else None
+    plan.save()
+
     child_category = CategoryFactory(parent=category)
     CategoryPageFactory(category=category)
+
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -807,6 +812,11 @@ def test_category_node(
         """,
         variables={'plan': plan.identifier},
     )
+
+    if not published:
+        assert data['planCategories'] is None
+        return
+
     expected = {
         'planCategories': [{
             'id': str(category.id),

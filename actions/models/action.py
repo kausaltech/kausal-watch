@@ -128,12 +128,11 @@ class ActionQuerySet(SearchableQuerySetMixin, MultilingualQuerySet['Action']):
             plans = [plan] if plan.is_visible_for_user(user) else []
         else:
             plans = list(Plan.objects.visible_for_user(user))
+
+        qs = self.filter(plan__in=plans)
         if user is None or not user.is_authenticated:
-            return self.filter(
-                visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC,
-                plan__in=plans,
-            )
-        return self.filter(plan__in=Plan.objects.visible_for_user(user))
+            qs = qs.filter(visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+        return qs
 
     def visible_for_public(self) -> Self:
         return self.visible_for_user(None)

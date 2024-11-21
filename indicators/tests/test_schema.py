@@ -912,3 +912,39 @@ def test_related_indicators_visibility(graphql_client_query_data):
         },
     }
     assert data == expected
+
+@pytest.mark.parametrize(
+    'published_at',
+    [
+        timezone.now() - timedelta(days=1),  # Published
+        None,  # Unpublished
+    ]
+)
+def test_indicator_plans_visibility(graphql_client_query_data, published_at):
+    """Test plan visibility in indicator's plans field for unauthenticated users."""
+    plan = PlanFactory(published_at=published_at)
+    indicator = IndicatorFactory()
+    indicator.plans.add(plan)
+
+    response = graphql_client_query_data(
+        """
+        query($id: ID!) {
+          indicator(id: $id) {
+            plans {
+              id
+            }
+          }
+        }
+        """,
+        variables={'id': str(indicator.id)},
+    )
+
+    expected = {
+        'indicator': {
+            'plans': [{
+                'id': plan.identifier,
+            }] if published_at is not None else []
+        }
+    }
+
+    assert response == expected

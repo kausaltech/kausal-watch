@@ -547,7 +547,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         return None
 
     def get_if_visible(self, user):
-        return self if self and self.is_visible_for_user(user) else None
+        return self if self.is_visible_for_user(user) else None
 
     def create_default_site(self, hostname=None):
         if hostname is None:

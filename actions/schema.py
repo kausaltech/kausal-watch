@@ -84,6 +84,7 @@ from actions.models import (
 )
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from actions.models.attributes import ModelWithAttributes
+from indicators.models import IndicatorLevelQuerySet
 from orgs.models import Organization
 from pages import schema as pages_schema
 from pages.models import ActionListPage, AplansPage, CategoryPage, Page
@@ -225,6 +226,10 @@ class PlanNode(DjangoNode):
     )
     impact_groups = graphene.List('actions.schema.ImpactGroupNode', first=graphene.Int(), required=True)
     image = graphene.Field('images.schema.ImageNode', required=False)
+    indicator_levels = graphene.List(
+        'indicators.schema.IndicatorLevelNode',
+        required=True,
+    )
 
     primary_orgs = graphene.List('orgs.schema.OrganizationNode', required=True)
 
@@ -266,7 +271,14 @@ class PlanNode(DjangoNode):
     )
 
     has_indicator_relationships = graphene.Boolean()
-
+    @staticmethod
+    @gql_optimizer.resolver_hints(
+        model_field='indicator_levels',
+    )
+    def resolve_indicator_levels(root: Plan, info) -> IndicatorLevelQuerySet:
+        if not root.is_visible_for_user(info.context.user):
+            return cast(IndicatorLevelQuerySet, root.indicator_levels.none())
+        return cast(IndicatorLevelQuerySet, root.indicator_levels.all())
 
     @staticmethod
     def resolve_action_status_summaries(root: Plan, info):
