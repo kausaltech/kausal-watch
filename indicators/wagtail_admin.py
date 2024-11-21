@@ -655,7 +655,9 @@ class IndicatorGroup(ModelAdminGroup):
     menu_label = _('Indicators')
     menu_icon = 'kausal-indicator'
     menu_order = 20
-    items = (IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin)
+    items: tuple[type[AplansModelAdmin[Any]], ...] = (
+        IndicatorAdmin, CommonIndicatorAdmin, DimensionAdmin, UnitAdmin, QuantityAdmin
+    )
 
 
 modeladmin_register(IndicatorGroup)

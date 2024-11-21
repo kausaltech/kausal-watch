@@ -83,3 +83,4 @@ psutil
 django-stubs-ext
 treelib
 graphene-pydantic
+diffsync

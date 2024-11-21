@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import importlib
+import importlib.util
 from urllib.parse import urlparse
+import typing
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -41,8 +42,11 @@ from users.views import change_admin_plan
 from .api_router import router as api_router
 from .graphene_views import SentryGraphQLView
 
+if typing.TYPE_CHECKING:
+    from types import ModuleType
+
 extensions_api_views = []
-kwe_urls = []
+kwe_urls: ModuleType | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions import urls
     from kausal_watch_extensions.api import all_views

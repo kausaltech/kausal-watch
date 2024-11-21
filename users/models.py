@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
     from rest_framework.authtoken.models import Token
 
-    from kausal_common.models.types import FK
+    from kausal_common.models.types import FK, RevOne
 
     from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 
@@ -57,6 +57,7 @@ class User(AbstractUser):
 
     auth_token: Token
     person: Person
+    wagtail_userprofile: RevOne[User, UserProfile]
     _corresponding_person: Person | None
     _active_admin_plan: Plan
     _adminable_plans: models.QuerySet[Plan]

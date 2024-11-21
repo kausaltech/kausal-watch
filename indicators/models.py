@@ -119,7 +119,7 @@ class Unit(ClusterableModel, ModificationTracking):
         fields=['name', 'short_name', 'verbose_name', 'verbose_name_plural'],
     )
 
-    objects: MultilingualManager[Self] = MultilingualManager()
+    objects: ClassVar[MLMM[Self, MultilingualQuerySet[Self]]] = manager_from_mlqs(MultilingualQuerySet[Self])
 
     autocomplete_search_field = 'name'
 

@@ -1,5 +1,6 @@
 import hashlib
 import importlib
+import importlib.util
 import json
 import os
 from typing import TYPE_CHECKING, Any
@@ -20,6 +21,8 @@ from loguru import logger
 from rich.console import Console
 from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
+
+from rest_framework.authentication import TokenAuthentication
 
 from aplans.settings import LOG_SQL_QUERIES
 from aplans.types import WatchAPIRequest
@@ -160,10 +163,10 @@ class LocaleMiddleware:
         return next(root, info, **kwargs)
 
 
+IDTokenAuthentication: type[TokenAuthentication] | None = None
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
     from kausal_watch_extensions.auth.authentication import IDTokenAuthentication
-else:
-    IDTokenAuthentication = None
+    id_token_authentication_found = True
 
 
 def perform_auth(request):

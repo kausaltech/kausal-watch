@@ -59,6 +59,8 @@ click-plugins==1.1.1
     # via celery
 click-repl==0.3.0
     # via celery
+colorama==0.4.6
+    # via diffsync
 coreapi==2.3.3
     # via -r requirements.in
 coreschema==0.0.4
@@ -87,6 +89,8 @@ deprecation==2.1.0
     # via django-helusers
 diff-match-patch==20230430
     # via django-import-export
+diffsync==2.0.1
+    # via -r requirements.in
 django==5.0.6
     # via
     #   -r requirements.in
@@ -312,9 +316,10 @@ opentelemetry-semantic-conventions==0.49b1
     # via
     #   opentelemetry-instrumentation
     #   opentelemetry-sdk
-packaging==24.0
+packaging==23.2
     # via
     #   deprecation
+    #   diffsync
     #   opentelemetry-instrumentation
     #   pytest
     #   pytest-factoryboy
@@ -351,7 +356,9 @@ pycparser==2.22
 pycryptodome==3.20.0
     # via -r requirements.in
 pydantic==2.9.2
-    # via graphene-pydantic
+    # via
+    #   diffsync
+    #   graphene-pydantic
 pydantic-core==2.23.4
     # via pydantic
 pygithub==2.3.0
@@ -460,6 +467,8 @@ soupsieve==2.5
     # via beautifulsoup4
 sqlparse==0.5.0
     # via django
+structlog==24.4.0
+    # via diffsync
 tablib==3.5.0
     # via django-import-export
 telepath==0.3.1
