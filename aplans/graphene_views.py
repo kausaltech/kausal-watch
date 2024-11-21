@@ -13,7 +13,6 @@ from django.utils import translation
 from graphene_django.views import GraphQLView
 from graphql import DirectiveNode, ExecutionResult, GraphQLResolveInfo
 from graphql.error import GraphQLError
-from graphql.execution import ExecutionContext
 from graphql.language.ast import StringValueNode, VariableNode
 
 import sentry_sdk
@@ -24,7 +23,6 @@ from sentry_sdk import tracing as sentry_tracing
 
 from rest_framework.authentication import TokenAuthentication
 
-from aplans.settings import LOG_SQL_QUERIES
 from aplans.types import WatchAPIRequest
 
 from actions.models import Plan
