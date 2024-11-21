@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
-import typing
 from urllib.parse import urlparse
+import typing
 
 from django.conf import settings
 from django.conf.urls.static import static
