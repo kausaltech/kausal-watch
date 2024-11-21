@@ -4,9 +4,9 @@ import abc
 import logging
 import random
 import re
+import typing
 from enum import Enum
 from typing import (
-    TYPE_CHECKING,
     Generic,
     Literal,
     Protocol,
@@ -37,7 +37,7 @@ import libvoikko  # type: ignore
 import sentry_sdk
 from tinycss2.color3 import parse_color
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from collections.abc import Iterable
     from datetime import datetime, timedelta
 
@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
     from django.utils.choices import _Choices
     from modeltrans.fields import TranslationField
+    from wagtail.blocks import StructBlock
 
     from aplans.types import UserOrAnon
 
@@ -737,7 +738,12 @@ def get_collator(lang: str) -> str:
     return LANGUAGE_COLLATORS.get(lang, 'en-US-x-icu')
 
 
-class StaticBlockToStructBlockWorkaroundMixin:
+if typing.TYPE_CHECKING:
+    _StructBlock = StructBlock
+else:
+    _StructBlock = object
+
+class StaticBlockToStructBlockWorkaroundMixin(_StructBlock):
     # Workaround for migration from StaticBlock to StructBlock
     def bulk_to_python(self, values):
         li = list(values)

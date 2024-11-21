@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from django.apps import apps
+from django.contrib.contenttypes.fields import GenericForeignKey
 from django.db import models
 from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
@@ -24,9 +25,13 @@ def get_field_label(model: type[models.Model], field_name: str) -> str | None:
     if not apps.ready:
         return 'label'
     field = model._meta.get_field(field_name)
-    if isinstance(field, models.ForeignObjectRel):
+    if isinstance(field, models.ForeignObjectRel | GenericForeignKey):
         # It's a relation field
-        label = str(field.related_model._meta.verbose_name_plural).capitalize()
+        related_model = field.related_model
+        if isinstance(related_model, str):
+            label = str(model._meta.verbose_name_plural).capitalize()
+        else:
+            label = str(related_model._meta.verbose_name_plural).capitalize()
     else:
         label = str(field.verbose_name).capitalize()
     return label

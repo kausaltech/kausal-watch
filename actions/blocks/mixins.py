@@ -11,12 +11,21 @@ if typing.TYPE_CHECKING:
     from django.db.models import Model
     from wagtail import blocks
     from wagtail.blocks.stream_block import StreamValue
+    from actions.models import AttributeType, CategoryType
+    from wagtail.blocks import BaseStreamBlock
+
+if typing.TYPE_CHECKING:
+    _Base = BaseStreamBlock
+else:
+    _Base = object
 
 class HasModelInstanceContainerBlocks(typing.Protocol):
     model_instance_container_blocks: dict[blocks.Block, str]
 
 
-class ActionListPageBlockPresenceMixin:
+type SupportedModel = AttributeType | CategoryType
+
+class ActionListPageBlockPresenceMixin(_Base):
     """
     Supports adding/removing blocks which represent some model instance.
 
@@ -29,24 +38,25 @@ class ActionListPageBlockPresenceMixin:
     needs to be added to the instance editing form.
     """
 
-    model_instance_container_blocks: dict[blocks.Block, str]
+    model_instance_container_blocks: dict[type[SupportedModel], str]
 
-    def _get_block_names(self: blocks.StructBlock, instance: Model) -> tuple[str, str]:
-        block_name = self.model_instance_container_blocks[instance._meta.model]
+    def _get_block_names(self, instance: SupportedModel) -> tuple[str, str]:
+        model_class = type(instance)
+        block_name = self.model_instance_container_blocks[model_class]
         child_block = self.child_blocks[block_name]
         sub_block_name = child_block.model_instance_container_blocks[instance._meta.model]
         return (block_name, sub_block_name)
 
-    def contains_model_instance(self, instance: Model, blocks: StreamValue):
+    def contains_model_instance(self, instance: SupportedModel, blocks: StreamValue):
         block_name, sub_block_name = self._get_block_names(instance)
         container_blocks = (child for child in blocks if child.block_type == block_name)
         return any(child.value.get(sub_block_name) == instance for child in container_blocks)
 
-    def insert_model_instance(self, instance: Model, blocks: StreamValue):
+    def insert_model_instance(self, instance: SupportedModel, blocks: StreamValue):
         block_name, sub_block_name = self._get_block_names(instance)
         blocks.append((block_name, {sub_block_name: instance}))
 
-    def remove_model_instance(self, instance: Model, blocks: StreamValue):
+    def remove_model_instance(self, instance: SupportedModel, blocks: StreamValue):
         block_name, sub_block_name = self._get_block_names(instance)
         try:
             i = next(

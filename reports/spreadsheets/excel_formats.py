@@ -3,11 +3,13 @@ from __future__ import annotations
 import inspect
 import typing
 
+from reports.report_formatters import ActionReportContentField
+
 if typing.TYPE_CHECKING:
+    from wagtail.blocks import BoundBlock
+
     import xlsxwriter
     from xlsxwriter.format import Format
-
-    from reports.blocks.action_content import ReportFieldBlock
 
 
 class ExcelFormats(dict):
@@ -133,10 +135,12 @@ class ExcelFormats(dict):
     def __getattr__(self, name):
         return self[name]
 
-    def set_for_field(self, field: ReportFieldBlock, labels: list) -> None:
+
+    def set_for_field(self, field: BoundBlock, labels: list) -> None:
         if None not in {self._formats_for_fields.get(label) for label in labels}:
             return
-        cell_format_specs: dict = field.block.get_xlsx_cell_format(field.value)
+        block: ActionReportContentField = typing.cast(ActionReportContentField, field.block)
+        cell_format_specs: dict[str, str] | None = block.get_xlsx_cell_format(field.value)
         cell_format = self.workbook.add_format(cell_format_specs)
         self.StyleSpecifications.all_rows(cell_format)
         for label in labels:
