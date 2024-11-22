@@ -8,7 +8,6 @@ from django.apps import apps
 from django.utils.translation import gettext as _
 
 if typing.TYPE_CHECKING:
-    from wagtail import blocks
     from wagtail.blocks import BaseStreamBlock
     from wagtail.blocks.stream_block import StreamValue
 
