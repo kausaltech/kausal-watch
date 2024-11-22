@@ -72,7 +72,7 @@ def _get_default_block_class_name_(model: type[models.Model], field_name: str) -
     return class_name
 
 
-def generate_block_for_field(  # noqa: PLR0913
+def generate_block_for_field(
         model: type[models.Model],
         field_name: str,
         target_module: object,

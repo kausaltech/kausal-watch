@@ -19,13 +19,13 @@ pytestmark = pytest.mark.django_db
 @pytest.fixture
 def field_name():
     seq = 1
-    def _field_name():
+    def _field_name():  # noqa: ANN202
         return f'field-{seq}'
     return _field_name
 
 @pytest.fixture
 def model_field_properties_factory(field_name):
-    def model_field_property(**kwargs):
+    def model_field_property(**kwargs):  # noqa: ANN202
         if 'field_name' not in kwargs:
             kwargs['field_name'] = field_name()
         return ModelFieldProperties(**kwargs)
@@ -34,7 +34,7 @@ def model_field_properties_factory(field_name):
 
 @pytest.fixture
 def disabled_field_factory(model_field_properties_factory):
-    def _disabled_field(block_context):
+    def _disabled_field(block_context):  # noqa: ANN202
          has = {
              'details': 'has_details_block',
              'dashboard': 'has_dashboard_column_block',

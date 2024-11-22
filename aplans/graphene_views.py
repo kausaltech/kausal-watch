@@ -15,6 +15,7 @@ from django.utils import translation
 from graphene_django.views import GraphQLView
 from graphql.error import GraphQLError
 from graphql.language.ast import StringValueNode, VariableNode
+from rest_framework.authentication import TokenAuthentication
 
 import sentry_sdk
 from loguru import logger
@@ -22,13 +23,9 @@ from rich.console import Console
 from rich.syntax import Syntax
 from sentry_sdk import tracing as sentry_tracing
 
-from rest_framework.authentication import TokenAuthentication
-
-from aplans.settings import LOG_SQL_QUERIES
 from aplans.types import WatchAPIRequest
 
 from actions.models import Plan
-
 from users.models import User
 
 from .graphql_helpers import GraphQLAuthFailedError, GraphQLAuthRequiredError

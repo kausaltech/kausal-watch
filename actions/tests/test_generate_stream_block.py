@@ -160,7 +160,7 @@ def test_expected_subblocks(fixturename, expected_subblocks, request, generated_
 @pytest.fixture
 def action_registry_factory():
     generated = importlib.import_module('actions.blocks.generated')
-    def make_action_registry(*default_fields):
+    def make_action_registry(*default_fields):  # noqa: ANN202
         mfr = ModelFieldRegistry(Action, generated)
         for f in default_fields:
             mfr.register(ModelFieldProperties(field_name=f))

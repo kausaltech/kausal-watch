@@ -3,8 +3,6 @@ from __future__ import annotations
 import warnings
 
 from django.db.models.fields import Field
-from django.db.models.fields.related import ForeignKey, ManyToManyField
-from django.db.models.fields.reverse_related import ManyToOneRel
 
 import pytest
 
