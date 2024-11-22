@@ -8,11 +8,11 @@ from django.apps import apps
 from django.utils.translation import gettext as _
 
 if typing.TYPE_CHECKING:
-    from django.db.models import Model
     from wagtail import blocks
-    from wagtail.blocks.stream_block import StreamValue
-    from actions.models import AttributeType, CategoryType
     from wagtail.blocks import BaseStreamBlock
+    from wagtail.blocks.stream_block import StreamValue
+
+    from actions.models import AttributeType, CategoryType
 
 if typing.TYPE_CHECKING:
     _Base = BaseStreamBlock
