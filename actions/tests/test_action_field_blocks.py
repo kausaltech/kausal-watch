@@ -54,6 +54,7 @@ def test_action_field_registry_validity(field):
         msg = (f'No blocks configured for public field "{field.name}" of Action. '
                'Please configure or disable blocks for that field in actions.action_fields.py')
         warnings.warn(msg, stacklevel=1)  # TODO: make this a test failure
+        return
 
     default_field_type = get_field_type(field)
     if field_props.is_disabled():
@@ -64,8 +65,8 @@ def test_action_field_registry_validity(field):
 
     config = field_props.config
     assert config
-    if config['dashboard'].has_block and not config['report'].has_block:
+    if config['dashboard'].has_block:
         msg = (f'No report block configured for public field "{field.name}" of Action '
                'even though a dashboard block exists for it.')
-        warnings.warn(msg, stacklevel=1)  # TODO: make this a test failure
+        assert config['report'].has_block, msg
     return
