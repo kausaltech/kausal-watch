@@ -209,7 +209,7 @@ class AdminOnlyPanel(ObjectList):
 
 
 class AplansAdminModelForm[M: Model](WagtailAdminModelForm[M, 'User']):
-    pass
+    plan: Plan
 
 if TYPE_CHECKING:
     BoundFieldPanelMixinBase = FieldPanel.BoundPanel

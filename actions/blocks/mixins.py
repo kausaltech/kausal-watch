@@ -13,15 +13,12 @@ if typing.TYPE_CHECKING:
     from wagtail.blocks.stream_block import StreamValue
 
     from actions.models import AttributeType, CategoryType
+    from admin_site.wagtail import AplansAdminModelForm
 
 if typing.TYPE_CHECKING:
     _Base = BaseStreamBlock
 else:
     _Base = object
-
-class HasModelInstanceContainerBlocks(typing.Protocol):
-    model_instance_container_blocks: dict[blocks.Block, str]
-
 
 type SupportedModel = AttributeType | CategoryType
 
@@ -71,7 +68,12 @@ class ActionListPageBlockPresenceMixin(_Base):
             del blocks[i]
 
 
-class ActionListPageBlockFormMixin(forms.Form):
+if typing.TYPE_CHECKING:
+    _FormBase = AplansAdminModelForm
+else:
+    _FormBase = object
+
+class ActionListPageBlockFormMixin(_FormBase):
     """
     Implements adding/removing blocks which represent the model instance being edited.
 
