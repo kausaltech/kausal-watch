@@ -142,7 +142,7 @@ register(wagtail_factories.blocks.ImageChooserBlockFactory)
 register(wagtail_factories.factories.CollectionFactory)
 
 
-@pytest.fixture()
+@pytest.fixture
 @factory.django.mute_signals(post_save)
 def plan_with_pages(plan):
     plan.create_default_site()
@@ -150,24 +150,24 @@ def plan_with_pages(plan):
     return plan
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_admin_user(plan_admin_person):
     return plan_admin_person.user
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_contact_person(action):
     user = users_factories.UserFactory.create()
     person = people_factories.PersonFactory.create(contact_for_actions=[action], user=user)
     return person
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_contact_person_user(action_contact_person):
     return action_contact_person.user
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client_query(client):
     def func(*args, **kwargs):
         response = graphql_query(*args, **kwargs, client=client, graphql_url='/v1/graphql/')
@@ -175,7 +175,7 @@ def graphql_client_query(client):
     return func
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client_query_data(graphql_client_query):
     """Make a GraphQL request, make sure the `error` field is not present and return the `data` field."""
     def func(*args, **kwargs):
@@ -185,17 +185,17 @@ def graphql_client_query_data(graphql_client_query):
     return func
 
 
-@pytest.fixture()
+@pytest.fixture
 def uuid(user):
     return str(user.uuid)
 
 
-@pytest.fixture()
+@pytest.fixture
 def token(user):
     return Token.objects.create(user=user).key
 
 
-@pytest.fixture()
+@pytest.fixture
 def contains_error():
     def func(response, code=None, message=None):
         if 'errors' not in response:
@@ -221,7 +221,7 @@ class ModelAdminEditTest(Protocol):
         post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...  # noqa: B006
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTest:
     def test_admin(
         admin_class: type[ModelAdmin], instance: Model, user: User,
@@ -264,7 +264,7 @@ def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTes
     return test_admin
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client():
     client = JSONAPIClient()
     return client
@@ -297,22 +297,22 @@ for format in AttributeType.AttributeFormat:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_attribute_type__category_choice__attribute_category_type(plan, category_type_factory):
     return category_type_factory(plan=plan)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type_choice_option(attribute_type_choice_option_factory, action_attribute_type__ordered_choice):
     return attribute_type_choice_option_factory(type=action_attribute_type__ordered_choice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type_choice_option__optional(attribute_type_choice_option_factory, action_attribute_type__optional_choice):
     return attribute_type_choice_option_factory(type=action_attribute_type__optional_choice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_choice(attribute_choice_factory, action_attribute_type__ordered_choice, action, action_attribute_type_choice_option):
     return attribute_choice_factory(
         type=action_attribute_type__ordered_choice,
@@ -327,7 +327,7 @@ def n_of_a_kind(factory, count, context={}):
     ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def actions_having_attributes(
         plan,
         category_type,

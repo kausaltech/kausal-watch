@@ -24,37 +24,37 @@ register(PlanFactory)
 # register(UserFactory)
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_list_url(plan):
     return reverse('action-list', args=(plan.pk,))
 
 
-@pytest.fixture()
+@pytest.fixture
 def action_detail_url(plan, action):
     return reverse('action-detail', kwargs={'plan_pk': plan.pk, 'pk': action.pk})
 
 
-@pytest.fixture()
+@pytest.fixture
 def openapi_url():
     return reverse('schema')
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_list_url():
     return reverse('plan-list')
 
 
-@pytest.fixture()
+@pytest.fixture
 def person_list_url():
     return reverse('person-list')
 
 
-@pytest.fixture()
+@pytest.fixture
 def category_list_url(plan, category_type):
     return reverse('category-list', args=(plan.pk, category_type.pk))
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_task_factory, action_factory):
     plan = plan_factory()
     workflow = workflow_factory()
@@ -64,7 +64,7 @@ def plan_with_single_task_moderation(plan_factory, workflow_factory, workflow_ta
     return plan
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_with_double_task_moderation(plan_factory, workflow_task_factory, workflow_factory, action_factory):
     plan = plan_factory()
     workflow = workflow_factory()

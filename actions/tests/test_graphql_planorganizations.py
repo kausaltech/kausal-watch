@@ -5,12 +5,12 @@ from actions.tests.factories import ActionFactory, ActionResponsiblePartyFactory
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def suborganization(organization_factory, organization):
     return organization_factory(parent=organization)
 
 
-@pytest.fixture()
+@pytest.fixture
 def another_organization(organization_factory):
     return organization_factory()
 

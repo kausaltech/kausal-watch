@@ -20,7 +20,7 @@ def colorized_implementation_phases(request, plan, action_implementation_phase_f
     return [action_implementation_phase_factory(plan=plan, identifier=f'phase{i}', color=color) for i in range(5)]
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_with_statuses_phases_and_actions(
     plan,
     action_factory,

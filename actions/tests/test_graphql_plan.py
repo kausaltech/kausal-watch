@@ -80,12 +80,12 @@ def add_menu_test_pages(root_page, menu_key='show_in_menus'):
     return pages
 
 
-@pytest.fixture()
+@pytest.fixture
 def suborganization(organization_factory, organization):
     return organization_factory(parent=organization)
 
 
-@pytest.fixture()
+@pytest.fixture
 def another_organization(organization_factory):
     return organization_factory()
 

@@ -31,42 +31,42 @@ from people.tests.factories import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def category_type(plan):
     return CategoryTypeFactory(plan=plan)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type__text(category_type):
     return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.TEXT)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type__rich_text(category_type):
     return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.RICH_TEXT)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type__ordered_choice(category_type):
     return AttributeTypeFactory(scope=category_type, format=AttributeType.AttributeFormat.ORDERED_CHOICE)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_type_choice_option(attribute_type__ordered_choice):
     return AttributeTypeChoiceOptionFactory(type=attribute_type__ordered_choice)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_text(attribute_type__text, category):
     return AttributeTextFactory(type=attribute_type__text, content_object=category)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_rich_text(attribute_type__rich_text, category):
     return AttributeRichTextFactory(type=attribute_type__rich_text, content_object=category)
 
 
-@pytest.fixture()
+@pytest.fixture
 def attribute_choice(attribute_type__ordered_choice, category, attribute_type_choice_option):
     return AttributeChoiceFactory(
         type=attribute_type__ordered_choice,
@@ -75,17 +75,17 @@ def attribute_choice(attribute_type__ordered_choice, category, attribute_type_ch
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def category(category_type):
     return CategoryFactory(type=category_type)
 
 
-@pytest.fixture()
+@pytest.fixture
 def category_level(category_type):
     return CategoryLevelFactory(type=category_type)
 
 
-@pytest.fixture()
+@pytest.fixture
 def actions_with_relations_factory():
     def actions_with_relations(visibility_lhs, visibility_rhs):
         plan = PlanFactory()
@@ -140,6 +140,6 @@ def actions_with_relations_factory():
     return actions_with_relations
 
 
-@pytest.fixture()
+@pytest.fixture
 def plan_with_actions_with_attributes(plan, actions_having_attributes):
     return plan

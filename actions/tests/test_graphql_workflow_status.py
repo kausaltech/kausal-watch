@@ -7,7 +7,7 @@ from actions.attributes import DraftAttributes
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def query_action_workflow_status():
     return """
       query ($id: ID!) {

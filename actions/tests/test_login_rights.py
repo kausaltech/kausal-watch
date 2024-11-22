@@ -23,7 +23,7 @@ ORG_TREE = """
 """
 
 
-@pytest.fixture()
+@pytest.fixture
 def organization_hierarchy(organization_hierarchy_factory):
     return organization_hierarchy_factory(ORG_TREE)
 
@@ -32,7 +32,7 @@ def get_org_pk(name: str) -> int:
     return Organization.objects.get(name=name).pk
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_data(organization_hierarchy):
     all_orgs = _make_organization_tree(Organization.objects.order_by('path').all())
     return {
@@ -53,7 +53,7 @@ def test_data(organization_hierarchy):
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_models(  # noqa: C901
         superuser,
         plan,

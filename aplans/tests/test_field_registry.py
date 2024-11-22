@@ -16,14 +16,14 @@ from reports import report_formatters
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def field_name():
     seq = 1
     def _field_name():
         return f'field-{seq}'
     return _field_name
 
-@pytest.fixture()
+@pytest.fixture
 def model_field_properties_factory(field_name):
     def model_field_property(**kwargs):
         if 'field_name' not in kwargs:
@@ -32,7 +32,7 @@ def model_field_properties_factory(field_name):
     return model_field_property
 
 
-@pytest.fixture()
+@pytest.fixture
 def disabled_field_factory(model_field_properties_factory):
     def _disabled_field(block_context):
          has = {
@@ -46,7 +46,7 @@ def disabled_field_factory(model_field_properties_factory):
     return _disabled_field
 
 
-@pytest.fixture()
+@pytest.fixture
 def field_registry():
     module = sys.modules[__name__]
     return ModelFieldRegistry(model=Action, target_module=module)

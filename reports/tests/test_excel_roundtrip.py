@@ -16,7 +16,7 @@ polars.Config.set_tbl_cols(20)
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def excel_file_from_report_factory(actions_having_attributes, report_with_all_attributes):
     def _excel_factory():
         assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True

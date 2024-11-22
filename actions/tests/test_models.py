@@ -164,7 +164,7 @@ def test_category_move_to_new_sibling_changes_page_hierarchy(plan_with_pages):
             cat1.category_pages.filter(locale=locale).get())
 
 
-@pytest.fixture()
+@pytest.fixture
 def category_type_with_category_hierarchy(category_type, category_level_factory, category_factory):
     """
     Constructs a three level category hierarchy with a balanced structure,
