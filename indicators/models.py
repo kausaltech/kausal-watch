@@ -882,13 +882,17 @@ class CommonIndicatorDimension(OrderedModel):
         return "%s ∈ %s" % (str(self.dimension), str(self.common_indicator))
 
 class IndicatorLevelQuerySet(SearchableQuerySetMixin, models.QuerySet['IndicatorLevel']):
-    def visible_for_user(self, user: UserOrAnon | None, plan: Plan | None = None) -> Self:
+    def visible_for_user(self, user: UserOrAnon | None, plan: Plan | str | None = None) -> Self:
         """
         Filter by visibility for a specific user.
 
         A None value is interpreted identically to a non-authenticated user
+
         """
+        from actions.models import Plan
         if plan:
+            if isinstance(plan, str):
+                plan = Plan.objects.get(identifier=plan)
             plans = [plan] if plan.is_visible_for_user(user) else []
         else:
             plans = list(Plan.objects.visible_for_user(user))

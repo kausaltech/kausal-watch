@@ -305,7 +305,6 @@ class PlanAdmin(AplansModelAdmin):
                 FieldPanel('client', widget=ClientChooser),
                 ], heading=_('Clients')))
             panels.append(FieldPanel('usage_status'))
-            panels.append(FieldPanel('visibility'))
             panels.append(FieldPanel('kausal_paths_instance_uuid'))
         if not creating and request.user.is_superuser:
             panels.append(FieldPanel('theme_identifier'))
