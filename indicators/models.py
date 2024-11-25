@@ -349,7 +349,7 @@ else:
     IndicatorManager = MLModelManager.from_queryset(IndicatorQuerySet)
 
 
-@reversion.register()
+@reversion.register(follow=('goals',))
 class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefaultsModel, RestrictedVisibilityModel):
     """An indicator with which to measure actions and progress towards strategic goals."""
 
@@ -944,6 +944,7 @@ class IndicatorValue(ClusterableModel):
         return f"{indicator} {date_str} {self.value}"
 
 
+@reversion.register()
 class IndicatorGoal(models.Model):
     """The numeric goal which the organization has set for an indicator."""
 
@@ -1041,6 +1042,7 @@ else:
     ActionIndicatorManager = ModelManager.from_queryset(ActionIndicatorQuerySet)
 
 
+@reversion.register(follow=['indicator'])
 class ActionIndicator(models.Model):
     """Link between an action and an indicator."""
 

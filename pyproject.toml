@@ -112,7 +112,7 @@ exclude = [
 ]
 stubPath = "kausal_common/typings"
 deprecateTypingAliases = true
-reportAttributeAccessIssue = "warning"
+reportAttributeAccessIssue = "error"
 
 
 [tool.django-stubs]

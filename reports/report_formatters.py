@@ -1,17 +1,19 @@
 from __future__ import annotations
 
+from datetime import datetime
 import typing
 from abc import ABC, abstractmethod
 from typing import Any
 
-from django.db.models.fields import Field
+from django.apps import apps
+from django.db.models.fields import Field, DateTimeField
 from django.utils.formats import date_format
-from django.utils.translation import gettext_lazy as _, pgettext
-from wagtail import blocks, fields
+from django.utils.translation import gettext, gettext_lazy as _, pgettext
+from wagtail import fields, blocks
 
 from grapple.models import GraphQLForeignKey
 
-from aplans.utils import convert_html_to_text
+from aplans.utils import RestrictedVisibilityModel, convert_html_to_text
 
 from actions.attributes import AttributeType
 from actions.models.action import (
@@ -29,9 +31,15 @@ from actions.models.category import (
     CategoryLevel,
     CategoryType,
 )
+from actions.models.plan import Plan
 from orgs.models import Organization
 from reports.graphene_types import GrapheneValueClassProperties, generate_graphene_report_value_node_class
-from reports.utils import get_attribute_for_type_from_related_objects, get_related_model_instances_for_action
+from reports.utils import (
+    get_attribute_for_type_from_related_objects,
+    get_related_model_instances_for_action,
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
+)
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -45,10 +53,10 @@ if typing.TYPE_CHECKING:
 
 
 class ReportFieldFormatter(ABC):
-    block: blocks.Block
+    block: ActionReportContentField
     ValueClass: type[graphene.ObjectType]
 
-    def __init__(self, block: blocks.Block):
+    def __init__(self, block: ActionReportContentField):
         self.block = block
         self.ValueClass = self.get_graphene_value_class()
 
@@ -60,7 +68,7 @@ class ReportFieldFormatter(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         pass
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
@@ -106,13 +114,123 @@ class ActionSimpleFieldFormatter(ReportFieldFormatter):
             action: dict,
             related_objects: dict[str, list[SerializedVersion]],
             attribute_versions: dict[AttributePath, SerializedAttributeVersion],
-            ):
+            ) -> Sequence[ReportCellValue]:
         field_name = self.block.meta.field_name
         field = Action._meta.get_field(field_name)
         value = action.get(field_name)
         if isinstance(field, fields.RichTextField):
             value = convert_html_to_text(value)
-        return [str(value)]
+        return [str(value) if value else '']
+
+    def xlsx_column_labels(self, value: dict, plan: Plan | None = None) -> list[str]:
+        field_name = self.block.meta.field_name
+        field = Action._meta.get_field(field_name)
+        if not isinstance(field, Field):
+            raise TypeError('Do not use ActionSimpleFieldFormatter for relations')
+        verbose_name = field.verbose_name
+        return [str(verbose_name)]
+
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
+        return None
+
+    def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
+        return GrapheneValueClassProperties(
+            class_name='ActionSimpleFieldReportValue',
+            value_field_name='value',
+            value_field_type='graphene.String',
+        )
+
+class ActionDateFieldFormatter(ActionSimpleFieldFormatter):
+    def extract_action_values(
+            self,
+            report: ExcelReport,
+            block_value: dict,
+            action: dict,
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
+            ) -> Sequence[ReportCellValue]:
+        field_name = self.block.meta.field_name
+        value = action.get(field_name)
+        if value is None:
+            return[None]
+        return [value]
+
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
+        # Do not use a string like "ddd-mmm" here, it will
+        # not be localized properly
+        return {
+            'num_format':
+            EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE
+        }
+
+    def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
+        return GrapheneValueClassProperties(
+            class_name='ActionSimpleFieldReportValue',
+            value_field_name='value',
+            value_field_type='graphene.Date',
+        )
+
+
+class ActionDateTimeFieldFormatter(ActionSimpleFieldFormatter):
+    def extract_action_values(
+            self,
+            report: ExcelReport,
+            block_value: dict,
+            action: dict,
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
+            ) -> Sequence[ReportCellValue]:
+        field_name = self.block.meta.field_name
+        value = action.get(field_name)
+        if value is None:
+            return[None]
+        return [report.plan.to_local_timezone_as_naive(value)]
+
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
+        # Do not use a string like "ddd-mmm" here, it will
+        # not be localized properly
+        return {
+            'num_format':
+            EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
+        }
+
+    def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
+        return GrapheneValueClassProperties(
+            class_name='ActionSimpleFieldReportValue',
+            value_field_name='value',
+            value_field_type='graphene.DateTime',
+        )
+
+
+class ActionSingleRelatedModelFieldFormatter(ReportFieldFormatter):
+    """A field referencing a single related model."""
+
+    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+        value = snapshot.action_version.field_dict[block_value.get('field_name')]
+        return value
+
+    def extract_action_values(
+            self,
+            report: ExcelReport,
+            block_value: dict,
+            action: dict,
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
+    ):
+        field_name = self.block.meta.field_name
+        field = Action._meta.get_field(field_name)
+        primary_key = action.get(f'{field_name}_id')
+        related_model = field.related_model
+        related_match  = get_related_model_instances_for_action(
+            ('id', primary_key),
+            related_objects,
+            related_model,
+        )
+        assert len(related_match) < 2
+        if not related_match:
+            return [None]
+        return [related_match[0].str]
+        #str(related_objects[related_objects_key][str(primary_key)])]
 
     def xlsx_column_labels(self, value: dict, plan: Plan | None = None) -> list[str]:
         field_name = self.block.meta.field_name
@@ -151,10 +269,18 @@ class ActionManyToOneFieldFormatter(ReportFieldFormatter):
         field_name = self.block.meta.field_name
         field = Action._meta.get_field(field_name)
         verbose_name = field.related_model._meta.verbose_name_plural
-        return [verbose_name.capitalize()]
+        return [verbose_name.capitalize() if verbose_name else field_name]
 
     def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
         return None
+
+    def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
+        return GrapheneValueClassProperties(
+            class_name='ActionManyToOneFieldReportValue',
+            value_field_name='value',
+            value_field_type='graphene.String',
+        )
+
 
 
 class ActionTasksFormatter(ActionManyToOneFieldFormatter):
@@ -169,7 +295,7 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         field = Action._meta.get_field(field_name)
         related_model = field.related_model
         tasks = get_related_model_instances_for_action(
-            int(action['id']),
+            ('action_id', int(action['id'])),
             related_objects,
             related_model,
         )
@@ -199,6 +325,60 @@ class ActionTasksFormatter(ActionManyToOneFieldFormatter):
         if plan is None:
             return super().xlsx_column_labels(value)
         return [str(plan.general_content.get_action_task_term_display_plural())]
+
+
+class ActionIndicatorsFormatter(ActionManyToOneFieldFormatter):
+    def extract_action_values(
+            self, report: ExcelReport,
+            block_value: dict,
+            action: dict,
+            related_objects: dict[str, list[SerializedVersion]],
+            attribute_versions: dict[AttributePath, SerializedAttributeVersion],
+    ):
+        field_name = self.block.meta.field_name
+        field = Action._meta.get_field(field_name)
+        related_model = field.related_model
+        action_indicators = get_related_model_instances_for_action(
+            ('action_id', int(action['id'])),
+            related_objects,
+            related_model,
+        )
+        indicators = get_related_model_instances_for_action(
+            None,  # Match all indicators
+            related_objects,
+            apps.get_model('indicators', 'Indicator'),
+        )
+        indicator_goals = get_related_model_instances_for_action(
+            None,  # Match all goals
+            related_objects,
+            apps.get_model('indicators', 'IndicatorGoal'),
+        )
+        available_organizations = report.plan_current_related_objects.organizations
+        indicators_available_for_plan = {
+            i.data['id']: i for i in indicators if (
+                i.data['organization_id'] in available_organizations and
+                i.data['visibility'] == RestrictedVisibilityModel.VisibilityState.PUBLIC
+            )
+        }
+        indicators_for_this_action = [
+            indicators_available_for_plan.get(ai.data['indicator_id']) for ai in action_indicators
+        ]
+        indicators_with_goals = [
+            i for i in indicators_for_this_action if (
+                any(ig.data['indicator_id'] == i.data['id'] for ig in indicator_goals)
+            )
+        ]
+        return [len(indicators_for_this_action), gettext('Yes') if len(indicators_with_goals) > 0 else gettext('No')]
+
+    def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
+        return GrapheneValueClassProperties(
+            class_name='ActionTasksReportValue',
+            value_field_name='tasks',
+            value_field_type='graphene.String',
+        )
+
+    def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
+        return ['Indicators', 'Has goals']
 
 
 class ActionAttributeTypeReportFieldFormatter(ReportFieldFormatter):
@@ -457,6 +637,13 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         )
 
 
+reveal_type(blocks.Block.creation_counter)
+
+class FooBar:
+    pass
+
+
+#class ActionReportContentField(blocks.Block[FooBar]):
 class ActionReportContentField(blocks.Block):
     report_value_formatter: ReportFieldFormatter
     report_value_formatter_class: type[ReportFieldFormatter]

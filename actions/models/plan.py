@@ -877,6 +877,9 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     def to_local_timezone(self, dt: datetime):
         return dt.astimezone(self.tzinfo)
 
+    def to_local_timezone_as_naive(self, dt: datetime):
+        return self.to_local_timezone(dt).replace(tzinfo=None)
+
     def now_in_local_timezone(self):
         return self.to_local_timezone(timezone.now())
 

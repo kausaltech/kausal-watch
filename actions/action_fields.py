@@ -90,13 +90,13 @@ def initialize():
         has_dashboard_column_block=True,
         dashboard_column_block_class_name='OrganizationColumnBlock',
         has_details_block=False,
-        has_report_block=False,
+        report_formatter_class='reports.report_formatters.ActionSingleRelatedModelFieldFormatter',
     )
     register(
         'related_indicators',
         field_type='many',
         dashboard_column_block_class_name='IndicatorsColumnBlock',
-        has_report_block=False,
+        report_formatter_class='reports.report_formatters.ActionIndicatorsFormatter',
     )
     register(
         'merged_actions',
@@ -129,11 +129,15 @@ def initialize():
     register(
         'start_date',
         'end_date',
-        'identifier',
-        'updated_at',
-        'name',
         has_details_block=False,
-        has_report_block=False,
+        has_report_block=True,
+        report_formatter_class='reports.report_formatters.ActionDateFieldFormatter',
+    )
+    register(
+        'updated_at',
+        has_details_block=False,
+        has_report_block=True,
+        report_formatter_class='reports.report_formatters.ActionDateTimeFieldFormatter',
     )
     register(
         'manual_status_reason',
@@ -144,6 +148,12 @@ def initialize():
         'status',
         'implementation_phase',
         field_type='single',
+        has_details_block=False,
+    )
+    register(
+        'identifier',
+        'name',
+        field_type='primitive',
         has_details_block=False,
     )
     register(

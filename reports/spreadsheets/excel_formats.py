@@ -4,6 +4,11 @@ import inspect
 import typing
 
 from reports.report_formatters import ActionReportContentField
+from reports.utils import (
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
+)
+
 
 if typing.TYPE_CHECKING:
     from wagtail.blocks import BoundBlock
@@ -43,14 +48,18 @@ class ExcelFormats(dict):
 
         @classmethod
         def date(cls, f: Format) -> None:
-            f.set_num_format('d mmmm yyyy')
+            f.set_num_format(
+                EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE
+            )
             f.set_align('left')
             f.set_bg_color(cls.COLOR_WHITE)
 
         @classmethod
         def timestamp(cls, f: Format) -> None:
             cls.date(f)
-            f.set_num_format('d mmmm yyyy hh:mm')
+            f.set_num_format(
+                EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
+            )
 
         @classmethod
         def odd_row(cls, f: Format) -> None:

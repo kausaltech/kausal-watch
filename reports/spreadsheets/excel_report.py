@@ -26,6 +26,7 @@ if typing.TYPE_CHECKING:
     from django.db.models import Model, QuerySet
 
     from actions.models.category import Category, CategoryType
+    from actions.models.plan import Plan
     from reports.models import Report, SerializedActionVersion, SerializedVersion
 
 
@@ -47,6 +48,7 @@ class ExcelReport:
     plan_current_related_objects: PlanRelatedObjects
     field_to_column_labels: dict[str, set[str]]
     has_macros: bool
+    plan: Plan
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -80,8 +82,14 @@ class ExcelReport:
         self.language = report.type.plan.primary_language if language is None else language
         self.report = report
         self.output = BytesIO()
-        self.workbook = xlsxwriter.Workbook(self.output, {'in_memory': True})
+        self.workbook = xlsxwriter.Workbook(
+            self.output,
+            {
+                'in_memory': True,
+            }
+        )
         self.formats = ExcelFormats(self.workbook)
+        self.plan = self.report.type.plan
         if report.type.plan.features.output_report_action_print_layout:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')

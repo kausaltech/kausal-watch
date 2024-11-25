@@ -118,6 +118,11 @@ a custom ReportFieldBlock from scratch.
 ActionDescriptionBlock = action_registry.get_block_class('report', 'description')
 ActionManualStatusReasonBlock = action_registry.get_block_class('report', 'manual_status_reason')
 ActionTasksBlock = action_registry.get_block_class('report', 'tasks')
+ActionStartDateBlock = action_registry.get_block_class('report', 'start_date')
+ActionEndDateBlock = action_registry.get_block_class('report', 'end_date')
+ActionUpdatedAtBlock = action_registry.get_block_class('report', 'updated_at')
+ActionIndicatorsBlock = action_registry.get_block_class('report', 'related_indicators')
+ActionPrimaryOrgBlock = action_registry.get_block_class('report', 'primary_org')
 
 
 @register_streamfield_block
@@ -133,6 +138,11 @@ class ReportFieldBlock(blocks.StreamBlock):
     manual_status_reason = ActionManualStatusReasonBlock()
     description = ActionDescriptionBlock()
     tasks = ActionTasksBlock()
+    start_date = ActionStartDateBlock()
+    end_date = ActionEndDateBlock()
+    updated_at = ActionUpdatedAtBlock()
+    related_indicators = ActionIndicatorsBlock()
+    primary_org = ActionPrimaryOrgBlock()
 
     graphql_types = [
         ActionImplementationPhaseReportFieldBlock,
@@ -143,4 +153,9 @@ class ReportFieldBlock(blocks.StreamBlock):
         ActionManualStatusReasonBlock,
         ActionDescriptionBlock,
         ActionTasksBlock,
+        ActionStartDateBlock,
+        ActionEndDateBlock,
+        ActionUpdatedAtBlock,
+        ActionIndicatorsBlock,
+        ActionPrimaryOrgBlock,
     ]

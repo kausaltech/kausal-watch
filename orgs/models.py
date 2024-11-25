@@ -5,6 +5,7 @@ import typing
 import uuid
 from typing import ClassVar, Iterable, Self, Sequence
 
+import reversion
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.gis.db import models as gis_models
@@ -196,6 +197,7 @@ class OrganizationManager(MLModelManager['Organization', OrganizationQuerySet], 
 del _OrganizationManager
 
 
+@reversion.register()
 class Organization(PlanDefaultsModel, index.Indexed, Node[OrganizationQuerySet], ModelWithPrimaryLanguage, gis_models.Model):
     # Different identifiers, depending on origin (namespace), are stored in OrganizationIdentifier
     class Meta:

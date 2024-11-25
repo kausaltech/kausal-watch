@@ -178,7 +178,17 @@ class ResponsiblePartyDict(TypedDict):
     role: Literal['primary', 'collaborator', None]
 
 
-@reversion.register(follow=ModelWithAttributes.REVERSION_FOLLOW + ['responsible_parties', 'tasks'])
+ACTION_FIELDS_TO_ADD_TO_REVERSION = (
+    ModelWithAttributes.REVERSION_FOLLOW + [
+        'responsible_parties',
+        'tasks',
+        'primary_org',
+        'related_indicators',
+    ]
+)
+
+
+@reversion.register(follow=ACTION_FIELDS_TO_ADD_TO_REVERSION)
 class Action(
     PlanRelatedOrderedModel, WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin,
     ModelWithAttributes, ClusterableModel, RestrictedVisibilityModel, index.Indexed,
