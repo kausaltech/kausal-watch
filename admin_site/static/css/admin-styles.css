@@ -43,7 +43,55 @@
   padding: 10px 0;
 }
 
-.sidebar--slim .active-plan {
+.active-plan-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.7rem;
+  padding: 0.5rem;
+}
+
+.active-plan-name {
+  line-height: 1.2;
+  color: var(--w-color-text-label-menus-default);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.active-plan-status {
+  color: var(--w-color-grey-200);
+  padding: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.active-plan-status svg {
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.active-plan-version-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 15ch;
+}
+
+.active-plan-live {
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.active-plan-live.public {
+  color: var(--w-color-warning-100);
+}
+
+.sidebar--slim .active-plan-info {
   display: none;
 }
 

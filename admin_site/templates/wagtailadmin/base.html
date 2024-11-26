@@ -18,7 +18,30 @@
     {% else %}
         <img src="{% static 'images/kausal-avatar-dark-green.svg' %}" alt="Kausal Logo" width="80" />
     {% endif %}
-    <div class="active-plan">{{ active_plan.name }}</div>
+
+    <div class="active-plan-info">
+        <span class="active-plan-name">{{ active_plan.name_i18n }}</span>
+        <div class="active-plan-status">
+            <!-- TODO: Enable this once locking plans is implemented-->
+            <!-- {% if active_plan.is_locked %}
+                <span class="active-plan-locked" aria-label="{% trans 'locked plan' %}">{% icon name="lock" %}</span>
+            {% endif %} -->
+
+            {% if active_plan.version_name %}
+                <span class="active-plan-version-name">{{ active_plan.version_name }}</span>
+            {% endif %}
+
+            <div>
+                <span class="active-plan-live {% if active_plan.is_live %}public{% else %}internal{% endif %}">
+                    {% if active_plan.is_live %}
+                        {% trans "Public" %}
+                    {% else %}
+                        {% trans "Internal" %}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_css %}
