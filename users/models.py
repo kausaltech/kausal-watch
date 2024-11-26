@@ -125,8 +125,7 @@ class User(AbstractUser):
         actions.update({act.id for act in person.contact_for_actions.all()})
         if action is None:
             return bool(actions)
-        else:
-            return action.pk in actions
+        return action.pk in actions
 
     def has_contact_person_role_for_action(self, role: ActionContactPerson.Role, action=None):
         from actions.models import ActionContactPerson
@@ -170,8 +169,7 @@ class User(AbstractUser):
         indicators.update({ind.id for ind in person.contact_for_indicators.all()})
         if indicator is None:
             return bool(indicators)
-        else:
-            return indicator.pk in indicators
+        return indicator.pk in indicators
 
     def is_contact_person_for_action_in_plan(self, plan, action=None):
         cache = self.get_cache()
@@ -384,8 +382,7 @@ class User(AbstractUser):
             if len(adminable_plans) == 0:
                 return False
             return True
-        else:
-            return plan.pk in adminable_plans
+        return plan.pk in adminable_plans
 
     def can_access_public_site(self, plan: Plan | None = None) -> bool:
         """Can the user access the public site (authenticated) in general or for a given plan."""
