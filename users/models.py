@@ -22,8 +22,6 @@ if TYPE_CHECKING:
 
     from kausal_common.models.types import FK, RevOne
 
-    from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
-
     from actions.models import Action, ActionContactPerson, ActionResponsibleParty, ModelWithRole, Plan
     from actions.models.action import ActionQuerySet
     from indicators.models import Indicator, IndicatorQuerySet
@@ -33,6 +31,20 @@ if TYPE_CHECKING:
 class ModerationAction(StrEnum):
     PUBLISH = auto()
     APPROVE = auto()
+
+
+class UserRelatedModelsCache:
+    _corresponding_person: Person | None
+    _active_admin_plan: Plan
+    _adminable_plans: models.QuerySet[Plan]
+    _org_admin_for_actions: ActionQuerySet
+    _org_admin_for_indicators: IndicatorQuerySet
+    _contact_for_actions: set[int]
+    _contact_for_indicators: set[int]
+    _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
+    _contact_for_plan_actions: dict[int, set[int]]
+    _contact_for_plan_indicators: dict[int, set[int]]
+    _general_admin_for_plans: set[int]
 
 
 class User(AbstractUser):
@@ -58,15 +70,8 @@ class User(AbstractUser):
     auth_token: Token
     person: Person
     wagtail_userprofile: RevOne[User, UserProfile]
-    _corresponding_person: Person | None
-    _active_admin_plan: Plan
-    _adminable_plans: models.QuerySet[Plan]
-    _org_admin_for_actions: ActionQuerySet
-    _org_admin_for_indicators: IndicatorQuerySet
-    _contact_for_actions: set[int]
-    _contact_for_actions_by_role: dict[ActionContactPerson.Role, set[int]]
-    _general_admin_for_plans: set[int]
 
+    _cache: UserRelatedModelsCache
 
     autocomplete_search_field = 'email'
 
@@ -77,12 +82,18 @@ class User(AbstractUser):
         UserProfile.objects.get_or_create(user=self, defaults={'theme': UserProfile.AdminColorThemes.LIGHT})
         return result
 
+    def get_cache(self) -> UserRelatedModelsCache:
+        if not hasattr(self, '_cache'):
+            self._cache = UserRelatedModelsCache()
+        return self._cache
+
     def autocomplete_label(self):
         return self.email
 
     def get_corresponding_person(self) -> Person | None:
-        if hasattr(self, '_corresponding_person'):
-            return self._corresponding_person
+        cache = self.get_cache()
+        if hasattr(cache, '_corresponding_person'):
+            return cache._corresponding_person
 
         from people.models import Person
 
@@ -93,19 +104,20 @@ class User(AbstractUser):
 
         if person is None:
             person = Person.objects.filter(email__iexact=self.email).first()
-        self._corresponding_person = person
+        cache._corresponding_person = person
         return person
 
     def is_contact_person_for_action(self, action=None):
         # Cache the contact person status
-        if hasattr(self, '_contact_for_actions'):
-            actions = self._contact_for_actions
+        cache = self.get_cache()
+        if hasattr(cache, '_contact_for_actions'):
+            actions = cache._contact_for_actions
             if action is None:
                 return bool(actions)
             return action.pk in actions
 
         actions = set()
-        self._contact_for_actions = actions
+        cache._contact_for_actions = actions
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -122,14 +134,15 @@ class User(AbstractUser):
         actions: dict[ActionContactPerson.Role, set[int]]
 
         # Cache the contact person role status
-        if hasattr(self, '_contact_for_actions_by_role'):
-            actions = self._contact_for_actions_by_role
+        cache = self.get_cache()
+        if hasattr(cache, '_contact_for_actions_by_role'):
+            actions = cache._contact_for_actions_by_role
             if action is None:
                 return bool(actions)
             return action.pk in actions[role]
 
         actions = {r: set() for r in ActionContactPerson.Role}
-        self._contact_for_actions_by_role = actions
+        cache._contact_for_actions_by_role = actions
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -141,14 +154,15 @@ class User(AbstractUser):
         return action.pk in actions[role]
 
     def is_contact_person_for_indicator(self, indicator=None):
-        if hasattr(self, '_contact_for_indicators'):
-            indicators = self._contact_for_indicators
+        cache = self.get_cache()
+        if hasattr(cache, '_contact_for_indicators'):
+            indicators = cache._contact_for_indicators
             if indicator is None:
                 return bool(indicators)
             return indicator.pk in indicators
 
         indicators = set()
-        self._contact_for_indicators = indicators
+        cache._contact_for_indicators = indicators
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -160,17 +174,18 @@ class User(AbstractUser):
             return indicator.pk in indicators
 
     def is_contact_person_for_action_in_plan(self, plan, action=None):
-        if not hasattr(self, '_contact_for_plan_actions'):
-            self._contact_for_plan_actions = {}
+        cache = self.get_cache()
+        if not hasattr(cache, '_contact_for_plan_actions'):
+            cache._contact_for_plan_actions = {}
 
-        if plan.id in self._contact_for_plan_actions:
-            plan_actions = self._contact_for_plan_actions[plan.id]
+        if plan.id in cache._contact_for_plan_actions:
+            plan_actions = cache._contact_for_plan_actions[plan.id]
             if action is None:
                 return bool(plan_actions)
             return action.id in plan_actions
 
         plan_actions = set()
-        self._contact_for_plan_actions[plan.id] = plan_actions
+        cache._contact_for_plan_actions[plan.id] = plan_actions
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -181,17 +196,18 @@ class User(AbstractUser):
         return action.id in plan_actions
 
     def is_contact_person_for_indicator_in_plan(self, plan, indicator=None):
-        if not hasattr(self, '_contact_for_plan_indicators'):
-            self._contact_for_plan_indicators = {}
+        cache = self.get_cache()
+        if not hasattr(cache, '_contact_for_plan_indicators'):
+            cache._contact_for_plan_indicators = {}
 
-        if plan.id in self._contact_for_plan_indicators:
-            plan_indicators = self._contact_for_plan_indicators[plan.id]
+        if plan.id in cache._contact_for_plan_indicators:
+            plan_indicators = cache._contact_for_plan_indicators[plan.id]
             if indicator is None:
                 return bool(plan_indicators)
             return indicator.id in plan_indicators
 
         plan_indicators = set()
-        self._contact_for_plan_indicators[plan.id] = plan_indicators
+        cache._contact_for_plan_indicators[plan.id] = plan_indicators
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -209,14 +225,15 @@ class User(AbstractUser):
             return True
 
         # Cache the general admin status
-        if hasattr(self, '_general_admin_for_plans'):
-            plans = self._general_admin_for_plans
+        cache = self.get_cache()
+        if hasattr(cache, '_general_admin_for_plans'):
+            plans = cache._general_admin_for_plans
             if plan is None:
                 return bool(plans)
             return plan.pk in plans
 
         plans = set[int]()
-        self._general_admin_for_plans = plans
+        cache._general_admin_for_plans = plans
         person = self.get_corresponding_person()
         if not person:
             return False
@@ -255,12 +272,13 @@ class User(AbstractUser):
         return Organization.objects.filter(id__in=orgs)
 
     def is_organization_admin_for_action(self, action: Action | None = None):
-        if hasattr(self, '_org_admin_for_actions'):
-            actions = self._org_admin_for_actions
+        cache = self.get_cache()
+        if hasattr(cache, '_org_admin_for_actions'):
+            actions = cache._org_admin_for_actions
         else:
             from actions.models import Action
             actions = Action.objects.get_queryset().user_is_org_admin_for(self)
-            self._org_admin_for_actions = actions
+            cache._org_admin_for_actions = actions
         # Ensure below that the actions queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
         if action is None:
@@ -269,12 +287,13 @@ class User(AbstractUser):
 
     def is_organization_admin_for_indicator(self, indicator: Indicator | None = None) -> bool:
         indicators = None
-        if hasattr(self, '_org_admin_for_indicators'):
-            indicators = self._org_admin_for_indicators
+        cache = self.get_cache()
+        if hasattr(cache, '_org_admin_for_indicators'):
+            indicators = cache._org_admin_for_indicators
         else:
             from indicators.models import Indicator
             indicators = Indicator.objects.qs.filter(organization__in=self.get_adminable_organizations()).distinct()
-            self._org_admin_for_indicators = indicators
+            cache._org_admin_for_indicators = indicators
         # Ensure below that the indicators queryset is evaluated to make
         # the cache efficient (it will use queryset's cache)
         if indicator is None:
@@ -294,8 +313,9 @@ class User(AbstractUser):
     def get_active_admin_plan(self, required: Literal[True] = True) -> Plan: ...
 
     def get_active_admin_plan(self, required: bool = True) -> Plan | None:
-        if hasattr(self, '_active_admin_plan'):
-            return self._active_admin_plan
+        cache = self.get_cache()
+        if hasattr(cache, '_active_admin_plan'):
+            return cache._active_admin_plan
 
         plans = self.get_adminable_plans()
         if len(plans) == 0:
@@ -303,14 +323,14 @@ class User(AbstractUser):
                 raise Exception("No active admin plan")
             return None
         if len(plans) == 1:
-            self._active_admin_plan = plans[0]
-            return self._active_admin_plan
+            cache._active_admin_plan = plans[0]
+            return cache._active_admin_plan
 
         selected_plan = self.selected_admin_plan
         if selected_plan is not None:
             for plan in plans:
                 if plan == selected_plan:
-                    self._active_admin_plan = plan
+                    cache._active_admin_plan = plan
                     return plan
 
         # If the plan is not set in session, select the
@@ -319,15 +339,16 @@ class User(AbstractUser):
 
         self.selected_admin_plan = plan
         self.save(update_fields=['selected_admin_plan'])
-        self._active_admin_plan = plan
+        cache._active_admin_plan = plan
         return plan
 
     def get_adminable_plans(self) -> models.QuerySet[Plan]:
         from actions.models import Plan
 
         # Cache adminable plans for each request
-        if hasattr(self, '_adminable_plans'):
-            return self._adminable_plans
+        cache = self.get_cache()
+        if hasattr(cache, '_adminable_plans'):
+            return cache._adminable_plans
 
         is_action_contact = self.is_contact_person_for_action()
         is_indicator_contact = self.is_contact_person_for_indicator()
@@ -336,19 +357,19 @@ class User(AbstractUser):
         is_indicator_org_admin = self.is_organization_admin_for_indicator()
         if not self.is_superuser and not is_action_contact and not is_general_admin \
                 and not is_org_admin and not is_indicator_contact and not is_indicator_org_admin:
-            self._adminable_plans = Plan.objects.none()
-            return self._adminable_plans
+            cache._adminable_plans = Plan.objects.none()
+            return cache._adminable_plans
 
         if self.is_superuser:
             plans = Plan.objects.all()
         else:
-            q = Q(actions__in=self._contact_for_actions)
-            q |= Q(indicators__in=self._contact_for_indicators)
-            q |= Q(id__in=self._general_admin_for_plans)
-            q |= Q(actions__in=self._org_admin_for_actions)
-            q |= Q(indicators__in=self._org_admin_for_indicators)
+            q = Q(actions__in=cache._contact_for_actions)
+            q |= Q(indicators__in=cache._contact_for_indicators)
+            q |= Q(id__in=cache._general_admin_for_plans)
+            q |= Q(actions__in=cache._org_admin_for_actions)
+            q |= Q(indicators__in=cache._org_admin_for_indicators)
             plans = Plan.objects.filter(q).distinct()
-        self._adminable_plans = plans
+        cache._adminable_plans = plans
         return plans
 
     def get_viewable_plans(self) -> models.QuerySet[Plan]:
