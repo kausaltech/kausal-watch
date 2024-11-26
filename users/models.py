@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import StrEnum, auto
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from django.core.exceptions import PermissionDenied
 from django.db import models
@@ -574,3 +574,10 @@ class User(AbstractUser):
         self.deactivated_by = admin_user
         self.deactivated_at = timezone.now()
         self.save()
+
+    def __getstate__(self) -> dict[str, Any]:
+        statedict = super().__getstate__()
+        # Do not pickle data that is only used for caching
+        if '_cache' in statedict:
+            del statedict['_cache']
+        return statedict
