@@ -203,6 +203,15 @@ class CloneVisitor(AbstractVisitor):
         self.prepare_instance_for_copy(instance)
 
     @pre_visit.register
+    def _(self, instance: AttributeType) -> None:
+        self.prepare_instance_for_copy(instance)
+        # We need to change the reference to the plan *before* saving. It's not enough to do it afterwards with
+        # `UpdateReferencesVisitor`. This is because the `AutoSlugField` for `identifier` in `AttributeType` has
+        # `always_update=True` and is unique per plan. So when saving the copy, it references the same plan as the
+        # original, thus getting a suffix appended to the slug to make it unique.
+        instance.scope = self.get_copy(instance.scope)  # pyright: ignore
+
+    @pre_visit.register
     def _(self, instance: Plan) -> None:
         self.prepare_instance_for_copy(instance)
         if self.plan_identifier:
