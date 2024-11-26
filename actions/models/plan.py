@@ -649,7 +649,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         return primary_root_page
 
     def is_live(self):
-        return self.published_at is not None and self.archived_at is None
+        now = self.now_in_local_timezone()
+        return self.published_at is not None and self.published_at <= now and self.archived_at is None
 
     def get_optional_locale_prefix(self, locale: str):
         if locale.lower() == self.primary_language.lower():
