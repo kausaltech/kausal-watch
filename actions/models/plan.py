@@ -32,7 +32,7 @@ from wagtail.models.i18n import Locale
 from django_countries.fields import CountryField
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
-from kausal_common.models.types import MLModelManager
+from kausal_common.models.types import MLModelManager, OneToOne
 
 from aplans.utils import (
     ChoiceArrayField,
@@ -245,10 +245,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         help_text=_('Persons that can modify everything related to the action plan'),
     )
 
-    site = models.OneToOneField(
+    site: OneToOne[Site | None] = models.OneToOneField(
         Site, null=True, on_delete=models.SET_NULL, editable=False, related_name='plan',
     )
-    root_collection = models.OneToOneField(
+    root_collection: OneToOne[Collection | None] = models.OneToOneField(
         Collection, null=True, on_delete=models.PROTECT, editable=False, related_name='plan',
     )
     admin_group = models.OneToOneField(

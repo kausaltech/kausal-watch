@@ -3,34 +3,37 @@ from __future__ import annotations
 from contextlib import ExitStack
 from copy import copy as shallow_copy
 from datetime import date
+from functools import singledispatchmethod
+from typing import Any
+from uuid import uuid4
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, Model, signals
-from functools import singledispatchmethod
+from django.db.models import Model, Q, signals
 from django.utils import translation
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
-from loguru import logger
-from relations_iterator import clone, AbstractVisitor, TreeNode, RelationTreeIterator, ConfigurableRelationTree
-from typing import Any
-from uuid import uuid4
 from wagtail.fields import StreamField
 from wagtail.models import Page, Site
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
-from .utils import get_foreign_keys, get_generic_foreign_keys, temp_disconnect_signal, update_streamfield_block
+from loguru import logger
+from relations_iterator import AbstractVisitor, ConfigurableRelationTree, RelationTreeIterator, TreeNode, clone  # type: ignore
+
 from actions.models.action import Action
 from actions.models.attributes import AttributeType
 from actions.models.category import Category, CategoryType
 from actions.models.plan import Plan
 from actions.signals import create_notification_settings, create_plan_features
 from content.apps import create_site_general_content
+from copying.utils import get_foreign_keys, get_generic_foreign_keys, temp_disconnect_signal, update_streamfield_block
 from documentation.models import DocumentationRootPage
 
+type CloneStructure = dict[str, CloneStructure]
 
 # TODO: Models from other apps: budget, feedback, etc.
-PLAN_CLONE_STRUCTURE = {
+PLAN_CLONE_STRUCTURE: CloneStructure = {
     'action_decision_levels': {},
     'action_dependency_roles': {},
     'action_impacts': {},
@@ -74,7 +77,7 @@ PLAN_CLONE_STRUCTURE = {
     'scenarios': {},
 }
 
-ATTRIBUTE_TYPE_CLONE_STRUCTURE = {
+ATTRIBUTE_TYPE_CLONE_STRUCTURE: CloneStructure = {
     'choice_options': {},
     'category_choice_attributes': {},
     'choice_attributes': {},
@@ -126,9 +129,12 @@ class CloneVisitor(AbstractVisitor):
         self.supersede_original_plan = supersede_original_plan
         self.supersede_original_actions = supersede_original_actions
 
-    def get_copy(self, instance: Model) -> Model:
+    def get_copy[M: Model](self, instance: M) -> M:
         """Get the copy that has been created for the given instance."""
-        return self.copies[(type(instance), instance.pk)]
+        copy = self.copies[(type(instance), instance.pk)]
+        assert type(copy) is type(instance)
+        assert isinstance(copy, type(instance))  # implied by previous line, but apparently mypy doesn't figure this out
+        return copy
 
     def visit(self, node: TreeNode):
         """
@@ -209,7 +215,7 @@ class CloneVisitor(AbstractVisitor):
         # `UpdateReferencesVisitor`. This is because the `AutoSlugField` for `identifier` in `AttributeType` has
         # `always_update=True` and is unique per plan. So when saving the copy, it references the same plan as the
         # original, thus getting a suffix appended to the slug to make it unique.
-        instance.scope = self.get_copy(instance.scope)  # pyright: ignore
+        instance.scope = self.get_copy(instance.scope)  # type: ignore
 
     @pre_visit.register
     def _(self, instance: Plan) -> None:
@@ -227,8 +233,10 @@ class CloneVisitor(AbstractVisitor):
         instance.admin_group = None
         instance.contact_person_group = None
         # Collection must have been copied before plan
+        assert instance.root_collection
         instance.root_collection = self.get_copy(instance.root_collection)
         # Site must have been copied before plan
+        assert instance.site
         instance.site = self.get_copy(instance.site)
 
     @pre_visit.register
@@ -247,8 +255,6 @@ class CloneVisitor(AbstractVisitor):
         parent = instance.get_parent()
         assert parent
         instance.path = ''
-        instance.depth = None
-        instance.numchild = 0
         parent.add_child(instance=instance)
 
     @save_copy.register
@@ -310,6 +316,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
         for fk in (*get_foreign_keys(instance), *get_generic_foreign_keys(instance)):
+            assert hasattr(fk, 'name')
             related_object = getattr(instance, fk.name)
             if related_object:
                 try:
@@ -448,6 +455,7 @@ def copy_plan(
     clone(Plan.objects.get(pk=plan.pk).root_collection, {}, clone_visitor)
     clone(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
     # `clone()` changes its argument, so better work with a copy instead of `plan`
+    assert plan.site
     root_page_copy = copy_root_pages(
         root_page=plan.site.root_page,
         slug_suffix=root_page_slug_suffix,
@@ -485,6 +493,7 @@ def copy_plan(
     for at in attribute_types:
         clone(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
     # Update root page (`plan_copy.site` should now be the site copy)
+    assert plan_copy.site
     plan_copy.site.root_page = root_page_copy
     plan_copy.site.save(update_fields=['root_page'])
     # Restore temporarily removed links
