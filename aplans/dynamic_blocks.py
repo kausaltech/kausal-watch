@@ -45,16 +45,16 @@ class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.Str
 
     field_label = blocks.CharBlock(
         required=False,
-        help_text=_("Heading to show instead of the default"),
+        help_text=_('Heading to show instead of the default'),
         default='',
-        label=_("Field label"),
+        label=_('Field label'),
     )
 
     field_help_text = blocks.CharBlock(
         required=False,
-        help_text=_("Help text for the field to be shown in the UI"),
+        help_text=_('Help text for the field to be shown in the UI'),
         default='',
-        label = _("Help text"),
+        label=_('Help text'),
     )
 
     graphql_fields = [
@@ -63,7 +63,7 @@ class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.Str
     ]
 
     def get_admin_text(self):
-        return _("Content block: %(label)s") % dict(label=self.label)
+        return _('Content block: %(label)s') % dict(label=self.label)
 
 
 def _get_default_block_class_name_(model: type[models.Model], field_name: str) -> str:
@@ -73,16 +73,16 @@ def _get_default_block_class_name_(model: type[models.Model], field_name: str) -
 
 
 def generate_block_for_field(
-        model: type[models.Model],
-        field_name: str,
-        target_module: object,
-        params: dict | None = None,
-        superclasses: tuple[type[blocks.Block], ...] = (
-            ActionListContentBlock,
-            ActionReportContentField,
-        ),
-        graphql_interfaces: tuple[type[graphene.Interface], ...] = tuple(),
-        class_name: str | None = None,
+    model: type[models.Model],
+    field_name: str,
+    target_module: object,
+    params: dict | None = None,
+    superclasses: tuple[type[blocks.Block], ...] = (
+        ActionListContentBlock,
+        ActionReportContentField,
+    ),
+    graphql_interfaces: tuple[type[graphene.Interface], ...] = tuple(),
+    class_name: str | None = None,
 ):
     if params is None:
         params = dict()
@@ -93,7 +93,9 @@ def generate_block_for_field(
     # the model registry is not yet fully initialized.
     label = params.get('label') or lazy_field_label(model, field_name)
     meta = type(
-        'Meta', (), {
+        'Meta',
+        (),
+        {
             'label': label,
             'field_name': field_name,
         },
@@ -102,7 +104,7 @@ def generate_block_for_field(
     attrs = {
         'Meta': meta,
         #'__module__': target_module,
-        'graphql_interfaces': (FieldBlockMetaInterface, ) + graphql_interfaces,
+        'graphql_interfaces': (FieldBlockMetaInterface,) + graphql_interfaces,
     }
     if 'report_value_formatter_class' in params:
         attrs['report_value_formatter_class'] = params['report_value_formatter_class']
