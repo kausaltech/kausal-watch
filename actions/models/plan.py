@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import reversion
 from django.conf import settings
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import AnonymousUser, Group
 from django.contrib.contenttypes.fields import GenericRelation
 from django.contrib.postgres.fields import ArrayField
 from django.core import management
@@ -35,6 +35,8 @@ from wagtail.models.i18n import Locale
 from django_countries.fields import CountryField
 from wagtail_localize.operations import TranslationCreator  # type: ignore
 
+from kausal_common.models.permission_policy import ModelPermissionPolicy, ObjectSpecificAction
+from kausal_common.models.permissions import PermissionedModel
 from kausal_common.models.types import MLModelManager, OneToOne, RevManyToMany
 
 from aplans.utils import (
@@ -70,6 +72,7 @@ if TYPE_CHECKING:
     from notifications.models import NotificationSettings
     from orgs.models import OrganizationPlanAdmin
     from reports.models import ReportType
+    from users.models import User
 
     from .action import Action, ActionImplementationPhase, ActionStatus
     from .category import CategoryType
@@ -134,15 +137,11 @@ class PlanQuerySet(MultilingualQuerySet['Plan']):
         # FIXME: Add indicators
         return self.filter(id__in=staff_actions)
 
-    def visible_for_user(self, user: UserOrAnon | None) -> Self:
-        """
-        Filter by visibility for the current user.
-
-        A None value is interpreted identically a non-authenticated user.
-        """
-        if user is None or not user.is_authenticated:
-            return self.filter(published_at__isnull=False, published_at__lte=timezone.now())
-        return self
+    def visible_for_user(self, user: UserOrAnon | None) -> PlanQuerySet:
+        """Filter by visibility using permission policy."""
+        if user is None:
+            user = AnonymousUser()
+        return cast(PlanQuerySet, self.model.permission_policy().filter_by_perm(self, user, 'view'))
 
 if TYPE_CHECKING:
     _PlanManager = models.Manager.from_queryset(PlanQuerySet)
@@ -182,7 +181,7 @@ class UsageStatus(models.TextChoices):
 @reversion.register(follow=[
     'action_statuses', 'action_implementation_phases',  # fixme
 ])
-class Plan(ClusterableModel, ModelWithPrimaryLanguage):
+class Plan(ClusterableModel, ModelWithPrimaryLanguage, PermissionedModel):
     """
     The Action Plan under monitoring.
 
@@ -515,6 +514,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         page: Page = self.site.root_page
         return page
 
+    @classmethod
+    def permission_policy(cls) -> PlanPermissionPolicy:
+        return PlanPermissionPolicy(cls)
+
     def get_translated_root_page(self, fallback=True) -> Page | None:
         """Return root page in activated language, fall back to default language by default."""
         if self.site_id is None:
@@ -700,15 +703,11 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         now = self.now_in_local_timezone()
         return self.published_at is not None and self.published_at <= now and self.archived_at is None
 
-    def is_visible_for_user(self, user: UserOrAnon | None):
-        """
-        Determine if this plan is visible for a user.
-
-        A None value is interpreted identically to a non-authenticated user.
-        """
-        if (user is None or not user.is_authenticated):
-            return self.published_at is not None and self.published_at <= timezone.now()
-        return True
+    def is_visible_for_user(self, user: UserOrAnon | None) -> bool:
+        """Use permission policy to check visibility."""
+        if user is None:  # TODO: remove this once all places where None is used are fixed
+            user = AnonymousUser()
+        return self.permission_policy().user_has_permission_for_instance(user, 'view', self)
 
     def get_optional_locale_prefix(self, locale: str):
         if locale.lower() == self.primary_language.lower():
@@ -1308,3 +1307,42 @@ class MonitoringQualityPoint(PlanRelatedModel, OrderedModel):
 
     def __str__(self):
         return self.name
+
+class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
+    def construct_perm_q_anon(self, action: ObjectSpecificAction) -> Q | None:
+        """
+        Construct permission query for anonymous users.
+
+        Allow only viewing of published plans.
+        """
+        if action == 'view':
+            return Q(published_at__isnull=False, published_at__lte=timezone.now())
+        return None
+
+    def construct_perm_q(self, user: User, action: ObjectSpecificAction) -> Q | None:
+        """
+        Construct permission query for authenticated users.
+
+        Allow viewing all plans but require specific permissions for other actions.
+        """
+        if action == 'view':
+            return Q()  # Can view all plans
+        # Add other permission checks for change/delete if needed
+        return None
+
+    def user_has_perm(self, user: User, action: ObjectSpecificAction, obj: Plan) -> bool:
+        """Check permissions for a specific plan instance."""
+        if action == 'view':
+            return True
+        # Add other permission checks when needed
+        return False
+
+    def anon_has_perm(self, action: ObjectSpecificAction, obj: Plan) -> bool:
+        """Check permissions for anonymous users."""
+        if action == 'view':
+            return obj.published_at is not None and obj.published_at <= timezone.now()
+        return False
+
+    def user_can_create(self, user: User, context: PlanQuerySet) -> bool:
+        """Check if user can create new plans."""
+        return False  # implement proper creation permissions when needed
