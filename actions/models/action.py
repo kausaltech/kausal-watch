@@ -438,16 +438,17 @@ class Action(
 
     # type annotations for related objects
     contact_persons: RevMany[ActionContactPerson]
-    merged_actions: RevMany[Action]
-    superseded_actions: RevMany[Action]
-    tasks: RevMany[ActionTask]
     dependent_relationships: RevMany[ActionDependencyRelationship]
-    preceding_relationships: RevMany[ActionDependencyRelationship]
-    related_indicators: RevMany[ActionIndicator]
-    verbose_name_partitive = pgettext_lazy('partitive', 'action')
-    plan_id: int
+    merged_actions: RevMany[Action]
     merged_with_id: int | None
     name_i18n: str
+    plan_id: int
+    preceding_relationships: RevMany[ActionDependencyRelationship]
+    related_indicators: RevMany[ActionIndicator]
+    superseded_actions: RevMany[Action]
+    tasks: RevMany[ActionTask]
+
+    verbose_name_partitive = pgettext_lazy('partitive', 'action')
 
     class Meta:
         verbose_name = _('action')

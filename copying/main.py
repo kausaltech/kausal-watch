@@ -14,7 +14,7 @@ from django.utils import translation
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
 from wagtail.fields import StreamField
-from wagtail.models import Page, Site
+from wagtail.models import Page, Revision, Site
 from wagtail.models.media import Collection
 from wagtail.models.reference_index import ReferenceIndex
 
@@ -298,7 +298,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         # The object `clone_visitor` will be used for associating instances with their copies.
         self.clone_visitor = clone_visitor
 
-    def update_instance(self, instance: Model):
+    def update_instance(self, instance: Model, save: bool = True):
         """Update all references from `instance` to objects that have been copied to point to the copies."""
         logger.trace(f"Update references of {type(instance).__name__} {instance.pk}: {instance}")
         update_fields = []
@@ -306,7 +306,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
         if isinstance(instance, Page):
             update_fields += self.update_streamfield_references(instance)
         # Save changes
-        if update_fields:
+        if update_fields and save:
             instance.save(update_fields=update_fields)
             logger.info(
                 f"Updated references in {len(update_fields)} fields of "
@@ -404,6 +404,23 @@ def copy_root_pages(root_page: Page, slug_suffix=None, title_suffix=None) -> Pag
     return root_page_copy
 
 
+def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
+    update_references_visitor = UpdateReferencesVisitor(clone_visitor)
+    for action in plan_copy.actions.all():
+        if action.latest_revision:
+            assert isinstance(action.latest_revision, Revision)
+            rev_obj = action.latest_revision.as_object()
+            # The PK of `rev_obj` is that of the original from which `action` was copied
+            rev_obj.pk = action.pk
+            rev_obj.uuid = action.uuid
+            # Update but don't save `rev_obj`. (Otherwise we'd overwrite published actions with drafts. We just want to
+            # create a revision out of `rev_obj` and save that.
+            update_references_visitor.update_instance(rev_obj, save=False)
+            new_rev = rev_obj.save_revision()
+            action.latest_revision = new_rev
+            action.save(update_fields=['latest_revision'])
+
+
 def copy_plan(
     plan: Plan,
     new_site_hostname: str,
@@ -462,6 +479,7 @@ def copy_plan(
         title_suffix=root_page_title_suffix,
     )
     plan_copy = Plan.objects.get(pk=plan.pk)
+
     # Copy plan
     with ExitStack() as stack:
         # Disconnect signals to prevent creating related model instances when saving the plan
@@ -472,6 +490,7 @@ def copy_plan(
         ))
         # We leave the signal update_plan_domain_deploy_info enabled
         clone(plan_copy, PLAN_CLONE_STRUCTURE, clone_visitor)
+
     # Copy documentation page hierarchy
     for documentation_root_page in plan.documentation_root_pages.all():
         root_page = copy_root_pages(
@@ -482,6 +501,7 @@ def copy_plan(
         assert isinstance(root_page, DocumentationRootPage)
         root_page.plan = plan_copy
         root_page.save(update_fields=['plan'])
+
     # Attribute types use generic foreign keys, so we need to copy them ourselves
     plan_ct = ContentType.objects.get_for_model(Plan)
     category_type_ct = ContentType.objects.get_for_model(CategoryType)
@@ -492,10 +512,18 @@ def copy_plan(
     ))
     for at in attribute_types:
         clone(at, ATTRIBUTE_TYPE_CLONE_STRUCTURE, clone_visitor)
+
     # Update root page (`plan_copy.site` should now be the site copy)
     assert plan_copy.site
     plan_copy.site.root_page = root_page_copy
     plan_copy.site.save(update_fields=['root_page'])
+
+    # Action revisions have not been copied yet. (`Action.revisions` is not a reverse accessor, so we can't include
+    # revisions in the clone hierarchy.)
+    # We decided that, when copying an action, we start with a clean slate revision-wise, except for the latest
+    # revision, which may be the current, yet unpublished, draft.
+    copy_action_drafts(plan_copy, clone_visitor)
+
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, clone_visitor)
