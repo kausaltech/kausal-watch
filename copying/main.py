@@ -71,7 +71,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'public_site_viewers': {},
     'report_types': {
         'reports': {
-            'action_snapshots': {},  # FIXME: copy `action_version` otherwise wrong action is linked to snapshot
+            'action_snapshots': {},  # As we don't copy `action_version`, original action will be linked to snapshot
         },
     },
     'scenarios': {},
