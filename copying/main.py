@@ -59,7 +59,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'categories': {},
         'levels': {},
     },
-    'domains': {},
+    # 'domains': {},  # deliberately don't copy domains because hostname + base path should be unique
     'features': {},
     'general_admins_ordered': {},
     'general_content': {},
@@ -70,9 +70,13 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
     'plan_related_organizations_through': {},
     'public_site_viewers': {},
     'report_types': {
-        'reports': {
-            'action_snapshots': {},  # As we don't copy `action_version`, original action will be linked to snapshot
-        },
+        # Deliberately don't copy reports because (a) the contained action snapshots refer to instances from the
+        # original plan within the serialized data, and (b) it might be justifiable for many use cases to skip copying
+        # reports. We could do something about (a) by meddling with the serialized data, but it's going to be an
+        # error-prone ordeal, so maybe this is fine for now.
+        # 'reports': {
+        #     'action_snapshots': {},  # As we don't copy `action_version`, original action will be linked to snapshot
+        # },
     },
     'scenarios': {},
 }
