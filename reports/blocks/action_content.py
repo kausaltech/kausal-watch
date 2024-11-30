@@ -108,6 +108,9 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
     class Meta:
         label = _("Primary responsible party")
+        default = {
+            'target_ancestor_depth': None
+        }
 
 
 """

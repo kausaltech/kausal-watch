@@ -49,6 +49,9 @@ class ExcelReport:
     field_to_column_labels: dict[str, set[str]]
     has_macros: bool
     plan: Plan
+    # Is this report and its type dynamically created
+    # (not loaded from database)
+    is_dynamic: bool
 
     class PlanRelatedObjects:
         implementation_phases: dict[int, ActionImplementationPhase]
@@ -74,13 +77,14 @@ class ExcelReport:
         def _keyed_dict[T: Model](seq: Iterable[T]) -> dict[int, T]:
             return {el.pk: el for el in seq}
 
-    def __init__(self, report: Report, language: str|None = None):
+    def __init__(self, report: Report, language: str|None = None, is_dynamic: bool = False):
         # Currently only language None is properly supported, defaulting
         # to the plan's primary language. When implementing support for
         # other languages, make sure the action contents and other
         # plan object contents are translated.
         self.language = report.type.plan.primary_language if language is None else language
         self.report = report
+        self.is_dynamic = is_dynamic
         self.output = BytesIO()
         self.workbook = xlsxwriter.Workbook(
             self.output,
@@ -90,7 +94,7 @@ class ExcelReport:
         )
         self.formats = ExcelFormats(self.workbook)
         self.plan = self.report.type.plan
-        if report.type.plan.features.output_report_action_print_layout:
+        if report.type.plan.features.output_report_action_print_layout and not report.disable_macros:
             # add macro to enable post-processing in Excel
             self.workbook.add_vba_project(pathlib.Path(__file__).parent / 'vbaProject.bin')
             self.has_macros = True
@@ -119,6 +123,8 @@ class ExcelReport:
         return self.output.getvalue()
 
     def _write_title_sheet(self) -> None:
+        if self.report.disable_title_sheet:
+            return
         worksheet = self.workbook.add_worksheet(_('Lead'))
         plan = self.report.type.plan
         start = self.report.start_date
@@ -316,6 +322,8 @@ class ExcelReport:
             ).sort(labels[0])
 
     def post_process(self, action_df: pl.DataFrame):
+        if self.report.disable_summary_sheets:
+            return
         if getattr(self.report.type.plan.features, 'output_report_action_print_layout', False):
             write_action_summaries(self, action_df)
 

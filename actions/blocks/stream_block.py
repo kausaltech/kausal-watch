@@ -59,13 +59,11 @@ def generate_stream_block(
         block = None
         if isinstance(field, tuple):
             if isinstance(field[1], str):
-                # Rename a field in the block;
-                # Second element is a string which should find
-                # the standard block in the action field registry.
-                # The first element, the key used in the stream block itself,
-                # is different from this and is saved to target_field_name
-                field_name = field[1]
-                target_field_name = field[0]
+                # There used to be functionality for renaming
+                # of standard field blocks, but we now want to
+                # make sure the field types are identical across
+                # different stream blocks
+                raise TypeError('Renaming block types not supported anymore.')
             else:
                 # Second element is a block instance already, use it directly
                 field_name, block = field
@@ -73,9 +71,6 @@ def generate_stream_block(
         else:
             field_name = field
             target_field_name = field_name
-        if action_registry is None:
-            from actions.action_fields import action_registry as imported_action_registry
-            action_registry = imported_action_registry
         if not block:
             block = action_registry.get_block(block_context, field_name)
 

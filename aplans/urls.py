@@ -37,6 +37,7 @@ from insight.api import all_views as insight_api_views
 from orgs.autocomplete import OrganizationAutocomplete
 from people.autocomplete import PersonAutocomplete
 from reports.autocomplete import ReportAutocomplete, ReportTypeAutocomplete, ReportTypeFieldAutocomplete
+from reports.views import export_report_view
 from users.views import change_admin_plan
 
 from .api_router import router as api_router
@@ -194,6 +195,7 @@ urlpatterns = [
     ),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
+    re_path('^report_export/(?:(?P<plan_identifier>[-a-z0-9]+)/)?$', export_report_view, name='export-report'),
     path('auth/', include('social_django.urls', namespace='social')),
     path("logout/", KausalLogoutView.as_view(), name="logout"),
     path('healthz/', csrf_exempt(health_view)),

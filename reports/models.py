@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
@@ -8,19 +8,23 @@ import reversion
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
 from reversion.revisions import _current_frame, add_to_revision, create_revision  # type: ignore
 from wagtail.fields import StreamField
+from wagtail.blocks.stream_block import StreamValue
 
 from autoslug.fields import AutoSlugField
 from sentry_sdk import capture_message
 
 from aplans.utils import PlanRelatedModel
 
+from actions.action_fields import action_registry
 from actions.models.action import Action
 from actions.models.attributes import Attribute
+from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
 
 # The following model is for very specialized use and is only imported here so that Django finds it
@@ -31,12 +35,14 @@ from .spreadsheets import ExcelReport
 if TYPE_CHECKING:
     from datetime import datetime
 
-    from wagtail.blocks.stream_block import StreamValue
+    from wagtail.blocks.struct_block import StructValue
 
     from kausal_common.models.types import FK
 
     from actions.models import AttributeType, Plan
+    from reports.report_formatters import ActionReportContentField
     from users.models import User
+
 
 
 AttributePath = tuple[int, int, int]
@@ -130,6 +136,47 @@ class ReportType(PlanRelatedModel):
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
 
+    @staticmethod
+    def generate_for_plan_dashboard(plan: Plan) -> ReportType:
+        report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
+        action_list_page = plan.root_page.get_children().type(ActionListPage).get().specific
+        dashboard_blocks = [(x.block_type, x.value) for x in action_list_page.dashboard_columns]
+        def get_value(field_id: str, value: StreamValue.StreamChild) -> StructValue | dict:
+            if field_id == 'attribute':
+                # Once the report block and the dashboard column block share the implementation,
+                # special cases like these can be removed
+                return {'attribute_type': value['attribute_type'].pk}
+            return action_registry.get_block('report' , field_id).get_default()
+
+        stream_data = [
+            {
+                'type': f,
+                'value': get_value(f, dblock),
+            }
+            for f, dblock in dashboard_blocks
+            # TODO: handle these fields in  reports
+            # (They are default fields, always included now)
+            if f not in ['identifier', 'name']
+        ]
+
+        report_type.fields = StreamValue(
+            stream_block=report_type.fields.stream_block,
+            stream_data=stream_data,
+            is_lazy=True,
+        )
+        return report_type
+
+    def generate_incomplete_report(self) -> Report:
+        return Report(
+            name='Dashboard export',
+            type=self,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date(),
+            is_complete=False,
+            is_public=True,
+            fields=None,
+        )
+
     def get_fields_for_type(self, block_type: str) -> list[StreamValue.StreamChild]:
         return [f for f in self.fields if f.block_type == block_type]
 
@@ -170,9 +217,20 @@ class Report(PlanRelatedModel):
         'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
     ]
 
+    # Non-persisted fields used only for action dashboard UI reports
+    disable_title_sheet: bool
+    disable_summary_sheets: bool
+    disable_macros: bool
+
     class Meta:
         verbose_name = _('report')
         verbose_name_plural = _('reports')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.disable_title_sheet = False
+        self.disable_summary_sheets = False
+        self.disable_macros = False
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'

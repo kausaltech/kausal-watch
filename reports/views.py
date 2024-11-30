@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -12,9 +13,10 @@ from reversion.models import Version
 
 from wagtail_modeladmin.views import WMABaseView
 
-from actions.models import Action
+from actions.models import Action, Plan
 
 from .models import ActionSnapshot, Report
+from .export import export_dashboard_report_for_plan
 
 
 class MarkActionAsCompleteView(WMABaseView):
@@ -140,3 +142,14 @@ class MarkReportAsCompleteView(WMABaseView):
             msg = _("Report '%(report)s' is no longer marked as complete.")
         messages.success(request, msg % {'report': self.report})
         return redirect(self.index_url)
+
+
+def export_report_view(request, plan_identifier):
+    plan = Plan.objects.get(identifier=plan_identifier)
+    output, filename = export_dashboard_report_for_plan(plan)
+    response = HttpResponse(
+        output,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

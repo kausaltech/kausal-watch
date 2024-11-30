@@ -282,7 +282,6 @@ def debug_registry(registry: ModelFieldRegistry):
             formatter,
         )
 
-
     console = Console()
     console.print(table)
     console.print(
