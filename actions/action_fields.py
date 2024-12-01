@@ -145,10 +145,18 @@ def initialize():
         has_dashboard_column_block=False,
     )
     register(
-        'status',
         'implementation_phase',
         field_type='single',
         has_details_block=False,
+        report_block_class='reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionImplementationPhaseReportFieldFormatter'
+    )
+    register(
+        'status',
+        field_type='single',
+        has_details_block=False,
+        report_block_class='reports.blocks.action_content.ActionStatusReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionStatusReportFieldFormatter'
     )
     register(
         'identifier',

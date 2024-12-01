@@ -42,15 +42,15 @@ def report_type_with_all_attributes(
     return report_type_factory(
         plan=plan,
         fields__0='implementation_phase',
-        fields__1='responsible_party',
-        fields__2__attribute_type__attribute_type=action_attribute_type__text,
-        fields__3__attribute_type__attribute_type=action_attribute_type__rich_text,
-        fields__4__attribute_type__attribute_type=action_attribute_type__ordered_choice,
-        fields__5__attribute_type__attribute_type=action_attribute_type__optional_choice,
-        fields__6__attribute_type__attribute_type=action_attribute_type__numeric,
-        fields__7__attribute_type__attribute_type=action_attribute_type__category_choice,
-        fields__8__category__category_type=category_type,
-        fields__9__attribute_type__attribute_type=action_attribute_type__unordered_choice,
+        fields__1='responsible_parties',
+        fields__2__attribute__attribute_type=action_attribute_type__text,
+        fields__3__attribute__attribute_type=action_attribute_type__rich_text,
+        fields__4__attribute__attribute_type=action_attribute_type__ordered_choice,
+        fields__5__attribute__attribute_type=action_attribute_type__optional_choice,
+        fields__6__attribute__attribute_type=action_attribute_type__numeric,
+        fields__7__attribute__attribute_type=action_attribute_type__category_choice,
+        fields__8__categories__category_type=category_type,
+        fields__9__attribute__attribute_type=action_attribute_type__unordered_choice,
     )
 
 

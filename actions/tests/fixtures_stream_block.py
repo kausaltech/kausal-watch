@@ -230,7 +230,7 @@ def action_dashboard_column_block():
         fields = (
             'identifier',
             'name',
-            ('imact', 'impact'), # TODO: Deprecate. The typo is for compatibility.
+            'impact',
             'implementation_phase',
             'status',
             'tasks',
@@ -238,9 +238,9 @@ def action_dashboard_column_block():
             'updated_at',
             'start_date',
             'end_date',
-            ('field', 'attribute'),
-            ('indicators', 'related_indicators'),
-            ('organization', 'primary_org'),
+            'attribute',
+            'related_indicators',
+            'primary_org',
         ),
         support_editing_from_other_form=False,
         block_context='dashboard',

@@ -119,11 +119,11 @@ field name, instead of implenting a custom ReportFieldBlock from scratch.
 ReportFieldBlock = generate_stream_block(
     'ReportFieldBlock',
     fields = (
-        ('implementation_phase', ActionImplementationPhaseReportFieldBlock()),
-        ('attribute_type', ActionAttributeTypeReportFieldBlock()), # attribute
-        ('responsible_party', ActionResponsiblePartyReportFieldBlock()),  # responsible_parties
-        ('category', ActionCategoryReportFieldBlock()),
-        ('status', ActionStatusReportFieldBlock()),
+        'implementation_phase',
+        'attribute',
+        'responsible_parties',
+        'categories',
+        'status',
         'manual_status_reason',
         'description',
         'tasks',
