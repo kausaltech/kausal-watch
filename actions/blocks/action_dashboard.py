@@ -28,7 +28,7 @@ ActionDashboardColumnBlock = generate_stream_block(
     fields = (
         'identifier',
         'name',
-        ('imact', 'impact'), # TODO: Deprecate. The typo is for compatibility.
+        'impact', # TODO: Deprecate.
         'implementation_phase',
         'status',
         'tasks',
@@ -36,9 +36,9 @@ ActionDashboardColumnBlock = generate_stream_block(
         'updated_at',
         'start_date',
         'end_date',
-        ('field', 'attribute'),
-        ('indicators', 'related_indicators'),
-        ('organization', 'primary_org'),
+        'attribute',
+        'related_indicators',
+        'primary_org',
     ),
     support_editing_from_other_form=False,
     block_context='dashboard',
