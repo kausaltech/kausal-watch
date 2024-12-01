@@ -11,6 +11,7 @@ from grapple.helpers import register_streamfield_block
 
 from actions.action_fields import action_registry
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
+from actions.blocks.stream_block import generate_stream_block
 from reports import report_formatters as formatters
 from reports.report_formatters import ActionReportContentField
 
@@ -111,51 +112,27 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
 """
 Whenever possible, try to use the existing report block classes
-that can be retrieved from the action_registry instead of implenting
-a custom ReportFieldBlock from scratch.
+that can be retrieved from the action_registry simply with the
+field name, instead of implenting a custom ReportFieldBlock from scratch.
 """
 
-ActionDescriptionBlock = action_registry.get_block_class('report', 'description')
-ActionManualStatusReasonBlock = action_registry.get_block_class('report', 'manual_status_reason')
-ActionTasksBlock = action_registry.get_block_class('report', 'tasks')
-ActionStartDateBlock = action_registry.get_block_class('report', 'start_date')
-ActionEndDateBlock = action_registry.get_block_class('report', 'end_date')
-ActionUpdatedAtBlock = action_registry.get_block_class('report', 'updated_at')
-ActionIndicatorsBlock = action_registry.get_block_class('report', 'related_indicators')
-ActionPrimaryOrgBlock = action_registry.get_block_class('report', 'primary_org')
-
-
-@register_streamfield_block
-class ReportFieldBlock(blocks.StreamBlock):
-    # All blocks mentioned here must have a formatter which implements
-    # xlsx_column_labels, value_for_action and value_for_action_snapshot
-    implementation_phase = ActionImplementationPhaseReportFieldBlock()
-    attribute_type = ActionAttributeTypeReportFieldBlock()
-    responsible_party = ActionResponsiblePartyReportFieldBlock()
-    category = ActionCategoryReportFieldBlock()
-    status = ActionStatusReportFieldBlock()
-
-    manual_status_reason = ActionManualStatusReasonBlock()
-    description = ActionDescriptionBlock()
-    tasks = ActionTasksBlock()
-    start_date = ActionStartDateBlock()
-    end_date = ActionEndDateBlock()
-    updated_at = ActionUpdatedAtBlock()
-    related_indicators = ActionIndicatorsBlock()
-    primary_org = ActionPrimaryOrgBlock()
-
-    graphql_types = [
-        ActionImplementationPhaseReportFieldBlock,
-        ActionAttributeTypeReportFieldBlock,
-        ActionResponsiblePartyReportFieldBlock,
-        ActionCategoryReportFieldBlock,
-        ActionStatusReportFieldBlock,
-        ActionManualStatusReasonBlock,
-        ActionDescriptionBlock,
-        ActionTasksBlock,
-        ActionStartDateBlock,
-        ActionEndDateBlock,
-        ActionUpdatedAtBlock,
-        ActionIndicatorsBlock,
-        ActionPrimaryOrgBlock,
-    ]
+ReportFieldBlock = generate_stream_block(
+    'ReportFieldBlock',
+    fields = (
+        ('implementation_phase', ActionImplementationPhaseReportFieldBlock()),
+        ('attribute_type', ActionAttributeTypeReportFieldBlock()), # attribute
+        ('responsible_party', ActionResponsiblePartyReportFieldBlock()),  # responsible_parties
+        ('category', ActionCategoryReportFieldBlock()),
+        ('status', ActionStatusReportFieldBlock()),
+        'manual_status_reason',
+        'description',
+        'tasks',
+        'start_date',
+        'end_date',
+        'updated_at',
+        'related_indicators',
+        'primary_org',
+    ),
+    support_editing_from_other_form=False,
+    block_context='report',
+)
