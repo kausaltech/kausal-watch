@@ -195,7 +195,7 @@ urlpatterns = [
     ),
     re_path(r'^person-autocomplete/$', PersonAutocomplete.as_view(), name='person-autocomplete'),
 
-    re_path('^report_export/(?:(?P<plan_identifier>[-a-z0-9]+)/)?$', export_report_view, name='export-report'),
+    re_path('^report_export/(?:(?P<plan_identifier>[-a-z0-9]+)/)?$', export_report_view, name='action-report-export'),
     path('auth/', include('social_django.urls', namespace='social')),
     path("logout/", KausalLogoutView.as_view(), name="logout"),
     path('healthz/', csrf_exempt(health_view)),

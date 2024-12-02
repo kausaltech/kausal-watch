@@ -11,6 +11,7 @@ import graphene
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
+from django.urls import reverse
 from django.utils.translation import get_language
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
@@ -226,6 +227,7 @@ class PlanNode(DjangoNode):
 
     admin_url = graphene.String(required=False)
     view_url = graphene.String(client_url=graphene.String(required=False))
+    action_report_export_view_url = graphene.String(required=False)
 
     main_menu = pages_schema.MainMenuNode.create_plan_menu_field()
     footer = pages_schema.FooterNode.create_plan_menu_field()
@@ -336,6 +338,12 @@ class PlanNode(DjangoNode):
         if client_plan is None:
             return None
         return client_plan.client.get_admin_url()
+
+    @staticmethod
+    def resolve_action_report_export_view_url(root: Plan, info) -> str:
+        return info.context.build_absolute_uri(reverse('action-report-export', kwargs={
+            'plan_identifier': root.identifier
+        }))
 
     @staticmethod
     @gql_optimizer.resolver_hints(
