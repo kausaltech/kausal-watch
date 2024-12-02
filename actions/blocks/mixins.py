@@ -70,7 +70,7 @@ class ActionListPageBlockPresenceMixin(_Base):
 if typing.TYPE_CHECKING:
     _FormBase = AplansAdminModelForm
 else:
-    _FormBase = object
+    _FormBase = forms.Form
 
 class ActionListPageBlockFormMixin(_FormBase):
     """
