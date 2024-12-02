@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from wagtail.blocks.struct_block import StructValue
 
     from kausal_common.models.types import FK
+    from kausal_common.users import UserOrAnon
 
     from actions.models import AttributeType, Plan
     from reports.report_formatters import ActionReportContentField
@@ -137,11 +138,19 @@ class ReportType(PlanRelatedModel):
         verbose_name_plural = _('report types')
 
     @staticmethod
-    def generate_for_plan_dashboard(plan: Plan) -> ReportType:
+    def generate_for_plan_dashboard(plan: Plan, user: UserOrAnon) -> ReportType:
         report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
         action_list_page = plan.root_page.get_children().type(ActionListPage).get().specific
-        dashboard_blocks = [(x.block_type, x.value) for x in action_list_page.dashboard_columns]
-        def get_value(field_id: str, value: StreamValue.StreamChild) -> StructValue | dict:
+        dashboard_blocks = [
+            (x.block_type, x.value)
+            for x in action_list_page.dashboard_columns
+        ]
+        dashboard_blocks = [
+            # filter out non-public attribute fields
+            (bt, val) for bt, val in dashboard_blocks
+            if bt != 'attribute' or val['attribute_type'].instances_visible_for == 'public'
+        ]
+        def get_value(field_id: str, value: StructValue) -> StructValue | dict:
             if field_id == 'attribute':
                 # Once the report block and the dashboard column block share the implementation,
                 # special cases like these can be removed
@@ -151,11 +160,12 @@ class ReportType(PlanRelatedModel):
         stream_data = [
             {
                 'type': f,
-                'value': get_value(f, dblock),
+                'value': get_value(f, value),
             }
-            for f, dblock in dashboard_blocks
-            # TODO: handle these fields in  reports
-            # (They are default fields, always included now)
+            for f, value in dashboard_blocks
+            # TODO: handle these fields in reports by making
+            # them blocks that are required
+            # (Now they are default fields, always included in reports)
             if f not in ['identifier', 'name']
         ]
 

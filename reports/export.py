@@ -6,10 +6,11 @@ from .models import ReportType
 
 if TYPE_CHECKING:
     from actions.models import Plan
+    from kausal_common.users import UserOrAnon
 
 
-def export_dashboard_report_for_plan(plan: Plan, format: Literal['csv', 'xlsx']):
-    report_type = ReportType.generate_for_plan_dashboard(plan)
+def export_dashboard_report_for_plan(plan: Plan, format: Literal['csv', 'xlsx'], user: UserOrAnon):
+    report_type = ReportType.generate_for_plan_dashboard(plan, user)
     report = report_type.generate_incomplete_report()
     report.disable_title_sheet = True
     report.disable_summary_sheets = True

@@ -146,11 +146,12 @@ class MarkReportAsCompleteView(WMABaseView):
 
 def export_report_view(request, plan_identifier):
     format = request.GET.get('format', 'xlsx')
+    user = request.user
     plan = Plan.objects.get(identifier=plan_identifier)
     if not plan.is_live():
         # TODO: authorization relative to user once plan visibility is merged
         raise Http404
-    output, filename = export_dashboard_report_for_plan(plan, format)
+    output, filename = export_dashboard_report_for_plan(plan, format, user)
     content_type = (
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         if format == 'xlsx'
