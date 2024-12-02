@@ -103,8 +103,9 @@ class ExcelReport:
         self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self.field_to_column_labels = dict()
 
-    def get_filename(self) -> str:
-        suffix = '.xlsm' if self.has_macros else '.xlsx'
+    def get_filename(self, suffix: str | None = None) -> str:
+        if suffix is None:
+            suffix = '.xlsm' if self.has_macros else '.xlsx'
         return slugify(self.report.name, allow_unicode=True) + suffix
 
     def generate_actions_dataframe(self) -> pl.DataFrame:
@@ -121,6 +122,11 @@ class ExcelReport:
         # Make striped even-odd rows
         self.close()
         return self.output.getvalue()
+
+    def generate_csv(self) -> str:
+        actions_df = self.generate_actions_dataframe()
+        with translation.override(self.language):
+            return actions_df.write_csv()
 
     def _write_title_sheet(self) -> None:
         if self.report.disable_title_sheet:

@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
@@ -145,11 +145,20 @@ class MarkReportAsCompleteView(WMABaseView):
 
 
 def export_report_view(request, plan_identifier):
+    format = request.GET.get('format', 'xlsx')
     plan = Plan.objects.get(identifier=plan_identifier)
-    output, filename = export_dashboard_report_for_plan(plan)
+    if not plan.is_live():
+        # TODO: authorization relative to user once plan visibility is merged
+        raise Http404
+    output, filename = export_dashboard_report_for_plan(plan, format)
+    content_type = (
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        if format == 'xlsx'
+        else 'text/csv'
+    )
     response = HttpResponse(
         output,
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        content_type=content_type,
     )
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
