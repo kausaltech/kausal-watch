@@ -591,7 +591,7 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
             attribute_versions: dict[AttributePath, SerializedAttributeVersion],
             ):
         organization_id = self._find_organization_id(
-            (version.data for version in related_objects['actions.models.action.ActionResponsibleParty']),
+            (version.data for version in related_objects.get('actions.models.action.ActionResponsibleParty', [])),
             action['id'],
         )
         target_depth = block_value.get('target_ancestor_depth')
