@@ -260,8 +260,9 @@ class Report(PlanRelatedModel):
 
     def get_live_versions(self) -> LiveVersions:
         """
-        Returns action versions and related object versions for an incomplete report
-        similar to those that would be saved to the database when completing a report.
+        Return action versions and related object versions for an incomplete report.
+
+        The versions are similar to those that would be saved to the database when completing a report.
         """
         if self.is_complete:
             self._raise_complete()
