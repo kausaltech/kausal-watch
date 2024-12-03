@@ -128,12 +128,6 @@ def populated_action_registry():
         has_report_block=False,
     )
     register(
-        'impact',  # deprecated
-        field_type='single',
-        has_details_block=False,
-        has_report_block=False,
-    )
-    register(
         'start_date',
         'end_date',
         'identifier',
@@ -230,7 +224,6 @@ def action_dashboard_column_block():
         fields = (
             'identifier',
             'name',
-            'impact',
             'implementation_phase',
             'status',
             'tasks',

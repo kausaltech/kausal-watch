@@ -28,7 +28,6 @@ ActionDashboardColumnBlock = generate_stream_block(
     fields = (
         'identifier',
         'name',
-        'impact', # TODO: Deprecate.
         'implementation_phase',
         'status',
         'tasks',

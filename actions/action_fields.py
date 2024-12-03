@@ -121,12 +121,6 @@ def initialize():
         has_report_block=False,
     )
     register(
-        'impact',  # deprecated
-        field_type='single',
-        has_details_block=False,
-        has_report_block=False,
-    )
-    register(
         'start_date',
         'end_date',
         has_details_block=False,
