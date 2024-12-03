@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
 import typing
 from abc import ABC, abstractmethod
 from typing import Any
 
 from django.apps import apps
-from django.db.models.fields import Field, DateTimeField
+from django.db.models.fields import Field
 from django.utils.formats import date_format
 from django.utils.translation import gettext, gettext_lazy as _, pgettext
-from wagtail import fields, blocks
+from wagtail import blocks, fields
 
 from grapple.models import GraphQLForeignKey
 
@@ -35,18 +34,20 @@ from actions.models.plan import Plan
 from orgs.models import Organization
 from reports.graphene_types import GrapheneValueClassProperties, generate_graphene_report_value_node_class
 from reports.utils import (
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE,
     get_attribute_for_type_from_related_objects,
     get_related_model_instances_for_action,
-    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
-    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
 )
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+    from typing import Literal
 
     import graphene
 
     from actions.models import Plan
+    from orgs.models import OrganizationQuerySet
     from reports.models import ActionSnapshot
     from reports.spreadsheets import ExcelReport
     from reports.utils import AttributePath, ReportCellValue, SerializedAttributeVersion, SerializedVersion
@@ -564,6 +565,15 @@ class ActionStatusReportFieldFormatter(ReportFieldFormatter):
 
 
 class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
+    def _find_organization_id(self, action_responsible_parties: Iterable[dict], action_id) -> int | None:
+        try:
+            return next(
+                arp['organization_id'] for arp in action_responsible_parties
+                if arp.get('action_id') == action_id and arp.get('role') == 'primary'
+            )
+        except StopIteration:
+            return None
+
     def value_for_action_snapshot(self, block_value, snapshot):
         related_versions = snapshot.get_related_versions()
         action_responsible_parties = (
@@ -576,51 +586,83 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         except Organization.DoesNotExist:
             return None
 
-    def _find_organization_id(self, action_responsible_parties: Iterable[dict], action_id) -> int | None:
-        try:
-            return next(
-                arp['organization_id'] for arp in action_responsible_parties
-                if arp.get('action_id') == action_id and arp.get('role') == 'primary'
-            )
-        except StopIteration:
-            return None
+    def _get_organizations(
+        self,
+        action_responsible_parties: Iterable[dict],
+        action_id: int,
+        report: ExcelReport,
+    ) -> dict[Literal['primary', 'collaborator', 'other'], list[Organization]]:
+        orgs_by_role = {}
+        for arp in action_responsible_parties:
+            if arp.get('action_id') != action_id:
+                continue
+            role: str = arp.get('role') or 'other'
+            org_id = arp['organization_id']
+            org = report.plan_current_related_objects.organizations.get(org_id)
+            if org is None:
+                # The organization does not exist anymore in the plan
+                continue
+            orgs_by_role.setdefault(role, []).append(org)
+        return orgs_by_role
 
     def extract_action_values(
             self, report: ExcelReport, block_value: dict, action: dict,
             related_objects: dict[str, list[SerializedVersion]],
             attribute_versions: dict[AttributePath, SerializedAttributeVersion],
             ):
-        organization_id = self._find_organization_id(
+
+        target_depth = block_value.get('target_ancestor_depth')
+        organizations_by_role = self._get_organizations(
             (version.data for version in related_objects.get('actions.models.action.ActionResponsibleParty', [])),
             action['id'],
+            report,
         )
-        target_depth = block_value.get('target_ancestor_depth')
-        value_length = 1
-        if target_depth is not None:
-            value_length += 1
-        if organization_id is None:
-            return [None] * value_length
-        organization = report.plan_current_related_objects.organizations.get(organization_id)
-        if organization is None:
-            # The organization does not exist anymore in the plan
-            return [None] * value_length
+
+        main_organization: Organization | None = None
+        if 'primary' in organizations_by_role:
+            main_organization = organizations_by_role['primary'][0]
+        elif 'other' in organizations_by_role:
+            main_organization = organizations_by_role['other'][0]
+        elif 'collaborator' in organizations_by_role:
+            main_organization = organizations_by_role['collaborator'][0]
+
+        formatted_data = {}
+        for role, orgs in organizations_by_role.items():
+            formatted_data[role] = "; ".join([o.name for o in orgs])
+
         if target_depth is None:
-            return [organization.name]
-        ancestors = organization.get_ancestors()
-        depth = len(ancestors)
-        if depth == 0:
-            parent = None
-        elif depth == 1:
-            parent = organization
-        elif depth < target_depth:
-            parent = ancestors[depth-1]
+            return [
+                formatted_data.get('primary', ''),
+                formatted_data.get('collaborator', ''),
+                formatted_data.get('other', ''),
+            ]
+        if main_organization is None:
+            parent_name = ''
         else:
-            parent = ancestors[target_depth-1]
-        parent_name = parent.name if parent else None
-        return [organization.name, parent_name]
+            ancestors: OrganizationQuerySet = main_organization.get_ancestors()
+            depth = len(ancestors)
+            if depth == 0:
+                parent = None
+            elif depth == 1:
+                parent = main_organization
+            elif depth < target_depth:
+                parent = ancestors[depth-1]
+            else:
+                parent = ancestors[target_depth-1]
+            parent_name = parent.name if parent else None
+        return [
+            formatted_data.get('primary', ''),
+            formatted_data.get('collaborator', ''),
+            formatted_data.get('other', ''),
+            parent_name,
+        ]
 
     def xlsx_column_labels(self, value: dict, plan: Plan | None = None) -> list[str]:
-        labels = [str(self.block.label)]
+        labels = [
+            gettext('Primary responsible party'),
+            gettext('Collaborator'),
+            gettext('Other responsible parties'),
+        ]
         target_depth = value.get('target_ancestor_depth')
         if target_depth is None:
             return labels
@@ -637,13 +679,6 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         )
 
 
-reveal_type(blocks.Block.creation_counter)
-
-class FooBar:
-    pass
-
-
-#class ActionReportContentField(blocks.Block[FooBar]):
 class ActionReportContentField(blocks.Block):
     report_value_formatter: ReportFieldFormatter
     report_value_formatter_class: type[ReportFieldFormatter]

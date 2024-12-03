@@ -42,7 +42,8 @@ def assert_report_dimensions(excel_file, report, actions):
         non_report_fields.extend(['marked_as_complete_by', 'marked_as_complete_at'])
 
     # optional choice attribute results in two columns, hence + 1
-    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1
+    # responsible parties columns result in 3 columns, hence + 2
+    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1 + 2
     assert df_actions.height == len(actions)
     return df_actions
 
