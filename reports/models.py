@@ -270,7 +270,8 @@ class Report(PlanRelatedModel):
             .prefetch_related(
                 'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
-            ).annotate_related_indicator_counts(self.type.plan)
+                'related_indicators',
+            )
         )
         result = LiveVersions()
 
