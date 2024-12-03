@@ -149,7 +149,7 @@ class ExcelFormats(dict):
         if None not in {self._formats_for_fields.get(label) for label in labels}:
             return
         block: ActionReportContentField = typing.cast(ActionReportContentField, field.block)
-        cell_format_specs: dict[str, str] | None = block.get_xlsx_cell_format(field.value)
+        cell_format_specs: dict[str, str | int] | None = block.get_xlsx_cell_format(field.value)
         cell_format = self.workbook.add_format(cell_format_specs)
         self.StyleSpecifications.all_rows(cell_format)
         for label in labels:

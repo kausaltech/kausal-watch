@@ -18,6 +18,8 @@ from aplans.utils import StaticBlockToStructBlockWorkaroundMixin, underscore_to_
 from reports.report_formatters import ActionReportContentField
 
 if typing.TYPE_CHECKING:
+    from typing import Any
+
     import graphene
 
 
@@ -77,7 +79,7 @@ def generate_block_for_field(
     field_name: str,
     target_module: object,
     params: dict | None = None,
-    superclasses: tuple[type[blocks.Block], ...] = (
+    superclasses: tuple[type[blocks.Block[Any]], ...] = (  #pyright: ignore
         ActionListContentBlock,
         ActionReportContentField,
     ),

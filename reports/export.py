@@ -16,6 +16,7 @@ def export_dashboard_report_for_plan(plan: Plan, format: Literal['csv', 'xlsx'],
     report.disable_summary_sheets = True
     report.disable_macros = True
     exporter = report.get_xlsx_exporter()
+    output: str | bytes
     if format == 'xlsx':
         output = exporter.generate_xlsx()
         filename = exporter.get_filename()

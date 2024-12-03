@@ -42,8 +42,7 @@ from reports.utils import (
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-    from typing import Literal
-
+    from wagtail.blocks.base import BlockMeta  # pyright: ignore
     import graphene
 
     from actions.models import Plan
@@ -241,7 +240,7 @@ class ActionSingleRelatedModelFieldFormatter(ReportFieldFormatter):
         verbose_name = field.verbose_name
         return [str(verbose_name)]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
@@ -272,7 +271,7 @@ class ActionManyToOneFieldFormatter(ReportFieldFormatter):
         verbose_name = field.related_model._meta.verbose_name_plural
         return [verbose_name.capitalize() if verbose_name else field_name]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
@@ -366,7 +365,7 @@ class ActionIndicatorsFormatter(ActionManyToOneFieldFormatter):
         ]
         indicators_with_goals = [
             i for i in indicators_for_this_action if (
-                any(ig.data['indicator_id'] == i.data['id'] for ig in indicator_goals)
+                i is not None and any(ig.data['indicator_id'] == i.data['id'] for ig in indicator_goals)
             )
         ]
         return [len(indicators_for_this_action), gettext('Yes') if len(indicators_with_goals) > 0 else gettext('No')]
@@ -424,7 +423,7 @@ class ActionAttributeTypeReportFieldFormatter(ReportFieldFormatter):
         wrapped_type: AttributeType = AttributeType.from_model_instance(value['attribute_type'])
         return wrapped_type.xlsx_column_labels(plan=plan)
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         wrapped_type: AttributeType = AttributeType.from_model_instance(block_value['attribute_type'])
         return wrapped_type.get_xlsx_cell_format()
 
@@ -476,7 +475,7 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return [self.get_help_label(value)]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def get_help_label(self, block_value):
@@ -520,7 +519,7 @@ class ActionImplementationPhaseReportFieldFormatter(ReportFieldFormatter):
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return [str(self.block.label).capitalize()]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
@@ -546,7 +545,7 @@ class ActionStatusReportFieldFormatter(ReportFieldFormatter):
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return [str(self.block.label).capitalize()]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def value_for_action_snapshot(self, block_value, snapshot: ActionSnapshot):
@@ -591,8 +590,8 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         action_responsible_parties: Iterable[dict],
         action_id: int,
         report: ExcelReport,
-    ) -> dict[Literal['primary', 'collaborator', 'other'], list[Organization]]:
-        orgs_by_role = {}
+    ) -> dict[str, list[Organization]]:
+        orgs_by_role: dict[str, list[Organization]] = {}
         for arp in action_responsible_parties:
             if arp.get('action_id') != action_id:
                 continue
@@ -649,7 +648,7 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
                 parent = ancestors[depth-1]
             else:
                 parent = ancestors[target_depth-1]
-            parent_name = parent.name if parent else None
+            parent_name = parent.name if parent else ''
         return [
             formatted_data.get('primary', ''),
             formatted_data.get('collaborator', ''),
@@ -668,7 +667,7 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
             return labels
         return labels + [pgettext('organization', 'Parent')]
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
     def get_graphene_value_class_properties(self) -> GrapheneValueClassProperties:
@@ -679,7 +678,15 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         )
 
 
-class ActionReportContentField(blocks.Block):
+if typing.TYPE_CHECKING:
+    class BlockMetaWithFieldName(BlockMeta):
+        field_name: str
+else:
+    class BlockMetaWithFieldName:
+        pass
+
+
+class ActionReportContentField(blocks.Block[BlockMetaWithFieldName]):  # pyright: ignore
     report_value_formatter: ReportFieldFormatter
     report_value_formatter_class: type[ReportFieldFormatter]
 
@@ -709,5 +716,5 @@ class ActionReportContentField(blocks.Block):
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return self.report_value_formatter.xlsx_column_labels(value, plan=plan)
 
-    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str] | None:
+    def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return self.report_value_formatter.get_xlsx_cell_format(block_value)
