@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import typing
-from datetime import datetime, date
+from datetime import date, datetime
 
 if typing.TYPE_CHECKING:
     from typing import Any, Literal

@@ -6,9 +6,8 @@ import typing
 from reports.report_formatters import ActionReportContentField
 from reports.utils import (
     EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
-    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE
+    EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE,
 )
-
 
 if typing.TYPE_CHECKING:
     from wagtail.blocks import BoundBlock

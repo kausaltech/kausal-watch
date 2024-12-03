@@ -42,8 +42,9 @@ from reports.utils import (
 
 if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-    from wagtail.blocks.base import BlockMeta  # pyright: ignore
+
     import graphene
+    from wagtail.blocks.base import BlockMeta  # pyright: ignore
 
     from actions.models import Plan
     from orgs.models import OrganizationQuerySet

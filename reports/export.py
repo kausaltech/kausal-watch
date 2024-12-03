@@ -5,8 +5,9 @@ from typing import TYPE_CHECKING, Literal
 from .models import ReportType
 
 if TYPE_CHECKING:
-    from actions.models import Plan
     from kausal_common.users import UserOrAnon
+
+    from actions.models import Plan
 
 
 def export_dashboard_report_for_plan(plan: Plan, format: Literal['csv', 'xlsx'], user: UserOrAnon):

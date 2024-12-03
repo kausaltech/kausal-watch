@@ -1,4 +1,3 @@
-import reversion
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
@@ -9,14 +8,13 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
-from reversion.models import Version
 
 from wagtail_modeladmin.views import WMABaseView
 
 from actions.models import Action, Plan
 
-from .models import ActionSnapshot, Report
 from .export import export_dashboard_report_for_plan
+from .models import ActionSnapshot, Report
 
 
 class MarkActionAsCompleteView(WMABaseView):

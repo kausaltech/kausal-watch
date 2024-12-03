@@ -41,7 +41,6 @@ if TYPE_CHECKING:
     from kausal_common.users import UserOrAnon
 
     from actions.models import AttributeType, Plan
-    from reports.report_formatters import ActionReportContentField
     from users.models import User
 
 
