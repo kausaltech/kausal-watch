@@ -43,8 +43,6 @@ lazy_field_label = lazy(get_field_label, str)
 
 
 class ActionListContentBlock(StaticBlockToStructBlockWorkaroundMixin, blocks.StructBlock):
-    block_label: str  # TODO: this is actually not used?
-
     field_label = blocks.CharBlock(
         required=False,
         help_text=_('Heading to show instead of the default'),

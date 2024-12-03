@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:
 
 def generate_stream_block(
     name: str,
-    fields: typing.Iterable[str | tuple[str, blocks.Block] | tuple[str, str]],
+    fields: typing.Iterable[str | tuple[str, blocks.Block]],
     support_editing_from_other_form: bool = False,
     block_context: BlockContext = 'details',
     action_registry: ModelFieldRegistry[type[Action]] = action_registry,
@@ -58,16 +58,8 @@ def generate_stream_block(
         target_field_name = None
         block = None
         if isinstance(field, tuple):
-            if isinstance(field[1], str):
-                # There used to be functionality for renaming
-                # of standard field blocks, but we now want to
-                # make sure the field types are identical across
-                # different stream blocks
-                raise TypeError('Renaming block types not supported anymore.')
-            else:
-                # Second element is a block instance already, use it directly
-                field_name, block = field
-                target_field_name = field_name
+            field_name, block = field
+            target_field_name = field_name
         else:
             field_name = field
             target_field_name = field_name
