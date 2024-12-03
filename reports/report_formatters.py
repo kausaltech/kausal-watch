@@ -44,6 +44,7 @@ if typing.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
     import graphene
+    from django.db.models import Model
     from wagtail.blocks.base import BlockMeta  # pyright: ignore
 
     from actions.models import Plan
@@ -52,6 +53,8 @@ if typing.TYPE_CHECKING:
     from reports.spreadsheets import ExcelReport
     from reports.utils import AttributePath, ReportCellValue, SerializedAttributeVersion, SerializedVersion
 
+
+type ValueType = Model | Iterable | str | None
 
 class ReportFieldFormatter(ABC):
     block: ActionReportContentField
@@ -65,7 +68,7 @@ class ReportFieldFormatter(ABC):
             self,
             block_value: dict[str, ReportCellValue],
             snapshot: ActionSnapshot,
-    ) -> Any | None:
+    ) -> ValueType:
         raise NotImplementedError
 
     @abstractmethod
@@ -104,7 +107,7 @@ class ReportFieldFormatter(ABC):
 class ActionSimpleFieldFormatter(ReportFieldFormatter):
     """A simple field is a field whose value is trivial to convert to a string with str."""
 
-    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         value = snapshot.action_version.field_dict[block_value.get('field_name')]
         return value
 
@@ -206,7 +209,7 @@ class ActionDateTimeFieldFormatter(ActionSimpleFieldFormatter):
 class ActionSingleRelatedModelFieldFormatter(ReportFieldFormatter):
     """A field referencing a single related model."""
 
-    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         value = snapshot.action_version.field_dict[block_value.get('field_name')]
         return value
 
@@ -387,7 +390,7 @@ class ActionAttributeTypeReportFieldFormatter(ReportFieldFormatter):
         GraphQLForeignKey('attribute_type', AttributeTypeModel, required=True),
     ]
 
-    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+    def value_for_action_snapshot(self, block_value, snapshot) -> Model | None:
         return snapshot.get_attribute_for_type(block_value['attribute_type'])
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
@@ -395,7 +398,7 @@ class ActionAttributeTypeReportFieldFormatter(ReportFieldFormatter):
         if attribute is not None:
             # Change the ID of the attribute to include the snapshot, otherwise Apollo would cache the attribute value from
             # one point in time and use this for all other points in time of the same attribute
-            attribute.id = f'{attribute.id}-snapshot-{snapshot.id}'
+            attribute.pk = f'{attribute.pk}-snapshot-{snapshot.id}'
         return self.get_graphene_value_class()(
             field=field,
             attribute=attribute,
@@ -485,7 +488,7 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
             return level.name
         return block_value.get('category_type').name
 
-    def value_for_action_snapshot(self, block_value, snapshot):
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         category_type = block_value['category_type']
         category_ids = snapshot.action_version.field_dict['categories']
         categories = Category.objects.filter(id__in=category_ids).filter(type=category_type)
@@ -500,7 +503,7 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
 
 
 class ActionImplementationPhaseReportFieldFormatter(ReportFieldFormatter):
-    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         implementation_phase_id = snapshot.action_version.field_dict['implementation_phase_id']
         if implementation_phase_id:
             return ActionImplementationPhase.objects.get(id=implementation_phase_id)
@@ -549,7 +552,7 @@ class ActionStatusReportFieldFormatter(ReportFieldFormatter):
     def get_xlsx_cell_format(self, block_value: dict[str, Any]) -> dict[str, str | int] | None:
         return None
 
-    def value_for_action_snapshot(self, block_value, snapshot: ActionSnapshot):
+    def value_for_action_snapshot(self, block_value, snapshot: ActionSnapshot) -> ValueType:
         status_id = snapshot.action_version.field_dict['status_id']
         try:
             return ActionStatus.objects.get(pk=status_id)
@@ -574,7 +577,7 @@ class ActionResponsiblePartyReportFieldFormatter(ReportFieldFormatter):
         except StopIteration:
             return None
 
-    def value_for_action_snapshot(self, block_value, snapshot):
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         related_versions = snapshot.get_related_versions()
         action_responsible_parties = (
             arp.field_dict
@@ -701,7 +704,7 @@ class ActionReportContentField(blocks.Block[BlockMetaWithFieldName]):  # pyright
             return ActionSimpleFieldFormatter
         return self.report_value_formatter_class
 
-    def value_for_action_snapshot(self, block_value, snapshot) -> Any | None:
+    def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         return self.report_value_formatter.value_for_action_snapshot(block_value, snapshot)
 
     def graphql_value_for_action_snapshot(self, field, snapshot):
