@@ -518,11 +518,14 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             return next(iter(root_pages.values()))
         return None
 
-    def create_default_site(self):
+    def create_default_site(self, hostname=None):
+        if hostname is None:
+            parsed_url = urlparse(self.site_url)
+            hostname = parsed_url.hostname
         if self.site is not None:
             return
         root_page = self.create_default_pages()
-        site = Site(site_name=self.name, hostname=self.site_url, root_page=root_page)
+        site = Site(site_name=self.name, hostname=hostname, root_page=root_page)
         site.save()
         self._site_created = True
         self.site = site
@@ -744,8 +747,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         other_languages: list[str] = [],
         short_name: str | None = None,
         base_path: str | None = None,
-        domain: str | None = None,
-        client_identifier: str | None = None,
+        hostname: str | None = None,
         client_name: str | None = None,
     ) -> Plan:
         plan = Plan(
@@ -763,7 +765,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             if client is None:
                 client = Client.objects.create(name=client_name)
             ClientPlan.objects.create(plan=plan, client=client)
-        return cls.apply_defaults(plan, domain=domain, base_path=base_path)
+        return cls.apply_defaults(plan, hostname=hostname, base_path=base_path)
 
     @classmethod
     @transaction.atomic()
@@ -771,22 +773,17 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             cls,
             plan: Plan,
             base_path: str | None = None,
-            domain: str | None = None,
+            hostname: str | None = None,
     ):
         from actions.defaults import DEFAULT_ACTION_IMPLEMENTATION_PHASES, DEFAULT_ACTION_STATUSES
         plan.statuses_updated_manually = True
-        default_domains = [x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost']
-        if not domain:
-            if not default_domains:
-                raise Exception("site_url not provided and no default domains configured")
-            domain = default_domains[0]
-            site_url = 'https://%s.%s' % (plan.identifier, domain)
-        else:
-            site_url = 'https://%s' % domain
+        if not hostname:
+            hostname = plan.default_hostname()
+        site_url = f'https://{hostname}'
         if base_path:
             site_url += '/' + base_path.strip('/')
         plan.site_url = site_url
-        plan.create_default_site()
+        plan.create_default_site(hostname)
         plan.save()
 
         with translation.override(plan.primary_language):
@@ -808,6 +805,15 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         # Set up notifications
         management.call_command('initialize_notifications', plan=plan.identifier)
         return plan
+
+    def default_hostname(self) -> str:
+        """Build a hostname from plan identifier and any item in HOSTNAME_PLAN_DOMAINS that's not localhost."""
+        hostname_plan_domains = (x for x in settings.HOSTNAME_PLAN_DOMAINS if x != 'localhost')
+        try:
+            default_domain = next(iter(hostname_plan_domains))
+        except StopIteration as e:
+            raise Exception("Cannot create default hostname if no hostname plan domains are configured") from e
+        return '%s.%s' % (self.identifier, default_domain)
 
     def get_all_related_plans(self, inclusive=False) -> PlanQuerySet:
         q = Q(related_plans=self)
