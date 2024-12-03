@@ -944,6 +944,14 @@ class ActionAdmin(AplansModelAdmin):
                     ),
                 )))
 
+            if plan.copy_of:
+                panels.append(FieldPanel('copy_of', widget=autocomplete.ModelSelect2(
+                    url='action-autocomplete',
+                    forward=(
+                        dal_forward.Const(plan.copy_of.id, 'plan'),
+                    ),
+                )))
+
         all_tabs.append(ObjectList(panels, heading=_('Basic information')))
 
         progress_panels = list(self.progress_panels)

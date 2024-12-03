@@ -317,6 +317,10 @@ class Action(
         'self', verbose_name=pgettext_lazy('action', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_actions', help_text=_('Set if this action is superseded by another action'),
     )
+    copy_of: FK[Action | None] = models.ForeignKey(
+        'self', verbose_name=pgettext_lazy('action', 'copy of'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='copies', help_text=_('Set if this action has been created by copying another action'),
+    )
     dependency_role: FK[ActionDependencyRole | None] = models.ForeignKey(  # pyright: ignore
         'actions.ActionDependencyRole', on_delete=models.SET_NULL, null=True, blank=True, related_name='actions',
         verbose_name=_('Role in dependencies'),
@@ -432,8 +436,8 @@ class Action(
         'categories', 'indicators', 'contact_persons', 'updated_at', 'start_date', 'end_date', 'date_format', 'tasks',
         'related_actions', 'related_indicators', 'impact', 'status_updates', 'merged_with', 'merged_actions',
         'impact_groups', 'monitoring_quality_points', 'implementation_phase', 'manual_status_reason', 'links',
-        'primary_org', 'order', 'superseded_by', 'superseded_actions', 'dependent_relationships', 'dependency_role',
-        'visibility',
+        'primary_org', 'order', 'superseded_by', 'superseded_actions', 'copy_of', 'copies', 'dependent_relationships',
+        'dependency_role', 'visibility',
     ]
 
     # type annotations for related objects
@@ -446,6 +450,7 @@ class Action(
     preceding_relationships: RevMany[ActionDependencyRelationship]
     related_indicators: RevMany[ActionIndicator]
     superseded_actions: RevMany[Action]
+    copies: RevMany[Action]
     tasks: RevMany[ActionTask]
 
     verbose_name_partitive = pgettext_lazy('partitive', 'action')

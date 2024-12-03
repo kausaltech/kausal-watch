@@ -36,7 +36,7 @@ def initialize():
     action_registry.disable_fields(
         'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact_groups',
         'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
-        'superseded_actions', 'superseded_by', 'uuid', 'visibility',
+        'superseded_actions', 'superseded_by', 'copies', 'copy_of', 'uuid', 'visibility',
     )
 
     register(

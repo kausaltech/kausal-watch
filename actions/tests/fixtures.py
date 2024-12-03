@@ -113,6 +113,10 @@ def actions_with_relations_factory():
         action.save()
 
         action = get_lhs_action()
+        action.copy_of = get_rhs_action()
+        action.save()
+
+        action = get_lhs_action()
         action.related_actions.add(get_rhs_action())
 
         get_lhs_action().monitoring_quality_points.add(MonitoringQualityPointFactory())

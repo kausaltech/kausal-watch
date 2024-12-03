@@ -342,6 +342,10 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         'self', verbose_name=pgettext_lazy('plan', 'superseded by'), blank=True, null=True, on_delete=models.SET_NULL,
         related_name='superseded_plans', help_text=_('Set if this plan is superseded by another plan'),
     )
+    copy_of: FK[Plan | None] = models.ForeignKey(
+        'self', verbose_name=pgettext_lazy('plan', 'copy of'), blank=True, null=True, on_delete=models.SET_NULL,
+        related_name='copies', help_text=_('Set if this plan has been created by copying another plan'),
+    )
     timezone = models.CharField[str, str](max_length=64, choices=get_timezones, default='UTC')  # type: ignore[arg-type]
     country = CountryField(blank=True)
     daily_notifications_triggered_at = models.DateTimeField(blank=True, null=True)
@@ -370,7 +374,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         'action_implementation_phases', 'actions_locked', 'organization',
         'related_plans', 'theme_identifier', 'parent', 'children',
         'primary_action_classification', 'secondary_action_classification', 'superseded_by', 'superseded_plans',
-        'report_types', 'external_feedback_url', 'action_dependency_roles', 'kausal_paths_instance_uuid',
+        'copy_of', 'copies', 'report_types', 'external_feedback_url', 'action_dependency_roles',
+        'kausal_paths_instance_uuid',
     ]
 
     objects: ClassVar[PlanManager] = PlanManager()

@@ -1,22 +1,25 @@
 from __future__ import annotations
 
 import typing
-from django.contrib.contenttypes.fields import GenericForeignKey
 from typing import Any
+
+from django.contrib.contenttypes.fields import GenericForeignKey
 from wagtail.blocks import StreamValue
 
 if typing.TYPE_CHECKING:
+    from collections.abc import Generator
+
     from django.db.models import Field, Model
 
 
-def get_foreign_keys(instance: Model) -> list[Field]:
+def get_foreign_keys(instance: Model) -> Generator[Field]:
     """Get foreign keys for the given instance."""
-    return [f for f in instance._meta.fields if f.many_to_one or f.one_to_one]
+    return (f for f in instance._meta.fields if f.many_to_one or f.one_to_one)
 
 
-def get_generic_foreign_keys(instance: Model) -> list[GenericForeignKey]:
+def get_generic_foreign_keys(instance: Model) -> Generator[GenericForeignKey]:
     """Get generic foreign keys for the given instance."""
-    return [f for f in instance._meta.private_fields if isinstance(f, GenericForeignKey)]
+    return (f for f in instance._meta.private_fields if isinstance(f, GenericForeignKey))
 
 
 # https://stackoverflow.com/questions/2209159/disconnect-signals-for-models-and-reconnect-in-django

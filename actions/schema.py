@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import graphene
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Prefetch, Q, prefetch_related_objects
+from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
 from django.utils.translation import get_language
 from graphene_django import DjangoObjectType
@@ -961,18 +961,17 @@ class ActionDependencyRelationshipNode(DjangoNode):
         fields = ActionDependencyRelationship.public_fields
 
 
-def _get_visible_action(root, field_name, user: User | None):
+def _get_visible_action(root, field_name, user: User | None) -> Action | None:
     action_id = getattr(root, f'{field_name}_id')
     if action_id is None:
         return None
     try:
-        retval = Action.objects.get_queryset().visible_for_user(user).get(id=action_id)
+        return Action.objects.get_queryset().visible_for_user(user).get(id=action_id)
     except Action.DoesNotExist:
         return None
-    return retval
 
 
-def _get_visible_actions(root, field_name, user: User | None):
+def _get_visible_actions(root, field_name, user: User | None) -> QuerySet[Action]:
     actions = getattr(root, field_name)
     return actions.visible_for_user(user)
 
@@ -1079,12 +1078,20 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
         return _get_visible_action(root, 'superseded_by', info.context.user)
 
     @staticmethod
+    def resolve_copy_of(root: Action, info) -> Action | None:
+        return _get_visible_action(root, 'copy_of', info.context.user)
+
+    @staticmethod
     def resolve_merged_actions(root: Action, info):
         return _get_visible_actions(root, 'merged_actions', info.context.user)
 
     @staticmethod
     def resolve_superseded_actions(root: Action, info):
         return _get_visible_actions(root, 'superseded_actions', info.context.user)
+
+    @staticmethod
+    def resolve_copies(root: Action, info) -> QuerySet[Action]:
+        return _get_visible_actions(root, 'copies', info.context.user)
 
     @staticmethod
     def resolve_related_actions(root: Action, info):

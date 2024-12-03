@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Generator, Iterable
 from contextlib import ExitStack
 from copy import copy as shallow_copy
 from datetime import date
@@ -9,7 +10,7 @@ from uuid import uuid4
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model, Q, signals
+from django.db.models import Field, Model, Q, signals
 from django.utils import translation
 from django.utils.formats import date_format
 from django.utils.translation import gettext as _
@@ -201,6 +202,8 @@ class CloneVisitor(AbstractVisitor):
             instance.name += self.copy_name_suffix
         if hasattr(instance, 'uuid'):
             instance.uuid = uuid4()
+        if hasattr(instance, 'copy_of_id'):
+            instance.copy_of_id = instance.id
 
     @singledispatchmethod
     def pre_visit(self, instance) -> None:
@@ -317,9 +320,33 @@ class UpdateReferencesVisitor(AbstractVisitor):
                 f"{type(instance).__name__} {instance.pk}: {instance}"
             )
 
+    def _get_references(
+        self, instance: Model, exclude_fields: Iterable[str] | None = None
+    ) -> Generator[Field | GenericForeignKey]:
+        if exclude_fields is None:
+            exclude_fields = []
+        for fk in get_foreign_keys(instance):
+            if fk.name not in exclude_fields:
+                yield fk
+        for gfk in get_generic_foreign_keys(instance):
+            if gfk.name not in exclude_fields:
+                yield gfk
+
+    @singledispatchmethod
+    def get_references(self, instance: Model) -> Generator[Field | GenericForeignKey]:
+        return self._get_references(instance)
+
+    @get_references.register
+    def _(self, instance: Action) -> Generator[Field | GenericForeignKey]:
+        return self._get_references(instance, exclude_fields=['copy_of'])
+
+    @get_references.register
+    def _(self, instance: Plan) -> Generator[Field | GenericForeignKey]:
+        return self._get_references(instance, exclude_fields=['copy_of'])
+
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
-        for fk in (*get_foreign_keys(instance), *get_generic_foreign_keys(instance)):
+        for fk in self.get_references(instance):
             assert hasattr(fk, 'name')
             related_object = getattr(instance, fk.name)
             if related_object:
