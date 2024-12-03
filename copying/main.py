@@ -244,7 +244,10 @@ class CloneVisitor(AbstractVisitor):
         instance.root_collection = self.get_copy(instance.root_collection)
         # Site must have been copied before plan
         assert instance.site
-        instance.site = self.get_copy(instance.site)
+        site_copy = self.get_copy(instance.site)
+        assert site_copy
+        instance.site = site_copy
+        instance.site_url = f'https://{site_copy.hostname}'
 
     @pre_visit.register
     def _(self, instance: Site) -> None:
@@ -452,9 +455,16 @@ def copy_action_drafts(plan_copy: Plan, clone_visitor: CloneVisitor):
             action.save(update_fields=['latest_revision'])
 
 
+def _new_site_hostname(old_plan: Plan, new_plan_identifier: str) -> str:
+    old_identifier = old_plan.identifier
+    old_plan.identifier = new_plan_identifier
+    new_site_hostname = old_plan.default_hostname()
+    old_plan.identifier = old_identifier
+    return new_site_hostname
+
+
 def copy_plan(
     plan: Plan,
-    new_site_hostname: str,
     new_plan_identifier: str | None = None,
     new_plan_name: str | None = None,
     general_name_suffix: str | None = None,
@@ -466,8 +476,6 @@ def copy_plan(
 ):
     """
     Copy the given plan.
-
-    Uses the given hostname for the new `Site` instance.
 
     Sets identifier and name of the copy of the plan to the given values, defaults to appending `'-copy'` to the
     identifier and a string containing the current date (in the plan's primary language) to the name.
@@ -489,7 +497,7 @@ def copy_plan(
             new_plan_name = _("%(plan)s (copy from %(date)s)") % {'plan': plan.name, 'date': today}
 
     clone_visitor = CloneVisitor(
-        site_hostname=new_site_hostname,
+        site_hostname=_new_site_hostname(plan, new_plan_identifier),
         plan_identifier=new_plan_identifier,
         plan_name=new_plan_name,
         copy_name_suffix=general_name_suffix,

@@ -17,10 +17,6 @@ class Command(BaseCommand):
             help="Copy the plan with the given identifier",
         )
         parser.add_argument(
-            'hostname',
-            help="Choose a hostname for the new plan's site",
-        )
-        parser.add_argument(
             '--dest-identifier',
             help="Use the given value as the copy's identifier (default: Append '-copy')",
         )
@@ -61,7 +57,6 @@ class Command(BaseCommand):
         with transaction.atomic():
             copy_plan(
                 plan=plan,
-                new_site_hostname=options['hostname'],
                 new_plan_identifier=options['dest_identifier'],
                 new_plan_name=options['dest_name'],
                 general_name_suffix=options['name_suffix'],
