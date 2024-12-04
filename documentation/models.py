@@ -10,12 +10,13 @@ from wagtail.fields import StreamField
 from wagtail.models import Page
 
 from actions.models.plan import Plan
+from pages.models import DefaultSlugForCopyingMixin
 
 if TYPE_CHECKING:
     from kausal_common.models.types import FK
 
 
-class DocumentationRootPage(Page):
+class DocumentationRootPage(DefaultSlugForCopyingMixin, Page):
     plan: FK[Plan] = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='documentation_root_pages')
 
     content_panels = [

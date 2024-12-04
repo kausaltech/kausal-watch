@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, Any, ClassVar, Self, Sequence
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
 
 import graphene
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, URLValidator
 from django.db import models
+from django.db.models.aggregates import Max
+from django.db.models.functions import Cast, Substr
 from django.utils import translation
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
@@ -83,6 +85,10 @@ PAGE_TRANSLATED_FIELDS = ['title', 'slug', 'url_path']
 
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from wagtail.query import PageQuerySet
+
     from kausal_common.models.types import FK
 
     from images.models import AplansImage
@@ -184,7 +190,31 @@ class AplansPage(Page):
         return []
 
 
-class PlanRootPage(AplansPage):
+class PageProtocol(Protocol):
+    slug: models.SlugField
+    def get_siblings(self) -> PageQuerySet[Page]: ...
+
+
+class DefaultSlugForCopyingMixin:
+    def default_slug_for_copying(self: PageProtocol) -> str:
+        """Get a slug a copy of this page should have by default."""
+        # Build a string of the form '{slug}-copy{i}', where '{slug}' is this page's slug and '{i}' is a positive
+        # integer such that:
+        # (a) if no sibling page with such a slug exists: '{i}' is 1.
+        # (b) otherwise, '{i}' is the greatest integer such that a sibling page with slug '{slug}-copy{i-1}' exists.
+        slug_base = f'{self.slug}-copy'
+        regex = rf'^{slug_base}\d+$'
+        max_copy_number = (
+            self.get_siblings().filter(slug__regex=regex)
+            .annotate(copy_number=Cast(Substr('slug', len(slug_base) + 1), models.IntegerField()))
+            .aggregate(Max('copy_number'))['copy_number__max']
+        )
+        if not max_copy_number:
+            max_copy_number = 0
+        return f'{slug_base}{max_copy_number+1}'
+
+
+class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock()),
         ('category_list', CategoryListBlock()),

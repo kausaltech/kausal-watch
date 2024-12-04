@@ -29,11 +29,6 @@ class Command(BaseCommand):
             help="Append the given suffix to the names of copies for models other than Plan (default: no suffix)",
         )
         parser.add_argument(
-            '--root-page-slug-suffix',
-            help="Append the given suffix (preceded by a hyphen) to the slug of the plan root page and its "
-                "translations (default: 'copy')",
-        )
-        parser.add_argument(
             '--root-page-title-suffix',
             help="Append the given suffix to the title of the plan root page and its translations (default: no suffix)",
         )
@@ -60,7 +55,6 @@ class Command(BaseCommand):
                 new_plan_identifier=options['dest_identifier'],
                 new_plan_name=options['dest_name'],
                 general_name_suffix=options['name_suffix'],
-                root_page_slug_suffix=options['root_page_slug_suffix'],
                 root_page_title_suffix=options['root_page_title_suffix'],
                 version_name=options['version_name'],
                 supersede_original_plan=options['supersede_original_plan'],

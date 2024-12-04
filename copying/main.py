@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Generator, Iterable
 from contextlib import ExitStack
 from copy import copy as shallow_copy
-from datetime import date
 from functools import singledispatchmethod
 from typing import Any
 from uuid import uuid4
@@ -11,9 +10,6 @@ from uuid import uuid4
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Field, Model, Q, signals
-from django.utils import translation
-from django.utils.formats import date_format
-from django.utils.translation import gettext as _
 from wagtail.fields import StreamField
 from wagtail.models import Page, Revision, Site
 from wagtail.models.media import Collection
@@ -30,6 +26,7 @@ from actions.signals import create_notification_settings, create_plan_features
 from content.apps import create_site_general_content
 from copying.utils import get_foreign_keys, get_generic_foreign_keys, temp_disconnect_signal, update_streamfield_block
 from documentation.models import DocumentationRootPage
+from pages.models import PlanRootPage
 
 type CloneStructure = dict[str, CloneStructure]
 
@@ -397,31 +394,26 @@ class UpdateReferencesVisitor(AbstractVisitor):
         self.update_instance(node.instance)
 
 
-def copy_root_pages(root_page: Page, slug_suffix=None, title_suffix=None) -> Page:
+def copy_root_pages(root_page: PlanRootPage | DocumentationRootPage, title_suffix=None) -> Page:
     """
     Copy the given root page and all its translations.
 
     A root page can be, e.g., a plan root page or a documentation root page.
 
-    Suffixes can be appended to the slug and title fields of the root pages using the arguments `slug_suffix` (defaults
-    to `'copy'`) and `title_suffix` (defaults to `''`). If a suffix is appended to the slug or the title, a hyphen or
-    space is put before it, respectively.
+    A suffix can be appended to the title field of the root page using the argument `title_suffix` (defaults to `''`).
+    If a suffix is appended, a space is put before it.
 
     Returns the copy of `root_page`.
     """
-    if slug_suffix is None:
-        slug_suffix = 'copy'
     if title_suffix is None:
         title_suffix = ''
 
-    if slug_suffix:
-        slug_suffix = '-' + slug_suffix
     if title_suffix:
         title_suffix = ' ' + title_suffix
 
     update_attrs = {
         'title': root_page.title + title_suffix,
-        'slug': root_page.slug + slug_suffix,
+        'slug': root_page.default_slug_for_copying(),
     }
     root_page_copy = root_page.copy(recursive=True, update_attrs=update_attrs)
     new_translation_key = root_page_copy.translation_key
@@ -429,10 +421,11 @@ def copy_root_pages(root_page: Page, slug_suffix=None, title_suffix=None) -> Pag
     # When copying the translations of `root_page`, reuse this translation key
     update_attrs['translation_key'] = new_translation_key
     for page in root_page.get_translations():
+        assert isinstance(page, PlanRootPage)
         update_attrs = {
             'translation_key': new_translation_key,
             'title': page.title + title_suffix,
-            'slug': page.slug + slug_suffix,
+            'slug': page.default_slug_for_copying(),
         }
         page.copy(recursive=True, update_attrs=update_attrs)
     return root_page_copy
@@ -468,7 +461,6 @@ def copy_plan(
     new_plan_identifier: str | None = None,
     new_plan_name: str | None = None,
     general_name_suffix: str | None = None,
-    root_page_slug_suffix: str | None = None,
     root_page_title_suffix: str | None = None,
     version_name: str | None = None,
     supersede_original_plan: bool = False,
@@ -477,12 +469,12 @@ def copy_plan(
     """
     Copy the given plan.
 
-    Sets identifier and name of the copy of the plan to the given values, defaults to appending `'-copy'` to the
-    identifier and a string containing the current date (in the plan's primary language) to the name.
+    Sets identifier and name of the copy of the plan to the given values, defaults to the result of calling
+    `default_identifier_for_copying()` and `default_name_for_copying()` on the original.
 
     Adds the suffix given in `general_name_suffix` to the names of other models. (Defaults to no suffix.)
 
-    Does what you expect for `root_page_slug_suffix` and `root_page_title_suffix`.
+    Does what you expect for `root_page_title_suffix`.
 
     The plan version name of the copy can be specified with `version_name`.
 
@@ -490,11 +482,9 @@ def copy_plan(
     `supersede_original_actions` is true, each action copy will supersede its original.
     """
     if new_plan_identifier is None:
-        new_plan_identifier = f'{plan.identifier}-copy'
+        new_plan_identifier = plan.default_identifier_for_copying()
     if new_plan_name is None:
-        with translation.override(plan.primary_language):
-            today = date_format(date.today(), format='SHORT_DATE_FORMAT', use_l10n=True)
-            new_plan_name = _("%(plan)s (copy from %(date)s)") % {'plan': plan.name, 'date': today}
+        new_plan_name = plan.default_name_for_copying()
 
     clone_visitor = CloneVisitor(
         site_hostname=_new_site_hostname(plan, new_plan_identifier),
@@ -512,9 +502,9 @@ def copy_plan(
     clone(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
     # `clone()` changes its argument, so better work with a copy instead of `plan`
     assert plan.site
+    assert isinstance(plan.site.root_page.specific, PlanRootPage)
     root_page_copy = copy_root_pages(
-        root_page=plan.site.root_page,
-        slug_suffix=root_page_slug_suffix,
+        root_page=plan.site.root_page.specific,
         title_suffix=root_page_title_suffix,
     )
     plan_copy = Plan.objects.get(pk=plan.pk)
@@ -534,7 +524,6 @@ def copy_plan(
     for documentation_root_page in plan.documentation_root_pages.all():
         root_page = copy_root_pages(
             root_page=documentation_root_page,
-            slug_suffix=root_page_slug_suffix,
             title_suffix=root_page_title_suffix,
         )
         assert isinstance(root_page, DocumentationRootPage)

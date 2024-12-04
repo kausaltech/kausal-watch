@@ -18,7 +18,10 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator, URLValidator
 from django.db import models, transaction
 from django.db.models import Q
+from django.db.models.aggregates import Max
+from django.db.models.functions import Cast, Substr
 from django.utils import timezone, translation
+from django.utils.formats import date_format
 from django.utils.functional import cached_property
 from django.utils.text import format_lazy
 from django.utils.translation import gettext, gettext_lazy as _, pgettext_lazy
@@ -384,21 +387,22 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     wagtail_reference_index_ignore = True
 
     # Type annotations for related models
-    features: PlanFeatures
-    actions: RevMany[Action]
-    action_statuses: RevMany[ActionStatus]
     action_implementation_phases: RevMany[ActionImplementationPhase]
+    action_statuses: RevMany[ActionStatus]
+    actions: RevMany[Action]
     category_types: RevMany[CategoryType]
-    domains: RevMany[PlanDomain]
     children: RevMany[Plan]
-    report_types: RevMany[ReportType]
-    user_feedbacks: RevMany[UserFeedback]
-    organization_plan_admins: RevMany[OrganizationPlanAdmin]
-    notification_settings: RevOne[Plan, NotificationSettings]
-    general_content: RevOne[Plan, SiteGeneralContent]
-    documentation_root_pages: RevMany[DocumentationRootPage]
     clients: RevMany[ClientPlan]
+    copies: RevMany[Plan]
+    documentation_root_pages: RevMany[DocumentationRootPage]
+    domains: RevMany[PlanDomain]
+    features: PlanFeatures
+    general_content: RevOne[Plan, SiteGeneralContent]
+    notification_settings: RevOne[Plan, NotificationSettings]
+    organization_plan_admins: RevMany[OrganizationPlanAdmin]
+    report_types: RevMany[ReportType]
     superseded_plans: RevMany[Plan]
+    user_feedbacks: RevMany[UserFeedback]
 
     organization_id: int
     id: int
@@ -925,6 +929,31 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         visible_indicators = Indicator.objects.qs.filter(levels__in=visible_levels)
         return RelatedIndicator.objects.filter(Q(causal_indicator__in=visible_indicators) &
                                                Q(effect_indicator__in=visible_indicators)).exists()
+
+    def default_identifier_for_copying(self) -> str:
+        """Get an identifier a copy of this plan should have by default."""
+        # Build a string of the form '{identifier}-copy{i}', where '{identifier}' is this plan's identifier and '{i}' is
+        # a positive integer such that:
+        # (a) if no plan with such an identifier exists: '{i}' is 1.
+        # (b) otherwise, '{i}' is the greatest integer such that a plan with identifier '{identifier}-copy{i-1}' exists.
+        identifier_base = f'{self.identifier}-copy'
+        regex = rf'^{identifier_base}\d+$'
+        max_copy_number = (
+            Plan.objects.filter(identifier__regex=regex)
+            .annotate(copy_number=Cast(Substr('identifier', len(identifier_base) + 1), models.IntegerField()))
+            .aggregate(Max('copy_number'))['copy_number__max']
+        )
+        if not max_copy_number:
+            max_copy_number = 0
+        return f'{identifier_base}{max_copy_number+1}'
+
+    def default_name_for_copying(self) -> str:
+        """Get a name a copy of this plan should have by default."""
+        # Append string containing current date to this plan's name
+        with translation.override(self.primary_language):
+            now = self.now_in_local_timezone()
+            today = date_format(now.date(), format='SHORT_DATE_FORMAT', use_l10n=True)
+            return _("%(plan)s (copy from %(date)s)") % {'plan': self.name, 'date': today}
 
 
 class PlanRelatedOrganizationsThrough(models.Model):
