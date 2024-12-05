@@ -4,7 +4,7 @@ import re
 import typing
 
 from django.core.exceptions import ValidationError
-from django.urls import reverse
+from django.urls import re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import (
     FieldPanel,
@@ -12,7 +12,10 @@ from wagtail.admin.panels import (
     ObjectList,
     TabbedInterface,
 )
+from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.snippets.models import register_snippet
+from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
+from wagtail.snippets.widgets import SnippetListingButton
 
 from dal import autocomplete
 from wagtail_modeladmin.helpers import PermissionHelper
@@ -35,11 +38,13 @@ from admin_site.wagtail import (
     CondensedInlinePanel,
     insert_model_translation_panels,
 )
+from copying.views import PlanCopyView
 from notifications.models import NotificationSettings
 from orgs.chooser import OrganizationChooser
 from orgs.models import Organization
 from pages.models import PlanLink
 from people.chooser import PersonChooser
+from users.models import User
 
 from . import (
     action_admin,  # noqa
@@ -49,9 +54,11 @@ from . import (
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 if typing.TYPE_CHECKING:
-    from aplans.types import WatchAdminRequest
+    from django.db.models import Model, QuerySet
+    from django.http import HttpRequest
+    from wagtail.admin.menu import MenuItem
 
-    from users.models import User
+    from aplans.types import WatchAdminRequest
 
 
 class PlanForm(AplansAdminModelForm):
@@ -121,6 +128,7 @@ class PlanAdmin(AplansModelAdmin):
     list_display = ('name',)
     search_fields = ('name',)
     create_view_class = PlanCreateView
+    copy_view_class = PlanCopyView
 
     panels = [
         FieldPanel('name'),
@@ -144,6 +152,7 @@ class PlanAdmin(AplansModelAdmin):
         ),
         FieldPanel('image'),
         FieldPanel('superseded_by', widget=PlanChooser),
+        FieldPanel('copy_of', widget=PlanChooser, read_only=True),
     ]
 
     action_impact_panels = [
@@ -160,6 +169,22 @@ class PlanAdmin(AplansModelAdmin):
     COLOR_HELP_TEXT = _(
         'Only set if explicitly required by customer. Use a color key from the UI theme\'s graphColors, for example red070 or grey030.',
     )
+
+    def copy_view(self, request, instance_pk):
+        kwargs = {'plan_id': instance_pk}
+        view_class = self.copy_view_class
+        return view_class.as_view(**kwargs)(request)
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        urls += (
+            re_path(
+                self.url_helper.get_action_url_pattern('copy'),
+                self.copy_view,
+                name=self.url_helper.get_action_url_name('copy'),
+            ),
+        )
+        return urls
 
     def get_action_status_panels(self, user: User):
         result = [
@@ -491,6 +516,88 @@ class ActivePlanNotificationSettingsViewSet(NotificationSettingsViewSet):
 
 
 register_snippet(ActivePlanNotificationSettingsViewSet)
+
+
+class PlanIndexView(IndexView[Plan]):
+    # FIXME: in yet unreleased Wagtail 6.2.X this is the default, so this line can be deleted
+    any_permission_required = ["add", "change", "delete", "view"]
+    permission_required = 'view'
+    additional_fields_cache: list[str] | None = None
+
+    def _get_additional_fields(self) -> list[str]:
+        """Get a list of all user-defined additional fields of the feedback form present in the queryset."""
+        if self.additional_fields_cache is not None:
+            return self.additional_fields_cache
+
+        additional_fields = []
+        for feedback in self.get_queryset():
+            if feedback.additional_fields is not None:
+                additional_fields += feedback.additional_fields.keys()
+
+        duplicates_removed = list(dict.fromkeys(additional_fields))
+        self.additional_fields_cache = duplicates_removed
+        return self.additional_fields_cache
+
+    def activate_plan_button(self, instance: Model):
+        return SnippetListingButton(
+            url=reverse('change-admin-plan', kwargs={'plan_id': instance.pk}),
+            label=_("Activate"),
+            icon_name='kausal-plan',
+            attrs={'aria-label': _("Make this the currently active admin plan")},
+        )
+
+    def get_list_buttons(self, instance: Plan):
+        buttons = super().get_list_buttons(instance)
+        # This will now contain a ButtonWithDropdown. Wagtail doesn't expect that this button has no "subbuttons", but
+        # this can happen in our case for users with little permissions (e.g., contact persons). So we discard those
+        # ButtonWithDropdown instances that don't have any dropdown buttons.
+        buttons = [b for b in buttons if not (isinstance(b, ButtonWithDropdown) and not b.dropdown_buttons)]
+        buttons.append(self.activate_plan_button(instance))
+        return buttons
+
+
+class PlanViewSet(SnippetViewSet[Plan]):
+    model = Plan
+    add_to_admin_menu = True
+    icon = 'kausal-plan'
+    menu_label = _('Plans')
+    menu_order = 9000
+    list_display = ['name', 'version_name', 'parent', 'organization', 'clients_as_string']
+    list_per_page = None  # disable pagination
+    index_view_class = PlanIndexView
+    # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView
+
+    # Copied from UserFeedbackViewSet
+    # FIXME: As of writing this latest Wagtail (6.1.X) has a bug which only
+    # shows the menu item when user has "add", "change" or "delete" permission,
+    # while "view" should be enough. (See
+    # https://github.com/wagtail/wagtail/blob/747d70e0656b86e3e8c8d123ecae82fa61cd1438/wagtail/admin/viewsets/model.py#L521C16-L521C58
+    # for the specific line of code). This seems to be fixed in the latest
+    # still unreleased Wagtail code, so when upgraded to Wagtail 6.2.X this
+    # workaround should be safe to delete.
+    def get_menu_item(self, order: int | None = None) -> MenuItem:
+        menu_item = super().get_menu_item(order)
+        menu_item.is_shown = lambda request: True  # noqa: ARG005
+        return menu_item
+
+    def get_url_name(self, view_name: str) -> str:
+        # We use a terrifying mix of modeladmin and snippet views. Once we got rid of modeladmin, change this.
+        if view_name == 'add':
+            return 'actions_plan_modeladmin_create'
+        if view_name == 'copy':
+            return 'actions_plan_modeladmin_copy'
+        if view_name == 'edit':
+            return 'actions_plan_modeladmin_edit'
+        return super().get_url_name(view_name)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet | None:
+        if request.user.is_anonymous:
+            return Plan.objects.none()
+        assert isinstance(request.user, User)
+        return request.user.get_adminable_plans()
+
+
+register_snippet(PlanViewSet)
 
 
 # Monkeypatch Organization to support Wagtail autocomplete

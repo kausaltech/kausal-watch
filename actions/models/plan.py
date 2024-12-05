@@ -487,7 +487,7 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     @property
     def root_page(self) -> Page:
         if self.site_id is None or self.site is None:
-            return None
+            raise Exception("Cannot get root page from plan without site")
         page: Page = self.site.root_page
         return page
 
@@ -954,6 +954,18 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
             now = self.now_in_local_timezone()
             today = date_format(now.date(), format='SHORT_DATE_FORMAT', use_l10n=True)
             return _("%(plan)s (copy from %(date)s)") % {'plan': self.name, 'date': today}
+
+    def default_version_name_for_copying(self) -> str:
+        """Get a version name a copy of this plan should have by default."""
+        with translation.override(self.primary_language):
+            now = self.now_in_local_timezone()
+            today = date_format(now.date(), format='SHORT_DATE_FORMAT', use_l10n=True)
+            return _("Copy from %(date)s") % {'date': today}
+
+    def clients_as_string(self) -> str:
+        return "; ".join(self.clients.values_list('client__name', flat=True))
+    clients_as_string.short_description = _('Clients')
+    clients_as_string.admin_order_field = 'clients__client__name'
 
 
 class PlanRelatedOrganizationsThrough(models.Model):
