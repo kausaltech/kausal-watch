@@ -967,6 +967,19 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
     clients_as_string.short_description = _('Clients')
     clients_as_string.admin_order_field = 'clients__client__name'
 
+    def delete(self, *args, **kwargs):
+        result = super().delete(*args, **kwargs)
+        if self.root_page:
+            # Deleting root page cascades to Site
+            self.root_page.get_translations(inclusive=True).delete()
+        if self.root_collection:
+            self.root_collection.delete()
+        if self.admin_group:
+            self.admin_group.delete()
+        if self.contact_person_group:
+            self.contact_person_group.delete()
+        return result
+
 
 class PlanRelatedOrganizationsThrough(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='plan_related_organizations_through')
