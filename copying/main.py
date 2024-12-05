@@ -57,6 +57,7 @@ PLAN_CLONE_STRUCTURE: CloneStructure = {
         'categories': {},
         'levels': {},
     },
+    'clients': {},
     # 'domains': {},  # deliberately don't copy domains because hostname + base path should be unique
     'features': {},
     'general_admins_ordered': {},
