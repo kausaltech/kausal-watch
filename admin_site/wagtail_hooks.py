@@ -136,57 +136,6 @@ def register_report_menu():
     )
 
 
-class PlanChooserMenuItem(SubmenuMenuItem):
-    def is_shown(self, request):
-        if len(self.menu.menu_items_for_request(request)) > 1:
-            return True
-        return False
-
-    def is_active(self, request):
-        return bool(self.menu.active_menu_items(request))
-
-
-class PlanItem(MenuItem):
-    pass
-
-
-class PlanChooserMenu(Menu):
-    def menu_items_for_request(self, request):
-        user = request.user
-        plans = user.get_adminable_plans()
-        items = []
-        for plan in plans:
-            url = reverse('change-admin-plan', kwargs=dict(plan_id=plan.id))
-            url += '?admin=wagtail'
-            icon_name = ''
-            if plan == user.get_active_admin_plan():
-                icon_name = 'tick'
-            item = PlanItem(plan.name, url, icon_name=icon_name)
-            items.append(item)
-        url_helper = PlanAdmin().url_helper
-        if request.user.is_superuser:
-            items.append(AdminOnlyMenuItem(
-                _('Create plan'),
-                url_helper.get_action_url('create'),
-                icon_name='plus-inverse',
-                #order=9100,
-            ))
-        return items
-
-
-plan_chooser = PlanChooserMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_plan_chooser():
-    return PlanChooserMenuItem(
-        _('Choose plan'),
-        plan_chooser,
-        order=9000,
-        icon_name='kausal-plan',
-    )
-
-
 class OwnIndicatorsPanel(Component):
     name = 'own_indicators'
     order = 102
