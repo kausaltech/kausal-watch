@@ -110,6 +110,7 @@ def get_action_contact_person_perms():
     new_perms += _get_perm_objs(Action, ('view', 'change', 'publish'))
     new_perms += _get_perm_objs(ActionTask, ('view', 'change', 'delete', 'add'))
     new_perms += _get_perm_objs(Person, ('view', 'change', 'add'))
+    new_perms += _get_perm_objs(Plan, ('view',))
     new_perms += _get_perm_objs(ActionContactPerson, ALL_PERMS)
     new_perms += _get_perm_objs(ActionStatusUpdate, ALL_PERMS)
     new_perms += _get_perm_objs(ActionIndicator, ('view',))
@@ -247,7 +248,7 @@ def remove_contact_person_perms(user, model):
 
 
 PLAN_ADMIN_PERMS = (
-    (Plan, ('view', 'change')),
+    (Plan, ALL_PERMS),
     (Action, ALL_PERMS),
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),
