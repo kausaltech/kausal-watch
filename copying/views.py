@@ -11,6 +11,7 @@ from django.utils.translation import gettext as _, gettext_lazy
 from django.views.generic import FormView
 from wagtail.admin.views.generic.base import WagtailAdminTemplateMixin
 
+from celery.contrib.django.task import DjangoTask
 from loguru import logger
 
 from actions.models.plan import Plan
@@ -78,9 +79,10 @@ class PlanCopyForm(forms.Form):
 
 
 class PlanCopyView(WagtailAdminTemplateMixin, FormView):
+    plan_id: int | None = None
+
     form_class = PlanCopyForm
     page_title = gettext_lazy("Copy plan")
-    plan_id = None
     template_name = 'wagtailadmin/generic/form.html'
     plan_list_url_name = 'wagtailsnippets_actions_plan:list'
 
@@ -121,6 +123,7 @@ class PlanCopyView(WagtailAdminTemplateMixin, FormView):
 
     def form_valid(self, form) -> HttpResponse:
         logger.info(f"Queueing task for copying plan {self.plan_id}")
+        assert isinstance(copy_plan, DjangoTask)
         copy_plan.delay_on_commit(
             plan_id=self.plan_id,
             new_plan_identifier=form.cleaned_data['identifier'],

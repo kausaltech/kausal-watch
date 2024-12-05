@@ -577,7 +577,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
     # workaround should be safe to delete.
     def get_menu_item(self, order: int | None = None) -> MenuItem:
         menu_item = super().get_menu_item(order)
-        menu_item.is_shown = lambda request: True  # noqa: ARG005
+        menu_item.is_shown = lambda request: True  # type: ignore[method-assign] # noqa: ARG005
         return menu_item
 
     def get_url_name(self, view_name: str) -> str:

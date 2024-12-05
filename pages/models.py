@@ -214,7 +214,7 @@ class DefaultSlugForCopyingMixin:
         return f'{slug_base}{max_copy_number+1}'
 
 
-class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):
+class PlanRootPage(DefaultSlugForCopyingMixin, AplansPage):  # type: ignore[misc]
     body = StreamField([
         ('front_page_hero', FrontPageHeroBlock()),
         ('category_list', CategoryListBlock()),

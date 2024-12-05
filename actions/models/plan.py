@@ -964,8 +964,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
 
     def clients_as_string(self) -> str:
         return "; ".join(self.clients.values_list('client__name', flat=True))
-    clients_as_string.short_description = _('Clients')
-    clients_as_string.admin_order_field = 'clients__client__name'
+    clients_as_string.short_description = _('Clients')  # type: ignore
+    clients_as_string.admin_order_field = 'clients__client__name'  # type: ignore
 
     def delete(self, *args, **kwargs):
         result = super().delete(*args, **kwargs)
