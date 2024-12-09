@@ -1,23 +1,28 @@
 from __future__ import annotations
 
+from functools import cached_property
 import re
 import typing
 
 from django.core.exceptions import ValidationError
 from django.urls import re_path, reverse
 from django.utils.translation import gettext_lazy as _
+from wagtail.admin.filters import WagtailFilterSet
 from wagtail.admin.panels import (
     FieldPanel,
     InlinePanel,
     ObjectList,
     TabbedInterface,
 )
+from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
 from wagtail.admin.widgets.button import ButtonWithDropdown
+from wagtail.coreutils import capfirst
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 from wagtail.snippets.widgets import SnippetListingButton
 
 from dal import autocomplete
+from django_filters import filters
 from wagtail_modeladmin.helpers import PermissionHelper
 from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
@@ -28,6 +33,7 @@ from actions.models.action import ActionSchedule
 from admin_site.chooser import ClientChooser
 from admin_site.menu import PlanSpecificSingletonModelMenuItem
 from admin_site.mixins import SuccessUrlEditPageMixin
+from admin_site.models import Client, ClientPlan
 from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
 from admin_site.viewsets import WatchEditView, WatchViewSet
 from admin_site.wagtail import (
@@ -538,22 +544,48 @@ class PlanIndexView(IndexView[Plan]):
         self.additional_fields_cache = duplicates_removed
         return self.additional_fields_cache
 
-    def activate_plan_button(self, instance: Model):
-        return SnippetListingButton(
-            url=reverse('change-admin-plan', kwargs={'plan_id': instance.pk}),
-            label=_("Activate"),
-            icon_name='kausal-plan',
-            attrs={'aria-label': _("Make this the currently active admin plan")},
-        )
-
     def get_list_buttons(self, instance: Plan):
         buttons = super().get_list_buttons(instance)
         # This will now contain a ButtonWithDropdown. Wagtail doesn't expect that this button has no "subbuttons", but
         # this can happen in our case for users with little permissions (e.g., contact persons). So we discard those
         # ButtonWithDropdown instances that don't have any dropdown buttons.
         buttons = [b for b in buttons if not (isinstance(b, ButtonWithDropdown) and not b.dropdown_buttons)]
-        buttons.append(self.activate_plan_button(instance))
         return buttons
+
+    def _get_title_column(self, *args, **kwargs) -> Column:
+        # Make the link in the title column change the active admin plan instead of editing the plan.
+        column = super()._get_title_column(*args, **kwargs)
+
+        def change_plan_url(plan: Plan) -> str:
+            return reverse('change-admin-plan', kwargs={'plan_id': plan.id})
+
+        column._get_url_func = change_plan_url  # pyright: ignore[reportAttributeAccessIssue]
+        return column
+
+    @cached_property
+    def columns(self):  # pyright: ignore[reportIncompatibleVariableOverride]
+        return [c for c in super().columns if not isinstance(c, BulkActionsCheckboxColumn)]
+
+
+def clients_for_request(request: HttpRequest):
+    if request is None or request.user.is_anonymous:
+        return Client.objects.none()
+    assert isinstance(request.user, User)
+    plans = request.user.get_adminable_plans()
+    clients = Client.objects.filter(id__in=ClientPlan.objects.filter(plan_id__in=plans).values_list('client_id'))
+    return clients.order_by('name')
+
+
+class PlanFilter(WagtailFilterSet):
+    clients__client = filters.ModelChoiceFilter(
+        queryset=clients_for_request,
+        label=capfirst(Client._meta.verbose_name),
+    )
+
+    class Meta:
+        model = Plan
+        fields = ['clients__client']
+
 
 
 class PlanViewSet(SnippetViewSet[Plan]):
@@ -563,6 +595,7 @@ class PlanViewSet(SnippetViewSet[Plan]):
     menu_label = _('Plans')
     menu_order = 9000
     list_display = ['name', 'version_name', 'parent', 'organization', 'clients_as_string']
+    filterset_class = PlanFilter
     list_per_page = None  # disable pagination
     index_view_class = PlanIndexView
     # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView

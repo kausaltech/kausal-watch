@@ -239,7 +239,8 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         help_text=_('Can actions be added and the official metadata edited?'),
     )
     organization: FK[Organization] = models.ForeignKey(
-        Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('main organization for the plan'),
+        Organization, related_name='plans', on_delete=models.PROTECT, verbose_name=_('organization'),
+        help_text=_('The main organization for the plan'),
     )
 
     general_admins = models.ManyToManyField['Person', 'GeneralPlanAdmin'](

@@ -501,7 +501,6 @@ def copy_plan(
     # visitor's copy cache (and the DB of course).
     clone(Plan.objects.get(pk=plan.pk).root_collection, {}, clone_visitor)
     clone(Plan.objects.get(pk=plan.pk).site, {}, clone_visitor)
-    # `clone()` changes its argument, so better work with a copy instead of `plan`
     assert plan.site
     assert isinstance(plan.site.root_page.specific, PlanRootPage)
     root_page_copy = copy_root_pages(
