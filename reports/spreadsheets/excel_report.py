@@ -219,6 +219,7 @@ class ExcelReport:
                 serialized_actions.append(action_version_data)
                 related_versions |= snapshot.get_related_versions()
             serialized_related = [SerializedVersion.from_version_polymorphic(v) for v in related_versions]
+            serialized_actions = sorted(serialized_actions, key=lambda x: x.data['order'])
             return serialized_actions, serialized_related
 
         # Live incomplete report, although some actions might be completed for report
