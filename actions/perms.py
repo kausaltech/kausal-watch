@@ -248,7 +248,7 @@ def remove_contact_person_perms(user, model):
 
 
 PLAN_ADMIN_PERMS = (
-    (Plan, ALL_PERMS),
+    (Plan, ('view', 'change')),
     (Action, ALL_PERMS),
     (ActionStatus, ALL_PERMS),
     (ActionSchedule, ALL_PERMS),
