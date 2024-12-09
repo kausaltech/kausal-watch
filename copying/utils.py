@@ -23,7 +23,7 @@ def get_generic_foreign_keys(instance: Model) -> Generator[GenericForeignKey]:
 
 
 # https://stackoverflow.com/questions/2209159/disconnect-signals-for-models-and-reconnect-in-django
-class temp_disconnect_signal:
+class temp_disconnect_signal:  # noqa: N801
     """Temporarily disconnect a model from a signal."""
 
     def __init__(self, signal, receiver, sender, dispatch_uid=None):
@@ -39,7 +39,7 @@ class temp_disconnect_signal:
             dispatch_uid=self.dispatch_uid,
         )
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         self.signal.connect(
             receiver=self.receiver,
             sender=self.sender,
@@ -48,7 +48,11 @@ class temp_disconnect_signal:
         )
 
 
-def update_raw_data_element_at_content_path(raw_data: Any, content_path: list[str], new_value: Any) -> Any:
+def update_raw_data_element_at_content_path(
+    raw_data: Any,  # noqa: ANN401
+    content_path: list[str],
+    new_value: Any,  # noqa: ANN401
+) -> Any:  # noqa: ANN401
     """Update the value at a certain path in raw data from a streamfield."""
     if not content_path:
         return new_value
@@ -70,11 +74,16 @@ def update_raw_data_element_at_content_path(raw_data: Any, content_path: list[st
             new_value
         )
     else:
-        raise AssertionError(f"raw_data has unexpected type {type(raw_data)}")
+        raise TypeError(f"raw_data has unexpected type {type(raw_data)}")
     return raw_data
 
 
-def update_streamfield_block(instance: Model, field_name: str, content_path: list[str], new_value: Any) -> None:
+def update_streamfield_block(
+    instance: Model,
+    field_name: str,
+    content_path: list[str],
+    new_value: Any,  # noqa: ANN401
+) -> None:
     """Update the value at a certain path in a given streamfield."""
     stream_value = getattr(instance, field_name)
     raw_data = list(stream_value.raw_data)

@@ -754,6 +754,9 @@ class IndicatorCategoryThrough(models.Model):
         db_table = 'indicators_indicator_categories'
         unique_together = ['indicator', 'category']
 
+    def __str__(self):
+        return f'{self.indicator}: {self.category}'
+
 
 @reversion.register()
 class Dimension(ClusterableModel):

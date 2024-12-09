@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from functools import cached_property
 import re
 import typing
+from functools import cached_property
 
 from django.core.exceptions import ValidationError
 from django.urls import re_path, reverse
@@ -19,7 +19,6 @@ from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.coreutils import capfirst
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
-from wagtail.snippets.widgets import SnippetListingButton
 
 from dal import autocomplete
 from django_filters import filters
@@ -60,7 +59,7 @@ from . import (
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 if typing.TYPE_CHECKING:
-    from django.db.models import Model, QuerySet
+    from django.db.models import QuerySet
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
 

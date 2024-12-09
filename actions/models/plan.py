@@ -990,6 +990,9 @@ class PlanRelatedOrganizationsThrough(models.Model):
         db_table = 'actions_plan_related_organizations'
         unique_together = ['plan', 'organization']
 
+    def __str__(self):
+        return f'{self.plan}: {self.organization}'
+
 
 class PlanCommonCategoryTypesThrough(models.Model):
     plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name='plan_common_category_types_through')
@@ -998,6 +1001,9 @@ class PlanCommonCategoryTypesThrough(models.Model):
     class Meta:
         db_table = 'actions_plan_common_category_types'
         unique_together = ['plan', 'commoncategorytype']
+
+    def __str__(self):
+        return f'{self.plan}: {self.commoncategorytype}'
 
 
 class PublicationStatus(models.TextChoices):

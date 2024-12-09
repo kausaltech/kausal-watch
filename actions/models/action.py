@@ -988,6 +988,9 @@ class ActionCategoryThrough(models.Model):
         db_table = 'actions_action_categories'
         unique_together = ['action', 'category']
 
+    def __str__(self):
+        return f'{self.action}: {self.category}'
+
 
 class ActionScheduleThrough(models.Model):
     action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_schedule_through')
@@ -996,6 +999,9 @@ class ActionScheduleThrough(models.Model):
     class Meta:
         db_table = 'actions_action_schedule'
         unique_together = ['action', 'actionschedule']
+
+    def __str__(self):
+        return f'{self.action}: {self.actionschedule}'
 
 
 class RelatedActionsThrough(models.Model):
@@ -1006,6 +1012,8 @@ class RelatedActionsThrough(models.Model):
         db_table = 'actions_action_related_actions'
         unique_together = ['from_action', 'to_action']
 
+    def __str__(self):
+        return f'{self.from_action} -> {self.to_action}'
 
 
 class ActionMonitoringQualityPointsThrough(models.Model):
@@ -1017,6 +1025,9 @@ class ActionMonitoringQualityPointsThrough(models.Model):
     class Meta:
         db_table = 'actions_action_monitoring_quality_points'
         unique_together = ['action', 'monitoringqualitypoint']
+
+    def __str__(self):
+        return f'{self.action}: {self.monitoringqualitypoint}'
 
 
 class ModelWithRole[ModelRole: 'ModelWithRole.Role']:  # pyright: ignore
