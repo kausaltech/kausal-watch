@@ -993,7 +993,7 @@ class ActionSerializer(
 
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
-        if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule'):
+        if field_name in ('status', 'implementation_phase', 'decision_level'):
             field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan=self.plan)
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
@@ -1001,9 +1001,6 @@ class ActionSerializer(
                 field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
-        elif field_name == 'related_actions':
-            related_plans = self.plan.get_all_related_plans(inclusive=True)
-            field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan__in=related_plans)
 
         return field_class, field_kwargs
 
@@ -1073,7 +1070,7 @@ class ActionSerializer(
             remove_fields=[
                 'impact', 'status_updates', 'monitoring_quality_points', 'image', 'tasks', 'links',
                 'related_indicators', 'indicators', 'impact_groups', 'merged_actions', 'superseded_actions',
-                'dependent_relationships',
+                'dependent_relationships', 'copies',
             ],
         )
         read_only_fields = ['plan']

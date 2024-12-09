@@ -328,8 +328,8 @@ def _sync_plan_admin_groups(user):
         if plan.root_collection is not None:
             _sync_group_collection_perms(plan.root_collection, group, wagtail_perms)
         root_pages = set()
-        if plan.root_page is not None:
-            root_pages |= set(plan.root_page.get_translations(inclusive=True))
+        if plan.site and plan.site.root_page:
+            root_pages |= set(plan.site.root_page.get_translations(inclusive=True))
         root_pages |= set(plan.documentation_root_pages.all())
         _sync_group_page_perms(root_pages, group)
 
