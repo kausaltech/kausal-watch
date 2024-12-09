@@ -30,6 +30,12 @@ class PlanFeatures(models.Model):
         default=False, verbose_name=_('Allow logging in to the public website'),
         help_text=_('Should users be able to have authenticated sessions in the public UI?'),
     )
+
+    expose_unpublished_plan_only_to_authenticated_user = models.BooleanField(
+         default=False, verbose_name=_('Expose unpublished plan only to authenticated users'),
+         help_text=_('Should the plan be exposed only to authenticated users if not published?'),
+    )
+
     contact_persons_public_data = models.CharField(
         max_length=50,
         choices=ContactPersonsPublicData.choices,

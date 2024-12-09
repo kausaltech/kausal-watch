@@ -393,6 +393,7 @@ class PlanFeaturesViewSet(WatchViewSet):
         FieldPanel('allow_images_for_actions', permission='superuser'),
         FieldPanel('show_admin_link', permission='superuser'),
         FieldPanel('allow_public_site_login', permission='superuser'),
+        FieldPanel('expose_unpublished_plan_only_to_authenticated_user', permission='superuser'),
         FieldPanel('contact_persons_public_data', permission='superuser'),
         FieldPanel('contact_persons_show_picture', permission='superuser'),
         FieldPanel('contact_persons_show_organization_ancestors', permission='superuser'),

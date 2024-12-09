@@ -45,7 +45,7 @@ class InsightViewSet(viewsets.ViewSet):
             action_id = params.get('action', '').strip()
             if action_id:
                 try:
-                    action = Action.objects.visible_for_user(None).get(id=action_id, plan=plan)
+                    action = Action.objects.visible_for_user(request.user).get(id=action_id, plan=plan)
                 except Action.DoesNotExist:
                     raise ValidationError("Action %s does not exist in plan %s" % (action_id, plan_id))
             else:
@@ -56,7 +56,7 @@ class InsightViewSet(viewsets.ViewSet):
                 if action_id:
                     raise ValidationError("You can't give both 'action' and 'indicator'")
                 try:
-                    indicator = Indicator.objects.visible_for_public().get(id=indicator_id, plans=plan)
+                    indicator = Indicator.objects.visible_for_user(request.user).get(id=indicator_id, plans=plan)
                 except Indicator.DoesNotExist:
                     raise ValidationError("Indicator %s does not exist in plan %s" % (indicator_id, plan_id))
             else:
@@ -70,7 +70,7 @@ class InsightViewSet(viewsets.ViewSet):
                 nodes = [indicator]
             else:
                 traverse_direction = 'both'
-                nodes = Action.objects.visible_for_user(None).filter(plan=plan, indicators__isnull=False).unmerged()
+                nodes = Action.objects.visible_for_user(request.user).filter(plan=plan, indicators__isnull=False).unmerged()
 
             generator = ActionGraphGenerator(request=request, plan=plan, traverse_direction=traverse_direction)
             generator.fetch_data()

@@ -1316,7 +1316,10 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
         Allow only viewing of published plans.
         """
         if action == 'view':
-            return Q(published_at__isnull=False, published_at__lte=timezone.now())
+            return Q(
+                published_at__isnull=False,
+                published_at__lte=timezone.now(),
+                features__expose_unpublished_plan_only_to_authenticated_user=False)
         return None
 
     def construct_perm_q(self, user: User, action: ObjectSpecificAction) -> Q | None:
@@ -1340,7 +1343,9 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
     def anon_has_perm(self, action: ObjectSpecificAction, obj: Plan) -> bool:
         """Check permissions for anonymous users."""
         if action == 'view':
-            return obj.published_at is not None and obj.published_at <= timezone.now()
+            if obj.features.expose_unpublished_plan_only_to_authenticated_user:
+                return obj.published_at is not None and obj.published_at <= timezone.now()
+            return True
         return False
 
     def user_can_create(self, user: User, context: PlanQuerySet) -> bool:
