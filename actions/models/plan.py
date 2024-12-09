@@ -1329,14 +1329,22 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
         Allow viewing all plans but require specific permissions for other actions.
         """
         if action == 'view':
-            return Q()  # Can view all plans
-        # Add other permission checks for change/delete if needed
+            viewable_plans = user.get_adminable_plans().union(user.get_viewable_plans()).values_list("id", flat=True)
+            return Q(id__in=viewable_plans) | Q(
+                published_at__isnull=False,
+                published_at__lte=timezone.now(),
+                features__expose_unpublished_plan_only_to_authenticated_user=False
+            )
         return None
 
     def user_has_perm(self, user: User, action: ObjectSpecificAction, obj: Plan) -> bool:
         """Check permissions for a specific plan instance."""
         if action == 'view':
-            return True
+            if user.can_access_public_site(obj):
+                return True
+            if obj.features.expose_unpublished_plan_only_to_authenticated_user:
+                return obj.published_at is not None and obj.published_at <= timezone.now()
+
         # Add other permission checks when needed
         return False
 
