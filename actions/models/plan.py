@@ -1336,8 +1336,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
             return Q(id__in=viewable_plans) | Q(
                 published_at__isnull=False,
                 published_at__lte=timezone.now(),
-                features__expose_unpublished_plan_only_to_authenticated_user=False
-            )
+            ) | Q(features__expose_unpublished_plan_only_to_authenticated_user=False)
         return None
 
     def user_has_perm(self, user: User, action: ObjectSpecificAction, obj: Plan) -> bool:
@@ -1347,7 +1346,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
                 return True
             if obj.features.expose_unpublished_plan_only_to_authenticated_user:
                 return obj.published_at is not None and obj.published_at <= timezone.now()
-
+            return True # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
         # Add other permission checks when needed
         return False
 
@@ -1356,7 +1355,7 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
         if action == 'view':
             if obj.features.expose_unpublished_plan_only_to_authenticated_user:
                 return obj.published_at is not None and obj.published_at <= timezone.now()
-            return True
+            return True # If expose_unpublished_plan_only_to_authenticated_user is False, allow access to Plan
         return False
 
     def user_can_create(self, user: User, context: PlanQuerySet) -> bool:
