@@ -184,6 +184,7 @@ ACTION_FIELDS_TO_ADD_TO_REVERSION = (
         'tasks',
         'primary_org',
         'related_indicators',
+        'action_category_through',
     ]
 )
 
@@ -990,6 +991,7 @@ class Action(
         return ActionDependencyRelationship.objects.qs.all_for_action(self).visible_for_user(user, plan)
 
 
+@reversion.register(follow=['action', 'category'])
 class ActionCategoryThrough(models.Model):
     action = models.ForeignKey(Action, on_delete=models.CASCADE, related_name='action_category_through')
     category = models.ForeignKey('actions.Category', on_delete=models.CASCADE)

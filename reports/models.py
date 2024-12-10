@@ -198,7 +198,7 @@ class Report(PlanRelatedModel):
             .prefetch_related(
                 'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
-                'related_indicators',
+                'related_indicators', 'action_category_through__category',
             )
         )
         result = LiveVersions()

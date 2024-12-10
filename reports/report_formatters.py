@@ -17,6 +17,7 @@ from aplans.utils import RestrictedVisibilityModel, convert_html_to_text
 from actions.attributes import AttributeType
 from actions.models.action import (
     Action,
+    ActionCategoryThrough,
     ActionImplementationPhase,
     ActionResponsibleParty,
     ActionStatus,
@@ -462,7 +463,10 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
                 return categories
             return [mappings.get(level.pk, {}).get(c.pk) for c in categories]
 
-        category_pks = action.get('categories', [])
+        category_pks = self._get_category_ids(
+            action['id'],
+            related_objects.get('actions.models.action.ActionCategoryThrough', [])
+        )
         categories: Iterable[Category] = filter_by_type([
             report.plan_current_related_objects.categories.get(int(pk)) for pk in category_pks
         ])
@@ -476,6 +480,12 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
         if len(category_names) == 0:
             return [None]
         return [category_names]
+
+    def _get_category_ids(self, action_id: int, action_category_throughs: list[SerializedVersion]) -> list[int]:
+        return [
+            t.data['category_id'] for t in action_category_throughs
+            if t.data['action_id'] == action_id
+        ]
 
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return [self.get_help_label(value)]
@@ -491,7 +501,14 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
 
     def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         category_type = block_value['category_type']
-        category_ids = snapshot.action_version.field_dict['categories']
+        related_objects = snapshot.get_related_versions()
+        category_ids = self._get_category_ids(
+            snapshot.action_version.field_dict.get('id'),
+            [
+                SerializedVersion.from_version(v) for v in related_objects
+                if v.content_type.model_class() == ActionCategoryThrough
+            ],
+        )
         categories = Category.objects.filter(id__in=category_ids).filter(type=category_type)
         return categories
 
