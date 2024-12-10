@@ -137,9 +137,11 @@ def test_related_indicator_node(graphql_client_query_data):
     assert data == expected
 
 @pytest.mark.parametrize('published_at', [None, timezone.now() - timedelta(days=1)])
-def test_action_indicator_node(graphql_client_query_data, published_at):
+@pytest.mark.parametrize('expose_to_auth_only', [False, True])
+def test_action_indicator_node(graphql_client_query_data, published_at, expose_to_auth_only):
     indicator = IndicatorFactory()
-    plan = PlanFactory(published_at=published_at)
+    plan = PlanFactory(published_at=published_at,
+                       features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only)
     action = ActionFactory(plan=plan)
     action_indicator = ActionIndicatorFactory(indicator=indicator, action=action)
     data = graphql_client_query_data(
@@ -180,7 +182,7 @@ def test_action_indicator_node(graphql_client_query_data, published_at):
                 },
                 'effectType': action_indicator.effect_type.upper(),
                 'indicatesActionProgress': action_indicator.indicates_action_progress,
-            }] if published_at else [],
+            }] if published_at or not expose_to_auth_only else [],
         },
     }
     assert data == expected
@@ -920,11 +922,14 @@ def test_related_indicators_visibility(graphql_client_query_data):
         None,  # Unpublished
     ]
 )
-def test_indicator_plans_visibility(graphql_client_query_data, published_at):
+@pytest.mark.parametrize('expose_to_auth_only', [False, True])
+def test_indicator_plans_visibility(graphql_client_query_data, published_at, expose_to_auth_only):
     """Test plan visibility in indicator's plans field for unauthenticated users."""
-    plan = PlanFactory(published_at=published_at)
+    plan = PlanFactory(published_at=published_at,
+                       features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only)
     indicator = IndicatorFactory()
     indicator.plans.add(plan)
+
 
     response = graphql_client_query_data(
         """
@@ -943,7 +948,7 @@ def test_indicator_plans_visibility(graphql_client_query_data, published_at):
         'indicator': {
             'plans': [{
                 'id': plan.identifier,
-            }] if published_at is not None else []
+            }] if published_at or not expose_to_auth_only else [],
         }
     }
 

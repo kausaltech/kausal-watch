@@ -51,15 +51,16 @@ def test_person_node(graphql_client_query_data):
 
 
 @pytest.mark.parametrize('published', [False, True])
-def test_organization_class_node(graphql_client_query_data, published):
+@pytest.mark.parametrize('expose_to_auth_only', [False, True])
+def test_organization_class_node(graphql_client_query_data, published, expose_to_auth_only):
     org_class = OrganizationClassFactory()
     organization = OrganizationFactory(classification=org_class)
 
     plan = PlanFactory(
         organization=organization,
-        published_at=timezone.now() - timedelta(days=1) if published else None
+        published_at=timezone.now() - timedelta(days=1) if published else None,
+        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only,
     )
-
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=organization)
 
@@ -85,7 +86,7 @@ def test_organization_class_node(graphql_client_query_data, published):
                 'id': str(org_class.id),
                 'name': org_class.name,
             },
-        }] if published else None,
+        }] if published or not expose_to_auth_only else None,
     }
 
     assert data == expected
@@ -93,14 +94,22 @@ def test_organization_class_node(graphql_client_query_data, published):
 
 @pytest.mark.parametrize(
     ('main_plan_published', 'arp_plan_published'),
-    list(itertools.product([False, True], repeat=2))
-)
-def test_organization_node(graphql_client_query_data, main_plan_published, arp_plan_published):
+    list(itertools.product([False, True], repeat=2)))
+@pytest.mark.parametrize(
+    ('main_plan_exposed_only_to_auth', 'arp_plan_exposed_only_to_auth'),
+    list(itertools.product([False, True], repeat=2)))
+def test_organization_node(
+    graphql_client_query_data,
+    main_plan_published, arp_plan_published,
+    main_plan_exposed_only_to_auth, arp_plan_exposed_only_to_auth):
     organization = OrganizationFactory()
+
     plan = PlanFactory(
         organization=organization,
-        published_at=timezone.now() - timedelta(days=1) if main_plan_published else None
+        published_at=timezone.now() - timedelta(days=1) if main_plan_published else None,
+        features__expose_unpublished_plan_only_to_authenticated_user=main_plan_exposed_only_to_auth,
     )
+
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     ActionContactFactory(action=action)
@@ -108,7 +117,8 @@ def test_organization_node(graphql_client_query_data, main_plan_published, arp_p
     # Implicitly create another plan not owned by `organization` for testing plansWithActionResponsibilities
     arp = ActionResponsiblePartyFactory(
         organization=organization,
-        action__plan__published_at=timezone.now() - timedelta(days=1) if arp_plan_published else None
+        action__plan__published_at=timezone.now() - timedelta(days=1) if arp_plan_published else None,
+        action__plan__features__expose_unpublished_plan_only_to_authenticated_user=arp_plan_exposed_only_to_auth,
     )
     plan_with_action_responsiblity = arp.action.plan
     assert plan_with_action_responsiblity != plan
@@ -139,15 +149,19 @@ def test_organization_node(graphql_client_query_data, main_plan_published, arp_p
         """,
         variables=dict(plan=plan.identifier),
     )
+    expected_plans = []
 
-    if not main_plan_published:
+    if not main_plan_published and main_plan_exposed_only_to_auth:
         assert data['planOrganizations'] is None
         return
-
-    expected_plans = [{
+    # FIXME?: Not sure if this is the correct behavior, but it is what we have now.
+    # Plans dont show up in the plansWithActionResponsibilities field if they are not published,
+    # even if the expose_unpublished_plan_only_to_authenticated_user feature is false.
+    if main_plan_published:
+        expected_plans.append({
         '__typename': 'Plan',
         'id': str(plan.identifier),
-    }]
+    })
 
     if arp_plan_published:
         expected_plans.append({

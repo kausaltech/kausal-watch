@@ -68,10 +68,13 @@ def test_plan_domain_node(graphql_client_query_data):
     assert data == expected
 
 @pytest.mark.parametrize('published', [False, True])
-def test_plan_node(graphql_client_query_data, plan_with_pages, published):
+@pytest.mark.parametrize('expose_to_auth_only', [False, True])
+def test_plan_node(graphql_client_query_data, plan_with_pages, published, expose_to_auth_only):
     plan = plan_with_pages
     if not published:
         plan.published_at = None
+        plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_to_auth_only
+        plan.features.save()
         plan.save()
     domain = PlanDomainFactory(plan=plan)
     action_schedule = ActionScheduleFactory(plan=plan)
@@ -260,16 +263,22 @@ def test_plan_node(graphql_client_query_data, plan_with_pages, published):
             'kausalPathsInstanceUuid': plan.kausal_paths_instance_uuid,
         },
     }
-    if not published:
+    if not published and expose_to_auth_only:
       expected = {'plan': None} # type: ignore[dict-item]
 
     assert data == expected
 
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-def test_plan_node_superseded_by(graphql_client_query_data, published_at):
+@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
+def test_plan_node_superseded_by(graphql_client_query_data, published_at, expose_to_authenticated_only):
     published_at1, published_at2 = published_at
-    plan1 = PlanFactory(published_at=published_at1)
-    plan2 = PlanFactory(superseded_by=plan1, published_at=published_at2)
+    exposed_auth_only1, exposed_auth_only2 = expose_to_authenticated_only
+    plan1 = PlanFactory(published_at=published_at1,
+                        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only1)
+    plan2 = PlanFactory(superseded_by=plan1,
+                        published_at=published_at2,
+                        features__expose_unpublished_plan_only_to_authenticated_user=exposed_auth_only2)
+
     data = graphql_client_query_data(
         """
         query($plan: ID!) {
@@ -296,9 +305,9 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at):
             'supersededBy': {
                 '__typename': 'Plan',
                 'id': plan1.identifier,
-            } if published_at1 else None,
+            } if published_at1 or not exposed_auth_only1 else None,
             'supersededPlans': [],
-        } if published_at2 else None,
+        } if published_at2 or not exposed_auth_only2 else None,
     }
     assert data == expected
 
@@ -308,11 +317,17 @@ def test_plan_node_superseded_by(graphql_client_query_data, published_at):
 
 @pytest.mark.parametrize('recursive', [False, True])
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-def test_plan_node_superseding_plans(graphql_client_query_data, recursive, published_at):
+@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
+def test_plan_node_superseding_plans(graphql_client_query_data, recursive, published_at, expose_to_authenticated_only):
     published_at1, published_at2 = published_at
-    plan1 = PlanFactory(published_at=published_at1)
-    plan2 = PlanFactory(superseded_by=plan1, published_at=published_at2)
+    expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
+    plan1 = PlanFactory(published_at=published_at1,
+                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1)
+    plan2 = PlanFactory(superseded_by=plan1,
+                        published_at=published_at2,
+                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2)
     plan3 = PlanFactory(superseded_by=plan2)
+
     data = graphql_client_query_data(
         """
         query($plan: ID!, $recursive: Boolean!) {
@@ -328,11 +343,13 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive, publi
         """,
         variables={'plan': plan3.identifier, 'recursive': recursive},
     )
+
     expected_superseding_plans = []
-    if published_at2:
-       expected_superseding_plans.append(plan2)
-    if recursive and published_at1:
+    if published_at2 or not expose_to_auth_only2:
+        expected_superseding_plans.append(plan2)
+    if recursive and (published_at1 or not expose_to_auth_only1):
         expected_superseding_plans.append(plan1)
+
     expected = {
         'plan': {
             '__typename': 'Plan',
@@ -348,11 +365,19 @@ def test_plan_node_superseding_plans(graphql_client_query_data, recursive, publi
 
 @pytest.mark.parametrize('recursive', [False, True])
 @pytest.mark.parametrize('published_at', itertools.product((None, timezone.now() - timedelta(days=1)), repeat=2))
-def test_plan_node_superseded_plans(graphql_client_query_data, recursive, published_at):
+@pytest.mark.parametrize('expose_to_authenticated_only', itertools.product([False, True], repeat=2))
+def test_plan_node_superseded_plans(graphql_client_query_data, recursive, published_at, expose_to_authenticated_only):
     published_at1, published_at2 = published_at
+    expose_to_auth_only1, expose_to_auth_only2 = expose_to_authenticated_only
     plan1 = PlanFactory()
-    plan2 = PlanFactory(superseded_by=plan1, published_at=published_at1)
-    plan3 = PlanFactory(superseded_by=plan2, published_at=published_at2)
+    plan2 = PlanFactory(superseded_by=plan1,
+                        published_at=published_at1,
+                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only1)
+    plan3 = PlanFactory(superseded_by=plan2,
+                        published_at=published_at2,
+                        features__expose_unpublished_plan_only_to_authenticated_user=expose_to_auth_only2)
+
+
     data = graphql_client_query_data(
         """
         query($plan: ID!, $recursive: Boolean!) {
@@ -373,9 +398,9 @@ def test_plan_node_superseded_plans(graphql_client_query_data, recursive, publis
         variables={'plan': plan1.identifier, 'recursive': recursive},
     )
     expected_superseded_plans = []
-    if published_at1:
+    if published_at1 or not expose_to_auth_only1:
       expected_superseded_plans = [plan2]
-    if recursive and published_at2:
+    if recursive and (published_at2 or not expose_to_auth_only2):
         expected_superseded_plans.append(plan3)
     expected = {
         'plan': {
@@ -758,12 +783,15 @@ def test_category_type_node(
 
 
 @pytest.mark.parametrize('published', [False, True])
+@pytest.mark.parametrize('expose_to_authenticated_only', [False, True])
 def test_category_node(
     graphql_client_query_data, plan_with_pages, category_type, category, category_level,
-    attribute_rich_text, attribute_choice, published
+    attribute_rich_text, attribute_choice, published, expose_to_authenticated_only
 ):
     plan = plan_with_pages
     plan.published_at = timezone.now() - timedelta(days=1) if published else None
+    plan.features.expose_unpublished_plan_only_to_authenticated_user = expose_to_authenticated_only
+    plan.features.save()
     plan.save()
 
     child_category = CategoryFactory(parent=category)
@@ -813,7 +841,7 @@ def test_category_node(
         variables={'plan': plan.identifier},
     )
 
-    if not published:
+    if not published and expose_to_authenticated_only:
         assert data['planCategories'] is None
         return
 

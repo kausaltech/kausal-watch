@@ -1313,13 +1313,16 @@ class PlanPermissionPolicy(ModelPermissionPolicy['Plan', 'PlanQuerySet']):
         """
         Construct permission query for anonymous users.
 
-        Allow only viewing of published plans.
+        Allow viewing of plans if the expose_unpublished_plan_only_to_authenticated_user flag is False.
+        If the expose_unpublished_plan_only_to_authenticated_user flag is True, only allow viewing of published plans.
         """
         if action == 'view':
             return Q(
+                features__expose_unpublished_plan_only_to_authenticated_user=False
+            ) | Q(
                 published_at__isnull=False,
                 published_at__lte=timezone.now(),
-                features__expose_unpublished_plan_only_to_authenticated_user=False)
+            )
         return None
 
     def construct_perm_q(self, user: User, action: ObjectSpecificAction) -> Q | None:
