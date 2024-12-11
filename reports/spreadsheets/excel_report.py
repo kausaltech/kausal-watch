@@ -27,7 +27,8 @@ if typing.TYPE_CHECKING:
 
     from actions.models.category import Category, CategoryType
     from actions.models.plan import Plan
-    from reports.models import Report, SerializedActionVersion, SerializedVersion
+    from reports.models import Report
+    from reports.types import SerializedActionVersion, SerializedVersion
 
 
 def clean(value: ReportCellValue) -> ReportCellValue:
@@ -225,7 +226,7 @@ class ExcelReport:
         self.workbook.close()
 
     def _prepare_serialized_report_data(self) -> tuple[list[SerializedActionVersion], list[SerializedVersion]]:
-        from reports.models import SerializedActionVersion, SerializedVersion
+        from reports.types import SerializedActionVersion, SerializedVersion
         if self.report.is_complete:
             serialized_actions: list[SerializedActionVersion] = []
             snapshots = (
@@ -256,7 +257,7 @@ class ExcelReport:
             all_actions: list[SerializedActionVersion],
             all_related_versions: list[SerializedVersion],
     ):
-        from reports.models import SerializedAttributeVersion
+        from reports.types import SerializedAttributeVersion
         data: dict[str, list[Any]] = {}
 
         def append_to_key(key: str, value: ReportCellValue, field_name: str) -> None:

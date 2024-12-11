@@ -8,7 +8,7 @@ if typing.TYPE_CHECKING:
 
     from django.db.models import Model
 
-    from .models import AttributePath, SerializedAttributeVersion, SerializedVersion
+    from .types import AttributePath, SerializedAttributeVersion, SerializedVersion
 
 def get_attribute_for_type_from_related_objects(
         required_content_type_id: int,

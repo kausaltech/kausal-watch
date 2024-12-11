@@ -26,7 +26,7 @@ if typing.TYPE_CHECKING:
 
     from actions.models import Category, Plan
     from copying.main import CloneVisitor
-    from reports.utils import SerializedAttributeVersion, SerializedVersion
+    from reports.types import SerializedAttributeVersion, SerializedVersion
     from users.models import User
 
 

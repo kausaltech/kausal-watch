@@ -51,7 +51,8 @@ if typing.TYPE_CHECKING:
     from orgs.models import OrganizationQuerySet
     from reports.models import ActionSnapshot
     from reports.spreadsheets import ExcelReport
-    from reports.utils import AttributePath, ReportCellValue, SerializedAttributeVersion, SerializedVersion
+    from reports.types import AttributePath, SerializedAttributeVersion, SerializedVersion
+    from reports.utils import ReportCellValue
 
 
 type ValueType = Model | Iterable | str | None
