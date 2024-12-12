@@ -34,6 +34,7 @@ from actions.models.category import (
 from actions.models.plan import Plan
 from orgs.models import Organization
 from reports.graphene_types import GrapheneValueClassProperties, generate_graphene_report_value_node_class
+from reports.types import SerializedVersion
 from reports.utils import (
     EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATES_WHICH_ADAPTS_TO_USER_LOCALE,
     EXCEL_BUILTIN_NUMBER_FORMAT_FOR_DATETIMES_WHICH_ADAPTS_TO_USER_LOCALE,
@@ -52,7 +53,7 @@ if typing.TYPE_CHECKING:
     from orgs.models import OrganizationQuerySet
     from reports.models import ActionSnapshot
     from reports.spreadsheets import ExcelReport
-    from reports.types import AttributePath, SerializedAttributeVersion, SerializedVersion
+    from reports.types import AttributePath, SerializedAttributeVersion
     from reports.utils import ReportCellValue
 
 
