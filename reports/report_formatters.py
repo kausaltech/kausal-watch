@@ -505,9 +505,15 @@ class ActionCategoryReportFieldFormatter(ReportFieldFormatter):
 class ActionImplementationPhaseReportFieldFormatter(ReportFieldFormatter):
     def value_for_action_snapshot(self, block_value, snapshot) -> ValueType:
         implementation_phase_id = snapshot.action_version.field_dict['implementation_phase_id']
-        if implementation_phase_id:
-            return ActionImplementationPhase.objects.get(id=implementation_phase_id)
-        return None
+        if not implementation_phase_id:
+            return '[%s]' % gettext('empty')
+        try:
+            implementation_phase = ActionImplementationPhase.objects.get(id=implementation_phase_id)
+        except ActionImplementationPhase.DoesNotExist:
+            return gettext('Unknown')
+        if snapshot.action_version.field_dict.get('schedule_continuous') and implementation_phase.is_completed():
+            return gettext('Continuous Action')
+        return implementation_phase
 
     def extract_action_values(
             self, report: ExcelReport, block_value: dict, action: dict,
@@ -518,7 +524,14 @@ class ActionImplementationPhaseReportFieldFormatter(ReportFieldFormatter):
         pk = action.get('implementation_phase_id')
         if pk is None:
             return [None]
-        return [str(report.plan_current_related_objects.implementation_phases.get(int(pk), f"[{_('empty')}]"))]
+        implementation_phase = report.plan_current_related_objects.implementation_phases.get(int(pk))
+        if not implementation_phase:
+            result = '[%s]' % gettext('empty')
+        elif action.get('schedule_continuous') and implementation_phase.is_completed():
+            result = gettext('Continuous Action')
+        else:
+            result = str(implementation_phase)
+        return [result]
 
     def xlsx_column_labels(self, value, plan: Plan | None = None) -> list[str]:
         return [str(self.block.label).capitalize()]

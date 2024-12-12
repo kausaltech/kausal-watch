@@ -1275,6 +1275,18 @@ class ActionImplementationPhase(PlanRelatedOrderedModel):
     def __str__(self):
         return self.name
 
+    def is_completed(self) -> bool:
+        """
+        Return True if being in this phase means an action is completed.
+
+        For continuous actions that means that all of the preliminary
+        phases have been completed and the action is in continuous operation.
+        """
+        # FIXME Once all of the plans have been cleaned up to use
+        # implementation phases consistently,
+        # we should make this more robust instead of relying on the identifier
+        return self.identifier == 'completed'
+
 
 class ActionDecisionLevel(PlanRelatedModel):
     plan = models.ForeignKey(
