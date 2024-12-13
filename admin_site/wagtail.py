@@ -660,32 +660,6 @@ class SuccessUrlEditPageModelAdminMixin:
         return self.url_helper.get_action_url('edit', self.instance.pk)
 
 
-class ActivePlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
-    @transaction.atomic()
-    def form_valid(self, form):
-        old_common_category_types = self.instance.common_category_types.all()
-        new_common_category_types = form.cleaned_data['common_category_types']
-        for added_cct in new_common_category_types.difference(old_common_category_types):
-            # Create category type corresponding to this common category type and link it to this plan
-            ct = added_cct.instantiate_for_plan(self.instance)
-            # Create categories for the common categories having that common category type
-            for common_category in added_cct.categories.all():
-                common_category.instantiate_for_category_type(ct)
-        for removed_cct in old_common_category_types.difference(new_common_category_types):
-            try:
-                self.instance.category_types.filter(common=removed_cct).delete()
-            except ProtectedError:
-                # Actually validation should have been done before this method is called, but it seems to work for now
-                error = _(
-                    'Could not remove common category type "%(removed_cct)" from the plan because categories '
-                    'with the corresponding category type exist.',
-                ) % {'removed_cct': removed_cct}
-                form.add_error('common_category_types', error)
-                messages.validation_error(self.request, self.get_error_message(), form)
-                return self.render_to_response(self.get_context_data(form=form))
-        return super().form_valid(form)
-
-
 class AplansCreateView(
     PersistFiltersEditingModelAdminMixin,
     ContinueEditingModelAdminMixin,

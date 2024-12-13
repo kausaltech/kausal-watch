@@ -8,13 +8,11 @@ import pytest
 from pytest_django.asserts import assertContains
 
 from actions.action_admin import ActionAdmin
-from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
-from actions.wagtail_admin import ActivePlanAdmin
+from actions.tests.factories import ActionFactory, PlanFactory
+from actions.wagtail_admin import PlanIndexView, PlanViewSet
 from admin_site.tests.factories import ClientPlanFactory
 
 if typing.TYPE_CHECKING:
-    from aplans.types import WatchAdminRequest
-
     from actions.models import Action
     from conftest import ModelAdminEditTest
     from people.models import Person
@@ -32,6 +30,27 @@ def get_request(rf, user=None, view_name='wagtailadmin_home', url=None):
     return request
 
 
+def get_plan_index_view(rf, client, user, view_set=None) -> PlanIndexView:
+    if view_set is None:
+        view_set = PlanViewSet()
+    client.force_login(user)
+    request = get_request(rf, user)
+    index_view = PlanIndexView(**view_set.get_common_view_kwargs(), **view_set.get_index_view_kwargs())
+    index_view.setup(request)
+    return index_view
+
+
+def edit_button_shown(rf, client, user, plan) -> bool:
+    view_set = PlanViewSet()
+    index_view = get_plan_index_view(rf, client, user, view_set)
+    buttons = index_view.get_list_buttons(user.get_active_admin_plan())
+    edit_url_name = view_set.get_url_name('edit')
+    return any(
+        any(b.url == reverse(edit_url_name, args=[plan.pk]) for b in getattr(button, 'dropdown_buttons', []))
+        for button in buttons
+    )
+
+
 @pytest.mark.parametrize("user__is_staff", [False])
 def test_no_access_for_non_staff_user(user, client):
     client.force_login(user)
@@ -47,64 +66,57 @@ def test_login_removes_user_from_staff_if_no_plan_admin(user, client):
     assert not user.is_staff
 
 
-def test_active_plan_menu_item_not_shown_to_action_contact_person(rf):
-    action_contact = ActionContactFactory()
-    request = get_request(rf, action_contact.person.user)
-    active_plan_admin = ActivePlanAdmin()
-    assert not active_plan_admin.get_menu_item().is_shown(request)
+def test_plan_edit_button_shown_to_superuser(rf, client, superuser, plan):
+    assert edit_button_shown(rf, client, superuser, plan)
 
 
-def test_active_plan_menu_item_shown_to_plan_admin(plan_admin_user, rf):
-    request = get_request(rf, plan_admin_user)
-    active_plan_admin = ActivePlanAdmin()
-    assert active_plan_admin.get_menu_item().is_shown(request)
+def test_plan_edit_button_shown_to_plan_admin(rf, client, plan_admin_user, plan):
+    assert edit_button_shown(rf, client, plan_admin_user, plan)
 
 
-def test_active_plan_menu_item_shown_to_superuser(superuser, rf):
-    request: WatchAdminRequest = get_request(rf, superuser)
-    active_plan_admin = ActivePlanAdmin()
-    assert active_plan_admin.get_menu_item().is_shown(request)
+def test_plan_edit_button_not_shown_to_action_contact_person(rf, client, action_contact_person_user, plan):
+    assert not edit_button_shown(rf, client, action_contact_person_user, plan)
 
 
-def test_cannot_list_plans(plan_admin_user, client):
-    active_plan_admin = ActivePlanAdmin()
-    url = active_plan_admin.url_helper.index_url
-    client.force_login(plan_admin_user)
-    response = client.get(url)
-    # Wagtail doesn't respond with HTTP status 403 but with a redirect and an error message in a cookie.
-    assert response.status_code == 302
-    assert response.url == reverse('wagtailadmin_home')
-
-
-def test_superuser_can_list_plans(superuser, plan, client):
-    # If the `plan` fixture is not included, the code will fail as there would be no plan, hence no active admin plan.
-    ClientPlanFactory(plan=plan)
-    active_plan_admin = ActivePlanAdmin()
-    url = active_plan_admin.url_helper.index_url
-    client.force_login(superuser)
-    response = client.get(url)
-    assert response.status_code == 200
-
-
-def test_cannot_access_other_plan_edit_page(plan_admin_user, client):
+def test_superuser_can_list_plans(rf, superuser, plan, client):
     other_plan = PlanFactory()
-    active_plan_admin = ActivePlanAdmin()
-    url = active_plan_admin.url_helper.get_action_url('edit', other_plan.pk)
-    client.force_login(plan_admin_user)
-    response = client.get(url)
-    # Wagtail doesn't respond with HTTP status 403 but with a redirect and an error message in a cookie.
-    assert response.status_code == 302
-    assert response.url == reverse('wagtailadmin_home')
+    view_set = PlanViewSet()
+    index_view = get_plan_index_view(rf, client, superuser, view_set)
+    qs = index_view.get_queryset()
+    assert plan in qs
+    assert other_plan in qs
 
 
-def test_can_access_plan_edit_page(plan_admin_user, client):
-    active_plan_admin = ActivePlanAdmin()
-    plan = plan_admin_user.get_adminable_plans()[0]
+def test_admin_can_list_only_own_plan(rf, plan, plan_admin_user, client):
+    other_plan = PlanFactory()
+    view_set = PlanViewSet()
+    index_view = get_plan_index_view(rf, client, plan_admin_user, view_set)
+    qs = index_view.get_queryset()
+    assert plan in qs
+    assert other_plan not in qs
+
+
+def test_can_access_plan_edit_page(plan, plan_admin_user, client):
     ClientPlanFactory(plan=plan)
-    url = active_plan_admin.url_helper.get_action_url('edit', plan.pk)
+    view_set = PlanViewSet()
+    edit_url_name = view_set.get_url_name('edit')
+    url = reverse(edit_url_name, args=[plan.pk])
     client.force_login(plan_admin_user)
     response = client.get(url)
     assert response.status_code == 200
+
+
+def test_cannot_access_other_plan_edit_page(plan, plan_admin_user, client):
+    other_plan = PlanFactory()
+    view_set = PlanViewSet()
+    edit_url_name = view_set.get_url_name('edit')
+    url = reverse(edit_url_name, args=[other_plan.pk])
+    client.force_login(plan_admin_user)
+    response = client.get(url)
+    # Wagtail doesn't respond with HTTP status 403 but with a redirect and an error message in a cookie.
+    view_set.permission_policy.user_has_permission_for_instance(plan_admin_user, 'edit', plan)
+    assert response.status_code == 302
+    assert response.url == reverse('wagtailadmin_home')
 
 
 def test_action_admin(

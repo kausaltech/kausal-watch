@@ -5,9 +5,12 @@ import typing
 from functools import cached_property
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.db.models import Model, ProtectedError
 from django.urls import re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.filters import WagtailFilterSet
+from wagtail.admin.messages import validation_error
 from wagtail.admin.panels import (
     FieldPanel,
     InlinePanel,
@@ -17,13 +20,14 @@ from wagtail.admin.panels import (
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.coreutils import capfirst
+from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
 from dal import autocomplete
 from django_filters import filters
 from wagtail_modeladmin.helpers import PermissionHelper
-from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
+from wagtail_modeladmin.options import modeladmin_register
 
 from aplans.context_vars import ctx_instance, ctx_request
 
@@ -36,11 +40,12 @@ from admin_site.models import Client, ClientPlan
 from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
 from admin_site.viewsets import WatchEditView, WatchViewSet
 from admin_site.wagtail import (
-    ActivePlanEditView,
     AplansAdminModelForm,
     AplansCreateView,
+    AplansEditView,
     AplansModelAdmin,
     CondensedInlinePanel,
+    SuccessUrlEditPageModelAdminMixin,
     insert_model_translation_panels,
 )
 from copying.views import PlanCopyView
@@ -59,11 +64,10 @@ from . import (
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 if typing.TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
     from django.db.models import QuerySet
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
-
-    from aplans.types import WatchAdminRequest
 
 
 class PlanForm(AplansAdminModelForm):
@@ -125,15 +129,59 @@ class PlanCreateView(AplansCreateView):
             plan_id=self.instance.id))
 
 
+class PlanEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
+    @transaction.atomic()
+    def form_valid(self, form):
+        old_common_category_types = self.instance.common_category_types.all()
+        new_common_category_types = form.cleaned_data['common_category_types']
+        for added_cct in new_common_category_types.difference(old_common_category_types):
+            # Create category type corresponding to this common category type and link it to this plan
+            ct = added_cct.instantiate_for_plan(self.instance)
+            # Create categories for the common categories having that common category type
+            for common_category in added_cct.categories.all():
+                common_category.instantiate_for_category_type(ct)
+        for removed_cct in old_common_category_types.difference(new_common_category_types):
+            try:
+                self.instance.category_types.filter(common=removed_cct).delete()
+            except ProtectedError:
+                # Actually validation should have been done before this method is called, but it seems to work for now
+                error = _(
+                    'Could not remove common category type "%(removed_cct)" from the plan because categories '
+                    'with the corresponding category type exist.',
+                ) % {'removed_cct': removed_cct}
+                form.add_error('common_category_types', error)
+                validation_error(self.request, self.get_error_message(), form)
+                return self.render_to_response(self.get_context_data(form=form))
+        return super().form_valid(form)
+
+
+class PlanModelAdminPermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return user.is_superuser
+
+    def user_can_create(self, user):
+        return user.is_superuser
+
+    def user_can_inspect_obj(self, user, obj):
+        return False
+
+    def user_can_delete_obj(self, user, obj):
+        return False
+
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj)
+
+
+
 class PlanAdmin(AplansModelAdmin):
     model = Plan
-    menu_icon = 'kausal-plan'
-    menu_label = _('Plans')
-    menu_order = 500
+    add_to_admin_menu = False  # We only have PlanViewSet in the menu and use the views of PlanAdmin in that viewset
     list_display = ('name',)
     search_fields = ('name',)
+    permission_helper_class = PlanModelAdminPermissionHelper
     create_view_class = PlanCreateView
     copy_view_class = PlanCopyView
+    edit_view_class = PlanEditView
 
     panels = [
         FieldPanel('name'),
@@ -325,74 +373,7 @@ class PlanAdmin(AplansModelAdmin):
         return qs
 
 
-# TODO: Add this to superusers once quick autocomplete search is included and status of plans is shown on index view
-# modeladmin_register(PlanAdmin)
-
-
-# FIXME: This is partly duplicated in content/admin.py.
-class ActivePlanModelAdminPermissionHelper(PermissionHelper):
-    def user_can_list(self, user):
-        return user.is_superuser
-
-    def user_can_create(self, user):
-        return user.is_superuser
-
-    def user_can_inspect_obj(self, user, obj):
-        return False
-
-    def user_can_delete_obj(self, user, obj):
-        return False
-
-    def user_can_edit_obj(self, user, obj):
-        return user.is_general_admin_for_plan(obj)
-
-
-# TODO: Reimplemented in admin_site/menu.py to make this work without
-# ModelAdmin. Use that when implementing new classes or migrating away from
-# ModelAdmin. Remove this class when ModelAdmin migration is finished.
-class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
-    def get_one_to_one_field(self, plan):
-        # Implement in subclass
-        raise NotImplementedError()
-
-    def render_component(self, request):
-        # When clicking the menu item, use the edit view instead of the index view.
-        link_menu_item = super().render_component(request)
-        plan = request.user.get_active_admin_plan()
-        field = self.get_one_to_one_field(plan)
-        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)
-        return link_menu_item
-
-    def is_shown(self, request: WatchAdminRequest):
-        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
-        # this menu item is about editing a plan features instance, not listing.
-        user = request.user
-        if user.is_superuser:
-            return True
-        plan = request.user.get_active_admin_plan(required=False)
-        if plan is None:
-            return False
-        field = self.get_one_to_one_field(plan)
-        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
-
-
-class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
-    def get_one_to_one_field(self, plan):
-        return plan
-
-
-class ActivePlanAdmin(PlanAdmin):
-    edit_view_class = ActivePlanEditView
-    permission_helper_class = ActivePlanModelAdminPermissionHelper
-    menu_label = _('Plan')
-    add_to_settings_menu = True
-
-    def get_menu_item(self, order=None):
-        item = ActivePlanMenuItem(self, order or self.get_menu_order())
-        return item
-
-
-modeladmin_register(ActivePlanAdmin)
+modeladmin_register(PlanAdmin)
 
 
 class PlanFeaturesViewSet(WatchViewSet):
@@ -586,6 +567,18 @@ class PlanFilter(WagtailFilterSet):
         fields = ['clients__client']
 
 
+class PlanPermissionPolicy(ModelPermissionPolicy):
+    def __init__(self):
+        super().__init__(Plan)
+
+    def user_has_permission_for_instance(self, user: AbstractBaseUser, action: str, instance: Model) -> bool:
+        if not super().user_has_permission_for_instance(user, action, instance):
+            return False
+        if not user.is_authenticated:
+            return False
+        assert isinstance(user, User)
+        return not user.is_anonymous and instance == user.get_active_admin_plan()
+
 
 class PlanViewSet(SnippetViewSet[Plan]):
     model = Plan
@@ -598,6 +591,10 @@ class PlanViewSet(SnippetViewSet[Plan]):
     list_per_page = None  # disable pagination
     index_view_class = PlanIndexView
     # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView
+
+    @property
+    def permission_policy(self):
+        return PlanPermissionPolicy()
 
     # Copied from UserFeedbackViewSet
     # FIXME: As of writing this latest Wagtail (6.1.X) has a bug which only
