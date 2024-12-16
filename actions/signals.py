@@ -2,7 +2,7 @@ import logging
 
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
-from wagtail.signals import task_cancelled, task_submitted
+from wagtail.signals import task_cancelled, task_submitted, workflow_approved
 
 from anymail.signals import post_send, pre_send
 
@@ -11,7 +11,11 @@ from notifications.models import NotificationSettings
 from orgs.models import Organization, OrganizationPlanAdmin
 from people.models import Person
 
-from .mail import ActionModeratorApprovalTaskStateSubmissionEmailNotifier, ActionModeratorCancelTaskStateSubmissionEmailNotifier
+from .mail import (
+    ActionModeratorApprovalTaskStateSubmissionEmailNotifier,
+    ActionModeratorCancelTaskStateSubmissionEmailNotifier,
+    WorkflowStateApprovalWithCommentEmailNotifier,
+)
 from .models import Action, ActionContactPerson, ActionResponsibleParty, Category, GeneralPlanAdmin, Plan, PlanFeatures
 from .models.attributes import AttributeType
 from .perms import get_people_with_login_rights
@@ -55,7 +59,7 @@ def invalidate_attribute_type_cache(sender, instance, **kwargs):
 
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
-
+workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
 
 MODELS_WHICH_AFFECT_LOGIN_RIGHTS = (
     Person,
@@ -87,4 +91,8 @@ def register_signal_handlers():
     task_cancelled.connect(
         action_moderator_cancel_task_submission_email_notifier,
         dispatch_uid='action_moderator_cancel_task_submitted_email_notification',
+    )
+    workflow_approved.connect(
+        workflow_approval_email_notifier,
+        dispatch_uid="workflow_state_approved_email_notification",
     )

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import logging
 
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.translation import override
-from wagtail.admin.mail import EmailNotificationMixin, Notifier
+from wagtail.admin.mail import EmailNotificationMixin, Notifier, WorkflowStateApprovalEmailNotifier
 from wagtail.models import TaskState
 
 from wagtail_modeladmin.helpers import ModelAdminURLFinder
@@ -114,3 +116,46 @@ class ActionModeratorCancelTaskStateSubmissionEmailNotifier(BaseActionModeratorA
     """A notifier to send updates for ActionModeratorApprovalTask submission events"""
 
     notification = 'cancelled'
+
+
+class WorkflowStateApprovalWithCommentEmailNotifier(WorkflowStateApprovalEmailNotifier):
+    """A notifier to send email updates for WorkflowState approval events."""
+
+    notification = 'approved'
+
+
+    def __call__(self, instance, user, **kwargs):
+
+        if not self.can_handle(instance, **kwargs):
+            return False
+
+        recipients = self.get_valid_recipients(instance, **kwargs)
+
+        if not recipients:
+            return True
+
+        context = self.get_context(instance, **kwargs)
+        comment = context.get("comment", None)
+        self.notification = "approved_comment" if comment else "approved"
+        template_set = self.get_template_set(instance, **kwargs)
+
+        return self.send_notifications(template_set, context, recipients, **kwargs)
+
+    # Override to add the comment to the context, can be removed if wagtail adds this
+    def get_context(self, workflow_state, **kwargs):
+        context = super().get_context(workflow_state, **kwargs)
+        task_state = workflow_state.current_task_state.specific
+        if task_state:
+            context["comment"] = task_state.get_comment()
+        return context
+
+    def get_valid_recipients(self, instance, **kwargs):
+        # The stock implementation has a limited selection of notification types based on what's available
+        # in Wagtail's UserProfile model. We will assume that approval with comment can reuse the same settings
+        # as the original submit.
+        actual_notification = self.notification
+        if self.notification == 'approved_comment':
+            self.notification = 'approved'
+        result = super().get_valid_recipients(instance, **kwargs)
+        self.notification = actual_notification
+        return result

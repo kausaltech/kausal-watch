@@ -569,6 +569,9 @@ if env.str('MAILJET_API_KEY'):
     ANYMAIL['MAILJET_API_KEY'] = env.str('MAILJET_API_KEY')
     ANYMAIL['MAILJET_SECRET_KEY'] = env.str('MAILJET_SECRET_KEY')
 
+if DEBUG:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 # ckeditor for rich-text admin fields
 CKEDITOR_CONFIGS = {
     'default': {
