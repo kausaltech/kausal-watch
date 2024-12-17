@@ -136,6 +136,10 @@ class CloneVisitor(AbstractVisitor):
         self.supersede_original_plan = supersede_original_plan
         self.supersede_original_actions = supersede_original_actions
 
+    def has_copy(self, instance: Model) -> bool:
+        """Return true if a copy has been created for the given instance."""
+        return (type(instance), instance.pk) in self.copies
+
     def get_copy[M: Model](self, instance: M) -> M:
         """Get the copy that has been created for the given instance."""
         copy = self.copies[(type(instance), instance.pk)]
@@ -315,6 +319,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def update_instance(self, instance: Model, save: bool = True):
         """Update all references from `instance` to objects that have been copied to point to the copies."""
         logger.trace(f"Update references of {type(instance).__name__} {instance.pk}: {instance}")
+        self.update_cluster_related_objects(instance)
         update_fields = []
         update_fields += self.update_foreign_keys(instance)
         if isinstance(instance, Page):
@@ -351,6 +356,38 @@ class UpdateReferencesVisitor(AbstractVisitor):
     def _(self, instance: Plan) -> Generator[Field | GenericForeignKey]:
         return self._get_references(instance, exclude_fields=['copy_of'])
 
+    def update_cluster_related_objects(self, instance: Model):
+        for cros in getattr(instance, '_cluster_related_objects', {}).values():
+            for cro in cros:
+                if cro.id is not None:
+                    try:
+                        cro_copy = self.clone_visitor.get_copy(cro)
+                    except KeyError:
+                        # Probably there is no copy because the model instance that `cro` originally corresponded to no
+                        # longer exists in the database.
+                        cro.id = None
+                        logger.trace(
+                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Could not find "
+                            f"copy for {type(cro).__name__} {cro.pk}: {cro}"
+                        )
+                    else:
+                        cro.id = cro_copy.id
+                        logger.trace(
+                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Set primary key "
+                            f"of {type(cro).__name__} {cro.pk} to: {cro_copy.id}"
+                        )
+                for fk in self.get_references(cro):
+                    related_object = getattr(cro, fk.name)
+                    if related_object:
+                        # `related_object` should be a copy already
+                        assert not self.clone_visitor.has_copy(related_object)
+                        # `cro` currently references the ID of the original of the copy `related_object`, so we update it
+                        setattr(cro, fk.name, related_object)
+                        logger.trace(
+                            f"In cluster related objects of {type(instance).__name__} {instance.pk}: Set foreign key "
+                            f"'{fk.name}' of {type(cro).__name__} {instance.pk} to: {related_object.pk}"
+                        )
+
     def update_foreign_keys(self, instance: Model) -> list[str]:
         update_fields = []
         for fk in self.get_references(instance):
@@ -365,7 +402,7 @@ class UpdateReferencesVisitor(AbstractVisitor):
                         f"{related_object}"
                     )
                     continue
-                logger.trace(f"Set foreign key '{fk.name}' of {type(instance).__name__} {instance.pk} to: {copy}")
+                logger.trace(f"Set foreign key '{fk.name}' of {type(instance).__name__} {instance.pk} to: {copy.pk}")
                 setattr(instance, fk.name, copy)
                 if isinstance(fk, GenericForeignKey):
                     # Technically we'd also need to update fk.ct_field, but content types don't change by copying
