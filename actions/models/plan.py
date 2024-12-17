@@ -541,17 +541,22 @@ class Plan(ClusterableModel, ModelWithPrimaryLanguage):
         ret = super().save(*args, **kwargs)
 
         update_fields = []
-        if self.root_collection is None:
-            with transaction.atomic():
+        with transaction.atomic():
+            collection = self.root_collection
+            if collection is None:
                 first_root = Collection.get_first_root_node()
                 if first_root is None:
                     raise ValueError('Collection tree not properly initialized with root.')
                 obj = first_root.add_child(name=self.name)
-            self.root_collection = obj
-            update_fields.append('root_collection')
-        elif self.root_collection.name != self.name:
-            self.root_collection.name = self.name
-            self.root_collection.save(update_fields=['name'])
+                self.root_collection = obj
+                update_fields.append('root_collection')
+            elif collection.name != self.name:
+                collection.name = self.name
+                collection.save(update_fields=['name'])
+                parent = collection.get_parent()
+                if parent is None:
+                    raise ValueError('Invalid tree state')
+                collection.move(parent, 'sorted-child')
 
         if self.site is not None and not self._site_created:
             # Synchronize site name, root page names
