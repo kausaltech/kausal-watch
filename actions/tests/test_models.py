@@ -527,3 +527,12 @@ def test_primary_language_lowercase(attribute_type, common_category_type, plan, 
             instance.primary_language = lang_code
             instance.save()
             assert instance.primary_language.lower() == instance.primary_language_lowercase
+
+
+def test_synchronizing_plan_root_collection(plan_factory):
+    plan = plan_factory(name='A')
+    plan_factory(name='B')
+    plan.name = 'Z'
+    plan.save()
+    new_plan = plan_factory(name='D')
+    new_plan.save()
