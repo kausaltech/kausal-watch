@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from wagtail.models import Revision
+
 import pytest
 
 from actions.tests.factories import ActionContactFactory, WorkflowFactory
@@ -18,6 +20,6 @@ def test_publish_copied_action_does_not_steal_contact_persons(plan_with_pages, a
     assert action == plan.actions.first()
     action_copy = plan_copy.actions.first()
     assert action_copy
-    assert action_copy.latest_revision
+    assert isinstance(action_copy.latest_revision, Revision)
     action_copy.latest_revision.publish()
     assert action.contact_persons.exists()
