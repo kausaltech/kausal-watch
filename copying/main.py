@@ -489,7 +489,7 @@ def copy_plan(
     version_name: str | None = None,
     supersede_original_plan: bool = False,
     supersede_original_actions: bool = False,
-):
+) -> Plan:
     """
     Copy the given plan.
 
@@ -504,6 +504,8 @@ def copy_plan(
 
     If `supersede_original_plan` is true, the copy will supersede the original plan; if
     `supersede_original_actions` is true, each action copy will supersede its original.
+
+    Returns the copy.
     """
     if new_plan_identifier is None:
         new_plan_identifier = plan.default_identifier_for_copying()
@@ -582,6 +584,8 @@ def copy_plan(
     # Restore temporarily removed links
     clone_visitor.restore_removed_links()
     update_references(plan_copy, attribute_types, clone_visitor)
+
+    return plan_copy
 
 
 def update_references(plan_copy: Plan, attribute_types: list[AttributeType], clone_visitor: CloneVisitor):
