@@ -62,6 +62,7 @@ class IndicatorFactory(DjangoModelFactory):
     max_value = 100.0
     show_trendline = False
     desired_trend = 'decreasing'
+    show_total_line = False
     time_resolution = indicators.models.Indicator.TIME_RESOLUTIONS[0][0]
     updated_values_due_at = None
     internal_notes = "Indicator internal note"

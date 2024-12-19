@@ -551,6 +551,7 @@ def test_indicator_node(graphql_client_query_data):
             maxValue
             showTrendline
             desiredTrend
+            showTotalLine
             categories {
               __typename
               id
@@ -632,6 +633,7 @@ def test_indicator_node(graphql_client_query_data):
             'maxValue': indicator.max_value,
             'showTrendline': indicator.show_trendline,
             'desiredTrend': indicator.desired_trend.upper(),
+            'showTotalLine': indicator.show_total_line,
             'categories': [{
                 '__typename': 'Category',
                 'id': str(category.id),

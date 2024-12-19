@@ -458,6 +458,10 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         ),
     )
 
+    show_total_line = models.BooleanField(
+        default=True, verbose_name=_('show total line'),
+    )
+
     sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='indicator')
 
     i18n = TranslationField(fields=['name', 'description'], default_language_field='organization__primary_language_lowercase')
@@ -475,6 +479,7 @@ class Indicator(ClusterableModel, index.Indexed, ModificationTracking, PlanDefau
         'min_value', 'max_value', 'categories', 'time_resolution', 'latest_value', 'latest_graph',
         'datasets', 'updated_at', 'created_at', 'values', 'plans', 'goals', 'related_actions', 'actions',
         'related_causes', 'related_effects', 'dimensions', 'reference', 'show_trendline', 'desired_trend',
+        'show_total_line',
     ]
 
     wagtail_reference_index_ignore = True

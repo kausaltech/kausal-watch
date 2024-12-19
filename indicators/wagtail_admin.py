@@ -445,6 +445,7 @@ class IndicatorAdmin(AplansModelAdmin):
             ),
             CustomizableBuiltInFieldPanel('show_trendline'),
             CustomizableBuiltInFieldPanel('desired_trend'),
+            CustomizableBuiltInFieldPanel('show_total_line'),
         ]
         panels.append(
             MultiFieldPanel(
