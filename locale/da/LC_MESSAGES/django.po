@@ -11,11 +11,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-11 12:34+0200\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>"
-"\n"
+"Language-Team: Danish <https://weblate.kausal.tech/projects/watch/django/da/>\n"
 "Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -263,7 +262,8 @@ msgstr "Sammenkoblede handlinger"
 msgid "Postponed"
 msgstr "Udskudt"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 #, fuzzy
 #| msgid "Unknown content"
 msgid "Unknown"
@@ -801,7 +801,7 @@ msgstr "Plan"
 msgid "Schedule"
 msgstr "Planlagt"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 #, fuzzy
 #| msgid "continuous action"
 msgid "Continuous Action"
@@ -2462,6 +2462,52 @@ msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
 
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+msgid "You can view the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "%(model_name)s '%(object)s' er blevet sendt til moderation."
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Identifikator er allerede i brug"
@@ -3698,6 +3744,12 @@ msgstr ""
 #: indicators/models.py
 msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
 msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "show in additional links"
+msgid "show total line"
+msgstr "vis i yderligere links"
 
 #: indicators/models.py
 msgid "indicator"
@@ -5489,6 +5541,10 @@ msgstr "handlingsstatus"
 #: reports/report_formatters.py
 msgid "Has goals"
 msgstr "Har mål"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
 
 #: reports/report_formatters.py
 msgid "Other responsible parties"

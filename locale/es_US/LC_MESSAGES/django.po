@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-11 12:34+0200\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/"
-"watch/django/es_US/>\n"
+"Language-Team: Spanish (American) <https://weblate.kausal.tech/projects/watch/django/es_US/>\n"
 "Language: es_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -238,7 +237,8 @@ msgstr "Fusionado"
 msgid "Postponed"
 msgstr "Pospuesto"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 msgid "Unknown"
 msgstr "Indefinido"
 
@@ -693,7 +693,7 @@ msgstr ""
 msgid "Schedule"
 msgstr ""
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 msgid "Continuous Action"
 msgstr ""
 
@@ -2209,6 +2209,46 @@ msgstr ""
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr ""
 
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+msgid "You can view the page here:"
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, python-format
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr ""
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr ""
@@ -3329,6 +3369,10 @@ msgstr ""
 
 #: indicators/models.py
 msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr ""
+
+#: indicators/models.py
+msgid "show total line"
 msgstr ""
 
 #: indicators/models.py
@@ -4909,6 +4953,10 @@ msgstr ""
 #: reports/report_formatters.py
 msgid "Has goals"
 msgstr "Tiene objetivos"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
 
 #: reports/report_formatters.py
 msgid "Other responsible parties"

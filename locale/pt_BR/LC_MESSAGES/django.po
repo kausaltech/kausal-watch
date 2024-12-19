@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-11 12:34+0200\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/"
-"watch/django/pt_BR/>\n"
+"Language-Team: Portuguese (Brazil) <https://weblate.kausal.tech/projects/watch/django/pt_BR/>\n"
 "Language: pt_BR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -258,7 +257,8 @@ msgstr "Mesclado"
 msgid "Postponed"
 msgstr "Adiado"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 #, fuzzy
 msgid "Unknown"
 msgstr "Desconhecido"
@@ -797,7 +797,7 @@ msgstr "Plano"
 msgid "Schedule"
 msgstr "Cronograma"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 #, fuzzy
 msgid "Continuous Action"
 msgstr "ação contínua"
@@ -2638,6 +2638,47 @@ msgstr "A página \"%(title)s\" foi enviada para aprovação no estágio de mode
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
 
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "A página \"%(title)s\" foi enviada para aprovação no estágio de moderação \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy
+msgid "You can view the page here:"
+msgstr "Você pode visualizar a página aqui:"
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "A página \"%(title)s\" foi enviada para aprovação no estágio de moderação \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "A página \"%(title)s\" foi enviada para aprovação no estágio de moderação \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "O endereço %(model_name)s \"%(title)s\" foi retirado da moderação."
+
 #: actions/wagtail_admin.py
 #, fuzzy
 msgid "Identifier already in use"
@@ -3990,6 +4031,11 @@ msgstr ""
 #: indicators/models.py
 msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
 msgstr ""
+
+#: indicators/models.py
+#, fuzzy
+msgid "show total line"
+msgstr "mostrar em links adicionais"
 
 #: indicators/models.py
 #, fuzzy
@@ -5915,6 +5961,10 @@ msgstr "instantâneos de ação"
 #: reports/report_formatters.py
 msgid "Has goals"
 msgstr "Tem metas"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
 
 #: reports/report_formatters.py
 msgid "Other responsible parties"

@@ -7,11 +7,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-11 12:34+0200\n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
 "PO-Revision-Date: 2024-12-11 10:52+0000\n"
 "Last-Translator: Timo Tuominen <timo.tuominen@kausal.tech>\n"
-"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/"
-">\n"
+"Language-Team: Spanish <https://weblate.kausal.tech/projects/watch/django/es/>\n"
 "Language: es\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -238,7 +237,8 @@ msgstr "Fusionado"
 msgid "Postponed"
 msgstr "Aplazado"
 
-#: actions/action_status_summary.py reports/spreadsheets/excel_report.py
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
 msgid "Unknown"
 msgstr "Desconocido"
 
@@ -712,7 +712,7 @@ msgstr "Plan"
 msgid "Schedule"
 msgstr "Programar"
 
-#: actions/blocks/filters.py
+#: actions/blocks/filters.py reports/report_formatters.py
 msgid "Continuous Action"
 msgstr "Acción continua"
 
@@ -2254,6 +2254,54 @@ msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moder
 msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
 msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
 
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy
+#| msgid "You can preview the page here:"
+msgid "You can view the page here:"
+msgstr "Puede previsualizar la página aquí:"
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "La página \"%(title)s\" ha sido sometida a aprobación en fase de moderación \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "El sitio %(model_name)s \"%(title)s\" ha sido retirado de la moderación."
+
 #: actions/wagtail_admin.py
 msgid "Identifier already in use"
 msgstr "Identificador ya utilizado"
@@ -3395,6 +3443,12 @@ msgstr "intentar detectar automáticamente"
 #: indicators/models.py
 msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
 msgstr "¿Qué tendencia en los valores numéricos de los objetivos de este indicador indica una mejora: cuando los valores aumentan o cuando disminuyen?"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "show trendline"
+msgid "show total line"
+msgstr "mostrar línea de tendencia"
 
 #: indicators/models.py
 msgid "indicator"
@@ -4990,6 +5044,10 @@ msgstr "instantáneas de la acción"
 #: reports/report_formatters.py
 msgid "Has goals"
 msgstr "Tiene objetivos"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
 
 #: reports/report_formatters.py
 msgid "Other responsible parties"
