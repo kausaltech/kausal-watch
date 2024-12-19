@@ -616,6 +616,12 @@ WAGTAILEMBEDS_FINDERS = [
     },
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'Google Maps',
+        'domain_whitelist': ('google.com/maps',),
+        'title': 'Map',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'ArcGIS',
         'domain_whitelist': ('arcgis.com', 'maps.arcgis.com'),
         'title': 'Map',
