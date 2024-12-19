@@ -622,6 +622,12 @@ WAGTAILEMBEDS_FINDERS = [
     },
     {
         'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
+        'provider': 'OpenStreetMap',
+        'domain_whitelist': ('openstreetmap.org',),
+        'title': 'Map',
+    },
+    {
+        'class': f'{PROJECT_NAME}.wagtail_embed_finders.GenericFinder',
         'provider': 'ArcGIS',
         'domain_whitelist': ('arcgis.com', 'maps.arcgis.com'),
         'title': 'Map',
