@@ -36,6 +36,7 @@ from admin_site.wagtail import (
     BuiltInFieldCustomizationAwareEditHandlerMixin,
     CondensedInlinePanel,
     CustomizableBuiltInFieldPanel,
+    InitializeFormWithInitialPlanMixin,
     InitializeFormWithPlanMixin,
     get_translation_tabs,
 )
@@ -235,7 +236,9 @@ class IndicatorForm(AplansAdminModelForm):
 
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
+        self.initial_plan_id = kwargs.pop('initial_plan_id', None)
         super().__init__(*args, **kwargs)
+
         if self.instance.pk is not None:
             # We are editing an existing indicator. If the indicator is in the
             # active plan, set this form's `level` field to the proper value.
@@ -266,10 +269,17 @@ class IndicatorForm(AplansAdminModelForm):
         return organization
 
     def clean(self):
-        data = super().clean()
-        common = data.get('common')
+        super().clean()
+
+        initial_plan_id = str(self.initial_plan_id)
+        # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
+        if initial_plan_id and initial_plan_id != str(self.plan.id):
+            raise ValidationError("Plan ID mismatch")
+
+        common = self.cleaned_data.get('common')
         # Dimensions cannot be accessed from self.instance.dimensions yet
         new_dimensions = self.get_dimension_ids_from_formset()
+
         if common and new_dimensions is not None:
             common_indicator_dimensions = list(common.dimensions.values_list('dimension', flat=True))
             if new_dimensions != common_indicator_dimensions:
@@ -281,7 +291,8 @@ class IndicatorForm(AplansAdminModelForm):
                 # common indicator, you'll get this validation error but the condensed inline panel will be gone. WTF?
                 # This may also affect CommonIndicatorForm.
                 raise ValidationError(_("Dimensions must be the same as in common indicator"))
-        return data
+
+        return self.cleaned_data
 
     def save(self, commit=True):
         if self.instance.organization_id is None:
@@ -342,13 +353,11 @@ class IndicatorAdminOrganizationFilter(SimpleListFilter):
         return queryset
 
 
-class IndicatorCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+class IndicatorCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView):
     pass
 
-
-class IndicatorEditView(InitializeFormWithPlanMixin, AplansEditView):
+class IndicatorEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView):
     pass
-
 
 class IndicatorEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTabbedInterface[Indicator]):
     def get_form_class(self):

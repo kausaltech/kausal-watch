@@ -793,6 +793,22 @@ class InitializeFormWithPlanMixin:
         return kwargs
 
 
+class InitializeFormWithInitialPlanMixin:
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs() # type: ignore
+        kwargs.update({'initial_plan_id': self.request.session.get('initial_plan_id')}) # type: ignore
+        return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        # Retrieve the active plan and set the plan ID in the session
+        if request.method == 'GET':
+            active_plan = request.get_active_admin_plan()
+            request.session['initial_plan_id'] = str(active_plan.id)
+
+        # Proceed with the normal dispatch process
+        return super().dispatch(request, *args, **kwargs) # type: ignore
+
+
 class InitializeFormWithUserMixin:
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

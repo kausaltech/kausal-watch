@@ -53,6 +53,7 @@ from admin_site.wagtail import (
     CondensedInlinePanel,
     CustomizableBuiltInFieldPanel,
     CustomizableBuiltInPlanFilteredFieldPanel,
+    InitializeFormWithInitialPlanMixin,
     PlanFilteredFieldPanel,
     PlanRelatedModelAdminPermissionHelper,
     get_translation_tabs,
@@ -155,6 +156,7 @@ MODELS_WITH_ROLES: list[tuple[type[ModelWithRole], str, type[Model], str]] = [
 
 class ActionAdminForm(WagtailAdminModelForm[Action]):
     def __init__(self, *args, **kwargs):
+        self.initial_plan_id = kwargs.pop('initial_plan_id', None)
         super().__init__(*args, **kwargs)
         # There is a corresponding formset for a role if and only if we can edit contact persons of that role.
         for cls, relation_name, __, __ in MODELS_WITH_ROLES:
@@ -208,6 +210,16 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             self._validate_unique_relations_with_roles(_cls, relation_name, wrapped_object_cls, wrapped_object_attr)
             # Persons can only have at most one role as a contact person.
             # Organizations can only have at most one role as a responsible party
+
+        # Check for plan_id mismatch.
+        # This can happen if the user is editing an action and opens another plan in a different tab.
+        super().clean()
+
+        initial_plan_id = self.initial_plan_id
+
+        # Use initial_plan_id to detect mismatch
+        if initial_plan_id and initial_plan_id != str(self.instance.plan.id):
+            raise ValidationError("Plan ID mismatch")
 
     def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
@@ -588,7 +600,7 @@ class ActionEditHandler(BuiltInFieldCustomizationAwareEditHandlerMixin, AplansTa
         return form_class
 
 
-class ActionCreateView(AplansCreateView):
+class ActionCreateView(InitializeFormWithInitialPlanMixin, AplansCreateView):
     instance: Action
 
     def initialize_instance(self, request):
@@ -669,7 +681,7 @@ class ActionButtonHelper(AplansButtonHelper):
         return buttons
 
 
-class ActionEditView(SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
+class ActionEditView(InitializeFormWithInitialPlanMixin, SnippetsEditViewCompatibilityMixin, SingleObjectMixin, AplansEditView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         if self.instance.plan.features.enable_moderation_workflow:
