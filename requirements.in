@@ -8,10 +8,8 @@ django-extensions
 django-environ
 markdown
 django-filter
-django-helusers
 lxml
 django-cors-headers
-python-jose
 cryptography
 django-image-cropping
 easy-thumbnails

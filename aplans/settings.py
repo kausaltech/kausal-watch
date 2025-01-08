@@ -186,8 +186,6 @@ INSTALLED_APPS = [
     'dal_select2',
     'dal_admin_filters',
 
-    'helusers.apps.HelusersConfig',
-    # 'helusers.apps.HelusersAdminConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -347,9 +345,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # SOCIAL_AUTH_POSTGRES_JSONFIELD = True
 
 AUTHENTICATION_BACKENDS = (
-    'helusers.tunnistamo_oidc.TunnistamoOIDCAuth',
     'admin_site.backends.AzureADAuth',
     'admin_site.backends.ADFSOpenIDConnectAuth',
+    'admin_site.backends.TunnistamoOIDCAuth',
     'django.contrib.auth.backends.ModelBackend',
     'social_core.backends.google_openidconnect.GoogleOpenIdConnect',
     'social_core.backends.okta_openidconnect.OktaOpenIdConnect',

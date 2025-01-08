@@ -24,8 +24,7 @@ class AzureADAuth(AzureADTenantOAuth2):
     def get_user_id(self, details, response):
         """Use oid claim as unique id."""
         oid = response['oid']
-        # Replace the pairwise 'sub' field with the oid to better play along
-        # with helusers.
+        # Replace the pairwise 'sub' field with the oid
         response['sub'] = oid
         return oid
 
@@ -67,3 +66,32 @@ class ADFSOpenIDConnectAuth(OpenIdConnectAuth):
 
     def get_user_id(self, details, response):
         return self.id_token['sub']
+
+
+class TunnistamoOIDCAuth(OpenIdConnectAuth):
+    """
+    Soon-to-be-deprecated authentication backend for Tunnistamo login of the City of Helsinki.
+
+    This will be replaced with the standard Azure Entra ID login
+    (ie. AzureADAuth) very soon.
+    """
+
+    name = "tunnistamo"
+    OIDC_ENDPOINT = "https://api.hel.fi/sso/openid"
+    END_SESSION_URL = ""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Allow OIDC endpoint to be overridden through local settings
+        self.OIDC_ENDPOINT = self.setting("OIDC_ENDPOINT", self.OIDC_ENDPOINT)
+
+    # Workaround for the cases where jwks-endpoint does not specify
+    # alg for keys. Default to RS256 per:
+    # https://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation
+    def get_remote_jwks_keys(self):
+        keys = super().get_remote_jwks_keys()
+        for key in keys:
+            if "alg" not in key:
+                key["alg"] = "RS256"
+
+        return keys

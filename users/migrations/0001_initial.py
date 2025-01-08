@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
         ('orgs', '0001_initial'),
         ('actions', '0001_initial'),
         ('auth', '0012_alter_user_first_name_max_length'),
-        ('helusers', '0001_add_ad_groups'),
+        # ('helusers', '0001_add_ad_groups'),
     ]
 
     operations = [
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
                 ('uuid', models.UUIDField(unique=True)),
                 ('department_name', models.CharField(blank=True, max_length=50, null=True)),
                 ('email', models.EmailField(max_length=254, unique=True, verbose_name='email address')),
-                ('ad_groups', models.ManyToManyField(blank=True, to='helusers.ADGroup')),
+                # ('ad_groups', models.ManyToManyField(blank=True, to='helusers.ADGroup')),
                 ('groups', models.ManyToManyField(blank=True, help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.', related_name='user_set', related_query_name='user', to='auth.Group', verbose_name='groups')),
                 ('selected_admin_plan', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='actions.plan')),
                 ('user_permissions', models.ManyToManyField(blank=True, help_text='Specific permissions for this user.', related_name='user_set', related_query_name='user', to='auth.Permission', verbose_name='user permissions')),
