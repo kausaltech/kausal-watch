@@ -10,6 +10,8 @@ from django.http.request import QueryDict
 from django.http.response import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.utils.translation import gettext_lazy as _
+from wagtail.snippets.action_menu import ActionMenuItem
 
 from aplans.context_vars import ctx_instance
 from aplans.types import WatchAdminRequest
@@ -77,8 +79,15 @@ class PersistFiltersEditingMixin:
 
 
 class ContinueEditingMixin:
+    """Mixin to add "Save and continue editing" functionality to a view."""
+
     request: HttpRequest
     get_edit_url: Callable
+
+    class ContinueEditingActionMenuItem(ActionMenuItem):
+        label = _("Save and continue editing")
+        name = "_continue"
+        icon_name = "download"
 
     def continue_editing_active(self):
         return '_continue' in self.request.POST
@@ -96,6 +105,11 @@ class ContinueEditingMixin:
             return []
 
         return super().get_success_buttons()  # type: ignore[misc]
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)  # type: ignore[misc]
+        context['action_menu'].menu_items.append(self.ContinueEditingActionMenuItem())
+        return context
 
 
 class PlanRelatedViewMixin:
