@@ -10,7 +10,7 @@ from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
 from wagtail.snippets.views.snippets import CreateView, EditView, IndexView, SnippetViewSet
 
-from aplans.utils import PlanRelatedModel
+from aplans.utils import PlanDefaultsModel, PlanRelatedModel
 
 from admin_site.forms import WatchAdminModelForm
 from admin_site.mixins import (
@@ -68,8 +68,45 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
         return _("%s could not be created due to errors.") % capfirst(model_name)
 
 
-class WatchCreateView[ModelT: Model, FormT: ModelForm](CreateView[ModelT, FormT]):
+class WatchCreateView[ModelT: Model, FormT: ModelForm](
+    # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
+    ContinueEditingMixin,
+    PlanRelatedViewMixin,
+    CreateView[ModelT, FormT],
+    # SetInstanceMixin,  # TODO: Is this needed? Causes linting errors right now.
+):
     request: WatchAdminRequest
+
+    def initialize_instance(self, request: WatchAdminRequest, instance: ModelT) -> None:
+        """
+        Initialize the instance with plan defaults.
+
+        Override this in subclasses to implement custom initialization logic.
+        """
+        if isinstance(instance, PlanDefaultsModel):
+            plan = request.user.get_active_admin_plan()
+            instance.initialize_plan_defaults(plan)
+
+    def get_initial_form_instance(self):
+        instance = super().get_initial_form_instance()
+        if instance is None:
+            instance = self.model()
+
+        self.initialize_instance(self.request, instance)
+        return instance
+
+    def save_instance(self):
+        instance = super().save_instance()
+
+        if hasattr(instance, 'handle_admin_save'):
+            instance.handle_admin_save(
+                context={
+                    'user': self.request.user,
+                    'operation': 'create',
+                },
+            )
+
+        return instance
 
     def get_form_kwargs(self):
         return {
