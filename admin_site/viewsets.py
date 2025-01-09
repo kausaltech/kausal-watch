@@ -8,7 +8,7 @@ from django.utils.text import capfirst
 from django.utils.translation import gettext as _
 from wagtail.admin import messages
 from wagtail.admin.forms.models import WagtailAdminModelForm
-from wagtail.snippets.views.snippets import CreateView, EditView, SnippetViewSet
+from wagtail.snippets.views.snippets import CreateView, EditView, IndexView, SnippetViewSet
 
 from aplans.utils import PlanRelatedModel
 
@@ -77,8 +77,15 @@ class WatchCreateView[ModelT: Model, FormT: ModelForm](CreateView[ModelT, FormT]
             'plan': self.request.user.get_active_admin_plan(),
         }
 
+class WatchIndexView[ModelT: Model, FormT: ModelForm](
+    ActivatePermissionHelperPlanContextMixin,
+    IndexView,
+):
+    pass
+
 
 class WatchViewSet[ModelT: Model, FormT: ModelForm](SnippetViewSet[ModelT, FormT]):
+    index_view_class = WatchIndexView
     add_view_class = WatchCreateView
     edit_view_class = WatchEditView
 
