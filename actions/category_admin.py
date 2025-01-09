@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib.admin import SimpleListFilter
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.forms import ModelChoiceField
@@ -24,6 +25,7 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
+from actions.models.plan import Plan
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
 
@@ -38,6 +40,7 @@ from admin_site.wagtail import (
     CondensedInlinePanel,
     DatasetButtonMixin,
     InitializeFormWithPlanMixin,
+    InitializeFormWithInitialPlanMixin,
     PlanFilteredFieldPanel,
     get_translation_tabs,
 )
@@ -81,11 +84,11 @@ class CommonCategoryTypeFilter(SimpleListFilter):
         return queryset
 
 
-class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):
+class CategoryTypeCreateView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansCreateView):
     pass
 
 
-class CategoryTypeEditView(InitializeFormWithPlanMixin, AplansEditView):
+class CategoryTypeEditView(InitializeFormWithPlanMixin, InitializeFormWithInitialPlanMixin, AplansEditView):
     pass
 
 
@@ -253,7 +256,24 @@ class CategoryEditHandler(AplansTabbedInterface):
 class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
     def __init__(self, *args, **kwargs):
         self.plan = kwargs.pop('plan')
+        self.initial_plan_id = kwargs.pop('initial_plan_id')
         super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        obj = super().save(commit)
+        initial_plan_id = self.initial_plan_id
+        if initial_plan_id and str(initial_plan_id) != str(self.plan.id):
+            initial_plan = Plan.objects.get(pk=initial_plan_id)
+            request = ctx_request.get_admin_request()
+            messages.add_message(request, messages.WARNING,
+                                 _("Active plan was changed during the editing of this category type. "
+                                   "Category type was saved with the original plan: %s")
+                                 % initial_plan.name)
+            self.plan = initial_plan
+            obj.plan = self.plan
+            obj.save()
+
+        return obj
 
 
 class CategoryTypeEditHandler(AplansTabbedInterface):

@@ -94,7 +94,11 @@ class AttributeTypeIndexView(IndexView):
     page_title = _("Fields")
 
 
-class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansCreateView):
+class AttributeTypeCreateView(
+    ContentTypeQueryParameterMixin,
+    InitializeFormWithPlanMixin,
+    AplansCreateView,
+):
     def get_object_content_type(self):
         object_ct_id = self.request.GET.get('content_type')
         if not object_ct_id:
@@ -132,7 +136,11 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
         return instance
 
 
-class AttributeTypeEditView(ContentTypeQueryParameterMixin, InitializeFormWithPlanMixin, AplansEditView):
+class AttributeTypeEditView(
+    ContentTypeQueryParameterMixin,
+    InitializeFormWithPlanMixin,
+    AplansEditView,
+):
     pass
 
 

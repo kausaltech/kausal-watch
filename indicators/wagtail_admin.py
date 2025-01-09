@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, cast
 
 from django import forms
+from django.contrib import messages
 from django.contrib.admin import SimpleListFilter
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _, ngettext_lazy
@@ -26,6 +27,7 @@ from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.wagtail_utils import _get_category_fields
 
+from actions.models.plan import Plan
 from admin_site.utils import admin_req
 from admin_site.wagtail import (
     AplansAdminModelForm,
@@ -271,11 +273,6 @@ class IndicatorForm(AplansAdminModelForm):
     def clean(self):
         super().clean()
 
-        initial_plan_id = str(self.initial_plan_id)
-        # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
-        if initial_plan_id and initial_plan_id != str(self.plan.id):
-            raise ValidationError("Plan ID mismatch")
-
         common = self.cleaned_data.get('common')
         # Dimensions cannot be accessed from self.instance.dimensions yet
         new_dimensions = self.get_dimension_ids_from_formset()
@@ -295,6 +292,18 @@ class IndicatorForm(AplansAdminModelForm):
         return self.cleaned_data
 
     def save(self, commit=True):
+        initial_plan_id = self.initial_plan_id
+        # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
+        if initial_plan_id and str(initial_plan_id) != str(self.plan.id):
+            initial_plan = Plan.objects.get(id=initial_plan_id)
+
+            request = ctx_request.get()
+            messages.add_message(request, messages.WARNING,
+                                 _("Active plan was changed during the editing of this indicator. "
+                                   "Indicator was saved with the original plan: %s")
+                                 % initial_plan.name)
+            self.plan = initial_plan
+
         if self.instance.organization_id is None:
             self.instance.organization = self.plan.organization
         old_dimensions = list(self.instance.dimensions.values_list('dimension', flat=True))
@@ -304,6 +313,7 @@ class IndicatorForm(AplansAdminModelForm):
             self.instance.latest_value = None
             self.instance.save()
             self.instance.values.all().delete()
+
         obj = super().save(commit)
         plan = self.plan
         for field_name, field in _get_category_fields(plan, Indicator, obj).items():

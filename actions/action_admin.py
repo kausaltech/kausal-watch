@@ -5,7 +5,7 @@ import logging
 import typing
 from typing import Any, Iterable, Unpack, cast
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import URLPattern, path, re_path
@@ -35,6 +35,7 @@ from dal import autocomplete, forward as dal_forward
 from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
+from actions.models.plan import Plan
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.utils import naturaltime
@@ -211,17 +212,20 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             # Persons can only have at most one role as a contact person.
             # Organizations can only have at most one role as a responsible party
 
-        # Check for plan_id mismatch.
-        # This can happen if the user is editing an action and opens another plan in a different tab.
-        super().clean()
+    def save(self, commit=True):
 
         initial_plan_id = self.initial_plan_id
+        # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
+        if initial_plan_id and str(initial_plan_id) != str(self.instance.plan.id):
+            initial_plan = Plan.objects.get(id=initial_plan_id)
 
-        # Use initial_plan_id to detect mismatch
-        if initial_plan_id and initial_plan_id != str(self.instance.plan.id):
-            raise ValidationError("Plan ID mismatch")
+            request = ctx_request.get()
+            messages.add_message(request, messages.WARNING,
+                                 _("Active plan was changed during the editing of this action. "
+                                   "Action was saved with the original plan: %s")
+                                 % initial_plan.name)
+            self.instance.plan = initial_plan
 
-    def save(self, commit=True):
         if hasattr(self.instance, 'updated_at'):
             self.instance.updated_at = timezone.now()
 
