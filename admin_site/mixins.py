@@ -58,6 +58,7 @@ class SetInstanceMixin(HasObject):
             return super().dispatch(request, *args, **kwargs)  # type: ignore[misc]
 
 
+# FIXME: Does not work.
 class PersistFiltersEditingMixin:
     request: HttpRequest
     model_name: str

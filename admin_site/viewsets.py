@@ -16,7 +16,6 @@ from admin_site.forms import WatchAdminModelForm
 from admin_site.mixins import (
     ActivatePermissionHelperPlanContextMixin,
     ContinueEditingMixin,
-    PersistFiltersEditingMixin,
     PlanRelatedViewMixin,
     SetInstanceMixin,
 )
@@ -29,7 +28,7 @@ if TYPE_CHECKING:
 
 
 class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
-    PersistFiltersEditingMixin,
+    # PersistFiltersEditingMixin,  # TODO: Is this needed? Does not work right now.
     ContinueEditingMixin,
     PlanRelatedViewMixin,
     ActivatePermissionHelperPlanContextMixin,
