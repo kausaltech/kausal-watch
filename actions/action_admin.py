@@ -35,13 +35,13 @@ from dal import autocomplete, forward as dal_forward
 from wagtail_modeladmin.options import ModelAdminMenuItem
 from wagtail_modeladmin.views import IndexView
 
-from actions.models.plan import Plan
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
 from aplans.utils import naturaltime
 from aplans.wagtail_utils import _get_category_fields
 
 from actions.chooser import ActionChooser
+from actions.models.plan import Plan
 from admin_site.utils import FieldLabelRenderer
 from admin_site.wagtail import (
     AdminOnlyPanel,
