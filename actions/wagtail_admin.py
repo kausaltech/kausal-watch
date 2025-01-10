@@ -567,19 +567,6 @@ class PlanFilter(WagtailFilterSet):
         fields = ['clients__client']
 
 
-class PlanPermissionPolicy(ModelPermissionPolicy):
-    def __init__(self):
-        super().__init__(Plan)
-
-    def user_has_permission_for_instance(self, user: AbstractBaseUser, action: str, instance: Model) -> bool:
-        if not super().user_has_permission_for_instance(user, action, instance):
-            return False
-        if not user.is_authenticated:
-            return False
-        assert isinstance(user, User)
-        return not user.is_anonymous and instance == user.get_active_admin_plan()
-
-
 class PlanViewSet(SnippetViewSet[Plan]):
     model = Plan
     add_to_admin_menu = True
@@ -591,10 +578,6 @@ class PlanViewSet(SnippetViewSet[Plan]):
     list_per_page = None  # disable pagination
     index_view_class = PlanIndexView
     # Note that we can't use PlanCopyView as copy_view_class because it is not a (snippet) CopyView
-
-    @property
-    def permission_policy(self):
-        return PlanPermissionPolicy()
 
     # Copied from UserFeedbackViewSet
     # FIXME: As of writing this latest Wagtail (6.1.X) has a bug which only
