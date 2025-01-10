@@ -6,7 +6,7 @@ from functools import cached_property
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Model, ProtectedError
+from django.db.models import ProtectedError
 from django.urls import re_path, reverse
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.filters import WagtailFilterSet
@@ -20,7 +20,6 @@ from wagtail.admin.panels import (
 from wagtail.admin.ui.tables import BulkActionsCheckboxColumn, Column
 from wagtail.admin.widgets.button import ButtonWithDropdown
 from wagtail.coreutils import capfirst
-from wagtail.permissions import ModelPermissionPolicy
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 
@@ -64,7 +63,6 @@ from . import (
 from .models import ActionImpact, ActionStatus, Plan, PlanFeatures
 
 if typing.TYPE_CHECKING:
-    from django.contrib.auth.models import AbstractBaseUser
     from django.db.models import QuerySet
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
