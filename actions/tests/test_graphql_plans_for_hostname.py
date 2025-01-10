@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 from django.utils import timezone
+
 import pytest
 
 from actions.models.plan import PublicationStatus
@@ -8,7 +9,7 @@ from actions.models.plan import PublicationStatus
 pytestmark = pytest.mark.django_db
 
 
-GET_PLANS_BY_HOSTNAME_QUERY = '''
+GET_PLANS_BY_HOSTNAME_QUERY = """
   query GetPlansByHostname($hostname: String) {
     plansForHostname(hostname: $hostname) {
       ... on Plan {
@@ -24,9 +25,9 @@ GET_PLANS_BY_HOSTNAME_QUERY = '''
       publishedAt
     }
   }
-'''
+"""
 
-GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = '''
+GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = """
   query GetPlansByHostname($hostname: String) {
     plansForHostname(hostname: $hostname) {
       domains {
@@ -35,7 +36,7 @@ GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = '''
       }
     }
   }
-'''
+"""
 
 
 @pytest.mark.parametrize(
@@ -45,7 +46,7 @@ GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE = '''
      (None, None, PublicationStatus.UNPUBLISHED),
      (PublicationStatus.UNPUBLISHED, -5, PublicationStatus.UNPUBLISHED),
      (PublicationStatus.PUBLISHED, 5, PublicationStatus.PUBLISHED),
-     (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED)]
+     (PublicationStatus.PUBLISHED, None, PublicationStatus.PUBLISHED)],
 )
 def test_get_plans_by_hostname(graphql_client_query_data,
                                plan_factory,
@@ -60,7 +61,7 @@ def test_get_plans_by_hostname(graphql_client_query_data,
     domain = plan_domain_factory(plan=plan, publication_status_override=publication_status_override)
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
-        variables={'hostname': domain.hostname}
+        variables={'hostname': domain.hostname},
     )
     plans = data['plansForHostname']
     expected = [
@@ -71,8 +72,8 @@ def test_get_plans_by_hostname(graphql_client_query_data,
                 'status': publication_status.name,
             }],
             'primaryLanguage': plan.primary_language,
-            'publishedAt': published_at.isoformat() if published_at else None
-        }
+            'publishedAt': published_at.isoformat() if published_at else None,
+        },
     ]
     if publication_status == PublicationStatus.PUBLISHED:
         expected[0]['identifier'] = plan.identifier
@@ -83,7 +84,7 @@ def test_get_plans_by_hostname(graphql_client_query_data,
 @pytest.mark.parametrize(
     "publication_status_override,has_message",
     [(PublicationStatus.UNPUBLISHED, True),
-     (PublicationStatus.PUBLISHED, False)]
+     (PublicationStatus.PUBLISHED, False)],
 )
 def test_get_correct_domain_by_hostname(graphql_client_query_data,
                                         plan_factory,
@@ -95,7 +96,7 @@ def test_get_correct_domain_by_hostname(graphql_client_query_data,
     domain = plan_domain_factory(plan=plan, publication_status_override=publication_status_override)
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY_STATUSMESSAGE,
-        variables={'hostname': domain.hostname}
+        variables={'hostname': domain.hostname},
     )
     plans = data['plansForHostname']
     message = plans[0]['domains'][0]['statusMessage']
@@ -118,7 +119,7 @@ def test_plans_for_hostname_without_domains(graphql_client_query_data,
                                             plan):
     data = graphql_client_query_data(
         GET_PLANS_BY_HOSTNAME_QUERY,
-        variables={'hostname': f'{plan.identifier}.{DUMMY_DOMAIN}'}
+        variables={'hostname': f'{plan.identifier}.{DUMMY_DOMAIN}'},
     )
     planData = data['plansForHostname'][0]
     assert len(planData['domains']) == 0

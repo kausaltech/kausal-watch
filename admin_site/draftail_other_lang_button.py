@@ -1,6 +1,6 @@
 import wagtail.admin.rich_text.editors.draftail.features as draftail_features
-from wagtail.admin.rich_text.converters.html_to_contentstate import InlineStyleElementHandler
 from wagtail import hooks
+from wagtail.admin.rich_text.converters.html_to_contentstate import InlineStyleElementHandler
 
 
 # Rich text language switch
@@ -20,7 +20,7 @@ def register_lang_feature(features):
     }
 
     features.register_editor_plugin(
-        'draftail', feature_name, draftail_features.InlineStyleFeature(control)
+        'draftail', feature_name, draftail_features.InlineStyleFeature(control),
     )
 
     def to_db(*args):

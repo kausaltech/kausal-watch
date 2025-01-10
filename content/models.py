@@ -47,7 +47,7 @@ class SiteGeneralContent(models.Model):
 
     plan = models.OneToOneField(
         'actions.Plan', related_name='general_content', verbose_name=_('plan'), on_delete=models.CASCADE,
-        unique=True
+        unique=True,
     )
     site_title = models.CharField(max_length=150, verbose_name=_('site title'), blank=True)
     site_description = models.CharField(max_length=150, verbose_name=_('site description'), blank=True)
@@ -67,15 +67,15 @@ class SiteGeneralContent(models.Model):
     github_api_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for API'))
     github_ui_repository = models.URLField(blank=True, verbose_name=_('Link to GitHub repository for UI'))
     action_term = models.CharField(
-        max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION
+        max_length=30, choices=ActionTerm.choices, verbose_name=_("Term to use for 'action'"), default=ActionTerm.ACTION,
     )
     action_task_term = models.CharField(
         max_length=30, choices=ActionTaskTerm.choices, verbose_name=_("Term to use for 'task'"),
-        default=ActionTaskTerm.TASK
+        default=ActionTaskTerm.TASK,
     )
     organization_term = models.CharField(
         max_length=30, choices=OrganizationTerm.choices, verbose_name=_("Term to use for 'organization'"),
-        default=OrganizationTerm.ORGANIZATION
+        default=OrganizationTerm.ORGANIZATION,
     )
     sitewide_announcement = RichTextField(
         blank=True,
@@ -88,14 +88,14 @@ class SiteGeneralContent(models.Model):
     i18n = TranslationField(
         fields=[
             'site_title', 'site_description', 'official_name_description', 'copyright_text',
-            'creative_commons_license', 'owner_name', 'owner_url'
+            'creative_commons_license', 'owner_name', 'owner_url',
         ],
         default_language_field='plan__primary_language_lowercase')
 
     public_fields = [
         'id', 'site_title', 'site_description', 'owner_url', 'owner_name', 'official_name_description',
         'copyright_text', 'creative_commons_license', 'github_api_repository', 'github_ui_repository', 'action_term',
-        'action_task_term', 'organization_term', 'sitewide_announcement'
+        'action_task_term', 'organization_term', 'sitewide_announcement',
     ]
 
     class Meta:

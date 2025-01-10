@@ -1,8 +1,9 @@
-from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
-from generic_chooser.widgets import AdminChooser
 from django.utils.translation import gettext_lazy as _
-from wagtail.search.backends import get_search_backend
 from wagtail import hooks
+from wagtail.search.backends import get_search_backend
+
+from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
 
 from .models import Indicator
 
@@ -26,7 +27,7 @@ class IndicatorChooserMixin(ModelChooserMixin):
 class IndicatorChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = IndicatorChooserMixin
 
-    icon = 'user'
+    icon = 'kausal-indicator'
     model = Indicator
     page_title = _("Choose an indicator")
     per_page = 30

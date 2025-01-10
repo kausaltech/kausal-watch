@@ -1,20 +1,23 @@
 from __future__ import annotations
 
-from typing import Protocol, Type
-import factory
 import json
-import pytest
 import typing
-from wagtail.test.utils import wagtail_factories
+from typing import Protocol, Type
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.urls import reverse
-from factory import LazyAttribute, Sequence, SubFactory
 from graphene_django.utils.testing import graphql_query
-from pytest_factoryboy import LazyFixture, register
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
+from wagtail.test.utils import wagtail_factories
 
+import factory
+import pytest
+from factory import LazyAttribute, Sequence, SubFactory
+from pytest_factoryboy import LazyFixture, register
+
+from actions.models.attributes import AttributeType
 from actions.tests import factories as actions_factories
 from admin_site.tests import factories as admin_site_factories
 from content.tests import factories as content_factories
@@ -22,20 +25,22 @@ from images.tests import factories as images_factories
 from indicators.tests import factories as indicators_factories
 from notifications.tests import factories as notifications_factories
 from orgs.models import Organization
-from actions.models.attributes import AttributeType
 from orgs.tests import factories as orgs_factories
 from pages.tests import factories as pages_factories
 from people.tests import factories as people_factories
 from users.tests import factories as users_factories
 
 if typing.TYPE_CHECKING:
-    from django.db.models import Model
-    from wagtail_modeladmin.options import ModelAdmin
-    from users.models import User
     import django.test.client
+    from django.db.models import Model
+
+    from wagtail_modeladmin.options import ModelAdmin
+
+    from users.models import User
 
 import logging
-logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARN)
+
+logging.getLogger('pytest_factoryboy.codegen').setLevel(logging.WARNING)
 
 
 class JSONAPIClient(APIClient):
@@ -60,6 +65,7 @@ register(actions_factories.CategoryFactory)
 register(actions_factories.CategoryListBlockFactory)
 register(actions_factories.CategoryTypeFactory)
 register(actions_factories.CategoryLevelFactory)
+register(actions_factories.CommonCategoryFactory)
 register(actions_factories.CommonCategoryTypeFactory)
 register(actions_factories.AttributeTextFactory)
 register(actions_factories.AttributeRichTextFactory)
@@ -105,6 +111,7 @@ register(indicators_factories.IndicatorBlockFactory)
 register(indicators_factories.IndicatorShowcaseBlockFactory)
 register(indicators_factories.QuantityFactory)
 register(indicators_factories.UnitFactory)
+register(indicators_factories.IndicatorContactFactory, 'indicator_contact')
 register(notifications_factories.NotificationSettingsFactory)
 register(orgs_factories.OrganizationClassFactory)
 register(orgs_factories.OrganizationFactory)
@@ -203,22 +210,22 @@ def contains_error():
 
 
 @pytest.fixture(autouse=True)
-def disable_search_autoupdate(settings):
+def _disable_search_autoupdate(settings) -> None:
     for conf in settings.WAGTAILSEARCH_BACKENDS.values():
         conf['AUTO_UPDATE'] = False
 
 
 class ModelAdminEditTest(Protocol):
-    def __call__(
-        self, admin_class: Type[ModelAdmin], instance: Model, user: User,
-        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...
+    def __call__(  # noqa: PLR0913
+        self, admin_class: type[ModelAdmin], instance: Model, user: User,
+        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True): ...  # noqa: B006
 
 
 @pytest.fixture
 def test_modeladmin_edit(client: django.test.client.Client) -> ModelAdminEditTest:
     def test_admin(
-        admin_class: Type[ModelAdmin], instance: Model, user: User,
-        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True
+        admin_class: type[ModelAdmin], instance: Model, user: User,
+        post_data: dict = {}, can_inspect: bool = True, can_edit: bool = True,
     ):
         adm = admin_class()
         edit_name = adm.url_helper.get_action_url_name('edit')
@@ -265,9 +272,9 @@ def api_client():
 
 common_kwargs = dict(
     object_content_type=LazyAttribute(
-        lambda _: ContentType.objects.get(app_label='actions', model='action')
+        lambda _: ContentType.objects.get(app_label='actions', model='action'),
     ),
-    scope=SubFactory(actions_factories.PlanFactory)
+    scope=SubFactory(actions_factories.PlanFactory),
 )
 
 
@@ -286,7 +293,7 @@ for format in AttributeType.AttributeFormat:
         f'action_attribute_type__{format.value}',
         name=_attribute_type_name(format),
         format=format,
-        **common_kwargs
+        **common_kwargs,
     )
 
 
@@ -316,7 +323,7 @@ def attribute_choice(attribute_choice_factory, action_attribute_type__ordered_ch
 
 def n_of_a_kind(factory, count, context={}):
     return [
-        factory(**context) for i in range(0, count)
+        factory(**context) for i in range(count)
     ]
 
 
@@ -353,14 +360,14 @@ def actions_having_attributes(
     implementation_phases = n_of_a_kind(action_implementation_phase_factory, IMPLEMENTATION_PHASE_COUNT, context={'plan': plan})
     organizations = [o for o in Organization.objects.all()]
     organizations.extend(n_of_a_kind(organization_factory, ORGANIZATION_COUNT - Organization.objects.count()))
-    plan_categories = [category_factory(type=category_type) for _ in range(0, CATEGORY_COUNT)]
+    plan_categories = [category_factory(type=category_type) for _ in range(CATEGORY_COUNT)]
 
     for o in organizations:
         o.related_plans.add(plan)
 
-    choices_ordered = [attribute_type_choice_option_factory(type=action_attribute_type__ordered_choice) for i in range(0,3)]
-    choices_unordered = [attribute_type_choice_option_factory(type=action_attribute_type__unordered_choice) for i in range(0,3)]
-    choices_optional = [attribute_type_choice_option_factory(type=action_attribute_type__optional_choice) for i in range(0,3)]
+    choices_ordered = [attribute_type_choice_option_factory(type=action_attribute_type__ordered_choice) for i in range(3)]
+    choices_unordered = [attribute_type_choice_option_factory(type=action_attribute_type__unordered_choice) for i in range(3)]
+    choices_optional = [attribute_type_choice_option_factory(type=action_attribute_type__optional_choice) for i in range(3)]
 
     def decorated_action(i: int):
         # Create less implementation phases than actions
@@ -371,11 +378,11 @@ def actions_having_attributes(
 
         attribute_text_factory(
             type=action_attribute_type__text,
-            content_object=action
+            content_object=action,
         )
         attribute_rich_text_factory(
             type=action_attribute_type__rich_text,
-            content_object=action
+            content_object=action,
         )
         attribute_choice_factory(
             type=action_attribute_type__ordered_choice,
@@ -390,7 +397,7 @@ def actions_having_attributes(
         attribute_choice_with_text_factory(
             type=action_attribute_type__optional_choice,
             content_object=action,
-            choice=choices_optional[2]
+            choice=choices_optional[2],
         )
         attribute_numeric_value_factory(
             type=action_attribute_type__numeric,
@@ -398,15 +405,15 @@ def actions_having_attributes(
         )
         at = action_attribute_type__category_choice
         assert at.attribute_category_type.plan == plan
-        categories = [category_factory(type=at.attribute_category_type) for _ in range(0, 2)]
+        categories = [category_factory(type=at.attribute_category_type) for _ in range(2)]
         attribute_category_choice_factory(
             type=at,
             content_object=action,
-            categories=categories
+            categories=categories,
 
         )
         c = plan_categories[i % CATEGORY_COUNT]
         action.categories.add(c)
         return action
 
-    return [decorated_action(i) for i in range(0, ACTION_COUNT)]
+    return [decorated_action(i) for i in range(ACTION_COUNT)]

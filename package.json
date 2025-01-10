@@ -10,7 +10,7 @@
   "repository": "https://github.com/kausaltech/kausal-watch",
   "license": "AGPL-3.0-or-later",
   "dependencies": {
-    "mjml": "^4.7.1"
+    "mjml": "^4.15.3"
   },
   "devDependencies": {}
 }

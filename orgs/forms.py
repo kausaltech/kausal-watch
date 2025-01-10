@@ -1,8 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.core.exceptions import ValidationError
 from django.forms import ModelChoiceField
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.forms import WagtailAdminModelForm
 
+from users.models import User
+
+if TYPE_CHECKING:
+    from .models import Node
 
 class NodeChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
@@ -11,7 +19,7 @@ class NodeChoiceField(ModelChoiceField):
         return f'{depth_line} {label}'
 
 
-class NodeForm(WagtailAdminModelForm):
+class NodeForm[N: Node](WagtailAdminModelForm[N, User]):
     parent = NodeChoiceField(required=False, queryset=None)
 
     def __init__(self, *args, **kwargs):
@@ -33,14 +41,15 @@ class NodeForm(WagtailAdminModelForm):
             raise ValidationError(_("A node cannot be moved under itself in the hierarchy."), code='invalid_parent')
         return parent
 
-    def save(self, commit=True, *args, **kwargs):
-        instance = super().save(commit=False, *args, **kwargs)
+    def save(self, commit: bool = True) -> N:
+        instance: N = super().save(commit=False)
+
         parent = self.cleaned_data['parent']
 
         if not commit:
             return instance
 
-        if instance.id is None:  # creating a new node
+        if instance.pk is None:  # creating a new node
             if parent is None:
                 instance = self._meta.model.add_root(instance=instance)
             else:
@@ -61,7 +70,9 @@ class NodeForm(WagtailAdminModelForm):
                 # django-treebeard uses Django raw SQL queries for some write operations, and raw queries don’t update
                 # the objects in the ORM since it’s being bypassed. Because of this, if you have a node in memory and
                 # plan to use it after a tree modification (adding/removing/moving nodes), you need to reload it.
-                instance = instance._meta.model.objects.get(pk=instance.pk)
+                mgr = instance._meta.default_manager
+                assert mgr is not None
+                instance = mgr.get(pk=instance.pk)
                 # The following would also seem to work, but is more likely to break.
                 # instance.refresh_from_db()
                 # instance.get_parent(update=True)

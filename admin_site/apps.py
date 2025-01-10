@@ -7,7 +7,6 @@ from django.db.models.fields import BLANK_CHOICE_DASH
 from django.utils.translation import get_language_info, gettext as _
 from wagtail.admin.localization import get_available_admin_languages
 
-
 _wagtail_collection_save_instance = None
 
 
@@ -39,12 +38,14 @@ def _get_language_choices():
             lang_name_local = settings.LOCAL_LANGUAGE_NAMES[lang_code]
         language_choices.append((lang_code, lang_name_local))
     return sorted(BLANK_CHOICE_DASH + language_choices,
-                  key=lambda l: l[1].lower())
+                  key=lambda lng: lng[1].lower())
 
 
 class AdminSiteConfig(AdminConfig):
     def ready(self):
         super().ready()
+        import admin_site.signals # noqa
+
         # monkeypatch collection create to make new collections as children
         # of root collection of the currently selected plan
         global _wagtail_collection_save_instance
@@ -62,6 +63,10 @@ class AdminSiteConfig(AdminConfig):
         # LANGUAGES in settings.py for details about this.
         from wagtail.admin.forms import account
         account.LocalePreferencesForm.base_fields['preferred_language']._choices.choices_func = _get_language_choices
+
+        # Remove the ThemeSettingsPanel
+        from wagtail.admin.views.account import ThemeSettingsPanel
+        ThemeSettingsPanel.is_active = lambda self: False  # type: ignore
 
         # We use this just for overriding some Django translations that are weird in some languages
         def _dummy_function_so_makemessages_finds_strings():

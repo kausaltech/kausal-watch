@@ -1,15 +1,27 @@
-from actions.models.plan import PlanQuerySet
+from typing import TYPE_CHECKING
+
 import graphene
+from graphene_django.forms.mutation import DjangoModelFormMutation
+
 import graphene_django_optimizer as gql_optimizer
+
+from actions.models.action import ActionQuerySet
+from aplans import graphql_gis  # noqa
 from aplans.graphql_helpers import (
-    AdminButtonsMixin, CreateModelInstanceMutation, DeleteModelInstanceMutation, UpdateModelInstanceMutation,
+    AdminButtonsMixin,
+    CreateModelInstanceMutation,
+    DeleteModelInstanceMutation,
+    UpdateModelInstanceMutation,
 )
 from aplans.graphql_types import AuthenticatedUserNode, DjangoNode, GQLInfo, register_django_node
-from graphene_django.forms.mutation import DjangoModelFormMutation
+from aplans.utils import public_fields
 
 from actions.models import Plan
 from orgs.forms import NodeForm
 from orgs.models import Organization, OrganizationClass
+
+if TYPE_CHECKING:
+    from actions.models.plan import PlanQuerySet
 
 
 # This form is just used in the GraphQL schema, not in Wagtail. For Wagtail, a different form class is created in
@@ -24,6 +36,7 @@ class OrganizationForm(NodeForm):
 class OrganizationClassNode(DjangoNode):
     class Meta:
         model = OrganizationClass
+        fields = public_fields(OrganizationClass)
 
 
 @register_django_node
@@ -33,17 +46,17 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
     action_count = graphene.Int(description='Number of actions this organization is responsible for', required=True)
     contact_person_count = graphene.Int(
         description='Number of contact persons that are associated with this organization',
-        required=True
+        required=True,
     )
     parent = graphene.Field(lambda: OrganizationNode, required=False)
     logo = graphene.Field('images.schema.ImageNode', parent_fallback=graphene.Boolean(default_value=False), required=False)
     plans_with_action_responsibilities = graphene.List(
-        graphene.NonNull('actions.schema.PlanNode'), except_plan=graphene.ID(required=False), required=True
+        graphene.NonNull('actions.schema.PlanNode'), except_plan=graphene.ID(required=False), required=True,
     )
 
     @staticmethod
-    def resolve_ancestors(parent, info):
-        return parent.get_ancestors()
+    def resolve_ancestors(root: Organization, info):
+        return root.get_ancestors()
 
     @staticmethod
     def resolve_descendants(parent, info):
@@ -54,7 +67,10 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
         only=tuple(),
     )
     def resolve_action_count(parent, info):
-        return getattr(parent, 'action_count', 0)
+        cache = getattr(info.context, 'organization_action_count_cache', None)
+        if cache is None:
+            return getattr(parent, 'action_count', 0)
+        return cache.get_action_count_for_organization(parent.id)
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -64,14 +80,14 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
         return getattr(parent, 'contact_person_count', 0)
 
     @gql_optimizer.resolver_hints(
-        only=('path', 'depth')
+        only=('path', 'depth'),
     )
     def resolve_parent(parent: Organization, info):
         return parent.get_parent()
 
     @gql_optimizer.resolver_hints(
         only=('logo',),
-        select_related=('logo',)
+        select_related=('logo',),
     )
     def resolve_logo(self: Organization, info: GQLInfo, parent_fallback=False):
         if self.logo is not None:
@@ -87,10 +103,10 @@ class OrganizationNode(AdminButtonsMixin, DjangoNode):
 
     @staticmethod
     def resolve_plans_with_action_responsibilities(
-        root: Organization, info: GQLInfo, except_plan: str | None = None
+        root: Organization, info: GQLInfo, except_plan: str | None = None,
     ):
-        qs: PlanQuerySet = Plan.objects.filter(
-            id__in=root.responsible_for_actions.values_list('plan')
+        qs = Plan.objects.qs.filter(
+            id__in=root.responsible_for_actions.values_list('plan'),
         )
         qs = qs.live()
         if except_plan:

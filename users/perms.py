@@ -2,7 +2,10 @@ import logging
 
 from actions.models import Action
 from actions.perms import (
-    add_contact_person_perms, add_plan_admin_perms, remove_contact_person_perms, remove_plan_admin_perms
+    add_contact_person_perms,
+    add_plan_admin_perms,
+    remove_contact_person_perms,
+    remove_plan_admin_perms,
 )
 from indicators.models import Indicator
 

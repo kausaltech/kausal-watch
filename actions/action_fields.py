@@ -1,0 +1,167 @@
+"""
+Specify the block configurations for all the action fields.
+
+This module only needs to contain custom configurations for actions fields which
+need custom classes and/or parameters to be used in the blocks. All of the default
+field block classes are automatically generated based on model introspection.
+
+We generate default implementations or configure custom implementations
+for blocks to be used in:
+    - The action details page
+    - The action dashboard table columns
+    - The action excel report types
+
+In the end, we would like these different blocks to share as much of the implementation
+as possible with each other.
+"""
+from __future__ import annotations
+
+from django.utils.translation import gettext_lazy as _
+
+from aplans.field_registry import ModelFieldProperties, ModelFieldRegistry
+
+from .blocks import generated
+from .models.action import Action
+
+action_registry = ModelFieldRegistry(Action, generated)
+
+def register(*field_names, **kwargs):
+    for field_name in field_names:
+        action_registry.register(
+            ModelFieldProperties(field_name=field_name, **kwargs),
+        )
+
+def initialize():
+    # The following fields will have no blocks created for them whatsoever
+    action_registry.disable_fields(
+        'completion', 'date_format', 'decision_level', 'dependency_role', 'dependent_relationships', 'id', 'impact_groups',
+        'indicators', 'merged_with', 'monitoring_quality_points', 'order', 'plan', 'schedule_continuous', 'status_updates',
+        'superseded_actions', 'superseded_by', 'copies', 'copy_of', 'uuid', 'visibility',
+    )
+
+    register(
+        'responsible_parties',
+        field_type='many',
+        report_block_class='reports.blocks.action_content.ActionResponsiblePartyReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionResponsiblePartyReportFieldFormatter',
+        details_block_class='actions.blocks.action_content_blocks.ActionResponsiblePartiesBlock',
+    )
+    register(
+        'tasks',
+        field_type='many',
+        report_formatter_class='reports.report_formatters.ActionTasksFormatter',
+    )
+    register(
+        'categories',
+        field_type='many',
+        report_block_class='reports.blocks.action_content.ActionCategoryReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionCategoryReportFieldFormatter',
+        has_dashboard_column_block=False,
+        details_block_class='actions.blocks.action_content_blocks.ActionContentCategoryTypeBlock',
+    )
+    register(
+        'dependencies',
+        field_type='custom',
+        has_report_block=False,
+        has_dashboard_column_block=False,
+        has_details_block=True,
+        custom_label=_('Action dependencies'),
+    )
+    register(
+        'attribute',
+        field_type='custom',
+        has_report_block=True,
+        has_dashboard_column_block=True,
+        has_details_block=True,
+        details_block_class='actions.blocks.action_content_blocks.ActionContentAttributeTypeBlock',
+        report_block_class='reports.blocks.action_content.ActionAttributeTypeReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionAttributeTypeReportFieldFormatter',
+        dashboard_column_block_class='actions.blocks.action_dashboard.FieldColumnBlock',
+    )
+    register(
+        'official_name',
+        details_block_class='actions.blocks.action_content_blocks.ActionOfficialNameBlock',
+        has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'primary_org',
+        field_type='single',
+        has_dashboard_column_block=True,
+        dashboard_column_block_class_name='OrganizationColumnBlock',
+        has_details_block=False,
+        report_formatter_class='reports.report_formatters.ActionSingleRelatedModelFieldFormatter',
+    )
+    register(
+        'related_indicators',
+        field_type='many',
+        dashboard_column_block_class_name='IndicatorsColumnBlock',
+        report_formatter_class='reports.report_formatters.ActionIndicatorsFormatter',
+    )
+    register(
+        'merged_actions',
+        field_type='many',
+        custom_label=_('Merged actions'),
+        has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'lead_paragraph',
+        field_type='primitive',
+        has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'contact_persons',
+        'links',
+        'related_actions',
+        'schedule',
+        field_type='many',
+        has_dashboard_column_block=False,
+        has_report_block=False,
+    )
+    register(
+        'start_date',
+        'end_date',
+        has_details_block=False,
+        has_report_block=True,
+        report_formatter_class='reports.report_formatters.ActionDateFieldFormatter',
+    )
+    register(
+        'updated_at',
+        has_details_block=False,
+        has_report_block=True,
+        report_formatter_class='reports.report_formatters.ActionDateTimeFieldFormatter',
+    )
+    register(
+        'manual_status_reason',
+        has_details_block=False,
+        has_dashboard_column_block=False,
+    )
+    register(
+        'implementation_phase',
+        field_type='single',
+        has_details_block=False,
+        report_block_class='reports.blocks.action_content.ActionImplementationPhaseReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionImplementationPhaseReportFieldFormatter'
+    )
+    register(
+        'status',
+        field_type='single',
+        has_details_block=False,
+        report_block_class='reports.blocks.action_content.ActionStatusReportFieldBlock',
+        report_formatter_class='reports.report_formatters.ActionStatusReportFieldFormatter'
+    )
+    register(
+        'identifier',
+        'name',
+        field_type='primitive',
+        has_details_block=False,
+    )
+    register(
+        'description',
+        has_dashboard_column_block=False,
+    )
+
+
+initialize()

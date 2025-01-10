@@ -1,14 +1,14 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-
-from xlsxwriter.workbook import Worksheet
-from xlsxwriter.format import Format
-
-from typing import Any, Sequence
 
 import typing
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from typing import Any, Sequence
+
 if typing.TYPE_CHECKING:
+    from xlsxwriter.format import Format
+    from xlsxwriter.workbook import Worksheet
+
     from reports.spreadsheets.excel_report import ExcelFormats
 
 
@@ -35,7 +35,7 @@ class CursorWriter:
             default_format: Format | None = None,
             start: tuple[int, int] = (0, 0),
             width: int | None = None,
-            merge: bool =False
+            merge: bool =False,
     ):
         self.default_format = default_format
         self.worksheet = worksheet

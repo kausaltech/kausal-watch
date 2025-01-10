@@ -7,14 +7,29 @@
     {% include "modeladmin/includes/header_with_history.html" with title=view.get_page_title subtitle=view.get_page_subtitle icon=view.header_icon merged=1 latest_log_entry=latest_log_entry history_url=history_url description=view.get_description %}
 {% endblock %}
 
-
 {% block extra_js %}
     {{ block.super }}
     {# Copied from wagtail/admin/templates/wagtailadmin/pages/edit.html #}
     <script>
+        {# FIXME: This will break eventually. #}
+        {# https://docs.wagtail.org/en/stable/releases/5.2.html#window-updatefootersavewarning-global-util-removed #}
+        window.updateFooterSaveWarning = (formDirty, commentsDirty) => {
+          if (!formDirty && !commentsDirty) {
+            document.dispatchEvent(new CustomEvent('w-unsaved:clear'));
+          } else {
+            const [type] = [
+              formDirty && commentsDirty && 'all',
+              commentsDirty && 'comments',
+              formDirty && 'edits',
+            ].filter(Boolean);
+            document.dispatchEvent(new CustomEvent('w-unsaved:add', { detail: { type } }));
+          }
+        };
+
         $(function() {
             /* Make user confirm before leaving the editor if there are unsaved changes */
             {% trans "This page has unsaved changes." as confirmation_message %}
+            {# FIXME: enableDirtyFormCheck is deprecated #}
             enableDirtyFormCheck(
                 'div.content > form',
                 {
@@ -38,39 +53,20 @@
     {% endif %}
 {% endblock %}
 
-{# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
-{% block footer %}
-    <footer class="footer">
-        <nav aria-label="{% trans 'Actions' %}">
-        <ul>
-            <li class="actions actions--primary footer__container">
-                {# This would be the form_actions block #}
-                <div class="dropdown dropup dropdown-button match-width {% if view.view_name == 'revisions_revert' %}warning{% endif %}">
-                    {% if action_menu %}
-                    {{ action_menu.render_html }}
-                    {% else %}
-                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
-                        <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
-                    </button>
+{% block more_action_items %}
+    {% if user_can_delete %}
+        <a href="{{ view.delete_url }}" class="button">{% trans "Delete" %}</a>
+    {% endif %}
 
-                    <div class="dropdown-toggle icon icon-arrow-up"></div>
-                    <ul>
-                        <li>
-                            <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
-                                <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
-                            </button>
-                        </li>
-                        {% if user_can_delete %}
-                        {# TODO: Is there a reason this is a member of `view` instead of the context? #}
-                        <li><a href="{{ view.delete_url }}" class="shortcut">{% trans "Delete" %}</a></li>
-                        {% endif %}
-                    </ul>
-                    {% endif %}
-                </div>
-                {# end of form_actions block #}
-            </li>
-            {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
-        </ul>
-        </nav>
-    </footer>
+    <button
+        type="submit"
+        class="button action-save button-longrunning w-w-full"
+        data-controller="w-progress"
+        data-action="w-progress#activate"
+        data-w-progress-active-value="{% trans 'Saving…' %}"
+        name="_continue"
+    >
+        {% icon name="spinner" %}
+        <em data-w-progress-target="label">{% trans 'Save and continue editing' %}</em>
+    </button>
 {% endblock %}

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.utils.formats import date_format
 from django.utils.translation import get_language
 from django.utils.translation.trans_real import DjangoTranslation
+
 from jinja2 import FileSystemLoader, StrictUndefined
 from jinja2.sandbox import SandboxedEnvironment
 from sentry_sdk import capture_exception
@@ -26,8 +27,8 @@ def make_jinja_environment():
     env = SandboxedEnvironment(
         trim_blocks=True, lstrip_blocks=True, undefined=StrictUndefined, loader=loader,
         extensions=[
-            'jinja2.ext.i18n'
-        ]
+            'jinja2.ext.i18n',
+        ],
     )
     # In order to use gettext and related functions, we need to install them ourselves
     trans = DjangoTranslation(get_language(), 'notifications')

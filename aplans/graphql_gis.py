@@ -1,10 +1,10 @@
 import json
+
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import GEOSGeometry
-from graphql.language import ast
 from graphene.types import Scalar
 from graphene_django.converter import convert_django_field
-
+from graphql.language import ast
 
 # GIS-related types copied from https://github.com/EverWinter23/graphene-gis
 
@@ -13,7 +13,7 @@ class GISScalar(Scalar):
     def geom_typeid(self):
         raise NotImplementedError(
             "GEOSScalar is an abstract class and doesn't have a 'geom_typeid'. \
-            Instantiate a concrete subtype instead."
+            Instantiate a concrete subtype instead.",
         )
 
     @staticmethod
@@ -57,7 +57,7 @@ GIS_FIELD_SCALAR = {
     "PointField": PointScalar,
     "LineStringField": LineStringScalar,
     "PolygonField": PolygonScalar,
-    "GeometryField": GISScalar
+    "GeometryField": GISScalar,
 }
 
 
@@ -68,5 +68,5 @@ GIS_FIELD_SCALAR = {
 def gis_converter(field, registry=None):
     class_name = field.__class__.__name__
     return GIS_FIELD_SCALAR[class_name](
-        required=not field.null, description=field.help_text
+        required=not field.null, description=field.help_text,
     )

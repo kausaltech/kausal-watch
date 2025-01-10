@@ -1,10 +1,12 @@
 import json
-import pytest
+
 from django.conf import settings
 
+import pytest
+
 from actions.models import AttributeType
-from pages.models import StaticPage
 from admin_site.tests.factories import ClientPlanFactory
+from pages.models import StaticPage
 
 pytestmark = pytest.mark.django_db
 
@@ -26,7 +28,7 @@ def menu_query(menu_field='mainMenu', with_descendants=False):
         with_descendants_str = 'true'
     else:
         with_descendants_str = 'false'
-    return '''
+    return """
         query($plan: ID!) {
           plan(id: $plan) {
             %(menu)s {
@@ -43,7 +45,7 @@ def menu_query(menu_field='mainMenu', with_descendants=False):
             }
           }
         }
-        ''' % {'menu': menu_field, 'with_descendants_str': with_descendants_str}
+        """ % {'menu': menu_field, 'with_descendants_str': with_descendants_str}
 
 
 def add_menu_test_pages(root_page, menu_key='show_in_menus'):
@@ -90,27 +92,27 @@ def another_organization(organization_factory):
 
 def test_nonexistent_domain(graphql_client_query_data):
     data = graphql_client_query_data(
-        '''
+        """
         {
           plan(domain: "foo.localhost") {
             id
           }
         }
-        ''',
+        """,
     )
     assert data['plan'] is None
 
 
 def test_plan_exists(graphql_client_query_data, plan):
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             id
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     assert data['plan']['id'] == plan.identifier
 
@@ -121,14 +123,14 @@ def test_plan_admin_url(graphql_client_query_data, plan, show_admin_link):
     plan.features.show_admin_link = show_admin_link
     plan.features.save()
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             adminUrl
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     if show_admin_link:
         admin_url = settings.ADMIN_BASE_URL
@@ -141,7 +143,7 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
     c0 = category_factory(type=category_type)
     c1 = category_factory(type=category_type, parent=c0)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             categoryTypes {
@@ -160,8 +162,8 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'plan': {
@@ -174,24 +176,24 @@ def test_categorytypes(graphql_client_query_data, plan, category_type, category_
                     'id': str(c0.id),
                     'identifier': c0.identifier,
                     'name': c0.name,
-                    'parent': None
+                    'parent': None,
                 }, {
                     'id': str(c1.id),
                     'identifier': c1.identifier,
                     'name': c1.name,
                     'parent': {
-                        'id': str(c0.id)
-                    }
-                }]
-            }]
-        }
+                        'id': str(c0.id),
+                    },
+                }],
+            }],
+        },
     }
     assert data == expected
 
 
 def test_category_types(
     graphql_client_query_data, plan, category_type_factory, attribute_type_factory,
-    attribute_type_choice_option_factory
+    attribute_type_choice_option_factory,
 ):
     ct = category_type_factory(plan=plan)
     cat1 = attribute_type_factory(scope=ct)
@@ -200,7 +202,7 @@ def test_category_types(
     cat2co1 = attribute_type_choice_option_factory(type=cat2)
     cat2co2 = attribute_type_choice_option_factory(type=cat2)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
             plan(id: $plan) {
                 categoryTypes {
@@ -218,8 +220,8 @@ def test_category_types(
                 }
             }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'plan': {
@@ -243,8 +245,8 @@ def test_category_types(
                         'name': cat2co2.name,
                     }],
                 }],
-            }]
-        }
+            }],
+        },
     }
     assert data == expected
 
@@ -252,7 +254,7 @@ def test_category_types(
 def test_plan_root_page_exists(graphql_client_query_data, plan_with_pages):
     plan = plan_with_pages
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             pages {
@@ -263,8 +265,8 @@ def test_plan_root_page_exists(graphql_client_query_data, plan_with_pages):
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     pages = data['plan']['pages']
     assert any(page['__typename'] == 'PlanRootPage' and page['id'] == str(plan.root_page.id) for page in pages)
@@ -278,7 +280,7 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_page
     ])
     plan.root_page.save()
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             pages {
@@ -293,8 +295,8 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_page
             }
           }
         }
-        ''' % " ".join(hero_data.keys()),
-        variables=dict(plan=plan.identifier)
+        """ % " ".join(hero_data.keys()),
+        variables=dict(plan=plan.identifier),
     )
     pages = data['plan']['pages']
     page = next(page for page in pages if page['__typename'] == 'PlanRootPage')
@@ -312,7 +314,7 @@ def test_plan_root_page_contains_block(graphql_client_query_data, plan_with_page
     ('footer', 'show_in_footer', True, ['subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu']),
     ('additionalLinks', 'show_in_additional_links', False, ['page1_in_menu', 'page2_in_menu']),
     ('additionalLinks', 'show_in_additional_links', True, [
-        'subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu'
+        'subpage1_in_menu', 'page1_in_menu', 'subpage2_in_menu', 'page2_in_menu',
     ]),
 ])
 def test_menu(graphql_client_query_data, menu_field, menu_key, with_descendants, expected_pages, plan_with_pages):
@@ -326,14 +328,14 @@ def test_menu(graphql_client_query_data, menu_field, menu_key, with_descendants,
     pages = add_menu_test_pages(plan.root_page, menu_key)
     data = graphql_client_query_data(
         menu_query(menu_field, with_descendants),
-        variables=dict(plan=plan.identifier)
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'plan': {
             menu_field: {
-                'items': [expected_menu_item_for_page(pages[page_name]) for page_name in expected_pages]
-            }
-        }
+                'items': [expected_menu_item_for_page(pages[page_name]) for page_name in expected_pages],
+            },
+        },
     }
     assert data == expected
 
@@ -351,7 +353,7 @@ def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
     page1.add_child(instance=page2)
     page1.add_child(instance=page3)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           plan(id: $plan) {
             footer {
@@ -366,8 +368,8 @@ def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
             }
           }
         }
-        ''',
-        variables={'plan': plan.identifier}
+        """,
+        variables={'plan': plan.identifier},
     )
     expected = {
         'plan': {
@@ -377,8 +379,8 @@ def test_footer_children_only_shown(graphql_client_query_data, plan_with_pages):
                     'children': [{
                         'id': str(page2.id),
                     }],
-                }]
-            }
-        }
+                }],
+            },
+        },
     }
     assert data == expected

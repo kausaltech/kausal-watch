@@ -1,4 +1,5 @@
 import re
+
 from wagtail.embeds.finders.base import EmbedFinder
 
 
@@ -15,7 +16,7 @@ class GenericFinder(EmbedFinder):
         self.domain_whitelist = options['domain_whitelist']
         self.title = options['title']
         self.acceptable_url_re = re.compile(
-            f'^https://([^/@:?.]+.)?({"|".join(self.domain_whitelist)})/.*'
+            f'^https://([^/@:?.]+.)?({"|".join(self.domain_whitelist)})/.*',
         )
 
     def accept(self, url):

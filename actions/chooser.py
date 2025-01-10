@@ -1,16 +1,21 @@
 from typing import Literal
 
-from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin
-from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
+from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import gettext_lazy as _
-from wagtail.search.backends import get_search_backend
 from wagtail import hooks
+from wagtail.search.backends import get_search_backend
+
+from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser, LinkedFieldMixin
+
+from aplans.types import WatchAdminRequest
+
+from budget.models import DatasetSchema
 
 from .models.action import Action
 from .models.attributes import AttributeType
 from .models.category import Category, CategoryLevel, CategoryType
 from .models.plan import Plan
-from aplans.types import WatchAdminRequest
 
 
 class WatchModelChooserBase(ModelChooserMixin):
@@ -36,7 +41,7 @@ class CategoryChooserMixin(WatchModelChooserBase):
 class CategoryChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = CategoryChooserMixin
 
-    icon = 'user'
+    icon = 'kausal-category'
     model = Category
     page_title = _("Choose a category")
     per_page = 30
@@ -70,7 +75,7 @@ class CategoryTypeChooserMixin(WatchModelChooserBase):
 class CategoryTypeChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = CategoryTypeChooserMixin
 
-    icon = 'folder-open-inverse'
+    icon = 'kausal-category'
     model = CategoryType
     page_title = _("Choose a category type")
     per_page = 30
@@ -95,9 +100,10 @@ class CategoryLevelChooserMixin(ModelChooserMixin):
     def get_unfiltered_object_list(self):
         plan = self.request.get_active_admin_plan()
         objects = CategoryLevel.objects.filter(type__plan=plan)
-        type = self.request.GET.get('type')
-        if type:
-            objects = objects.filter(type=type)
+
+        type_str = self.request.GET.get('type')
+        if type_str:
+            objects = objects.filter(type=int(type_str))
         return objects
 
     def user_can_create(self, user):
@@ -107,7 +113,7 @@ class CategoryLevelChooserMixin(ModelChooserMixin):
 class CategoryLevelChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = CategoryLevelChooserMixin
 
-    icon = 'fa-cubes'
+    icon = 'kausal-category'
     model = CategoryLevel
     page_title = _("Choose a category level")
     fields = ['order', 'name']
@@ -151,7 +157,7 @@ class ActionChooserMixin(WatchModelChooserBase):
 class ActionChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = ActionChooserMixin
 
-    icon = 'fa-cubes'
+    icon = 'kausal-action'
     model = Action
     page_title = _("Choose an action")
     per_page = 30
@@ -194,7 +200,7 @@ class PlanChooserMixin(WatchModelChooserBase):
 class PlanChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = PlanChooserMixin
 
-    icon = 'fa-cubes'
+    icon = 'kausal-plan'
     model = Plan
     page_title = _("Choose a plan")
     per_page = 30
@@ -219,8 +225,8 @@ class AttributeTypeChooserMixin(WatchModelChooserBase):
     def get_unfiltered_object_list(self):
         scope = self.request.GET.get('scope', None)
         plan = self.request.get_active_admin_plan()
-        cat_qs = AttributeType.objects.for_categories(plan)
-        act_qs = AttributeType.objects.for_actions(plan)
+        cat_qs = AttributeType.objects.get_queryset().for_categories(plan)
+        act_qs = AttributeType.objects.get_queryset().for_actions(plan)
         if scope:
             if scope == 'category':
                 qs = cat_qs
@@ -239,7 +245,7 @@ class AttributeTypeChooserMixin(WatchModelChooserBase):
 class AttributeTypeChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = AttributeTypeChooserMixin
 
-    icon = 'folder-open-inverse'
+    icon = 'kausal-attribute'
     model = AttributeType
     page_title = _("Choose a field")
     per_page = 30
@@ -268,3 +274,70 @@ class AttributeTypeChooser(AdminChooser):
 @hooks.register('register_admin_viewset')
 def register_attribute_type_chooser_viewset():
     return AttributeTypeChooserViewSet('attribute_type_chooser', url_prefix='attribute-type-chooser')
+
+
+
+class DatasetSchemaChooserMixin(WatchModelChooserBase):
+    request: WatchAdminRequest
+
+    def get_unfiltered_object_list(self):
+        plan = self.request.get_active_admin_plan()
+        scope = self.request.GET.get('scope')
+
+        if scope == 'plan':
+            content_type = ContentType.objects.get_for_model(Plan)
+            return DatasetSchema.objects.filter(
+                scopes__scope_content_type=content_type,
+                scopes__scope_id=plan.id,
+            ).distinct()
+        elif scope == 'categorytype':
+            content_type = ContentType.objects.get_for_model(CategoryType)
+            return DatasetSchema.objects.filter(
+                scopes__scope_content_type=content_type,
+                scopes__scope_id__in=plan.category_types.values_list('id', flat=True),
+            ).distinct()
+        else:
+            return DatasetSchema.objects.none()
+
+    def user_can_create(self, user):
+        return False
+
+    def get_object_string(self, obj):
+        return obj.name_i18n
+
+class DatasetSchemaChooserViewSet(ModelChooserViewSet):
+    chooser_mixin_class = DatasetSchemaChooserMixin
+    icon = 'table'
+    model = DatasetSchema
+    page_title = _("Choose a dataset schema")
+    per_page = 30
+    fields = ['name', 'unit', 'time_resolution']
+
+
+    def get_chooser_mixin_kwargs(self):
+        kwargs = super().get_chooser_mixin_kwargs()
+        kwargs['scope'] = self.request.GET.get('scope', 'plan')
+        return kwargs
+
+class DatasetSchemaChooser(AdminChooser):
+    choose_one_text = _('Choose a dataset schema')
+    choose_another_text = _('Choose another dataset schema')
+    model = DatasetSchema
+    choose_modal_url_name = 'dataset_schema_chooser:choose'
+
+    def __init__(self, /, scope: Literal['plan', 'categorytype'] = 'plan', **kwargs):
+        self.scope = scope
+        super().__init__(**kwargs)
+
+    def get_choose_modal_url(self):
+        url = super().get_choose_modal_url()
+        return f"{url}?scope={self.scope}"
+
+    def get_title(self, instance):
+        return instance.name_i18n
+
+
+
+@hooks.register('register_admin_viewset')
+def register_dataset_schema_chooser_viewset():
+    return DatasetSchemaChooserViewSet('dataset_schema_chooser', url_prefix='dataset-schema-chooser')

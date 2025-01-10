@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand, CommandError, CommandParser
+
 from actions.models import Plan
+from orgs.models import Organization
 from people.models import Person
 from users.models import User
-from orgs.models import Organization
 
 
 class Command(BaseCommand):
@@ -21,18 +22,18 @@ class Command(BaseCommand):
         if options['remove']:
             if not existing:
                 self.stderr.write(
-                    self.style.ERROR('Person with that email does not exist')
+                    self.style.ERROR('Person with that email does not exist'),
                 )
                 exit(1)
             out = existing.delete()
             self.stdout.write(
-                self.style.SUCCESS('User deleted')
+                self.style.SUCCESS('User deleted'),
             )
             exit(0)
 
         if existing:
             self.stderr.write(
-                self.style.ERROR('User with email %s already exists' % email)
+                self.style.ERROR('User with email %s already exists' % email),
             )
             exit(1)
 
@@ -47,14 +48,14 @@ class Command(BaseCommand):
                 orgs = Organization.objects.filter(name__icontains=org_name)
             if orgs.count() != 1:
                 self.stderr.write(
-                    self.style.ERROR('Invalid number of organizations matched "%s": %s' % (org_name, ', '.join([o.name for o in orgs])))
+                    self.style.ERROR('Invalid number of organizations matched "%s": %s' % (org_name, ', '.join([o.name for o in orgs]))),
                 )
                 exit(1)
             org = orgs[0]
         else:
             if not admin_plans:
                 self.stderr.write(
-                    self.style.ERROR('Unable to determine organization for user')
+                    self.style.ERROR('Unable to determine organization for user'),
                 )
                 exit(1)
             org = admin_plans[0].organization
@@ -70,5 +71,5 @@ class Command(BaseCommand):
             u.save()
 
         self.stdout.write(
-            self.style.SUCCESS('Created test user with email "%s" and organization "%s"' % (p.email, org.name))
+            self.style.SUCCESS('Created test user with email "%s" and organization "%s"' % (p.email, org.name)),
         )

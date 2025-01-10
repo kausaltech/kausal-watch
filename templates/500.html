@@ -1,16 +1,24 @@
 <!DOCTYPE html>
 {% load sentry %}
+{% load static %}
 <html lang="en" dir="ltr">
     <head>
+        <link href="{% static 'css/server-error-styles.css' %}" rel="stylesheet" />
         <meta charset="utf-8" />
         <title>Internal server error</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {% sentry_js %}
     </head>
     <body>
-        <h1>Internal server error</h1>
-
-        <h2>Sorry, there seems to be an error. Please try again soon.</h2>
+        <div id="container">
+          <div id="card">
+            <h1>Something seems to have gone wrong!</h1>
+            <h2>Sorry, there seems to be an error. Please try again soon.</h2>
+            {% if sentry_error_id %}
+                <p>Our team has been notified. Error ID: {{sentry_error_id}} </p>
+            {% endif %}
+          </div>
+        </div>
         {% sentry_init flush_replay=True event_id=sentry_error_id %}
-    </body>
+      </body>
 </html>

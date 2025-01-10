@@ -11,7 +11,7 @@ setup('authenticate', async ({ page }) => {
   await page.goto(`${baseUrl}/admin/login/`);
   await page.getByLabel('Email address').fill('test@example.com');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  
+
   const pw = await page.getByLabel('Password');
   await expect(pw).toBeVisible();
   pw.fill('test');

@@ -1,21 +1,33 @@
+from __future__ import annotations
+
 import pytest
 
 from actions.models import AttributeType
-
 from actions.tests.factories import (
-    AttributeChoiceFactory, AttributeTextFactory, AttributeRichTextFactory, AttributeTypeFactory,
-    AttributeTypeChoiceOptionFactory, CategoryLevelFactory, CategoryTypeFactory
-)
-from actions.tests.factories import (
-    ActionFactory, ActionContactFactory, CategoryFactory, PlanFactory, ActionResponsiblePartyFactory,
-    ActionStatusUpdateFactory, ActionTaskFactory, ImpactGroupActionFactory, MonitoringQualityPointFactory,
-    ActionLinkFactory
+    ActionContactFactory,
+    ActionFactory,
+    ActionLinkFactory,
+    ActionResponsiblePartyFactory,
+    ActionStatusUpdateFactory,
+    ActionTaskFactory,
+    AttributeChoiceFactory,
+    AttributeRichTextFactory,
+    AttributeTextFactory,
+    AttributeTypeChoiceOptionFactory,
+    AttributeTypeFactory,
+    CategoryFactory,
+    CategoryLevelFactory,
+    CategoryTypeFactory,
+    ImpactGroupActionFactory,
+    MonitoringQualityPointFactory,
+    PlanFactory,
 )
 from indicators.tests.factories import (
-    IndicatorFactory, ActionIndicatorFactory
+    ActionIndicatorFactory,
+    IndicatorFactory,
 )
 from people.tests.factories import (
-    PersonFactory
+    PersonFactory,
 )
 
 
@@ -101,6 +113,10 @@ def actions_with_relations_factory():
         action.save()
 
         action = get_lhs_action()
+        action.copy_of = get_rhs_action()
+        action.save()
+
+        action = get_lhs_action()
         action.related_actions.add(get_rhs_action())
 
         get_lhs_action().monitoring_quality_points.add(MonitoringQualityPointFactory())
@@ -111,7 +127,7 @@ def actions_with_relations_factory():
             ActionResponsiblePartyFactory,
             ActionStatusUpdateFactory,
             ActionTaskFactory,
-            ImpactGroupActionFactory
+            ImpactGroupActionFactory,
         ]:
             factory(action=get_lhs_action())
 

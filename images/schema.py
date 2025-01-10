@@ -1,11 +1,11 @@
-import sentry_sdk
 import graphene
 from graphql.error import GraphQLError
 from wagtail.images.models import SourceImageIOError
 
-from aplans.graphql_types import DjangoNode, replace_image_node
 import graphene_django_optimizer as gql_optimizer
+import sentry_sdk
 
+from aplans.graphql_types import DjangoNode, replace_image_node
 
 from .models import AplansImage, AplansRendition
 
@@ -32,18 +32,18 @@ class ImageNode(DjangoNode):
     rendition = graphene.Field(
         ImageRendition,
         size=graphene.String(),
-        crop=graphene.Boolean(required=False, default_value=True)
+        crop=graphene.Boolean(required=False, default_value=True),
     )
 
     class Meta:
         model = AplansImage
         fields = [
             'id', 'title', 'focal_point_x', 'focal_point_y', 'focal_point_width',
-            'focal_point_height', 'height', 'width', 'image_credit', 'alt_text'
+            'focal_point_height', 'height', 'width', 'image_credit', 'alt_text',
         ]
 
     @gql_optimizer.resolver_hints(
-        prefetch_related=('renditions',)
+        prefetch_related=('renditions',),
     )
     def resolve_rendition(root: AplansImage, info, size=None, crop=True):
         if size is not None:

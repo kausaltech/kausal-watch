@@ -1,49 +1,16 @@
 from __future__ import annotations
 
-import pytest
-from django.urls import reverse
 from itertools import permutations
-from typing import Iterable, List
 
-from actions.api import ActionSerializer, OrganizationSerializer
+from django.urls import reverse
+
+import pytest
+
+from actions.api import ActionSerializer
 from actions.tests.factories import ActionFactory
-from aplans.tests.tree import Tree, parse_tree_string
-from orgs.models import Organization
 from orgs.tests.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
-
-
-def orgs_to_trees(roots: Iterable[Organization], indent=0):
-    result: List[Tree] = []
-    for root in roots:
-        tree = Tree(root.name, indent)
-        for child in orgs_to_trees(root.get_children(), indent + 4):
-            tree.add_child(child)
-        result.append(tree)
-    return result
-
-
-def tree_to_org(tree: Tree, parent: Organization | None=None):
-    org = OrganizationFactory.create(name=tree.name, abbreviation=tree.name, parent=parent)
-    for child in tree.children:
-        tree_to_org(child, org)
-    return org
-
-
-@pytest.fixture
-def org_hierarchy():
-    trees = parse_tree_string("""
-        1
-        2
-            2.1
-            2.2
-        3
-            3.1
-            3.2
-            3.3
-    """)
-    return [tree_to_org(tree) for tree in trees]
 
 
 def test_plan_api_get(api_client, plan_list_url, plan):
@@ -90,7 +57,7 @@ PERSON_COUNT = 10
 
 
 def test_person_api_get_not_authenticated(api_client, person_list_url, action_contact_factory):
-    persons = [action_contact_factory().person for _ in range(0, PERSON_COUNT)]
+    persons = [action_contact_factory().person for _ in range(PERSON_COUNT)]
     response = api_client.get(person_list_url)
     data = response.json_data
     assert len(data['results']) == PERSON_COUNT
@@ -109,7 +76,8 @@ def test_person_api_get_for_plan_unauthenticated(api_client, person_list_url, pl
     data = response.json_data
     assert response.status_code == 403
     keys = data.keys()
-    assert len(keys) == 1 and 'detail' in keys
+    assert len(keys) == 1
+    assert 'detail' in keys
 
 
 def test_person_api_get_authenticated_and_authorized_for_single_plan(
@@ -121,7 +89,7 @@ def test_person_api_get_authenticated_and_authorized_for_single_plan(
 
     plan_not_accessible_by_admin_person = plan_factory()
 
-    persons_found = [action_contact_factory(action__plan=plan_of_admin_person).person for _ in range(0, PERSON_COUNT)]
+    persons_found = [action_contact_factory(action__plan=plan_of_admin_person).person for _ in range(PERSON_COUNT)]
     person_not_found = action_contact_factory(action__plan=plan_not_accessible_by_admin_person).person
 
     api_client.force_login(admin_person.user)
@@ -153,7 +121,8 @@ def test_person_api_get_authenticated_and_unauthorized(
     data = response.json_data
     assert response.status_code == 403
     keys = data.keys()
-    assert len(keys) == 1 and 'detail' in keys
+    assert len(keys) == 1
+    assert 'detail' in keys
 
 
 def test_person_api_get_unknown_plan(
@@ -169,7 +138,8 @@ def test_person_api_get_unknown_plan(
     data = response.json_data
     assert response.status_code == 404
     keys = data.keys()
-    assert len(keys) == 1 and 'detail' in keys
+    assert len(keys) == 1
+    assert 'detail' in keys
 
 
 def test_action_api_post_unauthenticated(
@@ -183,7 +153,7 @@ def test_action_api_put_unauthenticated(
     response = api_client.put(action_detail_url, data={
         'id': action.pk,
         'identifier': action.identifier,
-        'name': 'renamed'
+        'name': 'renamed',
     })
     assert response.status_code == 401
 
@@ -332,149 +302,12 @@ def test_action_bulk_serializer_reorder(plan, order):
     assert [a1.order == a2.order for a1, a2 in zip(actions_after_save, actions)]
 
 
-def assert_org_hierarchy(expected_hierarchy: str):
-    actual_roots = Organization.get_root_nodes()
-    actual = orgs_to_trees(actual_roots)
-    expected = parse_tree_string(expected_hierarchy)
-    # We could use this, but comparing the values as strings produces nicer error messages
-    # assert len(actual) == len(expected)
-    # assert all(a.equals(e) for (a, e) in zip(actual, expected))
-    actual_str = ''.join(str(tree) for tree in actual)
-    expected_str = ''.join(str(tree) for tree in expected)
-    assert actual_str == expected_str
+def test_category_api_get(api_client, category_list_url, category):
+    response = api_client.get(category_list_url)
+    data = response.json_data
+    assert data['count'] == 1
+    assert len(data['results']) == 1
 
-
-def update_org_hierarchy(goal_string: str):
-    # Only handles moving subtrees around for now
-    uuid_for_name: dict[str, str | None]  = {'<dummy>': None}
-    goal = Tree('<dummy>', 0)
-    for root in parse_tree_string(goal_string, reset_indent=False):
-        root.reset_indent(4)
-        goal.add_child(root)
-        for node in root.traverse():
-            uuid_for_name[node.name] = str(Organization.objects.get(name=node.name).uuid)
-    current = Tree('<dummy>', 0)
-    for child in orgs_to_trees(Organization.get_root_nodes(), 4):
-        current.add_child(child)
-    serializer_input = []
-    for goal_node in goal.traverse():
-        current_node = current.get_node(goal_node.name)
-        assert current_node
-        changed_fields = []
-        for field in ('parent', 'left_sibling'):
-            current_value = getattr(current_node, field)
-            current_value = current_value.name if current_value else None
-            goal_value = getattr(goal_node, field)
-            goal_value = goal_value.name if goal_value else None
-            if current_value != goal_value:
-                changed_fields.append(field)
-        if changed_fields:
-            node_data = OrganizationSerializer(Organization.objects.get(name=goal_node.name)).data
-            for field in changed_fields:
-                goal_value = getattr(goal_node, field)
-                goal_uuid_str = uuid_for_name[goal_value.name] if goal_value else None
-                assert node_data[field] != goal_uuid_str
-                node_data[field] = goal_uuid_str if goal_uuid_str else None
-            serializer_input.append(node_data)
-    serializer = OrganizationSerializer(many=True, data=serializer_input, instance=Organization.objects.all())
-    assert serializer.is_valid()
-    serializer.save()
-
-
-def test_organization_bulk_serializer_move_org1_after_org2(org_hierarchy):
-    expected = """
-        2
-            2.1
-            2.2
-        1
-        3
-            3.1
-            3.2
-            3.3
-    """
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
-
-
-def test_organization_bulk_serializer_move_org1_after_org21(org_hierarchy):
-    expected = """
-        2
-            2.1
-            1
-            2.2
-        3
-            3.1
-            3.2
-            3.3
-    """
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
-
-
-def test_organization_bulk_serializer_move_org22_after_org3(org_hierarchy):
-    expected = """
-        1
-        2
-            2.1
-        3
-            3.1
-            3.2
-            3.3
-        2.2
-    """
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
-
-
-def test_organization_bulk_serializer_move_org3_below_org22(org_hierarchy):
-    expected = """
-        1
-        2
-            2.1
-            2.2
-                3
-                    3.1
-                    3.2
-                    3.3
-    """
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
-
-
-@pytest.mark.parametrize('order', permutations(range(3)))
-def test_organization_bulk_serializer_move_children_of_org3(org_hierarchy, order):
-    expected = f"""
-        1
-        2
-            2.1
-            2.2
-        3
-            3.{order[0]+1}
-            3.{order[1]+1}
-            3.{order[2]+1}
-    """
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
-
-
-@pytest.mark.parametrize('order', permutations(range(3)))
-def test_organization_bulk_serializer_move_roots(org_hierarchy, order):
-    subtrees = [
-        """
-        1
-        """,
-        """
-        2
-            2.1
-            2.2
-        """,
-        """
-        3
-            3.1
-            3.2
-            3.3
-        """,
-    ]
-    expected = subtrees[order[0]] + subtrees[order[1]] + subtrees[order[2]]
-    update_org_hierarchy(expected)
-    assert_org_hierarchy(expected)
+    obj = data['results'][0]
+    assert obj['name'] == category.name
+    assert obj['identifier'] == category.identifier

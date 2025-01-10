@@ -24,7 +24,7 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=organization)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!, $withAncestors: Boolean!) {
           planOrganizations(plan: $plan, withAncestors: $withAncestors) {
             id
@@ -38,11 +38,11 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
             }
           }
         }
-        ''',
+        """,
         variables={
             'plan': plan.identifier,
             'withAncestors': with_ancestors,
-        }
+        },
     )
     expected_organizations = []
     if with_ancestors:
@@ -67,6 +67,6 @@ def test_planorganizations(graphql_client_query_data, with_ancestors):
         },
     })
     expected = {
-        'planOrganizations': expected_organizations
+        'planOrganizations': expected_organizations,
     }
     assert data == expected

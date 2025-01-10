@@ -1,4 +1,4 @@
-from typing import Mapping, Any
+from typing import Any, Mapping
 
 from wagtail import hooks
 from wagtail.admin.site_summary import SummaryItem

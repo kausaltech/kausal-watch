@@ -1,5 +1,5 @@
-from typing import Tuple
 import typing
+from typing import Tuple
 
 if typing.TYPE_CHECKING:
     from wagtail.blocks import Block
@@ -29,7 +29,7 @@ def modeladmin_register(cls):
     return wagtail_modeladmin_register(cls)
 
 
-BlockDef = Tuple[str, 'Block']
+BlockDef = tuple[str, 'Block']
 
 body_block_registry: dict[str | None, list[BlockDef]] = dict()
 

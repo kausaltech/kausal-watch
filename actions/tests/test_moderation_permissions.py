@@ -34,13 +34,13 @@ def editor_user_without_publishing_rights_single(plan_with_single_task_moderatio
 
 def test_action_moderator_has_publishing_rights(moderator_user_with_publishing_rights, plan_with_single_task_moderation):
     assert moderator_user_with_publishing_rights.can_publish_action(
-        plan_with_single_task_moderation.actions.first()
+        plan_with_single_task_moderation.actions.first(),
     )
 
 
 def test_action_moderator_has_no_publishing_rights(moderator_user_without_publishing_rights, plan_with_double_task_moderation):
     assert not moderator_user_without_publishing_rights.can_publish_action(
-        plan_with_double_task_moderation.actions.first()
+        plan_with_double_task_moderation.actions.first(),
     )
 
 
@@ -48,13 +48,13 @@ def test_action_editor_has_no_publishing_rights(
         editor_user_without_publishing_rights_single,
         editor_user_without_publishing_rights_double,
         plan_with_single_task_moderation,
-        plan_with_double_task_moderation
+        plan_with_double_task_moderation,
 ):
     assert not editor_user_without_publishing_rights_single.can_publish_action(
-        plan_with_single_task_moderation.actions.first()
+        plan_with_single_task_moderation.actions.first(),
     )
     assert not editor_user_without_publishing_rights_double.can_publish_action(
-        plan_with_double_task_moderation.actions.first()
+        plan_with_double_task_moderation.actions.first(),
     )
 
 
@@ -62,13 +62,13 @@ def test_action_editor_has_no_approval_rights(
         editor_user_without_publishing_rights_single,
         editor_user_without_publishing_rights_double,
         plan_with_single_task_moderation,
-        plan_with_double_task_moderation
+        plan_with_double_task_moderation,
 ):
     assert not editor_user_without_publishing_rights_single.can_approve_action(
-        plan_with_single_task_moderation.actions.first()
+        plan_with_single_task_moderation.actions.first(),
     )
     assert not editor_user_without_publishing_rights_double.can_approve_action(
-        plan_with_double_task_moderation.actions.first()
+        plan_with_double_task_moderation.actions.first(),
     )
 
 
@@ -76,11 +76,11 @@ def test_action_moderator_has_approval_rights(
         moderator_user_with_publishing_rights,
         moderator_user_without_publishing_rights,
         plan_with_single_task_moderation,
-        plan_with_double_task_moderation
+        plan_with_double_task_moderation,
 ):
     assert moderator_user_with_publishing_rights.can_approve_action(
-        plan_with_single_task_moderation.actions.first()
+        plan_with_single_task_moderation.actions.first(),
     )
     assert moderator_user_without_publishing_rights.can_approve_action(
-        plan_with_double_task_moderation.actions.first()
+        plan_with_double_task_moderation.actions.first(),
     )

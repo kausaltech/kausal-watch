@@ -1,42 +1,67 @@
-from django.core.exceptions import ValidationError
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, cast
+
 from django.contrib.admin import SimpleListFilter
+from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.forms import ModelChoiceField
+from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import (
-    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList,
-)
 from wagtail.admin.forms.models import WagtailAdminModelForm
+from wagtail.admin.panels import (
+    FieldPanel,
+    FieldRowPanel,
+    InlinePanel,
+    MultiFieldPanel,
+    ObjectList,
+)
+from wagtail.admin.panels.base import Panel
+
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .models import Category, CategoryType, CommonCategory, CommonCategoryType
-from admin_site.wagtail import (
-    ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
-    CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
-    get_translation_tabs
-)
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
+
+from actions.blocks.mixins import ActionListPageBlockFormMixin
+from admin_site.utils import admin_req
+from admin_site.wagtail import (
+    AplansAdminModelForm,
+    AplansCreateView,
+    AplansEditView,
+    AplansModelAdmin,
+    AplansTabbedInterface,
+    CondensedInlinePanel,
+    DatasetButtonMixin,
+    InitializeFormWithPlanMixin,
+    PlanFilteredFieldPanel,
+    get_translation_tabs,
+)
+
+from .models import Category, CategoryType, CommonCategory, CommonCategoryType
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 
 class CategoryTypeFilter(SimpleListFilter):
     title = _('Category type')
     parameter_name = 'category_type'
 
-    def lookups(self, request, model_admin):
-        user = request.user
+    def lookups(self, request: HttpRequest, model_admin):
+        user = admin_req(request).user
         plan = user.get_active_admin_plan()
-        choices = [(i.id, i.name) for i in plan.category_types.all()]
+        choices = [(i.pk, i.name) for i in plan.category_types.all()]
         return choices
 
     def queryset(self, request, queryset):
         if self.value() is not None:
             return queryset.filter(type=self.value())
-        else:
-            return queryset
+        return queryset
 
 
 class CommonCategoryTypeFilter(SimpleListFilter):
@@ -47,14 +72,13 @@ class CommonCategoryTypeFilter(SimpleListFilter):
         # user = request.user
         # plan = user.get_active_admin_plan()
         # choices = [(i.id, i.name) for i in plan.category_types.all()]
-        choices = [(i.id, i.name) for i in CommonCategoryType.objects.all()]
+        choices = [(i.pk, i.name) for i in CommonCategoryType.objects.all()]
         return choices
 
     def queryset(self, request, queryset):
         if self.value() is not None:
             return queryset.filter(type=self.value())
-        else:
-            return queryset
+        return queryset
 
 
 class CategoryTypeCreateView(InitializeFormWithPlanMixin, AplansCreateView):
@@ -68,9 +92,11 @@ class CategoryTypeEditView(InitializeFormWithPlanMixin, AplansEditView):
 class CategoryTypeDeleteView(DeleteView):
     def delete_instance(self):
         # When deleting a category type which is an instantiation of a common category type, remove link from plan
+        assert isinstance(self.instance, CategoryType)
         plan = self.instance.plan
         cct = self.instance.common
-        plan.common_category_types.remove(cct)
+        if cct is not None:
+            plan.common_category_types.remove(cct)
         return super().delete_instance()
 
 
@@ -95,7 +121,7 @@ class CategoryTypePermissionHelper(PermissionHelper):
 @modeladmin_register
 class CategoryTypeAdmin(AplansModelAdmin):
     model = CategoryType
-    menu_icon = 'kausal-categories'
+    menu_icon = 'kausal-category'
     menu_label = _('Category types')
     menu_order = 1100
     list_display = ('name',)
@@ -145,8 +171,8 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return qs.filter(plan=plan)
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(CategoryType)
         panels = list(self.panels)
         if instance and instance.common:
             panels.insert(1, FieldPanel('common'))
@@ -158,11 +184,13 @@ class CategoryTypeAdmin(AplansModelAdmin):
         return CategoryTypeEditHandler(tabs, base_form_class=CategoryTypeForm)
 
 
-class CategoryAdminForm(WagtailAdminModelForm):
+class CategoryAdminForm(WagtailAdminModelForm[Category]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # For the parent field, only show categories of the same type
-        self.fields['parent'].queryset = self.fields['parent'].queryset.filter(type=self.instance.type)
+        parent_field = cast(ModelChoiceField[Category], self.fields['parent'])
+        assert parent_field.queryset is not None
+        parent_field.queryset = parent_field.queryset.filter(type=self.instance.type)
 
     def clean_identifier(self):
         # Since we hide the category type in the form, `validate_unique()` will be called with `exclude` containing
@@ -193,8 +221,8 @@ class CategoryAdminForm(WagtailAdminModelForm):
 
 class CategoryEditHandler(AplansTabbedInterface):
     def get_form_class(self):
-        request = ctx_request.get()
-        instance = ctx_instance.get()
+        request = ctx_request.get_admin_request()
+        instance = ctx_instance.get_as_type(Category)
         user = request.user
         plan = request.get_active_admin_plan()
         if instance is not None:
@@ -208,7 +236,7 @@ class CategoryEditHandler(AplansTabbedInterface):
         self.base_form_class = type(
             'CategoryAdminForm',
             (CategoryAdminForm,),
-            {**attribute_fields, '_user': user}
+            {**attribute_fields, '_user': user},
         )
         form_class = super().get_form_class()
         if instance and instance.common:
@@ -241,6 +269,8 @@ class CategoryTypeEditHandler(AplansTabbedInterface):
 
 
 class CategoryTypeQueryParameterMixin:
+    request: HttpRequest
+
     @property
     def index_url(self):
         return append_query_parameter(self.request, super().index_url, 'category_type')
@@ -290,7 +320,7 @@ class CategoryDeleteView(CategoryTypeQueryParameterMixin, DeleteView):
     pass
 
 
-class CategoryAdminButtonHelper(ButtonHelper):
+class CategoryAdminButtonHelper(DatasetButtonMixin, ButtonHelper):
     # TODO: duplicated as AttributeTypeAdminButtonHelper
     def add_button(self, *args, **kwargs):
         """
@@ -319,6 +349,12 @@ class CategoryAdminButtonHelper(ButtonHelper):
         data['url'] = append_query_parameter(self.request, data['url'], 'category_type')
         return data
 
+    def get_buttons_for_obj(self, obj, exclude=None, classnames_add=None, classnames_exclude=None):
+        buttons = super().get_buttons_for_obj(obj, exclude, classnames_add, classnames_exclude)
+        dataset_buttons = self.dataset_buttons(obj, classnames_add or [], classnames_exclude)
+        buttons.extend(dataset_buttons)
+        return buttons
+
 
 class CategoryAdminMenuItem(ModelAdminMenuItem):
     def is_shown(self, request):
@@ -340,12 +376,12 @@ class CategoryPermissionHelper(PermissionHelper):
 @modeladmin_register
 class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Categories')
-    menu_icon = 'kausal-categories'
+    menu_icon = 'kausal-category'
     list_display = ('__str__', 'parent', 'type')
     list_filter = (CategoryTypeFilter,)
     model = Category
 
-    panels = [
+    panels: list[FieldPanel[Any]] = [
         PlanFilteredFieldPanel('parent'),
         FieldPanel('name'),
         FieldPanel('identifier'),
@@ -362,6 +398,19 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
     button_helper_class = CategoryAdminButtonHelper
     permission_helper_class = CategoryPermissionHelper
 
+    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
+    # wagtailorderable hasn't accounted for this.
+    def index_order(self, obj):
+        return mark_safe(
+            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
+            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
+            '<use href="#icon-grip"></use>'
+            '</svg>'
+            '</div>',
+        )
+    index_order.admin_order_field = 'order'
+    index_order.short_description = _('Order')
+
     def get_menu_item(self, order=None):
         return CategoryAdminMenuItem(self, order or self.get_menu_order())
 
@@ -373,7 +422,7 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(Category)
         panels = list(self.panels)
         # If the category type doesn't have semantic identifiers, we
         # hide the whole panel.
@@ -386,14 +435,17 @@ class CategoryAdmin(OrderableMixin, AplansModelAdmin):
         main_attribute_panels, i18n_attribute_panels = instance.get_attribute_panels(request.user)
         panels += main_attribute_panels
 
+        all_panels = cast(list[Panel[Any]], panels)
+
         if request.user.is_superuser:
             # Didn't use CondensedInlinePanel for the following because there is a bug:
             # When editing a CommonCategory that already has an icon, clicking "save" will yield a validation error if
             # and only if the inline instance is collapsed.
-            panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
+            all_panels.append(InlinePanel('icons', heading=_("Icons"), panels=[
                 FieldPanel('language'),
                 FieldPanel('image'),
             ]))
+            all_panels.append(FieldPanel('kausal_paths_node_uuid'))
 
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -423,7 +475,7 @@ class CommonCategoryTypePermissionHelper(PermissionHelper):
 @modeladmin_register
 class CommonCategoryTypeAdmin(AplansModelAdmin):
     model = CommonCategoryType
-    menu_icon = 'kausal-categories'
+    menu_icon = 'kausal-category'
     menu_label = _('Common category types')
     menu_order = 1101
     permission_helper_class = CommonCategoryTypePermissionHelper
@@ -454,7 +506,7 @@ class CommonCategoryTypeAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(CommonCategoryType)
         panels = list(self.panels)
         tabs = [ObjectList(panels, heading=_('Basic information'))]
 
@@ -561,7 +613,7 @@ class CommonCategoryEditHandler(AplansTabbedInterface):
 @modeladmin_register
 class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     menu_label = _('Common categories')
-    menu_icon = 'kausal-categories'  # FIXME
+    menu_icon = 'kausal-category'
     list_display = ('name', 'identifier', 'type')
     list_filter = (CommonCategoryTypeFilter,)
     model = CommonCategory
@@ -581,12 +633,25 @@ class CommonCategoryAdmin(OrderableMixin, AplansModelAdmin):
     delete_view_class = CommonCategoryDeleteView
     button_helper_class = CommonCategoryAdminButtonHelper
 
+    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
+    # wagtailorderable hasn't accounted for this.
+    def index_order(self, obj):
+        return mark_safe(
+            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
+            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
+            '<use href="#icon-grip"></use>'
+            '</svg>'
+            '</div>',
+        )
+    index_order.admin_order_field = 'order'
+    index_order.short_description = _('Order')
+
     def get_menu_item(self, order=None):
         return CommonCategoryAdminMenuItem(self, order or self.get_menu_order())
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(CommonCategory)
         panels = list(self.panels)
 
         if request.user.is_superuser:

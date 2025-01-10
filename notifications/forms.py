@@ -2,7 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.widgets import SwitchInput
 
-from .models import GeneralPlanAdminNotificationPreferences, ActionContactPersonNotificationPreferences
+from .models import ActionContactPersonNotificationPreferences, GeneralPlanAdminNotificationPreferences
 
 
 class NotificationPreferencesForm(forms.Form):
@@ -53,11 +53,11 @@ class NotificationPreferencesForm(forms.Form):
 
         if model is ActionContactPersonNotificationPreferences:
             return model.objects.filter(
-                pk__in=self.person.actioncontactperson_set.values_list('notification_preferences')
+                pk__in=self.person.actioncontactperson_set.values_list('notification_preferences'),
             )
         elif model is GeneralPlanAdminNotificationPreferences:
             return model.objects.filter(
-                pk__in=self.person.general_admin_plans_ordered.values_list('notification_preferences')
+                pk__in=self.person.general_admin_plans_ordered.values_list('notification_preferences'),
             )
         raise ValueError(f"Unexpected model {model}")
 

@@ -1,109 +1,48 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
-import reversion
-from autoslug.fields import AutoSlugField
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from typing import TYPE_CHECKING
+
+import reversion
 from django.contrib.contenttypes.models import ContentType
 from django.db import models, transaction
 from django.db.models import Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalManyToManyDescriptor
 from reversion.models import Version
-from reversion.revisions import _current_frame, add_to_revision, create_revision
-from sentry_sdk import capture_message
-from typing import TYPE_CHECKING
+from reversion.revisions import _current_frame, add_to_revision, create_revision  # type: ignore
 from wagtail.fields import StreamField
 from wagtail.blocks.stream_block import StreamValue
 
-from .spreadsheets import ExcelReport
+from autoslug.fields import AutoSlugField
+from sentry_sdk import capture_message
+
 from aplans.utils import PlanRelatedModel
+
+from actions.action_fields import action_registry
 from actions.models.action import Action
 from actions.models.attributes import Attribute
+from pages.models import ActionListPage
 from reports.blocks.action_content import ReportFieldBlock
 
 # The following model is for very specialized use and is only imported here so that Django finds it
 from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization  # noqa: F401
 
+from .spreadsheets import ExcelReport
+from .types import LiveVersions, SerializedActionVersion
 
 if TYPE_CHECKING:
-    from django.db.models.manager import RelatedManager
-    from actions.models import AttributeType
+    from datetime import datetime
+
+    from wagtail.blocks.struct_block import StructValue
+
+    from kausal_common.models.types import FK
+    from kausal_common.users import UserOrAnon
+
+    from actions.models import AttributeType, Plan
     from users.models import User
-
-
-AttributePath = tuple[int, int, int]
-
-
-@dataclass
-class SerializedVersion:
-    type: type
-    data: dict
-    str: str
-
-    @classmethod
-    def from_version(cls, version: Version) -> SerializedVersion:
-        return cls(
-            type=version.content_type.model_class(),
-            data=version.field_dict,
-            str=version.object_repr,
-        )
-
-    @classmethod
-    def from_version_polymorphic(cls, version: Version) -> SerializedVersion:
-        model = version.content_type.model_class()
-        if issubclass(model, Attribute):
-            return SerializedAttributeVersion.from_version(version)
-        elif issubclass(model, Action):
-            return SerializedActionVersion.from_version(version)
-        return cls.from_version(version)
-
-
-@dataclass
-class SerializedAttributeVersion(SerializedVersion):
-    attribute_path: AttributePath
-
-    @classmethod
-    def from_version(cls, version: Version) -> SerializedAttributeVersion:
-        base = SerializedVersion.from_version(version)
-        assert issubclass(base.type, Attribute)
-        attribute_path = (
-            version.field_dict['content_type_id'],
-            version.field_dict['object_id'],
-            version.field_dict['type_id']
-        )
-        return cls(
-            **asdict(base),
-            attribute_path=attribute_path,
-        )
-
-
-@dataclass
-class SerializedActionVersion(SerializedVersion):
-    completed_at: datetime | None
-    completed_by: str | None
-
-    @classmethod
-    def from_version(cls, version: Version) -> SerializedActionVersion:
-        base = SerializedVersion.from_version(version)
-        assert issubclass(base.type, Action)
-        completed_at = None
-        completed_by = None
-        if hasattr(version, 'revision'):
-            completed_at = version.revision.date_created
-            completed_by = str(version.revision.user) if version.revision.user else ''
-        return cls(
-            **asdict(base),
-            completed_at=completed_at,
-            completed_by=completed_by,
-        )
-
-
-@dataclass
-class LiveVersions:
-    actions: list[Version] = field(default_factory=list)
-    related: list[Version] = field(default_factory=list)
 
 
 class NoRevisionSave(Exception):
@@ -111,10 +50,10 @@ class NoRevisionSave(Exception):
 
 
 @reversion.register()
-class ReportType(models.Model, PlanRelatedModel):
-    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')
+class ReportType(PlanRelatedModel):
+    plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
+    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
     public_fields = [
         'id', 'plan', 'name', 'reports',
@@ -123,6 +62,56 @@ class ReportType(models.Model, PlanRelatedModel):
     class Meta:
         verbose_name = _('report type')
         verbose_name_plural = _('report types')
+
+    @staticmethod
+    def generate_for_plan_dashboard(plan: Plan, user: UserOrAnon) -> ReportType:
+        report_type = ReportType(plan=plan, name='Dashboard export', fields=None)
+        action_list_page = plan.root_page.get_children().type(ActionListPage).get().specific
+        dashboard_blocks = [
+            (x.block_type, x.value)
+            for x in action_list_page.dashboard_columns
+        ]
+        dashboard_blocks = [
+            # filter out non-public attribute fields
+            (bt, val) for bt, val in dashboard_blocks
+            if bt != 'attribute' or val['attribute_type'].instances_visible_for == 'public'
+        ]
+        def get_value(field_id: str, value: StructValue) -> StructValue | dict:
+            if field_id == 'attribute':
+                # Once the report block and the dashboard column block share the implementation,
+                # special cases like these can be removed
+                return {'attribute_type': value['attribute_type'].pk}
+            return action_registry.get_block('report' , field_id).get_default()
+
+        stream_data = [
+            {
+                'type': f,
+                'value': get_value(f, value),
+            }
+            for f, value in dashboard_blocks
+            # TODO: handle these fields in reports by making
+            # them blocks that are required
+            # (Now they are default fields, always included in reports)
+            if f not in ['identifier', 'name']
+        ]
+
+        report_type.fields = StreamValue(
+            stream_block=report_type.fields.stream_block,
+            stream_data=stream_data,
+            is_lazy=True,
+        )
+        return report_type
+
+    def generate_incomplete_report(self) -> Report:
+        return Report(
+            name='Dashboard export',
+            type=self,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date(),
+            is_complete=False,
+            is_public=True,
+            fields=None,
+        )
 
     def get_fields_for_type(self, block_type: str) -> list[StreamValue.StreamChild]:
         return [f for f in self.fields if f.block_type == block_type]
@@ -137,8 +126,8 @@ class ReportType(models.Model, PlanRelatedModel):
 
 
 @reversion.register()
-class Report(models.Model, PlanRelatedModel):
-    type = models.ForeignKey(ReportType, on_delete=models.CASCADE, related_name='reports')
+class Report(PlanRelatedModel):
+    type: FK[ReportType] = models.ForeignKey(ReportType, on_delete=models.CASCADE, related_name='reports')
     name = models.CharField(max_length=100, verbose_name=_('name'))
     identifier = AutoSlugField(
         always_update=True,
@@ -158,17 +147,26 @@ class Report(models.Model, PlanRelatedModel):
 
     # The fields are copied from the report type at the time of completion of this report. These are not currently used anywhere but we
     # might need them in the future to take care of certain edge cases wrt. schema changes
-    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True, use_json_field=True)
+    fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
 
     public_fields = [
         'type', 'name', 'identifier', 'start_date', 'end_date', 'fields',
     ]
 
-    type: RelatedManager[ReportType]
+    # Non-persisted fields used only for action dashboard UI reports
+    disable_title_sheet: bool
+    disable_summary_sheets: bool
+    disable_macros: bool
 
     class Meta:
         verbose_name = _('report')
         verbose_name_plural = _('reports')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.disable_title_sheet = False
+        self.disable_summary_sheets = False
+        self.disable_macros = False
 
     def __str__(self):
         return f'{self.type.name}: {self.name}'
@@ -180,26 +178,27 @@ class Report(models.Model, PlanRelatedModel):
     def filter_by_plan(cls, plan, qs):
         return qs.filter(type__plan=plan)
 
-    def to_xlsx(self):
-        xlsx_exporter = ExcelReport(self)
-        self.xlsx_exporter = xlsx_exporter
-        return xlsx_exporter.generate_xlsx()
+    def get_xlsx_exporter(self) -> ExcelReport:
+        self.xlsx_exporter = ExcelReport(self)
+        return self.xlsx_exporter
 
     def _raise_complete(self):
         raise ValueError(_("The report is already marked as complete."))
 
     def get_live_versions(self) -> LiveVersions:
-        """Returns action versions and related object versions for an incomplete report
-        similar to those that would be saved to the database when completing a report.
+        """
+        Return action versions and related object versions for an incomplete report.
+
+        The versions are similar to those that would be saved to the database when completing a report.
         """
         if self.is_complete:
             self._raise_complete()
-
         actions_to_snapshot = (
-            self.type.plan.actions.visible_for_user(None)
+            self.type.plan.actions.get_queryset().visible_for_user(None)
             .prefetch_related(
                 'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
                 'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
+                'related_indicators', 'action_category_through__category',
             )
         )
         result = LiveVersions()
@@ -210,13 +209,13 @@ class Report(models.Model, PlanRelatedModel):
         version_qs = Version.objects.filter(
                 content_type=ct,
                 object_id__in=[a.pk for a in actions_to_snapshot],
-                action_snapshots__report_id=self.pk
+                action_snapshots__report_id=self.pk,
             ).prefetch_related(
-                'action_snapshots'
+                'action_snapshots',
             ).select_related(
-                'revision'
+                'revision',
             ).order_by(
-                '-revision__date_created'
+                '-revision__date_created',
             )
 
         action_snapshots_by_action_pk: dict[int, ActionSnapshot] = dict()
@@ -224,7 +223,7 @@ class Report(models.Model, PlanRelatedModel):
             action_pk = version.object_id
             if action_pk in action_snapshots_by_action_pk:
                 continue
-            qs = version.action_snapshots.filter(report_id=self.pk)
+            qs = version.action_snapshots.filter(report_id=self.pk)  # pyright: ignore
             if qs.count() > 1:
                 capture_message("Database consistency error: snapshot has multiple versions")
             snapshot = qs.first()
@@ -258,7 +257,8 @@ class Report(models.Model, PlanRelatedModel):
         return result
 
     def mark_as_complete(self, user: User):
-        """Mark this report as complete, as well as all actions that are not yet complete.
+        """
+        Mark this report as complete, as well as all actions that are not yet complete.
 
         The snapshots for actions that are marked as complete by this will have `created_explicitly` set to False.
         """
@@ -314,7 +314,8 @@ class ActionSnapshot(models.Model):
 
     @contextmanager
     def inspect(self):
-        """Use like this to temporarily revert the action to this snapshot:
+        """
+        Use like this to temporarily revert the action to this snapshot:
         with snapshot.inspect() as action:
             pass  # action is reverted here and will be rolled back afterwards
         """
@@ -327,7 +328,8 @@ class ActionSnapshot(models.Model):
             pass
 
     def get_related_versions(self) -> models.QuerySet[Version]:
-        """Get all Version instances from the same revision as this action version's.
+        """
+        Get all Version instances from the same revision as this action version's.
 
         There may be more than one action version in this revision.
         """
@@ -335,7 +337,7 @@ class ActionSnapshot(models.Model):
         return revision.version_set.select_related('content_type')
 
     def get_attribute_for_type_from_versions(
-        self, attribute_type: AttributeType, versions: models.QuerySet[Version], ct: ContentType
+        self, attribute_type: AttributeType, versions: models.QuerySet[Version], ct: ContentType,
     ) -> models.Model | None:
         # FIXME: This relies on `serialized_data` to contain strings exactly in a certain syntax, which is an
         # implementation detail. Unfortunately, `serialized_data` is not a JSON field, so we can't use Django's
@@ -350,7 +352,7 @@ class ActionSnapshot(models.Model):
         for k, v in pattern.items():
             str_pattern = f'"{k}": {v}'
             versions = versions.filter(
-                Q(serialized_data__contains=str_pattern + ',') | Q(serialized_data__contains=str_pattern + '}')
+                Q(serialized_data__contains=str_pattern + ',') | Q(serialized_data__contains=str_pattern + '}'),
             )
         for version in versions:
             model = version.content_type.model_class()
@@ -373,7 +375,8 @@ class ActionSnapshot(models.Model):
         return None
 
     def get_attribute_for_type(self, attribute_type):
-        """Get the first action attribute of the given type in this snapshot.
+        """
+        Get the first action attribute of the given type in this snapshot.
 
         Returns None if there is no such attribute.
 
@@ -381,7 +384,7 @@ class ActionSnapshot(models.Model):
         """
         ct = ContentType.objects.get_for_model(Action)
         return self.get_attribute_for_type_from_versions(
-            attribute_type, self.get_related_versions(), ct
+            attribute_type, self.get_related_versions(), ct,
         )
 
     def get_serialized_data(self) -> SerializedActionVersion:

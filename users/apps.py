@@ -31,8 +31,9 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         from django.contrib.auth import user_logged_in
-        from .perms import create_permissions
         from wagtail import hooks
+
+        from .perms import create_permissions
 
         user_logged_in.connect(create_permissions)
         user_logged_in.connect(remove_from_staff_if_no_plan_admin)

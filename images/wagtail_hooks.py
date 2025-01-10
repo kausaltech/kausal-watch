@@ -1,4 +1,5 @@
 from wagtail import hooks
+
 from images.permissions import permission_policy
 
 

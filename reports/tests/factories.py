@@ -1,15 +1,17 @@
 import datetime
 
-from factory.django import DjangoModelFactory
-from factory import SubFactory, Sequence
 from wagtail.test.utils.wagtail_factories import (
-    StreamBlockFactory, StructBlockFactory, StreamFieldFactory
+    StreamBlockFactory,
+    StreamFieldFactory,
+    StructBlockFactory,
 )
 
-from actions.tests.factories import PlanFactory
+from factory import Sequence, SubFactory
+from factory.django import DjangoModelFactory
+
 import reports
+from actions.tests.factories import AttributeTypeFactory, PlanFactory
 from reports.blocks import action_content
-from actions.tests.factories import AttributeTypeFactory
 
 
 class ActionAttributeTypeReportFieldBlockFactory(StructBlockFactory):
@@ -50,9 +52,9 @@ class ReportTypeFactory(DjangoModelFactory):
     name = Sequence(lambda i: f'Report type {i}')
     fields = StreamFieldFactory({
         'implementation_phase': SubFactory(ActionImplementationPhaseReportFieldBlockFactory),
-        'attribute_type': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
-        'responsible_party': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
-        'category': SubFactory(ActionCategoryReportFieldBlockFactory),
+        'attribute': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
+        'responsible_parties': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
+        'categories': SubFactory(ActionCategoryReportFieldBlockFactory),
     })
 
 
@@ -65,8 +67,8 @@ class ReportFactory(DjangoModelFactory):
     end_date = datetime.date(year=2024, month=5, day=31)
     fields = StreamFieldFactory({
         'implementation_phase': SubFactory(ActionImplementationPhaseReportFieldBlockFactory),
-        'attribute_type': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
-        'responsible_party': SubFactory(ActionResponsiblePartyReportFieldBlockFactory)
+        'attribute': SubFactory(ActionAttributeTypeReportFieldBlockFactory),
+        'responsible_parties': SubFactory(ActionResponsiblePartyReportFieldBlockFactory),
     })
     is_complete = False
     is_public = False

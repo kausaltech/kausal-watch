@@ -1,10 +1,11 @@
-from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin, ModelChooserCreateTabMixin
-from generic_chooser.widgets import AdminChooser
-from django.utils.translation import gettext_lazy as _
 from django.forms.models import modelform_factory
-from wagtail.search.backends import get_search_backend
+from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
+from wagtail.search.backends import get_search_backend
+
 from dal import autocomplete
+from generic_chooser.views import ModelChooserCreateTabMixin, ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
 
 from .models import Person
 
@@ -56,7 +57,7 @@ class PersonModelChooserCreateTabMixin(ModelChooserCreateTabMixin):
         organization_widget = autocomplete.ModelSelect2(url='organization-autocomplete')
 
         self.form_class = modelform_factory(self.model, fields=self.fields, widgets=dict(
-            organization=organization_widget
+            organization=organization_widget,
         ))
         return self.form_class
 

@@ -1,7 +1,9 @@
 import re
 from copy import deepcopy
+
 from django.utils.translation import gettext
 from wagtail.admin.rich_text import DraftailRichTextArea
+
 
 # Workaround until https://github.com/wagtail/wagtail/pull/11075 is merged
 class DraftailRichTextAreaWithFixedTranslations(DraftailRichTextArea):

@@ -3,12 +3,16 @@ import pytest
 from aplans.utils import hyphenate_fi
 
 from actions.tests.factories import (
-    ActionFactory, ActionScheduleFactory, ActionResponsiblePartyFactory, CategoryFactory, PlanFactory
+    ActionFactory,
+    ActionResponsiblePartyFactory,
+    ActionScheduleFactory,
+    CategoryFactory,
+    PlanFactory,
 )
 
 pytestmark = pytest.mark.django_db
 
-ACTION_FRAGMENT = '''
+ACTION_FRAGMENT = """
     fragment ActionFragment on Action {
       id
       identifier
@@ -52,7 +56,7 @@ ACTION_FRAGMENT = '''
         identifier
       }
     }
-    '''
+    """
 
 
 def test_planactions(graphql_client_query_data):
@@ -64,14 +68,14 @@ def test_planactions(graphql_client_query_data):
                            schedule=[schedule])
     responsible_party = ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           planActions(plan: $plan) {
             ...ActionFragment
           }
         }
-        ''' + ACTION_FRAGMENT,
-        variables=dict(plan=plan.identifier)
+        """ + ACTION_FRAGMENT,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'planActions': [{
@@ -113,6 +117,6 @@ def test_planactions(graphql_client_query_data):
                 },
             }],
             'mergedWith': None,
-        }]
+        }],
     }
     assert data == expected

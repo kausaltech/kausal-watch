@@ -12,6 +12,22 @@
 
 {% block above_login %}
 <script type="text/javascript">
+    {# FIXME: Hack to bring back deprecated cancelSpinner. Will probably break sooner rather than later. #}
+    {# Adapted from https://github.com/wagtail/wagtail/commit/35de8a98b784ce194625662b774ac7364bcf7c17 #}
+    document.addEventListener(
+      'DOMContentLoaded',
+      () => {
+        window.cancelSpinner = () => {
+          const attr = `data-w-progress-loading-value`;
+
+          document.querySelectorAll(`[${attr}="true"]`).forEach((element) => {
+            element.removeAttribute(attr);
+          });
+        };
+      },
+      { once: true, passive: true },
+    );
+
     $(function() {
         const setError = (detail) => {
             $('.messages').empty().append(`<ul><li class="error">${detail}</li></ul>`);

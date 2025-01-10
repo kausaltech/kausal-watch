@@ -1,10 +1,13 @@
 from urllib.parse import urlparse
 
-from django.utils.translation import gettext as _
 from django.urls import resolve
-
+from django.utils.translation import gettext as _
 from rest_framework.decorators import (
-    api_view, throttle_classes, schema, authentication_classes, permission_classes
+    api_view,
+    authentication_classes,
+    permission_classes,
+    schema,
+    throttle_classes,
 )
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -52,14 +55,14 @@ def check_login_method(request):
     )
     if destination_is_public_site and not user.can_access_public_site(plan=None):
         msg = _(
-            "You do not have access to the public site."
+            "You do not have access to the public site.",
         )
         raise ValidationError({'detail': msg, 'code': 'no_site_access'})
 
     if not destination_is_public_site and not user.can_access_admin(plan=None):
         msg = _(
             "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant "
-            "you plan admin status."
+            "you plan admin status.",
         )
         raise ValidationError({'detail': msg, 'code': 'no_admin_access'})
 

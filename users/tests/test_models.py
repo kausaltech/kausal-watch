@@ -1,13 +1,13 @@
 from django.urls import reverse
+
 import pytest
 
-from admin_site.models import Client
 from actions.tests.factories import ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
-from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
-from people.tests.factories import PersonFactory
-from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from admin_site.models import Client
 from admin_site.tests.factories import ClientPlanFactory, EmailDomainsFactory
-
+from indicators.tests.factories import IndicatorContactFactory, IndicatorLevelFactory
+from orgs.tests.factories import OrganizationFactory, OrganizationPlanAdminFactory
+from people.tests.factories import PersonFactory
 
 pytestmark = pytest.mark.django_db
 

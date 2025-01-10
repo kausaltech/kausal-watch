@@ -1,9 +1,10 @@
-from django.http import HttpResponseServerError
-from django.views.defaults import ERROR_500_TEMPLATE_NAME
 from django.conf import settings
-from rest_framework.exceptions import server_error as json_server_error
-from django.views.decorators.csrf import requires_csrf_token
+from django.http import HttpResponseServerError
 from django.template import loader
+from django.views.decorators.csrf import requires_csrf_token
+from django.views.defaults import ERROR_500_TEMPLATE_NAME
+from rest_framework.exceptions import server_error as json_server_error
+
 import sentry_sdk
 
 from actions.context_processors import current_plan
@@ -18,6 +19,7 @@ def html_server_error(request, template_name=ERROR_500_TEMPLATE_NAME):
     Templates: :template:`500.html`
     Context: None
     """
+    admin_500_template = "500_admin.html"
     context = {}
     try:
         ret = current_plan(request)
@@ -34,10 +36,13 @@ def html_server_error(request, template_name=ERROR_500_TEMPLATE_NAME):
 
     context['sentry_error_id'] = None
     if settings.SENTRY_DSN:
-        context['sentry_error_id'] = sentry_sdk.last_event_id()
-    template = loader.get_template(template_name)
-    return HttpResponseServerError(template.render(context=context, request=request))
-
+        context['sentry_error_id'] = sentry_sdk.Scope.last_event_id()
+    try:
+        template = loader.get_template(admin_500_template)
+        return HttpResponseServerError(template.render(context=context, request=request))
+    except Exception:
+        template = loader.get_template(template_name)
+        return HttpResponseServerError(template.render(context=context, request=request))
 
 def server_error(request, *args, **kwargs):
     if request.accepts('text/html'):

@@ -1,24 +1,65 @@
 from django.conf import settings
-from django.forms import Select
+from django.forms import BaseFormSet, Select
+from django.utils import formats
+from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
 from wagtail.admin.panels import (
-    FieldPanel, FieldRowPanel, InlinePanel, MultiFieldPanel, ObjectList
+    FieldPanel,
+    FieldRowPanel,
+    InlinePanel,
+    MultiFieldPanel,
+    ObjectList,
 )
 from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
-from wagtail_modeladmin.options import modeladmin_register, ModelAdminMenuItem
-from wagtail import hooks
+
+from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
+
+from aplans.context_vars import ctx_request
+
+from admin_site.wagtail import (
+    AplansAdminModelForm,
+    AplansCreateView,
+    AplansEditView,
+    AplansModelAdmin,
+    AplansTabbedInterface,
+    CondensedInlinePanel,
+    PlanFilteredFieldPanel,
+    SuccessUrlEditPageModelAdminMixin,
+)
 
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
-from admin_site.wagtail import (
-    AplansModelAdmin, AplansTabbedInterface, CondensedInlinePanel,
-    PlanFilteredFieldPanel, AplansCreateView, AplansEditView, SuccessUrlEditPageMixin
-)
-from aplans.context_vars import ctx_request
 
 
-class BaseTemplateEditView(SuccessUrlEditPageMixin, AplansEditView):
-    pass
+class BaseTemplateEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
+    def get_error_message(self):
+        if self.instance.pk:
+            return _("Notifications could not be modified due to errors.")
+        return _("Notifications could not be set up due to errors.")
+
+
+class BaseTemplateForm(AplansAdminModelForm):
+    def _clean_manually_scheduled_notification_templates(self, formset: BaseFormSet):
+        for i, item in enumerate(formset.cleaned_data):
+            plan = self.instance.plan
+            new_date = item['date']
+            local_current_date = plan.now_in_local_timezone().date()
+            if item['id'] is None:
+                if new_date < local_current_date:
+                    formset[i].add_error('date', _('Cannot schedule a notification for the past'))
+                continue
+            instance = item['id']
+            if new_date != instance.date:
+                # Rescheduling old notification
+                if new_date < local_current_date:
+                    formset[i].add_error('date', _('Cannot reschedule a notification for the past'))
+
+    def clean(self):
+        formset = self.formsets.get('manually_scheduled_notification_templates', None)
+        if formset is not None:
+            self._clean_manually_scheduled_notification_templates(formset)
+        return super().clean()
 
 
 @modeladmin_register
@@ -27,7 +68,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
     add_to_settings_menu = True
     create_view_class = AplansCreateView
     edit_view_class = BaseTemplateEditView
-    menu_icon = 'warning'  # FIXME
+    menu_icon = 'fontawesome-bell'
     menu_label = _('Notifications')
 
     panels = [
@@ -53,8 +94,32 @@ class BaseTemplateAdmin(AplansModelAdmin):
     block_panels = [
         FieldPanel('content'),
         PlanFilteredFieldPanel('template'),
-        FieldPanel('identifier')
+        FieldPanel('identifier'),
     ]
+
+    def get_manually_scheduled_notification_panels(self, send_at_time):
+        panels = [
+            FieldPanel('subject'),
+            FieldPanel('date', help_text=(
+                format_lazy(
+                    '{msg} {time}.',
+                    msg=_("The email message will be sent on the specified day at"),
+                    time=send_at_time,
+                )
+            )),
+            FieldPanel('content'),
+            MultiFieldPanel([
+                FieldRowPanel([
+                    FieldPanel('send_to_plan_admins'),
+                    FieldPanel('send_to_action_contact_persons'),
+                    FieldPanel('send_to_indicator_contact_persons'),
+                    FieldPanel('send_to_organization_admins'),
+                    FieldPanel('send_to_custom_email'),
+                ]),
+                FieldPanel('custom_email'),
+            ], classname='collapsible'),
+        ]
+        return panels
 
     def get_queryset(self, request):
         qs = super().get_queryset(request)
@@ -76,24 +141,35 @@ class BaseTemplateAdmin(AplansModelAdmin):
             additional_panels.append(FieldPanel('font_family'))
             additional_panels.append(FieldPanel('font_css_url'))
 
-        return AplansTabbedInterface([
+        plan = request.user.get_active_admin_plan()
+        time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
+
+        handler = AplansTabbedInterface([
             ObjectList(
                 self.panels + additional_panels,
                 heading=_('Basic information')),
             ObjectList([
                 InlinePanel(
-                    'templates',
-                    panels=self.templates_panels
+                    'manually_scheduled_notification_templates',
+                    panels=self.get_manually_scheduled_notification_panels(time),
                 )],
-                heading=_('Notification types')),
+                heading=_('One-off notifications')),
+            ObjectList([
+                InlinePanel(
+                    'templates',
+                    panels=self.templates_panels,
+                )],
+                heading=_('Event-based notifications')),
             ObjectList([
                 CondensedInlinePanel(
                     'content_blocks',
-                    panels=self.block_panels
+                    panels=self.block_panels,
                 )],
-                heading=_('Notification contents')
-            )
+                heading=_('Notification contents'),
+            ),
         ])
+        handler.base_form_class = BaseTemplateForm
+        return handler
 
 
 class ActivePlanMenuItem(ModelAdminMenuItem):

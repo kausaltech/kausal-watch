@@ -1,6 +1,8 @@
 import typing
+
 from django.apps import AppConfig
 from django.conf import settings
+
 from wagtailorderable.signals import post_reorder
 
 if typing.TYPE_CHECKING:
@@ -73,5 +75,5 @@ class PagesConfig(AppConfig):
         from actions.category_admin import CategoryAdmin
         patch_grapple_url_resolvers()
         post_reorder.connect(
-            post_reorder_categories, sender=CategoryAdmin, dispatch_uid='reorder_category_pages'
+            post_reorder_categories, sender=CategoryAdmin, dispatch_uid='reorder_category_pages',
         )

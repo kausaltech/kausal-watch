@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 'ordering': ('plan', 'order'),
                 'permissions': (('admin_action', 'Can administrate all actions'),),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionContactPerson',
@@ -72,7 +72,7 @@ class Migration(migrations.Migration):
                 ('identifier', aplans.utils.IdentifierField(max_length=50, validators=[aplans.utils.IdentifierValidator()], verbose_name='identifier')),
                 ('i18n', modeltrans.fields.TranslationField(fields=('name',), required_languages=(), virtual_fields=True)),
             ],
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionImpact',
@@ -88,7 +88,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'action impact classes',
                 'ordering': ('plan', 'order'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionImplementationPhase',
@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'action implementation phases',
                 'ordering': ('plan', 'order'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionLink',
@@ -146,7 +146,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'action schedules',
                 'ordering': ('plan', 'begins_at'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionStatus',
@@ -161,7 +161,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'action status',
                 'verbose_name_plural': 'action statuses',
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionStatusUpdate',
@@ -214,7 +214,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'categories',
                 'ordering': ('type', 'order'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='CategoryLevel',
@@ -268,7 +268,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'category types',
                 'ordering': ('plan', 'name'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='CategoryTypeMetadata',
@@ -313,7 +313,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'impact groups',
                 'ordering': ('plan', '-weight'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ImpactGroupAction',
@@ -341,7 +341,7 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'monitoring quality points',
                 'ordering': ('plan', 'order'),
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='Plan',
@@ -386,7 +386,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'scenario',
                 'verbose_name_plural': 'scenarios',
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='PlanDomain',

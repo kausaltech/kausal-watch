@@ -1,12 +1,11 @@
 import pytest
+from factory import SubFactory
 from pytest_factoryboy import register
 
-from factory import SubFactory
-
-from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization
-from actions.tests.factories import PlanFactory
 from aplans.factories import ModelFactory
 
+from actions.tests.factories import PlanFactory
+from reports.spreadsheets.action_print_layout import ReportActionPrintLayoutCustomization
 
 pytestmark = pytest.mark.django_db
 
@@ -42,7 +41,7 @@ def test_report_action_print_layout_customization_returns_db_defaults(plan, glob
 
 
 def test_report_action_print_layout_customization_returns_plan_value_and_global_defaults(
-        plan, global_db_defaults
+        plan, global_db_defaults,
 ):
     ReportActionPrintLayoutCustomization.save_plan_variable(plan, 'approximate_chars_per_line', 1000)
     for key in KEYS:

@@ -1,13 +1,18 @@
 import json
-import pytest
+
 from django.urls import reverse
+
+import pytest
 from pytest_factoryboy import register
 
 from .factories import (
-    ActionFactory, CategoryFactory, CategoryTypeFactory, CommonCategoryFactory, CommonCategoryTypeFactory,
-    PlanFactory
+    ActionFactory,
+    CategoryFactory,
+    CategoryTypeFactory,
+    CommonCategoryFactory,
+    CommonCategoryTypeFactory,
+    PlanFactory,
 )
-
 from .fixtures import actions_with_relations_factory  # noqa
 
 register(ActionFactory)
@@ -42,6 +47,11 @@ def plan_list_url():
 @pytest.fixture
 def person_list_url():
     return reverse('person-list')
+
+
+@pytest.fixture
+def category_list_url(plan, category_type):
+    return reverse('category-list', args=(plan.pk, category_type.pk))
 
 
 @pytest.fixture

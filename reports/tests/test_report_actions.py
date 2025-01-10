@@ -1,12 +1,14 @@
-import pytest
-import reversion
 import typing
-from reversion.models import Version, Revision
+
+import reversion
+from reversion.models import Revision, Version
+
+import pytest
 
 from actions.models import Action
-from reports.models import Report, ActionSnapshot, SerializedActionVersion
-from .fixtures import *  # noqa
+from reports.models import ActionSnapshot, Report, SerializedActionVersion
 
+from .fixtures import *  # noqa
 
 pytestmark = pytest.mark.django_db
 
@@ -22,13 +24,14 @@ def report_type_with_multiple_reports(plan, report_type_factory, report_factory)
 
 @pytest.fixture
 def plan_with_some_actions(plan, action_factory):
-    for _ in range(0, 9):
+    for _ in range(9):
         action_factory(plan=plan)
     return plan
 
 
 def test_report_action_snapshots(plan_with_some_actions, report_type_with_multiple_reports, user):
-    """ This test intentionally creates revisions sequentially
+    """
+    This test intentionally creates revisions sequentially
     to test that the correct revisions / versions get tied to
     the actions when reporting / completing
     """

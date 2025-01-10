@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 'abstract': False,
                 'unique_together': {('plan', 'identifier')},
             },
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.CreateModel(
             name='ActionAttributeTypeChoiceOption',

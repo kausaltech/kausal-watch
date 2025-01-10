@@ -1,6 +1,6 @@
 import functools
-from wagtail.models import Collection
 
+from wagtail.models import Collection
 
 _wagtail_chooser_get_context_data = None
 _wagtail_index_get_context_data = None

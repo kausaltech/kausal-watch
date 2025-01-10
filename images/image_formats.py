@@ -1,5 +1,5 @@
-from wagtail.images.formats import Format, register_image_format
 from django.utils.translation import gettext_lazy as _
+from wagtail.images.formats import Format, register_image_format
 
 from images.models import AplansImage
 
@@ -9,7 +9,7 @@ class ZoomableFormat(Format):
         orig_attrs = {
             'data-original-width': image.width,
             'data-original-height': image.height,
-            'data-original-src': image.file.url
+            'data-original-src': image.file.url,
         }
         attrs = (extra_attributes or {}) | orig_attrs
         return super().image_to_html(image, alt_text, extra_attributes=attrs)
@@ -17,6 +17,7 @@ class ZoomableFormat(Format):
 
 register_image_format(
     ZoomableFormat(
-        'fullwidth-zoomable', _('Full width (zoomable)'), 'richtext-image full-width zoomable', 'width-800'
-    )
+        'fullwidth-zoomable', _('Full width (zoomable) only if width > 1000 px'),
+        'richtext-image full-width zoomable', 'width-800',
+    ),
 )

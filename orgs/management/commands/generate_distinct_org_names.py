@@ -1,4 +1,5 @@
 from collections import Counter
+
 from django.core.management.base import BaseCommand
 
 from orgs.models import Organization

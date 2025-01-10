@@ -34,7 +34,7 @@ class Migration(migrations.Migration):
                         'verbose_name': 'report type',
                         'verbose_name_plural': 'report types',
                     },
-                    bases=(models.Model, aplans.utils.PlanRelatedModel),
+                    bases=(aplans.utils.PlanRelatedModel,),
                 ),
                 migrations.CreateModel(
                     name='Report',

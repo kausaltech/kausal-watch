@@ -1,19 +1,37 @@
+from __future__ import annotations
+
 import graphene
-import graphene_django_optimizer as gql_optimizer
 from django.forms import ModelForm
 from graphql.error import GraphQLError
 from wagtail.rich_text import RichText
 
+import graphene_django_optimizer as gql_optimizer
+
 from aplans.graphql_helpers import UpdateModelInstanceMutation
 from aplans.graphql_types import DjangoNode, get_plan_from_context, order_queryset, register_django_node
-from aplans.utils import public_fields
+from aplans.utils import RestrictedVisibilityModel, public_fields
+
+from actions.models import Action
 from actions.schema import ScenarioNode
 from indicators.models import (
-    ActionIndicator, CommonIndicator, Dimension, DimensionCategory, Framework, FrameworkIndicator, Indicator,
-    IndicatorDimension, IndicatorGoal, IndicatorGraph, IndicatorLevel, IndicatorValue, Quantity, RelatedCommonIndicator,
-    RelatedIndicator, Unit
+    ActionIndicator,
+    CommonIndicator,
+    Dimension,
+    DimensionCategory,
+    Framework,
+    FrameworkIndicator,
+    Indicator,
+    IndicatorDimension,
+    IndicatorGoal,
+    IndicatorGraph,
+    IndicatorLevel,
+    IndicatorQuerySet,
+    IndicatorValue,
+    Quantity,
+    RelatedCommonIndicator,
+    RelatedIndicator,
+    Unit,
 )
-from actions.models import Action
 
 
 class UnitNode(DjangoNode):
@@ -25,7 +43,7 @@ class UnitNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='name',
-        only=('name', 'i18n')
+        only=('name', 'i18n'),
     )
     def resolve_name(self, info):
         name = self.name_i18n
@@ -35,7 +53,7 @@ class UnitNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='short_name',
-        only=('short_name', 'i18n')
+        only=('short_name', 'i18n'),
     )
     def resolve_short_name(self, info):
         short_name = self.short_name_i18n
@@ -45,7 +63,7 @@ class UnitNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='verbose_name',
-        only=('verbose_name', 'i18n')
+        only=('verbose_name', 'i18n'),
     )
     def resolve_verbose_name(self, info):
         verbose_name = self.verbose_name_i18n
@@ -55,7 +73,7 @@ class UnitNode(DjangoNode):
 
     @gql_optimizer.resolver_hints(
         model_field='verbose_name_plural',
-        only=('verbose_name_plural', 'i18n')
+        only=('verbose_name_plural', 'i18n'),
     )
     def resolve_verbose_name_plural(self, info):
         verbose_name_plural = self.verbose_name_plural_i18n
@@ -75,21 +93,29 @@ class QuantityNode(DjangoNode):
 class RelatedIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedIndicator
+        fields = public_fields(RelatedIndicator)
 
 
 class ActionIndicatorNode(DjangoNode):
     class Meta:
         model = ActionIndicator
+        fields = public_fields(ActionIndicator)
 
 
 class IndicatorGraphNode(DjangoNode):
     class Meta:
         model = IndicatorGraph
+        fields = public_fields(IndicatorGraph)
 
 
 class IndicatorLevelNode(DjangoNode):
     class Meta:
         model = IndicatorLevel
+        fields = public_fields(IndicatorLevel)
+
+    @staticmethod
+    def get_queryset(root, info):
+        return root.visible_for_public()
 
 
 class DimensionNode(DjangoNode):
@@ -123,7 +149,7 @@ class CommonIndicatorNode(DjangoNode):
         fields = public_fields(CommonIndicator)
 
     @gql_optimizer.resolver_hints(
-        model_field='normalizations'
+        model_field='normalizations',
     )
     def resolve_normalizations(root: CommonIndicator, info):
         return root.normalizations.all()
@@ -132,6 +158,7 @@ class CommonIndicatorNode(DjangoNode):
 class RelatedCommonIndicatorNode(DjangoNode):
     class Meta:
         model = RelatedCommonIndicator
+        fields = public_fields(RelatedCommonIndicator)
 
 
 class FrameworkIndicatorNode(DjangoNode):
@@ -192,7 +219,7 @@ class IndicatorNode(DjangoNode):
         default_value=None,
         description=('[Deprecated] Has no effect. '
                      'The same indicator cannot have different goals '
-                     'for the same organization for different plans.')
+                     'for the same organization for different plans.'),
     ))
     values = graphene.List(IndicatorValueNode, include_dimensions=graphene.Boolean())
     level = graphene.String(plan=graphene.ID())
@@ -238,6 +265,8 @@ class IndicatorNode(DjangoNode):
         model_field='levels',
     )
     def resolve_level(self, info, plan):
+        if not self.is_visible_for_public():
+            return None
         try:
             obj = self.levels.get(plan__identifier=plan)
         except IndicatorLevel.DoesNotExist:
@@ -253,6 +282,19 @@ class IndicatorNode(DjangoNode):
             return None
         return RichText(description)
 
+    @gql_optimizer.resolver_hints(
+        model_field=('related_causes', 'i18n'),
+    )
+    def resolve_related_causes(self: Indicator, info):
+        return self.related_causes.filter(causal_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+
+
+    @gql_optimizer.resolver_hints(
+        model_field=('related_effects', 'i18n'),
+    )
+    def resolve_related_effects(self: Indicator, info):
+        return self.related_effects.filter(effect_indicator__visibility=RestrictedVisibilityModel.VisibilityState.PUBLIC)
+
 
 class IndicatorDimensionNode(DjangoNode):
     class Meta:
@@ -261,21 +303,30 @@ class IndicatorDimensionNode(DjangoNode):
 
 
 class Query:
-    indicator = graphene.Field(IndicatorNode, id=graphene.ID(), identifier=graphene.ID(), plan=graphene.ID())
+    indicator = graphene.Field(
+        IndicatorNode,
+        id=graphene.ID(),
+        identifier=graphene.ID(),
+        plan=graphene.ID(),
+        restrict_to_publicly_visible=graphene.Boolean(default_value=True))
     plan_indicators = graphene.List(
         IndicatorNode, plan=graphene.ID(required=True), first=graphene.Int(),
         order_by=graphene.String(), has_data=graphene.Boolean(), has_goals=graphene.Boolean(),
     )
+    related_plan_indicators = graphene.List(
+        graphene.NonNull(IndicatorNode), plan=graphene.ID(required=True), first=graphene.Int(),
+        category=graphene.ID(), order_by=graphene.String(),
+    )
 
     def resolve_plan_indicators(
         self, info, plan, first=None, order_by=None, has_data=None,
-        has_goals=None, **kwargs
+        has_goals=None, **kwargs,
     ):
         plan_obj = get_plan_from_context(info, plan)
         if plan_obj is None:
             return None
 
-        qs = Indicator.objects.all()
+        qs = Indicator.objects.get_queryset().visible_for_public()
         qs = qs.filter(levels__plan=plan_obj).distinct()
 
         if has_data is not None:
@@ -290,15 +341,29 @@ class Query:
 
         return gql_optimizer.query(qs, info)
 
-    def resolve_indicator(self, info, **kwargs):
+
+    @staticmethod
+    def resolve_related_plan_indicators(
+        root, info, plan, **kwargs) -> IndicatorQuerySet | None:
+        plan_obj = get_plan_from_context(info, plan)
+        if plan_obj is None:
+            return None
+
+        plans = plan_obj.get_all_related_plans()
+        qs = plans_indicators_queryset(plans=plans, user=info.context.user, kwargs=kwargs)
+        return gql_optimizer.query(qs, info)
+
+
+    def resolve_indicator(self, info, restrict_to_publicly_visible: bool, **kwargs):
         obj_id = kwargs.get('id')
         identifier = kwargs.get('identifier')
         plan = kwargs.get('plan')
 
         if not identifier and not obj_id:
             raise GraphQLError("You must supply either 'id' or 'identifier'")
+        user = info.context.user
+        qs = Indicator.objects.get_queryset()
 
-        qs = Indicator.objects.all()
         if obj_id:
             try:
                 obj_id = int(obj_id)
@@ -310,7 +375,15 @@ class Query:
             plan_obj = get_plan_from_context(info, plan)
             if not plan_obj:
                 return None
+            if not restrict_to_publicly_visible and user.can_access_admin(plan_obj):
+                qs = qs.visible_for_user(user)
+            else:
+                qs = qs.visible_for_public()
+
             qs = qs.filter(levels__plan=plan_obj).distinct()
+        else:
+            qs = qs.visible_for_public()
+
 
         if identifier:
             qs = qs.filter(identifier=identifier)
@@ -323,6 +396,25 @@ class Query:
             return None
 
         return obj
+
+def plans_indicators_queryset(plans, user, **kwargs):
+    first = kwargs.get('first')
+    order_by = kwargs.get('order_by')
+    restrict_to_publicly_visible = kwargs.get('restrict_to_publicly_visible', True)
+    qs = Indicator.objects.get_queryset()
+    if restrict_to_publicly_visible:
+        qs = qs.visible_for_public()
+    else:
+        qs = qs.visible_for_user(user)
+    qs = qs.filter(plans__in=plans)
+
+    if isinstance(plans, list) and len(plans) == 1:
+        plan = plans[0]
+        qs = qs.annotate_related_indicator_counts(plan)
+    qs = order_queryset(qs, IndicatorNode, order_by)
+    if first is not None:
+        qs = qs[0:first]
+    return qs
 
 
 class IndicatorForm(ModelForm):

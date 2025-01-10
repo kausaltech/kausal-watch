@@ -1,5 +1,6 @@
-from drf_spectacular.openapi import AutoSchema as OpenAPIAutoSchema
 from rest_framework import serializers
+
+from drf_spectacular.openapi import AutoSchema as OpenAPIAutoSchema
 
 
 class AutoSchema(OpenAPIAutoSchema):

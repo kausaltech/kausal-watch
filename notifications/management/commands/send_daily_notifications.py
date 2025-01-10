@@ -1,10 +1,12 @@
 from datetime import datetime
-from django.core.management.base import BaseCommand
-from django.utils import translation
 from logging import getLogger
 
+from django.core.management.base import BaseCommand
+from django.utils import translation
+
 from actions.models import Plan
-from notifications.models import NotificationType
+from notifications.notifications import NotificationType
+
 from .send_plan_notifications import NotificationEngine
 
 logger = getLogger(__name__)
@@ -22,7 +24,7 @@ class Command(BaseCommand):
         parser.add_argument('--only-email', type=str, help='Send only the notifications that go to this email')
         parser.add_argument('--noop', action='store_true', help='Do not actually send the emails')
         parser.add_argument(
-            '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files'
+            '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files',
         )
         parser.add_argument('--time', type=datetime.fromisoformat, help='Override current time (ISO format)')
 

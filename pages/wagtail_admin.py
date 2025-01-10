@@ -15,15 +15,15 @@ class VeryRestrictivePagePermissionTester(PagePermissionTester):
 
 
 @hooks.register('construct_page_listing_buttons')
-def restrict_more_button_permissions_very_much(buttons, page, page_perms, context=None):
+def restrict_more_button_permissions_very_much(buttons, page, user, context=None):
     if getattr(page, 'restrict_more_button_permissions_very_much', False):
         for button in buttons:
             if button.label == _("More"):
-                button.page_perms = VeryRestrictivePagePermissionTester(page_perms.user, page_perms.page)
+                button.page_perms = VeryRestrictivePagePermissionTester(user, page)
 
 
 @hooks.register('construct_page_listing_buttons')
-def remove_sort_menu_order_button(buttons, page, page_perms, context=None):
+def remove_sort_menu_order_button(buttons, page, user, context=None):
     if getattr(page, 'remove_sort_menu_order_button', False):
         for button in buttons:
             if button.label == _("More"):

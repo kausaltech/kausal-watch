@@ -1,13 +1,29 @@
 {% extends "modeladmin/create.html" %}
-{% load i18n %}
+{% load i18n wagtailadmin_tags %}
 
 {% block extra_js %}
     {{ block.super }}
     {# Copied from wagtail/admin/templates/wagtailadmin/pages/edit.html #}
     <script>
+        {# FIXME: This will break eventually. #}
+        {# https://docs.wagtail.org/en/stable/releases/5.2.html#window-updatefootersavewarning-global-util-removed #}
+        window.updateFooterSaveWarning = (formDirty, commentsDirty) => {
+          if (!formDirty && !commentsDirty) {
+            document.dispatchEvent(new CustomEvent('w-unsaved:clear'));
+          } else {
+            const [type] = [
+              formDirty && commentsDirty && 'all',
+              commentsDirty && 'comments',
+              formDirty && 'edits',
+            ].filter(Boolean);
+            document.dispatchEvent(new CustomEvent('w-unsaved:add', { detail: { type } }));
+          }
+        };
+
         $(function() {
             /* Make user confirm before leaving the editor if there are unsaved changes */
             {% trans "This page has unsaved changes." as confirmation_message %}
+            {# FIXME: enableDirtyFormCheck is deprecated #}
             enableDirtyFormCheck(
                 'div.content > form',
                 {
@@ -43,29 +59,53 @@
 
         {% block footer %}
             {# Copied from modeladmin/create.html. Overrides what would be in the form_actions block and adds the unsaved changes warning. #}
-            <footer class="footer">
-                <ul>
-                    <li class="actions footer__container">
+            {# We replaced <ul> and <li> by a <div> as this is the way Wagtail 6 does things. #}
+            <footer class="footer w-grid md:w-grid-flow-col">
+                <nav class="actions actions--primary footer__container" aria-label="{% trans 'Actions' %}">
+                    {% if action_menu %}
+                        {{ action_menu.render_html }}
+                    {% else %}
                         {# This would be the form_actions block #}
-                        <div class="dropdown dropup dropdown-button match-width">
-                            <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}">
-                                <span class="icon icon-spinner"></span><em>{% trans 'Save' %}</em>
+                        {% fragment as default_action_item %}
+                            <button
+                                type="submit"
+                                class="button action-save button-longrunning w-w-full"
+                                data-controller="w-progress"
+                                data-action="w-progress#activate"
+                                data-w-progress-active-value="{% trans 'Saving…' %}"
+                            >
+                                {% icon name="spinner" %}
+                                <em data-w-progress-target="label">{% trans 'Save' %}</em>
                             </button>
+                        {% endfragment %}
 
-                            <div class="dropdown-toggle icon icon-arrow-up"></div>
-                            <ul>
-                                <li>
-                                    <button type="submit" class="button action-save button-longrunning" data-clicked-text="{% trans 'Saving…' %}" name="_continue">
-                                        <span class="icon icon-spinner"></span><em>{% trans 'Save and continue editing' %}</em>
-                                    </button>
-                                </li>
-                                {# TODO Moderation workflow actions like in edit.html #}
-                            </ul>
-                        </div>
+                        {% fragment as more_action_items %}
+                            {% block more_action_items %}
+                                <button
+                                    type="submit"
+                                    class="button action-save button-longrunning w-w-full"
+                                    data-controller="w-progress"
+                                    data-action="w-progress#activate"
+                                    data-w-progress-active-value="{% trans 'Saving…' %}"
+                                    name="_continue"
+                                >
+                                    {% icon name="spinner" %}
+                                    <em data-w-progress-target="label">{% trans 'Save and continue editing' %}</em>
+                                </button>
+                            {% endblock %}
+                        {% endfragment %}
+
+                        {% if more_action_items.strip %}
+                            {% dropdown_button button=default_action_item toggle_icon="arrow-up" %}
+                                {{ more_action_items }}
+                            {% enddropdown_button %}
+                        {% else %}
+                            {{ default_action_item }}
+                        {% endif %}
                         {# end of form_actions block #}
-                    </li>
-                    {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
-                </ul>
+                    {% endif %}
+                </nav>
+                {% include "wagtailadmin/pages/_unsaved_changes_warning.html" %}
             </footer>
         {% endblock %}
     </form>

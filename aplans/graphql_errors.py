@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from enum import StrEnum, auto
 
 from graphql.error import GraphQLError, GraphQLErrorExtensions
@@ -10,7 +11,7 @@ class GraphQLErrorWithCode(GraphQLError):
             *args,
             code: ErrorCode | None = None,
             extensions: GraphQLErrorExtensions = {},
-            **kwargs
+            **kwargs,
     ):
         if code:
             extensions['code'] = code

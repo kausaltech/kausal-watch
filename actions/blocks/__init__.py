@@ -1,41 +1,32 @@
+from __future__ import annotations
+
 from typing import Any
 
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
 from wagtail import blocks
 
-from actions.blocks.choosers import CategoryAttributeTypeChooserBlock, CategoryChooserBlock, CategoryTypeChooserBlock
+from grapple.helpers import register_streamfield_block
+
 from actions.blocks.action_content import (
     ActionAsideContentBlock,
-    ActionContactFormBlock,
     ActionMainContentBlock,
-    ActionOfficialNameBlock,
-    ActionResponsiblePartiesBlock,
-    # If you're wondering about unknown import symbol errors:
-    # The types below are defined by metaprogramming
-    ActionContactPersonsBlock, # type: ignore
-    ActionDependenciesBlock, # type: ignore
-    ActionDescriptionBlock, # type: ignore
-    ActionLeadParagraphBlock, # type: ignore
-    ActionLinksBlock, # type: ignore
-    ActionMergedActionsBlock, # type: ignore
-    ActionRelatedActionsBlock, # type: ignore
-    ActionRelatedIndicatorsBlock, # type: ignore
-    ActionScheduleBlock, # type: ignore
-    ActionTasksBlock, # type: ignore
 )
-from actions.blocks.action_dashboard import (
-    IdentifierColumnBlock, NameColumnBlock, ImplementationPhaseColumnBlock, StatusColumnBlock, TasksColumnBlock,
-    ResponsiblePartiesColumnBlock, IndicatorsColumnBlock, UpdatedAtColumnBlock, OrganizationColumnBlock,
-    ImpactColumnBlock, ActionDashboardColumnBlock
+from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock  # noqa: F401
+from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock, CategoryTypeLevelListBlock  # noqa: F401
+from actions.blocks.choosers import (
+    ActionAttributeTypeChooserBlock,  # noqa: F401
+    AttributeTypeChooserBlock,  # noqa: F401
+    CategoryAttributeTypeChooserBlock,  # noqa: F401
+    CategoryChooserBlock,  # noqa: F401
+    CategoryTypeChooserBlock,  # noqa: F401
 )
-from actions.blocks.action_list import ActionHighlightsBlock, ActionListBlock
-from actions.blocks.category_list import CategoryListBlock, CategoryTreeMapBlock
-from actions.blocks.choosers import ActionAttributeTypeChooserBlock, AttributeTypeChooserBlock
 from actions.blocks.filters import (
-    ActionImplementationPhaseFilterBlock, ActionListFilterBlock,
-    ActionScheduleFilterBlock, PrimaryOrganizationFilterBlock, ResponsiblePartyFilterBlock,
-    ContinuousActionFilterBlock,
+    ActionImplementationPhaseFilterBlock,  # noqa: F401
+    ActionListFilterBlock,
+    ActionScheduleFilterBlock,  # noqa: F401
+    ContinuousActionFilterBlock,  # noqa: F401
+    PrimaryOrganizationFilterBlock,  # noqa: F401
+    ResponsiblePartyFilterBlock,  # noqa: F401
 )
 from actions.models.attributes import AttributeType, AttributeTypeQuerySet
 from actions.models.category import CategoryType
@@ -126,17 +117,3 @@ def get_default_action_filter_blocks(plan: Plan) -> dict[str, blocks.StreamValue
 class RelatedPlanListBlock(blocks.StaticBlock):  # type: ignore[misc]
     class Meta:
         label = _('Related plans')
-
-
-__all__ = [
-    'ActionAttributeTypeChooserBlock', 'ActionContactPersonsBlock', 'ActionDescriptionBlock', 'ActionContactFormBlock',
-    'ActionHighlightsBlock', 'ActionImplementationPhaseFilterBlock', 'ActionLeadParagraphBlock', 'ActionLinksBlock',
-    'ActionListBlock', 'ActionMergedActionsBlock', 'ActionOfficialNameBlock', 'ActionRelatedActionsBlock', 'ActionDependenciesBlock',
-    'ActionRelatedIndicatorsBlock', 'ActionResponsiblePartiesBlock', 'ActionScheduleBlock', 'ActionScheduleFilterBlock',
-    'ActionTasksBlock', 'AttributeTypeChooserBlock', 'CategoryAttributeTypeChooserBlock', 'CategoryChooserBlock',
-    'CategoryListBlock', 'CategoryTreeMapBlock', 'CategoryTypeChooserBlock', 'PrimaryOrganizationFilterBlock',
-    'ResponsiblePartyFilterBlock', 'ContinuousActionFilterBlock',
-    'IdentifierColumnBlock', 'NameColumnBlock', 'ImplementationPhaseColumnBlock', 'StatusColumnBlock',
-    'TasksColumnBlock', 'ResponsiblePartiesColumnBlock', 'IndicatorsColumnBlock', 'UpdatedAtColumnBlock',
-    'OrganizationColumnBlock', 'ImpactColumnBlock', 'ActionDashboardColumnBlock'
-]

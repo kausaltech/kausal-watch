@@ -97,13 +97,13 @@
                 padding-bottom="0"
                 align="left"
             />
-            <mj-button 
+            <mj-button
                 background-color="{{ theme.brand_dark_color }}"
                 font-weight="bold"
                 font-size="15px"
                 border-radius="8px"
             />
-            <mj-divider 
+            <mj-divider
                 border-width="2px"
                 border-color="#cccccc"
                 padding="20px 0 20px 0"

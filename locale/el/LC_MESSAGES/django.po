@@ -1,0 +1,5303 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-12-19 14:36+0200\n"
+"PO-Revision-Date: 2024-12-19 14:20+0000\n"
+"Last-Translator: Matias Wargelin <matias.wargelin@kausal.tech>\n"
+"Language-Team: Greek <https://weblate.kausal.tech/projects/watch/django/el/>"
+"\n"
+"Language: el\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 5.4.2\n"
+
+#: actions/action_admin.py
+msgid "There is already an action with this identifier."
+msgstr "Υπάρχει ήδη μια ενέργεια με αυτό το αναγνωριστικό."
+
+#: actions/action_admin.py
+#, python-format
+msgid "%s is listed multiple times in the action."
+msgstr "%s αναφέρεται πολλές φορές στη δράση."
+
+#: actions/action_admin.py actions/models/action.py
+msgid "Unspecified"
+msgstr "Απροσδιόριστο"
+
+#: actions/action_admin.py actions/api.py
+#: actions/blocks/action_content_blocks.py
+msgid "Responsible parties"
+msgstr "Υπεύθυνα μέρη"
+
+#: actions/action_admin.py actions/api.py aplans/utils.py indicators/api.py
+#: indicators/wagtail_admin.py
+msgid "Contact persons"
+msgstr "Πρόσωπα επικοινωνίας"
+
+#: actions/action_admin.py
+#, python-format
+msgid "Mark as complete for report %s"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο για αναφορά %s"
+
+#: actions/action_admin.py
+#, python-format
+msgid "Mark this action as complete for the report %s"
+msgstr "Σημειώστε αυτή την ενέργεια ως ολοκληρωμένη για την έκθεση %s"
+
+#: actions/action_admin.py
+#, python-format
+msgid "Undo marking as complete for report %s"
+msgstr "Αναίρεση της επισήμανσης ως ολοκληρωμένης για την έκθεση %s"
+
+#: actions/action_admin.py
+#, python-format
+msgid "Undo marking this action as complete for the report %s"
+msgstr "Αναίρεση της επισήμανσης αυτής της ενέργειας ως ολοκληρωμένης για την αναφορά %s"
+
+#: actions/action_admin.py
+msgid "Last updated"
+msgstr "Τελευταία ενημέρωση"
+
+#: actions/action_admin.py actions/templates/actions/chooser_results.html
+#: admin_site/models.py
+#: admin_site/templates/admin_site/own_indicators_panel.html copying/views.py
+#: orgs/models.py orgs/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Name"
+msgstr "Όνομα"
+
+#: actions/action_admin.py actions/category_admin.py
+#: admin_site/wagtail_hooks.py budget/wagtail_admin.py
+#: indicators/wagtail_admin.py
+msgid "Categories"
+msgstr "Κατηγορίες"
+
+#: actions/action_admin.py actions/wagtail_admin.py
+msgid "External links"
+msgstr "Εξωτερικοί σύνδεσμοι"
+
+#: actions/action_admin.py actions/category_admin.py actions/wagtail_admin.py
+#: indicators/wagtail_admin.py notifications/wagtail_admin.py
+#: orgs/wagtail_admin.py
+msgid "Basic information"
+msgstr "Βασικές πληροφορίες"
+
+#: actions/action_admin.py actions/blocks/category_page_layout.py
+#: indicators/blocks.py
+msgid "Progress"
+msgstr "Πρόοδος"
+
+#: actions/action_admin.py
+msgid "Internal notes"
+msgstr "Εσωτερικές σημειώσεις"
+
+#: actions/action_admin.py
+msgid "Internal notes for plan administrators"
+msgstr "Εσωτερικές σημειώσεις για τους διαχειριστές των προγραμμάτων"
+
+#: actions/action_admin.py indicators/wagtail_admin.py
+msgid "Reporting"
+msgstr "Αναφορά"
+
+#: actions/action_admin.py
+msgid "Dependent actions"
+msgstr "Εξαρτημένες δράσεις"
+
+#: actions/action_admin.py
+msgid "Dependencies"
+msgstr "Εξαρτήσεις"
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "The %(model_name)s could not be saved as it is locked"
+msgstr "Το %(model_name)s δεν μπορούσε να αποθηκευτεί καθώς είναι κλειδωμένο"
+
+#: actions/action_admin_mixins.py admin_site/wagtail.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated."
+msgstr "%(model_name)s '%(object)s' ενημερώθηκε."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created."
+msgstr "%(model_name)s '%(object)s' δημιουργήθηκε."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' έχει προγραμματιστεί για δημοσίευση."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και προγραμματίστηκε για δημοσίευση."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+msgstr "%(model_name)s '%(object)s' είναι ζωντανή και αυτή η έκδοση έχει προγραμματιστεί για δημοσίευση."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' updated and published."
+msgstr "%(model_name)s '%(object)s' ενημερώθηκε και δημοσιεύθηκε."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and published."
+msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και δημοσιεύθηκε."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' has been submitted for moderation."
+msgstr "%(model_name)s '%(object)s' έχει υποβληθεί για έλεγχο."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' created and submitted for moderation."
+msgstr "%(model_name)s '%(object)s' δημιουργήθηκε και υποβλήθηκε για έλεγχο."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been restarted."
+msgstr "Η ροή εργασιών στο %(model_name)s '%(object)s' έχει επανεκκινήσει."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "Workflow on %(model_name)s '%(object)s' has been cancelled."
+msgstr "Η ροή εργασίας στο %(model_name)s '%(object)s' έχει ακυρωθεί."
+
+#: actions/action_admin_mixins.py
+#, python-format
+msgid "%(model_name)s '%(object)s' approved and published."
+msgstr "%(model_name)s '%(object)s' εγκρίθηκε και δημοσιεύθηκε."
+
+#: actions/action_admin_mixins.py
+msgid "Unlock"
+msgstr "Ξεκλειδώστε το"
+
+#: actions/action_admin_mixins.py
+msgid "Cancel scheduled publish"
+msgstr "Ακύρωση προγραμματισμένης δημοσίευσης"
+
+#: actions/action_admin_mixins.py
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#: admin_site/wagtail.py
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+msgid "Action dependencies"
+msgstr "Εξαρτήσεις δράσης"
+
+#: actions/action_fields.py actions/tests/fixtures_stream_block.py
+msgid "Merged actions"
+msgstr "Συγχωνευμένες δράσεις"
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Completed"
+msgstr "Ολοκληρωμένο"
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "On time"
+msgstr "Στην ώρα του"
+
+#: actions/action_status_summary.py
+msgid "In progress"
+msgstr "Σε εξέλιξη"
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Not started"
+msgstr "Δεν έχει ξεκινήσει"
+
+#: actions/action_status_summary.py actions/defaults.py
+msgid "Late"
+msgstr "Αργά"
+
+#: actions/action_status_summary.py
+msgid "Cancelled"
+msgstr "Ακυρωμένο"
+
+#: actions/action_status_summary.py
+msgid "Out of scope"
+msgstr "Εκτός πεδίου εφαρμογής"
+
+#: actions/action_status_summary.py
+msgid "Merged"
+msgstr "Συγχωνευμένο"
+
+#: actions/action_status_summary.py
+msgid "Postponed"
+msgstr "Αναβλήθηκε"
+
+#: actions/action_status_summary.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
+msgid "Unknown"
+msgstr "Άγνωστος"
+
+#: actions/action_status_summary.py
+#, python-format
+msgid "Under %d days"
+msgstr "Κάτω από %d ημέρες"
+
+#: actions/action_status_summary.py
+#, python-format
+msgid "Over %d days"
+msgstr "Πάνω από %d ημέρες"
+
+#: actions/api.py
+msgid "Organization occurs multiple times as responsible party"
+msgstr "Ο οργανισμός εμφανίζεται πολλές φορές ως υπεύθυνος"
+
+#: actions/api.py indicators/api.py
+msgid "Person occurs multiple times as contact person"
+msgstr "Το πρόσωπο εμφανίζεται πολλές φορές ως πρόσωπο επαφής"
+
+#: actions/api.py
+msgid "Identifier must be set"
+msgstr "Το αναγνωριστικό πρέπει να οριστεί"
+
+#: actions/api.py
+msgid "Identifier already exists"
+msgstr "Το αναγνωριστικό υπάρχει ήδη"
+
+#: actions/api.py people/models.py
+msgid "Person with this email already exists"
+msgstr "Άτομο με αυτό το email υπάρχει ήδη"
+
+#: actions/api.py
+msgid "Not all objects have an email address"
+msgstr "Δεν έχουν όλα τα αντικείμενα διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: actions/api.py
+#, python-format
+msgid "Duplicate email addresses: %s"
+msgstr "Διπλές διευθύνσεις ηλεκτρονικού ταχυδρομείου: %s"
+
+#: actions/apps.py
+msgid "collection"
+msgstr "συλλογή"
+
+#: actions/apps.py
+msgid "Resubmit for moderation"
+msgstr "Επανυποβολή για έλεγχο"
+
+#: actions/apps.py
+msgid "Cancel moderation"
+msgstr "Ακύρωση της μετριοπάθειας"
+
+#: actions/apps.py actions/models/plan.py content/models.py
+#: indicators/wagtail_admin.py reports/spreadsheets/excel_report.py
+#: reports/tests/test_excel_roundtrip.py templates/modeladmin/create.html
+msgid "Actions"
+msgstr "Δράσεις"
+
+#: actions/attribute_type_admin.py
+msgid "Object type"
+msgstr "Τύπος αντικειμένου"
+
+#: actions/attribute_type_admin.py
+msgid "Fields"
+msgstr "Πεδία"
+
+#: actions/attribute_type_admin.py
+#, python-format
+msgid "Field for %s"
+msgstr "Πεδίο για %s"
+
+#: actions/attribute_type_admin.py
+#, python-format
+msgid "Fields (%(model)s)"
+msgstr "Πεδία (%(model)s)"
+
+#: actions/attribute_type_admin.py
+msgid "If format is 'Category', a category type must be set"
+msgstr "Εάν η μορφή είναι \"Category\", πρέπει να οριστεί ένας τύπος κατηγορίας"
+
+#: actions/attribute_type_admin.py
+msgid "If format is 'Numeric', a unit must be set"
+msgstr "Εάν η μορφή είναι \"Numeric\", πρέπει να οριστεί μια μονάδα"
+
+#: actions/attribute_type_admin.py actions/category_admin.py
+msgid "Order"
+msgstr "Παραγγελία"
+
+#: actions/attribute_type_admin.py
+msgid "This field already has values. If you want to change the format, you need to delete the existing values first."
+msgstr "Αυτό το πεδίο έχει ήδη τιμές. Αν θέλετε να αλλάξετε τη μορφή, πρέπει πρώτα να διαγράψετε τις υπάρχουσες τιμές."
+
+#: actions/attribute_type_admin.py
+msgid "Choice options"
+msgstr "Επιλογές επιλογής"
+
+#: actions/attribute_type_admin.py actions/blocks/choosers.py
+#: actions/category_admin.py pages/models.py
+msgid "Category type"
+msgstr "Τύπος κατηγορίας"
+
+#: actions/attribute_type_admin.py feedback/models.py
+#: indicators/wagtail_admin.py people/wagtail_admin.py
+msgid "General"
+msgstr "Γενικά"
+
+#: actions/attributes.py
+#, python-format
+msgid "%(attribute_type)s (choice)"
+msgstr "%(attribute_type)s (επιλογή)"
+
+#: actions/attributes.py
+#, python-format
+msgid "%(attribute_type)s (text)"
+msgstr "%(attribute_type)s (κείμενο)"
+
+#: actions/attributes.py
+#, fuzzy, python-format
+#| msgid "%(attribute_type)s (text)"
+msgid "%(attribute_type)s"
+msgstr "%(attribute_type)s (κείμενο)"
+
+#: actions/blocks/__init__.py
+msgid "Related plans"
+msgstr "Σχετικά σχέδια"
+
+#: actions/blocks/action_content.py
+msgid "Full width"
+msgstr "Πλήρες πλάτος"
+
+#: actions/blocks/action_content.py
+msgid "Grid"
+msgstr "Πλέγμα"
+
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py pages/blocks.py
+msgid "Heading"
+msgstr "Κεφαλή"
+
+#: actions/blocks/action_content.py actions/blocks/action_content_blocks.py
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#: actions/blocks/paths_content.py aplans/dynamic_blocks.py
+msgid "Help text"
+msgstr "Κείμενο βοήθειας"
+
+#: actions/blocks/action_content.py
+msgid "Blocks"
+msgstr "Μπλοκ"
+
+#: actions/blocks/action_content.py
+msgid "Section"
+msgstr "Τμήμα"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/action_dashboard.py
+#: actions/blocks/category_page_layout.py actions/blocks/choosers.py
+#: actions/blocks/filters.py
+msgid "Field"
+msgstr "Πεδίο"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/choosers.py
+#: actions/blocks/filters.py actions/models/attributes.py feedback/models.py
+#: pages/models.py
+msgid "Category"
+msgstr "Κατηγορία"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Heading to show instead of the default"
+msgstr "Επικεφαλίδα που θα εμφανίζεται αντί της προεπιλεγμένης"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/column_block_base.py
+msgid "Label"
+msgstr "Ετικέτα"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "value"
+msgid "Value"
+msgstr "Αξία"
+
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+msgid "Choice"
+msgstr "Επιλογή"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Label"
+msgstr "Ετικέτα πεδίου"
+
+#: actions/blocks/action_content_blocks.py actions/models/attributes.py
+#: documentation/models.py pages/models.py
+msgid "Text"
+msgstr "Κείμενο"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Checkbox"
+msgstr "Κουτάκι ελέγχου"
+
+#: actions/blocks/action_content_blocks.py actions/blocks/filters.py
+msgid "Dropdown"
+msgstr "Dropdown"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Field label"
+msgid "Field Type"
+msgstr "Τύπος πεδίου"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Required"
+msgstr "Απαιτούμενο"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Choice"
+msgid "Choices"
+msgstr "Επιλογές"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "This value is only allowed for action fields"
+msgid "Choices are only allowed for 'Dropdown' or 'Checkbox' field types."
+msgstr "Επιλογές επιτρέπονται μόνο για τους τύπους πεδίων 'Dropdown' ή 'Checkbox'."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Choices must be provided for 'Dropdown' or 'Checkbox' field types."
+msgstr "Πρέπει να παρέχονται επιλογές για τους τύπους πεδίων \"Dropdown\" ή \"Checkbox\"."
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Field"
+msgid "Form Field"
+msgstr "Πεδίο φόρμας"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Description"
+msgstr "Περιγραφή"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback field visible"
+msgstr "Ορατό πεδίο ανατροφοδότησης"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the feedback field."
+msgstr "Εναλλαγή της ορατότητας του πεδίου ανατροφοδότησης."
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "User feedback received"
+msgid "Feedback required"
+msgstr "Απαιτείται ανατροφοδότηση"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the feedback field required when visible."
+msgstr "Κάντε το πεδίο ανατροφοδότησης υποχρεωτικό όταν είναι ορατό."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email field visible"
+msgstr "Ορατό πεδίο Email"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Toggle visibility of the email field."
+msgstr "Εναλλαγή της ορατότητας του πεδίου email."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email required"
+msgstr "Απαιτείται email"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Make the email field required when visible."
+msgstr "Κάντε το πεδίο email υποχρεωτικό όταν είναι ορατό."
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Action field"
+msgid "Additional form fields"
+msgstr "Πρόσθετα πεδία φόρμας"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Form fields to be shown in addition to Name, Email and Comment fields"
+msgstr "Πεδία φόρμας που θα εμφανίζονται εκτός από τα πεδία Όνομα, Email και Σχόλιο"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Feedback can't be required if it's not visible."
+msgstr "Η ανατροφοδότηση δεν μπορεί να απαιτείται αν δεν είναι ορατή."
+
+#: actions/blocks/action_content_blocks.py
+msgid "Email can't be required if it's not visible."
+msgstr "Το ηλεκτρονικό ταχυδρομείο δεν μπορεί να απαιτείται εάν δεν είναι ορατό."
+
+#: actions/blocks/action_content_blocks.py
+#: actions/blocks/category_page_layout.py
+msgid "Contact form"
+msgstr "Φόρμα επικοινωνίας"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Indicator Causal Chain"
+msgstr "Δείκτης Αιτιώδης αλυσίδα"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the dataset?"
+msgstr "Ποια επικεφαλίδα θα πρέπει να χρησιμοποιείται στο δημόσιο περιβάλλον εργασίας για το σύνολο δεδομένων;"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Help text for the Dataset to be shown in the public UI"
+msgstr "Κείμενο βοήθειας για το σύνολο δεδομένων που θα εμφανίζεται στο δημόσιο UI"
+
+#: actions/blocks/action_content_blocks.py
+#, fuzzy
+#| msgid "datasets"
+msgid "Datasets"
+msgstr "Σύνολα δεδομένων"
+
+#: actions/blocks/action_content_blocks.py
+msgid "What label should be used in the public UI for the official name?"
+msgstr "Ποια ετικέτα θα πρέπει να χρησιμοποιείται στη δημόσια Ε.Ε. για την επίσημη ονομασία;"
+
+#: actions/blocks/action_content_blocks.py aplans/dynamic_blocks.py
+msgid "Field label"
+msgstr "Ετικέτα πεδίου"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Description to show after the field content"
+msgstr "Περιγραφή που θα εμφανίζεται μετά το περιεχόμενο του πεδίου"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Caption"
+msgstr "Λεζάντα"
+
+#: actions/blocks/action_content_blocks.py
+msgid "Official name"
+msgstr "Επίσημη ονομασία"
+
+#: actions/blocks/action_list.py
+msgid "Action highlights"
+msgstr "Επισημάνσεις δράσης"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Action list?"
+msgstr "Ποια επικεφαλίδα θα πρέπει να χρησιμοποιείται στο δημόσιο περιβάλλον εργασίας για τη λίστα ενεργειών;"
+
+#: actions/blocks/action_list.py
+#, fuzzy
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Help text for the Action list to be shown in the public UI"
+msgstr "Κείμενο βοήθειας για τη λίστα ενεργειών που θα εμφανίζεται στο δημόσιο UI"
+
+#: actions/blocks/action_list.py
+msgid "Filter on category"
+msgstr "Φίλτρο στην κατηγορία"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+msgid "Group by level"
+msgstr "Ομαδοποίηση ανά επίπεδο"
+
+#: actions/blocks/action_list.py actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Use category level for tabbed grouping in the public UI"
+msgstr "Χρήση επιπέδου κατηγορίας για ομαδοποίηση με καρτέλες στο δημόσιο UI"
+
+#: actions/blocks/action_list.py
+msgid "Action list"
+msgstr "Κατάλογος ενεργειών"
+
+#: actions/blocks/category_list.py pages/blocks.py
+#: reports/spreadsheets/excel_report.py
+msgid "Lead"
+msgstr "Επικεφαλής"
+
+#: actions/blocks/category_list.py actions/blocks/filters.py
+msgid "Style"
+msgstr "Στυλ"
+
+#: actions/blocks/category_list.py pages/blocks.py pages/models.py
+msgid "Cards"
+msgstr "Κάρτες"
+
+#: actions/blocks/category_list.py
+msgid "Table"
+msgstr "Πίνακας"
+
+#: actions/blocks/category_list.py actions/blocks/category_page_layout.py
+msgid "Category list"
+msgstr "Κατάλογος κατηγοριών"
+
+#: actions/blocks/category_list.py
+msgid "Value field"
+msgstr "Πεδίο τιμών"
+
+#: actions/blocks/category_list.py
+msgid "Category tree map"
+msgstr "Χάρτης δέντρων κατηγορίας"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Category level list?"
+msgstr "Ποια επικεφαλίδα θα πρέπει να χρησιμοποιείται στο δημόσιο περιβάλλον εργασίας για τη λίστα επιπέδου κατηγορίας;"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Help text for the Category level list to be shown in the public UI"
+msgstr "Κείμενο βοήθειας για τη λίστα επιπέδου κατηγορίας που θα εμφανίζεται στο δημόσιο περιβάλλον εργασίας"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "category level"
+msgid "Filter by level"
+msgstr "Φίλτρο ανά επίπεδο"
+
+#: actions/blocks/category_list.py
+#, fuzzy
+#| msgid "Category levels"
+msgid "Category level list"
+msgstr "Κατάλογος επιπέδων κατηγορίας"
+
+#: actions/blocks/category_page_layout.py
+msgid "Body"
+msgstr "Σώμα"
+
+#: actions/blocks/category_page_layout.py
+msgid "Basis"
+msgstr "Βάση"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py reports/spreadsheets/excel_report.py
+msgid "Implementation phase"
+msgstr "Φάση υλοποίησης"
+
+#: actions/blocks/category_page_layout.py actions/blocks/filters.py
+#: reports/blocks/action_content.py
+msgid "Status"
+msgstr "Κατάσταση"
+
+#: actions/blocks/choosers.py
+#, fuzzy
+#| msgid "dataset license"
+msgid "Dataset Schema"
+msgstr "Σχήμα συνόλου δεδομένων"
+
+#: actions/blocks/column_block_base.py
+msgid "Label for the column to be used instead of the default"
+msgstr "Ετικέτα για τη στήλη που θα χρησιμοποιείται αντί της προεπιλεγμένης"
+
+#: actions/blocks/filters.py
+msgid "Label for 'show all'"
+msgstr "Ετικέτα για το 'show all'"
+
+#: actions/blocks/filters.py
+msgid "Buttons"
+msgstr "Κουμπιά"
+
+#: actions/blocks/filters.py
+msgid "How many levels of category hierarchy to show"
+msgstr "Πόσα επίπεδα ιεραρχίας κατηγοριών θα εμφανίζονται"
+
+#: actions/blocks/filters.py
+msgid "Depth"
+msgstr "Βάθος"
+
+#: actions/blocks/filters.py
+#, python-format
+msgid "Filter: %(filter_label)s"
+msgstr "Φίλτρο: %(filter_label)s"
+
+#: actions/blocks/filters.py
+msgid "Responsible party"
+msgstr "Υπεύθυνος"
+
+#: actions/blocks/filters.py
+msgid "Primary organization"
+msgstr "Πρωτοβάθμια οργάνωση"
+
+#: actions/blocks/filters.py actions/templates/actions/chooser_results.html
+#: actions/wagtail_admin.py
+msgid "Plan"
+msgstr "Σχέδιο"
+
+#: actions/blocks/filters.py
+msgid "Schedule"
+msgstr "Πρόγραμμα"
+
+#: actions/blocks/filters.py reports/report_formatters.py
+msgid "Continuous Action"
+msgstr "Συνεχής δράση"
+
+#: actions/blocks/mixins.py
+msgid "[not included]"
+msgstr "[δεν περιλαμβάνεται]"
+
+#: actions/blocks/mixins.py
+msgid "in primary filters"
+msgstr "σε πρωτογενή φίλτρα"
+
+#: actions/blocks/mixins.py
+msgid "in main filters"
+msgstr "στα κύρια φίλτρα"
+
+#: actions/blocks/mixins.py
+msgid "in advanced filters"
+msgstr "στα προηγμένα φίλτρα"
+
+#: actions/blocks/mixins.py
+msgid "in main column (top)"
+msgstr "στην κύρια στήλη (επάνω)"
+
+#: actions/blocks/mixins.py
+msgid "in main column (bottom)"
+msgstr "στην κύρια στήλη (κάτω)"
+
+#: actions/blocks/mixins.py
+msgid "in side column"
+msgstr "στην πλαϊνή στήλη"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "What label should be used in the public UI for the official name?"
+msgid "What heading should be used in the public UI for the Outcome?"
+msgstr "Ποιος τίτλος θα πρέπει να χρησιμοποιείται στο δημόσιο περιβάλλον εργασίας για το αποτέλεσμα;"
+
+#: actions/blocks/paths_content.py
+#, fuzzy
+#| msgid "Help text for the field to be shown in the UI"
+msgid "Help text for the Outcome to be shown in the public UI"
+msgstr "Κείμενο βοήθειας για το αποτέλεσμα που θα εμφανίζεται στο δημόσιο UI"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node ID"
+msgstr "Kausal Paths αποτέλεσμα ID κόμβου"
+
+#: actions/blocks/paths_content.py
+msgid "Kausal Paths outcome node to be used"
+msgstr "Κόμβος αποτελέσματος Kausal Paths που πρέπει να χρησιμοποιηθεί"
+
+#: actions/blocks/paths_content.py
+msgid "Paths outcome"
+msgstr "Αποτελέσματα Paths"
+
+#: actions/category_admin.py
+msgid "Common category type"
+msgstr "Κοινός τύπος κατηγορίας"
+
+#: actions/category_admin.py
+msgid "Category types"
+msgstr "Τύποι κατηγορίας"
+
+#: actions/category_admin.py
+msgid "Action and indicator categorization"
+msgstr "Κατηγοριοποίηση δράσεων και δεικτών"
+
+#: actions/category_admin.py
+msgid "Category levels"
+msgstr "Επίπεδα κατηγορίας"
+
+#: actions/category_admin.py
+msgid "There is already a category with this identifier."
+msgstr "Υπάρχει ήδη μια κατηγορία με αυτό το αναγνωριστικό."
+
+#: actions/category_admin.py
+msgid "Icons"
+msgstr "Εικόνες"
+
+#: actions/category_admin.py
+msgid "Common category types"
+msgstr "Κοινοί τύποι κατηγοριών"
+
+#: actions/category_admin.py admin_site/wagtail_hooks.py
+msgid "Common categories"
+msgstr "Κοινές κατηγορίες"
+
+#: actions/chooser.py
+msgid "Choose a category"
+msgstr "Επιλέξτε μια κατηγορία"
+
+#: actions/chooser.py
+msgid "Choose another category"
+msgstr "Επιλέξτε άλλη κατηγορία"
+
+#: actions/chooser.py
+msgid "Choose a category type"
+msgstr "Επιλέξτε έναν τύπο κατηγορίας"
+
+#: actions/chooser.py
+msgid "Choose another category type"
+msgstr "Επιλέξτε έναν άλλο τύπο κατηγορίας"
+
+#: actions/chooser.py
+msgid "Choose a category level"
+msgstr "Επιλέξτε ένα επίπεδο κατηγορίας"
+
+#: actions/chooser.py
+msgid "Choose an action"
+msgstr "Επιλέξτε μια ενέργεια"
+
+#: actions/chooser.py
+msgid "Choose another action"
+msgstr "Επιλέξτε μια άλλη ενέργεια"
+
+#: actions/chooser.py
+msgid "Choose a plan"
+msgstr "Επιλέξτε ένα σχέδιο"
+
+#: actions/chooser.py
+msgid "Choose another plan"
+msgstr "Επιλέξτε άλλο πρόγραμμα"
+
+#: actions/chooser.py
+msgid "Choose a field"
+msgstr "Επιλέξτε ένα πεδίο"
+
+#: actions/chooser.py
+msgid "Choose another field"
+msgstr "Επιλέξτε ένα άλλο πεδίο"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose a category type"
+msgid "Choose a dataset schema"
+msgstr "Επιλέξτε ένα σχήμα συνόλου δεδομένων"
+
+#: actions/chooser.py
+#, fuzzy
+#| msgid "Choose another category type"
+msgid "Choose another dataset schema"
+msgstr "Επιλέξτε ένα άλλο σχήμα συνόλου δεδομένων"
+
+#: actions/defaults.py
+msgid "Cancelled or postponed"
+msgstr "Ακυρώθηκε ή αναβλήθηκε"
+
+#: actions/defaults.py
+msgid "Planning"
+msgstr "Σχεδιασμός"
+
+#: actions/defaults.py
+msgid "Implementation"
+msgstr "Εφαρμογή"
+
+#: actions/export.py aplans/utils.py notifications/models.py
+msgid "identifier"
+msgstr "αναγνωριστικό"
+
+#: actions/export.py actions/models/action.py actions/models/action_deps.py
+#: actions/models/attributes.py actions/models/category.py
+#: actions/models/plan.py budget/models.py feedback/models.py
+#: indicators/models.py orgs/models.py reports/models.py
+msgid "name"
+msgstr "όνομα"
+
+#: actions/export.py actions/models/action.py
+msgid "impact"
+msgstr "αντίκτυπο"
+
+#: actions/export.py actions/models/action.py
+#: reports/spreadsheets/excel_report.py
+msgid "status"
+msgstr "κατάσταση"
+
+#: actions/export.py
+msgid "progress indicators"
+msgstr "δείκτες προόδου"
+
+#: actions/export.py
+msgid "other indicators"
+msgstr "άλλοι δείκτες"
+
+#: actions/export.py actions/models/action.py indicators/models.py
+msgid "contact persons"
+msgstr "πρόσωπα επικοινωνίας"
+
+#: actions/models/action.py actions/models/plan.py content/models.py
+#: feedback/models.py indicators/models.py notifications/models.py
+#: orgs/models.py pages/models.py
+msgid "plan"
+msgstr "σχέδιο"
+
+#: actions/models/action.py
+msgid "primary organization"
+msgstr "πρωτοβάθμια οργάνωση"
+
+#: actions/models/action.py
+msgid "official name"
+msgstr "επίσημη ονομασία"
+
+#: actions/models/action.py
+msgid "The name as approved by an official party"
+msgstr "Η ονομασία όπως έχει εγκριθεί από επίσημο κόμμα"
+
+#: actions/models/action.py
+msgid "The identifier for this action (e.g. number)"
+msgstr "Το αναγνωριστικό αυτής της ενέργειας (π.χ. αριθμός)"
+
+#: actions/models/action.py admin_site/draftail_rich_text_area.py
+#: pages/blocks.py
+msgid "Image"
+msgstr "Εικόνα"
+
+#: actions/models/action.py pages/models.py
+msgid "Lead paragraph"
+msgstr "Επικεφαλής παράγραφος"
+
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py
+msgid "description"
+msgstr "περιγραφή"
+
+#: actions/models/action.py
+msgid "What does this action involve in more detail?"
+msgstr "Τι περιλαμβάνει αυτή η δράση με περισσότερες λεπτομέρειες;"
+
+#: actions/models/action.py
+msgid "The impact of this action"
+msgstr "Ο αντίκτυπος αυτής της δράσης"
+
+#: actions/models/action.py
+msgid "internal priority"
+msgstr "εσωτερική προτεραιότητα"
+
+#: actions/models/action.py
+msgid "internal notes for plan administrators"
+msgstr "εσωτερικές σημειώσεις για τους διαχειριστές των προγραμμάτων"
+
+#: actions/models/action.py indicators/models.py
+msgid "internal notes"
+msgstr "εσωτερικές σημειώσεις"
+
+#: actions/models/action.py
+msgid "implementation phase"
+msgstr "φάση υλοποίησης"
+
+#: actions/models/action.py
+msgid "override status manually"
+msgstr "παράκαμψη της κατάστασης χειροκίνητα"
+
+#: actions/models/action.py
+msgid "Set if you want to prevent the action status from being determined automatically"
+msgstr "Ορίστε αν θέλετε να αποτρέψετε τον αυτόματο προσδιορισμό της κατάστασης της ενέργειας"
+
+#: actions/models/action.py
+msgid "specifier for status"
+msgstr "προσδιορισμός για την κατάσταση"
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Describe the reason why this action has has this status"
+msgid "Describe the reason why this action has this status"
+msgstr "Περιγράψτε τον λόγο για τον οποίο η δράση έχει αυτό το καθεστώς"
+
+#: actions/models/action.py
+msgid "merged with action"
+msgstr "συγχωνεύθηκε με τη δράση"
+
+#: actions/models/action.py
+msgid "Set if this action is merged with another action"
+msgstr "Ορίζεται εάν αυτή η ενέργεια συγχωνεύεται με άλλη ενέργεια"
+
+#: actions/models/action.py
+msgid "completion"
+msgstr "ολοκλήρωση"
+
+#: actions/models/action.py
+msgid "The completion percentage for this action"
+msgstr "Το ποσοστό ολοκλήρωσης αυτής της ενέργειας"
+
+#: actions/models/action.py
+msgid "schedule"
+msgstr "πρόγραμμα"
+
+#: actions/models/action.py
+msgid "continuous action"
+msgstr "συνεχής δράση"
+
+#: actions/models/action.py
+msgid "Set if the action does not have a start or an end date"
+msgstr "Ορίζεται εάν η δράση δεν έχει ημερομηνία έναρξης ή λήξης"
+
+#: actions/models/action.py
+msgid "decision-making level"
+msgstr "επίπεδο λήψης αποφάσεων"
+
+#: actions/models/action.py actions/models/category.py indicators/models.py
+msgid "categories"
+msgstr "κατηγορίες"
+
+#: actions/models/action.py indicators/models.py
+msgid "indicators"
+msgstr "δείκτες"
+
+#: actions/models/action.py
+msgid "related actions"
+msgstr "σχετικές δράσεις"
+
+#: actions/models/action.py
+msgid "responsible organizations"
+msgstr "υπεύθυνες οργανώσεις"
+
+#: actions/models/action.py aplans/utils.py
+#: reports/spreadsheets/excel_report.py
+msgid "updated at"
+msgstr "ενημερώνεται στο"
+
+#: actions/models/action.py budget/models.py reports/models.py
+msgid "start date"
+msgstr "ημερομηνία έναρξης"
+
+#: actions/models/action.py
+msgid "The date when implementation of this action starts"
+msgstr "Η ημερομηνία έναρξης της εφαρμογής της δράσης αυτής"
+
+#: actions/models/action.py reports/models.py
+msgid "end date"
+msgstr "ημερομηνία λήξης"
+
+#: actions/models/action.py
+msgid "The date when implementation of this action ends"
+msgstr "Η ημερομηνία λήξης της εφαρμογής της δράσης αυτής"
+
+#: actions/models/action.py
+msgid "Date format"
+msgstr "Μορφή ημερομηνίας"
+
+#: actions/models/action.py
+msgid "Format of action start and end dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr "Μορφή των ημερομηνιών έναρξης και λήξης των ενεργειών που εμφανίζονται στο δημόσιο περιβάλλον εργασίας.             Η προεπιλογή για όλες τις ενέργειες μπορεί να καθοριστεί στη σελίδα των ενεργειών."
+
+#: actions/models/action.py
+msgctxt "action"
+msgid "superseded by"
+msgstr "αντικαταστάθηκε από"
+
+#: actions/models/action.py
+msgid "Set if this action is superseded by another action"
+msgstr "Ορίζεται εάν αυτή η ενέργεια αντικαθίσταται από άλλη ενέργεια"
+
+#: actions/models/action.py
+msgctxt "action"
+msgid "copy of"
+msgstr ""
+
+#: actions/models/action.py
+#, fuzzy
+#| msgid "Set if this action is superseded by another action"
+msgid "Set if this action has been created by copying another action"
+msgstr "Ορίζεται εάν αυτή η ενέργεια αντικαθίσταται από άλλη ενέργεια"
+
+#: actions/models/action.py
+msgid "Role in dependencies"
+msgstr "Ρόλος στις εξαρτήσεις"
+
+#: actions/models/action.py
+msgid "Set if this action has the same role in all its dependency relationships with other actions"
+msgstr "Ορίζεται εάν αυτή η ενέργεια έχει τον ίδιο ρόλο σε όλες τις σχέσεις εξάρτησης με άλλες ενέργειες"
+
+#: actions/models/action.py
+msgctxt "partitive"
+msgid "action"
+msgstr "δράση"
+
+#: actions/models/action.py feedback/models.py indicators/models.py
+msgid "action"
+msgstr "δράση"
+
+#: actions/models/action.py
+msgid "actions"
+msgstr "δράσεις"
+
+#: actions/models/action.py
+msgid "Can administrate all actions"
+msgstr "Μπορεί να διαχειρίζεται όλες τις δράσεις"
+
+#: actions/models/action.py
+msgid "Other action is merged with this one"
+msgstr "Η άλλη ενέργεια συγχωνεύεται με την παρούσα"
+
+#: actions/models/action.py
+msgid "Has contact persons"
+msgstr "Διαθέτει πρόσωπα επαφής"
+
+#: actions/models/action.py
+msgid "Active tasks"
+msgstr "Ενεργά καθήκοντα"
+
+#: actions/models/action.py
+#, python-format
+msgid "The action is already marked as complete for report %s."
+msgstr "Η ενέργεια έχει ήδη επισημανθεί ως ολοκληρωμένη για την έκθεση %s."
+
+#: actions/models/action.py
+#, python-format
+msgid "Marked action '%(action)s' as complete for report '%(report)s'"
+msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'"
+
+#: actions/models/action.py
+#, python-format
+msgid "Cannot undo marking action as complete as there are %s snapshots"
+msgstr "Δεν είναι δυνατή η αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης, καθώς υπάρχουν στιγμιότυπα %s"
+
+#: actions/models/action.py
+#, python-format
+msgid "Undid marking action '%(action)s' as complete for report '%(report)s'"
+msgstr "Αναίρεση της επισήμανσης της ενέργειας \"%(action)s\" ως ολοκληρωμένης για την έκθεση \"%(report)s\""
+
+#: actions/models/action.py reports/blocks/action_content.py
+#: reports/report_formatters.py
+msgid "Primary responsible party"
+msgstr "Κύριος υπεύθυνος"
+
+#: actions/models/action.py reports/report_formatters.py
+msgid "Collaborator"
+msgstr "Συνεργάτης"
+
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py people/wagtail_admin.py
+msgid "organization"
+msgstr "οργάνωση"
+
+#: actions/models/action.py
+msgid "role"
+msgstr "ρόλος"
+
+#: actions/models/action.py
+msgid "specifier"
+msgstr "διευκρινιστής"
+
+#: actions/models/action.py
+msgid "The responsibility domain for the organization"
+msgstr "Ο τομέας ευθύνης για τον οργανισμό"
+
+#: actions/models/action.py
+msgid "action responsible party"
+msgstr "δράση υπεύθυνο μέρος"
+
+#: actions/models/action.py
+msgid "action responsible parties"
+msgstr "δράση υπεύθυνα μέρη"
+
+#: actions/models/action.py
+msgid "Editor"
+msgstr "Εκδότης"
+
+#: actions/models/action.py
+msgid "Moderator"
+msgstr "Συντονιστής"
+
+#: actions/models/action.py actions/models/plan.py indicators/models.py
+#: orgs/models.py people/models.py
+msgid "person"
+msgstr "πρόσωπο"
+
+#: actions/models/action.py
+msgid "primary contact person"
+msgstr "κύριο πρόσωπο επικοινωνίας"
+
+#: actions/models/action.py
+msgid "Is this person the primary contact person for the action?"
+msgstr "Είναι το πρόσωπο αυτό ο κύριος υπεύθυνος επικοινωνίας για τη δράση;"
+
+#: actions/models/action.py
+msgid "action contact person"
+msgstr "πρόσωπο επαφής για τη δράση"
+
+#: actions/models/action.py
+msgid "action contact persons"
+msgstr "πρόσωπα επαφής για τη δράση"
+
+#: actions/models/action.py
+msgid "action schedule"
+msgstr "χρονοδιάγραμμα δράσης"
+
+#: actions/models/action.py
+msgid "action schedules"
+msgstr "χρονοδιαγράμματα δράσης"
+
+#: actions/models/action.py
+msgid "is completed"
+msgstr "ολοκληρώνεται"
+
+#: actions/models/action.py actions/models/plan.py
+msgid "color"
+msgstr "χρώμα"
+
+#: actions/models/action.py
+msgid "action status"
+msgstr "κατάσταση δράσης"
+
+#: actions/models/action.py
+msgid "action statuses"
+msgstr "καταστάσεις δράσης"
+
+#: actions/models/action.py
+msgid "action implementation phase"
+msgstr "φάση υλοποίησης της δράσης"
+
+#: actions/models/action.py
+msgid "action implementation phases"
+msgstr "φάσεις υλοποίησης της δράσης"
+
+#: actions/models/action.py
+msgid "not started"
+msgstr "δεν ξεκίνησε"
+
+#: actions/models/action.py reports/spreadsheets/excel_report.py
+msgid "in progress"
+msgstr "σε εξέλιξη"
+
+#: actions/models/action.py
+msgid "completed"
+msgstr "ολοκληρωμένο"
+
+#: actions/models/action.py
+msgid "cancelled"
+msgstr "ακυρώθηκε"
+
+#: actions/models/action.py
+msgid "state"
+msgstr "κράτος"
+
+#: actions/models/action.py feedback/models.py
+msgid "comment"
+msgstr "σχόλιο"
+
+#: actions/models/action.py
+msgid "due date"
+msgstr "ημερομηνία λήξης"
+
+#: actions/models/action.py
+msgid "The date by which the task should be completed (deadline)"
+msgstr "Η ημερομηνία μέχρι την οποία θα πρέπει να έχει ολοκληρωθεί η εργασία (προθεσμία)"
+
+#: actions/models/action.py
+msgid "Due date format"
+msgstr "Μορφή ημερομηνίας λήξης"
+
+#: actions/models/action.py
+msgid "Format of action task due dates shown in the public UI.             The default for all actions can be specified on the actions page."
+msgstr "Μορφή των καταληκτικών ημερομηνιών εργασιών δράσης που εμφανίζονται στο δημόσιο περιβάλλον εργασίας.             Η προεπιλογή για όλες τις ενέργειες μπορεί να καθοριστεί στη σελίδα των ενεργειών."
+
+#: actions/models/action.py
+msgid "completion date"
+msgstr "ημερομηνία ολοκλήρωσης"
+
+#: actions/models/action.py
+msgid "The date when the task was completed"
+msgstr "Η ημερομηνία κατά την οποία ολοκληρώθηκε η εργασία"
+
+#: actions/models/action.py
+msgid "completed by"
+msgstr "συμπληρώνεται από"
+
+#: actions/models/action.py aplans/utils.py feedback/models.py
+msgid "created at"
+msgstr "δημιουργήθηκε στο"
+
+#: actions/models/action.py
+msgid "modified at"
+msgstr "τροποποιημένο σε"
+
+#: actions/models/action.py
+msgctxt "partitive"
+msgid "action task"
+msgstr "εργασία δράσης"
+
+#: actions/models/action.py
+msgid "action task"
+msgstr "εργασία δράσης"
+
+#: actions/models/action.py
+msgid "action tasks"
+msgstr "καθήκοντα δράσης"
+
+#: actions/models/action.py
+msgid "Non-completed tasks cannot have a completion date"
+msgstr "Οι μη ολοκληρωμένες εργασίες δεν μπορούν να έχουν ημερομηνία ολοκλήρωσης"
+
+#: actions/models/action.py
+msgid "Completed tasks must have a completion date"
+msgstr "Οι ολοκληρωμένες εργασίες πρέπει να έχουν ημερομηνία ολοκλήρωσης"
+
+#: actions/models/action.py
+msgid "action impact class"
+msgstr "κατηγορία επιπτώσεων δράσης"
+
+#: actions/models/action.py
+msgid "action impact classes"
+msgstr "τάξεις αντίκτυπου δράσης"
+
+#: actions/models/action.py feedback/models.py indicators/models.py
+#: orgs/models.py pages/blocks.py pages/models.py
+msgid "URL"
+msgstr "URL"
+
+#: actions/models/action.py pages/models.py
+msgid "title"
+msgstr "τίτλος"
+
+#: actions/models/action.py
+msgid "action link"
+msgstr "σύνδεσμος δράσης"
+
+#: actions/models/action.py
+msgid "action links"
+msgstr "σύνδεσμοι δράσης"
+
+#: actions/models/action.py budget/models.py indicators/models.py
+msgid "date"
+msgstr "ημερομηνία"
+
+#: actions/models/action.py
+msgid "author"
+msgstr "συγγραφέας"
+
+#: actions/models/action.py notifications/models.py
+msgid "content"
+msgstr "περιεχόμενο"
+
+#: actions/models/action.py aplans/utils.py people/models.py
+msgid "created by"
+msgstr "δημιουργήθηκε από"
+
+#: actions/models/action.py
+msgid "action status update"
+msgstr "επικαιροποίηση της κατάστασης της δράσης"
+
+#: actions/models/action.py
+msgid "action status updates"
+msgstr "ενημερώσεις κατάστασης δράσης"
+
+#: actions/models/action.py
+msgid "impact group action"
+msgstr "δράση της ομάδας αντίκτυπου"
+
+#: actions/models/action.py
+msgid "impact group actions"
+msgstr "δράσεις της ομάδας αντίκτυπου"
+
+#: actions/models/action.py
+msgid "Approve"
+msgstr "Έγκριση"
+
+#: actions/models/action.py
+msgid "Request changes"
+msgstr "Αίτημα αλλαγών"
+
+#: actions/models/action_deps.py
+msgid "Preceding action"
+msgstr "Προηγούμενη δράση"
+
+#: actions/models/action_deps.py
+msgid "Dependent action"
+msgstr "Εξαρτημένη δράση"
+
+#: actions/models/action_deps.py
+msgid "Maximum dependency chain length exceeded."
+msgstr "Υπέρβαση του μέγιστου μήκους αλυσίδας εξάρτησης."
+
+#: actions/models/attributes.py
+msgid "Ordered choice"
+msgstr "Επιλογή κατά παραγγελία"
+
+#: actions/models/attributes.py
+msgid "Optional choice with optional text"
+msgstr "Προαιρετική επιλογή με προαιρετικό κείμενο"
+
+#: actions/models/attributes.py
+msgid "Rich text"
+msgstr "Πλούσιο κείμενο"
+
+#: actions/models/attributes.py
+msgid "Numeric"
+msgstr "Αριθμητικό"
+
+#: actions/models/attributes.py actions/models/category.py admin_site/models.py
+msgid "help text"
+msgstr "κείμενο βοήθειας"
+
+#: actions/models/attributes.py
+msgid "Format"
+msgstr "Μορφή"
+
+#: actions/models/attributes.py
+msgid "Unit (only if format is numeric)"
+msgstr "Μονάδα (μόνο αν η μορφή είναι αριθμητική)"
+
+#: actions/models/attributes.py
+msgid "Category type (if format is category)"
+msgstr "Τύπος κατηγορίας (εάν η μορφή είναι κατηγορία)"
+
+#: actions/models/attributes.py
+msgid "If the format is \"Category\", choose which category type the field values can be chosen from"
+msgstr "Εάν η μορφή είναι \"Κατηγορία\", επιλέξτε από ποιον τύπο κατηγορίας μπορούν να επιλεγούν οι τιμές του πεδίου"
+
+#: actions/models/attributes.py
+msgid "show choice names"
+msgstr "δείξτε ονόματα επιλογής"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the choice names are displayed"
+msgstr "Εάν η μορφή είναι \"διατεταγμένη επιλογή\", καθορίζει εάν εμφανίζονται τα ονόματα των επιλογών"
+
+#: actions/models/attributes.py
+msgid "has zero option"
+msgstr "έχει μηδενική επιλογή"
+
+#: actions/models/attributes.py
+msgid "If the format is \"ordered choice\", determines whether the first option is displayed with zero bullets instead of one"
+msgstr "Εάν η μορφή είναι \"διατεταγμένη επιλογή\", καθορίζει εάν η πρώτη επιλογή εμφανίζεται με μηδέν κουκκίδες αντί για μία"
+
+#: actions/models/attributes.py
+msgid "character limit for text fields"
+msgstr "όριο χαρακτήρων για τα πεδία κειμένου"
+
+#: actions/models/attributes.py
+msgid "show in reporting tab"
+msgstr "εμφάνιση στην καρτέλα αναφοράς"
+
+#: actions/models/attributes.py admin_site/models.py
+msgid "field"
+msgstr "πεδίο"
+
+#: actions/models/attributes.py reports/wagtail_admin.py
+msgid "fields"
+msgstr "πεδία"
+
+#: actions/models/attributes.py
+msgid "Unit must only be used for numeric fields"
+msgstr "Η μονάδα πρέπει να χρησιμοποιείται μόνο για αριθμητικά πεδία"
+
+#: actions/models/attributes.py
+msgid "If no primary language is set, there must not be other languages"
+msgstr "Εάν δεν έχει οριστεί κύρια γλώσσα, δεν πρέπει να υπάρχουν άλλες γλώσσες"
+
+#: actions/models/attributes.py
+msgid "This value is only allowed for action fields"
+msgstr "Αυτή η τιμή επιτρέπεται μόνο για πεδία δράσης"
+
+#: actions/models/attributes.py
+msgid "attribute choice option"
+msgstr "επιλογή επιλογής χαρακτηριστικών"
+
+#: actions/models/attributes.py
+msgid "attribute choice options"
+msgstr "επιλογές επιλογής χαρακτηριστικών"
+
+#: actions/models/category.py
+msgid "Single"
+msgstr "Ενιαία"
+
+#: actions/models/category.py
+msgid "Multiple"
+msgstr "Πολλαπλές"
+
+#: actions/models/category.py
+msgid "hide category identifiers"
+msgstr "απόκρυψη αναγνωριστικών κατηγοριών"
+
+#: actions/models/category.py
+msgid "Set if the categories do not have meaningful identifiers"
+msgstr "Ορίζεται εάν οι κατηγορίες δεν έχουν σημαντικά αναγνωριστικά"
+
+#: actions/models/category.py
+msgid "lead paragraph"
+msgstr "κύρια παράγραφος"
+
+#: actions/models/category.py
+msgid "usable for action categorization"
+msgstr "χρήσιμη για την κατηγοριοποίηση δράσεων"
+
+#: actions/models/category.py
+msgid "usable for indicator categorization"
+msgstr "που μπορούν να χρησιμοποιηθούν για την κατηγοριοποίηση των δεικτών"
+
+#: actions/models/category.py
+msgid "editable for actions"
+msgstr "επεξεργάσιμο για δράσεις"
+
+#: actions/models/category.py
+msgid "editable for indicators"
+msgstr "επεξεργάσιμο για δείκτες"
+
+#: actions/models/category.py
+msgid "single or multiple selection"
+msgstr "απλή ή πολλαπλή επιλογή"
+
+#: actions/models/category.py
+#, python-brace-format
+msgid "Choose \"{choice_multiple}\" only if more than one category can be selected at a time, otherwise choose \"{choice_single}\" which is the default."
+msgstr "Επιλέξτε \"{choice_multiple}\" μόνο αν μπορούν να επιλεγούν περισσότερες από μία κατηγορίες ταυτόχρονα, διαφορετικά επιλέξτε \"{choice_single}\" που είναι η προεπιλεγμένη."
+
+#: actions/models/category.py
+msgid "has a collection"
+msgstr "έχει μια συλλογή"
+
+#: actions/models/category.py
+msgid "Set if this category type should have its own collection for images"
+msgstr "Ορίστε αν αυτός ο τύπος κατηγορίας θα πρέπει να έχει τη δική του συλλογή για εικόνες"
+
+#: actions/models/category.py orgs/models.py
+msgid "primary language"
+msgstr "κύρια γλώσσα"
+
+#: actions/models/category.py
+msgid "common category type"
+msgstr "κοινός τύπος κατηγορίας"
+
+#: actions/models/category.py
+msgid "common category types"
+msgstr "κοινοί τύποι κατηγοριών"
+
+#: actions/models/category.py
+msgid "synchronize with pages"
+msgstr "συγχρονισμός με σελίδες"
+
+#: actions/models/category.py
+msgid "Set if categories of this type should be synchronized with pages"
+msgstr "Ορίστε αν οι κατηγορίες αυτού του τύπου θα πρέπει να συγχρονίζονται με τις σελίδες"
+
+#: actions/models/category.py
+msgid "category type"
+msgstr "τύπος κατηγορίας"
+
+#: actions/models/category.py
+msgid "category types"
+msgstr "τύποι κατηγοριών"
+
+#: actions/models/category.py
+msgid "This value is not allowed for category types"
+msgstr "Αυτή η τιμή δεν επιτρέπεται για τύπους κατηγοριών"
+
+#: actions/models/category.py feedback/models.py notifications/models.py
+msgid "type"
+msgstr "τύπος"
+
+#: actions/models/category.py
+msgid "plural name"
+msgstr "όνομα στον πληθυντικό αριθμό"
+
+#: actions/models/category.py
+msgid "category level"
+msgstr "επίπεδο κατηγορίας"
+
+#: actions/models/category.py
+msgid "category levels"
+msgstr "επίπεδα κατηγορίας"
+
+#: actions/models/category.py
+msgid "theme color"
+msgstr "χρώμα θέματος"
+
+#: actions/models/category.py
+msgid "Set if the category has a theme color"
+msgstr "Ορίζει αν η κατηγορία έχει χρώμα θέματος"
+
+#: actions/models/category.py
+msgid "Kausal Paths node UUID"
+msgstr "UUID κόμβου Kausal Paths"
+
+#: actions/models/category.py
+msgid "Kausal Paths node to link this category to"
+msgstr "Κόμβος Kausal Paths για να συνδέσετε αυτή την κατηγορία με"
+
+#: actions/models/category.py
+msgid "common category"
+msgstr "κοινή κατηγορία"
+
+#: actions/models/category.py
+msgid "common categories"
+msgstr "κοινές κατηγορίες"
+
+#: actions/models/category.py
+msgid "parent category"
+msgstr "γονική κατηγορία"
+
+#: actions/models/category.py feedback/models.py
+msgid "category"
+msgstr "κατηγορία"
+
+#: actions/models/category.py
+msgid "Parent forms a loop. Leave empty if top-level category."
+msgstr "Ο γονέας σχηματίζει βρόχο. Αφήστε το κενό αν πρόκειται για κατηγορία ανώτατου επιπέδου."
+
+#: actions/models/category.py
+msgid "Parent must be of same type"
+msgstr "Ο γονέας πρέπει να είναι του ίδιου τύπου"
+
+#: actions/models/category.py
+msgid "Subcategories"
+msgstr "Υποκατηγορίες"
+
+#: actions/models/features.py
+msgid "No ordering"
+msgstr "Καμία παραγγελία"
+
+#: actions/models/features.py
+msgid "Order by name"
+msgstr "Παραγγελία με βάση το όνομα"
+
+#: actions/models/features.py
+msgid "Do not show contact persons publicly"
+msgstr "Μην εμφανίζετε δημόσια τα πρόσωπα επαφής"
+
+#: actions/models/features.py
+msgid "Show only name, role and affiliation"
+msgstr "Εμφάνιση μόνο του ονόματος, του ρόλου και της ιδιότητας"
+
+#: actions/models/features.py
+msgid "Show all information"
+msgstr "Εμφάνιση όλων των πληροφοριών"
+
+#: actions/models/features.py
+msgid "Show all information but only for authenticated users"
+msgstr "Εμφάνιση όλων των πληροφοριών αλλά μόνο για πιστοποιημένους χρήστες"
+
+#: actions/models/features.py
+msgid "Allow images for actions"
+msgstr "Επιτρέψτε εικόνες για ενέργειες"
+
+#: actions/models/features.py
+msgid "Should custom images for individual actions be allowed"
+msgstr "Θα πρέπει να επιτρέπονται προσαρμοσμένες εικόνες για μεμονωμένες ενέργειες"
+
+#: actions/models/features.py
+msgid "Show admin link"
+msgstr "Εμφάνιση συνδέσμου διαχειριστή"
+
+#: actions/models/features.py
+msgid "Should the public website contain a link to the admin login?"
+msgstr "Θα πρέπει ο δημόσιος ιστότοπος να περιέχει σύνδεσμο για τη σύνδεση του διαχειριστή;"
+
+#: actions/models/features.py
+msgid "Allow logging in to the public website"
+msgstr "Επιτρέπει τη σύνδεση στο δημόσιο δικτυακό τόπο"
+
+#: actions/models/features.py
+msgid "Should users be able to have authenticated sessions in the public UI?"
+msgstr "Θα πρέπει οι χρήστες να μπορούν να έχουν επαληθευμένες συνεδρίες στο δημόσιο περιβάλλον εργασίας;"
+
+#: actions/models/features.py
+msgid "Publicly visible data about contact persons"
+msgstr "Δημόσια ορατά δεδομένα σχετικά με τα πρόσωπα επαφής"
+
+#: actions/models/features.py
+msgid "Choose which information about contact persons is visible in the public UI"
+msgstr "Επιλέξτε ποιες πληροφορίες σχετικά με τα πρόσωπα επαφής θα είναι ορατές στο δημόσιο UI"
+
+#: actions/models/features.py
+msgid "Show profile pictures for contact persons"
+msgstr "Εμφάνιση εικόνων προφίλ για τα πρόσωπα επαφής"
+
+#: actions/models/features.py
+msgid "Should profile pictures be shown for contact persons in the public UI?"
+msgstr "Θα πρέπει να εμφανίζονται φωτογραφίες προφίλ για τα πρόσωπα επαφής στο δημόσιο περιβάλλον εργασίας;"
+
+#: actions/models/features.py
+msgid "Show organization ancestors in contact details of contact persons"
+msgstr "Εμφάνιση των προγόνων της οργάνωσης στα στοιχεία επικοινωνίας των προσώπων επαφής"
+
+#: actions/models/features.py
+msgid "When displaying a contact person's contact details, should the contact person's organization be displayed along with all its ancestors?"
+msgstr "Όταν εμφανίζονται τα στοιχεία επικοινωνίας ενός προσώπου επαφής, θα πρέπει να εμφανίζεται ο οργανισμός του προσώπου επαφής μαζί με όλους τους προγόνους του;"
+
+#: actions/models/features.py
+msgid "Hide moderators from the contact persons"
+msgstr "Απόκρυψη των συντονιστών από τα πρόσωπα επικοινωνίας"
+
+#: actions/models/features.py
+msgid "Should moderators be hidden from the visible contact persons in the public UI?"
+msgstr "Θα πρέπει οι συντονιστές να αποκρύπτονται από τα ορατά πρόσωπα επικοινωνίας στο δημόσιο περιβάλλον εργασίας;"
+
+#: actions/models/features.py
+msgid "Has action identifiers"
+msgstr "Έχει αναγνωριστικά δράσης"
+
+#: actions/models/features.py
+msgid "Set if the plan uses meaningful action identifiers"
+msgstr "Ορίζεται εάν το σχέδιο χρησιμοποιεί αναγνωριστικά δράσης με νόημα"
+
+#: actions/models/features.py
+msgid "Show action identifiers"
+msgstr "Εμφάνιση αναγνωριστικών δράσης"
+
+#: actions/models/features.py
+msgid "Set if action identifiers should be visible in the public UI"
+msgstr "Ορίστε αν τα αναγνωριστικά ενεργειών θα πρέπει να είναι ορατά στο δημόσιο UI"
+
+#: actions/models/features.py
+msgid "Action contact persons have different roles"
+msgstr "Τα πρόσωπα επαφής της δράσης έχουν διαφορετικούς ρόλους"
+
+#: actions/models/features.py
+msgid "Set if there are separate contact persons with publishing rights and others who can only suggest changes"
+msgstr "Ορίστε αν υπάρχουν ξεχωριστοί ρόλοι για πρόσωπα επικοινωνίας με δικαιώματα δημοσίευσης και επεξεργασίας"
+
+#: actions/models/features.py
+msgid "Minimal statuses"
+msgstr "Ελάχιστες καταστάσεις"
+
+#: actions/models/features.py
+msgid "Set to prevent showing status-specific graphs and other elements if statuses aren't systematically used in this action plan"
+msgstr "Ρύθμιση για να μην εμφανίζονται γραφήματα και άλλα στοιχεία που αφορούν την κατάσταση, εάν οι καταστάσεις δεν χρησιμοποιούνται συστηματικά σε αυτό το σχέδιο δράσης"
+
+#: actions/models/features.py
+msgid "Has action official name field"
+msgstr "Έχει πεδίο επίσημο όνομα δράσης"
+
+#: actions/models/features.py
+msgid "Set if the plan uses the official name field"
+msgstr "Ορίζεται εάν το σχέδιο χρησιμοποιεί το πεδίο επίσημο όνομα"
+
+#: actions/models/features.py
+msgid "Has action lead paragraph"
+msgstr "Διαθέτει παράγραφο εισαγωγής δράσης"
+
+#: actions/models/features.py
+msgid "Set if the plan uses the lead paragraph field"
+msgstr "Ορίζεται εάν το σχέδιο χρησιμοποιεί το πεδίο της επικεφαλής παραγράφου"
+
+#: actions/models/features.py
+msgid "Has primary organizations for actions"
+msgstr "Έχει πρωταρχικούς οργανισμούς για δράσεις"
+
+#: actions/models/features.py
+msgid "Set if actions have a clear primary organization (such as multi-city plans)"
+msgstr "Ορίστε εάν οι δράσεις έχουν σαφή πρωτογενή οργάνωση (όπως τα σχέδια πολλαπλών πόλεων)"
+
+#: actions/models/features.py
+msgid "Enable site search"
+msgstr "Ενεργοποίηση αναζήτησης ιστότοπου"
+
+#: actions/models/features.py
+msgid "Enable site-wide search functionality"
+msgstr "Ενεργοποίηση της λειτουργίας αναζήτησης σε ολόκληρο τον ιστότοπο"
+
+#: actions/models/features.py
+msgid "Enable indicator comparison"
+msgstr "Ενεργοποίηση σύγκρισης δεικτών"
+
+#: actions/models/features.py
+msgid "Set to enable comparing indicators between organizations"
+msgstr "Ρύθμιση για να επιτρέπεται η σύγκριση δεικτών μεταξύ οργανισμών"
+
+#: actions/models/features.py
+msgid "Indicator order"
+msgstr "Εντολή δείκτη"
+
+#: actions/models/features.py
+msgid "Choose how to order indicators in the action pages"
+msgstr "Επιλέξτε τον τρόπο διάταξης των δεικτών στις σελίδες δράσης"
+
+#: actions/models/features.py
+msgid "Set to enable drafting and reviewing functionality and choose the desired workflow for reviewing"
+msgstr "Ρυθμίστε για να ενεργοποιήσετε τη λειτουργία σύνταξης και αναθεώρησης και επιλέξτε την επιθυμητή ροή εργασίας για την αναθεώρηση"
+
+#: actions/models/features.py
+msgid "Display field visibility as a label in edit views"
+msgstr "Εμφάνιση ορατότητας πεδίου ως ετικέτα σε προβολές επεξεργασίας"
+
+#: actions/models/features.py
+msgid "For plans which have field-specific visibility restrictions, show to users which fields are public and which are restricted."
+msgstr "Για σχέδια που έχουν περιορισμούς ορατότητας για συγκεκριμένα πεδία, δείξτε στους χρήστες ποια πεδία είναι δημόσια και ποια περιορισμένα."
+
+#: actions/models/features.py
+msgid "Include action print layout in reports"
+msgstr "Συμπεριλάβετε διάταξη εκτύπωσης ενέργειας στις αναφορές"
+
+#: actions/models/features.py
+msgid "In the report spreadsheet output, include a sheet with all actions in a layout optimized for printing."
+msgstr "Στην έξοδο φύλλου αναφοράς, συμπεριλάβετε ένα φύλλο με όλες τις ενέργειες σε διάταξη βελτιστοποιημένη για εκτύπωση."
+
+#: actions/models/features.py
+msgid "Password protected"
+msgstr "Προστατεύεται με κωδικό πρόσβασης"
+
+#: actions/models/features.py
+msgid "Is this plan password protected?"
+msgstr "Προστατεύεται αυτό το σχέδιο με κωδικό πρόσβασης;"
+
+#: actions/models/features.py
+msgid "plan feature"
+msgstr "χαρακτηριστικό του πλάνου"
+
+#: actions/models/features.py
+msgid "plan features"
+msgstr "χαρακτηριστικά του προγράμματος"
+
+#: actions/models/plan.py
+msgid "If you leave this blank the application will use the default value"
+msgstr "Εάν αφήσετε αυτό το πεδίο κενό, η εφαρμογή θα χρησιμοποιήσει την προεπιλεγμένη τιμή"
+
+#: actions/models/plan.py
+msgid "Customer use"
+msgstr "Χρήση από τον πελάτη"
+
+#: actions/models/plan.py
+msgid "Sales and demos"
+msgstr "Πωλήσεις και επιδείξεις"
+
+#: actions/models/plan.py
+msgid "Internal testing, training, development or other non-public use"
+msgstr "Εσωτερικές δοκιμές, εκπαίδευση, ανάπτυξη ή άλλη μη δημόσια χρήση"
+
+#: actions/models/plan.py
+msgid "Offboarding in progress"
+msgstr "Offboarding σε εξέλιξη"
+
+#: actions/models/plan.py
+msgid "Inactive, not in use currently"
+msgstr "Ανενεργό, δεν χρησιμοποιείται επί του παρόντος"
+
+#: actions/models/plan.py
+msgid "Deprecated, should be deleted"
+msgstr "Έχει καταργηθεί, πρέπει να διαγραφεί"
+
+#: actions/models/plan.py
+msgid "The official plan name in full form"
+msgstr "Η επίσημη ονομασία του σχεδίου σε πλήρη μορφή"
+
+#: actions/models/plan.py
+msgid "A unique identifier for the plan used internally to distinguish between plans. This becomes part of the test site URL: https://[identifier].watch-test.kausal.tech. Use lowercase letters and dashes."
+msgstr "Ένα μοναδικό αναγνωριστικό για το σχέδιο που χρησιμοποιείται εσωτερικά για τη διάκριση μεταξύ των σχεδίων. Αυτό γίνεται μέρος της διεύθυνσης URL της τοποθεσίας δοκιμής: https://[identifier].watch-test.kausal.tech. Χρησιμοποιήστε πεζά γράμματα και παύλες."
+
+#: actions/models/plan.py indicators/models.py
+msgid "short name"
+msgstr "σύντομο όνομα"
+
+#: actions/models/plan.py
+msgid "A shorter version of the plan name"
+msgstr "Μια συντομότερη εκδοχή του ονόματος του σχεδίου"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "identifier"
+msgid "short identifier"
+msgstr "αναγνωριστικό"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "A unique short identifier for the plan to be shown in UI. Could be eg. a number or an abbreviation"
+msgid "A unique short identifier for the plan to be shown in the UI. Could be, e.g., a number or an abbreviation."
+msgstr "Ένα μοναδικό σύντομο αναγνωριστικό για το σχέδιο που θα εμφανίζεται στο UI. Θα μπορούσε να είναι π.χ. ένας αριθμός ή μια συντομογραφία."
+
+#: actions/models/plan.py
+msgid "version name"
+msgstr "όνομα έκδοσης"
+
+#: actions/models/plan.py
+msgid "If this plan has multiple versions, name of this version"
+msgstr "Εάν αυτό το σχέδιο έχει πολλαπλές εκδόσεις, το όνομα αυτής της έκδοσης"
+
+#: actions/models/plan.py
+msgid "published at"
+msgstr "που δημοσιεύτηκε στο"
+
+#: actions/models/plan.py
+msgid "archived at"
+msgstr "αρχειοθετημένο στο"
+
+#: actions/models/plan.py
+msgid "Usage status"
+msgstr "Κατάσταση χρήσης"
+
+#: actions/models/plan.py
+msgid "If unsure, use the default value representing customer use. For statistical purposes specify what the plan will be used for in order to differentiate between plans actually in use by customers and those created for some other reason."
+msgstr "Εάν δεν είστε σίγουροι, χρησιμοποιήστε την προεπιλεγμένη τιμή που αντιπροσωπεύει τη χρήση από τον πελάτη. Για στατιστικούς σκοπούς, προσδιορίστε για ποιο λόγο θα χρησιμοποιηθεί το σχέδιο, ώστε να γίνει διάκριση μεταξύ των σχεδίων που χρησιμοποιούνται πραγματικά από τους πελάτες και εκείνων που δημιουργήθηκαν για κάποιο άλλο λόγο."
+
+#: actions/models/plan.py
+msgid "site URL"
+msgstr "URL του ιστότοπου"
+
+#: actions/models/plan.py
+msgid "actions locked"
+msgstr "κλειδωμένες ενέργειες"
+
+#: actions/models/plan.py
+msgid "Can actions be added and the official metadata edited?"
+msgstr "Μπορούν να προστεθούν δράσεις και να επεξεργαστούν τα επίσημα μεταδεδομένα;"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "main organization for the plan"
+msgid "The main organization for the plan"
+msgstr "κύρια οργάνωση του σχεδίου"
+
+#: actions/models/plan.py
+msgid "general administrators"
+msgstr "γενικοί διαχειριστές"
+
+#: actions/models/plan.py
+msgid "Persons that can modify everything related to the action plan"
+msgstr "Πρόσωπα που μπορούν να τροποποιήσουν τα πάντα σχετικά με το σχέδιο δράσης"
+
+#: actions/models/plan.py
+msgid "Link to accessibility statement"
+msgstr "Σύνδεσμος προς τη δήλωση προσβασιμότητας"
+
+#: actions/models/plan.py
+msgid "Link to external feedback form"
+msgstr "Σύνδεσμος προς εξωτερική φόρμα ανατροφοδότησης"
+
+#: actions/models/plan.py
+msgid "If not empty, the system's built-in user feedback feature will be replaced by a link to an external feedback form available at this web address."
+msgstr "Εάν δεν είναι κενό, η ενσωματωμένη στο σύστημα λειτουργία ανατροφοδότησης του χρήστη θα αντικατασταθεί από έναν σύνδεσμο προς μια εξωτερική φόρμα ανατροφοδότησης που είναι διαθέσιμη σε αυτή τη διεύθυνση στο διαδίκτυο."
+
+#: actions/models/plan.py
+msgid "Theme identifier"
+msgstr "Αναγνωριστικό θέματος"
+
+#: actions/models/plan.py
+msgctxt "plan"
+msgid "parent"
+msgstr "γονέας"
+
+#: actions/models/plan.py
+msgid "Primary action classification"
+msgstr "Ταξινόμηση πρωτογενούς δράσης"
+
+#: actions/models/plan.py
+msgid "Used for primary navigation and grouping of actions"
+msgstr "Χρησιμοποιείται για πρωτογενή πλοήγηση και ομαδοποίηση ενεργειών"
+
+#: actions/models/plan.py
+msgid "Secondary action classification"
+msgstr "Ταξινόμηση δευτερογενούς δράσης"
+
+#: actions/models/plan.py
+msgid "Leave empty unless specifically required. Action filters based on this category are displayed more prominently than filters of other categories."
+msgstr "Αφήστε το κενό εκτός αν απαιτείται ρητά. Τα φίλτρα ενεργειών που βασίζονται σε αυτή την κατηγορία εμφανίζονται πιο εμφανώς από τα φίλτρα άλλων κατηγοριών."
+
+#: actions/models/plan.py
+msgid "Days until actions considered stale"
+msgstr "Ημέρες έως ότου οι δράσεις θεωρηθούν παρωχημένες"
+
+#: actions/models/plan.py
+msgid "Actions not updated since this many days are considered stale."
+msgstr "Οι ενέργειες που δεν έχουν ενημερωθεί εδώ και τόσες ημέρες θεωρούνται παρωχημένες."
+
+#: actions/models/plan.py
+msgid "Target interval in days to update actions"
+msgstr "Διάστημα-στόχος σε ημέρες για την ενημέρωση των ενεργειών"
+
+#: actions/models/plan.py
+msgid "A desirable time interval in days within which actions should be updated in the optimal case."
+msgstr "Ένα επιθυμητό χρονικό διάστημα σε ημέρες εντός του οποίου θα πρέπει να ενημερώνονται οι δράσεις στη βέλτιστη περίπτωση."
+
+#: actions/models/plan.py
+msgid "Acceptable interval in days to update actions"
+msgstr "Αποδεκτό διάστημα σε ημέρες για την ενημέρωση των δράσεων"
+
+#: actions/models/plan.py
+msgid "A maximum time interval in days within which actions should always be updated."
+msgstr "Ένα μέγιστο χρονικό διάστημα σε ημέρες εντός του οποίου οι ενέργειες θα πρέπει πάντα να ενημερώνονται."
+
+#: actions/models/plan.py
+msgctxt "plan"
+msgid "superseded by"
+msgstr "αντικαταστάθηκε από"
+
+#: actions/models/plan.py
+msgid "Set if this plan is superseded by another plan"
+msgstr "Ορίζεται εάν αυτό το σχέδιο αντικαθίσταται από άλλο σχέδιο"
+
+#: actions/models/plan.py
+msgctxt "plan"
+msgid "copy of"
+msgstr ""
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Set if this plan is superseded by another plan"
+msgid "Set if this plan has been created by copying another plan"
+msgstr "Ορίζεται εάν αυτό το σχέδιο αντικαθίσταται από άλλο σχέδιο"
+
+#: actions/models/plan.py
+msgid "Kausal Paths instance UUID"
+msgstr "UUID της περίπτωσης Kausal Paths"
+
+#: actions/models/plan.py
+msgid "UUID of the corresponding Kausal Paths instance for Kausal Paths integration"
+msgstr "UUID της αντίστοιχης περίπτωσης Kausal Paths για την ενσωμάτωση Kausal Paths"
+
+#: actions/models/plan.py indicators/models.py
+msgid "plans"
+msgstr "σχέδια"
+
+#: actions/models/plan.py
+msgid "Primary language must not be selected"
+msgstr "Η κύρια γλώσσα δεν πρέπει να είναι επιλεγμένη"
+
+#: actions/models/plan.py
+msgid "Category type must belong to plan"
+msgstr "Ο τύπος κατηγορίας πρέπει να ανήκει σε σχέδιο"
+
+#: actions/models/plan.py
+msgid "You must create and choose a primary category type for classifying actions"
+msgstr "Πρέπει να δημιουργήσετε και να επιλέξετε έναν πρωτεύοντα τύπο κατηγορίας για την ταξινόμηση των ενεργειών"
+
+#: actions/models/plan.py
+msgid "Primary and secondary classification cannot be the same"
+msgstr "Η πρωτογενής και δευτερογενής ταξινόμηση δεν μπορεί να είναι η ίδια"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "The organization is already included in the plan"
+msgid "This short identifier is already in use within the parent plan."
+msgstr "Αυτό το σύντομο αναγνωριστικό χρησιμοποιείται ήδη στο μητρικό σχέδιο."
+
+#: actions/models/plan.py
+msgid "This short identifier is already in use for a top-level plan within this organization."
+msgstr "Αυτό το σύντομο αναγνωριστικό χρησιμοποιείται ήδη για ένα σχέδιο ανώτατου επιπέδου σε αυτόν τον οργανισμό."
+
+#: actions/models/plan.py indicators/apps.py indicators/blocks.py
+#: indicators/wagtail_admin.py reports/report_formatters.py
+msgid "Indicators"
+msgstr "Δείκτες"
+
+#: actions/models/plan.py
+msgid "Privacy"
+msgstr "Απόρρητο"
+
+#: actions/models/plan.py feedback/models.py
+msgid "Accessibility"
+msgstr "Προσβασιμότητα"
+
+#: actions/models/plan.py
+#, python-format
+msgid "%(plan)s (copy from %(date)s)"
+msgstr ""
+
+#: actions/models/plan.py
+#, python-format
+msgid "Copy from %(date)s"
+msgstr ""
+
+#: actions/models/plan.py actions/wagtail_admin.py
+msgid "Clients"
+msgstr "Πελάτες"
+
+#: actions/models/plan.py aplans/graphql_types.py
+msgid "Published"
+msgstr "Δημοσιευμένο"
+
+#: actions/models/plan.py
+msgid "Unpublished"
+msgstr "Αδημοσίευτο"
+
+#: actions/models/plan.py
+msgid "Scheduled"
+msgstr "Προγραμματισμένο"
+
+#: actions/models/plan.py
+msgid "general plan admin"
+msgstr "γενικό σχέδιο admin"
+
+#: actions/models/plan.py
+msgid "general plan admins"
+msgstr "διαχειριστές γενικού σχεδίου"
+
+#: actions/models/plan.py
+msgid "public site viewer"
+msgstr "δημόσιο site viewer"
+
+#: actions/models/plan.py
+msgid "public site viewers"
+msgstr "θεατές του δημόσιου ιστότοπου"
+
+#: actions/models/plan.py
+msgid "Production"
+msgstr "Παραγωγή"
+
+#: actions/models/plan.py
+msgid "Preview"
+msgstr "Προεπισκόπηση"
+
+#: actions/models/plan.py
+#, fuzzy
+#| msgid "Document"
+msgid "Development"
+msgstr "Ανάπτυξη"
+
+#: actions/models/plan.py
+msgid "host name"
+msgstr "όνομα κεντρικού υπολογιστή"
+
+#: actions/models/plan.py
+msgid "The fully qualified domain name, eg. climate.cityname.gov. Leave blank if not yet known."
+msgstr "Το πλήρως αναγνωρισμένο όνομα τομέα, π.χ. climate.cityname.gov. Αφήστε κενό εάν δεν είναι ακόμη γνωστό."
+
+#: actions/models/plan.py
+msgid "base path"
+msgstr "βασική διαδρομή"
+
+#: actions/models/plan.py
+msgid "Fill this for a multi-plan site when the plan does not live in the root of the domain."
+msgstr "Συμπληρώστε αυτό το πεδίο για μια τοποθεσία με πολλά σχέδια όταν το σχέδιο δεν βρίσκεται στη ρίζα του τομέα."
+
+#: actions/models/plan.py
+msgid "Base path must begin with a '/' and not end with '/'"
+msgstr "Η βασική διαδρομή πρέπει να αρχίζει με '/' και να μην τελειώνει με '/'"
+
+#: actions/models/plan.py
+msgid "deployment environment"
+msgstr "περιβάλλον ανάπτυξης"
+
+#: actions/models/plan.py
+msgid "Domain names that will we used to redirect to the main hostname. Multiple domains are separated by commas."
+msgstr "Ονόματα τομέα που θα χρησιμοποιηθούν για την ανακατεύθυνση στο κύριο όνομα κεντρικού υπολογιστή. Τα πολλαπλά domains χωρίζονται με κόμμα."
+
+#: actions/models/plan.py
+msgid "Immediate override of publishing status"
+msgstr "Άμεση παράκαμψη της κατάστασης δημοσίευσης"
+
+#: actions/models/plan.py
+msgid "Only set this if you are sure you want to override the publication time set in the plan. Be aware that this will immediately change the publication status of the plan at this domain!"
+msgstr "Ορίστε το μόνο αν είστε σίγουροι ότι θέλετε να παρακάμψετε την ώρα δημοσίευσης που έχει οριστεί στο σχέδιο. Λάβετε υπόψη ότι αυτό θα αλλάξει αμέσως την κατάσταση δημοσίευσης του σχεδίου σε αυτόν τον τομέα!"
+
+#: actions/models/plan.py
+msgid "The site is not public at this time."
+msgstr "Ο ιστότοπος δεν είναι δημόσιος προς το παρόν."
+
+#: actions/models/plan.py
+msgid "Hostname must be a fully qualified domain name in lower-case only"
+msgstr "Το όνομα κεντρικού υπολογιστή πρέπει να είναι ένα πλήρως αναγνωρισμένο όνομα τομέα μόνο με πεζά γράμματα"
+
+#: actions/models/plan.py
+msgid "plan domain"
+msgstr "τομέας σχεδίου"
+
+#: actions/models/plan.py
+msgid "plan domains"
+msgstr "τομείς σχεδίου"
+
+#: actions/models/plan.py
+msgid "scenario"
+msgstr "σενάριο"
+
+#: actions/models/plan.py
+msgid "scenarios"
+msgstr "σενάρια"
+
+#: actions/models/plan.py
+msgctxt "impact group"
+msgid "parent"
+msgstr "γονέας"
+
+#: actions/models/plan.py
+msgid "weight"
+msgstr "βάρος"
+
+#: actions/models/plan.py
+msgid "impact group"
+msgstr "ομάδα αντίκτυπου"
+
+#: actions/models/plan.py
+msgid "impact groups"
+msgstr "ομάδες επιπτώσεων"
+
+#: actions/models/plan.py
+msgid "description when action fulfills criteria"
+msgstr "περιγραφή όταν η δράση πληροί τα κριτήρια"
+
+#: actions/models/plan.py
+msgid "description when action doesn't fulfill criteria"
+msgstr "περιγραφή όταν η δράση δεν πληροί τα κριτήρια"
+
+#: actions/models/plan.py
+msgid "monitoring quality point"
+msgstr "σημείο ποιότητας παρακολούθησης"
+
+#: actions/models/plan.py
+msgid "monitoring quality points"
+msgstr "σημεία παρακολούθησης ποιότητας"
+
+#: actions/templates/site_summary/actions.html
+#, python-format
+msgid ""
+"\n"
+"        <span>%(n)s</span> active action <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
+"    "
+msgid_plural ""
+"\n"
+"        <span>%(n)s</span> active actions <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
+"    "
+msgstr[0] ""
+"\n"
+"        <span>%(n)s</span> ενεργή δράση <span class=\"w-sr-only\">που παρακολουθείται σε %(plan)s</span>\n"
+"    "
+msgstr[1] ""
+"\n"
+"        <span>%(n)s</span> ενεργές δράσεις <span class=\"w-sr-only\">που παρακολουθούνται στο %(plan)s</span>\n"
+"    "
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "The page \"%(title)s\" has been submitted for approval to moderation stage \"%(task)s\"."
+msgstr "Η σελίδα \"%(title)s\" έχει υποβληθεί για έγκριση στο στάδιο μετριοπάθειας \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can preview the page here:"
+msgstr "Μπορείτε να κάνετε προεπισκόπηση της σελίδας εδώ:"
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+msgid "You can edit the page here:"
+msgstr "Μπορείτε να επεξεργαστείτε τη σελίδα εδώ:"
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from the moderation stage \"%(task)s\". It does not require approval until it has been resubmitted for moderation again."
+msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από το στάδιο της μετριοπάθειας \"%(task)s\". Δεν απαιτεί έγκριση μέχρι να υποβληθεί εκ νέου για συντονισμό."
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can preview the %(model_name)s here:"
+msgstr "Μπορείτε να κάνετε προεπισκόπηση του %(model_name)s εδώ:"
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled.txt
+#, python-format
+msgid "You can edit the %(model_name)s here:"
+msgstr "Μπορείτε να επεξεργαστείτε το %(model_name)s εδώ:"
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, python-format
+msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgstr "Η σελίδα \"%(title)s\" έχει υποβληθεί για έγκριση στο στάδιο της μετριοπάθειας \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/task_state_cancelled_subject.txt
+#, python-format
+msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από τη μετριοπάθεια."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment."
+msgstr "Η σελίδα \"%(title)s\" έχει υποβληθεί για έγκριση στο στάδιο της μετριοπάθειας \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, python-format
+msgid "Comment: \"%(comment)s\""
+msgstr ""
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy
+#| msgid "You can preview the page here:"
+msgid "You can view the page here:"
+msgstr "Μπορείτε να κάνετε προεπισκόπηση της σελίδας εδώ:"
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.html
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από τη μετριοπάθεια."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\"."
+msgstr "Η σελίδα \"%(title)s\" έχει υποβληθεί για έγκριση στο στάδιο της μετριοπάθειας \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in workflow \"%(workflow)s\" with comment: \"%(comment)s\""
+msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από τη μετριοπάθεια."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The page \"%(title)s\" has been submitted for approval in moderation stage \"%(task)s\"."
+msgid "The page \"%(title)s\" has been approved in \"%(workflow)s with comment."
+msgstr "Η σελίδα \"%(title)s\" έχει υποβληθεί για έγκριση στο στάδιο της μετριοπάθειας \"%(task)s\"."
+
+#: actions/templates/wagtailadmin/notifications/workflow_state_approved_comment_subject.txt
+#, fuzzy, python-format
+#| msgid "The %(model_name)s \"%(title)s\" has been withdrawn from moderation."
+msgid "The %(model_name)s \"%(title)s\" has been approved in \"%(workflow)s\" with comment."
+msgstr "Το %(model_name)s \"%(title)s\" έχει αποσυρθεί από τη μετριοπάθεια."
+
+#: actions/wagtail_admin.py
+msgid "Identifier already in use"
+msgstr "Αναγνωριστικό που χρησιμοποιείται ήδη"
+
+#: actions/wagtail_admin.py
+msgid "For identifiers, use only lowercase letters from the English alphabet with dashes separating words. Numbers are allowed only in the end."
+msgstr "Για τα αναγνωριστικά, χρησιμοποιήστε μόνο πεζά γράμματα του αγγλικού αλφαβήτου με παύλες μεταξύ των λέξεων. Οι αριθμοί επιτρέπονται μόνο στο τέλος."
+
+#: actions/wagtail_admin.py
+msgid "Plan name already in use"
+msgstr "Όνομα σχεδίου που χρησιμοποιείται ήδη"
+
+#: actions/wagtail_admin.py
+msgid "A plan's other language cannot be the same as its primary language"
+msgstr "Η άλλη γλώσσα ενός σχεδίου δεν μπορεί να είναι η ίδια με την κύρια γλώσσα του"
+
+#: actions/wagtail_admin.py admin_site/wagtail_hooks.py
+msgid "Plans"
+msgstr "Σχέδια"
+
+#: actions/wagtail_admin.py
+msgid "General administrators"
+msgstr "Γενικοί διαχειριστές"
+
+#: actions/wagtail_admin.py
+msgid "Only set if explicitly required by customer. Use a color key from the UI theme's graphColors, for example red070 or grey030."
+msgstr "Ορίζεται μόνο εάν απαιτείται ρητά από τον πελάτη. Χρησιμοποιήστε ένα κλειδί χρώματος από τα graphColors του θέματος UI, για παράδειγμα red070 ή grey030."
+
+#: actions/wagtail_admin.py
+msgid "Domains"
+msgstr "Τομείς"
+
+#: actions/wagtail_admin.py
+msgid "Action statuses"
+msgstr "Καταστάσεις δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Action implementation phases"
+msgstr "Φάσεις υλοποίησης της δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Action impacts"
+msgstr "Επιπτώσεις της δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Action schedules"
+msgstr "Χρονοδιαγράμματα δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Action dependency roles"
+msgstr "Ρόλοι εξάρτησης δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Action classifications"
+msgstr "Ταξινόμηση δράσης"
+
+#: actions/wagtail_admin.py
+msgid "Plan features"
+msgstr "Χαρακτηριστικά του σχεδίου"
+
+#: actions/wagtail_admin.py
+msgid "Plan notification settings"
+msgstr "Ρυθμίσεις ειδοποίησης σχεδίου"
+
+#: admin_site/api.py
+msgid "Invalid email address"
+msgstr "Μη έγκυρη διεύθυνση email"
+
+#: admin_site/api.py
+msgid "No user found with this email address. Ask your administrator to create an account for you."
+msgstr "Δεν βρέθηκε χρήστης με αυτή τη διεύθυνση ηλεκτρονικού ταχυδρομείου. Ζητήστε από το διαχειριστή σας να δημιουργήσει ένα λογαριασμό για εσάς."
+
+#: admin_site/api.py
+msgid "You do not have access to the public site."
+msgstr "Δεν έχετε πρόσβαση στον δημόσιο ιστότοπο."
+
+#: admin_site/api.py
+msgid "You do not have admin access. Your administrator may need to assign you an action or indicator, or grant you plan admin status."
+msgstr "Δεν έχετε πρόσβαση διαχειριστή. Ο διαχειριστής σας μπορεί να χρειαστεί να σας αναθέσει μια ενέργεια ή μια ένδειξη ή να σας χορηγήσει την ιδιότητα διαχειριστή σχεδίου."
+
+#: admin_site/api.py
+msgid "Cannot determine authentication method. The email address domain may be unknown."
+msgstr "Δεν μπορεί να προσδιοριστεί η μέθοδος ελέγχου ταυτότητας. Ο τομέας της διεύθυνσης ηλεκτρονικού ταχυδρομείου μπορεί να είναι άγνωστος."
+
+#: admin_site/api.py
+msgid "Password authentication is required, but the user has no password."
+msgstr "Απαιτείται έλεγχος ταυτότητας με κωδικό πρόσβασης, αλλά ο χρήστης δεν έχει κωδικό πρόσβασης."
+
+#: admin_site/apps.py
+msgid "History"
+msgstr "Ιστορία"
+
+#: admin_site/chooser.py
+msgid "What is the part after @ in the staff email address of the organization mainly responsible for the plan?"
+msgstr "Ποιο είναι το μέρος μετά το @ στη διεύθυνση ηλεκτρονικού ταχυδρομείου του προσωπικού του οργανισμού που είναι κυρίως υπεύθυνος για το σχέδιο;"
+
+#: admin_site/chooser.py
+msgid "Choose a client"
+msgstr "Επιλέξτε έναν πελάτη"
+
+#: admin_site/chooser.py
+msgid "Choose another client"
+msgstr "Επιλέξτε έναν άλλο πελάτη"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Link"
+msgstr "Σύνδεσμος"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Document"
+msgstr "Έγγραφο"
+
+#: admin_site/draftail_rich_text_area.py pages/blocks.py
+msgid "Embed"
+msgstr "Ενσωματώστε το"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bold"
+msgstr "Τολμηρό"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Italic"
+msgstr "Πλάγια"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Superscript"
+msgstr "Superscript"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Subscript"
+msgstr "Υποδείκτης"
+
+#: admin_site/draftail_rich_text_area.py
+#, python-format
+msgid "Heading %(level)d"
+msgstr "Κεφαλή %(level)d"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Numbered list"
+msgstr "Αριθμημένος κατάλογος"
+
+#: admin_site/draftail_rich_text_area.py
+msgid "Bulleted list"
+msgstr "Λίστα με κουκκίδες"
+
+#: admin_site/forms.py
+msgid "Enter password"
+msgstr "Εισάγετε τον κωδικό πρόσβασης"
+
+#: admin_site/forms.py
+msgid "Enter your email address"
+msgstr "Εισάγετε τη διεύθυνση email σας"
+
+#: admin_site/models.py
+msgid "Only allow password login"
+msgstr "Επιτρέψτε μόνο τη σύνδεση με κωδικό πρόσβασης"
+
+#: admin_site/models.py
+msgid "Microsoft Azure AD"
+msgstr "Microsoft Azure AD"
+
+#: admin_site/models.py
+msgid "Google"
+msgstr "Google"
+
+#: admin_site/models.py
+msgid "Tunnistamo"
+msgstr "Tunnistamo"
+
+#: admin_site/models.py
+msgid "OKTA"
+msgstr "OKTA"
+
+#: admin_site/models.py
+msgid "ADFS OpenID Connect"
+msgstr "ADFS OpenID Connect"
+
+#: admin_site/models.py
+msgid "Name of the customer organization administering the plan"
+msgstr "Όνομα του οργανισμού του πελάτη που διαχειρίζεται το σχέδιο"
+
+#: admin_site/models.py
+msgid "login method"
+msgstr "μέθοδος σύνδεσης"
+
+#: admin_site/models.py
+msgid "Login method that will be used for users that don't have a password set"
+msgstr "Μέθοδος σύνδεσης που θα χρησιμοποιείται για τους χρήστες που δεν έχουν ορίσει κωδικό πρόσβασης"
+
+#: admin_site/models.py budget/models.py
+msgid "label"
+msgstr "ετικέτα"
+
+#: admin_site/models.py
+#, python-format
+msgid "%(field)s is not a valid field in the model '%(model)s'"
+msgstr "%(field)s δεν είναι έγκυρο πεδίο στο μοντέλο '%(model)s'"
+
+#: admin_site/models.py
+#, python-format
+msgid "Field '%(field)s' in model '%(model)s' of plan '%(plan)s'"
+msgstr "Πεδίο '%(field)s' στο μοντέλο '%(model)s' του σχεδίου '%(plan)s'"
+
+#: admin_site/signals.py
+#, python-format
+msgid "You are now viewing the site as %(user)s."
+msgstr "Βλέπετε τώρα τον ιστότοπο ως %(user)s."
+
+#: admin_site/signals.py
+#, python-format
+msgid "You have stopped viewing the site as %(user)s and have returned to your original account."
+msgstr "Έχετε σταματήσει να βλέπετε τον ιστότοπο ως %(user)s και έχετε επιστρέψει στον αρχικό σας λογαριασμό."
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Indicators assigned to me"
+msgstr "Δείκτες που μου έχουν ανατεθεί"
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Last modified"
+msgstr "Τελευταία τροποποίηση"
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Last data point"
+msgstr "Τελευταίο σημείο δεδομένων"
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Edit this indicator"
+msgstr "Επεξεργασία αυτού του δείκτη"
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+msgid "Edit data"
+msgstr "Επεξεργασία δεδομένων"
+
+#: admin_site/templates/admin_site/own_indicators_panel.html
+#, python-format
+msgid "%(time_period)s ago"
+msgstr "%(time_period)s πριν"
+
+#: admin_site/templates/admin_site/release_impersonation.html
+msgid "Back to own user"
+msgstr "Πίσω στο δικό σας χρήστη"
+
+#: admin_site/templates/dal_admin_filters/autocomplete-filter.html
+#, python-format
+msgid " By %(filter_title)s "
+msgstr " Με %(filter_title)s "
+
+#: admin_site/templates/wagtailadmin/base.html
+msgid "Administration"
+msgstr "Διοίκηση"
+
+#: admin_site/templates/wagtailadmin/base.html
+#, fuzzy
+#| msgid "Related plans"
+msgid "locked plan"
+msgstr "Σχετικά σχέδια"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Public"
+msgstr "Δημόσιο"
+
+#: admin_site/templates/wagtailadmin/base.html aplans/utils.py
+msgid "Internal"
+msgstr "Εσωτερικό"
+
+#: admin_site/templates/wagtailadmin/login.html
+msgid "Sign in to Kausal Watch admin"
+msgstr "Συνδεθείτε στο Kausal Watch admin"
+
+#: admin_site/templates/wagtailadmin/login.html
+msgid "Our apologies, the server is temporarily experiencing difficulties."
+msgstr "Ζητούμε συγγνώμη, ο διακομιστής αντιμετωπίζει προσωρινά δυσκολίες."
+
+#: admin_site/utils.py
+msgid "Public field"
+msgstr "Δημόσιο πεδίο"
+
+#: admin_site/utils.py
+msgid "Non-public field"
+msgstr "Μη δημόσιο πεδίο"
+
+#: admin_site/viewsets.py admin_site/wagtail.py
+#, python-format
+msgid "Error deleting items. Try first deleting any %(name)s that are in use."
+msgstr "Σφάλμα διαγραφής στοιχείων. Δοκιμάστε πρώτα να διαγράψετε τυχόν %(name)s που είναι σε χρήση."
+
+#: admin_site/viewsets.py admin_site/wagtail.py
+#, python-format
+msgid "In use: \"%(instance)s\"."
+msgstr "Σε χρήση: \"%(instance)s\"."
+
+#: admin_site/viewsets.py admin_site/wagtail.py
+#, python-format
+msgid "%s could not be created due to errors."
+msgstr "%s δεν μπόρεσε να δημιουργηθεί λόγω σφαλμάτων."
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Edit %(schema_name)s"
+msgstr "Επεξεργασία %(schema_name)s"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "Add %(schema_name)s"
+msgstr "Προσθέστε %(schema_name)s"
+
+#: admin_site/wagtail.py
+msgid "View live"
+msgstr "Προβολή live"
+
+#: admin_site/wagtail.py
+#, python-format
+msgid "View %s live"
+msgstr "Δείτε το %s live"
+
+#: admin_site/wagtail.py
+#, fuzzy
+#| msgid "Could not remove common category type '{removed_cct}' from the plan because categories with the corresponding category type exist."
+msgid "Could not remove common category type \"%(removed_cct)\" from the plan because categories with the corresponding category type exist."
+msgstr "Δεν ήταν δυνατή η αφαίρεση του κοινού τύπου κατηγορίας '{removed_cct}' από το σχέδιο, επειδή υπάρχουν κατηγορίες με τον αντίστοιχο τύπο κατηγορίας."
+
+#: admin_site/wagtail_hooks.py reports/apps.py reports/wagtail_admin.py
+msgid "Reports"
+msgstr "Αναφορές"
+
+#: admin_site/wagtail_hooks.py
+msgid "Email domains"
+msgstr "Τομείς ηλεκτρονικού ταχυδρομείου"
+
+#: admin_site/wagtail_hooks.py
+msgid "Video tutorials"
+msgstr "Εκπαιδευτικά βίντεο"
+
+#: admin_site/wagtail_hooks.py
+msgid "https://kausal.gitbook.io/watch"
+msgstr "https://kausal.gitbook.io/watch"
+
+#: aplans/dynamic_blocks.py
+msgid "Help text for the field to be shown in the UI"
+msgstr "Κείμενο βοήθειας για το πεδίο που θα εμφανίζεται στο UI"
+
+#: aplans/dynamic_blocks.py
+#, python-format
+msgid "Content block: %(label)s"
+msgstr "Μπλοκ περιεχομένου: %(label)s"
+
+#: aplans/fields.py
+msgid "Enter a valid hostname."
+msgstr "Εισάγετε ένα έγκυρο όνομα κεντρικού υπολογιστή."
+
+#: aplans/fields.py
+msgid "Fully qualified hostname (FQDN)"
+msgstr "Πλήρως προσδιορισμένο όνομα κεντρικού υπολογιστή (FQDN)"
+
+#: aplans/graphql_types.py
+msgid "Approved"
+msgstr "Εγκεκριμένο"
+
+#: aplans/graphql_types.py
+msgid "Draft"
+msgstr "Σχέδιο"
+
+#: aplans/middleware.py
+msgid "Login was unsuccessful."
+msgstr "Η σύνδεση δεν ήταν επιτυχής."
+
+#: aplans/rest_api.py
+msgid "Cannot delete instance because other objects reference it."
+msgstr "Δεν είναι δυνατή η διαγραφή της περίπτωσης επειδή άλλα αντικείμενα αναφέρονται σε αυτήν."
+
+#: aplans/rest_api.py
+#, python-format
+msgid "Cannot delete \"%s\" because it is connected to other objects such as plans, persons or actions."
+msgstr "Δεν μπορεί να διαγραφεί το \"%s\" επειδή συνδέεται με άλλα αντικείμενα, όπως σχέδια, πρόσωπα ή δράσεις."
+
+#: aplans/settings.py
+msgid "Danish"
+msgstr "Δανικά"
+
+#: aplans/settings.py
+msgid "German"
+msgstr "Γερμανικά"
+
+#: aplans/settings.py
+msgid "German (Switzerland)"
+msgstr "Γερμανικά (Ελβετία)"
+
+#: aplans/settings.py
+msgid "Greek"
+msgstr "Ελληνική"
+
+#: aplans/settings.py
+msgid "English (United States)"
+msgstr "Αγγλικά (Ηνωμένες Πολιτείες)"
+
+#: aplans/settings.py
+msgid "English (Australia)"
+msgstr "Αγγλικά (Αυστραλία)"
+
+#: aplans/settings.py
+msgid "English (United Kingdom)"
+msgstr "Αγγλικά (Ηνωμένο Βασίλειο)"
+
+#: aplans/settings.py
+msgid "Spanish"
+msgstr "Ισπανικά"
+
+#: aplans/settings.py
+msgid "Spanish (United States)"
+msgstr "Ισπανικά (Ηνωμένες Πολιτείες)"
+
+#: aplans/settings.py
+msgid "Finnish"
+msgstr "Φινλανδική"
+
+#: aplans/settings.py
+msgid "Latvian"
+msgstr "Λετονία"
+
+#: aplans/settings.py
+msgid "Portuguese"
+msgstr "Πορτογαλικά"
+
+#: aplans/settings.py
+msgid "Portuguese (Brazil)"
+msgstr "Πορτογαλικά (Βραζιλία)"
+
+#: aplans/settings.py
+msgid "Swedish"
+msgstr "Σουηδικά"
+
+#: aplans/settings.py
+msgid "Swedish (Finland)"
+msgstr "Σουηδικά (Φινλανδία)"
+
+#: aplans/utils.py
+msgid "Day, month and year (31.12.2020)"
+msgstr "Ημέρα, μήνας και έτος (31.12.2020)"
+
+#: aplans/utils.py
+msgid "Month and year (12.2020)"
+msgstr "Μήνας και έτος (12.2020)"
+
+#: aplans/utils.py
+msgid "Year (2020)"
+msgstr "Έτος (2020)"
+
+#: aplans/utils.py kausal_common/models/ordered.py
+msgid "order"
+msgstr "παραγγελία"
+
+#: aplans/utils.py
+msgid "visibility"
+msgstr "ορατότητα"
+
+#: aplans/utils.py
+msgid "Authenticated users"
+msgstr "Αυθεντικοποιημένοι χρήστες"
+
+#: aplans/utils.py
+msgid "Contact persons with moderator permissions"
+msgstr "Πρόσωπα επικοινωνίας με δικαιώματα συντονιστή"
+
+#: aplans/utils.py orgs/wagtail_admin.py
+msgid "Plan admins"
+msgstr "Διαχειριστές σχεδίου"
+
+#: aplans/utils.py
+msgid "Not editable"
+msgstr "Δεν επεξεργάζεται"
+
+#: aplans/utils.py
+msgid "Edit rights"
+msgstr "Επεξεργασία δικαιωμάτων"
+
+#: aplans/utils.py
+msgid "Contact persons with \"moderator\" role"
+msgstr "Πρόσωπα επικοινωνίας με ρόλο \"συντονιστή\""
+
+#: aplans/utils.py
+msgid "Visibility"
+msgstr "Ορατότητα"
+
+#: aplans/utils.py
+#, python-format
+msgid "%(color)s is not a CSS color (e.g., \"#112233\", \"red\" or \"rgb(0, 255, 127)\")"
+msgstr "%(color)s δεν είναι χρώμα CSS (π.χ. \"#112233\", \"red\" ή \"rgb(0, 255, 127)\")"
+
+#: aplans/utils.py
+msgid "updated by"
+msgstr "ενημερώθηκε από"
+
+#: budget/models.py indicators/models.py
+msgid "dimension"
+msgstr "διάσταση"
+
+#: budget/models.py indicators/models.py
+msgid "dimensions"
+msgstr "Διαστάσεις"
+
+#: budget/models.py indicators/models.py
+msgid "dimension category"
+msgstr "κατηγορία διάστασης"
+
+#: budget/models.py indicators/models.py
+msgid "dimension categories"
+msgstr "κατηγορίες διαστάσεων"
+
+#: budget/models.py
+msgid "Yearly"
+msgstr "Ετήσια"
+
+#: budget/models.py
+msgid "Time resolution of the time stamps of data points in this dataset"
+msgstr "Χρονική ανάλυση των χρονικών σφραγίδων των σημείων δεδομένων σε αυτό το σύνολο δεδομένων"
+
+#: budget/models.py indicators/models.py
+msgid "unit"
+msgstr "μονάδα"
+
+#: budget/models.py
+#, fuzzy
+#| msgid "Time resolution of the time stamps of data points in this dataset"
+msgid "First applicable date for datapoints in these datasets"
+msgstr "Πρώτη εφαρμοστέα ημερομηνία για τα σημεία δεδομένων σε αυτά τα σύνολα δεδομένων"
+
+#: budget/models.py
+msgid "schema"
+msgstr "σχήμα"
+
+#: budget/models.py indicators/models.py
+msgid "dataset"
+msgstr "σύνολο δεδομένων"
+
+#: budget/models.py indicators/models.py
+msgid "datasets"
+msgstr "σύνολα δεδομένων"
+
+#: budget/models.py
+msgid "Date of this data point in context of the dataset's time resolution"
+msgstr "Ημερομηνία αυτού του σημείου δεδομένων στο πλαίσιο της χρονικής ανάλυσης του συνόλου δεδομένων"
+
+#: budget/models.py indicators/models.py
+msgid "value"
+msgstr "αξία"
+
+#: budget/models.py
+msgid "data point"
+msgstr "σημείο δεδομένων"
+
+#: budget/models.py
+msgid "data points"
+msgstr "σημεία δεδομένων"
+
+#: budget/wagtail_admin.py
+msgid "Budget dimensions"
+msgstr "Διαστάσεις του προϋπολογισμού"
+
+#: content/apps.py
+msgid "According to the action plan"
+msgstr "Σύμφωνα με το σχέδιο δράσης"
+
+#: content/apps.py
+msgid "Content"
+msgstr "Περιεχόμενο"
+
+#: content/models.py feedback/models.py reports/spreadsheets/excel_report.py
+msgid "Action"
+msgstr "Δράση"
+
+#: content/models.py
+msgid "Strategy"
+msgstr "Στρατηγική"
+
+#: content/models.py
+msgid "Case study"
+msgstr "Μελέτη περίπτωσης"
+
+#: content/models.py
+msgid "Strategies"
+msgstr "Στρατηγικές"
+
+#: content/models.py
+msgid "Case studies"
+msgstr "Μελέτες περιπτώσεων"
+
+#: content/models.py
+msgid "Task"
+msgstr "Εργασία"
+
+#: content/models.py
+msgid "Milestone"
+msgstr "Ορόσημο"
+
+#: content/models.py
+msgid "Tasks"
+msgstr "Εργασίες"
+
+#: content/models.py
+msgid "Milestones"
+msgstr "Ορόσημα"
+
+#: content/models.py indicators/wagtail_admin.py
+#: people/templates/people/chooser_results.html
+msgid "Organization"
+msgstr "Οργανισμός"
+
+#: content/models.py
+msgid "Division"
+msgstr "Τμήμα"
+
+#: content/models.py orgs/apps.py orgs/wagtail_admin.py
+msgid "Organizations"
+msgstr "Οργανισμοί"
+
+#: content/models.py
+msgid "Divisions"
+msgstr "Τμήματα"
+
+#: content/models.py
+msgid "site title"
+msgstr "τίτλος ιστότοπου"
+
+#: content/models.py
+msgid "site description"
+msgstr "περιγραφή του χώρου"
+
+#: content/models.py
+msgid "URL for the owner of the site"
+msgstr "URL για τον ιδιοκτήτη του ιστότοπου"
+
+#: content/models.py
+msgid "Name of the owner of the site"
+msgstr "Όνομα του ιδιοκτήτη του χώρου"
+
+#: content/models.py
+msgid "official name description"
+msgstr "επίσημη ονομασία περιγραφή"
+
+#: content/models.py
+msgid "The text to show when displaying official content"
+msgstr "Το κείμενο που θα εμφανίζεται κατά την εμφάνιση επίσημου περιεχομένου"
+
+#: content/models.py
+msgid "copyright text"
+msgstr "κείμενο πνευματικής ιδιοκτησίας"
+
+#: content/models.py
+msgid "creative commons license"
+msgstr "άδεια creative commons"
+
+#: content/models.py
+msgid "If the site is under a Creative Commons license, which CC license it is"
+msgstr "Εάν ο ιστότοπος υπόκειται σε άδεια Creative Commons, ποια είναι η άδεια CC"
+
+#: content/models.py
+msgid "Link to GitHub repository for API"
+msgstr "Σύνδεσμος προς το αποθετήριο GitHub για το API"
+
+#: content/models.py
+msgid "Link to GitHub repository for UI"
+msgstr "Σύνδεσμος στο αποθετήριο GitHub για το UI"
+
+#: content/models.py
+msgid "Term to use for 'action'"
+msgstr "Όρος που χρησιμοποιείται για τη \"δράση"
+
+#: content/models.py
+msgid "Term to use for 'task'"
+msgstr "Όρος που χρησιμοποιείται για το 'task'"
+
+#: content/models.py
+msgid "Term to use for 'organization'"
+msgstr "Όρος που χρησιμοποιείται για την 'οργάνωση'"
+
+#: content/models.py
+msgid "Sitewide announcement"
+msgstr "Ανακοίνωση σε όλη την ιστοσελίδα"
+
+#: content/models.py
+msgid "A message prominently displayed in a banner at the top of every page on the public website"
+msgstr "Ένα μήνυμα που προβάλλεται σε εμφανές σημείο σε ένα πανό στην κορυφή κάθε σελίδας του δημόσιου δικτυακού τόπου"
+
+#: content/models.py
+msgid "site general content"
+msgstr "Γενικό περιεχόμενο της ιστοσελίδας"
+
+#: content/models.py
+msgid "site general contents"
+msgstr "Γενικά περιεχόμενα της ιστοσελίδας"
+
+#: content/wagtail_admin.py
+msgid "Site settings"
+msgstr "Ρυθμίσεις τοποθεσίας"
+
+#: copying/views.py reports/spreadsheets/excel_report.py
+msgid "Identifier"
+msgstr "Αναγνωριστικό"
+
+#: copying/views.py
+msgid "A unique value that identifies the copy internally and appears in URLs of testing or preview environments"
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Term to use for 'action'"
+msgid "Name to use for the copy"
+msgstr "Όρος που χρησιμοποιείται για τη \"δράση"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "version name"
+msgid "Version name"
+msgstr "όνομα έκδοσης"
+
+#: copying/views.py
+msgid "Version name to be set for the copied plan in order to distinguish it from other versions"
+msgstr ""
+
+#: copying/views.py
+msgid "Supersede original plan"
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Set if this plan is superseded by another plan"
+msgid "Set if the copy should supersede the original plan"
+msgstr "Ορίζεται εάν αυτό το σχέδιο αντικαθίσταται από άλλο σχέδιο"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "editable for actions"
+msgid "Supersede original actions"
+msgstr "επεξεργάσιμο για δράσεις"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Set if this action is superseded by another action"
+msgid "Set if copies of actions should supersede their original"
+msgstr "Ορίζεται εάν αυτή η ενέργεια αντικαθίσταται από άλλη ενέργεια"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "A plan with this identifier already exists"
+msgstr "Άτομο με αυτό το email υπάρχει ήδη"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Person with this email already exists"
+msgid "A plan with this name already exists"
+msgstr "Άτομο με αυτό το email υπάρχει ήδη"
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Choose plan"
+msgid "Copy plan"
+msgstr "Επιλέξτε σχέδιο"
+
+#: copying/views.py
+msgid "The copy will be created in the background. This may take a few minutes. The copy will appear in the list of plans as soon as copying is finished."
+msgstr ""
+
+#: copying/views.py
+#, fuzzy
+#| msgid "Create plan"
+msgid "Create copy"
+msgstr "Δημιουργία σχεδίου"
+
+#: documentation/models.py
+msgid "CSS style"
+msgstr "Στυλ CSS"
+
+#: documentation/models.py
+msgid "CSS style to be applied to the container of the body"
+msgstr "Στυλ CSS που πρέπει να εφαρμοστεί στον περιέκτη του σώματος"
+
+#: documentation/models.py
+msgid "Documentation page"
+msgstr "Σελίδα τεκμηρίωσης"
+
+#: documentation/models.py
+msgid "Documentation pages"
+msgstr "Σελίδες τεκμηρίωσης"
+
+#: documents/chooser.py
+msgid "Server Error"
+msgstr "Σφάλμα διακομιστή"
+
+#: documents/chooser.py
+msgid "Report this error to your webmaster with the following information:"
+msgstr "Αναφέρετε αυτό το σφάλμα στον διαχειριστή του ιστοτόπου σας με τις ακόλουθες πληροφορίες:"
+
+#: documents/models.py
+#, fuzzy
+#| msgid "updated by"
+msgid "uploaded by user"
+msgstr "μεταφορτώθηκε από τον χρήστη"
+
+#: documents/models.py
+msgid "document"
+msgstr "έγγραφο"
+
+#: documents/models.py
+msgid "documents"
+msgstr "έγγραφα"
+
+#: feedback/models.py kausal_common/users/models.py orgs/models.py
+#: people/models.py users/models.py
+msgid "email address"
+msgstr "διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: feedback/models.py
+#, fuzzy
+#| msgid "Page link"
+msgid "page id"
+msgstr "id σελίδας"
+
+#: feedback/models.py
+msgid "latest revision"
+msgstr "τελευταία αναθεώρηση"
+
+#: feedback/models.py
+msgid "is processed"
+msgstr "επεξεργάζεται"
+
+#: feedback/models.py
+msgid "user feedback"
+msgstr "σχόλια χρηστών"
+
+#: feedback/models.py
+msgid "user feedbacks"
+msgstr "σχόλια χρηστών"
+
+#: feedback/models.py
+msgid "At least one field must be filled."
+msgstr "Πρέπει να συμπληρωθεί τουλάχιστον ένα πεδίο."
+
+#: feedback/views.py
+msgid "Mark user feedback as processed"
+msgstr "Σημειώστε τα σχόλια των χρηστών ως επεξεργασμένα"
+
+#: feedback/views.py
+msgid "Mark user feedback as unprocessed"
+msgstr "Χαρακτηρίστε τα σχόλια των χρηστών ως μη επεξεργασμένα"
+
+#: feedback/views.py
+#, python-format
+msgid "Confirm marking %(user_feedback)s as processed"
+msgstr "Επιβεβαίωση της σήμανσης του %(user_feedback)s ως επεξεργασμένου"
+
+#: feedback/views.py
+#, python-format
+msgid "Confirm marking %(user_feedback)s as unprocessed"
+msgstr "Επιβεβαίωση της σήμανσης του %(user_feedback)s ως μη επεξεργασμένου"
+
+#: feedback/views.py
+#, python-format
+msgid "Do you really want to mark the user feedback '%(user_feedback)s' as processed?"
+msgstr "Θέλετε πραγματικά να επισημάνετε την ανατροφοδότηση χρήστη '%(user_feedback)s' ως επεξεργασμένη;"
+
+#: feedback/views.py
+#, python-format
+msgid "Do you really want to mark the user feedback '%(user_feedback)s' as unprocessed?"
+msgstr "Θέλετε πραγματικά να επισημάνετε την ανατροφοδότηση χρήστη '%(user_feedback)s' ως μη επεξεργασμένη;"
+
+#: feedback/views.py
+msgid "The user feedback is already processed"
+msgstr "Η ανατροφοδότηση του χρήστη έχει ήδη επεξεργαστεί"
+
+#: feedback/views.py
+msgid "The user feedback is already unprocessed"
+msgstr "Η ανατροφοδότηση του χρήστη είναι ήδη μη επεξεργασμένη"
+
+#: feedback/views.py
+#, python-format
+msgid "User feedback '%(user_feedback)s' has been marked as processed."
+msgstr "Τα σχόλια του χρήστη '%(user_feedback)s' έχουν επισημανθεί ως επεξεργασμένα."
+
+#: feedback/views.py
+#, python-format
+msgid "User feedback '%(user_feedback)s' has been marked as unprocessed."
+msgstr "Τα σχόλια του χρήστη '%(user_feedback)s' έχουν χαρακτηριστεί ως μη επεξεργασμένα."
+
+#: feedback/wagtail_admin.py
+msgid "N/A"
+msgstr ""
+
+#: feedback/wagtail_admin.py
+msgid "Mark as processed"
+msgstr "Χαρακτηρίστε ως επεξεργασμένο"
+
+#: feedback/wagtail_admin.py
+msgid "Mark this user feedback as processed"
+msgstr "Σημειώστε αυτό το σχόλιο χρήστη ως επεξεργασμένο"
+
+#: feedback/wagtail_admin.py
+msgid "Mark as unprocessed"
+msgstr "Χαρακτηρίστε ως μη επεξεργασμένο"
+
+#: feedback/wagtail_admin.py
+msgid "Mark this user feedback as unprocessed"
+msgstr "Σημειώστε αυτό το σχόλιο χρήστη ως μη επεξεργασμένο"
+
+#: feedback/wagtail_admin.py
+msgid "User feedback"
+msgstr "Ανατροφοδότηση χρηστών"
+
+#: images/image_formats.py
+msgid "Full width (zoomable) only if width > 1000 px"
+msgstr "Πλήρες πλάτος (με δυνατότητα μεγέθυνσης) μόνο αν το πλάτος > 1000 px"
+
+#: images/models.py
+msgid "Image byline or credits"
+msgstr "Σύνοψη ή πιστώσεις εικόνας"
+
+#: images/models.py
+msgid "Alt text"
+msgstr "Alt κείμενο"
+
+#: images/models.py people/models.py
+msgid "image"
+msgstr "εικόνα"
+
+#: images/models.py
+msgid "images"
+msgstr "εικόνες"
+
+#: indicators/blocks.py
+msgid "Indicator"
+msgstr "Δείκτης"
+
+#: indicators/blocks.py
+msgid "Indicator highlights"
+msgstr "Κύρια σημεία του δείκτη"
+
+#: indicators/blocks.py
+msgid "Graph"
+msgstr "Γράφημα"
+
+#: indicators/blocks.py
+msgid "Animated"
+msgstr "Κινούμενα σχέδια"
+
+#: indicators/blocks.py
+msgid "Indicator showcase"
+msgstr "Βιτρίνα δείκτη"
+
+#: indicators/chooser.py
+msgid "Choose an indicator"
+msgstr "Επιλέξτε έναν δείκτη"
+
+#: indicators/chooser.py
+msgid "Choose another indicator"
+msgstr "Επιλέξτε έναν άλλο δείκτη"
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantity"
+msgstr "ποσότητα"
+
+#: indicators/models.py
+msgctxt "physical"
+msgid "quantities"
+msgstr "ποσότητες"
+
+#: indicators/models.py
+msgid "verbose name"
+msgstr "λεκτικό όνομα"
+
+#: indicators/models.py
+msgid "verbose name plural"
+msgstr "λεκτικός πληθυντικός του ονόματος"
+
+#: indicators/models.py
+msgid "units"
+msgstr "μονάδες"
+
+#: indicators/models.py
+msgid "dataset license"
+msgstr "άδεια χρήσης συνόλου δεδομένων"
+
+#: indicators/models.py
+msgid "dataset licenses"
+msgstr "άδειες χρήσης συνόλου δεδομένων"
+
+#: indicators/models.py
+msgid "last retrieved at"
+msgstr "τελευταία ανάκτηση στο"
+
+#: indicators/models.py
+msgid "owner"
+msgstr "ιδιοκτήτης"
+
+#: indicators/models.py
+msgid "owner name"
+msgstr "όνομα ιδιοκτήτη"
+
+#: indicators/models.py
+msgid "Set if owner organization is not available"
+msgstr "Ορίζεται εάν ο οργανισμός ιδιοκτήτη δεν είναι διαθέσιμος"
+
+#: indicators/models.py
+msgid "license"
+msgstr "άδεια"
+
+#: indicators/models.py
+msgid "framework"
+msgstr "πλαίσιο"
+
+#: indicators/models.py
+msgid "frameworks"
+msgstr "πλαίσια"
+
+#: indicators/models.py
+msgid "increases"
+msgstr "αυξάνει το"
+
+#: indicators/models.py
+msgid "decreases"
+msgstr "μειώνει το"
+
+#: indicators/models.py
+msgid "is a part of"
+msgstr "αποτελεί μέρος της"
+
+#: indicators/models.py
+msgid "effect type"
+msgstr "τύπος αποτελέσματος"
+
+#: indicators/models.py
+msgid "What type of causal effect is there between the indicators"
+msgstr "Τι είδους αιτιώδης επίδραση υπάρχει μεταξύ των δεικτών"
+
+#: indicators/models.py
+msgid "normalize by label"
+msgstr "κανονικοποίηση με ετικέτα"
+
+#: indicators/models.py
+msgid "common indicator"
+msgstr "κοινός δείκτης"
+
+#: indicators/models.py
+msgid "common indicators"
+msgstr "κοινοί δείκτες"
+
+#: indicators/models.py
+msgid "causal indicator"
+msgstr "αιτιώδης δείκτης"
+
+#: indicators/models.py
+msgid "effect indicator"
+msgstr "δείκτης αποτελέσματος"
+
+#: indicators/models.py
+msgid "related indicator"
+msgstr "σχετικός δείκτης"
+
+#: indicators/models.py
+msgid "related indicators"
+msgstr "σχετικοί δείκτες"
+
+#: indicators/models.py
+msgid "framework indicator"
+msgstr "δείκτης πλαισίου"
+
+#: indicators/models.py
+msgid "framework indicators"
+msgstr "δείκτες πλαισίου"
+
+#: indicators/models.py
+msgid "year"
+msgstr "έτος"
+
+#: indicators/models.py
+msgid "month"
+msgstr "μήνας"
+
+#: indicators/models.py
+msgid "day"
+msgstr "ημέρα"
+
+#: indicators/models.py
+msgid "strategic"
+msgstr "στρατηγική"
+
+#: indicators/models.py
+msgid "tactical"
+msgstr "τακτική"
+
+#: indicators/models.py
+msgid "operational"
+msgstr "λειτουργικό"
+
+#: indicators/models.py
+msgid "minimum value"
+msgstr "ελάχιστη τιμή"
+
+#: indicators/models.py
+msgid "What is the minimum value this indicator can reach? It is used in visualizations as the Y axis minimum."
+msgstr "Ποια είναι η ελάχιστη τιμή που μπορεί να φτάσει ο δείκτης αυτός; Χρησιμοποιείται στις απεικονίσεις ως το ελάχιστο όριο του άξονα Υ."
+
+#: indicators/models.py
+msgid "maximum value"
+msgstr "μέγιστη τιμή"
+
+#: indicators/models.py
+msgid "What is the maximum value this indicator can reach? It is used in visualizations as the Y axis maximum."
+msgstr "Ποια είναι η μέγιστη τιμή που μπορεί να φτάσει ο δείκτης αυτός; Χρησιμοποιείται στις απεικονίσεις ως η μέγιστη τιμή του άξονα Υ."
+
+#: indicators/models.py
+msgid "time resolution"
+msgstr "χρονική ανάλυση"
+
+#: indicators/models.py
+msgid "updated values due at"
+msgstr "επικαιροποιημένες τιμές που οφείλονται στο"
+
+#: indicators/models.py
+msgid "reference"
+msgstr "αναφορά"
+
+#: indicators/models.py
+msgid "What is the reference or source for this indicator?"
+msgstr "Ποια είναι η αναφορά ή η πηγή για αυτόν τον δείκτη;"
+
+#: indicators/models.py
+msgid "show trendline"
+msgstr "Εμφάνιση γραμμής τάσης"
+
+#: indicators/models.py
+msgid "desired trend"
+msgstr "επιθυμητή τάση"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "increases"
+msgid "increasing"
+msgstr "αύξηση"
+
+#: indicators/models.py
+#, fuzzy
+#| msgid "decreases"
+msgid "decreasing"
+msgstr "μείωση"
+
+#: indicators/models.py
+msgid "attempt to detect automatically"
+msgstr "προσπάθεια αυτόματης ανίχνευσης"
+
+#: indicators/models.py
+msgid "Which trend in the numerical values of this indicator's goals indicates improvement: when the values are increasing or decreasing?"
+msgstr "Ποια τάση στις αριθμητικές τιμές των στόχων αυτού του δείκτη υποδηλώνει βελτίωση: όταν οι τιμές αυξάνονται ή μειώνονται;"
+
+#: indicators/models.py
+msgid "show total line"
+msgstr "Εμφάνιση συνολικής γραμμής"
+
+#: indicators/models.py
+msgid "indicator"
+msgstr "δείκτης"
+
+#: indicators/models.py
+msgid "Has datasets"
+msgstr "Διαθέτει σύνολα δεδομένων"
+
+#: indicators/models.py
+msgid "Has data"
+msgstr "Έχει δεδομένα"
+
+#: indicators/models.py
+msgid "Has a graph"
+msgstr "Έχει γράφημα"
+
+#: indicators/models.py
+msgid "Deadlines for value updates are currently only possible for yearly indicators"
+msgstr "Οι προθεσμίες για τις επικαιροποιήσεις των τιμών είναι επί του παρόντος δυνατές μόνο για τους ετήσιους δείκτες"
+
+#: indicators/models.py
+msgid "There is already an indicator value for the year preceding the deadline"
+msgstr "Υπάρχει ήδη τιμή δείκτη για το έτος που προηγείται της προθεσμίας"
+
+#: indicators/models.py
+#, python-format
+msgid "Quantity must be the same as in common indicator (%s)"
+msgstr "Η ποσότητα πρέπει να είναι η ίδια με τον κοινό δείκτη (%s)"
+
+#: indicators/models.py
+#, python-format
+msgid "Unit must be the same as in common indicator (%s)"
+msgstr "Η μονάδα πρέπει να είναι η ίδια με την κοινή ένδειξη (%s)"
+
+#: indicators/models.py
+msgid "indicator dimension"
+msgstr "διάσταση δείκτη"
+
+#: indicators/models.py
+msgid "indicator dimensions"
+msgstr "διαστάσεις του δείκτη"
+
+#: indicators/models.py
+msgid "common indicator dimension"
+msgstr "κοινή διάσταση δείκτη"
+
+#: indicators/models.py
+msgid "common indicator dimensions"
+msgstr "κοινές διαστάσεις του δείκτη"
+
+#: indicators/models.py pages/models.py
+msgid "level"
+msgstr "επίπεδο"
+
+#: indicators/models.py
+msgid "indicator levels"
+msgstr "επίπεδα δεικτών"
+
+#: indicators/models.py
+msgid "indicator value"
+msgstr "τιμή δείκτη"
+
+#: indicators/models.py
+msgid "indicator values"
+msgstr "τιμές δεικτών"
+
+#: indicators/models.py
+msgid "indicator goal"
+msgstr "στόχος του δείκτη"
+
+#: indicators/models.py
+msgid "indicator goals"
+msgstr "στόχοι του δείκτη"
+
+#: indicators/models.py
+msgid "high"
+msgstr "υψηλή"
+
+#: indicators/models.py pages/blocks.py
+msgid "medium"
+msgstr "medium"
+
+#: indicators/models.py
+msgid "low"
+msgstr "χαμηλή"
+
+#: indicators/models.py
+msgid "confidence level"
+msgstr "επίπεδο εμπιστοσύνης"
+
+#: indicators/models.py
+msgid "How confident we are that the causal effect is present"
+msgstr "Πόσο σίγουροι είμαστε ότι υπάρχει το αιτιώδες αποτέλεσμα"
+
+#: indicators/models.py
+msgid "What type of effect should the action cause?"
+msgstr "Τι είδους αποτέλεσμα πρέπει να προκαλέσει η δράση;"
+
+#: indicators/models.py
+msgid "indicates action progress"
+msgstr "υποδεικνύει την πρόοδο της δράσης"
+
+#: indicators/models.py
+msgid "Set if the indicator should be used to determine action progress"
+msgstr "Ορίστε αν ο δείκτης θα πρέπει να χρησιμοποιείται για τον προσδιορισμό της προόδου της δράσης"
+
+#: indicators/models.py
+msgid "action indicator"
+msgstr "δείκτης δράσης"
+
+#: indicators/models.py
+msgid "action indicators"
+msgstr "δείκτες δράσης"
+
+#: indicators/models.py
+msgid "indicator contact person"
+msgstr "δείκτης πρόσωπο επαφής"
+
+#: indicators/models.py
+msgid "indicator contact persons"
+msgstr "πρόσωπα επαφής του δείκτη"
+
+#: indicators/resources.py
+msgid "Creating new indicators is not allowed"
+msgstr "Δεν επιτρέπεται η δημιουργία νέων δεικτών"
+
+#: indicators/resources.py
+msgid "Permission denied"
+msgstr "Άδεια απορριφθεί"
+
+#: indicators/templates/site_summary/indicators.html
+#, python-format
+msgid ""
+"\n"
+"        <span>%(total)s</span> indicator <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
+"    "
+msgid_plural ""
+"\n"
+"        <span>%(total)s</span> indicators <span class=\"w-sr-only\">monitored in %(plan)s</span>\n"
+"    "
+msgstr[0] ""
+"\n"
+"        <span>%(total)s</span> δείκτης <span class=\"w-sr-only\">που παρακολουθείται στο %(plan)s</span>\n"
+"    "
+msgstr[1] ""
+"\n"
+"        <span>%(total)s</span> δείκτες <span class=\"w-sr-only\">που παρακολουθούνται στο %(plan)s</span>\n"
+"    "
+
+#: indicators/wagtail_admin.py
+msgid "Show indicators"
+msgstr "Εμφάνιση δεικτών"
+
+#: indicators/wagtail_admin.py
+msgid "in active plan"
+msgstr "σε ενεργό σχέδιο"
+
+#: indicators/wagtail_admin.py
+msgid "not in active plan"
+msgstr "όχι σε ενεργό σχέδιο"
+
+#: indicators/wagtail_admin.py
+msgid "all"
+msgstr "όλα"
+
+#: indicators/wagtail_admin.py
+msgid "Choose a quantity"
+msgstr "Επιλέξτε μια ποσότητα"
+
+#: indicators/wagtail_admin.py
+msgid "Choose another quantity"
+msgstr "Επιλέξτε άλλη ποσότητα"
+
+#: indicators/wagtail_admin.py
+msgid "Edit this quantity"
+msgstr "Επεξεργασία αυτής της ποσότητας"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator dimensions"
+msgstr "Διαστάσεις δείκτη"
+
+#: indicators/wagtail_admin.py
+msgid "Quantities"
+msgstr "Ποσότητες"
+
+#: indicators/wagtail_admin.py
+msgid "Units"
+msgstr "Μονάδες"
+
+#: indicators/wagtail_admin.py
+msgid "[not in active plan]"
+msgstr "[όχι σε ενεργό σχέδιο]"
+
+#: indicators/wagtail_admin.py
+msgid "Changing the organization to one with a different primary language is currently not supported"
+msgstr "Προς το παρόν δεν υποστηρίζεται η αλλαγή του οργανισμού σε έναν οργανισμό με διαφορετική κύρια γλώσσα"
+
+#: indicators/wagtail_admin.py
+msgid "Dimensions must be the same as in common indicator"
+msgstr "Οι διαστάσεις πρέπει να είναι οι ίδιες με τον κοινό δείκτη"
+
+#: indicators/wagtail_admin.py
+msgid "none"
+msgstr "κανένας"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This indicator is linked to a common indicator, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Ο δείκτης αυτός συνδέεται με έναν κοινό δείκτη, οπότε η ποσότητα, η μονάδα και οι διαστάσεις δεν μπορούν να επεξεργαστούν. Τρέχουσα ποσότητα: %(quantity)s; μονάδα: %(unit)s; διαστάσεις: %(dimensions)s"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Basic information"
+msgid "Further information"
+msgstr "Περισσότερες πληροφορίες"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Value field"
+msgid "Value bounds"
+msgstr "Όρια τιμών"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "notification settings"
+msgid "Visualization settings"
+msgstr "Ρυθμίσεις οπτικοποίησης"
+
+#: indicators/wagtail_admin.py
+msgid "Dimensions"
+msgstr "Διαστάσεις"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "If you change the dimensions of this indicator (currently %(dimensions)s), its single value will be deleted."
+msgid_plural "If you change the dimensions of this indicator (currently %(dimensions)s), all its %(num)d values will be deleted."
+msgstr[0] "Εάν αλλάξετε τις διαστάσεις αυτού του δείκτη (επί του παρόντος %(dimensions)s), η ενιαία τιμή του θα διαγραφεί."
+msgstr[1] "Εάν αλλάξετε τις διαστάσεις αυτού του δείκτη (επί του παρόντος %(dimensions)s), όλες οι τιμές του %(num)d θα διαγραφούν."
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Advanced options"
+msgid "Advanced settings"
+msgstr "Προηγμένες ρυθμίσεις"
+
+#: indicators/wagtail_admin.py
+msgid "Indicator for actions"
+msgstr "Δείκτης για δράσεις"
+
+#: indicators/wagtail_admin.py
+msgid "Effects"
+msgstr "Αποτελέσματα"
+
+#: indicators/wagtail_admin.py
+msgid "Causes"
+msgstr "Αιτίες"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "other indicators"
+msgid "Other indicators"
+msgstr "άλλοι δείκτες"
+
+#: indicators/wagtail_admin.py
+#, fuzzy
+#| msgid "Related actions"
+msgid "Relationships"
+msgstr "Σχέσεις"
+
+#: indicators/wagtail_admin.py
+msgid "Unit"
+msgstr "Μονάδα"
+
+#: indicators/wagtail_admin.py
+msgid "Dimensions must be the same as in all indicators linked to this one"
+msgstr "Οι διαστάσεις πρέπει να είναι οι ίδιες όπως σε όλους τους δείκτες που συνδέονται με αυτόν"
+
+#: indicators/wagtail_admin.py
+msgid "Common indicators"
+msgstr "Κοινοί δείκτες"
+
+#: indicators/wagtail_admin.py
+#, python-format
+msgid "This common indicator has indicators linked to it, so quantity, unit and dimensions cannot be edited. Current quantity: %(quantity)s; unit: %(unit)s; dimensions: %(dimensions)s"
+msgstr "Αυτός ο κοινός δείκτης έχει δείκτες συνδεδεμένους με αυτόν, οπότε η ποσότητα, η μονάδα και οι διαστάσεις δεν μπορούν να επεξεργαστούν. Τρέχουσα ποσότητα: %(quantity)s; μονάδα: %(unit)s; διαστάσεις: %(dimensions)s"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "created at"
+msgid "Created at"
+msgstr "Δημιουργήθηκε στο"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified by"
+msgstr "Τελευταία τροποποίηση από"
+
+#: kausal_common/models/modification_tracking.py
+#, fuzzy
+#| msgid "Last modified"
+msgid "Last modified at"
+msgstr "Τελευταία τροποποίηση στις"
+
+#: kausal_common/models/uuid.py
+msgid "UUID"
+msgstr "UUID"
+
+#: notifications/apps.py notifications/wagtail_admin.py
+msgid "Notifications"
+msgstr "Ειδοποιήσεις"
+
+#: notifications/forms.py
+#, python-format
+msgid "General notifications for action '%s'"
+msgstr "Γενικές ειδοποιήσεις για δράση '%s'"
+
+#: notifications/forms.py
+msgid "These are sent when there are news about this action such as reminders for deadlines."
+msgstr "Αυτά αποστέλλονται όταν υπάρχουν νέα σχετικά με αυτή τη δράση, όπως υπενθυμίσεις για προθεσμίες."
+
+#: notifications/forms.py
+#, python-format
+msgid "Feedback notifications for action '%s'"
+msgstr "Ειδοποιήσεις ανατροφοδότησης για δράση '%s'"
+
+#: notifications/forms.py
+msgid "These are sent when a visitor has left feedback for this action."
+msgstr "Αυτά αποστέλλονται όταν ένας επισκέπτης έχει αφήσει σχόλια για αυτή την ενέργεια."
+
+#: notifications/forms.py
+#, python-format
+msgid "Feeback notifications for plan '%s'"
+msgstr "Ειδοποιήσεις επιστροφής χρημάτων για το σχέδιο '%s'"
+
+#: notifications/forms.py
+msgid "These are sent when a visitor has left feedback for this plan."
+msgstr "Αυτά αποστέλλονται όταν ένας επισκέπτης έχει αφήσει σχόλια για αυτό το σχέδιο."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "motivation"
+msgid "Thank you for keeping the action plan updated. Up-to-date information about the actions is essential for us to achieve our goals."
+msgstr "Σας ευχαριστούμε για την ενημέρωση του σχεδίου δράσης. Η επικαιροποίηση των πληροφοριών σχετικά με τις δράσεις είναι απαραίτητη για την επίτευξη των στόχων μας."
+
+#: notifications/management/commands/initialize_notifications.py
+msgctxt "outro"
+msgid ""
+"If you are having difficulties using the action plan watch platform, please send an email to the administrators of the action plan.\n"
+"\n"
+"Thank you for taking part in implementing the action plan!\n"
+"\n"
+"Kind regards,\n"
+"the action plan administrators"
+msgstr ""
+"Εάν αντιμετωπίζετε δυσκολίες στη χρήση της πλατφόρμας παρακολούθησης του σχεδίου δράσης, στείλτε μήνυμα ηλεκτρονικού ταχυδρομείου στους διαχειριστές του σχεδίου δράσης.\n"
+"\n"
+"Σας ευχαριστούμε για τη συμμετοχή σας στην εφαρμογή του σχεδίου δράσης!\n"
+"\n"
+"Με εκτίμηση,\n"
+"οι διαχειριστές του σχεδίου δράσης"
+
+#: notifications/models.py
+msgid "notifications enabled"
+msgstr "ειδοποιήσεις ενεργοποιημένες"
+
+#: notifications/models.py
+msgid "Should notifications be sent?"
+msgstr "Θα πρέπει να αποστέλλονται ειδοποιήσεις;"
+
+#: notifications/models.py
+msgid "notification sending time"
+msgstr "χρόνος αποστολής ειδοποίησης"
+
+#: notifications/models.py
+msgid "The local time of day when notifications are sent"
+msgstr "Η τοπική ώρα της ημέρας κατά την οποία αποστέλλονται οι ειδοποιήσεις"
+
+#: notifications/models.py
+msgctxt "partitive"
+msgid "notification settings"
+msgstr "ρυθμίσεις ειδοποιήσεων"
+
+#: notifications/models.py
+msgid "notification settings"
+msgstr "ρυθμίσεις ειδοποιήσεων"
+
+#: notifications/models.py
+msgid "Set if the notification was sent to an email address instead of a person"
+msgstr "Ορίζει εάν η ειδοποίηση εστάλη σε μια διεύθυνση ηλεκτρονικού ταχυδρομείου αντί για ένα άτομο"
+
+#: notifications/models.py
+msgid "Email From name"
+msgstr "Email Από όνομα"
+
+#: notifications/models.py
+msgid "Email From address"
+msgstr "Email Από τη διεύθυνση"
+
+#: notifications/models.py
+msgid "Email Reply-To address"
+msgstr "Διεύθυνση Reply-To ηλεκτρονικού ταχυδρομείου"
+
+#: notifications/models.py
+msgid "Brand dark color"
+msgstr "Μάρκα σκούρο χρώμα"
+
+#: notifications/models.py
+msgid "Font family"
+msgstr "Οικογένεια γραμματοσειρών"
+
+#: notifications/models.py
+msgid "Leave empty unless custom font required by customer"
+msgstr "Αφήστε το κενό, εκτός εάν απαιτείται προσαρμοσμένη γραμματοσειρά από τον πελάτη"
+
+#: notifications/models.py
+msgid "Font CSS style URL"
+msgstr "Στυλ γραμματοσειράς CSS URL"
+
+#: notifications/models.py
+msgctxt "partitive"
+msgid "base templates"
+msgstr "βασικά πρότυπα"
+
+#: notifications/models.py
+msgid "base template"
+msgstr "βασικό πρότυπο"
+
+#: notifications/models.py
+msgid "base templates"
+msgstr "βασικά πρότυπα"
+
+#: notifications/models.py
+msgid "subject"
+msgstr "θέμα"
+
+#: notifications/models.py
+msgid "Subject for email notifications"
+msgstr "Θέμα για ειδοποιήσεις μέσω email"
+
+#: notifications/models.py
+msgid "custom email address"
+msgstr "προσαρμοσμένη διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: notifications/models.py
+msgid "Email address used when \"send to custom email address\" is checked"
+msgstr "Διεύθυνση ηλεκτρονικού ταχυδρομείου που χρησιμοποιείται όταν έχει επιλεγεί η επιλογή \"αποστολή σε προσαρμοσμένη διεύθυνση ηλεκτρονικού ταχυδρομείου\""
+
+#: notifications/models.py
+msgid "send to plan admins"
+msgstr "αποστολή στους διαχειριστές του προγράμματος"
+
+#: notifications/models.py
+msgid "send to custom email address"
+msgstr "αποστολή σε προσαρμοσμένη διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: notifications/models.py
+msgid "This can only be set if a custom email address is defined"
+msgstr "Αυτό μπορεί να οριστεί μόνο αν έχει οριστεί μια προσαρμοσμένη διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: notifications/models.py
+msgid "If a custom email address is defined, this must be set"
+msgstr "Εάν έχει οριστεί μια προσαρμοσμένη διεύθυνση ηλεκτρονικού ταχυδρομείου, αυτή πρέπει να οριστεί"
+
+#: notifications/models.py
+msgid "Do not send to contact persons"
+msgstr "Μην στέλνετε σε πρόσωπα επαφής"
+
+#: notifications/models.py
+msgid "Send to contact persons"
+msgstr "Αποστολή σε πρόσωπα επικοινωνίας"
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins"
+msgstr "Αποστολή σε πρόσωπα επαφής; εφεδρεία: διαχειριστές οργανισμού"
+
+#: notifications/models.py
+msgid "Send to contact persons; fallback: organization admins, plan admins"
+msgstr "Αποστολή σε πρόσωπα επαφής; εφεδρεία: διαχειριστές οργανισμού, διαχειριστές προγράμματος"
+
+#: notifications/models.py
+msgid "send to contact persons"
+msgstr "αποστολή στα πρόσωπα επικοινωνίας"
+
+#: notifications/models.py
+msgid "Notifications of this type cannot be sent to contact persons"
+msgstr "Ειδοποιήσεις αυτού του τύπου δεν μπορούν να αποσταλούν σε πρόσωπα επαφής"
+
+#: notifications/models.py
+msgid "notification template"
+msgstr "πρότυπο ειδοποίησης"
+
+#: notifications/models.py
+msgid "notification templates"
+msgstr "πρότυπα ειδοποίησης"
+
+#: notifications/models.py
+msgid "The content of the notification"
+msgstr "Το περιεχόμενο της κοινοποίησης"
+
+#: notifications/models.py
+msgid "send to action contact persons"
+msgstr "αποστολή σε πρόσωπα επαφής δράσης"
+
+#: notifications/models.py
+msgid "send to indicator contact persons"
+msgstr "στείλτε στα πρόσωπα επαφής του δείκτη"
+
+#: notifications/models.py
+msgid "send to organization admins"
+msgstr "αποστολή σε διαχειριστές οργανισμών"
+
+#: notifications/models.py
+msgid "scheduled notification"
+msgstr "προγραμματισμένη ειδοποίηση"
+
+#: notifications/models.py
+msgid "scheduled notifications"
+msgstr "προγραμματισμένες ειδοποιήσεις"
+
+#: notifications/models.py
+#, python-format
+msgid "The type must be \"%(t)s\"."
+msgstr "Ο τύπος πρέπει να είναι \"%(t)s\"."
+
+#: notifications/models.py
+msgid "HTML content for the block"
+msgstr "Περιεχόμενο HTML για το μπλοκ"
+
+#: notifications/models.py
+msgid "template"
+msgstr "πρότυπο"
+
+#: notifications/models.py
+msgid "Do not set if content block is used in multiple templates"
+msgstr "Μην ορίζετε εάν το μπλοκ περιεχομένου χρησιμοποιείται σε πολλαπλά πρότυπα"
+
+#: notifications/models.py
+msgid "Introduction block"
+msgstr "Μπλοκ εισαγωγής"
+
+#: notifications/models.py
+msgid "Motivation block"
+msgstr "Μπλοκ κινήτρων"
+
+#: notifications/models.py
+msgid "Contact information block"
+msgstr "Μπλοκ πληροφοριών επικοινωνίας"
+
+#: notifications/models.py
+msgid "content block"
+msgstr "μπλοκ περιεχομένου"
+
+#: notifications/models.py
+msgid "content blocks"
+msgstr "μπλοκ περιεχομένου"
+
+#: notifications/models.py
+msgid "receive feedback notifications"
+msgstr "να λαμβάνετε ειδοποιήσεις ανατροφοδότησης"
+
+#: notifications/models.py
+msgid "receive general action notifications"
+msgstr "να λαμβάνετε γενικές ειδοποιήσεις δράσης"
+
+#: notifications/models.py
+msgid "receive action feedback notifications"
+msgstr "λαμβάνετε ειδοποιήσεις ανατροφοδότησης δράσης"
+
+#: notifications/notifications.py
+msgctxt "task_late"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan. There is an action whose deadline has passed. The action is shown to be late until you mark it as done and fill in some details."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των πληροφοριών εργασίας της ενέργειάς σας στο σχέδιο δράσης. Υπάρχει μια δράση της οποίας η προθεσμία έχει παρέλθει. Η ενέργεια εμφανίζεται ως καθυστερημένη μέχρι να την επισημάνετε ως τελειωμένη και να συμπληρώσετε ορισμένες λεπτομέρειες."
+
+#: notifications/notifications.py
+msgid "Task is late"
+msgstr "Η εργασία έχει καθυστερήσει"
+
+#: notifications/notifications.py
+msgid "Updated indicator values are late"
+msgstr "Οι ενημερωμένες τιμές των δεικτών είναι καθυστερημένες"
+
+#: notifications/notifications.py
+msgctxt "updated_indicator_values_late"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values has passed. Please go and update the indicator with the latest values."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των στοιχείων του δείκτη στο σχέδιο δράσης.  Η προθεσμία για την επικαιροποίηση των τιμών των δεικτών έχει παρέλθει. Παρακαλείσθε να μεταβείτε και να ενημερώσετε τον δείκτη με τις τελευταίες τιμές."
+
+#: notifications/notifications.py
+msgid "Task is due soon"
+msgstr "Η εργασία αναμένεται σύντομα"
+
+#: notifications/notifications.py
+msgctxt "task_due_soon"
+msgid "This is an automatic reminder about updating the task information of your action in the action plan.  There is an action in the action plan with a deadline approaching. Please remember to mark the task as done as soon as it has been completed. After the deadline has gone, the action will be marked as late. You can edit the task details from the link below."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των πληροφοριών εργασίας της ενέργειάς σας στο σχέδιο δράσης.  Υπάρχει μια ενέργεια στο σχέδιο δράσης με προθεσμία που πλησιάζει. Θυμηθείτε να σημειώσετε ότι η εργασία έχει ολοκληρωθεί μόλις ολοκληρωθεί. Αφού παρέλθει η προθεσμία, η ενέργεια θα σημειωθεί ως καθυστερημένη. Μπορείτε να επεξεργαστείτε τις λεπτομέρειες της εργασίας από τον παρακάτω σύνδεσμο."
+
+#: notifications/notifications.py
+msgid "Updated indicator values are due soon"
+msgstr "Οι ενημερωμένες τιμές των δεικτών αναμένεται να ανακοινωθούν σύντομα"
+
+#: notifications/notifications.py
+msgctxt "updated_indicator_values_due_soon"
+msgid "This is an automatic reminder about updating indicator details in the action plan.  The deadline for updating the indicator values is approaching. Please go and update the indicator with the latest values."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των στοιχείων του δείκτη στο σχέδιο δράσης.  Η προθεσμία για την επικαιροποίηση των τιμών των δεικτών πλησιάζει. Παρακαλείστε να πάτε και να ενημερώσετε τον δείκτη με τις τελευταίες τιμές."
+
+#: notifications/notifications.py
+msgid "Action doesn't have enough in-progress tasks"
+msgstr "Η δράση δεν έχει αρκετές εργασίες σε εξέλιξη"
+
+#: notifications/notifications.py
+msgctxt "not_enough_tasks"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  This means that it would be preferrable for each action to have at least one upcoming task within the next year. Please go and add tasks for the action which show what the next planned steps for the action are."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των λεπτομερειών δράσης στο σχέδιο δράσης.  Μπορείτε να δείτε στον ιστότοπο παρακολούθησης του σχεδίου δράσης τι έχει ήδη γίνει για την προώθηση των δράσεων και τι έχει προγραμματιστεί για το μέλλον.  Αυτό σημαίνει ότι θα ήταν προτιμότερο κάθε δράση να έχει τουλάχιστον μία επερχόμενη εργασία εντός του επόμενου έτους. Παρακαλούμε πηγαίνετε και προσθέστε εργασίες για τη δράση που δείχνουν ποια είναι τα επόμενα προγραμματισμένα βήματα για τη δράση."
+
+#: notifications/notifications.py
+msgid "Action metadata has not been updated recently"
+msgstr "Τα μεταδεδομένα της δράσης δεν έχουν ενημερωθεί πρόσφατα"
+
+#: notifications/notifications.py
+msgctxt "action_not_updated"
+msgid "This is an automatic reminder about updating the action details in the action plan.  You can see on the action plan watch site what has already been done to further the actions and what has been planned for the future.  It's already six months since you last updated an action. Please go and update the action with the latest information. You can add an upcoming task to the action at the same time."
+msgstr "Πρόκειται για μια αυτόματη υπενθύμιση σχετικά με την ενημέρωση των λεπτομερειών δράσης στο σχέδιο δράσης.  Μπορείτε να δείτε στον ιστότοπο παρακολούθησης του σχεδίου δράσης τι έχει ήδη γίνει για την προώθηση των δράσεων και τι έχει προγραμματιστεί για το μέλλον.  Έχουν περάσει ήδη έξι μήνες από την τελευταία φορά που ενημερώσατε μια δράση. Παρακαλείστε να πάτε και να ενημερώσετε τη δράση με τις πιο πρόσφατες πληροφορίες. Μπορείτε ταυτόχρονα να προσθέσετε μια επερχόμενη εργασία στη δράση."
+
+#: notifications/notifications.py
+msgid "User feedback received"
+msgstr "Ανατροφοδότηση χρηστών"
+
+#: notifications/notifications.py
+msgctxt "user_feedback_received"
+msgid "A user has submitted feedback."
+msgstr "Ένας χρήστης έχει υποβάλει σχόλια."
+
+#: notifications/notifications.py
+msgid "Manually scheduled notification"
+msgstr "Χειροκίνητα προγραμματισμένη ειδοποίηση"
+
+#: notifications/wagtail_admin.py
+msgid "Notifications could not be modified due to errors."
+msgstr "Οι ειδοποιήσεις δεν μπόρεσαν να τροποποιηθούν λόγω σφαλμάτων."
+
+#: notifications/wagtail_admin.py
+msgid "Notifications could not be set up due to errors."
+msgstr "Οι ειδοποιήσεις δεν μπόρεσαν να ρυθμιστούν λόγω σφαλμάτων."
+
+#: notifications/wagtail_admin.py
+msgid "Cannot schedule a notification for the past"
+msgstr "Δεν μπορείτε να προγραμματίσετε μια ειδοποίηση για το παρελθόν"
+
+#: notifications/wagtail_admin.py
+msgid "Cannot reschedule a notification for the past"
+msgstr "Δεν μπορεί να επαναπρογραμματιστεί μια ειδοποίηση για το παρελθόν"
+
+#: notifications/wagtail_admin.py
+msgid "Recipients"
+msgstr "Αποδέκτες"
+
+#: notifications/wagtail_admin.py
+msgid "The email message will be sent on the specified day at"
+msgstr "Το μήνυμα ηλεκτρονικού ταχυδρομείου θα σταλεί την καθορισμένη ημέρα στις"
+
+#: notifications/wagtail_admin.py
+msgid "One-off notifications"
+msgstr "Εφάπαξ κοινοποιήσεις"
+
+#: notifications/wagtail_admin.py
+msgid "Event-based notifications"
+msgstr "Ειδοποιήσεις βάσει συμβάντων"
+
+#: notifications/wagtail_admin.py
+msgid "Notification contents"
+msgstr "Περιεχόμενο κοινοποίησης"
+
+#: notifications/wagtail_admin.py
+msgid "Notification preferences"
+msgstr "Προτιμήσεις ειδοποιήσεων"
+
+#: orgs/chooser.py
+msgid "Choose an organization"
+msgstr "Επιλέξτε έναν οργανισμό"
+
+#: orgs/chooser.py
+msgid "Choose another organization"
+msgstr "Επιλέξτε έναν άλλο οργανισμό"
+
+#: orgs/forms.py
+msgid "A node cannot be moved under itself in the hierarchy."
+msgstr "Ένας κόμβος δεν μπορεί να μετακινηθεί κάτω από τον εαυτό του στην ιεραρχία."
+
+#: orgs/models.py
+msgctxt "node"
+msgid "Parent"
+msgstr "Γονέας"
+
+#: orgs/models.py
+msgid "The time at which the resource was created"
+msgstr "Η ώρα κατά την οποία δημιουργήθηκε ο πόρος"
+
+#: orgs/models.py
+msgid "The time at which the resource was updated"
+msgstr "Η ώρα κατά την οποία ενημερώθηκε ο πόρος"
+
+#: orgs/models.py
+msgid "organizations"
+msgstr "οργανισμοί"
+
+#: orgs/models.py
+msgid "Classification"
+msgstr "Ταξινόμηση"
+
+#: orgs/models.py
+msgid "An organization category, e.g. committee"
+msgstr "Μια κατηγορία οργάνωσης, π.χ. επιτροπή"
+
+#: orgs/models.py
+msgid "A primary name, e.g. a legally recognized name"
+msgstr "Ένα κύριο όνομα, π.χ. ένα νομικά αναγνωρισμένο όνομα"
+
+#: orgs/models.py
+msgid "Short name"
+msgstr "Σύντομο όνομα"
+
+#: orgs/models.py
+msgid "A simplified short version of name for the general public"
+msgstr "Μια απλουστευμένη σύντομη εκδοχή του ονόματος για το ευρύ κοινό"
+
+#: orgs/models.py
+msgid "Internal abbreviation"
+msgstr "Εσωτερική συντομογραφία"
+
+#: orgs/models.py
+msgid "An internally used abbreviation"
+msgstr "Μια εσωτερικά χρησιμοποιούμενη συντομογραφία"
+
+#: orgs/models.py
+msgid "A distinct name for this organization (generated automatically)"
+msgstr "Ένα ξεχωριστό όνομα για αυτόν τον οργανισμό (δημιουργείται αυτόματα)"
+
+#: orgs/models.py
+msgid "Organization logo. Please provide a square image (min. 250x250px). The logo used for the organization's social media often works best."
+msgstr "Λογότυπο του οργανισμού. Παρακαλούμε δώστε μια τετράγωνη εικόνα (τουλάχιστον 250x250px). Το λογότυπο που χρησιμοποιείται για τα μέσα κοινωνικής δικτύωσης του οργανισμού συχνά λειτουργεί εδώ καλύτερα."
+
+#: orgs/models.py
+msgid "A date of founding"
+msgstr "Ημερομηνία ίδρυσης"
+
+#: orgs/models.py
+msgid "A date of dissolution"
+msgstr "Ημερομηνία διάλυσης"
+
+#: orgs/models.py
+msgid "Location"
+msgstr "Τοποθεσία"
+
+#: orgs/models.py
+msgid "plan admin"
+msgstr "plan admin"
+
+#: orgs/models.py
+msgid "plan admins"
+msgstr "διαχειριστές πλάνων"
+
+#: orgs/models.py
+msgid "metadata admin"
+msgstr "metadata admin"
+
+#: orgs/models.py
+msgid "metadata admins"
+msgstr "διαχειριστές μεταδεδομένων"
+
+#: orgs/views.py
+msgid "This will delete the following objects:"
+msgstr "Αυτό θα διαγράψει τα ακόλουθα αντικείμενα:"
+
+#: orgs/views.py
+msgid "Add organization to active plan"
+msgstr "Προσθήκη οργανισμού σε ενεργό σχέδιο"
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm including %(org)s in plan %(plan)s"
+msgstr "Επιβεβαίωση της συμπερίληψης του %(org)s στο σχέδιο %(plan)s"
+
+#: orgs/views.py
+#, python-format
+msgid "Confirm excluding %(org)s from plan %(plan)s"
+msgstr "Επιβεβαίωση της εξαίρεσης του %(org)s από το σχέδιο %(plan)s"
+
+#: orgs/views.py
+#, python-format
+msgid "Do you really want to include the organization '%(org)s' in the plan '%(plan)s'?"
+msgstr "Θέλετε πραγματικά να συμπεριλάβετε τον οργανισμό '%(org)s' στο σχέδιο '%(plan)s';"
+
+#: orgs/views.py
+#, python-format
+msgid "Do you really want to exclude the organization '%(org)s' from the plan '%(plan)s'?"
+msgstr "Θέλετε πραγματικά να αποκλείσετε τον οργανισμό '%(org)s' από το σχέδιο '%(plan)s';"
+
+#: orgs/views.py
+msgid "The organization is already included in the plan"
+msgstr "Ο οργανισμός περιλαμβάνεται ήδη στο σχέδιο"
+
+#: orgs/views.py
+msgid "The organization is not included in the plan"
+msgstr "Ο οργανισμός δεν περιλαμβάνεται στο σχέδιο"
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been included in plan '%(plan)s'."
+msgstr "Ο οργανισμός '%(org)s' έχει συμπεριληφθεί στο σχέδιο '%(plan)s'."
+
+#: orgs/views.py
+#, python-format
+msgid "Organization '%(org)s' has been excluded from plan '%(plan)s'."
+msgstr "Ο οργανισμός \"%(org)s\" έχει αποκλειστεί από το σχέδιο \"%(plan)s\"."
+
+#: orgs/wagtail_admin.py
+msgid "Add child"
+msgstr "Προσθήκη παιδιού"
+
+#: orgs/wagtail_admin.py
+msgid "Add child under this node"
+msgstr "Προσθήκη παιδιού κάτω από αυτόν τον κόμβο"
+
+#: orgs/wagtail_admin.py
+msgid "Edit subtree"
+msgstr "Επεξεργασία υποδέντρου"
+
+#: orgs/wagtail_admin.py
+#, python-format
+msgid "Edit subtree rooted at this %s"
+msgstr "Επεξεργασία υποδέντρου με ρίζα σε αυτό %s"
+
+#: orgs/wagtail_admin.py
+msgid "Creating organizations without a parent not allowed."
+msgstr "Δεν επιτρέπεται η δημιουργία οργανισμών χωρίς γονέα."
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization"
+msgstr "Προσθήκη υποοργάνωσης"
+
+#: orgs/wagtail_admin.py
+msgid "Add suborganization under this organization"
+msgstr "Προσθέστε υποοργανισμό κάτω από αυτόν τον οργανισμό"
+
+#: orgs/wagtail_admin.py
+msgid "Include in plan"
+msgstr "Συμπεριλάβετε στο σχέδιο"
+
+#: orgs/wagtail_admin.py
+msgid "Include this organization in the active plan"
+msgstr "Συμπεριλάβετε τον οργανισμό αυτό στο ενεργό σχέδιο"
+
+#: orgs/wagtail_admin.py
+msgid "Exclude from plan"
+msgstr "Εξαίρεση από το σχέδιο"
+
+#: orgs/wagtail_admin.py
+msgid "Exclude this organization from the active plan"
+msgstr "Αποκλείστε αυτόν τον οργανισμό από το ενεργό σχέδιο"
+
+#: orgs/wagtail_admin.py reports/report_formatters.py
+#: reports/spreadsheets/excel_report.py
+msgctxt "organization"
+msgid "Parent"
+msgstr "Γονέας"
+
+#: orgs/wagtail_admin.py
+msgid "People who can edit plan-specific content related to this organization"
+msgstr "Άτομα που μπορούν να επεξεργάζονται το συγκεκριμένο περιεχόμενο του σχεδίου που σχετίζεται με αυτόν τον οργανισμό"
+
+#: orgs/wagtail_admin.py
+msgid "Metadata admins"
+msgstr "Διαχειριστές μεταδεδομένων"
+
+#: orgs/wagtail_admin.py
+msgid "People who can edit data of this organization and suborganizations but no plan-specific content"
+msgstr "Άτομα που μπορούν να επεξεργάζονται δεδομένα αυτού του οργανισμού και των υποοργανισμών, αλλά όχι περιεχόμενο συγκεκριμένου σχεδίου"
+
+#: orgs/wagtail_admin.py
+msgid "Is in plan"
+msgstr "Είναι στο σχέδιο"
+
+#: orgs/wagtail_admin.py
+msgid "Permissions"
+msgstr "Δικαιώματα"
+
+#: pages/blocks.py
+msgid "Question"
+msgstr "Ερώτηση"
+
+#: pages/blocks.py
+msgid "Answer"
+msgstr "Απάντηση"
+
+#: pages/blocks.py
+msgid "small"
+msgstr "μικρό"
+
+#: pages/blocks.py
+msgid "large"
+msgstr "μεγάλο"
+
+#: pages/blocks.py
+msgid "Size"
+msgstr "Μέγεθος"
+
+#: pages/blocks.py
+msgid "Title"
+msgstr "Τίτλος"
+
+#: pages/blocks.py
+msgid "Questions & Answers"
+msgstr "Ερωτήσεις & απαντήσεις"
+
+#: pages/blocks.py
+msgid "Big image"
+msgstr "Μεγάλη εικόνα"
+
+#: pages/blocks.py
+msgid "Small image"
+msgstr "Μικρή εικόνα"
+
+#: pages/blocks.py
+msgid "Front page hero block"
+msgstr "Μπλοκ ήρωα της πρώτης σελίδας"
+
+#: pages/blocks.py
+msgid "Page link"
+msgstr "Σύνδεσμος σελίδας"
+
+#: pages/blocks.py
+msgid "Card"
+msgstr "Κάρτα"
+
+#: pages/blocks.py
+msgid "Action category filter card"
+msgstr "Κάρτα φίλτρου κατηγορίας δράσης"
+
+#: pages/blocks.py
+msgid "Links"
+msgstr "Σύνδεσμοι"
+
+#: pages/blocks.py
+msgid "Action category filter cards"
+msgstr "Κάρτες φίλτρου κατηγορίας δράσης"
+
+#: pages/blocks.py
+msgid "Accessibility statement compliance status"
+msgstr "Κατάσταση συμμόρφωσης με τη δήλωση προσβασιμότητας"
+
+#: pages/blocks.py
+msgid "Accessibility statement preparation information"
+msgstr "Πληροφορίες προετοιμασίας δήλωσης προσβασιμότητας"
+
+#: pages/blocks.py
+msgid "Publisher name"
+msgstr "Όνομα εκδότη"
+
+#: pages/blocks.py
+msgid "Maintenance responsibility paragraph"
+msgstr "Παράγραφος ευθύνης συντήρησης"
+
+#: pages/blocks.py
+msgid "If this is set, it will be displayed instead of \"This service is published by [publisher]\"."
+msgstr "Εάν έχει οριστεί, θα εμφανίζεται αντί του \"Αυτή η υπηρεσία δημοσιεύεται από τον [εκδότης]\"."
+
+#: pages/blocks.py
+msgid "Email address"
+msgstr "Διεύθυνση ηλεκτρονικού ταχυδρομείου"
+
+#: pages/blocks.py
+msgid "Accessibility statement contact information"
+msgstr "Στοιχεία επικοινωνίας της δήλωσης προσβασιμότητας"
+
+#: pages/blocks.py
+msgid "Accessibility statement contact form"
+msgstr "Δήλωση προσβασιμότητας φόρμα επικοινωνίας"
+
+#: pages/blocks.py
+msgid "Action status pie charts"
+msgstr "Κυκλικά διαγράμματα κατάστασης δράσης"
+
+#: pages/blocks.py
+msgid "Width"
+msgstr "Πλάτος"
+
+#: pages/blocks.py
+msgid "Maximum"
+msgstr "Μέγιστο"
+
+#: pages/blocks.py
+msgid "Fit to column"
+msgstr "Προσαρμογή στη στήλη"
+
+#: pages/blocks.py
+msgid "Large image"
+msgstr "Μεγάλη εικόνα"
+
+#: pages/models.py
+msgid "show in footer"
+msgstr "εμφάνιση στο υποσέλιδο"
+
+#: pages/models.py
+msgid "Should the page be shown in the footer?"
+msgstr "Θα πρέπει να εμφανίζεται η σελίδα στο υποσέλιδο;"
+
+#: pages/models.py
+msgid "show in additional links"
+msgstr "εμφανίζονται σε πρόσθετους συνδέσμους"
+
+#: pages/models.py
+msgid "Should the page be shown in the additional links?"
+msgstr "Θα πρέπει η σελίδα να εμφανίζεται στους πρόσθετους συνδέσμους;"
+
+#: pages/models.py
+msgid "show link in child plans"
+msgstr "Εμφάνιση συνδέσμου στα σχέδια παιδιών"
+
+#: pages/models.py
+msgid "Should this additional link be displayed in child plans?"
+msgstr "Θα πρέπει να εμφανίζεται αυτός ο πρόσθετος σύνδεσμος στα σχέδια παιδιών;"
+
+#: pages/models.py
+msgid "children use secondary navigation"
+msgstr "τα παιδιά χρησιμοποιούν δευτερεύουσα πλοήγηση"
+
+#: pages/models.py
+msgid "Should subpages of this page use secondary navigation?"
+msgstr "Θα πρέπει οι υποσελίδες αυτής της σελίδας να χρησιμοποιούν δευτερεύουσα πλοήγηση;"
+
+#: pages/models.py
+msgid "Common page configuration"
+msgstr "Διαμόρφωση κοινής σελίδας"
+
+#: pages/models.py
+msgid "Links to actions in specific category"
+msgstr "Σύνδεσμοι σε δράσεις σε συγκεκριμένη κατηγορία"
+
+#: pages/models.py
+msgid "Front page"
+msgstr "Πρώτη σελίδα"
+
+#: pages/models.py
+msgid "Front pages"
+msgstr "Πρώτες σελίδες"
+
+#: pages/models.py
+msgid "Empty page"
+msgstr "Κενή σελίδα"
+
+#: pages/models.py
+msgid "Empty pages"
+msgstr "Κενές σελίδες"
+
+#: pages/models.py
+msgid "Header image"
+msgstr "Εικόνα κεφαλίδας"
+
+#: pages/models.py
+msgid "Image to use in the header for this page"
+msgstr "Εικόνα που θα χρησιμοποιηθεί στην επικεφαλίδα αυτής της σελίδας"
+
+#: pages/models.py
+msgid "Lead paragraph right under the heading"
+msgstr "Επικεφαλής παράγραφος ακριβώς κάτω από τον τίτλο"
+
+#: pages/models.py
+msgid "Paragraph"
+msgstr "Παράγραφος"
+
+#: pages/models.py
+msgid "Content page"
+msgstr "Σελίδα περιεχομένου"
+
+#: pages/models.py
+msgid "Content pages"
+msgstr "Σελίδες περιεχομένου"
+
+#: pages/models.py
+msgid "Level layouts"
+msgstr "Διατάξεις επιπέδων"
+
+#: pages/models.py
+msgid "Category type page"
+msgstr "Σελίδα τύπου κατηγορίας"
+
+#: pages/models.py
+msgid "Category type pages"
+msgstr "Σελίδες τύπου κατηγορίας"
+
+#: pages/models.py
+msgid "Small"
+msgstr "Μικρό"
+
+#: pages/models.py
+msgid "Medium"
+msgstr "Μεσαίο"
+
+#: pages/models.py
+msgid "Large"
+msgstr "Μεγάλο"
+
+#: pages/models.py
+msgid "layout main top"
+msgstr "διάταξη κύρια κορυφή"
+
+#: pages/models.py
+msgid "layout main bottom"
+msgstr "διάταξη κύριας κάτω πλευράς"
+
+#: pages/models.py
+msgid "layout aside"
+msgstr "εκτός από τη διάταξη"
+
+#: pages/models.py
+msgid "icon size"
+msgstr "μέγεθος εικονιδίου"
+
+#: pages/models.py
+msgid "Category page"
+msgstr "Σελίδα κατηγορίας"
+
+#: pages/models.py
+msgid "Category pages"
+msgstr "Σελίδες κατηγορίας"
+
+#: pages/models.py
+msgid "This category already has a page"
+msgstr "Αυτή η κατηγορία έχει ήδη μια σελίδα"
+
+#: pages/models.py
+msgid "lead content"
+msgstr "κύριο περιεχόμενο"
+
+#: pages/models.py
+msgid "Dashboard"
+msgstr "Ταμπλό"
+
+#: pages/models.py
+msgid "default view"
+msgstr "προεπιλεγμένη προβολή"
+
+#: pages/models.py
+msgid "Tab of the action list page that should be visible by default"
+msgstr "Καρτέλα της σελίδας λίστας ενεργειών που πρέπει να είναι ορατή από προεπιλογή"
+
+#: pages/models.py
+msgid "Subheading hierarchy depth"
+msgstr "Βάθος ιεραρχίας υποτίτλων"
+
+#: pages/models.py
+msgid "Depth of category hierarchy to present as subheadings starting from the root."
+msgstr "Βάθος της ιεραρχίας των κατηγοριών που θα παρουσιάζονται ως υποκεφαλίδες ξεκινώντας από τη ρίζα."
+
+#: pages/models.py
+msgid "Action date format"
+msgstr "Μορφή ημερομηνίας δράσης"
+
+#: pages/models.py
+msgid "Default format of action start and end dates shown in the public UI."
+msgstr "Προεπιλεγμένη μορφή των ημερομηνιών έναρξης και λήξης των ενεργειών που εμφανίζονται στο δημόσιο περιβάλλον εργασίας."
+
+#: pages/models.py
+msgid "Task due date format"
+msgstr "Μορφή ημερομηνίας λήξης εργασιών"
+
+#: pages/models.py
+msgid "Default format of action task due dates shown in the public UI."
+msgstr "Προεπιλεγμένη μορφή των ημερομηνιών λήξης εργασιών ενεργειών που εμφανίζονται στο δημόσιο περιβάλλον εργασίας."
+
+#: pages/models.py
+msgid "Include related plans"
+msgstr "Συμπεριλάβετε σχετικά σχέδια"
+
+#: pages/models.py
+msgid "Enable to make this page include actions from related plans."
+msgstr "Ενεργοποίηση για να συμπεριλάβει αυτή η σελίδα ενέργειες από σχετικά σχέδια."
+
+#: pages/models.py
+msgid "Primary filters"
+msgstr "Πρωτογενή φίλτρα"
+
+#: pages/models.py
+msgid "Main filters"
+msgstr "Κύρια φίλτρα"
+
+#: pages/models.py
+msgid "Advanced filters (hidden by default)"
+msgstr "Σύνθετα φίλτρα (κρυμμένα από προεπιλογή)"
+
+#: pages/models.py
+msgid "Action list filters"
+msgstr "Φίλτρα λίστας ενεργειών"
+
+#: pages/models.py
+msgid "Main column (top part on mobile)"
+msgstr "Κύρια στήλη (πάνω μέρος στο κινητό)"
+
+#: pages/models.py
+msgid "Main column (bottom part on mobile)"
+msgstr "Κύρια στήλη (κάτω μέρος στο κινητό)"
+
+#: pages/models.py
+msgid "Side column"
+msgstr "Πλευρική στήλη"
+
+#: pages/models.py
+msgid "Action details page"
+msgstr "Σελίδα λεπτομερειών δράσης"
+
+#: pages/models.py
+msgid "Action dashboard columns"
+msgstr "Στήλες ταμπλό δράσης"
+
+#: pages/models.py
+msgid "Action list page"
+msgstr "Σελίδα λίστας ενεργειών"
+
+#: pages/models.py
+msgid "Action list pages"
+msgstr "Σελίδες λίστας ενεργειών"
+
+#: pages/models.py
+msgid "Should insight network be shown for indicators?"
+msgstr "Θα πρέπει να εμφανίζεται το δίκτυο διορατικότητας για τους δείκτες;"
+
+#: pages/models.py
+msgid "Display insights"
+msgstr "Εμφάνιση πληροφοριών"
+
+#: pages/models.py
+#, fuzzy
+msgid "Should the indicator level be shown for indicators? (Displayed in the column \"Type\")"
+msgstr "Θα πρέπει να εμφανίζεται το επίπεδο του δείκτη για τους δείκτες; (Εμφανίζεται στη στήλη \"Τύπος\")"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "category level"
+msgid "Display level"
+msgstr "Επίπεδο οθόνης"
+
+#: pages/models.py
+#, fuzzy
+#| msgid "Enable to make this page include actions from related plans."
+msgid "Enable to make this page include indicators from related plans."
+msgstr "Ενεργοποίηση για να συμπεριλάβει η σελίδα αυτή δείκτες από συναφή σχέδια."
+
+#: pages/models.py
+msgid "Indicator list page"
+msgstr "Σελίδα λίστας δεικτών"
+
+#: pages/models.py
+msgid "Indicator list pages"
+msgstr "Σελίδες λίστας δεικτών"
+
+#: pages/models.py
+msgid "Impact group page"
+msgstr "Σελίδα ομάδας Impact"
+
+#: pages/models.py
+msgid "Impact group pages"
+msgstr "Σελίδες ομάδας επιπτώσεων"
+
+#: pages/models.py
+msgid "Privacy policy page"
+msgstr "Σελίδα πολιτικής απορρήτου"
+
+#: pages/models.py
+msgid "Privacy policy pages"
+msgstr "Σελίδες πολιτικής απορρήτου"
+
+#: pages/models.py
+msgid "Accessibility statement page"
+msgstr "Σελίδα δήλωσης προσβασιμότητας"
+
+#: pages/models.py
+msgid "Accessibility statement pages"
+msgstr "Σελίδες δήλωσης προσβασιμότητας"
+
+#: pages/models.py
+msgid "external plan link"
+msgstr "εξωτερικός σύνδεσμος σχεδίου"
+
+#: pages/models.py
+msgid "external plan links"
+msgstr "εξωτερικοί σύνδεσμοι σχεδίου"
+
+#: pages/wagtail_admin.py
+msgid "More"
+msgstr "Περισσότερα"
+
+#: people/apps.py people/wagtail_admin.py
+msgid "People"
+msgstr "Άνθρωποι"
+
+#: people/chooser.py
+msgid "Create new"
+msgstr "Δημιουργία νέου"
+
+#: people/chooser.py
+msgid "Choose person"
+msgstr "Επιλέξτε άτομο"
+
+#: people/chooser.py
+msgid "Choose a person"
+msgstr "Επιλέξτε ένα άτομο"
+
+#: people/chooser.py
+msgid "Choose another person"
+msgstr "Επιλέξτε ένα άλλο άτομο"
+
+#: people/chooser.py
+msgid "Edit this person"
+msgstr "Επεξεργαστείτε αυτό το άτομο"
+
+#: people/models.py people/wagtail_admin.py
+msgid "first name"
+msgstr "όνομα"
+
+#: people/models.py people/wagtail_admin.py
+msgid "last name"
+msgstr "επώνυμο"
+
+#: people/models.py
+msgctxt "person's role"
+msgid "title"
+msgstr "τίτλος"
+
+#: people/models.py
+msgid "postal address"
+msgstr "ταχυδρομική διεύθυνση"
+
+#: people/models.py
+msgid "What is this person's organization"
+msgstr "Ποια είναι η οργάνωση αυτού του ατόμου"
+
+#: people/models.py
+msgid "user"
+msgstr "χρήστης"
+
+#: people/models.py
+msgid "Set if the person has an user account"
+msgstr "Ορίζεται εάν το άτομο έχει λογαριασμό χρήστη"
+
+#: people/models.py
+msgid "participated in training"
+msgstr "συμμετείχε σε εκπαίδευση"
+
+#: people/models.py
+msgid "Set to keep track who have attended training sessions"
+msgstr "Ρύθμιση για να παρακολουθείτε ποιοι έχουν παρακολουθήσει εκπαιδευτικές συνεδρίες"
+
+#: people/models.py
+msgid "image cropping"
+msgstr "περικοπή εικόνας"
+
+#: people/models.py people/wagtail_admin.py
+msgid "contact for actions"
+msgstr "επαφή για δράσεις"
+
+#: people/models.py
+msgid "people"
+msgstr "άνθρωποι"
+
+#: people/override_django_translations.py
+#, python-format
+msgid "%(model_name)s '%(object)s' deleted."
+msgstr "%(model_name)s '%(object)s' διαγράφεται."
+
+#: people/templates/people/delete.html
+#, python-format
+msgid "Confirm deletion of %(model_name)s"
+msgstr "Επιβεβαιώστε τη διαγραφή των %(model_name)s"
+
+#: people/templates/people/delete.html
+#, python-format
+msgid "'%(instance_name)s' is currently connected to the following items. Please verify deletion:"
+msgstr "Το '%(instance_name)s' είναι συνδεδεμένο με τα ακόλουθα στοιχεία. Παρακαλώ επαληθεύστε τη διαγραφή:"
+
+#: people/templates/people/delete.html
+msgid "Yes, delete"
+msgstr "Ναι, διαγράψτε"
+
+#: people/templates/people/delete.html
+msgid "No, don't delete"
+msgstr "Όχι, μη διαγράψετε"
+
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
+msgid "Yes"
+msgstr "Ναι"
+
+#: people/templates/people/view_as_user.html reports/report_formatters.py
+#: templates/aplans/confirmation.html
+msgid "No"
+msgstr "Όχι"
+
+#: people/views.py people/wagtail_admin.py
+msgid "Reset password"
+msgstr "Επαναφορά κωδικού πρόσβασης"
+
+#: people/views.py
+#, python-format
+msgid "Confirm sending password reset link to %(person)s"
+msgstr "Επιβεβαιώστε την αποστολή του συνδέσμου επαναφοράς κωδικού πρόσβασης στο %(person)s"
+
+#: people/views.py
+#, python-format
+msgid "Do you really want to send a password reset link to %(person)s?"
+msgstr "Θέλετε πραγματικά να στείλετε έναν σύνδεσμο επαναφοράς κωδικού πρόσβασης στο %(person)s?"
+
+#: people/views.py
+#, python-format
+msgid "An email has been sent to %(person)s with a link to reset their password."
+msgstr "Έχει σταλεί email στο %(person)s με σύνδεσμο για την επαναφορά του κωδικού πρόσβασης."
+
+#: people/views.py
+#, python-format
+msgid "If the email does not arrive, you can send them the following link: %(url)s"
+msgstr "Αν το email δεν φτάσει, μπορείτε να τους στείλετε τον ακόλουθο σύνδεσμο: %(url)s"
+
+#: people/views.py
+#, python-format
+msgid "Please take great care that nobody except %(person)s gets access to the link. For additional security, the link will expire in %(days_until_expiration)s days."
+msgstr "Παρακαλείστε να φροντίσετε να μην έχει πρόσβαση στον σύνδεσμο κανείς άλλος εκτός από το %(person)s. Για περισσότερη ασφάλεια, ο σύνδεσμος θα λήξει σε %(days_until_expiration)s ημέρες."
+
+#: people/views.py people/wagtail_admin.py
+msgid "View as user"
+msgstr "Προβολή ως χρήστης"
+
+#: people/views.py
+#, python-format
+msgid "Confirm viewing the site as user %(person)s"
+msgstr "Επιβεβαίωση προβολής του ιστότοπου ως χρήστης %(person)s"
+
+#: people/views.py
+#, python-format
+msgid "Do you really want to view the site as %(person)s?"
+msgstr "Θέλετε πραγματικά να δείτε τον ιστότοπο ως %(person)s;"
+
+#: people/wagtail_admin.py
+msgid "Is contact person"
+msgstr "Είναι πρόσωπο επαφής"
+
+#: people/wagtail_admin.py
+#, python-format
+msgid "For an action in %(plan)s"
+msgstr "Για μια δράση στο %(plan)s"
+
+#: people/wagtail_admin.py
+msgid "For an action"
+msgstr "Για μια δράση"
+
+#: people/wagtail_admin.py
+msgid "For same actions or indicators as me"
+msgstr "Για τις ίδιες ενέργειες ή δείκτες με εμένα"
+
+#: people/wagtail_admin.py
+msgid "For an indicator"
+msgstr "Για έναν δείκτη"
+
+#: people/wagtail_admin.py
+msgid "Not a contact person"
+msgstr "Δεν είναι πρόσωπο επαφής"
+
+#: people/wagtail_admin.py
+msgid "Access to public site only"
+msgstr "Πρόσβαση μόνο σε δημόσιο χώρο"
+
+#: people/wagtail_admin.py
+msgid "Access to admin site and public site"
+msgstr "Πρόσβαση στον ιστότοπο διαχειριστή και στον δημόσιο ιστότοπο"
+
+#: people/wagtail_admin.py
+msgid "Is plan admin"
+msgstr "Είναι σχέδιο admin"
+
+#: people/wagtail_admin.py
+msgid "Site access"
+msgstr "Πρόσβαση στην τοποθεσία"
+
+#: people/wagtail_admin.py
+msgid "Plan admin organizations"
+msgstr "Οργανισμοί διαχείρισης σχεδίου"
+
+#: people/wagtail_admin.py
+msgid "Deactivate"
+msgstr "Απενεργοποίηση"
+
+#: people/wagtail_admin.py
+msgid "Create a password reset link"
+msgstr "Δημιουργία συνδέσμου επαναφοράς κωδικού πρόσβασης"
+
+#: people/wagtail_admin.py
+msgid "View site as it looks for this user"
+msgstr "Προβολή του ιστότοπου όπως φαίνεται για αυτόν τον χρήστη"
+
+#: people/wagtail_admin.py
+msgid "Are you sure you want to deactivate this person?"
+msgstr "Είστε σίγουροι ότι θέλετε να απενεργοποιήσετε αυτό το άτομο;"
+
+#: people/wagtail_admin.py
+msgid "This person has no access to the admin interface. This is commonly because no actions or indicators are assigned to them."
+msgstr "Αυτό το άτομο δεν έχει πρόσβαση στη διεπαφή διαχειριστή. Αυτό συμβαίνει συνήθως επειδή δεν του έχουν εκχωρηθεί ενέργειες ή δείκτες."
+
+#: people/wagtail_admin.py
+msgid "last login"
+msgstr "τελευταία σύνδεση"
+
+#: people/wagtail_admin.py
+msgid "contact for indicators"
+msgstr "επαφή για δείκτες"
+
+#: reports/blocks/action_content.py
+msgid "Action field"
+msgstr "Πεδίο δράσης"
+
+#: reports/blocks/action_content.py
+msgid "Action category"
+msgstr "Κατηγορία δράσης"
+
+#: reports/blocks/action_content.py
+msgid "Level of containing organization"
+msgstr "Επίπεδο οργάνωσης που περιέχει"
+
+#: reports/blocks/action_content.py
+msgid "In addition to the organization itself, an organizational unit containing the organization is included in the report. Counting from the top-level root organisation at level 1, which level in the organizational hierarchy should be used to find this containing organization? If left empty, don't add the containing organization to the report."
+msgstr "Εκτός από τον ίδιο τον οργανισμό, στην έκθεση περιλαμβάνεται και μια οργανωτική μονάδα που περιέχει τον οργανισμό. Μετρώντας από τον κορυφαίο ριζικό οργανισμό στο επίπεδο 1, ποιο επίπεδο της οργανωτικής ιεραρχίας πρέπει να χρησιμοποιηθεί για να βρεθεί αυτός ο οργανισμός που περιέχει; Εάν παραμείνει κενό, μην προσθέσετε τον οργανισμό που περιέχει στην αναφορά."
+
+#: reports/blocks/choosers.py reports/wagtail_admin.py
+msgid "Report type"
+msgstr "Τύπος έκθεσης"
+
+#: reports/blocks/choosers.py
+msgid "Report type field"
+msgstr "Πεδίο τύπου αναφοράς"
+
+#: reports/blocks/report_comparison_block.py
+msgid "UUID of report field"
+msgstr "UUID του πεδίου αναφοράς"
+
+#: reports/blocks/report_comparison_block.py
+msgid "Report comparison"
+msgstr "Σύγκριση εκθέσεων"
+
+#: reports/chooser.py
+msgid "Choose a report type"
+msgstr "Επιλέξτε έναν τύπο αναφοράς"
+
+#: reports/chooser.py
+msgid "Choose another report type"
+msgstr "Επιλέξτε έναν άλλο τύπο αναφοράς"
+
+#: reports/models.py
+msgid "report type"
+msgstr "τύπος έκθεσης"
+
+#: reports/models.py
+msgid "report types"
+msgstr "τύποι αναφορών"
+
+#: reports/models.py reports/spreadsheets/excel_report.py
+msgid "complete"
+msgstr "πλήρες"
+
+#: reports/models.py
+msgid "Set if report cannot be changed anymore"
+msgstr "Ορίζεται εάν η έκθεση δεν μπορεί πλέον να αλλάξει"
+
+#: reports/models.py
+msgid "public"
+msgstr "δημόσια"
+
+#: reports/models.py
+msgid "Set if report can be shown to the public"
+msgstr "Ορίστε αν η έκθεση μπορεί να προβληθεί στο κοινό"
+
+#: reports/models.py
+msgid "report"
+msgstr "έκθεση"
+
+#: reports/models.py
+msgid "reports"
+msgstr "αναφέρει"
+
+#: reports/models.py
+msgid "The report is already marked as complete."
+msgstr "Η έκθεση έχει ήδη επισημανθεί ως πλήρης."
+
+#: reports/models.py
+#, python-format
+msgid "Marked report '%s' as complete"
+msgstr "Χαρακτηρίστηκε η έκθεση '%s' ως πλήρης"
+
+#: reports/models.py
+msgid "The report is not marked as complete."
+msgstr "Η έκθεση δεν χαρακτηρίζεται ως πλήρης."
+
+#: reports/models.py
+#, python-format
+msgid "Undid marking report '%s' as complete"
+msgstr "Αναίρεση της σήμανσης της έκθεσης '%s' ως πλήρης"
+
+#: reports/models.py
+msgid "action snapshot"
+msgstr "στιγμιότυπο δράσης"
+
+#: reports/models.py
+msgid "action snapshots"
+msgstr "στιγμιότυπα δράσης"
+
+#: reports/report_formatters.py
+msgid "Has goals"
+msgstr "Έχει στόχους"
+
+#: reports/report_formatters.py
+msgid "empty"
+msgstr ""
+
+#: reports/report_formatters.py
+msgid "Other responsible parties"
+msgstr "Άλλοι υπεύθυνοι"
+
+#: reports/spreadsheets/action_print_layout.py
+msgid "Profiles"
+msgstr "Προφίλ"
+
+#: reports/spreadsheets/action_print_layout.py
+msgid "Prepare for printing"
+msgstr "Προετοιμασία για εκτύπωση"
+
+#: reports/spreadsheets/excel_report.py
+msgid "Exported from Kausal Watch"
+msgstr "Εξαχθείσα από το Kausal Watch"
+
+#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete by"
+msgstr "Σημειώθηκε ως πλήρης από"
+
+#: reports/spreadsheets/excel_report.py reports/tests/test_excel_roundtrip.py
+msgid "Marked as complete at"
+msgstr "Σημειώθηκε ως πλήρης στο"
+
+#: reports/spreadsheets/excel_report.py
+msgid "Summary"
+msgstr "Περίληψη"
+
+#: reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "Do you really want to mark the report <i>%(report)s</i> as complete?"
+msgstr "Θέλετε πραγματικά να επισημάνετε την έκθεση <i>%(report)s</i> ως ολοκληρωμένη;"
+
+#: reports/templates/reports/mark_report_as_complete_confirmation.html
+#, python-format
+msgid "Do you really want to undo marking the report <i>%(report)s</i> as complete?"
+msgstr "Θέλετε πραγματικά να αναιρέσετε τη σήμανση της έκθεσης <i>%(report)s</i> ως ολοκληρωμένης;"
+
+#: reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "This will mark the following actions as complete:"
+msgstr "Αυτό θα επισημάνει τις ακόλουθες ενέργειες ως ολοκληρωμένες:"
+
+#: reports/templates/reports/mark_report_as_complete_confirmation.html
+msgid "This will undo marking the following actions as complete:"
+msgstr "Αυτό θα αναιρέσει τη σήμανση των ακόλουθων ενεργειών ως ολοκληρωμένων:"
+
+#: reports/views.py
+msgid "Mark action as complete"
+msgstr "Σημειώστε την ενέργεια ως ολοκληρωμένη"
+
+#: reports/views.py
+msgid "Undo marking action as complete"
+msgstr "Αναίρεση της επισήμανσης ενέργειας ως ολοκληρωμένης"
+
+#: reports/views.py
+#, python-format
+msgid "Confirm marking action %(action)s as complete for report %(report)s"
+msgstr "Επιβεβαίωση της επισήμανσης της δράσης %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
+
+#: reports/views.py
+#, python-format
+msgid "Confirm undoing marking action %(action)s as complete for report %(report)s"
+msgstr "Επιβεβαίωση αναίρεσης της σήμανσης της ενέργειας %(action)s ως ολοκληρωμένης για την έκθεση %(report)s"
+
+#: reports/views.py
+#, python-format
+msgid "Do you really want to mark the action '%(action)s' as complete for the report '%(report)s'?"
+msgstr "Θέλετε πραγματικά να επισημάνετε την ενέργεια '%(action)s' ως ολοκληρωμένη για την έκθεση '%(report)s';"
+
+#: reports/views.py
+#, python-format
+msgid "Do you really want to undo marking the action '%(action)s' as complete for the report '%(report)s'?"
+msgstr "Θέλετε πραγματικά να αναιρέσετε τη σήμανση της ενέργειας \"%(action)s\" ως ολοκληρωμένης για την έκθεση \"%(report)s\";"
+
+#: reports/views.py
+#, python-format
+msgid "Action '%(action)s' has been marked as complete for report '%(report)s'."
+msgstr "Η ενέργεια '%(action)s' χαρακτηρίστηκε ως ολοκληρωμένη για την έκθεση '%(report)s'."
+
+#: reports/views.py
+#, python-format
+msgid "Action '%(action)s' is no longer marked as complete for report '%(report)s'."
+msgstr "Η ενέργεια '%(action)s' δεν χαρακτηρίζεται πλέον ως ολοκληρωμένη για την έκθεση '%(report)s'."
+
+#: reports/views.py
+msgid "Mark report as complete"
+msgstr "Σημειώστε την έκθεση ως ολοκληρωμένη"
+
+#: reports/views.py
+msgid "Undo marking report as complete"
+msgstr "Αναίρεση της επισήμανσης της έκθεσης ως ολοκληρωμένης"
+
+#: reports/views.py
+#, python-format
+msgid "Confirm marking report %(report)s as complete"
+msgstr "Επιβεβαίωση σήμανσης της έκθεσης %(report)s ως πλήρους"
+
+#: reports/views.py
+#, python-format
+msgid "Confirm undoing marking report %(report)s as complete"
+msgstr "Επιβεβαίωση της αναίρεσης της σήμανσης της έκθεσης %(report)s ως ολοκληρωμένης"
+
+#: reports/views.py
+#, python-format
+msgid "Report '%(report)s' has been marked as complete."
+msgstr "Η αναφορά '%(report)s' έχει επισημανθεί ως πλήρης."
+
+#: reports/views.py
+#, python-format
+msgid "Report '%(report)s' is no longer marked as complete."
+msgstr "Η αναφορά '%(report)s' δεν χαρακτηρίζεται πλέον ως πλήρης."
+
+#: reports/wagtail_admin.py
+msgid "Download XLSX"
+msgstr "Λήψη XLSX"
+
+#: reports/wagtail_admin.py
+msgid "Download report as spreadsheet file"
+msgstr "Κατεβάστε την έκθεση ως αρχείο λογιστικού φύλλου"
+
+#: reports/wagtail_admin.py
+msgid "Mark as complete"
+msgstr "Χαρακτηρίστε ως ολοκληρωμένο"
+
+#: reports/wagtail_admin.py
+msgid "Mark this report as complete"
+msgstr "Χαρακτηρίστε αυτή την αναφορά ως ολοκληρωμένη"
+
+#: reports/wagtail_admin.py
+msgid "Undo marking as complete"
+msgstr "Αναίρεση σήμανσης ως ολοκληρωμένη"
+
+#: reports/wagtail_admin.py
+msgid "Undo marking this report as complete"
+msgstr "Αναίρεση της επισήμανσης αυτής της αναφοράς ως ολοκληρωμένης"
+
+#: reports/wagtail_admin.py
+msgid "Report types"
+msgstr "Τύποι αναφορών"
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "This page has unsaved changes."
+msgstr "Αυτή η σελίδα έχει μη αποθηκευμένες αλλαγές."
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Saving…"
+msgstr "Εξοικονόμηση…"
+
+#: templates/modeladmin/create.html
+msgid "Save"
+msgstr "Αποθήκευση"
+
+#: templates/modeladmin/create.html templates/modeladmin/edit.html
+msgid "Save and continue editing"
+msgstr "Αποθήκευση και συνέχιση της επεξεργασίας"
+
+#: templates/modeladmin/edit.html
+msgid "Delete"
+msgstr "Διαγραφή"
+
+#: users/apps.py
+msgid "Users"
+msgstr "Χρήστες"
+
+#: users/models.py
+msgid "No permission to remove the user belonging to plans you are not managing."
+msgstr "Δεν έχετε δικαίωμα να καταργήσετε τον χρήστη που ανήκει σε σχέδια που δεν διαχειρίζεστε."
+
+#~ msgid "Related actions"
+#~ msgstr "Σχετικές ενέργειες"
+
+#~ msgid "Updated at"
+#~ msgstr "Ενημερώθηκε στις"
+
+#, fuzzy
+#~| msgid "start date"
+#~ msgid "Start date"
+#~ msgstr "Ημερομηνία έναρξης"
+
+#, fuzzy
+#~| msgid "end date"
+#~ msgid "End date"
+#~ msgstr "Ημερομηνία λήξης"
+
+#~ msgid "Impact"
+#~ msgstr "Επιπτώσεις"
+
+#~ msgid "Automatic notifications"
+#~ msgstr "Αυτόματες ειδοποιήσεις"
+
+#~ msgid "Testing"
+#~ msgstr "Δοκιμές"
+
+#~ msgid "Your account settings have been changed successfully!"
+#~ msgstr "Οι ρυθμίσεις του λογαριασμού σας άλλαξαν με επιτυχία!"
+
+#~ msgid "An optional logo for this organization"
+#~ msgstr "Ένα προαιρετικό λογότυπο για αυτόν τον οργανισμό"

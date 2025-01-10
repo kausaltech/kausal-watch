@@ -1,12 +1,12 @@
 {% load i18n wagtailadmin_tags %}
 
 <li>
-    <span class="icon icon-fa-cubes"></span>
+    {% icon name="kausal-action" %}
     <a href="{% url 'actions_action_modeladmin_index' %}">
-    {% blocktrans count counter=active_actions with active_actions|intcomma as n %}
-        <span>{{ n }}</span> active action <span class="visuallyhidden">monitored in {{ plan.name }}</span>
+    {% blocktranslate count counter=active_actions with n=active_actions|intcomma plan=plan.name %}
+        <span>{{ n }}</span> active action <span class="w-sr-only">monitored in {{ plan }}</span>
     {% plural %}
-        <span>{{ n }}</span> active actions <span class="visuallyhidden">monitored in {{ plan.name }}</span>
-    {% endblocktrans %}
+        <span>{{ n }}</span> active actions <span class="w-sr-only">monitored in {{ plan }}</span>
+    {% endblocktranslate %}
     </a>
 </li>

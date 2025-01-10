@@ -2,14 +2,15 @@ import io
 import logging
 from uuid import uuid4
 
+from wagtail.users.models import UserProfile
+
 from sentry_sdk import capture_exception
 from social_core.backends.oauth import OAuthAuth
-from wagtail.users.models import UserProfile
 
 from admin_site.msgraph import get_user_photo
 
-from .models import User
 from .base import uuid_to_username
+from .models import User
 
 logger = logging.getLogger('users.login')
 
@@ -48,13 +49,13 @@ def log_login_attempt(backend, details, *args, **kwargs):
 
 def find_user_by_email(backend, details, user=None, social=None, *args, **kwargs):
     if user is not None:
-        return
+        return None
 
     details['email'] = details['email'].lower()
     try:
         user = User.objects.get(email=details['email'])
     except User.DoesNotExist:
-        return
+        return None
 
     return {
         'user': user,
@@ -139,7 +140,8 @@ def update_avatar(backend, details, user, *args, **kwargs):
 
 
 def get_username(details, backend, response, *args, **kwargs):
-    """Sets the `username` argument.
+    """
+    Sets the `username` argument.
 
     If the user exists already, use the existing username. Otherwise
     generate username from the `new_uuid` using the
@@ -147,19 +149,19 @@ def get_username(details, backend, response, *args, **kwargs):
     """
 
     if backend.name != 'azure_ad':
-        return
+        return None
 
     user = details.get('user')
     if not user:
         user_uuid = kwargs.get('uid')
         if not user_uuid:
-            return
+            return None
         username = uuid_to_username(user_uuid)
     else:
         username = user.username
 
     return {
-        'username': username
+        'username': username,
     }
 
 

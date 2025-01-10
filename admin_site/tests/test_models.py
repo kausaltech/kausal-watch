@@ -1,7 +1,9 @@
-import pytest
 from django.contrib.auth.models import AnonymousUser
 
+import pytest
+
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
+
 from actions.models import ActionContactPerson
 from actions.tests.factories import ActionContactFactory
 from admin_site.tests.factories import BuiltInFieldCustomizationFactory
@@ -17,11 +19,11 @@ pytestmark = pytest.mark.django_db
         (InstancesEditableByMixin.EditableBy.MODERATORS, False, False, True, True),
         (InstancesEditableByMixin.EditableBy.PLAN_ADMINS, False, False, False, True),
         (InstancesEditableByMixin.EditableBy.NOT_EDITABLE, False, False, False, False),
-    ]
+    ],
 )
 def test_built_in_field_customization_is_action_field_editable_by(
     expect_unprivileged, expect_editor, expect_moderator, expect_admin, built_in_field_customization, action,
-    plan_admin_user
+    plan_admin_user,
 ):
     unauthenticated = AnonymousUser()
     # Create an authenticated user that's unprivileged for this action because they are a contact for another action
@@ -44,11 +46,11 @@ def test_built_in_field_customization_is_action_field_editable_by(
         (InstancesVisibleForMixin.VisibleFor.CONTACT_PERSONS, False, False, True, True, True),
         (InstancesVisibleForMixin.VisibleFor.MODERATORS, False, False, False, True, True),
         (InstancesVisibleForMixin.VisibleFor.PLAN_ADMINS, False, False, False, False, True),
-    ]
+    ],
 )
 def test_built_in_field_customization_is_action_field_visible_for(
     expect_unauthenticated, expect_unprivileged, expect_editor, expect_moderator, expect_admin,
-    built_in_field_customization, action, plan_admin_user
+    built_in_field_customization, action, plan_admin_user,
 ):
     unauthenticated = AnonymousUser()
     # Create an authenticated user that's unprivileged for this action because they are a contact for another action

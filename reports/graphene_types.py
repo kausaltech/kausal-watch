@@ -3,8 +3,10 @@ from functools import cache
 from typing import Type
 
 import graphene
+
 from grapple.registry import registry as grapple_registry
 from grapple.types.streamfield import StreamFieldBlock
+
 from aplans.graphql_types import register_graphene_node
 
 
@@ -30,8 +32,8 @@ class GrapheneValueClassProperties:
 
 @cache
 def generate_graphene_report_value_node_class(
-        properties: GrapheneValueClassProperties
-) -> Type[ActionReportValue]:
+        properties: GrapheneValueClassProperties,
+) -> type[ActionReportValue]:
     """
     Generates a class representing a report value, and registers it as graphene node
     The class would look something like this if created manually:
@@ -51,8 +53,8 @@ def generate_graphene_report_value_node_class(
         (ActionReportValue,),
         {
             'Meta': Meta_,
-            properties.value_field_name: graphene.Field(properties.value_field_type)
-        }
+            properties.value_field_name: graphene.Field(properties.value_field_type),
+        },
     )
     globals()[properties.class_name] = Class
     register_graphene_node(Class)

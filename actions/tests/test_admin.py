@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import typing
 
-import pytest
 from django.urls import reverse
+
+import pytest
 from pytest_django.asserts import assertContains
 
 from actions.action_admin import ActionAdmin
 from actions.tests.factories import ActionContactFactory, ActionFactory, PlanFactory
 from actions.wagtail_admin import ActivePlanAdmin
 from admin_site.tests.factories import ClientPlanFactory
-from aplans.types import WatchAdminRequest
-from conftest import ModelAdminEditTest
 
 if typing.TYPE_CHECKING:
-    from users.models import User
-    from people.models import Person
+    from aplans.types import WatchAdminRequest
+
     from actions.models import Action
+    from conftest import ModelAdminEditTest
+    from people.models import Person
+    from users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -107,24 +109,24 @@ def test_can_access_plan_edit_page(plan_admin_user, client):
 
 def test_action_admin(
     plan_admin_user: User, action_contact_person: Person, action: Action,
-    test_modeladmin_edit: ModelAdminEditTest
+    test_modeladmin_edit: ModelAdminEditTest,
 ):
     ClientPlanFactory(plan=action.plan)
     post_data = dict(name='Modified name', identifier=action.identifier)
     test_modeladmin_edit(
-        ActionAdmin, action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
+        ActionAdmin, action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True,
     )
     return
     # FIXME
     action.refresh_from_db()
     #assert action.name == post_data['name']
     test_modeladmin_edit(
-        ActionAdmin, action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=True
+        ActionAdmin, action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=True,
     )
     other_action = ActionFactory.create(plan=action.plan)
     test_modeladmin_edit(
-        ActionAdmin, other_action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True
+        ActionAdmin, other_action, plan_admin_user, post_data=post_data, can_inspect=True, can_edit=True,
     )
     test_modeladmin_edit(
-        ActionAdmin, other_action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=False
+        ActionAdmin, other_action, action_contact_person.user, post_data=post_data, can_inspect=True, can_edit=False,
     )

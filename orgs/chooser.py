@@ -1,10 +1,9 @@
 from django import forms
-
 from django.utils.translation import gettext_lazy as _
+from wagtail import hooks
 
 from generic_chooser.views import ModelChooserMixin, ModelChooserViewSet
 from generic_chooser.widgets import AdminChooser
-from wagtail import hooks
 
 from aplans.types import WatchAdminRequest
 
@@ -12,7 +11,8 @@ from .models import Organization
 
 
 class OrganizationChooserMixin(ModelChooserMixin):
-    """This chooser is currently intended only for choosing (and creating) top level organizations
+    """
+    This chooser is currently intended only for choosing (and creating) top level organizations
     by superusers creating new plans. That's why it only supports root level organizations
     at the moment.
     """
@@ -44,7 +44,7 @@ class OrgForm(forms.ModelForm):
 class OrganizationChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = OrganizationChooserMixin
 
-    icon = 'user'
+    icon = 'kausal-organization'
     model = Organization
     page_title = _("Choose an organization")
     per_page = 30

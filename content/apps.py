@@ -30,5 +30,5 @@ class ContentConfig(AppConfig):
         from actions.models import Plan
         post_save.connect(
             create_site_general_content, sender=Plan,
-            dispatch_uid='create_site_general_content'
+            dispatch_uid='create_site_general_content',
         )

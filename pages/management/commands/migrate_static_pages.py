@@ -1,11 +1,11 @@
 import json
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from wagtail.models import PageLogEntry
 
 from content.models import StaticPage as OldStaticPage
-from pages.models import PlanRootPage
-from pages.models import StaticPage as NewStaticPage
+from pages.models import PlanRootPage, StaticPage as NewStaticPage
 
 
 def set_subtree(root, parent=None):

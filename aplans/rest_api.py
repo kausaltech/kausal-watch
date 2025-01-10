@@ -1,21 +1,23 @@
 from __future__ import annotations
+
 import typing
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from rest_framework import response, status, viewsets, exceptions, serializers
+from rest_framework import exceptions, response, serializers, status, viewsets
 from rest_framework.exceptions import ValidationError
 
 from actions.models import Plan
-from aplans.types import WatchAPIRequest
 
 if typing.TYPE_CHECKING:
     from django.db.models import QuerySet
 
+    from aplans.types import WatchAPIRequest
+
 
 class BulkListSerializer(serializers.ListSerializer):
     child: serializers.ModelSerializer
-    instance: typing.Optional[QuerySet]
+    instance: QuerySet | None
     update_lookup_field = 'id'
     _refresh_cache: bool
 
@@ -110,11 +112,11 @@ class BulkListSerializer(serializers.ListSerializer):
         grouped_by_operation_and_model = dict()
         for operation, obj, *rest in ops:
             grouped_by_operation_and_model.setdefault(
-                operation, {}
+                operation, {},
             ).setdefault(
-                type(obj), []
+                type(obj), [],
             ).append(
-                tuple([obj] + rest)
+                tuple([obj] + rest),
             )
         self._handle_updates(grouped_by_operation_and_model.get('update', {}))
         self._handle_deletes(grouped_by_operation_and_model.get('delete', {}))
@@ -182,7 +184,7 @@ class BulkModelViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return response.Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers,
         )
 
     def bulk_update(self, request, *args, **kwargs):
@@ -191,7 +193,7 @@ class BulkModelViewSet(viewsets.ModelViewSet):
             self.filter_queryset(self.get_queryset()),
             data=request.data,
             many=True,
-            partial=partial
+            partial=partial,
         )
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -244,6 +246,7 @@ class ProtectedError(exceptions.APIException):
 
 class HandleProtectedErrorMixin:
     """Mixin for viewsets that use DRF's DestroyModelMixin to handle ProtectedError gracefully."""
+
     def perform_destroy(self, instance):
         try:
             super().perform_destroy(instance)
@@ -252,7 +255,7 @@ class HandleProtectedErrorMixin:
                 detail={
                     'non_field_errors': _(
                         'Cannot delete "%s" because it is connected to other objects '
-                        'such as plans, persons or actions.'
-                    ) % getattr(instance, 'name', str(instance))
-                }
+                        'such as plans, persons or actions.',
+                    ) % getattr(instance, 'name', str(instance)),
+                },
             )

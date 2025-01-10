@@ -2,26 +2,38 @@ from __future__ import annotations
 
 import datetime
 import logging
-import reversion
 import typing
+from typing import TYPE_CHECKING, Sequence, TypeVar, cast
+
+import reversion
 from django.conf import settings
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
-from django.utils.translation import pgettext_lazy, gettext_lazy as _
-from enum import Enum
+from django.db.models.query import QuerySet
+from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from typing import Dict, Sequence
 from wagtail.fields import RichTextField
 
+from kausal_common.models.types import ModelManager
+
 from aplans.utils import PlanRelatedModel
+
 from people.models import Person
 
+from .notifications import NotificationType
+
 if typing.TYPE_CHECKING:
+    from modelcluster.fields import PK
+
+    from actions.models.plan import Plan
+    from admin_site.models import Client
+
     from .recipients import EmailRecipient, NotificationRecipient
+
 
 DEFAULT_FONT_FAMILY = (
     '-apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, '
@@ -29,24 +41,6 @@ DEFAULT_FONT_FAMILY = (
 )
 DEFAULT_LANG = settings.LANGUAGES[0][0]
 logger = logging.getLogger('aplans.notifications')
-
-
-class NotificationType(Enum):
-    TASK_LATE = _("Task is late")
-    TASK_DUE_SOON = _("Task is due soon")
-    ACTION_NOT_UPDATED = _("Action metadata has not been updated recently")
-    NOT_ENOUGH_TASKS = _("Action doesn't have enough in-progress tasks")
-    UPDATED_INDICATOR_VALUES_LATE = _("Updated indicator values are late")
-    UPDATED_INDICATOR_VALUES_DUE_SOON = _("Updated indicator values are due soon")
-    USER_FEEDBACK_RECEIVED = _("User feedback received")
-
-    @property
-    def identifier(self):
-        return self.name.lower()
-
-    @property
-    def verbose_name(self):
-        return self.value
 
 
 ACTION_NOTIFICATION_TYPES = {
@@ -63,11 +57,13 @@ INDICATOR_NOTIFICATION_TYPES = {
 }
 
 
-def notification_type_choice_builder():
+def notification_type_choice_builder(include_manual: bool = False):
     for val in NotificationType:
+        if val == NotificationType.MANUALLY_SCHEDULED and not include_manual: continue
         yield (val.identifier, val.verbose_name)
 
 
+@reversion.register()
 class NotificationSettings(ClusterableModel, PlanRelatedModel):
     plan = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_settings',
@@ -78,7 +74,7 @@ class NotificationSettings(ClusterableModel, PlanRelatedModel):
     )
     send_at_time = models.TimeField(
         default=datetime.time(9, 0), verbose_name=_('notification sending time'),
-        help_text=_('The local time of day when notifications are sent')
+        help_text=_('The local time of day when notifications are sent'),
     )
 
     verbose_name_partitive = pgettext_lazy('partitive', 'notification settings')
@@ -91,9 +87,16 @@ class NotificationSettings(ClusterableModel, PlanRelatedModel):
         return str(self.plan)
 
 
-class SentNotificationQuerySet(models.QuerySet):
+class SentNotificationQuerySet(QuerySet['SentNotification']):
     def recipient(self, recipient: NotificationRecipient):
         return recipient.filter_sent_notifications(self)
+
+
+if TYPE_CHECKING:
+    class SentNotificationManager(ModelManager['SentNotification', SentNotificationQuerySet]):
+        pass
+else:
+    SentNotificationManager = ModelManager.from_queryset(SentNotificationQuerySet)
 
 
 class SentNotification(models.Model):
@@ -103,8 +106,8 @@ class SentNotification(models.Model):
 
     sent_at = models.DateTimeField()
     type = models.CharField(
-        verbose_name=_('type'), choices=notification_type_choice_builder(),
-        max_length=100
+        verbose_name=_('type'), choices=notification_type_choice_builder(include_manual=True),
+        max_length=100,
     )
     person = models.ForeignKey(Person, on_delete=models.CASCADE, related_name='notifications', blank=True, null=True)
     email = models.EmailField(
@@ -112,34 +115,40 @@ class SentNotification(models.Model):
         help_text=_('Set if the notification was sent to an email address instead of a person'),
     )
 
-    objects = SentNotificationQuerySet.as_manager()
+    objects = SentNotificationManager()  # pyright: ignore
 
     class Meta:
+        default_manager_name = 'objects'
         constraints = [
             models.CheckConstraint(
                 check=((Q(person__isnull=True) & ~Q(email='')) | (Q(person__isnull=False) & Q(email=''))),
                 name='person_xor_email',
-            )
+            ),
         ]
 
     def __str__(self):
         return '%s: %s -> %s' % (self.content_object, self.type, self.person)
 
 
-class BaseTemplateManager(models.Manager):
-    def get_by_natural_key(self, plan_identifier):
+class BaseTemplateManager(models.Manager['BaseTemplate']):
+    def get_by_natural_key(self, plan_identifier: str):
         return self.get(plan__identifier=plan_identifier)
 
 
+_QS = TypeVar('_QS', bound=models.QuerySet)
+
 class IndirectPlanRelatedModel(PlanRelatedModel):
+    class Meta:
+        abstract = True
+
     @classmethod
-    def filter_by_plan(cls, plan, qs):
+    def filter_by_plan(cls, plan: Plan, qs: _QS) -> _QS:
         return qs.filter(base__plan=plan)
 
 
 @reversion.register()
 class BaseTemplate(ClusterableModel, PlanRelatedModel):
-    plan = models.OneToOneField(
+    plan: models.OneToOneField[Plan] = models.OneToOneField(
         'actions.Plan', on_delete=models.CASCADE, related_name='notification_base_template',
         verbose_name=_('plan'),
     )
@@ -149,14 +158,14 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
 
     brand_dark_color = models.CharField(verbose_name=_('Brand dark color'), null=True, blank=True, max_length=30)
     logo = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
     )
     font_family = models.CharField(verbose_name=_('Font family'), null=True, blank=True, max_length=200,
                                    help_text=_('Leave empty unless custom font required by customer'))
     font_css_url = models.URLField(verbose_name=_('Font CSS style URL'), null=True, blank=True,
                                    help_text=_('Leave empty unless custom font required by customer'))
 
-    objects = BaseTemplateManager()
+    objects = BaseTemplateManager()  # pyright: ignore
 
     verbose_name_partitive = pgettext_lazy('partitive', 'base templates')
 
@@ -182,7 +191,7 @@ class BaseTemplate(ClusterableModel, PlanRelatedModel):
             font_family=self.font_family,
             font_family_with_fallback=self._get_font_family_with_fallback(),
             font_css_url=self.font_css_url,
-            link_in_brand_bg_color="#ffffff"
+            link_in_brand_bg_color="#ffffff",
         ))
 
     def get_from_email(self):
@@ -196,14 +205,15 @@ class NotificationTemplateManager(models.Manager):
         return self.get(base__plan__identifier=base[0], type=type_)
 
 
-class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
-    base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
-    subject = models.CharField(
-        verbose_name=_('subject'), max_length=200, help_text=_('Subject for email notifications')
-    )
+class NotificationTemplate(IndirectPlanRelatedModel):
+    base: ParentalKey[BaseTemplate, BaseTemplate]
+
     type = models.CharField(
-        verbose_name=_('type'), choices=notification_type_choice_builder(),
+        verbose_name=_('type'), choices=notification_type_choice_builder(include_manual=False),
         max_length=100,
+    )
+    subject = models.CharField(
+        verbose_name=_('subject'), max_length=200, help_text=_('Subject for email notifications'),
     )
     custom_email = models.EmailField(
         blank=True, verbose_name=_('custom email address'),
@@ -212,35 +222,10 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
     send_to_plan_admins = models.BooleanField(verbose_name=_('send to plan admins'), default=True)
     send_to_custom_email = models.BooleanField(verbose_name=_('send to custom email address'), default=False)
 
-    class ContactPersonFallbackChain(models.TextChoices):
-        DO_NOT_SEND = '', _('Do not send to contact persons')
-        CONTACT_PERSONS = 'cp', _('Send to contact persons')
-        CONTACT_PERSONS_THEN_ORG_ADMINS = 'cp-oa', _('Send to contact persons; fallback: organization admins')
-        CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS = 'cp-oa-pa', _(
-            'Send to contact persons; fallback: organization admins, plan admins'
-        )
-
-    send_to_contact_persons = models.CharField(
-        max_length=50, verbose_name=_('send to contact persons'), blank=True,
-        choices=ContactPersonFallbackChain.choices,
-    )
-
     objects = NotificationTemplateManager()
 
     class Meta:
-        ordering = ('type', 'subject')
-        verbose_name = _('notification template')
-        verbose_name_plural = _('notification templates')
-        unique_together = (('base', 'type'),)
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    (Q(custom_email='') & Q(send_to_custom_email=False))
-                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
-                ),
-                name='custom_email_iff_send_to_custom_email',
-            )
-        ]
+        abstract = True
 
     def __str__(self):
         for val in NotificationType:
@@ -250,20 +235,16 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
 
     def natural_key(self):
         return (self.base.natural_key(), self.type)
-    natural_key.dependencies = ['notifications.BaseTemplate']
+    natural_key.dependencies = ['notifications.BaseTemplate']  # type: ignore
 
     def clean(self):
         if not self.custom_email and self.send_to_custom_email:
             raise ValidationError({
-                'send_to_custom_email': _('This can only be set if a custom email address is defined')
+                'send_to_custom_email': _('This can only be set if a custom email address is defined'),
             })
         if self.custom_email and not self.send_to_custom_email:
             raise ValidationError({
-                'send_to_custom_email': _('If a custom email address is defined, this must be set')
-            })
-        if self.send_to_contact_persons and not self.concerns_action and not self.concerns_indicator:
-            raise ValidationError({
-                'send_to_contact_persons': _('Notifications of this type cannot be sent to contact persons')
+                'send_to_custom_email': _('If a custom email address is defined, this must be set'),
             })
 
     @property
@@ -275,11 +256,57 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
         return self.type in (t.identifier for t in INDICATOR_NOTIFICATION_TYPES)
 
     def get_recipients(
-        self, action_contacts: Dict[int, Sequence[NotificationRecipient]],
-        indicator_contacts: Dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
-        organization_plan_admins: Dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
+        self, action_contacts: dict[int, Sequence[NotificationRecipient]],
+        indicator_contacts: dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
+        organization_plan_admins: dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
     ) -> Sequence[NotificationRecipient]:
-        recipients = []
+        raise NotImplementedError('Implement in subclass')
+
+    def get_email_recipient(self) -> EmailRecipient | None:
+        from .recipients import EmailRecipient
+        if not self.custom_email:
+            return None
+        plan = self.base.plan
+        client_plan = plan.clients.first()
+        client: Client | None
+        if client_plan:
+            client = client_plan.client
+        else:
+            admin = plan.general_admins.first()
+            if admin:
+                client = admin.get_admin_client()
+        assert client
+        return EmailRecipient(email=cast(str, self.custom_email), client=client)
+
+
+class AutomaticNotificationTemplate(NotificationTemplate):
+    base: PK[BaseTemplate] = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='templates', editable=False)
+
+    class ContactPersonFallbackChain(models.TextChoices):
+        DO_NOT_SEND = '', _('Do not send to contact persons')
+        CONTACT_PERSONS = 'cp', _('Send to contact persons')
+        CONTACT_PERSONS_THEN_ORG_ADMINS = 'cp-oa', _('Send to contact persons; fallback: organization admins')
+        CONTACT_PERSONS_THEN_ORG_ADMINS_THEN_PLAN_ADMINS = 'cp-oa-pa', _(
+            'Send to contact persons; fallback: organization admins, plan admins',
+        )
+    send_to_contact_persons = models.CharField(
+        max_length=50, verbose_name=_('send to contact persons'), blank=True,
+        choices=ContactPersonFallbackChain.choices,
+    )
+
+    def clean(self):
+        if self.send_to_contact_persons and not self.concerns_action and not self.concerns_indicator:
+            raise ValidationError({
+                'send_to_contact_persons': _('Notifications of this type cannot be sent to contact persons'),
+            })
+        super().clean()
+
+    def get_recipients(
+        self, action_contacts: dict[int, Sequence[NotificationRecipient]],
+        indicator_contacts: dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
+        organization_plan_admins: dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
+    ) -> Sequence[NotificationRecipient]:
+        recipients: list[NotificationRecipient] = []
         if self.send_to_plan_admins:
             recipients += plan_admins
         if self.send_to_custom_email:
@@ -289,12 +316,12 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
             recipients += [recipient]
         if self.send_to_contact_persons:
             recipients += self._get_contact_person_recipients(
-                action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator
+                action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator,
             )
         return recipients
 
     def _get_contact_person_recipients(
-        self, action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator
+        self, action_contacts, indicator_contacts, organization_plan_admins, plan_admins, action, indicator,
     ):
         recipients = []
         fall_back_to_org_admins = (
@@ -311,10 +338,10 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
             recipients += action_contacts.get(action.id, [])
             if not recipients:
                 if fall_back_to_org_admins:
-                    org_ids = set((p.organization_id for p in action.responsible_parties.all()))
+                    org_ids = {p.organization_id for p in action.responsible_parties.all()}
                     org_ids.add(action.primary_org_id)
                     opa_lists = (organization_plan_admins.get(org_id, []) for org_id in org_ids)
-                    recipients += set(recipient for opas in opa_lists for recipient in opas)
+                    recipients += {recipient for opas in opa_lists for recipient in opas}
                     if not recipients and fall_back_to_plan_admins:
                         recipients += plan_admins
 
@@ -330,20 +357,88 @@ class NotificationTemplate(models.Model, IndirectPlanRelatedModel):
 
         return recipients
 
-    def get_email_recipient(self) -> typing.Optional[EmailRecipient]:
-        from .recipients import EmailRecipient
-        if not self.custom_email:
-            return None
-        plan = self.base.plan
-        client = plan.clients.first()
-        if client:
-            client = client.client
-        else:
-            admin = plan.general_admins.first()
-            if admin:
-                client = admin.get_admin_client()
-        assert client
-        return EmailRecipient(email=self.custom_email, client=client)
+    class Meta(NotificationTemplate.Meta):
+        ordering = ('type', 'subject')
+        verbose_name = _('notification template')
+        verbose_name_plural = _('notification templates')
+        unique_together = (('base', 'type'),)
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    (Q(custom_email='') & Q(send_to_custom_email=False))
+                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
+                ),
+                name='custom_email_iff_send_to_custom_email',
+            ),
+        ]
+
+
+class ManuallyScheduledNotificationTemplate(NotificationTemplate):
+    type = models.CharField(
+        verbose_name=_('type'),
+        max_length=100,
+        default=NotificationType.MANUALLY_SCHEDULED.identifier,
+        db_default=NotificationType.MANUALLY_SCHEDULED.identifier,
+        editable=False,
+    )
+    base: ParentalKey[BaseTemplate, BaseTemplate] = ParentalKey(
+        BaseTemplate, on_delete=models.CASCADE, related_name='manually_scheduled_notification_templates', editable=False,
+    )
+    date = models.DateField(null=False, blank=False)  # Must be interpreted as local to the plan timezone
+    content = RichTextField(verbose_name=_('content'), help_text=_('The content of the notification'))
+
+    sent_notifications = GenericRelation('notifications.SentNotification', related_query_name='manually_scheduled_notifications')
+
+    send_to_action_contact_persons = models.BooleanField(verbose_name=_('send to action contact persons'), default=True)
+    send_to_indicator_contact_persons = models.BooleanField(verbose_name=_('send to indicator contact persons'), default=True)
+    send_to_organization_admins = models.BooleanField(verbose_name=_('send to organization admins'), default=True)
+
+    class Meta(NotificationTemplate.Meta):
+        ordering = ('date', 'subject')
+        verbose_name = _('scheduled notification')
+        verbose_name_plural = _('scheduled notifications')
+        unique_together = (('base', 'date', 'subject'),)
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    (Q(custom_email='') & Q(send_to_custom_email=False))
+                    | (~Q(custom_email='') & Q(send_to_custom_email=True))
+                ),
+                name='custom_email_iff_send_to_custom_email_the_sequel',
+            ),
+        ]
+
+    def clean(self):
+        # In practice this should not be called, it's only a safeguard if future admin UIs expose the type
+        if self.type != NotificationType.MANUALLY_SCHEDULED.identifier:
+            raise ValidationError({
+                'type': _('The type must be "%(t)s".' % {'t': NotificationType.MANUALLY_SCHEDULED.value}),
+            })
+        super().clean()
+
+    def get_recipients(
+        self, action_contacts: dict[int, Sequence[NotificationRecipient]],
+        indicator_contacts: dict[int, Sequence[NotificationRecipient]], plan_admins: Sequence[NotificationRecipient],
+        organization_plan_admins: dict[int, Sequence[NotificationRecipient]], action=None, indicator=None,
+    ) -> Sequence[NotificationRecipient]:
+        recipients: list[NotificationRecipient] = []
+        if self.send_to_plan_admins:
+            recipients += plan_admins
+        if self.send_to_action_contact_persons:
+            for item in action_contacts.values():
+                recipients.extend(item)
+        if self.send_to_indicator_contact_persons:
+            for item in indicator_contacts.values():
+                recipients.extend(item)
+        if self.send_to_organization_admins:
+            for item in organization_plan_admins.values():
+                recipients.extend(item)
+        if self.send_to_custom_email:
+            recipient = self.get_email_recipient()
+            if not recipient:
+                raise Exception(f'There is no custom email recipient for notifications of type {self.type}')
+            recipients += [recipient]
+        return recipients
 
 
 class ContentBlockManager(models.Manager):
@@ -351,7 +446,7 @@ class ContentBlockManager(models.Manager):
         return self.get(
             base=base,
             template=template,
-            identifier=identifier
+            identifier=identifier,
         )
 
 
@@ -360,8 +455,8 @@ class ContentBlock(models.Model):
 
     base = ParentalKey(BaseTemplate, on_delete=models.CASCADE, related_name='content_blocks', editable=False)
     template = models.ForeignKey(
-        NotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
-        verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates')
+        AutomaticNotificationTemplate, null=True, blank=True, on_delete=models.CASCADE, related_name='content_blocks',
+        verbose_name=_('template'), help_text=_('Do not set if content block is used in multiple templates'),
     )
     identifier = models.CharField(max_length=50, verbose_name=_('identifier'), choices=(
         ('intro', _('Introduction block')),
@@ -380,7 +475,7 @@ class ContentBlock(models.Model):
     def natural_key(self):
         return (self.base, self.template, self.identifier)
     natural_key.dependencies = [
-        'notifications.BaseTemplate', 'notifications.NotificationTemplate'
+        'notifications.BaseTemplate', 'notifications.AutomaticNotificationTemplate',
     ]
 
     def save(self, *args, **kwargs):
@@ -402,7 +497,7 @@ class GeneralPlanAdminNotificationPreferences(models.Model):
         'actions.GeneralPlanAdmin', related_name='notification_preferences', on_delete=models.CASCADE,
     )
     receive_feedback_notifications = models.BooleanField(
-        verbose_name=_("receive feedback notifications"), default=True
+        verbose_name=_("receive feedback notifications"), default=True,
     )
 
 
@@ -411,8 +506,8 @@ class ActionContactPersonNotificationPreferences(models.Model):
         'actions.ActionContactPerson', related_name='notification_preferences', on_delete=models.CASCADE,
     )
     receive_general_action_notifications = models.BooleanField(
-        verbose_name=_("receive general action notifications"), default=True
+        verbose_name=_("receive general action notifications"), default=True,
     )
     receive_action_feedback_notifications = models.BooleanField(
-        verbose_name=_("receive action feedback notifications"), default=True
+        verbose_name=_("receive action feedback notifications"), default=True,
     )

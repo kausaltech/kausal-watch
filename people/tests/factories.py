@@ -1,4 +1,4 @@
-from factory import post_generation, RelatedFactory, SelfAttribute, Sequence, SubFactory
+from factory import RelatedFactory, SelfAttribute, Sequence, SubFactory, post_generation
 from factory.django import DjangoModelFactory
 
 

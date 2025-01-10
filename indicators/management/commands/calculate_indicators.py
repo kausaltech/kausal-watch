@@ -1,9 +1,9 @@
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 from django.core.management.base import BaseCommand
-from indicators.models import Indicator, IndicatorValue
 
+from indicators.models import Indicator, IndicatorValue
 
 logger = logging.getLogger(__name__)
 

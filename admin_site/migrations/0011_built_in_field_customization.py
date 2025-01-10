@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('content_type', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='+', to='contenttypes.contenttype')),
                 ('plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='built_in_action_attribute_types', to='actions.plan')),
             ],
-            bases=(models.Model, aplans.utils.PlanRelatedModel),
+            bases=(aplans.utils.PlanRelatedModel,),
         ),
         migrations.AddConstraint(
             model_name='builtinfieldcustomization',

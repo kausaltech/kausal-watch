@@ -1,14 +1,23 @@
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from wagtail.blocks import (
+    BooleanBlock,
+    CharBlock,
+    ChoiceBlock,
+    ChooserBlock,
+    ListBlock,
+    RichTextBlock,
+    StaticBlock,
+    StructBlock,
+)
+
 from grapple.helpers import register_streamfield_block
 from grapple.models import GraphQLBoolean, GraphQLForeignKey, GraphQLStreamfield, GraphQLString
-from wagtail.blocks import (
-    BooleanBlock, CharBlock, ChoiceBlock, ChooserBlock, ListBlock, RichTextBlock, StaticBlock, StructBlock
-)
+
+from pages.blocks import PageLinkBlock
 
 from .chooser import IndicatorChooser
 from .models import Indicator
-from pages.blocks import PageLinkBlock
 
 
 class IndicatorChooserBlock(ChooserBlock):

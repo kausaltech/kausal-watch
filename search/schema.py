@@ -2,20 +2,19 @@ import logging
 from itertools import chain
 from typing import Optional
 
-from django.utils.translation import get_language
-from django.db.models import Q
 import graphene
+from django.db.models import Q
+from django.utils.translation import get_language
 from graphql.error import GraphQLError
 from wagtail.models import Page
 
 from actions.models import Action, Plan
-from indicators.models import Indicator
-from pages.models import PlanRootPage, AplansPage
-
 from actions.schema import ActionNode
+from indicators.models import Indicator
 from indicators.schema import IndicatorNode
-from .backends import get_search_backend
+from pages.models import AplansPage, PlanRootPage
 
+from .backends import get_search_backend
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class SearchResults(graphene.ObjectType):
                     id='act-%d' % obj.id,
                     title=str(obj),
                     plan=obj.plan,
-                    object=obj
+                    object=obj,
                 )
             elif isinstance(obj, Indicator):
                 hit = dict(
@@ -108,7 +107,7 @@ class Query:
                 (query is None and autocomplete is None)):
             raise GraphQLError("You must supply either query or autocomplete")
 
-        plan_obj: Optional[Plan] = Plan.objects.filter(identifier=plan).first()
+        plan_obj: Plan | None = Plan.objects.filter(identifier=plan).first()
         if plan_obj is None:
             raise GraphQLError("Plan %s not found" % plan)
         related_plans = plan_obj.get_all_related_plans().all()
@@ -143,7 +142,8 @@ class Query:
         ]
         # FIXME: This doesn't work with exclude yet
         if not only_other_plans:
-            querysets.append(Indicator.objects.filter(plans__in=plan_ids))
+            querysets.append(Indicator.objects.visible_for_public().filter(plans__in=plan_ids))
+
 
         lang = get_language()
         # For now just string the region from the language as we don't have separate backends for regions at the moment

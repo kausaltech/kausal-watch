@@ -4,67 +4,131 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kausal-watch"
+requires-python = ">= 3.12"
 dynamic = ["version"]
 
 [tool.ruff]
-line-length = 140
-exclude = [
-    "node_modules",
-    "*/migrations",
-    "Attic",
-]
-
-
-[tool.isort]
-atomic = true
-combine_as_imports = true
-indent = 4
-sections = ['FUTURE', 'STDLIB', 'DJANGO', 'THIRDPARTY', 'FIRSTPARTY', 'LOCALFOLDER']
-known_django = [
-    'django', 'rest_framework', 'graphene', 'graphql', 'graphene_django', 'modelcluster', 'modeltrans', 'wagtail'
-]
-line_length = 80
-multi_line_output = 5
-skip = "migrations"
-wrap_length = 80
+extend = "./kausal_common/configs/ruff.toml"
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "aplans.settings"
 norecursedirs = [
-    ".*", "node_modules", "data", ".git", "venv", "Attic", ".direnv", ".mypy_cache",
-    "**/static", "**/templates", "**/media",
+  ".*",
+  ".direnv",
+  ".git",
+  ".mypy_cache",
+  "**/media",
+  "**/static",
+  "**/templates",
+  "Attic",
+  "data",
+  "node_modules",
+  "venv",
 ]
-filterwarnings = [
-    "ignore::DeprecationWarning:easy_thumbnails",
-]
-testpaths = [
-    "**/tests"
-]
+filterwarnings = ["ignore::DeprecationWarning:easy_thumbnails"]
+testpaths = ["**/tests"]
 
 [tool.mypy]
-plugins = [
-    "mypy_django_plugin.main",
-]
-mypy_path = "typings"
+plugins = ["mypy_django_plugin.main"]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/kausal_common/typings"
 exclude = [
-    '^Attic/',
-    '^typings/',
-    '^local_settings\.py',
+  "/migrations/",
+  "^Attic/",
+  "^local_settings\\.py$",
+  "^typings/",
+  "^kausal_common/deployment/gunicorn\\.py$",
+  "node_modules",
+  #"^kausal_common/typings/",
 ]
 check_untyped_defs = true
-
+cache_fine_grained = true
+explicit_package_bases = true
+strict_optional = true
 
 [[tool.mypy.overrides]]
 module = [
-    "colored.*", "dvc_pandas.*", "factory.*", "pint.*", "pint_pandas.*", "oauth2_provider.*", "modelcluster.*",
-    "modeltrans.*", "wagtail.*", "networkx.*", "plotext.*", "graphene_django.*", "grapple.*", "willow.*",
-    "reversion.*", "wagtail_modeladmin.*", "rest_framework_nested.*", "dal_admin_filters.*", "social_core.*",
-    "taggit.*", "dal.*", "social_django.*", "easy_thumbnails.*", "graphene_django_optimizer.*"
+  "anymail.*",
+  "colored.*",
+  "dal_admin_filters.*",
+  "dal.*",
+  "debug_toolbar.*",
+  "django_filters.*",
+  "django_filters.*",
+  "dvc_pandas.*",
+  "easy_thumbnails.*",
+  "elasticsearch_dsl.*",
+  "environ.*",
+  "factory.*",
+  "generic_chooser.*",
+  "graphene_django_optimizer.*",
+  "graphene_django.*",
+  "grapple.*",
+  "gunicorn.*",
+  "helusers.*",
+  "import_export.*",
+  "laces.*",
+  "modelcluster.*",
+  "modeltrans.*",
+  "nanoid.*",
+  "networkx.*",
+  "oauth2_provider.*",
+  "opentelemetry.*",
+  "permissionedforms.*",
+  "pint_pandas.*",
+  "pint.*",
+  "plotext.*",
+  "rest_framework_nested.*",
+  "reversion.*",
+  "rustface.*",
+  "social_core.*",
+  "social_django.*",
+  "storages.*",
+  "taggit.*",
+  "tinycss2.*",
+  "uwsgidecorators.*",
+  "wagtail_localize.*",
+  "wagtail_modeladmin.*",
+  "wagtail.*",
+  "wagtailautocomplete.*",
+  "wagtailgeowidget.*",
+  "wagtailorderable.*",
+  "willow.*",
+  "xlsxwriter.*",
 ]
 ignore_missing_imports = true
+
+[tool.mypy-baseline]
+baseline_path = ".mypy-baseline.txt"
+preserve_position = false
+
+[tool.pyright]
+exclude = [
+  ".*",
+  "**/__pycache__",
+  "**/migrations",
+  "**/node_modules",
+  "Attic/",
+  "local_settings.py",
+]
+stubPath = "kausal_common/typings"
+deprecateTypingAliases = true
+reportAttributeAccessIssue = "error"
+
 
 [tool.django-stubs]
 django_settings_module = "aplans.settings"
 
 [tool.setuptools]
 include-package-data = false
+
+[tool.setuptools.dynamic]
+dependencies = { file = [
+  "requirements.txt",
+  "kausal_common/requirements-common.txt",
+] }
+optional-dependencies.dev = { file = [
+  "requirements-dev.txt",
+  "requirements-lint.txt",
+] }
+optional-dependencies.lint = { file = ["requirements-lint.txt"] }
+optional-dependencies.prod = { file = ["requirements-prod.txt"] }

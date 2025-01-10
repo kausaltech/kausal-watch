@@ -1,6 +1,7 @@
-import willow
 from wagtail.images.image_operations import FillOperation, ImageTransform
 from wagtail.images.rect import Rect
+
+import willow
 
 
 class FocalPointImage:
@@ -9,7 +10,7 @@ class FocalPointImage:
 
     def get_focal_point(self):
         if not self.focal_point:
-            return
+            return None
         return Rect(*self.focal_point)
 
 

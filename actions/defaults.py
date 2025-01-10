@@ -1,6 +1,20 @@
-from django.utils.translation import ugettext_lazy as _
+from __future__ import annotations
 
-DEFAULT_ACTION_STATUSES = [
+from typing import TYPE_CHECKING, NotRequired, TypedDict
+
+from django.utils.translation import gettext_lazy as _
+
+if TYPE_CHECKING:
+    from django_stubs_ext.aliases import StrOrPromise  # pyright: ignore
+
+
+class DefaultActionStatus(TypedDict):
+    identifier: str
+    name: StrOrPromise
+    is_completed: NotRequired[bool]
+
+
+DEFAULT_ACTION_STATUSES: list[DefaultActionStatus] = [
     {
         'identifier': 'on_time',
         'name': _("On time"),
@@ -27,5 +41,5 @@ DEFAULT_ACTION_IMPLEMENTATION_PHASES = [
     }, {
         'identifier': 'completed',
         'name': _("Completed"),
-    }
+    },
 ]

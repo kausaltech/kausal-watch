@@ -1,23 +1,26 @@
-from typing import Any
+# pyright: reportMissingTypeStubs=true
+from typing import TYPE_CHECKING, Any
+
 from django.db.models import Q
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail import hooks
 from wagtail.admin.menu import AdminOnlyMenuItem, DismissibleMenuItem, Menu, MenuItem, SubmenuMenuItem
+from wagtail.admin.panels import FieldPanel, InlinePanel, ObjectList
 from wagtail.admin.ui.components import Component
 from wagtail.snippets.models import register_snippet
 from wagtail.snippets.views.snippets import SnippetViewSet
-from wagtail_modeladmin.options import ModelAdmin, modeladmin_register
-from wagtail import hooks
 
-from aplans.types import WatchAdminRequest
-
-from .models import Client
 from actions.models import CommonCategoryType
 from actions.wagtail_admin import PlanAdmin
+
+from .models import Client
+
+if TYPE_CHECKING:
+    from aplans.types import WatchAdminRequest
 
 
 # FIXME: Refactor duplicated code for categories, common categories, attribute types and reports
@@ -128,59 +131,8 @@ def register_report_menu():
     return SubmenuMenuItem(
         _('Reports'),
         report_menu,
-        classnames='icon icon-doc-full',
-        order=40
-    )
-
-
-class PlanChooserMenuItem(SubmenuMenuItem):
-    def is_shown(self, request):
-        if len(self.menu.menu_items_for_request(request)) > 1:
-            return True
-        return False
-
-    def is_active(self, request):
-        return bool(self.menu.active_menu_items(request))
-
-
-class PlanItem(MenuItem):
-    pass
-
-
-class PlanChooserMenu(Menu):
-    def menu_items_for_request(self, request):
-        user = request.user
-        plans = user.get_adminable_plans()
-        items = []
-        for plan in plans:
-            url = reverse('change-admin-plan', kwargs=dict(plan_id=plan.id))
-            url += '?admin=wagtail'
-            icon_name = ''
-            if plan == user.get_active_admin_plan():
-                icon_name = 'tick'
-            item = PlanItem(plan.name, url, icon_name=icon_name)
-            items.append(item)
-        url_helper = PlanAdmin().url_helper
-        if request.user.is_superuser:
-            items.append(AdminOnlyMenuItem(
-                _('Create plan'),
-                url_helper.get_action_url('create'),
-                icon_name='plus-inverse',
-                #order=9100,
-            ))
-        return items
-
-
-plan_chooser = PlanChooserMenu(None)
-
-
-@hooks.register('register_admin_menu_item')
-def register_plan_chooser():
-    return PlanChooserMenuItem(
-        _('Choose plan'),
-        plan_chooser,
-        order=9000,
-        icon_name='kausal-plan',
+        order=40,
+        icon_name='doc-full',
     )
 
 
@@ -218,12 +170,13 @@ def remove_default_site_summary_items(request, items: list):
     items.clear()
 
 
-class ClientAdmin(ModelAdmin):
+class ClientViewSet(SnippetViewSet):
     model = Client
-    menu_icon = 'globe'
+    icon = 'globe'
     menu_order = 520
     list_display = ('name',)
     search_fields = ('name',)
+    add_to_admin_menu = True
 
     panels = [
         FieldPanel('name'),
@@ -234,14 +187,14 @@ class ClientAdmin(ModelAdmin):
     ]
 
 
-modeladmin_register(ClientAdmin)
+register_snippet(ClientViewSet)
 
 
 @hooks.register("insert_global_admin_css")
 def global_admin_css():
     return format_html(
         '<link rel="stylesheet" href="{}">',
-        static("css/admin-styles.css")
+        static("css/admin-styles.css"),
     )
 
 
@@ -296,21 +249,22 @@ def remove_menu_items(items, item_classes_to_remove):
 
 @hooks.register('construct_settings_menu')
 def remove_settings_menu_items(request, items: list):
-    from wagtail.users.wagtail_hooks import (
-        GroupsMenuItem, UsersMenuItem
-    )
-    from wagtail.sites.wagtail_hooks import (
-        SitesMenuItem
+    from wagtail.contrib.redirects.wagtail_hooks import (
+        RedirectsMenuItem,
     )
     from wagtail.locales.wagtail_hooks import (
-        LocalesMenuItem
+        LocalesMenuItem,
     )
-    from wagtail.contrib.redirects.wagtail_hooks import (
-        RedirectsMenuItem
+    from wagtail.sites.wagtail_hooks import (
+        SitesMenuItem,
+    )
+    from wagtail.users.wagtail_hooks import (
+        GroupsMenuItem,
+        UsersMenuItem,
     )
 
     item_classes_to_remove = (
-        GroupsMenuItem, UsersMenuItem, SitesMenuItem, LocalesMenuItem, RedirectsMenuItem
+        GroupsMenuItem, UsersMenuItem, SitesMenuItem, LocalesMenuItem, RedirectsMenuItem,
     )
     remove_menu_items(items, item_classes_to_remove)
 
@@ -318,7 +272,7 @@ def remove_settings_menu_items(request, items: list):
 @hooks.register('construct_main_menu')
 def remove_main_menu_items(request, items: list):
     from wagtail.snippets.wagtail_hooks import (
-        SnippetsMenuItem
+        SnippetsMenuItem,
     )
 
     item_classes_to_remove = (
@@ -367,16 +321,26 @@ def add_documentation_to_help_menu(request, items: list):
 
 @hooks.register("register_icons")
 def register_icons(icons):
-    return icons + [
-        'wagtailadmin/icons/kausal-action.svg',
-        'wagtailadmin/icons/kausal-attribute.svg',
-        'wagtailadmin/icons/kausal-category.svg',
-        'wagtailadmin/icons/kausal-dimension.svg',
-        'wagtailadmin/icons/kausal-indicator.svg',
-        'wagtailadmin/icons/kausal-organization.svg',
-        'wagtailadmin/icons/kausal-plan.svg',
-        'wagtailadmin/icons/kausal-spreadsheet.svg',
+    basenames = [
+        'kausal-action',
+        'kausal-attribute',
+        'kausal-category',
+        'kausal-dimension',
+        'kausal-indicator',
+        'kausal-organization',
+        'kausal-plan',
+        'kausal-spreadsheet',
+        # Icons we copied from Font Awesome have a `fontawesome-` prefix. We also override some icons shipped with
+        # Wagtail, but they don't have a prefix even though some of them also come from Font Awesome and they don't need
+        # to be registered here.
+        # It would be tempting to use `fa-` instead of `fontawesome-`, but the modeladmin package checks in
+        # `ModelAdminMenuItem` and `GroupMenuItem` for this hard-coded prefix, and if it's there, it uses
+        # CSS-classname-based icons for the menu items. This doesn't work anymore with newer versions of Wagtail.
+        'fontawesome-bell',
+        'fontawesome-link-slash',
+        'fontawesome-rotate-left',
     ]
+    return icons + [f'wagtailadmin/icons/{basename}.svg' for basename in basenames]
 
 
 @hooks.register('insert_editor_js')

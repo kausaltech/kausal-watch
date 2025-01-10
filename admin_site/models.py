@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldDoesNotExist, ValidationError
@@ -5,15 +9,21 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from modelcluster.fields import ParentalKey
 from modelcluster.models import ClusterableModel
-from sentry_sdk import capture_exception
 from wagtail.images.models import SourceImageIOError
 from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, WorkflowMixin
+
+from sentry_sdk import capture_exception
 
 from aplans.fields import HostnameField
 from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin, OrderedModel, PlanRelatedModel
 
+if TYPE_CHECKING:
+    from kausal_common.models.types import FK
 
-class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, ClusterableModel):
+    from actions.models.plan import Plan
+
+
+class Client(ClusterableModel):
     class AuthBackend(models.TextChoices):
         NONE = '', _('Only allow password login')
         # Values are social auth backend names
@@ -26,10 +36,10 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
     name = models.CharField(
         max_length=100,
         verbose_name=_('Name'),
-        help_text=_('Name of the customer organization administering the plan')
+        help_text=_('Name of the customer organization administering the plan'),
     )
     logo = models.ForeignKey(
-        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+'
+        'images.AplansImage', null=True, blank=True, on_delete=models.SET_NULL, related_name='+',
     )
     # Login method can be overridden per user: If the user has a usable password, that will be used regardless.
     auth_backend = models.CharField(
@@ -70,10 +80,10 @@ class Client(WorkflowMixin, DraftStateMixin, LockableMixin, RevisionMixin, Clust
 
 class ClientPlan(OrderedModel):
     client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans'
+        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='plans',
     )
-    plan = ParentalKey(
-        'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients'
+    plan = ParentalKey['Plan'](
+        'actions.Plan', on_delete=models.CASCADE, null=False, blank=False, related_name='clients',
     )
 
     def get_sort_order_max(self):
@@ -90,7 +100,7 @@ class ClientPlan(OrderedModel):
 
 class EmailDomains(OrderedModel, ClusterableModel):
     client = ParentalKey(
-        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='email_domains'
+        Client, on_delete=models.CASCADE, null=False, blank=False, related_name='email_domains',
     )
     domain = HostnameField(unique=True)
 
@@ -121,8 +131,12 @@ class EmailDomains(OrderedModel, ClusterableModel):
 #     return [(field_name, Action._meta.get_field(field_name).verbose_name) for field_name in field_names]
 
 
-class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMixin, models.Model, PlanRelatedModel):
-    plan = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='built_in_action_attribute_types')
+class BuiltInFieldCustomization(
+    PlanRelatedModel, InstancesEditableByMixin, InstancesVisibleForMixin,
+):
+    plan: FK[Plan] = models.ForeignKey(
+        'actions.Plan', on_delete=models.CASCADE, related_name='built_in_field_customizations',
+    )
     # Model of the customized field
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
     # Name of the field in the model
@@ -136,7 +150,7 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
             models.UniqueConstraint(
                 fields=['plan', 'content_type', 'field_name'],
                 name='unique_field_customization_per_plan',
-            )
+            ),
         ]
 
     def clean(self):
@@ -144,21 +158,28 @@ class BuiltInFieldCustomization(InstancesEditableByMixin, InstancesVisibleForMix
         # for now we don't have an model admin class for this model but rely on creating instances manually in the REPL,
         # we must manually trigger the validation by calling full_clean().
         model = self.content_type.model_class()
+        assert model is not None
         try:
             model._meta.get_field(self.field_name)
         except FieldDoesNotExist:
-            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {
+            raise ValidationError({'field_name': _("%(field)s is not a valid field in the model '%(model)s'") % {  # noqa: B904
                 'field': self.field_name,
-                'model': self.content_type.model
+                'model': self.content_type.model,
             }})
         return self.field_name
 
     def __str__(self):
         model = self.content_type.model_class()
+        assert model is not None
         model_name = model._meta.verbose_name
-        field_name = model._meta.get_field(self.field_name).verbose_name
+        target_field = model._meta.get_field(self.field_name)
+        if isinstance(target_field, models.Field):
+            field_label = target_field.verbose_name
+        else:
+            # ForeignObjectRel or GenericForeignKey
+            field_label = self.field_name
         return _("Field '%(field)s' in model '%(model)s' of plan '%(plan)s'") % {
-            'field': field_name,
+            'field': field_label,
             'model': model_name,
             'plan': str(self.plan),
         }

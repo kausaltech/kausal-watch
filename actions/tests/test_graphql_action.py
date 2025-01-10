@@ -1,16 +1,15 @@
 import itertools
-import pytest
 
+import pytest
 
 from actions.models.action import ActionContactPerson
 from actions.models.action_deps import ActionDependencyRelationship, ActionDependencyRole
 from indicators.models import Indicator
 
-
 pytestmark = pytest.mark.django_db
 
 
-ACTION_FIELDS = '''
+ACTION_FIELDS = """
   id
   identifier
   name
@@ -22,19 +21,19 @@ ACTION_FIELDS = '''
   previousAction { id },
   relatedActions { id }
 
-'''
+"""
 
 
-RETRIEVE_ACTION_QUERY = f'''
+RETRIEVE_ACTION_QUERY = f"""
   query($id: ID) {{
     action(id: $id) {{
       {ACTION_FIELDS}
     }}
   }}
-'''
+"""
 
 
-RETRIEVE_INDICATOR_QUERY = f'''
+RETRIEVE_INDICATOR_QUERY = f"""
   query($id: ID) {{
     indicator(id: $id) {{
       id
@@ -48,19 +47,19 @@ RETRIEVE_INDICATOR_QUERY = f'''
       }}
     }}
   }}
-'''
+"""
 
 
-PLAN_ACTIONS_QUERY = f'''
+PLAN_ACTIONS_QUERY = f"""
   query($plan: ID!) {{
     planActions(plan: $plan) {{
       {ACTION_FIELDS}
     }}
   }}
-'''
+"""
 
 
-PLAN_QUERY = f'''
+PLAN_QUERY = f"""
   query($plan: ID!) {{
     plan(id: $plan) {{
       actions {{
@@ -68,7 +67,7 @@ PLAN_QUERY = f'''
       }}
     }}
   }}
-'''
+"""
 
 
 ACTION_FIELDS_WITH_ACTIONS = [
@@ -78,7 +77,7 @@ ACTION_FIELDS_WITH_ACTIONS = [
     'supersededActions',
     'nextAction',
     'previousAction',
-    'relatedActions'
+    'relatedActions',
 ]
 
 
@@ -90,12 +89,12 @@ def test_action_visibility(graphql_client_query_data, actions_with_relations_fac
     graphql_action_listings = [
         graphql_client_query_data(
             PLAN_ACTIONS_QUERY,
-            variables={'plan': actions[0].plan.identifier}
+            variables={'plan': actions[0].plan.identifier},
         )['planActions'],
         graphql_client_query_data(
             PLAN_QUERY,
-            variables={'plan': actions[0].plan.identifier}
-        )['plan']['actions']
+            variables={'plan': actions[0].plan.identifier},
+        )['plan']['actions'],
     ]
 
     individual_data = {
@@ -122,14 +121,14 @@ def test_action_visibility(graphql_client_query_data, actions_with_relations_fac
                 api_object = individual_data[other_action.id]['action']
                 value = api_object.get(field_name)
                 if isinstance(value, list):
-                    assert str(action.id) not in set((a['id'] for a in value)), field_name
+                    assert str(action.id) not in {a['id'] for a in value}, field_name
                 elif isinstance(value, dict):
                     assert str(action.id) != value['id'], field_name
 
         # ActionIndicator.action
         for indicator in Indicator.objects.all():
             data = graphql_client_query_data(
-                RETRIEVE_INDICATOR_QUERY, variables={'id': indicator.id}
+                RETRIEVE_INDICATOR_QUERY, variables={'id': indicator.id},
             )
             assert data['indicator']['id'] == str(indicator.id)
             assert str(action.id) not in (
@@ -158,7 +157,7 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
     acp2 = action_contact_factory(action=action, role=ActionContactPerson.Role.MODERATOR)
     acp3 = action_contact_factory(action=action, role=ActionContactPerson.Role.EDITOR)
 
-    query = '''
+    query = """
         query($action: ID!) {
           action(id: $action) {
             contactPersons {
@@ -177,7 +176,7 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
             }
           }
         }
-        '''
+        """
 
     data = graphql_client_query_data(query, variables={'action': action.id})
     expected = {
@@ -195,8 +194,8 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
                 },
                 'order': acp.order,
                 'primaryContact': acp.primary_contact,
-            } for acp in [acp1, acp2, acp3]]
-        }
+            } for acp in [acp1, acp2, acp3]],
+        },
     }
     assert data == expected
 
@@ -218,8 +217,8 @@ def test_action_contact_person_hide_moderators(graphql_client_query_data, plan, 
                 },
                 'order': acp3.order,
                 'primaryContact': acp3.primary_contact,
-            }]
-        }
+            }],
+        },
     }
     assert data == expected
 
@@ -243,7 +242,7 @@ def test_action_dependency_basics(graphql_client_query_data, plan, action_factor
     ActionDependencyRelationship.objects.create(preceding=b1, dependent=b2)
 
     # 2. Query the graphql endpoint for action.dependent_relationships for A2
-    query = '''
+    query = """
         query($id: ID!) {
           action(id: $id) {
             dependencyRole {
@@ -268,7 +267,7 @@ def test_action_dependency_basics(graphql_client_query_data, plan, action_factor
             }
           }
         }
-    '''
+    """
     data = graphql_client_query_data(query, variables={'id': a2.id})
 
     # 3. Ensure dependency role of A2 is correct

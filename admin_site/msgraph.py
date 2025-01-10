@@ -29,7 +29,7 @@ def graph_get_json(resource, token):
 def get_user_data(user, principal_name=None):
     token = _get_token(user)
     if not token:
-        return
+        return None
     if principal_name:
         resource = 'users/%s' % principal_name
     else:
@@ -41,8 +41,8 @@ def get_user_data(user, principal_name=None):
 def get_user_photo(user):
     token = _get_token(user)
     if not token:
-        return
+        return None
     out = graph_get('me/photo/$value', token)
     if out.status_code == 404:
-        return
+        return None
     return out

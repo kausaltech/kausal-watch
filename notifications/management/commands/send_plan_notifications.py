@@ -1,10 +1,11 @@
 from datetime import datetime
+
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import translation
 
-from notifications.engine import NotificationEngine
-from notifications.models import NotificationType
 from actions.models import Plan
+from notifications.engine import NotificationEngine
+from notifications.notifications import NotificationType
 
 
 class Command(BaseCommand):
@@ -19,11 +20,11 @@ class Command(BaseCommand):
         parser.add_argument('--only-email', type=str, help='Send only the notifications that go to this email')
         parser.add_argument('--ignore-actions', type=str, help='Comma-separated list of action identifiers to ignore')
         parser.add_argument(
-            '--ignore-indicators', type=str, help='Comma-separated list of indicator identifiers to ignore'
+            '--ignore-indicators', type=str, help='Comma-separated list of indicator identifiers to ignore',
         )
         parser.add_argument('--noop', action='store_true', help='Do not actually send the emails')
         parser.add_argument(
-            '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files'
+            '--dump', metavar='FILE', type=str, help='Dump generated MJML and HTML files',
         )
         parser.add_argument('--time', type=datetime.fromisoformat, help='Override current time (ISO format)')
 

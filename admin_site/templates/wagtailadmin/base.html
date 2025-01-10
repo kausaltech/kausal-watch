@@ -15,10 +15,33 @@
 {% block branding_logo %}
     {% if active_client and active_client.logo %}
         {% image active_client.logo width-80 %}
-        <!-- <h5>{{ active_plan.name }}</h5> -->
     {% else %}
         <img src="{% static 'images/kausal-avatar-dark-green.svg' %}" alt="Kausal Logo" width="80" />
     {% endif %}
+
+    <div class="active-plan-info">
+        <span class="active-plan-name">{{ active_plan.name_i18n }}</span>
+        <div class="active-plan-status">
+            <!-- TODO: Enable this once locking plans is implemented-->
+            <!-- {% if active_plan.is_locked %}
+                <span class="active-plan-locked" aria-label="{% trans 'locked plan' %}">{% icon name="lock" %}</span>
+            {% endif %} -->
+
+            {% if active_plan.version_name %}
+                <span class="active-plan-version-name">{{ active_plan.version_name }}</span>
+            {% endif %}
+
+            <div>
+                <span class="active-plan-live {% if active_plan.is_live %}public{% else %}internal{% endif %}">
+                    {% if active_plan.is_live %}
+                        {% trans "Public" %}
+                    {% else %}
+                        {% trans "Internal" %}
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block extra_css %}
@@ -27,6 +50,15 @@
 {% endblock %}
 
 {% block js %}
+    {% comment %}
+        The following script injects various fixes to accessibility problems.
+        The more intrusive of the fixes required for some customers are only enabled
+        if plan.features.admin_accessibility_conformance_level is "high"
+    {% endcomment %}
+    <script
+      src="{% static 'admin_site/js/accessibility.js' %}"
+      data-active-plan-accessibility-level="{{ active_plan.features.admin_accessibility_conformance_level|default:"default" }}">
+    </script>
     {{ block.super }}
     {% sentry_init %}
     {# Workaround for being able to navigate to the action button's dropdown menu with the keyboard #}
@@ -39,4 +71,10 @@
         }
       });
     </script>
+    {# Set role alert for notifications for accessibility #}
+
+    {% if request.user.is_hijacked %}
+        {% include "admin_site/release_impersonation.html" %}
+    {% endif %}
+
 {% endblock %}

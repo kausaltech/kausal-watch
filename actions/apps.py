@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import collections
+from functools import cache
+
 from django.apps import AppConfig
 from django.contrib.admin.filters import SimpleListFilter
 from django.utils.translation import gettext_lazy as _
-from functools import lru_cache
-
 
 # FIXME: Monkey patch due to wagtail-admin-list-controls using a deprecated alias in collections package
 # Wagtail uses the deprecated alias -- remove after updating to 2.16
@@ -32,6 +34,7 @@ class CollectionFilter(SimpleListFilter):
     def queryset(self, request, queryset):
         if self.value():
             return queryset.filter(collection=self.value())
+        return None
 
 
 def get_unfiltered_object_list(self):
@@ -41,6 +44,7 @@ def get_unfiltered_object_list(self):
 
 def monkeypatch_image_chooser_viewset():
     from wagtail.images.views.chooser import ImageChooserViewSet
+
     from images.permissions import permission_policy
     global _wagtail_image_chooser_viewset_permission_policy
 
@@ -49,7 +53,7 @@ def monkeypatch_image_chooser_viewset():
         ImageChooserViewSet.permission_policy = permission_policy
 
 
-@lru_cache(maxsize=None)
+@cache
 def get_base_snippet_action_menu_items(model):
     from actions.models.action import Action
     if model == Action:
@@ -125,7 +129,14 @@ def get_base_snippet_action_menu_items(model):
         menu_items = []
         # WorkflowMenuItem instances are inserted with order 100
         menu_items += [
-            SaveMenuItem(order=101),  # We want "Publish" (below) or "Approve" (100) as the default action (if shown)
+            # SaveMenuItem(order=101),  # We want "Publish" (below) or "Approve" (100) as the default action (if shown)
+            # FIXME: The previous line would cause "SaveMenuItem" to be not the first item, so the first item would
+            # probably be a workflow-related item. This causes a problem because Wagtail in `workflow-action.js`
+            # only appends hidden input elements to the form if the "more actions" dropdown is expanded. That is,
+            # the default button must not be workflow-related. Otherwise Wagtail wouldn't handle the workflow
+            # action properly. This should better be fixed in the Wagtail code, but until we find a good
+            # solution, let's just live with a suboptimal menu item order.
+            SaveMenuItem(order=0),
             DeleteMenuItem(order=102),
         ]
         if issubclass(model, DraftStateMixin):

@@ -1,7 +1,8 @@
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLForeignKey, GraphQLString, GraphQLInt
 from wagtail import blocks
+
+from grapple.helpers import register_streamfield_block
+from grapple.models import GraphQLForeignKey, GraphQLInt, GraphQLString
 
 from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock
 from actions.blocks.mixins import ActionListPageBlockPresenceMixin
@@ -20,7 +21,7 @@ class ActionAttributeTypeFilterBlock(blocks.StructBlock):
 
     graphql_fields = [
         GraphQLString('show_all_label'),
-        GraphQLForeignKey('attribute_type', AttributeType, required=True)
+        GraphQLForeignKey('attribute_type', AttributeType, required=True),
     ]
 
     class Meta:
@@ -50,7 +51,7 @@ class CategoryTypeFilterBlock(blocks.StructBlock):
         GraphQLString('style'),
         GraphQLString('show_all_label'),
         GraphQLInt('depth'),
-        GraphQLForeignKey('category_type', CategoryType)
+        GraphQLForeignKey('category_type', CategoryType),
     ]
 
     class Meta:
@@ -126,5 +127,5 @@ class ActionListFilterBlock(ActionListPageBlockPresenceMixin, blocks.StreamBlock
     graphql_types = [
         ResponsiblePartyFilterBlock, PrimaryOrganizationFilterBlock, ActionImplementationPhaseFilterBlock,
         ActionStatusFilterBlock, ActionScheduleFilterBlock, ActionAttributeTypeFilterBlock, CategoryTypeFilterBlock,
-        PlanFilterBlock, ContinuousActionFilterBlock
+        PlanFilterBlock, ContinuousActionFilterBlock,
     ]

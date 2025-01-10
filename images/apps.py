@@ -10,8 +10,9 @@ class ImagesConfig(AppConfig):
         monkeypatch_chooser()
 
         # monkeypatch new permission policy
-        from .permissions import permission_policy
         from wagtail.images import permissions
+
+        from .permissions import permission_policy
         permissions.permission_policy = permission_policy
 
         from wagtail.images.forms import BaseImageForm
@@ -19,6 +20,9 @@ class ImagesConfig(AppConfig):
 
         # Register feature detection library
         from willow.registry import registry
-        import rustface.willow
-
-        registry.register_plugin(rustface.willow)
+        try:
+            import rustface.willow
+        except ImportError:
+            pass
+        else:
+            registry.register_plugin(rustface.willow)

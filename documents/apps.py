@@ -10,12 +10,16 @@ class DocumentsConfig(AppConfig):
         monkeypatch_chooser()
 
         # monkeypatch new permission policy
-        from .permissions import permission_policy
         from wagtail.documents import permissions
+
+        from .permissions import permission_policy
         permissions.permission_policy = permission_policy
 
         from wagtail.documents.forms import BaseDocumentForm
         BaseDocumentForm.permission_policy = permission_policy
+
+        from wagtail.documents.views.chooser import viewset
+        viewset.permission_policy = permission_policy
 
         from wagtail.documents import wagtail_hooks  # noqa
         from .rich_text import DocumentLinkHandler  # noqa

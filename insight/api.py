@@ -1,13 +1,14 @@
 from django.utils.translation import override
-
-from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+
+from aplans.utils import register_view_helper
 
 from actions.models import Action, Plan
 from indicators.models import Indicator
 from orgs.models import Organization, OrganizationClass
-from aplans.utils import register_view_helper
+
 from .generator import ActionGraphGenerator, OrganizationGraphGenerator
 
 all_views = []
@@ -55,7 +56,7 @@ class InsightViewSet(viewsets.ViewSet):
                 if action_id:
                     raise ValidationError("You can't give both 'action' and 'indicator'")
                 try:
-                    indicator = Indicator.objects.get(id=indicator_id, plans=plan)
+                    indicator = Indicator.objects.visible_for_public().get(id=indicator_id, plans=plan)
                 except Indicator.DoesNotExist:
                     raise ValidationError("Indicator %s does not exist in plan %s" % (indicator_id, plan_id))
             else:

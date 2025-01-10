@@ -1,27 +1,47 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.contrib.admin import SimpleListFilter
+from django.contrib.admin.decorators import display
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.forms import ValidationError
 from django.urls import reverse
+from django.utils.safestring import mark_safe
 from django.utils.text import capfirst
 from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 from wagtail.admin.menu import MenuItem
 from wagtail.admin.panels import FieldPanel, ObjectList
+
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
-from wagtail_modeladmin.views import IndexView, DeleteView
+from wagtail_modeladmin.views import DeleteView, IndexView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
+
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.utils import OrderedModelChildFormSet
+
+from actions.blocks.mixins import ActionListPageBlockFormMixin
+from actions.chooser import CategoryTypeChooser
+from admin_site.wagtail import (
+    AplansAdminModelForm,
+    AplansCreateView,
+    AplansEditView,
+    AplansModelAdmin,
+    AplansTabbedInterface,
+    CondensedInlinePanel,
+    InitializeFormWithPlanMixin,
+    insert_model_translation_panels,
+)
 
 from .attributes import AttributeType as AttributeTypeWrapper
 from .models import Action, AttributeType, AttributeTypeChoiceOption, Category
-from actions.chooser import CategoryTypeChooser
-from admin_site.wagtail import (
-    ActionListPageBlockFormMixin, AplansAdminModelForm, AplansCreateView, AplansEditView, AplansModelAdmin,
-    AplansTabbedInterface, CondensedInlinePanel, InitializeFormWithPlanMixin, insert_model_translation_panels
-)
-from aplans.context_vars import ctx_instance, ctx_request
+
+if TYPE_CHECKING:
+    from django.http.request import HttpRequest
 
 
 class AttributeTypeFilter(SimpleListFilter):
@@ -51,6 +71,8 @@ def _append_content_type_query_parameter(request, url):
 
 
 class ContentTypeQueryParameterMixin:
+    request: HttpRequest
+
     @property
     def index_url(self):
         return _append_content_type_query_parameter(self.request, super().index_url)
@@ -81,6 +103,7 @@ class AttributeTypeCreateView(ContentTypeQueryParameterMixin, InitializeFormWith
 
     def get_page_subtitle(self):
         content_type = self.get_object_content_type()
+        assert content_type is not None
         model_name = content_type.model_class()._meta.verbose_name_plural
         return _("Field for %s") % model_name
 
@@ -204,6 +227,13 @@ class ActionAttributeTypeForm(ActionListPageBlockFormMixin, AttributeTypeForm):
     pass
 
 
+class AttributeTypeEditHandler(AplansTabbedInterface):
+    def get_form_options(self):
+        options = super().get_form_options()
+        options['formsets']['choice_options']['formset'] = OrderedModelChildFormSet
+        return options
+
+
 @modeladmin_register
 class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     model = AttributeType
@@ -223,11 +253,23 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
     delete_view_class = AttributeTypeDeleteView
     button_helper_class = AttributeTypeAdminButtonHelper
 
+    # Fix index_order method added by OrderableMixinMetaClass because the way Wagtail handles icons has changed and
+    # wagtailorderable hasn't accounted for this.
+    @display(ordering='order', description=_('Order'))
+    def index_order(self, obj):
+        return mark_safe(  # noqa: S308
+            '<div class="w-orderable__item__handle button button-small button--icon handle text-replace">'
+            '<svg class="icon icon-grip default" style="padding: 0px;" aria-hidden="true">'
+            '<use href="#icon-grip"></use>'
+            '</svg>'
+            '</div>',
+        )
+
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
+        instance = ctx_instance.get_as_type(AttributeType)
         choice_option_panels = insert_model_translation_panels(
-            AttributeTypeChoiceOption, self.choice_option_panels, request, instance
+            AttributeTypeChoiceOption, self.choice_option_panels, request, instance,
         )
 
         creating = instance.pk is None
@@ -237,8 +279,8 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
                 read_only=True,
                 help_text=_(
                     "This field already has values. If you want to change the format, you need to delete the existing "
-                    "values first."
-                )
+                    "values first.",
+                ),
             )
         else:
             format_field_panel = FieldPanel('format')
@@ -278,7 +320,7 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
 
         tabs = [ObjectList(panels, heading=_('General'))]
 
-        handler = AplansTabbedInterface(tabs, base_form_class=base_form_class)
+        handler = AttributeTypeEditHandler(tabs, base_form_class=base_form_class)
         return handler
 
     def get_menu_item(self, order=None):
@@ -298,5 +340,5 @@ class AttributeTypeAdmin(OrderableMixin, AplansModelAdmin):
             (Q(object_content_type=action_ct) & Q(scope_content_type=plan_ct) & Q(scope_id=plan.id))
             # Attribute types for categories whose category type is the active plan
             | (Q(object_content_type=category_ct) & Q(scope_content_type=category_type_ct)
-               & Q(scope_id__in=category_types_in_plan))
+               & Q(scope_id__in=category_types_in_plan)),
         )

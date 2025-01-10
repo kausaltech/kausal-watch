@@ -1,6 +1,8 @@
+from __future__ import annotations
+
+from django.conf import settings
 from django.core.management import CommandError
 from django.core.management.base import BaseCommand
-from django.conf import settings
 from django.db import transaction
 from reversion.models import Revision as ReversionRevision
 from wagtail.models import ModelLogEntry, PageLogEntry, Revision as WagtailRevision
@@ -32,7 +34,7 @@ class Command(BaseCommand):
         if not settings.DEBUG or settings.DEPLOYMENT_TYPE != 'production':
             raise CommandError(
                 "Sorry, for preventing accidents, this management command only works if DEBUG is true and "
-                "DEPLOYMENT_TYPE is 'production'."
+                "DEPLOYMENT_TYPE is 'production'.",
             )
         all_identifiers = Plan.objects.values_list('identifier', flat=True)
         if not options.get('exclude_plan'):
@@ -40,11 +42,11 @@ class Command(BaseCommand):
         for identifier in options['exclude_plan']:
             if identifier not in all_identifiers:
                 raise CommandError(f"No plan with identifier '{identifier}' exists.")
-        plans_to_delete = Plan.objects.exclude(identifier__in=options['exclude_plan'])
-        plans_to_keep = Plan.objects.exclude(id__in=plans_to_delete)
+        plans_to_delete = Plan.objects.qs.exclude(identifier__in=options['exclude_plan'])
+        plans_to_keep = Plan.objects.qs.exclude(id__in=plans_to_delete)
         delete_identifiers = plans_to_delete.values_list('identifier', flat=True)
-        orgs_to_keep = Organization.objects.available_for_plans(plans_to_keep)
-        orgs_to_delete = Organization.objects.exclude(id__in=orgs_to_keep)
+        orgs_to_keep = Organization.objects.qs.available_for_plans(plans_to_keep)
+        orgs_to_delete = Organization.objects.qs.exclude(id__in=orgs_to_keep)
         num_delete_suborgs = {}
         for org in orgs_to_delete.filter(depth=1):
             # Unnecessarily inefficient, but what the hell...
@@ -58,7 +60,7 @@ class Command(BaseCommand):
             for org, n in num_delete_suborgs.items():
                 string = org.name
                 if n == 1:
-                    string += f' (and 1 suborganization)'
+                    string += ' (and 1 suborganization)'
                 elif n > 1:
                     string += f' (and {n} suborganizations)'
                 strings.append(string)

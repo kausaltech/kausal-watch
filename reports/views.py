@@ -1,19 +1,20 @@
-import reversion
 from django.contrib import messages
 from django.contrib.admin.utils import unquote
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.utils.decorators import method_decorator
 from django.utils.translation import gettext_lazy as _
-from reversion.models import Version
+
 from wagtail_modeladmin.views import WMABaseView
 
-from .models import ActionSnapshot, Report
-from actions.models import Action
+from actions.models import Action, Plan
 
+from .export import export_dashboard_report_for_plan
+from .models import ActionSnapshot, Report
 
 
 class MarkActionAsCompleteView(WMABaseView):
@@ -139,3 +140,24 @@ class MarkReportAsCompleteView(WMABaseView):
             msg = _("Report '%(report)s' is no longer marked as complete.")
         messages.success(request, msg % {'report': self.report})
         return redirect(self.index_url)
+
+
+def export_report_view(request, plan_identifier):
+    format = request.GET.get('format', 'xlsx')
+    user = request.user
+    plan = Plan.objects.get(identifier=plan_identifier)
+    if not plan.is_live():
+        # TODO: authorization relative to user once plan visibility is merged
+        raise Http404
+    output, filename = export_dashboard_report_for_plan(plan, format, user)
+    content_type = (
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        if format == 'xlsx'
+        else 'text/csv'
+    )
+    response = HttpResponse(
+        output,
+        content_type=content_type,
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

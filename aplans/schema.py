@@ -1,25 +1,27 @@
-import typing
+from typing import TYPE_CHECKING
 
 import graphene
-import graphene_django_optimizer as gql_optimizer
-
 from django.db.models import Count, Q
-from graphql.error import GraphQLError
 from graphql import DirectiveLocation
+from graphql.error import GraphQLError
 from graphql.type import (
-    GraphQLArgument, GraphQLDirective, GraphQLNonNull, GraphQLString, specified_directives
+    GraphQLArgument,
+    GraphQLDirective,
+    GraphQLNonNull,
+    GraphQLString,
+    specified_directives,
 )
+
+import graphene_django_optimizer as gql_optimizer
 from grapple.registry import registry as grapple_registry
 
-from actions.models.action import Action
-
-from . import graphql_gis  # noqa
+from aplans.cache import OrganizationActionCountCache
+from aplans.graphql_types import WorkflowStateGrapheneEnum
+from aplans.utils import public_fields
 
 from actions import schema as actions_schema
-from actions.models import Plan
-from aplans.utils import public_fields
-from aplans.graphql_types import WorkflowStateGrapheneEnum
-from admin_site.wagtail import PlanRelatedPermissionHelper
+from actions.models.action import Action
+from budget import schema as budget_schema
 from content.models import SiteGeneralContent
 from feedback import schema as feedback_schema
 from indicators import schema as indicators_schema
@@ -31,8 +33,12 @@ from people.models import Person
 from reports import schema as reports_schema
 from search import schema as search_schema
 
+from . import graphql_gis  # noqa
 from .graphql_helpers import get_fields
-from .graphql_types import DjangoNode, GQLInfo, get_plan_from_context, graphene_registry, WorkflowStateEnum, register_graphene_node
+from .graphql_types import DjangoNode, GQLInfo, WorkflowStateEnum, get_plan_from_context, graphene_registry
+
+if TYPE_CHECKING:
+    from actions.models import Plan
 
 
 def mp_node_get_ancestors(qs, include_self=False):
@@ -47,16 +53,6 @@ def mp_node_get_ancestors(qs, include_self=False):
     return qs.model.objects.filter(path__in=paths)
 
 
-class OrderableModelMixin:
-    order = graphene.Int()
-
-    @gql_optimizer.resolver_hints(
-        model_field='sort_order',
-    )
-    def resolve_order(self, **kwargs):
-        return self.sort_order
-
-
 class SiteGeneralContentNode(DjangoNode):
     class Meta:
         model = SiteGeneralContent
@@ -68,8 +64,10 @@ class Query(
     indicators_schema.Query,
     orgs_schema.Query,
     pages_schema.Query,
+    reports_schema.Query,
+    budget_schema.Query,
     search_schema.Query,
-    graphene.ObjectType
+    graphene.ObjectType,
 ):
     plan_organizations = graphene.List(
         graphene.NonNull(orgs_schema.OrganizationNode),
@@ -83,7 +81,7 @@ class Query(
 
     def resolve_plan_organizations(
         self, info: GQLInfo, plan: str | None, with_ancestors: bool, for_responsible_parties: bool, for_contact_persons: bool,
-        include_related_plans: bool, **kwargs
+        include_related_plans: bool, **kwargs,
     ):
         plan_obj: Plan | None = get_plan_from_context(info, plan)
         if plan_obj is None:
@@ -95,13 +93,30 @@ class Query(
             plans = [plan_obj]
 
         visible_actions = Action.objects.visible_for_user(info.context.user).filter(plan__in=plans)
+
+        workflow_state = getattr(info.context.watch_cache, 'query_workflow_state', None)
+        some_plan_has_a_workflow = any(p.features.moderation_workflow is not None for p in plans)
+        consider_responsible_parties_within_action_revisions = (
+            workflow_state is not None and
+            workflow_state != WorkflowStateEnum.PUBLISHED and
+            some_plan_has_a_workflow
+        )
+        cache = None
+        if consider_responsible_parties_within_action_revisions:
+            info.context.organization_action_count_cache = OrganizationActionCountCache(visible_actions)
+            cache = info.context.organization_action_count_cache
+
         qs = Organization.objects.available_for_plans(plans)
         if plan is not None:
             # Note the weird behavior by Django: Q() is neither "true" nor "false".
             # For all x, Q() | x is equivalent to x, and Q() & x is also equivalent to x.
             query = Q()
             if for_responsible_parties:
-                query |= Q(responsible_actions__action__in=visible_actions)
+                if consider_responsible_parties_within_action_revisions:
+                    responsible_actions_filter = cache.organization_responsible_party_queryset_filter
+                else:
+                    responsible_actions_filter = Q(responsible_actions__action__in=visible_actions)
+                query |= responsible_actions_filter
             if for_contact_persons:
                 query |= Q(people__contact_for_actions__in=visible_actions)
             if not query and not info.context.user.is_authenticated:
@@ -116,15 +131,17 @@ class Query(
 
         selections = get_fields(info)
         if 'actionCount' in selections:
-            annotate_filter = Q(responsible_actions__action__in=visible_actions)
-            qs = qs.annotate(action_count=Count(
-                'responsible_actions__action', distinct=True, filter=annotate_filter
-            ))
+            if not consider_responsible_parties_within_action_revisions:
+                annotate_filter = Q(responsible_actions__action__in=visible_actions)
+                qs = qs.annotate(action_count=Count(
+                    'responsible_actions__action', distinct=True, filter=annotate_filter,
+                ))
+
         if 'contactPersonCount' in selections and plan_obj.features.public_contact_persons:
             # FIXME: Check visibility of related plans, too
             annotate_filter = Q(people__contact_for_actions__in=visible_actions)
             qs = qs.annotate(contact_person_count=Count(
-                'people', distinct=True, filter=annotate_filter
+                'people', distinct=True, filter=annotate_filter,
             ))
 
         qs = gql_optimizer.query(qs, info)
@@ -162,7 +179,7 @@ class Mutation(
     indicators_schema.Mutation,
     orgs_schema.Mutation,
     people_schema.Mutation,
-    graphene.ObjectType
+    graphene.ObjectType,
 ):
     create_user_feedback = feedback_schema.UserFeedbackMutation.Field()
 
@@ -175,10 +192,10 @@ class LocaleDirective(GraphQLDirective):
             args={
                 'lang': GraphQLArgument(
                     type_=GraphQLNonNull(GraphQLString),
-                    description="Language code of the locale to use"
+                    description="Language code of the locale to use",
                 ),
             },
-            locations=[DirectiveLocation.QUERY]
+            locations=[DirectiveLocation.QUERY],
         )
 
 
@@ -190,14 +207,14 @@ class AuthDirective(GraphQLDirective):
             args={
                 'uuid': GraphQLArgument(
                     type_=GraphQLNonNull(GraphQLString),
-                    description="User UUID"
+                    description="User UUID",
                 ),
                 'token': GraphQLArgument(
                     type_=GraphQLNonNull(GraphQLString),
-                    description="Authentication token"
+                    description="Authentication token",
                 ),
             },
-            locations=[DirectiveLocation.MUTATION]
+            locations=[DirectiveLocation.MUTATION],
         )
 
 graphene_enum_type = graphene.types.schema.TypeMap.create_enum(WorkflowStateGrapheneEnum)
@@ -219,10 +236,10 @@ class WorkflowStateDirective(GraphQLDirective):
                 GraphQLArgument(
                     type_= graphene_enum_type,
                     description="State of content to show",
-                    default_value='published'
-                )
+                    default_value=WorkflowStateEnum.PUBLISHED,
+                ),
             },
-            locations=[DirectiveLocation.QUERY]
+            locations=[DirectiveLocation.QUERY],
         )
 
 

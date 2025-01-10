@@ -4,10 +4,11 @@ from collections import OrderedDict
 from django.db.models import Max, Min
 from django.utils.encoding import force_str
 from django.utils.translation import gettext_lazy as _
+
 from import_export import fields, widgets
 from import_export.resources import ModelResource
 
-from .models import Indicator, IndicatorValue, IndicatorLevel, Unit
+from .models import Indicator, IndicatorLevel, IndicatorValue, Unit
 
 
 class YearField(fields.Field):

@@ -1,14 +1,15 @@
 from django import forms
-from django.utils.translation import gettext_lazy as _
 from django.forms.models import modelform_factory
-
-from generic_chooser.views import ModelChooserViewSet, ModelChooserMixin, ModelChooserCreateTabMixin
-from generic_chooser.widgets import AdminChooser
+from django.utils.translation import gettext_lazy as _
 from wagtail import hooks
 
-from actions.chooser import WatchModelChooserBase
-from aplans.types import WatchAdminRequest
+from generic_chooser.views import ModelChooserCreateTabMixin, ModelChooserMixin, ModelChooserViewSet
+from generic_chooser.widgets import AdminChooser
+
 from aplans.fields import HostnameValidator
+from aplans.types import WatchAdminRequest
+
+from actions.chooser import WatchModelChooserBase
 
 from .models import Client, EmailDomains
 
@@ -24,9 +25,9 @@ class ClientChooserMixin(WatchModelChooserBase):
 class ClientForm(forms.ModelForm):
     default_email_hostname = forms.CharField(
         help_text=_(
-            'What is the part after @ in the staff email address of the organization mainly responsible for the plan?'
+            'What is the part after @ in the staff email address of the organization mainly responsible for the plan?',
         ),
-        validators=[HostnameValidator()]
+        validators=[HostnameValidator()],
     )
 
     def save(self, commit=True):
@@ -43,7 +44,7 @@ class ClientForm(forms.ModelForm):
 class ClientChooserViewSet(ModelChooserViewSet):
     chooser_mixin_class = ClientChooserMixin
 
-    icon = 'user'
+    icon = 'globe'
     model = Client
     page_title = _("Choose a client")
     per_page = 30

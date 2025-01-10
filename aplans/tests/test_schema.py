@@ -1,6 +1,6 @@
 import pytest
 
-from actions.tests.factories import ActionFactory, ActionContactFactory, ActionResponsiblePartyFactory, PlanFactory
+from actions.tests.factories import ActionContactFactory, ActionFactory, ActionResponsiblePartyFactory, PlanFactory
 from orgs.tests.factories import OrganizationClassFactory, OrganizationFactory
 from people.tests.factories import PersonFactory
 
@@ -10,7 +10,7 @@ pytestmark = pytest.mark.django_db
 def test_person_node(graphql_client_query_data):
     person = PersonFactory()
     data = graphql_client_query_data(
-        '''
+        """
         query($person: ID!) {
           person(id: $person) {
             __typename
@@ -25,8 +25,8 @@ def test_person_node(graphql_client_query_data):
             }
           }
         }
-        ''',
-        variables=dict(person=person.id)
+        """,
+        variables=dict(person=person.id),
     )
     expected = {
         'person': {
@@ -40,7 +40,7 @@ def test_person_node(graphql_client_query_data):
                 '__typename': 'Organization',
                 'id': str(person.organization.id),
             },
-        }
+        },
     }
     assert data == expected
 
@@ -52,7 +52,7 @@ def test_organization_class_node(graphql_client_query_data):
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           planOrganizations(plan: $plan) {
             classification {
@@ -62,8 +62,8 @@ def test_organization_class_node(graphql_client_query_data):
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'planOrganizations': [{
@@ -71,8 +71,8 @@ def test_organization_class_node(graphql_client_query_data):
                 '__typename': 'OrganizationClass',
                 'id': str(organization_class.id),
                 'name': organization_class.name,
-            }
-        }]
+            },
+        }],
     }
     assert data == expected
 
@@ -89,7 +89,7 @@ def test_organization_node(graphql_client_query_data):
     assert plan_with_action_responsiblity != plan
     assert plan_with_action_responsiblity.organization != organization
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           planOrganizations(plan: $plan) {
             __typename
@@ -110,8 +110,8 @@ def test_organization_node(graphql_client_query_data):
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'planOrganizations': [{
@@ -129,7 +129,7 @@ def test_organization_node(graphql_client_query_data):
                 '__typename': 'Plan',
                 'id': str(plan_with_action_responsiblity.identifier),
             }],
-        }]
+        }],
     }
     assert data == expected
 
@@ -142,7 +142,7 @@ def test_organization_node_ancestors(graphql_client_query_data):
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           planOrganizations(plan: $plan) {
             __typename
@@ -153,8 +153,8 @@ def test_organization_node_ancestors(graphql_client_query_data):
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'planOrganizations': [{
@@ -164,7 +164,7 @@ def test_organization_node_ancestors(graphql_client_query_data):
                 '__typename': 'Organization',
                 'id': str(superorganization.id),
             }],
-        }]
+        }],
     }
     assert data == expected
 
@@ -177,7 +177,7 @@ def test_organization_node_ancestors_deep(graphql_client_query_data):
     action = ActionFactory(plan=plan)
     ActionResponsiblePartyFactory(action=action, organization=plan.organization)
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!) {
           planOrganizations(plan: $plan) {
             __typename
@@ -188,8 +188,8 @@ def test_organization_node_ancestors_deep(graphql_client_query_data):
             }
           }
         }
-        ''',
-        variables=dict(plan=plan.identifier)
+        """,
+        variables=dict(plan=plan.identifier),
     )
     expected = {
         'planOrganizations': [{
@@ -202,7 +202,7 @@ def test_organization_node_ancestors_deep(graphql_client_query_data):
                 '__typename': 'Organization',
                 'id': str(superorganization.id),
             }],
-        }]
+        }],
     }
     assert data == expected
 

@@ -1,50 +1,69 @@
 from __future__ import annotations
 
 import copy
-import rest_framework.fields
 import typing
 from collections import Counter
-from typing import Optional, Dict, Any, Set, Tuple
+from typing import Any, Callable, Protocol
 from uuid import UUID
 
-from django.core.exceptions import FieldDoesNotExist
+import rest_framework.fields
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldDoesNotExist
 from django.db import models
-from django.db.models import Model
-from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import exceptions, permissions, serializers, viewsets
 
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_field, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_field
 from rest_framework_nested import routers
 
-from actions.models.action import ActionImplementationPhase, ActionContactPerson
-from actions.models.attributes import AttributeType, ModelWithAttributes
-from actions.models.plan import PlanQuerySet
 from aplans.api_router import router
 from aplans.model_images import (
-    ModelWithImageSerializerMixin, ModelWithImageViewMixin
+    ModelWithImageSerializerMixin,
+    ModelWithImageViewMixin,
 )
 from aplans.permissions import AnonReadOnly
 from aplans.rest_api import (
-    BulkListSerializer, BulkModelViewSet, HandleProtectedErrorMixin, PlanRelatedModelSerializer
+    BulkListSerializer,
+    BulkModelViewSet,
+    HandleProtectedErrorMixin,
+    PlanRelatedModelSerializer,
 )
-from aplans.types import AuthenticatedWatchRequest, WatchAdminRequest, WatchAPIRequest
 from aplans.utils import generate_identifier, public_fields, register_view_helper
+
+from actions.models.action import ActionContactPerson, ActionImplementationPhase
+from actions.models.attributes import AttributeType, ModelWithAttributes
 from orgs.models import Organization
 from people.models import Person
 from users.models import User
 
-from .models import (
-    Action, ActionDecisionLevel, ActionImpact, ActionResponsibleParty, ActionSchedule, ActionStatus,
-    ActionTask, Category, CategoryType, ImpactGroup, ImpactGroupAction, Plan,
-    Scenario
-)
 from .deferred_ops import DeferredDatabaseOperationsMixin
+from .models import (
+    Action,
+    ActionDecisionLevel,
+    ActionImpact,
+    ActionResponsibleParty,
+    ActionSchedule,
+    ActionStatus,
+    ActionTask,
+    Category,
+    CategoryType,
+    ImpactGroup,
+    ImpactGroupAction,
+    Plan,
+    Scenario,
+)
 
 if typing.TYPE_CHECKING:
-    from django.db.models import QuerySet  # noqa
+    from django.db.models import (
+        Model,
+        QuerySet,  # noqa
+    )
+
+    from aplans.types import AuthenticatedWatchRequest, WatchAdminRequest, WatchAPIRequest
+
+    from actions.models.plan import PlanQuerySet
 
 all_views = []
 all_routers = []
@@ -109,7 +128,7 @@ class PlanSerializer(ModelWithImageSerializerMixin, serializers.ModelSerializer)
             remove_fields=[
                 'static_pages', 'general_content', 'blog_posts', 'indicator_levels',
                 'monitoring_quality_points', 'action_impacts', 'superseded_plans',
-            ]
+            ],
         )
         filterset_fields = {
             'identifier': ('exact',),
@@ -127,9 +146,9 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
 
     @classmethod
     def get_available_plans(
-        cls, queryset: Optional[PlanQuerySet] = None, request: Optional[WatchAPIRequest] = None
+        cls, queryset: PlanQuerySet | None = None, request: WatchAPIRequest | None = None,
     ) -> PlanQuerySet:
-        user: Optional[User]
+        user: User | None
         if not request or not request.user or not request.user.is_authenticated:
             user = None
         else:
@@ -146,7 +165,7 @@ class PlanViewSet(ModelWithImageViewMixin, viewsets.ModelViewSet):
 
     @classmethod
     def get_default_plan(
-        cls, queryset: Optional[PlanQuerySet] = None, request: Optional[WatchAPIRequest] = None
+        cls, queryset: PlanQuerySet | None = None, request: WatchAPIRequest | None = None,
     ) -> Plan:
         plans = cls.get_available_plans(queryset=queryset, request=request)
         plan = None
@@ -226,7 +245,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
             if plan is None:
                 raise exceptions.NotFound(detail='Plan not found')
         else:
-            plan = Plan.objects.live().first()
+            plan = Plan.objects.get_queryset().live().first()
         perms = self.get_required_permissions(request.method, Action)
         for perm in perms:
             if not self.check_permission(request.user, perm, plan):
@@ -249,7 +268,7 @@ class ActionPermission(permissions.DjangoObjectPermissions):
         type='array',
         title='categories',
         items=dict(type='integer'),
-    )
+    ),
 ))
 class ActionCategoriesSerializer(serializers.Serializer):
     parent: ActionSerializer
@@ -306,7 +325,7 @@ class ActionCategoriesSerializer(serializers.Serializer):
                 cat = ct.categories.filter(id=cat_id).first()
                 if cat is None:
                     raise exceptions.ValidationError(
-                        'category %d not found in %s' % (cat_id, ct_id)
+                        'category %d not found in %s' % (cat_id, ct_id),
                     )
                 cats.append(cat)
             out[ct_id] = cats
@@ -364,7 +383,7 @@ class ActionResponsibleWithRoleSerializer(serializers.Serializer):
                     and isinstance(instance_id, int)
                     and (role is None or isinstance(role, str))):
                 raise exceptions.ValidationError(
-                    'expecting a list of dicts mapping "organization" to int and "role" to str or None'
+                    'expecting a list of dicts mapping "organization" to int and "role" to str or None',
                 )
             if val[key] not in available_instances:
                 raise exceptions.ValidationError('%d not available for plan' % val[key])
@@ -390,7 +409,7 @@ class ActionResponsiblePartySerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'organization'
 
-    def get_available_instances(self, plan) -> Set[int]:
+    def get_available_instances(self, plan) -> set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_organization_ids' not in cache:
             return Organization.objects.available_for_plan(plan)
@@ -420,10 +439,10 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
     def get_type_label(self):
         return 'person'
 
-    def get_available_instances(self, plan) -> Set[int]:
+    def get_available_instances(self, plan) -> set[int]:
         cache = self.context.get('_cache')
         if cache is None or 'available_person_ids' not in cache:
-            return Person.objects.available_for_plan(plan, include_contact_persons=True)
+            return Person.objects.get_queryset().available_for_plan(plan, include_contact_persons=True)
         return cache['available_person_ids']
 
     def get_allowed_roles(self):
@@ -443,8 +462,8 @@ class ActionContactPersonSerializer(ActionResponsibleWithRoleSerializer):
 
 
 class AttributesSerializerMixin:
-    context: Dict[str, Any]
-    attribute_formats: Tuple[AttributeType.AttributeFormat, ...]
+    context: dict[str, Any]
+    attribute_formats: tuple[AttributeType.AttributeFormat, ...]
 
     # In the serializer, set `attribute_formats` to a tuple of values from `AttributeType.AttributeFormat`
     # (usually just one element)
@@ -494,7 +513,7 @@ class AttributesSerializerMixin:
             attribute_type,
             existing_attribute,
             self.to_value_parameter(item),
-            self.to_attribute_value_input(item)
+            self.to_attribute_value_input(item),
         )
 
     def update(self, instance: Model, validated_data):
@@ -515,20 +534,20 @@ class AttributesSerializerMixin:
                 existing_attribute = existing_attributes[0]
             assert len(existing_attributes) < 2
             attribute_operations.append(
-                self.set_instance_attribute(instance, attribute_type, existing_attribute, item)
+                self.set_instance_attribute(instance, attribute_type, existing_attribute, item),
             )
         return attribute_operations
 
     def to_attribute_value_input(self, item: Any) ->  Any:
-        '''
+        """
         Format the incoming REST API data to conform
         to the format expected by each actions.attributes.AttributeValue
         subclass as the value parameter of the from_serialized_value method
-        '''
+        """
         return self.to_value_parameter(item)
 
     def to_value_parameter(self, item: Any) -> dict[str, Any]:
-        '''
+        """
         Format the incoming REST API data to conform
         to the format expected by an existing Attribute model
         instance, setting the instance attributes with
@@ -539,7 +558,7 @@ class AttributesSerializerMixin:
         for that attribute type's attribute model instances
         and the corresponding dict values must be compatible
         values for that field.
-        '''
+        """
         raise NotImplementedError
 
 
@@ -575,13 +594,13 @@ class ChoiceWithTextAttributesSerializer(AttributesSerializerMixin, serializers.
     def to_value_parameter(self, item):
         return {
             'choice_id': item.get('choice'),
-            'text': item.get('text')
+            'text': item.get('text'),
         }
 
     def to_attribute_value_input(self, item):
         return {
             'choice': item.get('choice'),
-            'text': {'text': item.get('text')}
+            'text': {'text': item.get('text')},
         }
 
 
@@ -598,7 +617,7 @@ class NumericValueAttributesSerializer(AttributesSerializerMixin, serializers.Se
 
     def to_value_parameter(self, item):
         return {
-            'value': item
+            'value': item,
         }
 
     def to_attribute_value_input(self, item):
@@ -618,7 +637,7 @@ class TextAttributesSerializer(AttributesSerializerMixin, serializers.Serializer
 
     def to_value_parameter(self, item):
         return {
-            'text': item
+            'text': item,
         }
 
 
@@ -635,7 +654,7 @@ class RichTextAttributesSerializer(AttributesSerializerMixin, serializers.Serial
 
     def to_value_parameter(self, item):
         return {
-            'text': item
+            'text': item,
         }
 
 
@@ -652,7 +671,7 @@ class CategoryChoiceAttributesSerializer(AttributesSerializerMixin, serializers.
 
     def set_instance_attribute(self, instance, attribute_type, existing_attribute, item):
         return instance.set_category_choice_attribute(
-            attribute_type, existing_attribute, item
+            attribute_type, existing_attribute, item,
         )
 
 
@@ -669,6 +688,43 @@ class ModelWithAttributesSerializerMixin(DeferredDatabaseOperationsMixin, metacl
         'choice_attributes', 'choice_with_text_attributes', 'numeric_value_attributes', 'text_attributes',
         'rich_text_attributes', 'category_choice_attributes',
     ]
+
+    context: dict[str, Any]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.initialize_cache_context()
+
+    def initialize_cache_context(self):
+        plan = self.context.get('plan')
+        if plan is None:
+            return
+        Model = self.Meta.model
+        attribute_types = Model.get_attribute_types_for_plan(plan)
+        attribute_types_by_identifier = {
+            at.instance.identifier: at for at in attribute_types
+        }
+        prepopulated_attributes: dict[str, dict] = {}
+        content_type = ContentType.objects.get_for_model(Model)
+        for at in attribute_types:
+            prepopulated_attributes.setdefault(at.instance.format, {})
+            for a in at.attributes.filter(content_type=content_type):
+                prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
+
+        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
+        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
+        persons_by_id = {p.pk: p for p in Person.objects.all()}
+        organizations_by_id = {o.pk: o for o in Organization.objects.all()}
+
+        for field_name in self._attribute_fields:
+            self.fields[field_name].context['_cache'] = {
+                'attribute_values': prepopulated_attributes,
+                'attribute_types': attribute_types_by_identifier,
+                'available_organization_ids': available_organization_ids,
+                'available_person_ids':  available_person_ids,
+                'persons_by_id': persons_by_id,
+                'organizations_by_id': organizations_by_id,
+            }
 
     def get_field_names(self, declared_fields, info):
         fields = super().get_field_names(declared_fields, info)
@@ -907,7 +963,6 @@ class ActionSerializer(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initialize_cache_context()
         must_generate_identifiers = not self.plan.features.has_action_identifiers
         if must_generate_identifiers:
             actions_data = getattr(self, 'initial_data', [])
@@ -918,36 +973,6 @@ class ActionSerializer(
                     # Duplicates Action.generate_identifier, but validation runs before we create an Action instance, so
                     # to avoid an error when we omit an identifier, we need to do it here
                     action_data['identifier'] = generate_identifier(self.plan.actions.all(), 'a', 'identifier')
-
-    def initialize_cache_context(self):
-        plan = self.context.get('plan')
-        if plan is None:
-            return
-        attribute_types = Action.get_attribute_types_for_plan(plan)
-        attribute_types_by_identifier = {
-            at.instance.identifier: at for at in attribute_types
-        }
-        prepopulated_attributes: Dict[str, Dict] = {}
-        action_content_type = ContentType.objects.get(app_label='actions', model='action')
-        for at in attribute_types:
-            prepopulated_attributes.setdefault(at.instance.format, {})
-            for a in at.attributes.filter(content_type=action_content_type):
-                prepopulated_attributes[at.instance.format].setdefault(a.object_id, []).append(a)
-
-        available_organization_ids = set(Organization.objects.available_for_plan(plan).values_list('id', flat=True))
-        available_person_ids = set(Person.objects.available_for_plan(plan, include_contact_persons=True).values_list('id', flat=True))
-        persons_by_id = {p.pk: p for p in Person.objects.all()}
-        organizations_by_id = {o.pk: o for o in Organization.objects.all()}
-
-        for field_name in self._attribute_fields:
-            self.fields[field_name].context['_cache'] = {
-                'attribute_values': prepopulated_attributes,
-                'attribute_types': attribute_types_by_identifier,
-                'available_organization_ids': available_organization_ids,
-                'available_person_ids':  available_person_ids,
-                'persons_by_id': persons_by_id,
-                'organizations_by_id': organizations_by_id
-            }
 
     def get_fields(self):
         fields = super().get_fields()
@@ -968,7 +993,7 @@ class ActionSerializer(
 
     def build_field(self, field_name, info, model_class, nested_depth):
         field_class, field_kwargs = super().build_field(field_name, info, model_class, nested_depth)
-        if field_name in ('status', 'implementation_phase', 'decision_level', 'schedule'):
+        if field_name in ('status', 'implementation_phase', 'decision_level'):
             field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan=self.plan)
         elif field_name == 'primary_org':
             if self.plan.features.has_action_primary_orgs:
@@ -976,9 +1001,6 @@ class ActionSerializer(
                 field_kwargs['queryset'] = Organization.objects.available_for_plan(self.plan)
             else:
                 field_kwargs['queryset'] = Organization.objects.none()
-        elif field_name == 'related_actions':
-            related_plans = self.plan.get_all_related_plans(inclusive=True)
-            field_kwargs['queryset'] = field_kwargs['queryset'].filter(plan__in=related_plans)
 
         return field_class, field_kwargs
 
@@ -1043,21 +1065,46 @@ class ActionSerializer(
         fields = public_fields(
             Action,
             add_fields=[
-                'internal_notes', 'internal_admin_notes', 'visibility', 'visibility_display'
+                'internal_notes', 'internal_admin_notes', 'visibility', 'visibility_display',
             ],
             remove_fields=[
                 'impact', 'status_updates', 'monitoring_quality_points', 'image', 'tasks', 'links',
                 'related_indicators', 'indicators', 'impact_groups', 'merged_actions', 'superseded_actions',
-                'dependent_relationships',
-            ]
+                'dependent_relationships', 'copies',
+            ],
         )
         read_only_fields = ['plan']
 
 
+class PlanRelatedSerializer(Protocol):
+    kwargs: dict[str, Any]
+    get_serializer_context: Callable
+    def get_plan(self) -> Plan: ...
+
+
+class ViewSetWithPlanContext:
+    def get_plan(self: PlanRelatedSerializer):
+        plan_pk = self.kwargs.get('plan_pk')
+        if plan_pk is None:
+            return None
+        try:
+            return Plan.objects.get(pk=plan_pk)
+        except Plan.DoesNotExist:
+            raise exceptions.NotFound(detail="Plan not found")
+
+    def get_serializer_context(self: PlanRelatedSerializer):
+        context = super().get_serializer_context()
+        plan = self.get_plan()
+        if plan is None:
+            return context
+        context.update({'plan': plan})
+        return context
+
+
 @extend_schema(
-    tags=['action']
+    tags=['action'],
 )
-class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
+class ActionViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = ActionSerializer
 
     def get_permissions(self):
@@ -1079,25 +1126,8 @@ class ActionViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
         # For caching reasons, we must query the actions through the
         # plan so all of the actions share the same Plan instance
         return plan.actions.all().prefetch_related(
-            'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions'
+            'schedule', 'categories', 'contact_persons', 'responsible_parties', 'related_actions',
         )
-
-    def get_plan(self):
-        plan_pk = self.kwargs.get('plan_pk')
-        if plan_pk is None:
-            return None
-        try:
-            return Plan.objects.get(pk=plan_pk)
-        except Plan.DoesNotExist:
-            raise exceptions.NotFound(detail="Plan not found")
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        plan = self.get_plan()
-        if plan is None:
-            return context
-        context.update({'plan': plan})
-        return context
 
 
 plan_router.register(
@@ -1279,7 +1309,7 @@ class CategorySerializer(
         list_serializer_class = BulkListSerializer
         fields = public_fields(
             Category,
-            remove_fields=['category_pages', 'children', 'indicators', 'level', 'order']
+            remove_fields=['category_pages', 'children', 'indicators', 'level', 'order'],
         )
         read_only_fields = ['type']
 
@@ -1291,7 +1321,7 @@ class CategorySerializer(
         OpenApiParameter(name='category_type_id', type=OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
 )
-class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
+class CategoryViewSet(ViewSetWithPlanContext, HandleProtectedErrorMixin, BulkModelViewSet):
     serializer_class = CategorySerializer
 
     def get_permissions(self):
@@ -1306,7 +1336,7 @@ class CategoryViewSet(HandleProtectedErrorMixin, BulkModelViewSet):
             # Called during schema generation
             return Category.objects.none()
         category_type_pk = self.kwargs['category_type_pk']
-        return Category.objects.filter(type=category_type_pk)
+        return Category.objects.filter(type=category_type_pk).select_related("type")
 
 
 category_type_router.register('categories', CategoryViewSet, basename='category')

@@ -14,6 +14,6 @@ class AutocompleteFilter(DALFilter):
             'all': [
                 'dal_admin_filters/css/select2.min.css',
                 'autocomplete_light/select2.css',
-                'dal_admin_filters/css/autocomplete-fix.css'
-            ]
+                'dal_admin_filters/css/autocomplete-fix.css',
+            ],
         }

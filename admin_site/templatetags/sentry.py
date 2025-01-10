@@ -1,6 +1,7 @@
 from django import template
-from admin_site.context_processors import sentry as sentry_context
+
 from actions.context_processors import current_plan
+from admin_site.context_processors import sentry as sentry_context
 
 register = template.Library()
 

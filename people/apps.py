@@ -8,6 +8,7 @@ class PeopleConfig(AppConfig):
 
     def ready(self):
         from wagtail.admin.templatetags.wagtailadmin_tags import register
+
         from .models import avatar_url
 
         del register.tags['avatar_url']

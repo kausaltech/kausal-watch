@@ -1,37 +1,56 @@
 from __future__ import annotations
+
 import abc
-from django.contrib.auth.models import AnonymousUser
-import humanize
-import libvoikko  # type: ignore
 import logging
 import random
 import re
-from typing import Generic, Iterable, List, Protocol, Self, Sequence, TYPE_CHECKING, TypeVar
-from modeltrans.fields import TranslationField
+import typing
+from enum import Enum
+from typing import (
+    Generic,
+    Literal,
+    Protocol,
+    Self,
+    TypedDict,
+    cast,
+)
+from typing_extensions import TypeVar
 
-import sentry_sdk
-from datetime import datetime, timedelta
 from django import forms
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.postgres.fields import ArrayField
 from django.core import checks
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import get_language, gettext_lazy as _
-from enum import Enum
-import html2text
+from modelcluster.forms import BaseChildFormSet
 from modeltrans.translator import get_i18n_field
 from modeltrans.utils import get_instance_field_value
-from tinycss2.color3 import parse_color  # type: ignore
 from wagtail.fields import StreamField
 from wagtail.models import Page, ReferenceIndex
 
-from aplans.types import UserOrAnon
+import html2text
+import humanize
+import libvoikko  # type: ignore
+import sentry_sdk
+from tinycss2.color3 import parse_color
 
-if TYPE_CHECKING:
-    from actions.models.action import Action, Plan
+if typing.TYPE_CHECKING:
+    from collections.abc import Iterable
+    from datetime import datetime, timedelta
+
+    from django.db.models import Model, QuerySet
+    from django.http import HttpRequest
+    from django.utils.choices import _Choices
+    from modeltrans.fields import TranslationField
+    from wagtail.blocks import StructBlock
+
+    from aplans.types import UserOrAnon
+
     from actions.models.plan import Plan
+    from users.models import User
 
 
 logger = logging.getLogger(__name__)
@@ -98,14 +117,14 @@ def underscore_to_camelcase(value: str) -> str:
 
 
 class HasPublicFields(Protocol):
-    public_fields: Sequence[str]
+    public_fields: list[str]
 
 
 def public_fields(
     model: HasPublicFields,
     add_fields: Iterable[str] | None = None,
-    remove_fields: Iterable[str] | None = None
-) -> List[str]:
+    remove_fields: Iterable[str] | None = None,
+) -> list[str]:
     fields = list(model.public_fields)
     if remove_fields is not None:
         fields = [f for f in fields if f not in remove_fields]
@@ -148,7 +167,7 @@ class DateFormatField(models.CharField):
         kwargs['choices'] = DateFormatOptions.choices
         super().__init__(*args, **kwargs)
 
-class IdentifierField(models.CharField):
+class IdentifierField(models.CharField[str, str]):
     def __init__(self, *args, **kwargs):
         if 'validators' not in kwargs:
             kwargs['validators'] = [IdentifierValidator()]
@@ -160,49 +179,14 @@ class IdentifierField(models.CharField):
 
 
 class OrderedModel(models.Model):
+    """Like wagtailorderable.models.Orderable, but with additional functionality in filter_siblings()."""
+
     order = models.PositiveIntegerField(default=0, editable=True, verbose_name=_('order'))
     sort_order_field = 'order'
     order_on_create: int | None
 
-    def __init__(self, *args, order_on_create: int | None = None, **kwargs):
-        """
-        Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
-        None, the order will instead be set to <maximum existing order> + 1.
-        """
-        super().__init__(*args, **kwargs)
-        self.order_on_create = order_on_create
-
-    @classmethod
-    def check(cls, **kwargs):
-        errors = super().check(**kwargs)
-        if getattr(cls.filter_siblings, '__isabstractmethod__', False):
-            errors.append(checks.Warning("filter_siblings() not defined", hint="Implement filter_siblings() method", obj=cls))
-        return errors
-
-    @property
-    def sort_order(self):
-        return self.order
-
-    @abc.abstractmethod
-    def filter_siblings(self, qs: models.QuerySet[Self]) -> models.QuerySet[Self]:
-        raise NotImplementedError("Implement in subclass")
-
-    def get_sort_order_max(self):
-        """
-        Method used to get the max sort_order when a new instance is created.
-        If you order depends on a FK (eg. order of books for a specific author),
-        you can override this method to filter on the FK.
-        ```
-        def get_sort_order_max(self):
-            qs = self.__class__.objects.filter(author=self.author)
-            return qs.aggregate(Max(self.sort_order_field))['sort_order__max'] or 0
-        ```
-        """
-        qs = self.__class__.objects.all()  # type: ignore
-        if not getattr(self.filter_siblings, '__isabstractmethod__', False):
-            qs = self.filter_siblings(qs)
-
-        return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
+    class Meta:
+        abstract = True
 
     def save(self, *args, **kwargs):
         if self.pk is None:
@@ -213,45 +197,145 @@ class OrderedModel(models.Model):
                 self.order = self.get_sort_order_max() + 1
         super().save(*args, **kwargs)
 
-    class Meta:
-        abstract = True
+    def __init__(self, *args, order_on_create: int | None = None, **kwargs):
+        """
+        Create new model instance.
+
+        Specify `order_on_create` to set the order to that value when saving if the instance is being created. If it is
+        None, the order will instead be set to <maximum existing order> + 1.
+        """
+        super().__init__(*args, **kwargs)
+        self.order_on_create = order_on_create
+
+    @classmethod
+    def check(cls, **kwargs) -> list[checks.CheckMessage]:
+        errors = super().check(**kwargs)
+        if getattr(cls.filter_siblings, '__isabstractmethod__', False):
+            errors.append(checks.Warning("filter_siblings() not defined", hint="Implement filter_siblings() method", obj=cls))
+        return errors
+
+    # Probably for compatibility with things that expect a `sort_order` field as in wagtailorderable.models.Orderable
+    @property
+    def sort_order(self):
+        return self.order
+
+    @abc.abstractmethod
+    def filter_siblings(self, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
+        raise NotImplementedError("Implement in subclass")
+
+    def get_sort_order_max(self) -> int:
+        """
+        Get the max sort_order when a new instance is created.
+
+        If you order depends on a FK (eg. order of books for a specific author),
+        you can override this method to filter on the FK.
+        ```
+        def get_sort_order_max(self):
+            qs = self.__class__.objects.filter(author=self.author)
+            return qs.aggregate(Max(self.sort_order_field))['sort_order__max'] or 0
+        ```
+        """
+        mgr = cast(models.Manager, getattr(type(self), 'objects'))  # noqa: B009
+        qs = mgr.all()
+        if not getattr(self.filter_siblings, '__isabstractmethod__', False):
+            qs = self.filter_siblings(qs)
+
+        return qs.aggregate(models.Max(self.sort_order_field))['%s__max' % self.sort_order_field] or 0
+
+
+class OrderedModelChildFormSet(BaseChildFormSet):
+    """
+    Fix ordering issues when using an `OrderedModel` in an `InlinePanel`.
+
+    When using an `OrderedModel` in at `InlinePanel`, you will probably run into problems with the order field values
+    being messed up by modelcluster's saving logic as it does not make sure that, e.g., the order of existing instances
+    is updated when an element before them in the order is deleted or when a new element is inserted. This may lead to
+    potential integrity constraint violations even if you override `OrderedModel.filter_siblings()` correctly.
+
+    This class is intended to fix these issues by setting the order of *all* instances in the forms of the formset
+    according to the form order and saving all instances.
+
+    Define an edit handler for the modeladmin class containing the inline panel and override the `get_form_options()`
+    method like this to make the formset use this class instead of `BaseChildFormSet`:
+
+    ```
+    def get_form_options(self):
+        options = super().get_form_options()
+        options['formsets']['<field_name>']['formset'] = OrderedModelChildFormSet
+        return options
+    ```
+    """
+
+    def save(self, commit=True):
+        # `super().save()` may change the order field of instances in `self.ordered_forms` without persisting the new
+        # values of the order field to the database unless something else changed in the respective instance.
+        saved_instances = super().save(commit)
+        if commit:
+            for i, form in enumerate(self.ordered_forms):
+                form.instance.order = i
+                form.instance.save()
+        return saved_instances
 
 
 class PlanDefaultsModel:
-    '''Model instances of this mixin have
-    some plan-specific default values that
-    must be set when creating new instances
-    in the admin.
-    '''
+    """
+    Mixin for models that are plan-related.
+
+    Model instances of this mixin have some plan-specific default values that
+    must be set when creating new instances in the admin.
+    """
+
     def initialize_plan_defaults(self, plan: Plan):
         raise NotImplementedError()
 
-M = TypeVar('M', bound=models.Model)
 
-
-class PlanRelatedModel(PlanDefaultsModel, Generic[M]):
+class PlanRelatedModel(PlanDefaultsModel, models.Model):
     wagtail_reference_index_ignore = False
 
+    class Meta:
+        abstract = True
+
     @classmethod
-    def filter_by_plan(cls, plan: Plan, qs: models.QuerySet[M]) -> models.QuerySet[M]:
+    def filter_by_plan(cls, plan: Plan, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         return qs.filter(plan=plan)
 
-    def get_plans(self):
-        return [self.plan]  # type: ignore[attr-defined]
+    def get_plans(self) -> list[Plan]:
+        return [cast('Plan', getattr(self, 'plan'))]  # noqa: B009
 
     def initialize_plan_defaults(self, plan: Plan):
-        # Using setattr() here to avoid type pollution in subclasses
-        setattr(self, 'plan', plan)
+        setattr(self, 'plan', plan)  # noqa: B010
 
-    def filter_siblings(self, qs: models.QuerySet[M]) -> models.QuerySet[M]:
+
+class PlanRelatedOrderedModel(OrderedModel, PlanRelatedModel):
+    class Meta:
+        abstract = True
+
+    def filter_siblings(self, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         # Used by OrderedModel
         plans = self.get_plans()
         assert len(plans) == 1
         return self.filter_by_plan(plans[0], qs)
 
 
+class RestrictedVisibilityModel(models.Model):
+    class VisibilityState(models.TextChoices):
+        INTERNAL = 'internal', _('Internal')
+        PUBLIC = 'public', _('Public')
+
+    visibility = models.CharField(
+        blank=False, null=False,
+        default=VisibilityState.PUBLIC,
+        choices=VisibilityState.choices,
+        max_length=20,
+        verbose_name=_('visibility'),
+    )
+
+    class Meta:
+        abstract = True
+
 class InstancesEditableByMixin(models.Model):
-    """Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes.
+    """
+    Mixin for models such as CategoryType and AttributeType to restrict editing rights of categories/attributes.
 
     When you use this mixin, make sure in the validation of your model that `EditableBy.CONTACT_PERSONS` and
     `EditableBy.MODERATORS` are only accepted for `instances_editable_by` if your model instance can be associated with
@@ -263,6 +347,7 @@ class InstancesEditableByMixin(models.Model):
     For example, action attribute types and built-in field customizations are action-specific, whereas category types
     and category attribute types are not.
     """
+
     class EditableBy(models.TextChoices):
         AUTHENTICATED = 'authenticated', _('Authenticated users')  # practically you also need access to the edit page
         CONTACT_PERSONS = 'contact_persons', _('Contact persons')  # regardless of role; plan admins also can edit
@@ -278,18 +363,23 @@ class InstancesEditableByMixin(models.Model):
         verbose_name=_('Edit rights'),
     )
 
+    class Meta:
+        abstract = True
+
     @property
     def instance_editability_is_action_specific(self):
-        ACTION_SPECIFIC_VALUES = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
-        return self.instances_editable_by in ACTION_SPECIFIC_VALUES
+        action_specific_values = [self.EditableBy.CONTACT_PERSONS, self.EditableBy.MODERATORS]
+        return self.instances_editable_by in action_specific_values
 
-    def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, action: Action | None):
+    def is_instance_editable_by(self, user: UserOrAnon, plan: Plan, instance: Model | None):  # noqa: PLR0911
         from actions.models.action import Action, ActionContactPerson
         # `action` may only be None if `self.instances_editable_by` is not action-specific
-        if __debug__:
-            if self.instance_editability_is_action_specific and action is None:
-                raise AssertionError(f"instances_editable_by has action-specific value '{self.instances_editable_by}', "
-                                     "but no action has been supplied.")
+        if __debug__ and self.instance_editability_is_action_specific and instance is None:
+            msg = (
+                f"instances_editable_by has action-specific value '{self.instances_editable_by}', "
+                                 "but no action has been supplied."
+            )
+            raise AssertionError(msg)
 
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return False
@@ -303,24 +393,24 @@ class InstancesEditableByMixin(models.Model):
         if self.instances_editable_by == self.EditableBy.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_editable_by == self.EditableBy.CONTACT_PERSONS:
-            assert isinstance(action, Action)
-            is_contact_person = user.is_contact_person_for_action(action)
+            assert isinstance(instance, Action)
+            is_contact_person = user.is_contact_person_for_action(instance)
             return is_contact_person or is_plan_admin
         if self.instances_editable_by == self.EditableBy.MODERATORS:
-            assert isinstance(action, Action)
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, action)
+            assert isinstance(instance, Action)
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
             return is_moderator or is_plan_admin
         if self.instances_editable_by == self.EditableBy.AUTHENTICATED:
             assert user.is_authenticated  # checked above
             return True
-        assert False, f"Unexpected value for instances_editable_by: {self.instances_editable_by}"
 
-    class Meta:
-        abstract = True
+        msg = f"Unexpected value for instances_editable_by: {self.instances_editable_by}"
+        raise Exception(msg)  # noqa: TRY002
 
 
 class InstancesVisibleForMixin(models.Model):
-    """Mixin for models such as AttributeType to restrict visibility of attributes.
+    """
+    Mixin for models such as AttributeType to restrict visibility of attributes.
 
     When you use this mixin, make sure in the validation of your model that `VisibleFor.CONTACT_PERSONS` and
     `VisibleFor.MODERATORS` are only accepted for `instances_visible_for` if your model instance can be associated with
@@ -332,6 +422,7 @@ class InstancesVisibleForMixin(models.Model):
     For example, action attribute types and built-in field customizations are action-specific, whereas category types
     and category attribute types are not.
     """
+
     class VisibleFor(models.TextChoices):
         PUBLIC = 'public', _('Public')
         AUTHENTICATED = 'authenticated', _('Authenticated users')
@@ -347,18 +438,23 @@ class InstancesVisibleForMixin(models.Model):
         verbose_name=_('Visibility'),
     )
 
+    class Meta:
+        abstract = True
+
     @property
     def instance_visibility_is_action_specific(self):
-        ACTION_SPECIFIC_VALUES = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
-        return self.instances_visible_for in ACTION_SPECIFIC_VALUES
+        action_specific_values = [self.VisibleFor.CONTACT_PERSONS, self.VisibleFor.MODERATORS]
+        return self.instances_visible_for in action_specific_values
 
-    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, action: Action | None) -> bool:
+    def is_instance_visible_for(self, user: UserOrAnon, plan: Plan, instance: Model | None) -> bool:  # noqa: PLR0911
         from actions.models.action import Action, ActionContactPerson
         # `action` may only be None if `self.instances_visible_for` is not action-specific
-        if __debug__:
-            if self.instance_visibility_is_action_specific and action is None:
-                raise AssertionError(f"instances_visible_for has action-specific value '{self.instances_visible_for}', "
-                                     "but no action has been supplied.")
+        if __debug__ and self.instance_visibility_is_action_specific and instance is None:
+            msg = (
+                f"instances_visible_for has action-specific value '{self.instances_visible_for}', "
+                                 "but no action has been supplied."
+            )
+            raise AssertionError(msg)
 
         if not user.is_authenticated:  # need to handle this case first, otherwise user does not have expected methods
             return self.instances_visible_for == self.VisibleFor.PUBLIC
@@ -370,22 +466,20 @@ class InstancesVisibleForMixin(models.Model):
         if self.instances_visible_for == self.VisibleFor.PLAN_ADMINS:
             return is_plan_admin
         if self.instances_visible_for == self.VisibleFor.CONTACT_PERSONS:
-            assert isinstance(action, Action)
-            is_contact_person = user.is_contact_person_for_action(action)
+            assert isinstance(instance, Action)
+            is_contact_person = user.is_contact_person_for_action(instance)
             return is_contact_person or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.MODERATORS:
-            assert isinstance(action, Action)
-            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, action)
+            assert isinstance(instance, Action)
+            is_moderator = user.has_contact_person_role_for_action(ActionContactPerson.Role.MODERATOR, instance)
             return is_moderator or is_plan_admin
         if self.instances_visible_for == self.VisibleFor.PUBLIC:
             return True
         if self.instances_visible_for == self.VisibleFor.AUTHENTICATED:
             assert user.is_authenticated  # checked above
             return True
-        assert False, f"Unexpected value for instances_visible_for: {self.instances_visible_for}"
 
-    class Meta:
-        abstract = True
+        assert False, f"Unexpected value for instances_visible_for: {self.instances_visible_for}"  # noqa: B011, PT015
 
 
 class ReferenceIndexedModelMixin:
@@ -394,9 +488,11 @@ class ReferenceIndexedModelMixin:
 
         references = ReferenceIndex.get_references_to(self)
         for ref in references:
-            logger.debug(f"Removing referencing block '{ref.describe_source_field()}' from {ref.model_name} "
+            logger.debug(f"Removing referencing block '{ref.describe_source_field()}' from {ref.model_name} "  # noqa: G004
                          f"{ref.object_id}")
-            page = ref.content_type.model_class().objects.get(id=ref.object_id)
+            model_class = ref.content_type.model_class()
+            assert model_class is not None
+            page = model_class.objects.get(id=ref.object_id)
             if isinstance(page, Page) and isinstance(ref.source_field, StreamField):
                 stream_value = ref.source_field.value_from_object(page)
                 model_field, block_id, block_field = ref.content_path.split('.')
@@ -413,7 +509,7 @@ class ReferenceIndexedModelMixin:
         super().delete(*args, **kwargs)  # type: ignore
 
 
-class ChoiceArrayField(ArrayField):
+class ChoiceArrayField[ST](ArrayField[ST, ST]):  # pyright: ignore
     """
     A field that allows us to store an array of choices.
 
@@ -421,29 +517,31 @@ class ChoiceArrayField(ArrayField):
     and a MultipleChoiceField for its formfield.
     """
 
-    def formfield(self, **kwargs):
-        defaults = {
-            'form_class': forms.MultipleChoiceField,
-            'choices': self.base_field.choices,
-        }
-        defaults.update(kwargs)
+    def formfield(
+        self,
+        form_class: type[forms.Field] | None = None,
+        choices_form_class: type[forms.ChoiceField] | None = None,
+        choices: _Choices | None = None,
+        **kwargs,
+    ):
+        form_class = form_class or forms.MultipleChoiceField
+        choices = kwargs.pop('choices', self.base_field.choices)
+        kwargs['choices_form_class'] = choices_form_class
         # Skip our parent's formfield implementation completely as we don't
         # care for it.
-        # pylint:disable=bad-super-call
-        return super(ArrayField, self).formfield(**defaults)
+        return super(ArrayField, self).formfield(form_class=form_class, choices=choices, **kwargs)
 
 
 def generate_identifier(qs, type_letter: str, field_name: str) -> str:
     # Try a couple of times to generate a unique identifier.
-    for i in range(0, 10):
-        rand = random.randint(0, 65535)
+    for _i in range(10):
+        rand = random.randint(0, 65535)  # noqa: S311
         identifier = '%s%04x' % (type_letter, rand)
         f = '%s__iexact' % field_name
         if qs.filter(**{f: identifier}).exists():
             continue
         return identifier
-    else:
-        raise Exception('Unable to generate an unused identifier')
+    raise Exception('Unable to generate an unused identifier')  # noqa: TRY002
 
 
 def validate_css_color(s):
@@ -455,7 +553,7 @@ def validate_css_color(s):
 
 
 class HasI18n(Protocol):
-    i18n: dict
+    i18n: TranslationField
 
 
 class TranslatedModelMixin:
@@ -463,19 +561,18 @@ class TranslatedModelMixin:
         if language is None:
             language = get_language()
         key = '%s_%s' % (field_name, language)
-        val = self.i18n.get(key)
+        val = cast(dict, self.i18n).get(key)
         if val:
             return val
         return getattr(self, field_name)
 
 
 def get_supported_languages():
-    for x in settings.LANGUAGES:
-        yield x
+    yield from settings.LANGUAGES
 
 
 def get_default_language():
-    """Return the global default language from Django settings"""
+    """Return the global default language from Django settings."""
     return settings.LANGUAGES[0][0]
 
 
@@ -484,12 +581,12 @@ def get_default_language_lowercase():
 
 
 def get_language_from_default_language_field(
-        instance: models.Model,
-        i18n_field: TranslationField | None = None
+    instance: models.Model,
+    i18n_field: TranslationField | None = None,
 ):
-    """Return the primary language from the default language field"""
+    """Return the primary language from the default language field."""
 
-    i18n_field = i18n_field or get_i18n_field(instance._meta.model)
+    i18n_field = i18n_field or get_i18n_field(instance._meta.model)  # pyright: ignore
     if i18n_field is None:
         raise ValueError('No i18n field found for', instance)
     if i18n_field.default_language_field:
@@ -499,7 +596,7 @@ def get_language_from_default_language_field(
     if isinstance(default_language, str):
         default_language = default_language.lower()
     else:
-        raise ValueError('Invalid default_language for', instance, default_language)
+        raise ValueError('Invalid default_language for', instance, default_language)  # noqa: TRY004
     return default_language
 
 
@@ -507,11 +604,13 @@ LANGUAGE_MAX_LENGTH = 8
 
 
 class ModelWithPrimaryLanguage(models.Model):
-    primary_language = models.CharField(max_length=LANGUAGE_MAX_LENGTH, choices=get_supported_languages(), default=get_default_language)
+    primary_language = models.CharField(
+        max_length=LANGUAGE_MAX_LENGTH, choices=get_supported_languages(), default=get_default_language,
+    )
 
-    # The lowercase field must be used as the modeltrans default language field instead of the primary language field itself, because
-    # modeltrans is using lowercase language codes. Otherwise primary languages with variant suffixes do not match, causing all sorts of
-    # problems.
+    # The lowercase field must be used as the modeltrans default language field instead of the primary language field itself,
+    # because modeltrans is using lowercase language codes. Otherwise primary languages with variant suffixes do not match,
+    # causing all sorts of problems.
     primary_language_lowercase =  models.CharField(max_length=LANGUAGE_MAX_LENGTH, default=get_default_language_lowercase)
 
     class Meta:
@@ -522,12 +621,19 @@ class ModelWithPrimaryLanguage(models.Model):
         super().save(*args, **kwargs)
 
 
+type AdminSaveOperation = Literal['edit', 'create']
+
+class AdminSaveContext(TypedDict):
+    user: User
+    operation: AdminSaveOperation
+
+
 class ModificationTracking(models.Model):
     updated_at = models.DateTimeField(
-        auto_now=True, editable=False, verbose_name=_('updated at')
+        auto_now=True, editable=False, verbose_name=_('updated at'),
     )
     created_at = models.DateTimeField(
-        auto_now_add=True, editable=False, verbose_name=_('created at')
+        auto_now_add=True, editable=False, verbose_name=_('created at'),
     )
     updated_by = models.ForeignKey(
         'users.User', blank=True, null=True, on_delete=models.SET_NULL,
@@ -543,7 +649,7 @@ class ModificationTracking(models.Model):
     class Meta:
         abstract = True
 
-    def update_modification_metadata(self, user, operation):
+    def update_modification_metadata(self, user: User, operation: AdminSaveOperation):
         if operation == 'edit':
             self.updated_by = user
             self.save(update_fields=['updated_by'])
@@ -551,11 +657,11 @@ class ModificationTracking(models.Model):
             self.created_by = user
             self.save(update_fields=['created_by'])
 
-    def handle_admin_save(self, context=None):
-        self.update_modification_metadata(context.get('user'), context.get('operation'))
+    def handle_admin_save(self, context: AdminSaveContext):
+        self.update_modification_metadata(context['user'], context['operation'])
 
 
-def append_query_parameter(request, url, parameter):
+def append_query_parameter(request: HttpRequest, url: str, parameter: str) -> str:
     value = request.GET.get(parameter)
     if value:
         assert '?' not in url
@@ -582,7 +688,7 @@ CM = TypeVar('CM', bound=ConstantMetadata)
 
 
 class MetadataEnum(Enum):
-    value: 'ConstantMetadata'
+    value: ConstantMetadata
 
     def get_data(self, context=None):
         return self.value.with_identifier(self).with_context(context)
@@ -610,3 +716,37 @@ def convert_html_to_text(html):
     # which can't be turned off!
     text = re.sub(r'\\-', '-', text)
     return text
+
+LANGUAGE_COLLATORS = {
+    'da': 'da-x-icu',
+    'de': 'de-x-icu',
+    'de-CH': 'de-CH-x-icu',
+    'en': 'en-US-x-icu',
+    'en-AU': 'en-AU-x-icu',
+    'en-GB': 'en-GB-x-icu',
+    'es': 'es-x-icu',
+    'es-US': 'es-US-x-icu',
+    'fi': 'fi-FI-x-icu',
+    'lv': 'lv-LV-x-icu',
+    'sv': 'sv-SE-x-icu',
+    'sv-FI': 'sv-FI-x-icu',
+    'pt': 'pt-x-icu',
+    'pt-BR': 'pt-BR-x-icu',
+}
+
+def get_collator(lang: str) -> str:
+    return LANGUAGE_COLLATORS.get(lang, 'en-US-x-icu')
+
+
+if typing.TYPE_CHECKING:
+    _StructBlock = StructBlock
+else:
+    _StructBlock = object
+
+class StaticBlockToStructBlockWorkaroundMixin(_StructBlock):
+    # Workaround for migration from StaticBlock to StructBlock
+    def bulk_to_python(self, values):
+        li = list(values)
+        if len(li) == 1 and li[0] is None:
+            values = [{}]
+        return super().bulk_to_python(values)

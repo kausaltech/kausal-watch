@@ -1,13 +1,23 @@
-from django.utils.translation import gettext_lazy as _
+from uuid import UUID
+
 import graphene
+from django.utils.translation import gettext_lazy as _
+from wagtail import blocks
+from wagtail.embeds.embeds import get_embed
+from wagtail.images.blocks import ImageChooserBlock
+
 from grapple.helpers import register_streamfield_block
-from grapple.models import GraphQLField, GraphQLImage, GraphQLPage, GraphQLStreamfield, GraphQLString, GraphQLForeignKey, GraphQLBoolean
+from grapple.models import (
+    GraphQLBoolean,
+    GraphQLField,
+    GraphQLForeignKey,
+    GraphQLImage,
+    GraphQLPage,
+    GraphQLStreamfield,
+    GraphQLString,
+)
 from grapple.registry import registry
 from grapple.types.streamfield import ListBlock as GrappleListBlock, StructBlockItem
-from uuid import UUID
-from wagtail import blocks
-from wagtail.images.blocks import ImageChooserBlock
-from wagtail.embeds.embeds import get_embed
 
 from actions.blocks import CategoryChooserBlock
 from actions.models.category import Category
@@ -29,7 +39,7 @@ class ListBlockWithIncrementingChildIds(GrappleListBlock):
 registry.streamfield_blocks.update(
     {
         blocks.ListBlock: ListBlockWithIncrementingChildIds,
-    }
+    },
 )
 
 
@@ -50,7 +60,7 @@ class QuestionBlock(blocks.StructBlock):
 RESPONSIVE_STYLES = {
     's': 'responsive-object-small',
     'm': 'responsive-object-medium',
-    'l': 'responsive-object-large'
+    'l': 'responsive-object-large',
 }
 
 
@@ -62,11 +72,7 @@ class EmbedHTMLValue(graphene.ObjectType):
         url = parent['url']
         css_class = RESPONSIVE_STYLES.get(height_key, list(RESPONSIVE_STYLES.values())[0])
         embed = get_embed(url)
-        return "<div data-embed-provider='{provider}' class='responsive-object {css_class}'>{html}</div>".format(
-            html=embed.html,
-            css_class=css_class,
-            provider=embed.provider_name
-        )
+        return f"<div data-embed-provider='{embed.provider_name}' class='responsive-object {css_class}'>{embed.html}</div>"
 
 
 @register_streamfield_block
@@ -81,7 +87,7 @@ class AdaptiveEmbedBlock(blocks.StructBlock):
          ('height', blocks.ChoiceBlock(
              choices=[('s', _('small')), ('m', _('medium')), ('l', _('large'))],
              label=_('Size'),
-         ))]
+         ))],
     )
     full_width = blocks.BooleanBlock(required=False)
 
@@ -207,7 +213,7 @@ class ActionCategoryFilterCardsBlock(blocks.StructBlock):
         label = _('Action category filter cards')
 
     graphql_fields = [
-        GraphQLStreamfield('cards')
+        GraphQLStreamfield('cards'),
     ]
 
 
@@ -228,7 +234,7 @@ class AccessibilityStatementContactInformationBlock(blocks.StructBlock):
     publisher_name = blocks.CharBlock(label=_('Publisher name'))
     maintenance_responsibility_paragraph = blocks.CharBlock(
         required=False, label=_('Maintenance responsibility paragraph'),
-        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]".')
+        help_text=_('If this is set, it will be displayed instead of "This service is published by [publisher]".'),
     )
     email = blocks.CharBlock(label=_('Email address'))
 

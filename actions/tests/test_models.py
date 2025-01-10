@@ -1,5 +1,5 @@
-import pytest
 from datetime import date, datetime, timedelta
+
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -7,12 +7,21 @@ from django.db.utils import IntegrityError
 from django.utils import translation
 from wagtail.models import Locale
 
+import pytest
+
+from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
+
 from actions.attributes import AttributeType
 from actions.models import Action, ActionContactPerson
 from actions.tests.factories import (
-    ActionFactory, ActionContactFactory, AttributeTextFactory, AttributeTypeFactory, CategoryFactory, CategoryTypeFactory, PlanFactory
+    ActionContactFactory,
+    ActionFactory,
+    AttributeTextFactory,
+    AttributeTypeFactory,
+    CategoryFactory,
+    CategoryTypeFactory,
+    PlanFactory,
 )
-from aplans.utils import InstancesEditableByMixin, InstancesVisibleForMixin
 from pages.models import CategoryPage, CategoryTypePage
 
 pytestmark = pytest.mark.django_db
@@ -23,31 +32,31 @@ def test_plan_can_be_saved(plan):
 
 
 def test_action_query_set_modifiable_by_not_modifiable(action, user):
-    assert action not in Action.objects.modifiable_by(user)
+    assert action not in Action.objects.qs.modifiable_by(user)
 
 
 def test_action_query_set_modifiable_by_superuser(action, superuser):
-    assert action in Action.objects.modifiable_by(superuser)
+    assert action in Action.objects.qs.modifiable_by(superuser)
 
 
 def test_action_query_set_modifiable_by_plan_admin(action, plan_admin_user):
-    assert action in Action.objects.modifiable_by(plan_admin_user)
+    assert action in Action.objects.qs.modifiable_by(plan_admin_user)
 
 
 def test_action_query_set_modifiable_by_contact_person(action, action_contact):
-    assert action in Action.objects.modifiable_by(action_contact.person.user)
+    assert action in Action.objects.qs.modifiable_by(action_contact.person.user)
 
 
 def test_action_query_set_modifiable_by_distinct(action, user, person, action_contact):
     assert person.user == user
     assert person == action_contact.person
-    assert list(Action.objects.modifiable_by(user)) == [action]
+    assert list(Action.objects.qs.modifiable_by(user)) == [action]
     # Make user a plan admin as well
     person.general_admin_plans.add(action.plan)
-    assert list(Action.objects.modifiable_by(user)) == [action]
+    assert list(Action.objects.qs.modifiable_by(user)) == [action]
     # When we remove the user from the action contacts, it should still be able to modify
     action_contact.delete()
-    assert list(Action.objects.modifiable_by(user)) == [action]
+    assert list(Action.objects.qs.modifiable_by(user)) == [action]
 
 
 def test_action_can_be_saved():
@@ -162,7 +171,7 @@ def category_type_with_category_hierarchy(category_type, category_level_factory,
     with the category identifiers matching the hierarchy structure
     """
     ct_id = category_type
-    for _ in range(0, 3):
+    for _ in range(3):
         category_level_factory(type=category_type)
 
     p1 = category_factory(type=ct_id, identifier="C1", parent_id=None)
@@ -208,7 +217,7 @@ def test_categories_projected_by_level(category_type_with_category_hierarchy):
     level_projections = ct.categories_projected_by_level()
     levels = ct.levels.all()
 
-    for depth in range(0, 3):
+    for depth in range(3):
         level_proj = level_projections[levels[depth].pk]
         for cat in cat_by_pk.values():
             identifier_prefix = cat.identifier[0:(2*(depth+1))]
@@ -422,7 +431,7 @@ def test_action_i18n_when_saving(plan, action_factory, primary_language, active_
         action.save()
         active_lang_translation_without_fallback = getattr(
             action,
-            f"name_{active_language.replace('-', '_').lower()}"
+            f"name_{active_language.replace('-', '_').lower()}",
         )
         if active_language == primary_language:
             assert action.name == 'action.name_i18n'
@@ -436,7 +445,7 @@ def test_action_i18n_when_saving(plan, action_factory, primary_language, active_
 def test_action_on_form_save_no_commit(
     actions_having_attributes, action_attribute_type__text, action_attribute_type__rich_text,
     action_attribute_type__ordered_choice, action_attribute_type__unordered_choice,
-    action_attribute_type__optional_choice, action_attribute_type__numeric
+    action_attribute_type__optional_choice, action_attribute_type__numeric,
 ):
     action = actions_having_attributes[0]
     attribute_types = [
@@ -466,7 +475,7 @@ def test_action_on_form_save_no_commit(
     expected_result_attributes_cleared = {
         'numeric': {str(action_attribute_type__numeric.id): None},
         'optional_choice': {
-            str(action_attribute_type__optional_choice.id): {'choice': None, 'text': {'text': '', 'text_fi': None}}
+            str(action_attribute_type__optional_choice.id): {'choice': None, 'text': {'text': '', 'text_fi': None}},
         },
         'ordered_choice': {str(action_attribute_type__ordered_choice.id): None},
         'rich_text': {str(action_attribute_type__rich_text.id): {'text': '', 'text_fi': None}},
@@ -491,8 +500,8 @@ def test_action_on_form_save_no_commit(
         'optional_choice': {
             str(action_attribute_type__optional_choice.id): {
                 'choice': action_attribute_type__optional_choice.choice_options.first().id,
-                'text': {'text': 'foo', 'text_fi': None}
-            }
+                'text': {'text': 'foo', 'text_fi': None},
+            },
         },
         'ordered_choice': {
             str(action_attribute_type__ordered_choice.id):
@@ -518,3 +527,12 @@ def test_primary_language_lowercase(attribute_type, common_category_type, plan, 
             instance.primary_language = lang_code
             instance.save()
             assert instance.primary_language.lower() == instance.primary_language_lowercase
+
+
+def test_synchronizing_plan_root_collection(plan_factory):
+    plan = plan_factory(name='A')
+    plan_factory(name='B')
+    plan.name = 'Z'
+    plan.save()
+    new_plan = plan_factory(name='D')
+    new_plan.save()

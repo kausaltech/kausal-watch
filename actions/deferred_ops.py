@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 
 class DeferredDatabaseOperationsMixin:
-    deferred_operations: List[Tuple]
+    deferred_operations: list[tuple]
     execute_immediately: bool
 
     def __init__(self, *args, **kwargs):
@@ -12,16 +12,16 @@ class DeferredDatabaseOperationsMixin:
     def enable_deferred_operations(self):
         self.execute_immediately = False
 
-    def set_deferred_operations(self, operations: List[Tuple]):
+    def set_deferred_operations(self, operations: list[tuple]):
         if self.execute_immediately:
             self._execute_immediately(operations)
             return
         self.deferred_operations = operations
 
-    def get_deferred_operations(self) -> List[Tuple]:
+    def get_deferred_operations(self) -> list[tuple]:
         return self.deferred_operations
 
-    def add_deferred_operations(self, operations: List[Tuple]):
+    def add_deferred_operations(self, operations: list[tuple]):
         if self.execute_immediately:
             self._execute_immediately(operations)
             return
@@ -30,7 +30,7 @@ class DeferredDatabaseOperationsMixin:
         except AttributeError:
             self.set_deferred_operations(operations)
 
-    def _execute_immediately(self, operations: List[Tuple]):
+    def _execute_immediately(self, operations: list[tuple]):
         for operation, obj, *rest in operations:
             if operation == 'create':
                 obj.save()

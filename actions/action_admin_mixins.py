@@ -1,4 +1,5 @@
 import json
+from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.admin.utils import quote, unquote
@@ -11,14 +12,12 @@ from django.utils.functional import cached_property
 from django.utils.html import format_html
 from django.utils.text import capfirst
 from django.utils.translation import gettext as _
-
 from wagtail import hooks
 from wagtail.admin import messages
 from wagtail.admin.templatetags.wagtailadmin_tags import user_display_name
 from wagtail.admin.utils import get_latest_str
 from wagtail.locks import BasicLock, ScheduledForPublishLock, WorkflowLock
-from wagtail.log_actions import log
-from wagtail.log_actions import registry as log_registry
+from wagtail.log_actions import log, registry as log_registry
 from wagtail.models import (
     DraftStateMixin,
     LockableMixin,
@@ -128,7 +127,7 @@ class CreateEditViewOptionalFeaturesMixin:
             permission == "change"
             and self.current_workflow_task
             and self.current_workflow_task.user_can_access_editor(
-                self.object, self.request.user
+                self.object, self.request.user,
             )
         ):
             return True
@@ -140,7 +139,7 @@ class CreateEditViewOptionalFeaturesMixin:
             return False
         self.workflow_action = self.request.POST.get("workflow-action-name")
         available_actions = self.current_workflow_task.get_actions(
-            self.object, self.request.user
+            self.object, self.request.user,
         )
         available_action_names = [
             name for name, verbose_name, modal in available_actions
@@ -206,7 +205,7 @@ class CreateEditViewOptionalFeaturesMixin:
         if not self.workflow_enabled or not self.confirm_workflow_cancellation_url_name:
             return None
         return reverse(
-            self.confirm_workflow_cancellation_url_name, args=[quote(self.object.pk)]
+            self.confirm_workflow_cancellation_url_name, args=[quote(self.object.pk)],
         )
 
     def get_error_message(self):
@@ -215,7 +214,7 @@ class CreateEditViewOptionalFeaturesMixin:
         if self.locked_for_user:
             return capfirst(
                 _("The %(model_name)s could not be saved as it is locked")
-                % {"model_name": self.model._meta.verbose_name}
+                % {"model_name": self.model._meta.verbose_name},
             )
         return super().get_error_message()
 
@@ -230,16 +229,16 @@ class CreateEditViewOptionalFeaturesMixin:
             # Scheduled publishing
             if object.go_live_at and object.go_live_at > timezone.now():
                 message = _(
-                    "%(model_name)s '%(object)s' has been scheduled for publishing."
+                    "%(model_name)s '%(object)s' has been scheduled for publishing.",
                 )
 
                 if self.view_name == "create":
                     message = _(
-                        "%(model_name)s '%(object)s' created and scheduled for publishing."
+                        "%(model_name)s '%(object)s' created and scheduled for publishing.",
                     )
                 elif object.live:
                     message = _(
-                        "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing."
+                        "%(model_name)s '%(object)s' is live and this version has been scheduled for publishing.",
                     )
 
             # Immediate publishing
@@ -250,12 +249,12 @@ class CreateEditViewOptionalFeaturesMixin:
 
         if self.action == "submit":
             message = _(
-                "%(model_name)s '%(object)s' has been submitted for moderation."
+                "%(model_name)s '%(object)s' has been submitted for moderation.",
             )
 
             if self.view_name == "create":
                 message = _(
-                    "%(model_name)s '%(object)s' created and submitted for moderation."
+                    "%(model_name)s '%(object)s' created and submitted for moderation.",
                 )
 
         if self.action == "restart-workflow":
@@ -263,6 +262,19 @@ class CreateEditViewOptionalFeaturesMixin:
 
         if self.action == "cancel-workflow":
             message = _("Workflow on %(model_name)s '%(object)s' has been cancelled.")
+
+        # Kausal customization: When clicking "approve and publish", don't show "Action updated" but something more
+        # informative
+        if (
+            self.action == 'workflow-action'
+            and self.workflow_action == 'approve'
+            and self.workflow_state
+            and self.workflow_state.is_at_final_task
+            and not getattr(settings, 'WAGTAIL_WORKFLOW_REQUIRE_REAPPROVAL_ON_EDIT', False)
+        ):
+            message = _("%(model_name)s '%(object)s' approved and published.")
+
+
 
         return message % {
             "model_name": capfirst(self.model._meta.verbose_name),
@@ -344,15 +356,13 @@ class CreateEditViewOptionalFeaturesMixin:
     def restart_workflow_action(self):
         self.workflow_state.cancel(user=self.request.user)
         self.workflow.start(self.object, self.request.user)
-        return None
 
     def cancel_workflow_action(self):
         self.workflow_state.cancel(user=self.request.user)
-        return None
 
     def workflow_action_action(self):
         extra_workflow_data_json = self.request.POST.get(
-            "workflow-action-extra-data", "{}"
+            "workflow-action-extra-data", "{}",
         )
         extra_workflow_data = json.loads(extra_workflow_data_json)
         self.object.current_workflow_task.on_action(
@@ -361,7 +371,6 @@ class CreateEditViewOptionalFeaturesMixin:
             self.workflow_action,
             **extra_workflow_data,
         )
-        return None
 
     def run_action_method(self):
         action_method = getattr(self, self.action.replace("-", "_") + "_action", None)
@@ -512,7 +521,7 @@ class CreateEditViewOptionalFeaturesMixin:
             "confirm_workflow_cancellation_url"
         ] = self.get_confirm_workflow_cancellation_url()
         context["publishing_will_cancel_workflow"] = getattr(
-            settings, "WAGTAIL_WORKFLOW_CANCEL_ON_PUBLISH", True
+            settings, "WAGTAIL_WORKFLOW_CANCEL_ON_PUBLISH", True,
         ) and bool(self.workflow_tasks)
         return context
 
@@ -527,9 +536,7 @@ class CreateEditViewOptionalFeaturesMixin:
 
 class HookResponseMixin:
     # Source: wagtail.admin.views.generic.mixins.HookResponseMixin
-    """
-    A mixin for class-based views to run hooks by `hook_name`.
-    """
+    """A mixin for class-based views to run hooks by `hook_name`."""
 
     def run_hook(self, hook_name, *args, **kwargs):
         """
@@ -561,7 +568,7 @@ class BeforeAfterHookMixin(HookResponseMixin):
         hook response will be returned as the view response, skipping the default
         response.
         """
-        return None
+        return
 
     def run_after_hook(self):
         """
@@ -573,7 +580,7 @@ class BeforeAfterHookMixin(HookResponseMixin):
         response immediately after the operation finishes, skipping the default
         response.
         """
-        return None
+        return
 
     def dispatch(self, *args, **kwargs):
         hooks_result = self.run_before_hook()
@@ -629,20 +636,26 @@ class GenericModelEditViewMixin(BeforeAfterHookMixin):
     def get_success_buttons(self):
         return [
             messages.button(
-                reverse(self.edit_url_name, args=(quote(self.object.pk),)), _("Edit")
-            )
+                reverse(self.edit_url_name, args=(quote(self.object.pk),)), _("Edit"),
+            ),
         ]
 
     def get_edit_url(self):
         if not self.edit_url_name:
             raise ImproperlyConfigured(
                 "Subclasses of wagtail.admin.views.generic.models.EditView must provide an "
-                "edit_url_name attribute or a get_edit_url method"
+                "edit_url_name attribute or a get_edit_url method",
             )
         return reverse(self.edit_url_name, args=(quote(self.object.pk),))
 
 
-class PermissionCheckedMixin:
+if TYPE_CHECKING:
+    from wagtail.admin.views.generic.permissions import PermissionCheckedMixin
+else:
+    PermissionCheckedMixin = object
+
+
+class WatchPermissionCheckedMixin(PermissionCheckedMixin):
     # Source: wagtail.admin.views.generic.permissions.PermissionCheckedMixin
     """
     Mixin for class-based views to enforce permission checks according to
@@ -678,14 +691,14 @@ class PermissionCheckedMixin:
 
     def user_has_any_permission(self, permissions):
         return self.permission_policy.user_has_any_permission(
-            self.request.user, permissions
+            self.request.user, permissions,
         )
 
 
 class SnippetsEditViewCompatibilityMixin(
     CreateEditViewOptionalFeaturesMixin,
     GenericModelEditViewMixin,
-    PermissionCheckedMixin,
+    WatchPermissionCheckedMixin,
 ):
     # Source: wagtail.snippets.views.snippets.EditView and other classes
     view_name = "edit"

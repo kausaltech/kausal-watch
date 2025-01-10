@@ -1,5 +1,6 @@
-import pytest
 from wagtail import blocks
+
+import pytest
 
 from actions.tests.factories import ActionListBlockFactory
 from indicators.blocks import IndicatorBlock
@@ -9,7 +10,7 @@ from pages.tests.factories import CardListBlockFactory, QuestionAnswerBlockFacto
 
 pytestmark = pytest.mark.django_db
 
-MULTI_USE_IMAGE_FRAGMENT = '''
+MULTI_USE_IMAGE_FRAGMENT = """
     fragment MultiUseImageFragment on Image {
       title
       width
@@ -22,7 +23,7 @@ MULTI_USE_IMAGE_FRAGMENT = '''
         src
       }
     }
-    '''
+    """
 
 
 def assert_body_block(graphql_client_query_data, plan, block_fields, expected, extra_fragments=None, page=None):
@@ -37,7 +38,7 @@ def assert_body_block(graphql_client_query_data, plan, block_fields, expected, e
     assert len(page.body) == 1
     block_type = type(page.body[0].block).__name__
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             ... on %(page_type)s {
@@ -56,20 +57,20 @@ def assert_body_block(graphql_client_query_data, plan, block_fields, expected, e
           }
         }
         %(extra_fragments)s
-        ''' % {'page_type': type(page).__name__,
+        """ % {'page_type': type(page).__name__,
                'block_type': block_type,
                'block_fields': block_fields,
                'extra_fragments': extra_fragments_str},
         variables={
             'plan': plan.identifier,
             'path': page.url_path,
-        }
+        },
     )
     expected = {
         'id': page.body[0].id,
         'blockType': block_type,
         'field': page.body[0].block.name,
-        **expected
+        **expected,
     }
     assert data == {'planPage': {'body': [expected]}}
 
@@ -100,7 +101,7 @@ def test_front_page_hero_block(graphql_client_query_data, front_page_hero_block,
         graphql_client_query_data,
         plan=plan,
         page=page,
-        block_fields='''
+        block_fields="""
             id
             layout
             image {
@@ -108,14 +109,14 @@ def test_front_page_hero_block(graphql_client_query_data, front_page_hero_block,
             }
             heading
             lead
-        ''',
+        """,
         extra_fragments=[MULTI_USE_IMAGE_FRAGMENT],
         expected={
             'heading': front_page_hero_block['heading'],
             'image': expected_result_multi_use_image_fragment(front_page_hero_block['image']),
             'layout': 'big_image',
             'lead': str(front_page_hero_block['lead']),
-        }
+        },
     )
 
 
@@ -129,16 +130,16 @@ def test_category_list_block(graphql_client_query_data, category_list_block, pla
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
-        block_fields='''
+        block_fields="""
             heading
             lead
             style
-        ''',
+        """,
         expected={
             'heading': category_list_block['heading'],
             'lead': str(category_list_block['lead']),
             'style': category_list_block['style'],
-        }
+        },
     )
 
 
@@ -160,7 +161,7 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
-        block_fields='''
+        block_fields="""
             title
             indicators {
               ... on IndicatorBlock {
@@ -192,7 +193,7 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
                 }
               }
             }
-        ''',
+        """,
         expected={
             'title': indicator_group_block['title'],
             'indicators': [{
@@ -215,8 +216,8 @@ def test_indicator_group_block(graphql_client_query_data, indicator_block, plan_
                     'goals': [],
                     'level': None,
                 },
-            }]
-        }
+            }],
+        },
     )
 
 
@@ -230,12 +231,12 @@ def test_indicator_highlights_block(graphql_client_query_data, plan_with_pages):
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
-        block_fields='''
+        block_fields="""
             __typename
-        ''',
+        """,
         expected={
-            '__typename': 'IndicatorHighlightsBlock'
-        }
+            '__typename': 'IndicatorHighlightsBlock',
+        },
     )
 
 
@@ -248,18 +249,18 @@ def test_indicator_showcase_block(graphql_client_query_data, plan_with_pages, in
     assert_body_block(
         graphql_client_query_data,
         plan=plan_with_pages,
-        block_fields='''
+        block_fields="""
             title
             body
             indicator {
               id
             }
-        ''',
+        """,
         expected={
             'title': indicator_showcase_block['title'],
             'body': str(indicator_showcase_block['body']),
             'indicator': {'id': str(indicator_showcase_block['indicator'].id)},
-        }
+        },
     )
 
 
@@ -272,12 +273,12 @@ def test_action_highlights_block(plan_with_pages, graphql_client_query_data):
     assert_body_block(
         graphql_client_query_data,
         plan=plan_with_pages,
-        block_fields='''
+        block_fields="""
             __typename
-        ''',
+        """,
         expected={
-            '__typename': 'ActionHighlightsBlock'
-        }
+            '__typename': 'ActionHighlightsBlock',
+        },
     )
 
 
@@ -291,12 +292,12 @@ def test_related_plan_list_block(graphql_client_query_data, plan_with_pages):
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
-        block_fields='''
+        block_fields="""
             __typename
-        ''',
+        """,
         expected={
-            '__typename': 'RelatedPlanListBlock'
-        }
+            '__typename': 'RelatedPlanListBlock',
+        },
     )
 
 
@@ -315,7 +316,7 @@ def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages)
     assert_body_block(
         graphql_client_query_data,
         plan=plan,
-        block_fields='''
+        block_fields="""
             heading
             lead
             cards {
@@ -328,7 +329,7 @@ def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages)
                 link
               }
             }
-        ''',
+        """,
         extra_fragments=[MULTI_USE_IMAGE_FRAGMENT],
         expected={
             'heading': card_list_block['heading'],
@@ -339,7 +340,7 @@ def test_card_list_block(graphql_client_query_data, card_block, plan_with_pages)
                 'content': card_block['content'],
                 'link': card_block['link'],
             }],
-        }
+        },
     )
 
 
@@ -354,7 +355,7 @@ def test_question_answer_block(graphql_client_query_data, plan_with_pages, stati
         graphql_client_query_data,
         plan=plan_with_pages,
         page=static_page,
-        block_fields='''
+        block_fields="""
             heading
             questions {
               ... on QuestionBlock {
@@ -362,20 +363,20 @@ def test_question_answer_block(graphql_client_query_data, plan_with_pages, stati
                 answer
               }
             }
-        ''',
+        """,
         expected={
             'heading': question_answer_block['heading'],
             'questions': [{
                 'question': question_block['question'],
                 'answer': str(question_block['answer']),
             }],
-        }
+        },
     )
 
 
 def test_static_page_lead_paragraph(graphql_client_query_data, plan_with_pages, static_page):
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             id
@@ -386,11 +387,11 @@ def test_static_page_lead_paragraph(graphql_client_query_data, plan_with_pages, 
             }
           }
         }
-        ''',
+        """,
         variables={
             'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
-        }
+        },
     )
     expected = {
         'planPage': {
@@ -398,14 +399,14 @@ def test_static_page_lead_paragraph(graphql_client_query_data, plan_with_pages, 
             'slug': static_page.slug,
             'title': static_page.title,
             'leadParagraph': static_page.lead_paragraph,
-        }
+        },
     }
     assert data == expected
 
 
 def test_static_page_header_image(graphql_client_query_data, plan_with_pages, static_page):
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             ... on StaticPage {
@@ -415,11 +416,11 @@ def test_static_page_header_image(graphql_client_query_data, plan_with_pages, st
             }
           }
         }
-        ''' + MULTI_USE_IMAGE_FRAGMENT,
+        """ + MULTI_USE_IMAGE_FRAGMENT,
         variables={
             'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
-        }
+        },
     )
     expected = {
         'planPage': {
@@ -435,7 +436,7 @@ def test_static_page_header_image(graphql_client_query_data, plan_with_pages, st
                     'src': 'http://testserver' + static_page.header_image.get_rendition('fill-300x200-c50').url,
                 },
             },
-        }
+        },
     }
     assert data == expected
 
@@ -443,7 +444,7 @@ def test_static_page_header_image(graphql_client_query_data, plan_with_pages, st
 def test_static_page_body(graphql_client_query_data, plan_with_pages, static_page):
     # We omit checking non-primitive blocks as they get their own tests.
     data = graphql_client_query_data(
-        '''
+        """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             ... on StaticPage {
@@ -461,11 +462,11 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
             }
           }
         }
-        ''',
+        """,
         variables={
             'plan': plan_with_pages.identifier,
             'path': static_page.url_path,
-        }
+        },
     )
     expected = {
         'planPage': {
@@ -479,23 +480,23 @@ def test_static_page_body(graphql_client_query_data, plan_with_pages, static_pag
                 'blockType': 'QuestionAnswerBlock',
                 'field': 'qa_section',
             }],
-        }
+        },
     }
     assert data == expected
 
 
 def test_attribute_category_choices_are_resolved_correctly(
     graphql_client_query_data, plan_with_pages, category_factory, category_page, category_type_factory, attribute_type_factory,
-    attribute_category_choice_factory
+    attribute_category_choice_factory,
 ):
     category_type_host = category_page.category.type
     category_host = category_page.category
     category_type_for_attribute = category_type_factory()
-    categories = [category_factory(type=category_type_for_attribute) for c in range(0, 5)]
+    categories = [category_factory(type=category_type_for_attribute) for c in range(5)]
     at0 = attribute_type_factory(scope=category_type_host)
     acc0 = attribute_category_choice_factory(type=at0, content_object=category_host, categories=categories)
 
-    query = '''
+    query = """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             ... on CategoryPage {
@@ -512,7 +513,7 @@ def test_attribute_category_choices_are_resolved_correctly(
             }
           }
         }
-        '''
+        """
     query_variables = {
         'plan': plan_with_pages.identifier,
         'path': category_page.url_path,
@@ -522,10 +523,10 @@ def test_attribute_category_choices_are_resolved_correctly(
             'category': {
                 'attributes': [{
                     'keyIdentifier': at0.identifier,
-                    'categories': [{'id': str(c.id)} for c in acc0.categories.all()]
+                    'categories': [{'id': str(c.id)} for c in acc0.categories.all()],
                 }],
-            }
-        }
+            },
+        },
     }
     data = graphql_client_query_data(query, variables=query_variables)
     assert data == expected
@@ -533,7 +534,7 @@ def test_attribute_category_choices_are_resolved_correctly(
 
 def test_attribute_order_as_in_attribute_type(
     graphql_client_query_data, plan_with_pages, category, category_page, category_type, attribute_type_factory,
-    attribute_rich_text_factory
+    attribute_rich_text_factory,
 ):
     at0 = attribute_type_factory(scope=category_type)
     at1 = attribute_type_factory(scope=category_type)
@@ -541,7 +542,7 @@ def test_attribute_order_as_in_attribute_type(
     art0 = attribute_rich_text_factory(type=at0, content_object=category)
     art1 = attribute_rich_text_factory(type=at1, content_object=category)
 
-    query = '''
+    query = """
         query($plan: ID!, $path: String!) {
           planPage(plan: $plan, path: $path) {
             ... on CategoryPage {
@@ -556,7 +557,7 @@ def test_attribute_order_as_in_attribute_type(
             }
           }
         }
-        '''
+        """
     query_variables = {
         'plan': plan_with_pages.identifier,
         'path': category_page.url_path,
@@ -571,8 +572,8 @@ def test_attribute_order_as_in_attribute_type(
                     'keyIdentifier': at1.identifier,
                     'value': art1.text,
                 }],
-            }
-        }
+            },
+        },
     }
     data = graphql_client_query_data(query, variables=query_variables)
     assert data == expected
@@ -596,14 +597,14 @@ def test_category_page_action_list(graphql_client_query_data, plan_with_pages, c
         graphql_client_query_data,
         plan=plan_with_pages,
         page=category_page,
-        block_fields='''
+        block_fields="""
             categoryFilter {
               id
             }
-        ''',
+        """,
         expected={
             'categoryFilter': {
                 'id': str(category.id),
             },
-        }
+        },
     )

@@ -1,33 +1,38 @@
 from __future__ import annotations
 
 import functools
-import uuid
-
-import typing
-from typing import Any, ClassVar, Protocol, Sequence, Type, TypeVar, Generic
-import graphene
-from enum import Enum
 import re
+import typing
+import uuid
+from enum import Enum
+from typing import Any, ClassVar, Generic, Protocol, Sequence, Type, TypeVar, cast
 
+import graphene
 from django.db.models import Model, QuerySet
 from django.db.models.constants import LOOKUP_SEP
 from django.utils.translation import gettext_lazy as _
-from graphql import GraphQLResolveInfo
-from graphql.language.ast import OperationDefinitionNode
-import graphene_django_optimizer as gql_optimizer
 from graphene.utils.str_converters import to_camel_case, to_snake_case
 from graphene.utils.trim_docstring import trim_docstring
 from graphene_django import DjangoObjectType
-from grapple.registry import registry as grapple_registry
+from graphene_django.types import DjangoObjectTypeOptions
+from graphql import GraphQLResolveInfo
 from modeltrans.translator import get_i18n_field
 
-from actions.models.plan import Plan
-from aplans.types import WatchAPIRequest
+import graphene_django_optimizer as gql_optimizer
+from grapple.registry import registry as grapple_registry
+
 from aplans.utils import get_language_from_default_language_field
-from users.models import User
 
+from actions.models.plan import Plan
 
-graphene_registry: list[Type[graphene.ObjectType | graphene.Interface]] = []
+if typing.TYPE_CHECKING:
+    from graphql.language.ast import OperationDefinitionNode
+
+    from aplans.types import WatchAPIRequest
+
+    from users.models import User
+
+graphene_registry: list[type[graphene.ObjectType | graphene.Interface]] = []
 
 
 def get_i18n_field_with_fallback(field_name: str, obj: Model, info: GQLInfo):
@@ -68,13 +73,13 @@ class DjangoNode(DjangoObjectType, Generic[M]):
         return getattr(root, 'pk', None) or f'unpublished-{uuid.uuid4()}'
 
     @classmethod
-    def __init_subclass_with_meta__(cls, **kwargs: Any):
+    def __init_subclass_with_meta__(cls, **kwargs: Any) -> None:
         if 'name' not in kwargs:
             # Remove the trailing 'Node' from the object types
             kwargs['name'] = re.sub(r'Node$', '', cls.__name__)
 
-        model: Type[M] = kwargs['model']
-        assert model.__doc__ is not None
+        model: type[M] = kwargs['model']
+        assert model.__doc__ is not None, f"Model {model} does not have __doc__"
         is_autogen = re.match(r'^\w+\([\w_, ]+\)$', model.__doc__)
         if 'description' not in kwargs and not cls.__doc__ and not is_autogen:
             kwargs['description'] = trim_docstring(model.__doc__)
@@ -101,7 +106,7 @@ class DjangoNode(DjangoObjectType, Generic[M]):
                             select_related.append(LOOKUP_SEP.join(related_path))
                     hints = dict(
                         only=only,
-                        select_related=select_related
+                        select_related=select_related,
                     )
                     apply_hints = gql_optimizer.resolver_hints(**hints)
                     field.resolver = apply_hints(resolver)
@@ -147,7 +152,7 @@ class SupportsOrderable(Protocol):
 
 Q = TypeVar('Q', bound=QuerySet)
 
-def order_queryset(qs: Q, node_class: Type[SupportsOrderable], order_by: str | None) -> Q:
+def order_queryset(qs: Q, node_class: type[SupportsOrderable], order_by: str | None) -> Q:
     if order_by is None:
         return qs
 
@@ -160,7 +165,7 @@ def order_queryset(qs: Q, node_class: Type[SupportsOrderable], order_by: str | N
     order_by = to_snake_case(order_by)
     if order_by not in orderable_fields:
         raise ValueError('Only orderable fields are: %s' % ', '.join(
-            [to_camel_case(x) for x in orderable_fields]
+            [to_camel_case(x) for x in orderable_fields],
         ))
     assert order_by is not None
     qs = qs.order_by(desc + order_by)
@@ -169,7 +174,7 @@ def order_queryset(qs: Q, node_class: Type[SupportsOrderable], order_by: str | N
 
 OT = TypeVar('OT', bound=graphene.ObjectType)
 
-def register_graphene_node(cls: Type[OT]) -> Type[OT]:
+def register_graphene_node(cls: type[OT]) -> type[OT]:
     global graphene_registry
     graphene_registry.append(cls)
     return cls
@@ -178,14 +183,17 @@ def register_graphene_node(cls: Type[OT]) -> Type[OT]:
 IT = TypeVar('IT', bound=graphene.Interface)
 
 
-def register_graphene_interface(cls: Type[IT]) -> Type[IT]:
+def register_graphene_interface(cls: type[IT]) -> type[IT]:
     global graphene_registry
     graphene_registry.append(cls)
     return cls
 
 
-def register_django_node(cls: Type[M]) -> Type[M]:
-    model = cls._meta.model
+DN = TypeVar('DN', bound=DjangoNode)
+
+def register_django_node(cls: type[DN]) -> type[DN]:
+    meta = cast(DjangoObjectTypeOptions, getattr(cls, '_meta'))
+    model = meta.model
     grapple_registry.django_models[model] = cls
     return cls
 
@@ -211,6 +219,7 @@ class AdminButton(graphene.ObjectType):
     classname = graphene.String(required=True)
     title = graphene.String(required=False)
     target = graphene.String(required=False)
+    icon = graphene.String(required=False)
 
 
 class WorkflowStateEnum(Enum):
@@ -237,6 +246,7 @@ class WorkflowStateEnum(Enum):
             return _('Approved')
         if self == WorkflowStateEnum.DRAFT:
             return _('Draft')
+        return None
 
 
 WorkflowStateGrapheneEnum = graphene.Enum.from_enum(WorkflowStateEnum, name='WorkflowState')  # type: ignore

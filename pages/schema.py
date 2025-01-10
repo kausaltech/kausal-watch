@@ -1,9 +1,11 @@
 import graphene
-import graphene_django_optimizer as gql_optimizer
 from wagtail.models import Page as WagtailPage
+
+import graphene_django_optimizer as gql_optimizer
 from grapple.types.pages import PageInterface
 
 from aplans.graphql_types import get_plan_from_context, register_graphene_node
+
 from pages.models import AplansPage, Page
 
 
@@ -64,7 +66,7 @@ class MenuItem(graphene.Union):
         types = (PageMenuItemNode, ExternalLinkMenuItemNode)
 
 
-class MenuNodeMixin():
+class MenuNodeMixin:
     """
     Mixin for main menu and footer
 
@@ -74,6 +76,7 @@ class MenuNodeMixin():
     not use polymorphism in resolver methods.
     https://docs.graphene-python.org/en/latest/types/objecttypes/#resolverimplicitstaticmethod
     """
+
     items = graphene.List(MenuItem, required=True, with_descendants=graphene.Boolean(default_value=False))
 
     @classmethod

@@ -2,7 +2,8 @@ import graphene
 from django.forms import ModelForm
 
 from aplans.graphql_helpers import UpdateModelInstanceMutation
-from aplans.graphql_types import DjangoNode, register_django_node
+from aplans.graphql_types import DjangoNode, get_plan_from_context, register_django_node
+
 from .models import Person
 
 
@@ -20,7 +21,10 @@ class PersonNode(DjangoNode):
         request = info.context
         if not request:
             return None
-        return self.get_avatar_url(request, size)
+        plan = get_plan_from_context(info)
+        if plan.features.contact_persons_show_picture:
+            return self.get_avatar_url(request, size)
+        return None
 
 
 class PersonForm(ModelForm):

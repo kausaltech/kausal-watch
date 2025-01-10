@@ -1,7 +1,9 @@
-from dal import autocomplete, forward as dal_forward
+from typing import Type, TypeVar
+
 from django import forms
 from django.db.models import Model
-from typing import Type, TypeVar
+
+from dal import autocomplete, forward as dal_forward
 
 from actions.models.action import Action
 from actions.models.category import CategoryType
@@ -11,6 +13,7 @@ from indicators.models import Indicator
 
 class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
     """Like ModelMultipleChoiceField, but allow only one value to be chosen."""
+
     def to_python(self, value):
         result = super().to_python(value)
         if not result:
@@ -28,7 +31,7 @@ class ModelChoiceFieldWithValueInList(forms.ModelChoiceField):
 
 M = TypeVar('M', bound=Model)
 
-def _get_category_fields(plan: Plan, model: Type[M], obj: M | None, with_initial: bool = False) -> dict:
+def _get_category_fields(plan: Plan, model: type[M], obj: M | None, with_initial: bool = False) -> dict:
     fields = {}
     if model == Action:
         filter_name = 'editable_for_actions'
@@ -53,7 +56,7 @@ def _get_category_fields(plan: Plan, model: Type[M], obj: M | None, with_initial
                 url='category-autocomplete',
                 forward=(
                     dal_forward.Const(cat_type.id, 'type'),
-                )
+                ),
             )
         else:
             field_class = forms.ModelMultipleChoiceField
@@ -61,10 +64,10 @@ def _get_category_fields(plan: Plan, model: Type[M], obj: M | None, with_initial
                 url='category-autocomplete',
                 forward=(
                     dal_forward.Const(cat_type.id, 'type'),
-                )
+                ),
             )
         field = field_class(
-            qs, label=cat_type.name, initial=initial, required=False, widget=widget
+            qs, label=cat_type.name, initial=initial, required=False, widget=widget,
         )
         field.category_type = cat_type
         fields['categories_%s' % cat_type.identifier] = field

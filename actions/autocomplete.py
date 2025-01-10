@@ -1,8 +1,10 @@
-from dal import autocomplete
 from django.db.models import Q
 
-from actions.models import Action, Category, CommonCategoryType, Plan
+from dal import autocomplete
+
 from aplans.types import WatchAdminRequest
+
+from actions.models import Action, Category, CommonCategoryType, Plan
 
 
 class ActionAutocomplete(autocomplete.Select2QuerySetView):
@@ -67,7 +69,7 @@ class CategoryAutocomplete(autocomplete.Select2QuerySetView):
             q = self.q.strip()
             categories = categories.filter(
                 Q(identifier__istartswith=q) |
-                Q(name__icontains=q)
+                Q(name__icontains=q),
             )
         return categories
 

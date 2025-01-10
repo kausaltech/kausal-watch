@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from enum import Enum
-from typing import Callable, NotRequired, TypedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, NotRequired, TypedDict
 
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -10,8 +10,9 @@ from django.utils.translation import gettext_lazy as _
 from aplans.utils import ConstantMetadata, MetadataEnum
 
 if TYPE_CHECKING:
-    from actions.models import Action, Plan, ActionStatus
     from aplans.cache import WatchObjectCache
+
+    from .models import Action, ActionStatus, Plan
 
 Sentiment = Enum('Sentiment', names='POSITIVE NEGATIVE NEUTRAL')
 
@@ -73,80 +74,80 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
         color='green090',
         is_completed=True,
         is_active=False,
-        sentiment=Sentiment.POSITIVE
+        sentiment=Sentiment.POSITIVE,
     )
     ON_TIME = ActionStatusSummary(
         default_label=_('On time'),
         color='green050',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.POSITIVE
+        sentiment=Sentiment.POSITIVE,
     )
     IN_PROGRESS = ActionStatusSummary(
         default_label=_('In progress'),
         color='green050',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.POSITIVE
+        sentiment=Sentiment.POSITIVE,
     )
     NOT_STARTED = ActionStatusSummary(
         default_label=_('Not started'),
         color='green010',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
     LATE = ActionStatusSummary(
         default_label=_('Late'),
         color='yellow050',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.NEGATIVE
+        sentiment=Sentiment.NEGATIVE,
     )
     CANCELLED = ActionStatusSummary(
         default_label=_('Cancelled'),
         color='grey030',
         is_completed=False,
         is_active=False,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
     OUT_OF_SCOPE = ActionStatusSummary(
         default_label=_('Out of scope'),
         color='grey030',
         is_completed=False,
         is_active=False,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
     MERGED = ActionStatusSummary(
         default_label=_('Merged'),
         color='grey030',
         is_completed=True,
         is_active=False,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
     POSTPONED = ActionStatusSummary(
         default_label=_('Postponed'),
         color='blue030',
         is_completed=False,
         is_active=False,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
     UNDEFINED = ActionStatusSummary(
         default_label=_('Unknown'),
         color='grey010',
         is_completed=False,
         is_active=True,
-        sentiment=Sentiment.NEUTRAL
+        sentiment=Sentiment.NEUTRAL,
     )
 
     def get_identifier(self):
         return self.name.lower()
 
     def __str__(self):
-        return f'{self.name}.{str(self.value)}'
+        return f'{self.name}.{self.value!s}'
 
     @classmethod
-    def for_status(cls, status: 'ActionStatus'):
+    def for_status(cls, status: ActionStatus):
         if status is None:
             return cls.UNDEFINED
         status_identifier = status.identifier.lower() if status else None
@@ -156,7 +157,7 @@ class ActionStatusSummaryIdentifier(MetadataEnum):
             return cls.UNDEFINED
 
     @classmethod
-    def for_action(cls, action: 'Action'):
+    def for_action(cls, action: Action):
         # FIXME: Some plans in production have inconsistent Capitalized identifiers
         # Once the db has been cleaned up, this match logic
         # should be revisited
@@ -181,13 +182,13 @@ class ActionTimeliness(ConstantMetadata['ActionTimelinessIdentifier', SummaryCon
     color: str | None
     sentiment: Sentiment | None
     label: str | None
-    boundary: Callable[['Plan'], int]
+    boundary: Callable[[Plan], int]
     comparison: Comparison | None
-    identifier: 'ActionTimelinessIdentifier'
+    identifier: ActionTimelinessIdentifier
     days: int
 
     def __init__(self,
-        boundary: Callable[['Plan'], int],
+        boundary: Callable[[Plan], int],
         color: str | None = None,
         sentiment: Sentiment | None = None,
         label: str | None = None,
@@ -199,12 +200,12 @@ class ActionTimeliness(ConstantMetadata['ActionTimelinessIdentifier', SummaryCon
         self.comparison = comparison
         self.boundary = boundary
 
-    def _get_label(self, plan: 'Plan'):
+    def _get_label(self, plan: Plan):
         if self.comparison == Comparison.LTE:
             return _('Under %d days') % self._get_days(plan)
         return _('Over %d days') % self._get_days(plan)
 
-    def _get_days(self, plan: 'Plan'):
+    def _get_days(self, plan: Plan):
         return self.boundary(plan)
 
     def with_context(self, context: SummaryContext):
@@ -224,29 +225,29 @@ class ActionTimelinessIdentifier(MetadataEnum):
         color='green070',
         sentiment=Sentiment.POSITIVE,
         boundary=(lambda plan: plan.action_update_target_interval),
-        comparison=Comparison.LTE
+        comparison=Comparison.LTE,
     )
     ACCEPTABLE = ActionTimeliness(
         color='green030',
         sentiment=Sentiment.NEUTRAL,
         boundary=(lambda plan: plan.action_update_acceptable_interval),
-        comparison=Comparison.LTE
+        comparison=Comparison.LTE,
     )
     LATE = ActionTimeliness(
         color='yellow050',
         sentiment=Sentiment.NEGATIVE,
         boundary=(lambda plan: plan.action_update_acceptable_interval),
-        comparison=Comparison.GT
+        comparison=Comparison.GT,
     )
     STALE = ActionTimeliness(
         color='red050',
         sentiment=Sentiment.NEGATIVE,
         boundary=(lambda plan: plan.get_action_days_until_considered_stale()),
-        comparison=Comparison.GT
+        comparison=Comparison.GT,
     )
 
     @classmethod
-    def for_action(cls, action: 'Action'):
+    def for_action(cls, action: Action):
         plan = action.plan
         age = timezone.now() - action.updated_at
         if age <= datetime.timedelta(days=cls.OPTIMAL.value.boundary(plan)):

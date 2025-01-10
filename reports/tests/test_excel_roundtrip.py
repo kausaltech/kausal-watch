@@ -2,9 +2,10 @@ from io import BytesIO
 
 from django.utils import translation
 from django.utils.translation import gettext as _
-import pytest
+
 import polars
 import polars.selectors as cs
+import pytest
 
 from .fixtures import *  # noqa
 
@@ -20,7 +21,8 @@ def excel_file_from_report_factory(actions_having_attributes, report_with_all_at
     def _excel_factory():
         assert report_with_all_attributes.type.plan.features.output_report_action_print_layout is True
         assert report_with_all_attributes.fields == report_with_all_attributes.type.fields
-        output_excel = report_with_all_attributes.to_xlsx()
+        exporter = report_with_all_attributes.get_xlsx_exporter()
+        output_excel = exporter.generate_xlsx()
         return output_excel
     return _excel_factory
 
@@ -40,7 +42,8 @@ def assert_report_dimensions(excel_file, report, actions):
         non_report_fields.extend(['marked_as_complete_by', 'marked_as_complete_at'])
 
     # optional choice attribute results in two columns, hence + 1
-    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1
+    # responsible parties columns result in 3 columns, hence + 2
+    assert df_actions.width == len(report.fields) + len(non_report_fields) + 1 + 2
     assert df_actions.height == len(actions)
     return df_actions
 
@@ -50,9 +53,9 @@ def test_excel_export(
         report_with_all_attributes,
         excel_file_from_report_factory,
         user,
-        django_assert_max_num_queries
+        django_assert_max_num_queries,
 ):
-    with django_assert_max_num_queries(272):
+    with django_assert_max_num_queries(283):
         # report.get_live_action_versions hack still causes some extra queries
         # because of implementation details wrt. reversion
         excel_file_incomplete = excel_file_from_report_factory()
@@ -79,7 +82,7 @@ def test_partly_completed_report_excel_export(
         user):
     actions_having_attributes[0].mark_as_complete_for_report(
         report_with_all_attributes,
-        user
+        user,
     )
     excel = excel_file_from_report_factory()
     assert_report_dimensions(excel, report_with_all_attributes, actions_having_attributes)

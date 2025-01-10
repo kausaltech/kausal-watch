@@ -1,6 +1,7 @@
 from datetime import timedelta
-from django.db import models
+
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 from users.models import User
@@ -12,7 +13,7 @@ class LoggedRequest(models.Model):
     raw_request = models.TextField()
     user = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='logged_requests')
     created_at = models.DateTimeField(auto_now_add=True, editable=False)
-
+    impersonator = models.ForeignKey(User, blank=True, null=True, on_delete=models.SET_NULL, related_name='logged_impersonated_requests')
     class Meta:
         ordering = ['created_at']
 
@@ -23,7 +24,8 @@ class LoggedRequest(models.Model):
         return result
 
     def __str__(self):
-        result = f'{self.method} {self.path}'
+        date_str = self.created_at.strftime('%Y-%m-%d %H:%M:%S')
+        result = f'{date_str} {self.method} {self.path}'
         if self.user:
-            result += f' from {self.user}'
+            result += f' by {self.user}'
         return result

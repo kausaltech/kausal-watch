@@ -1,6 +1,7 @@
+from logging import getLogger
+
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from logging import getLogger
 
 from orgs.models import Organization
 

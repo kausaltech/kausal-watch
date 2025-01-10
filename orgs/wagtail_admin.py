@@ -6,20 +6,27 @@ from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import ClusterForm
 from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
+
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.mixins import ThumbnailMixin
 from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as WAGTAILGEOWIDGET_VERSION
 
+from aplans.context_vars import ctx_instance, ctx_request
+from aplans.extensions import modeladmin_register
+
+from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
+from people.chooser import PersonChooser
+
 from .forms import NodeForm
 from .models import Organization, OrganizationMetadataAdmin
 from .views import (
-    OrganizationCreateView, OrganizationEditView, SetOrganizationRelatedToActivePlanView, CreateChildNodeView,
+    CreateChildNodeView,
+    OrganizationCreateView,
+    OrganizationDeleteView,
+    OrganizationEditView,
+    SetOrganizationRelatedToActivePlanView,
 )
-from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
-from aplans.context_vars import ctx_instance, ctx_request
-from aplans.extensions import modeladmin_register
-from people.chooser import PersonChooser
 
 if int(WAGTAILGEOWIDGET_VERSION.split('.')[0]) >= 7:
     from wagtailgeowidget.panels import GoogleMapsPanel
@@ -39,27 +46,29 @@ class NodeButtonHelper(ButtonHelper):
     def add_child_button(self, pk, **kwargs):
         """Build a add child button, to easily add a child under node."""
         classnames = self.prepare_classnames(
-            start=self.edit_button_classnames + ['icon', 'icon-plus'],
+            start=self.edit_button_classnames,
             add=kwargs.get('classnames_add'),
-            exclude=kwargs.get('classnames_exclude')
+            exclude=kwargs.get('classnames_exclude'),
         )
         return {
             'classname': classnames,
             'label': _("Add child"),
             'title': _("Add child under this node"),
+            'icon': 'plus',
             'url': self.url_helper.get_action_url('add_child', quote(pk)),
         }
 
     def edit_subtree_button(self, pk, **kwargs):
         classnames = self.prepare_classnames(
-            start=self.edit_button_classnames + ['icon', 'icon-edit'],
+            start=self.edit_button_classnames,
             add=kwargs.get('classnames_add'),
-            exclude=kwargs.get('classnames_exclude')
+            exclude=kwargs.get('classnames_exclude'),
         )
         return {
             'classname': classnames,
             'label': _("Edit subtree"),
             'title': _("Edit subtree rooted at this %s") % self.verbose_name,
+            'icon': 'edit',
             'url': self.url_helper.get_action_url('edit_subtree', quote(pk)),
         }
 
@@ -68,7 +77,7 @@ class NodeButtonHelper(ButtonHelper):
 
         add_child_button = self.add_child_button(
             pk=getattr(obj, self.opts.pk.attname),
-            **kwargs
+            **kwargs,
         )
         user = self.request.user
         plan = user.get_active_admin_plan()
@@ -125,17 +134,17 @@ class NodeAdmin(ModelAdmin):
         add_child_url = re_path(
             self.url_helper.get_action_url_pattern('add_child'),
             self.add_child_view,
-            name=self.url_helper.get_action_url_name('add_child')
+            name=self.url_helper.get_action_url_name('add_child'),
         )
         include_organization_in_active_plan_url = re_path(
             self.url_helper.get_action_url_pattern('include_organization_in_active_plan'),
             self.include_organization_in_active_plan_view,
-            name=self.url_helper.get_action_url_name('include_organization_in_active_plan')
+            name=self.url_helper.get_action_url_name('include_organization_in_active_plan'),
         )
         exclude_organization_from_active_plan_url = re_path(
             self.url_helper.get_action_url_pattern('exclude_organization_from_active_plan'),
             self.exclude_organization_from_active_plan_view,
-            name=self.url_helper.get_action_url_name('exclude_organization_from_active_plan')
+            name=self.url_helper.get_action_url_name('exclude_organization_from_active_plan'),
         )
         return urls + (
             add_child_url,
@@ -237,27 +246,29 @@ class OrganizationButtonHelper(NodeButtonHelper):
 
     def include_organization_in_active_plan_button(self, pk, **kwargs):
         classnames = self.prepare_classnames(
-            start=self.edit_button_classnames + ['icon', 'icon-fa-link'],
+            start=self.edit_button_classnames,
             add=kwargs.get('classnames_add'),
-            exclude=kwargs.get('classnames_exclude')
+            exclude=kwargs.get('classnames_exclude'),
         )
         return {
             'classname': classnames,
             'label': _("Include in plan"),
             'title': _("Include this organization in the active plan"),
+            'icon': 'link',
             'url': self.url_helper.get_action_url('include_organization_in_active_plan', quote(pk)),
         }
 
     def exclude_organization_from_active_plan_button(self, pk, **kwargs):
         classnames = self.prepare_classnames(
-            start=self.edit_button_classnames + ['icon', 'icon-fa-unlink'],  # icon-fa-link-slash if we used FA 6
+            start=self.edit_button_classnames,
             add=kwargs.get('classnames_add'),
-            exclude=kwargs.get('classnames_exclude')
+            exclude=kwargs.get('classnames_exclude'),
         )
         return {
             'classname': classnames,
             'label': _("Exclude from plan"),
             'title': _("Exclude this organization from the active plan"),
+            'icon': 'fontawesome-link-slash',
             'url': self.url_helper.get_action_url('exclude_organization_from_active_plan', quote(pk)),
         }
 
@@ -271,13 +282,13 @@ class OrganizationButtonHelper(NodeButtonHelper):
             if obj.pk in plan.related_organizations.values_list('pk', flat=True):
                 exclude_organization_from_active_plan_button = self.exclude_organization_from_active_plan_button(
                     pk=getattr(obj, self.opts.pk.attname),
-                    **kwargs
+                    **kwargs,
                 )
                 buttons.append(exclude_organization_from_active_plan_button)
             else:
                 include_organization_in_active_plan_button = self.include_organization_in_active_plan_button(
                     pk=getattr(obj, self.opts.pk.attname),
-                    **kwargs
+                    **kwargs,
                 )
                 buttons.append(include_organization_in_active_plan_button)
 
@@ -294,6 +305,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
     permission_helper_class = OrganizationPermissionHelper
     create_view_class = OrganizationCreateView
     edit_view_class = OrganizationEditView
+    delete_view_class = OrganizationDeleteView
     search_fields = ('name', 'abbreviation')
     list_display = ('admin_thumb',) + NodeAdmin.list_display + ('abbreviation',)
     list_display_add_buttons = NodeAdmin.list_display[0]
@@ -302,7 +314,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
     basic_panels = NodeAdmin.panels + [
         FieldPanel(
             # virtual field, needs to be specified in the form
-            'parent', heading=pgettext_lazy('organization', 'Parent')
+            'parent', heading=pgettext_lazy('organization', 'Parent'),
         ),
         FieldPanel('logo'),
         FieldPanel('abbreviation'),

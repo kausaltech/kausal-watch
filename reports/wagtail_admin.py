@@ -5,15 +5,18 @@ from django.urls import re_path
 from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel
+
 from wagtail_modeladmin.helpers import ButtonHelper
 from wagtail_modeladmin.menus import ModelAdminMenuItem
 from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 
+from aplans.utils import append_query_parameter
+
+from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin
+
 from .models import Report, ReportType
 from .views import MarkReportAsCompleteView
-from admin_site.wagtail import AplansCreateView, AplansEditView, AplansModelAdmin
-from aplans.utils import append_query_parameter
 
 
 # FIXME: Duplicated code in category_admin.py and attribute_type_admin.py
@@ -54,9 +57,9 @@ class ReportDeleteView(ReportTypeQueryParameterMixin, DeleteView):
 
 class ReportAdminButtonHelper(ButtonHelper):
     # TODO: duplicated as AttributeTypeAdminButtonHelper
-    download_report_button_classnames = ['icon', 'icon-fa-download']
-    mark_as_complete_button_classnames = ['icon', 'icon-fa-check']
-    undo_marking_as_complete_button_classnames = ['icon', 'icon-fa-undo']
+    download_report_button_classnames = []
+    mark_as_complete_button_classnames = []
+    undo_marking_as_complete_button_classnames = []
 
     def add_button(self, *args, **kwargs):
         """
@@ -94,6 +97,7 @@ class ReportAdminButtonHelper(ButtonHelper):
             'url': self.url_helper.get_action_url('download', quote(report_pk)),
             'label': _("Download XLSX"),
             'classname': cn,
+            'icon': 'download',
             'title': _("Download report as spreadsheet file"),
         }
 
@@ -106,6 +110,7 @@ class ReportAdminButtonHelper(ButtonHelper):
             'url': self.url_helper.get_action_url('mark_report_as_complete', quote(report_pk)),
             'label': _("Mark as complete"),
             'classname': cn,
+            'icon': 'check',
             'title': _("Mark this report as complete"),
         }
 
@@ -118,6 +123,7 @@ class ReportAdminButtonHelper(ButtonHelper):
             'url': self.url_helper.get_action_url('undo_marking_report_as_complete', quote(report_pk)),
             'label': _("Undo marking as complete"),
             'classname': cn,
+            'icon': 'fontawesome-rotate-left',
             'title': _("Undo marking this report as complete"),
         }
 
@@ -225,17 +231,17 @@ class ReportAdmin(AplansModelAdmin):
         download_report_url = re_path(
             self.url_helper.get_action_url_pattern('download'),
             self.download_report_view,
-            name=self.url_helper.get_action_url_name('download')
+            name=self.url_helper.get_action_url_name('download'),
         )
         mark_as_complete_url = re_path(
             self.url_helper.get_action_url_pattern('mark_report_as_complete'),
             self.mark_report_as_complete_view,
-            name=self.url_helper.get_action_url_name('mark_report_as_complete')
+            name=self.url_helper.get_action_url_name('mark_report_as_complete'),
         )
         undo_marking_as_complete_url = re_path(
             self.url_helper.get_action_url_pattern('undo_marking_report_as_complete'),
             self.undo_marking_report_as_complete_view,
-            name=self.url_helper.get_action_url_name('undo_marking_report_as_complete')
+            name=self.url_helper.get_action_url_name('undo_marking_report_as_complete'),
         )
         return urls + (
             download_report_url,
@@ -245,13 +251,13 @@ class ReportAdmin(AplansModelAdmin):
 
     def download_report_view(self, request, instance_pk):
         report = Report.objects.get(pk=instance_pk)
-        output = report.to_xlsx()
+        exporter = report.get_xlsx_exporter()
+        output = exporter.generate_xlsx()
         response = HttpResponse(
             output,
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
-        filename = slugify(report.name, allow_unicode=True) + '.xlsx'
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Disposition'] = f'attachment; filename="{exporter.get_filename()}"'
         return response
 
     def mark_report_as_complete_view(self, request, instance_pk):

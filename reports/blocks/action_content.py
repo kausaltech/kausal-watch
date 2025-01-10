@@ -1,18 +1,22 @@
 from __future__ import annotations
+
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
-from django.db.models import Model
-from django.apps import apps
 from django.utils.translation import gettext_lazy as _
-from grapple.helpers import register_streamfield_block
-from wagtail.admin.panels import HelpPanel
 from wagtail import blocks
+from wagtail.admin.panels import HelpPanel
 
-from actions.blocks.action_content import get_action_block_for_field
-from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryTypeChooserBlock, CategoryLevelChooserBlock
+from grapple.helpers import register_streamfield_block
 
+from actions.action_fields import action_registry
+from actions.blocks.choosers import ActionAttributeTypeChooserBlock, CategoryLevelChooserBlock, CategoryTypeChooserBlock
+from actions.blocks.stream_block import generate_stream_block
 from reports import report_formatters as formatters
 from reports.report_formatters import ActionReportContentField
+
+if TYPE_CHECKING:
+    from django.db.models import Model
 
 
 class FieldBlockWithHelpPanel(ActionReportContentField):
@@ -23,7 +27,7 @@ class FieldBlockWithHelpPanel(ActionReportContentField):
         value = self.value_for_action_snapshot(block_value, snapshot) or ''
         if not isinstance(value, Iterable) or isinstance(value, str):
             value = [value]
-        value = "; ".join((str(v) for v in value))
+        value = "; ".join(str(v) for v in value)
         label = self.get_help_label(block_value)
         if label is None:
             label = self.label
@@ -81,12 +85,11 @@ class ActionStatusReportFieldBlock(blocks.StaticBlock, FieldBlockWithHelpPanel):
 
 @register_streamfield_block
 class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithHelpPanel):
-    '''
-    FIXME: Note that this block is currently actually exporting only the primary
-    responsible parties. That's why the label is set accordingly.
-    There should be a field to configure which role(s) should
-    be exported and that should affect the label(s)
-    '''
+    # FIXME: Note that this block is currently actually exporting only the primary
+    # responsible parties. That's why the label is set accordingly.
+    # There should be a field to configure which role(s) should
+    # be exported and that should affect the label(s)
+
     target_ancestor_depth = blocks.IntegerBlock(
         label=_('Level of containing organization'),
         required=False,
@@ -96,8 +99,8 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
             'In addition to the organization itself, an organizational unit containing the organization '
             'is included in the report. Counting from the top-level root organisation at level 1, which level '
             'in the organizational hierarchy should be used to find this containing organization? '
-            'If left empty, don\'t add the containing organization to the report.'
-        )
+            'If left empty, don\'t add the containing organization to the report.',
+        ),
     )
 
     def get_report_value_formatter_class(self):
@@ -105,39 +108,34 @@ class ActionResponsiblePartyReportFieldBlock(blocks.StructBlock, FieldBlockWithH
 
     class Meta:
         label = _("Primary responsible party")
+        default = {
+            'target_ancestor_depth': None
+        }
 
 
-'''
-We are reusing generated action field block classes from the action app
+"""
+Whenever possible, try to use the existing report block classes
+that can be retrieved from the action_registry simply with the
+field name, instead of implenting a custom ReportFieldBlock from scratch.
+"""
 
-If adding reporting support for a block, the block should be explicitly added here
-and correct report generation should be verified.
-'''
-ActionDescriptionBlock = get_action_block_for_field('description')
-ActionManualStatusReasonBlock = get_action_block_for_field('manual_status_reason')
-ActionTasksBlock = get_action_block_for_field('tasks')
-
-
-@register_streamfield_block
-class ReportFieldBlock(blocks.StreamBlock):
-    # All blocks mentioned here must have a formatter which implements
-    # xlsx_column_labels, value_for_action and value_for_action_snapshot
-    implementation_phase = ActionImplementationPhaseReportFieldBlock()
-    attribute_type = ActionAttributeTypeReportFieldBlock()
-    responsible_party = ActionResponsiblePartyReportFieldBlock()
-    category = ActionCategoryReportFieldBlock()
-    status = ActionStatusReportFieldBlock()
-    manual_status_reason = ActionManualStatusReasonBlock()
-    description = ActionDescriptionBlock()
-    tasks = ActionTasksBlock()
-
-    graphql_types = [
-        ActionImplementationPhaseReportFieldBlock,
-        ActionAttributeTypeReportFieldBlock,
-        ActionResponsiblePartyReportFieldBlock,
-        ActionCategoryReportFieldBlock,
-        ActionStatusReportFieldBlock,
-        ActionManualStatusReasonBlock,
-        ActionDescriptionBlock,
-        ActionTasksBlock
-    ]
+ReportFieldBlock = generate_stream_block(
+    'ReportFieldBlock',
+    fields = (
+        'implementation_phase',
+        'attribute',
+        'responsible_parties',
+        'categories',
+        'status',
+        'manual_status_reason',
+        'description',
+        'tasks',
+        'start_date',
+        'end_date',
+        'updated_at',
+        'related_indicators',
+        'primary_org',
+    ),
+    support_editing_from_other_form=False,
+    block_context='report',
+)

@@ -1,4 +1,5 @@
-"""A module for writing action data in  a spreadsheet in a format which aims to
+"""
+A module for writing action data in  a spreadsheet in a format which aims to
 fit a visually pleasing  amount of data in one printed page  of the sheet. This
 module writes explicit horizontal page breaks with worksheet.set_h_pagebreaks()
 
@@ -14,22 +15,26 @@ the rough estimations happening here.
 
 """
 from __future__ import annotations
+
+import re
+import typing
 from dataclasses import dataclass
 from functools import reduce
-from loguru import logger
-import re
 from typing import Any, cast
-import typing
 
-from django.utils.translation import gettext as _
 from django.db import models
+from django.utils.translation import gettext as _
 
-from .cursor_writer import CursorWriter, CellBase, Cell
+from loguru import logger
+
+from .cursor_writer import Cell, CellBase, CursorWriter
 
 if typing.TYPE_CHECKING:
     import polars
-    from .excel_report import ExcelReport
+
     from actions.models import Plan
+
+    from .excel_report import ExcelReport
 
 
 class ReportActionPrintLayoutCustomization(models.Model):
@@ -122,7 +127,7 @@ class NewPageMarker(CellBase):
 def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFrame) -> None:
     keys_with_total_length = _keys_with_total_length(action_df)
 
-    plan = excel_report.report.type.plan
+    plan: Plan = excel_report.report.type.plan
     custom_variables = ReportActionPrintLayoutCustomization.get_plan_variables_with_fallback(plan)
     MAX_COLUMNS = custom_variables.max_columns
     WIDTH_NEEDED: list[list[int | None]] = custom_variables.width_needed
@@ -188,7 +193,7 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
             grid_layout: list[list[str]],
             action: dict[str, Any],
             approximate_chars_per_line: int,
-            approximate_lines_per_page: int
+            approximate_lines_per_page: int,
     ) -> list[tuple[CellBase, ...]]:
 
         result: list[tuple[CellBase, ...]] = []
@@ -288,7 +293,7 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
                 data_row,
                 APPROXIMATE_CHARS_PER_LINE,
                 APPROXIMATE_LINES_PER_PAGE,
-            )
+            ),
         )
 
     page_break_row_indexes = []
@@ -323,17 +328,29 @@ def write_action_summaries(excel_report: ExcelReport, action_df: polars.DataFram
             page_specifier = f' [{_("Page")} {page}/{page_count}]'
         processed.append((
             Cell(value=(action_identifier + page_specifier), format='action_digest_page_header'),
-            Cell(value=action_name, format='action_digest_page_header')
+            Cell(value=action_name, format='action_digest_page_header'),
         ))
         row_index += 1
 
     worksheet = excel_report.workbook.add_worksheet(_('Profiles'))
-    worksheet.set_column(0, MAX_COLUMNS - 1, 16)
+    COLUMN_WIDTH = 16
+    worksheet.set_column(0, MAX_COLUMNS - 1, COLUMN_WIDTH)
+    # The following empty columns need to be 2 columns wide and 4 columns wide (actually a little bit less) and are used when forcing excel
+    # to automatically adjust the row height to fit the texts (with a separate macro), since excel doesn't do that for merged cells
+    worksheet.set_column(MAX_COLUMNS + 1, MAX_COLUMNS + 2, COLUMN_WIDTH * 2 - 2)
+    worksheet.set_column(MAX_COLUMNS + 3, MAX_COLUMNS + 3, COLUMN_WIDTH * 4 - 2)
+    worksheet.insert_button('F1', {
+        'macro':   'ThisWorkbook.ProcessMergedCells',
+        'caption': _('Prepare for printing'),
+        'width':   320,
+        'height':  60,
+    })
+
     cursor_writer = CursorWriter(
         worksheet,
         formats=excel_report.formats,
         width=MAX_COLUMNS,
-        merge=True
+        merge=True,
     )
     cursor_writer.write_cells(processed)
     worksheet.set_h_pagebreaks(page_break_row_indexes)
