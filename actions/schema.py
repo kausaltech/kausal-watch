@@ -13,7 +13,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Q, QuerySet, prefetch_related_objects
 from django.forms import ModelForm
 from django.urls import reverse
-from django.utils.translation import get_language
+from django.utils.translation import gettext, get_language, override
 from graphene_django import DjangoObjectType
 from graphene_django.converter import convert_django_field_with_choices
 from graphql.error import GraphQLError
@@ -157,6 +157,7 @@ class PlanInterface(graphene.Interface, Generic[T]):
     published_at = graphene.DateTime()
     domain = graphene.Field(PlanDomainNode, hostname=graphene.String(required=False))
     domains = graphene.List(PlanDomainNode, hostname=graphene.String(required=False))
+    status_message = graphene.String()
 
     @staticmethod
     @gql_optimizer.resolver_hints(
@@ -188,11 +189,28 @@ class PlanInterface(graphene.Interface, Generic[T]):
         if context_hostname is None:
             return RestrictedPlanNode
         domain = instance.domains.filter(plan=instance, hostname=context_hostname)
-        # Having no domains means that this domain match is for a non-production site,
-        # hence the full plan schema must be used.
-        if not domain or domain.first().status == PublicationStatus.PUBLISHED:
+        if not domain:
+            if instance.is_visible_for_user(info.context.user):
+                return PlanNode
+        elif domain.first().status == PublicationStatus.PUBLISHED:
             return PlanNode
         return RestrictedPlanNode
+
+    @staticmethod
+    def resolve_status_message(root: Plan, info: GQLInfo, hostname=None) -> str | None:
+        context_hostname = getattr(info.context, '_plan_hostname', None)
+        if not hostname:
+            hostname = context_hostname
+            if not hostname:
+                return None
+        domain = root.domains.filter(plan=root, hostname=hostname).first()
+        if domain is not None:
+            return domain.status_message
+        if root.is_live():
+            return None
+        with override(root.primary_language):
+            return gettext('The site is not public at this time.')
+
 
 
 @register_graphene_node
