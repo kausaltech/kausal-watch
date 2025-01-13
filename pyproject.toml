@@ -27,6 +27,9 @@ norecursedirs = [
 ]
 filterwarnings = ["ignore::DeprecationWarning:easy_thumbnails"]
 testpaths = ["**/tests"]
+env = [
+  "ENV_FILE=.env.test",
+]
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main"]

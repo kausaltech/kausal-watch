@@ -3,6 +3,7 @@
 /static/
 /.direnv/
 /.*env*
+!/.env.test
 /.git/
 /.github/
 /.pytest_cache/

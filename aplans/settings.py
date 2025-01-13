@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib.util
-import os
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -102,8 +101,11 @@ env = environ.FileAwareEnv(
 
 BASE_DIR = root()
 
-if env.bool('ENV_FILE'):
-    environ.Env.read_env(env.str('ENV_FILE'))
+ENV_FILE = env.str('ENV_FILE', None)  # pyright: ignore[reportArgumentType]
+if ENV_FILE:
+    if not Path(ENV_FILE).exists():
+        raise ImproperlyConfigured(f'File {ENV_FILE} specified in ENV_FILE does not exist')
+    environ.Env.read_env(ENV_FILE)
 else:
     dotenv_path = BASE_DIR / Path('.env')
     if dotenv_path.exists():

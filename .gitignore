@@ -13,6 +13,7 @@ tmp/**
 *.bz2
 *.xlsx
 .env*
+!/.env.test
 venv/**
 bin/**
 Attic/**
