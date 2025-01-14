@@ -24,11 +24,6 @@ from wagtail_modeladmin.options import modeladmin_register
 from wagtail_modeladmin.views import DeleteView
 from wagtailorderable.modeladmin.mixins import OrderableMixin
 
-from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
-from admin_site.wagtail import (
-    CondensedInlinePanel, InitializeFormWithPlanMixin,  PlanFilteredFieldPanel, AplansTabbedInterface,
-    get_translation_tabs, insert_model_translation_panels
-)
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.utils import append_query_parameter
 
@@ -45,9 +40,10 @@ from admin_site.wagtail import (
     InitializeFormWithPlanMixin,
     PlanFilteredFieldPanel,
     get_translation_tabs,
+    insert_model_translation_panels,
 )
 
-from .models import Category, CategoryType, CommonCategory, CommonCategoryType
+from .models import Category, CategoryLevel, CategoryType, CommonCategory, CommonCategoryType
 
 if TYPE_CHECKING:
     from django.http.request import HttpRequest
