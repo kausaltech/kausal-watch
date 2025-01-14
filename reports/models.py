@@ -193,14 +193,28 @@ class Report(PlanRelatedModel):
         """
         if self.is_complete:
             self._raise_complete()
-        actions_to_snapshot = (
-            self.type.plan.actions.get_queryset().visible_for_user(None)
-            .prefetch_related(
-                'responsible_parties__organization', 'categories__type', 'choice_attributes__choice', 'choice_with_text_attributes__choice',
-                'text_attributes__type', 'rich_text_attributes__type', 'numeric_value_attributes__type', 'category_choice_attributes__type',
-                'related_indicators', 'action_category_through__category',
+
+        if ((child_plans := self.type.plan.children.get_queryset()) and  # TODO: add .visible_for_user() when it is implemented
+                self.type.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific.include_related_plans):
+            actions_to_snapshot = (
+                Action.objects.get_queryset().filter(plan__in=child_plans).visible_for_user(None)
+                .prefetch_related(
+                    'responsible_parties__organization', 'categories__type', 'choice_attributes__choice',
+                    'choice_with_text_attributes__choice', 'text_attributes__type', 'rich_text_attributes__type',
+                    'numeric_value_attributes__type', 'category_choice_attributes__type', 'related_indicators',
+                    'action_category_through__category',
+                )
             )
-        )
+        else:
+            actions_to_snapshot = (
+                self.type.plan.actions.get_queryset().visible_for_user(None)
+                .prefetch_related(
+                    'responsible_parties__organization', 'categories__type', 'choice_attributes__choice',
+                    'choice_with_text_attributes__choice', 'text_attributes__type', 'rich_text_attributes__type',
+                    'numeric_value_attributes__type', 'category_choice_attributes__type', 'related_indicators',
+                    'action_category_through__category',
+                )
+            )
         result = LiveVersions()
 
         incomplete_actions = []

@@ -16,7 +16,9 @@ import xlsxwriter
 from loguru import logger
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
+from actions.models.plan import PlanQuerySet
 from orgs.models import Organization
+from pages.models import ActionListPage
 from reports.utils import ReportCellValue, group_by_model
 
 from .action_print_layout import write_action_summaries
@@ -51,6 +53,7 @@ class ExcelReport:
     field_to_column_labels: dict[str, set[str]]
     has_macros: bool
     plan: Plan
+    child_plans: list[Plan]
     # Is this report and its type dynamically created
     # (not loaded from database)
     is_dynamic: bool
@@ -63,14 +66,24 @@ class ExcelReport:
         statuses: dict[int, ActionStatus]
         action_content_type: ContentType
 
-        def __init__(self, report: Report):
+        def __init__(self, report: Report, child_plans: list[Plan] | None = None):
             plan = report.type.plan
+            if child_plans is None:
+                child_plans = []
             self.category_types = self._keyed_dict(plan.category_types.all())
             self.categories = self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()])
             self.implementation_phases = self._keyed_dict(plan.action_implementation_phases.all())
             self.statuses = self._keyed_dict(plan.action_statuses.all())
             self.organizations = self._keyed_dict(Organization.objects.available_for_plan(plan))
             self.action_content_type = ContentType.objects.get_for_model(Action)
+            # Aggregate related objects from child plans
+            for child_plan in child_plans:
+                self.category_types.update(self._keyed_dict(child_plan.category_types.all()))
+                self.categories.update(self._keyed_dict([c for ct in self.category_types.values() for c in ct.categories.all()]))
+                self.implementation_phases.update(self._keyed_dict(child_plan.action_implementation_phases.all()))
+                self.statuses.update(self._keyed_dict(child_plan.action_statuses.all()))
+                self.organizations.update(self._keyed_dict(Organization.objects.available_for_plan(child_plan)))
+
             self.category_level_category_mappings = {
                 ct.pk: ct.categories_projected_by_level() for ct in self.category_types.values()
             }
@@ -84,6 +97,7 @@ class ExcelReport:
         # to the plan's primary language. When implementing support for
         # other languages, make sure the action contents and other
         # plan object contents are translated.
+
         self.language = report.type.plan.primary_language if language is None else language
         self.report = report
         self.is_dynamic = is_dynamic
@@ -102,7 +116,14 @@ class ExcelReport:
             self.has_macros = True
         else:
             self.has_macros = False
-        self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
+
+        if (child_plans := report.type.plan.children.get_queryset().prefetch_related(
+                'category_types', 'action_implementation_phases', 'action_statuses', 'related_organizations')) and \
+                report.type.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific.include_related_plans:
+            self.child_plans = list(child_plans)  # TODO: add .visible_for_user() when it is implemented
+            self.plan_current_related_objects = self.PlanRelatedObjects(self.report, self.child_plans)
+        else:
+            self.plan_current_related_objects = self.PlanRelatedObjects(self.report)
         self.field_to_column_labels = dict()
 
     def get_filename(self, suffix: str | None = None) -> str:
