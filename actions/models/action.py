@@ -942,7 +942,10 @@ class Action(
         ):
             visible_contact_persons = [acp for acp in visible_contact_persons if not acp.is_moderator()]
 
-        if self.plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.ALL:
+        if self.plan.features.contact_persons_public_data in (
+                PlanFeatures.ContactPersonsPublicData.ALL,
+                PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
             return visible_contact_persons
 
         # Need to redact due to setting of self.plan.features.contact_persons_public_data

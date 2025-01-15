@@ -472,7 +472,10 @@ class Person(index.Indexed, ClusterableModel, PlanDefaultsModel):
 
         You better not save the returned object.
         """
-        if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.ALL:
+        if plan.features.contact_persons_public_data in (
+            PlanFeatures.ContactPersonsPublicData.ALL,
+            PlanFeatures.ContactPersonsPublicData.ALL_FOR_AUTHENTICATED,
+        ):
             return copy.copy(self)
         if plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NAME:
             return Person(
