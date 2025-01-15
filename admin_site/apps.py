@@ -68,6 +68,16 @@ class AdminSiteConfig(AdminConfig):
         from wagtail.admin.views.account import ThemeSettingsPanel
         ThemeSettingsPanel.is_active = lambda self: False  # type: ignore
 
+        from wagtail.admin.rich_text import DraftailRichTextArea
+        from wagtail.telepath import register as register_telepath_adapter
+
+        from admin_site.draftail_rich_text_area import DraftailRichTextAreaAdapterWithFixedTranslations
+
+        # Override existing adapter for DraftailRichTextArea; otherwise the tools when pressing '/' while editing a rich
+        # text field in a Wagtail page will not use the right language. Note that this hack here takes care of Wagtail
+        # pages; we use a different hack for the rich text editor when editing Action instances.
+        register_telepath_adapter(DraftailRichTextAreaAdapterWithFixedTranslations(), DraftailRichTextArea)
+
         # We use this just for overriding some Django translations that are weird in some languages
         def _dummy_function_so_makemessages_finds_strings():
             # This is never called
