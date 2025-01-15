@@ -221,16 +221,24 @@ class Report(PlanRelatedModel):
 
         ct = ContentType.objects.get_for_model(Action)
         version_qs = Version.objects.filter(
-                content_type=ct,
-                object_id__in=[a.pk for a in actions_to_snapshot],
-                action_snapshots__report_id=self.pk,
-            ).prefetch_related(
-                'action_snapshots',
-            ).select_related(
-                'revision',
-            ).order_by(
-                '-revision__date_created',
-            )
+            content_type=ct,
+            object_id__in=[a.pk for a in actions_to_snapshot],
+            action_snapshots__report_id=self.pk,
+        ).prefetch_related(
+            'action_snapshots',
+        ).select_related(
+            'revision',
+        ).order_by(
+            '-revision__date_created',
+        )
+        snapshot_counts = version_qs.annotate(
+            snapshot_count=models.Count('action_snapshots')
+        ).values('object_id', 'snapshot_count')
+
+        counts_by_action = {
+            str(item['object_id']): item['snapshot_count']
+            for item in snapshot_counts
+        }
 
         action_snapshots_by_action_pk: dict[int, ActionSnapshot] = dict()
         for version in version_qs:
@@ -238,7 +246,7 @@ class Report(PlanRelatedModel):
             if action_pk in action_snapshots_by_action_pk:
                 continue
             qs = version.action_snapshots.filter(report_id=self.pk)  # pyright: ignore
-            if qs.count() > 1:
+            if counts_by_action.get(action_pk, 0) > 1:
                 capture_message("Database consistency error: snapshot has multiple versions")
             snapshot = qs.first()
             action_snapshots_by_action_pk[int(action_pk)] = snapshot

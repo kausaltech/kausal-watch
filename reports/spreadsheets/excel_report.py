@@ -16,7 +16,6 @@ import xlsxwriter
 from loguru import logger
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
-from actions.models.plan import PlanQuerySet
 from orgs.models import Organization
 from pages.models import ActionListPage
 from reports.utils import ReportCellValue, group_by_model
