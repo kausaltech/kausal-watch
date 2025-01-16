@@ -1202,7 +1202,6 @@ class ActionNode(AdminButtonsMixin, AttributesMixin, DjangoNode):
     )
     def resolve_contact_persons(root: Action, info: GQLInfo, show_all_contact_persons: bool):
         plan: Plan = get_plan_from_context(info)
-        assert plan == root.plan
         user = info.context.user
         cache = info.context.watch_cache.for_plan(plan)
         return root.get_redacted_contact_persons(user, show_all_contact_persons, cache)
