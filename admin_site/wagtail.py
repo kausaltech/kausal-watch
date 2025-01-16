@@ -460,10 +460,6 @@ class AplansTabbedInterface[M: Model, F: ModelForm](TabbedInterface[M, F]):
         return super().get_bound_panel(instance, request, form, prefix)
 
 
-# TODO: Reimplemented in admin_site/mixins.py to make this work without
-# ModelAdmin. Use that when implementing new classes or migrating away from
-# ModelAdmin. Remove this class when ModelAdmin migration is finished.
-
 if TYPE_CHECKING:
     class PersistFiltersBase(Protocol):
         continue_editing_active: Callable[[], bool]
@@ -473,6 +469,9 @@ if TYPE_CHECKING:
 else:
     PersistFiltersBase = object
 
+# TODO: Reimplemented in admin_site/mixins.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
 class PersistFiltersEditingModelAdminMixin(PersistFiltersBase):
     def get_success_url(self: PersistFiltersBase):
         if hasattr(super(), 'continue_editing_active') and super().continue_editing_active():
