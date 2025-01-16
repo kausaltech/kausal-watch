@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.forms import BaseFormSet, Select
 from django.utils import formats
@@ -15,8 +19,7 @@ from wagtail.admin.views.account import BaseSettingsPanel, notifications_tab
 
 from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
-from aplans.context_vars import ctx_request
-
+from admin_site.utils import admin_req
 from admin_site.wagtail import (
     AplansAdminModelForm,
     AplansCreateView,
@@ -31,6 +34,12 @@ from admin_site.wagtail import (
 from .forms import NotificationPreferencesForm
 from .models import BaseTemplate
 
+if TYPE_CHECKING:
+    from django.contrib.auth.models import AbstractBaseUser
+    from django.db.models import Model
+    from django.http.request import HttpRequest
+    from wagtail.admin.forms.models import WagtailAdminModelForm
+    from wagtail.admin.panels.base import Panel
 
 class BaseTemplateEditView(SuccessUrlEditPageModelAdminMixin, AplansEditView):
     def get_error_message(self):
@@ -62,6 +71,36 @@ class BaseTemplateForm(AplansAdminModelForm):
         return super().clean()
 
 
+class BaseTemplateSendDatePanel(FieldPanel):
+    """
+    Panel for the send date field of the BaseTemplate model.
+
+    Provides plan-specific help text for the send date field.
+    """
+
+    def get_bound_panel(
+        self,
+        instance: Model | None = None,
+        request: HttpRequest | None = None,
+        form: WagtailAdminModelForm[Model, AbstractBaseUser] | None = None,
+        prefix: str = 'panel'
+    ) -> Panel.BoundPanel[
+        Panel[Model, WagtailAdminModelForm[Model, AbstractBaseUser]],
+        WagtailAdminModelForm[Model, AbstractBaseUser],
+        Model,
+    ]:
+        assert request is not None
+        request = admin_req(request)
+        plan = request.user.get_active_admin_plan()
+        time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
+        self.help_text = format_lazy(
+            '{msg} {time}.',
+            msg=_("The email message will be sent on the specified day at"),
+            time=time,
+        )
+        return super().get_bound_panel(instance, request, form, prefix)
+
+
 @modeladmin_register
 class BaseTemplateAdmin(AplansModelAdmin):
     model = BaseTemplate
@@ -83,6 +122,22 @@ class BaseTemplateAdmin(AplansModelAdmin):
         FieldPanel('logo', permission='superuser'),
         FieldPanel('font_family', permission='superuser'),
         FieldPanel('font_css_url', permission='superuser'),
+    ]
+
+    manually_scheduled_notification_panels = [
+        FieldPanel('subject'),
+        BaseTemplateSendDatePanel('date'),
+        FieldPanel('content'),
+        MultiFieldPanel([
+            FieldRowPanel([
+                FieldPanel('send_to_plan_admins'),
+                FieldPanel('send_to_action_contact_persons'),
+                FieldPanel('send_to_indicator_contact_persons'),
+                FieldPanel('send_to_organization_admins'),
+                FieldPanel('send_to_custom_email'),
+            ]),
+            FieldPanel('custom_email'),
+        ], classname='collapsible'),
     ]
 
     templates_panels = [
@@ -140,11 +195,6 @@ class BaseTemplateAdmin(AplansModelAdmin):
         return ActivePlanMenuItem(self, order or self.get_menu_order())
 
     def get_edit_handler(self):
-        request = ctx_request.get()
-
-        plan = request.user.get_active_admin_plan()
-        time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
-
         handler = AplansTabbedInterface([
             ObjectList(
                 self.panels,
@@ -152,7 +202,7 @@ class BaseTemplateAdmin(AplansModelAdmin):
             ObjectList([
                 InlinePanel(
                     'manually_scheduled_notification_templates',
-                    panels=self.get_manually_scheduled_notification_panels(time),
+                    panels=self.manually_scheduled_notification_panels,
                 )],
                 heading=_('One-off notifications')),
             ObjectList([
