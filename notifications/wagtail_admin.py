@@ -58,10 +58,9 @@ class BaseTemplateForm(AplansAdminModelForm):
                     formset[i].add_error('date', _('Cannot schedule a notification for the past'))
                 continue
             instance = item['id']
-            if new_date != instance.date:
+            if new_date != instance.date and new_date < local_current_date:
                 # Rescheduling old notification
-                if new_date < local_current_date:
-                    formset[i].add_error('date', _('Cannot reschedule a notification for the past'))
+                formset[i].add_error('date', _('Cannot reschedule a notification for the past'))
 
     def clean(self):
         formset = self.formsets.get('manually_scheduled_notification_templates', None)
@@ -264,8 +263,8 @@ class NotificationsPreferencesPanel(BaseSettingsPanel):
         }
         if self.request.method == 'POST':
             return self.form_class(self.request.POST, self.request.FILES, **kwargs)
-        else:
-            return self.form_class(**kwargs)
+
+        return self.form_class(**kwargs)
 
     def get_context_data(self):
         return {
