@@ -33,7 +33,7 @@ class WatchEditView[ModelT: Model, FormT: WagtailAdminModelForm](
     PlanRelatedViewMixin,
     ActivatePermissionHelperPlanContextMixin,
     EditView[ModelT, FormT],
-    SetInstanceMixin,
+    # SetInstanceMixin, # TODO: Is this needed? Causes linting errors right now.
 ):
     object: ModelT
     model: type[ModelT]
