@@ -74,6 +74,15 @@ class BaseTemplateAdmin(AplansModelAdmin):
     panels = [
         FieldPanel('from_name'),
         FieldPanel('reply_to'),
+        FieldPanel(
+            'from_address',
+            widget=Select(choices=[(email, email) for email in settings.ALLOWED_SENDER_EMAILS]),
+            permission='superuser',
+        ),
+        FieldPanel('brand_dark_color', permission='superuser'),
+        FieldPanel('logo', permission='superuser'),
+        FieldPanel('font_family', permission='superuser'),
+        FieldPanel('font_css_url', permission='superuser'),
     ]
 
     templates_panels = [
@@ -132,21 +141,13 @@ class BaseTemplateAdmin(AplansModelAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        additional_panels = []
-        if request.user.is_superuser:
-            choices = [(email, email) for email in settings.ALLOWED_SENDER_EMAILS]
-            additional_panels.append(FieldPanel('from_address', widget=Select(choices=choices)))
-            additional_panels.append(FieldPanel('brand_dark_color'))
-            additional_panels.append(FieldPanel('logo'))
-            additional_panels.append(FieldPanel('font_family'))
-            additional_panels.append(FieldPanel('font_css_url'))
 
         plan = request.user.get_active_admin_plan()
         time = formats.time_format(plan.notification_settings.send_at_time, 'H:i')
 
         handler = AplansTabbedInterface([
             ObjectList(
-                self.panels + additional_panels,
+                self.panels,
                 heading=_('Basic information')),
             ObjectList([
                 InlinePanel(
