@@ -13,6 +13,7 @@ from reversion.models import Version
 
 import polars as pl
 import xlsxwriter
+from loguru import logger
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from orgs.models import Organization
@@ -273,6 +274,14 @@ class ExcelReport:
             for v in all_related_versions
             if isinstance(v, SerializedAttributeVersion)
         }
+
+        fields = []
+        for field in self.report.type.fields:
+            if field is not None and field.value is not None and 'attribute_type' in field.value and \
+                    field.value['attribute_type'] is None:
+                logger.error(f"Field has NoneType attribute_type in report type {self.report.type.name}.")
+                continue
+            fields.append(field)
         for action in all_actions:
             action_identifier = action.data['identifier']
             action_obj = Action(**{key: action.data[key] for key in ['identifier', 'name', 'plan_id', 'i18n']})
@@ -286,7 +295,7 @@ class ExcelReport:
                 completed_at = timezone.make_naive(completed_at, timezone=self.report.type.plan.tzinfo)
             append_to_key(_('Identifier'), action_identifier, 'identifier')
             append_to_key(_('Action'), action_name, 'name')
-            for field in self.report.type.fields:
+            for field in fields:
                 labels = list(field.block.xlsx_column_labels(field.value, plan=self.report.type.plan))
                 values = field.block.extract_action_values(
                     self, field.value, action.data, related_objects, attribute_versions,
