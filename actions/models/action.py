@@ -925,8 +925,8 @@ class Action(
         cache: PlanSpecificCache | None = None,
     ):
         """Get contact persons but redact data that should not be revealed according to plan features."""
-        if self.plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE and (
-                not show_all_contact_persons or not user.is_authenticated or not user.can_access_admin(self.plan)):
+        if self.plan.features.contact_persons_public_data == PlanFeatures.ContactPersonsPublicData.NONE and not (
+                show_all_contact_persons and user.is_authenticated and user.can_access_admin(self.plan)):
             return self.contact_persons.none()
 
         visible_contact_persons = []
