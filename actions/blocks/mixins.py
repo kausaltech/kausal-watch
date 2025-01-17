@@ -104,7 +104,7 @@ class ActionListPageBlockFormMixin(_FormBase):
         super().__init__(*args, **kwargs)
         if self.instance.pk is not None:
             ActionListPage = apps.get_model('pages', 'ActionListPage')
-            action_list_page = self.plan.root_page.get_children().type(ActionListPage).get().specific
+            action_list_page = self.plan.root_page.get_descendants().type(ActionListPage).get().specific
             for field_name in (f for f, _ in self.ACTION_LIST_FILTER_SECTION_CHOICES if f):
                 if action_list_page.contains_model_instance_block(self.instance, field_name):
                     self.fields['action_list_filter_section'].initial = field_name
