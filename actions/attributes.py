@@ -15,6 +15,7 @@ from wagtail.admin.panels import FieldPanel, field_panel
 from wagtail.models import DraftStateMixin, RevisionMixin
 
 from dal import autocomplete, forward as dal_forward
+from loguru import logger
 
 from aplans.utils import convert_html_to_text
 
@@ -171,7 +172,13 @@ class OrderedChoiceAttributeValue(AttributeValue):
             if cache is not None:
                 option = cache.get_choice_option(value)
             if option is None:
-                option = models.AttributeTypeChoiceOption.objects.get(pk=value)
+                try:
+                    option = models.AttributeTypeChoiceOption.objects.get(pk=value)
+                except models.AttributeTypeChoiceOption.DoesNotExist:
+                    logger.warning(
+                        f"Could not deserialize ordered choice attribute value '{value}' because "
+                        "AttributeTypeChoiceOption does not exist. Setting to None."
+                    )
         return OrderedChoiceAttributeValue(option=option)
 
     def serialize(self) -> Any:
@@ -243,7 +250,13 @@ class OptionalChoiceWithTextAttributeValue(AttributeValue):
             if cache is not None:
                 option = cache.get_choice_option(value['choice'])
             if option is None:
-                option = models.AttributeTypeChoiceOption.objects.get(pk=value['choice'])
+                try:
+                    option = models.AttributeTypeChoiceOption.objects.get(pk=value['choice'])
+                except models.AttributeTypeChoiceOption.DoesNotExist:
+                    logger.warning(
+                        f"Could not deserialize optional choice with text attribute value '{value}' because "
+                        "AttributeTypeChoiceOption does not exist. Setting choice to None."
+                    )
         text_vals = value['text']
         assert isinstance(text_vals, dict)
         return OptionalChoiceWithTextAttributeValue(option=option, text_vals=text_vals)
