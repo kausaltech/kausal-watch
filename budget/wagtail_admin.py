@@ -2,18 +2,16 @@ from __future__ import annotations
 
 from django.utils.translation import gettext_lazy as _
 from wagtail.admin.panels import FieldPanel, InlinePanel
+from wagtail.snippets.models import register_snippet
 
-from wagtail_modeladmin.options import modeladmin_register
-
-from admin_site.wagtail import AplansModelAdmin
+from admin_site.viewsets import WatchViewSet
 from budget.models import Dimension
 
 
-@modeladmin_register
-class DimensionAdmin(AplansModelAdmin):
+class DimensionAdmin(WatchViewSet):
     model = Dimension
     menu_order = 2100
-    menu_icon = 'kausal-dimension'
+    icon = 'kausal-dimension'
     menu_label = _('Budget dimensions')
     list_display = ('name',)
     add_to_settings_menu = True
@@ -22,3 +20,6 @@ class DimensionAdmin(AplansModelAdmin):
         FieldPanel('name'),
         InlinePanel('categories', panels=[FieldPanel('label')], heading=_('Categories')),
     ]
+
+
+register_snippet(DimensionAdmin)
