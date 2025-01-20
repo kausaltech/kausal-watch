@@ -17,7 +17,6 @@ from loguru import logger
 
 from actions.models.action import Action, ActionImplementationPhase, ActionStatus
 from orgs.models import Organization
-from pages.models import ActionListPage
 from reports.utils import ReportCellValue, group_by_model
 
 from .action_print_layout import write_action_summaries
@@ -118,7 +117,7 @@ class ExcelReport:
 
         if (child_plans := report.type.plan.children.get_queryset().prefetch_related(
                 'category_types', 'action_implementation_phases', 'action_statuses', 'related_organizations')) and \
-                report.type.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific.include_related_plans:
+                report.type.get_action_list_page().include_related_plans:
             self.child_plans = list(child_plans)  # TODO: add .visible_for_user() when it is implemented
             self.plan_current_related_objects = self.PlanRelatedObjects(self.report, self.child_plans)
         else:

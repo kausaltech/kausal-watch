@@ -121,6 +121,9 @@ class ReportType(PlanRelatedModel):
         labels = [field.block.xlsx_column_labels(field.value) for field in fields]
         return labels
 
+    def get_action_list_page(self) -> ActionListPage:
+        return self.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific
+
     def __str__(self):
         return f'{self.name} ({self.plan.identifier})'
 
@@ -194,10 +197,12 @@ class Report(PlanRelatedModel):
         if self.is_complete:
             self._raise_complete()
 
-        if ((child_plans := self.type.plan.children.get_queryset()) and  # TODO: add .visible_for_user() when it is implemented
-                self.type.plan.root_page.get_descendants().live().public().type(ActionListPage).first().specific.include_related_plans):
+        if ((child_plans := self.type.plan.children.get_queryset().live().values_list('id', flat=True)) and
+            # TODO: add .visible_for_user() when it is implemented
+                self.type.get_action_list_page().include_related_plans):
+            plans = list(child_plans) + [self.type.plan.id]
             actions_to_snapshot = (
-                Action.objects.get_queryset().filter(plan__in=child_plans).visible_for_user(None)
+                Action.objects.get_queryset().filter(plan__in=plans).visible_for_user(None)
                 .prefetch_related(
                     'responsible_parties__organization', 'categories__type', 'choice_attributes__choice',
                     'choice_with_text_attributes__choice', 'text_attributes__type', 'rich_text_attributes__type',
