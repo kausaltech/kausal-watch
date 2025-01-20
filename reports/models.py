@@ -229,32 +229,35 @@ class Report(PlanRelatedModel):
             content_type=ct,
             object_id__in=[a.pk for a in actions_to_snapshot],
             action_snapshots__report_id=self.pk,
-        ).prefetch_related(
-            'action_snapshots',
-        ).select_related(
-            'revision',
-        ).order_by(
-            '-revision__date_created',
         )
-        snapshot_counts = version_qs.annotate(
-            snapshot_count=models.Count('action_snapshots')
-        ).values('object_id', 'snapshot_count')
+
+        # Fetch all relevant ActionSnapshots in a single query
+        all_snapshots = ActionSnapshot.objects.filter(
+            action_version__in=version_qs,
+            report_id=self.pk
+        ).select_related(
+            'action_version__revision',
+        ).order_by(
+            '-action_version__revision__date_created',
+        )
+
+        snapshot_counts = all_snapshots.values('action_version__object_id').annotate(
+            snapshot_count=models.Count('id')
+        ).values('action_version__object_id', 'snapshot_count')
 
         counts_by_action = {
-            str(item['object_id']): item['snapshot_count']
+            str(item['action_version__object_id']): item['snapshot_count']
             for item in snapshot_counts
         }
 
         action_snapshots_by_action_pk: dict[int, ActionSnapshot] = dict()
-        for version in version_qs:
-            action_pk = version.object_id
-            if action_pk in action_snapshots_by_action_pk:
-                continue
-            qs = version.action_snapshots.filter(report_id=self.pk)  # pyright: ignore
-            if counts_by_action.get(action_pk, 0) > 1:
-                capture_message("Database consistency error: snapshot has multiple versions")
-            snapshot = qs.first()
-            action_snapshots_by_action_pk[int(action_pk)] = snapshot
+
+        for snapshot in all_snapshots:
+            action_pk = snapshot.action_version.object_id
+            if action_pk not in action_snapshots_by_action_pk:
+                action_snapshots_by_action_pk[int(action_pk)] = snapshot
+                if counts_by_action.get(action_pk, 0) > 1:
+                    capture_message("Database consistency error: snapshot has multiple versions")
 
         related_versions: set[Version] = set() # non-Action versions from the same revision as any of our actions
         for action in actions_to_snapshot:
