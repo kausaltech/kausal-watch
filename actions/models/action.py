@@ -29,7 +29,7 @@ from modeltrans.translator import get_i18n_field
 from reversion.models import Version
 from wagtail.admin.panels.base import Panel
 from wagtail.fields import RichTextField
-from wagtail.models import DraftStateMixin, LockableMixin, RevisionMixin, Task, TaskState, WorkflowMixin
+from wagtail.models import DraftStateMixin, LockableMixin, Revision, RevisionMixin, Task, TaskState, WorkflowMixin
 from wagtail.search import index
 from wagtail.search.queryset import SearchableQuerySetMixin
 
@@ -1170,6 +1170,17 @@ class ActionResponsibleParty(OrderedModel, ModelWithRole['ActionResponsibleParty
     def filter_siblings(self, qs: QuerySet[Self, Self]) -> QuerySet[Self, Self]:
         return qs.filter(action=self.action)
 
+    def fix_action_draft_after_deletion(self):
+        # This should only be called after self just got deleted
+        revision = self.action.latest_revision
+        if not revision:
+            return
+        assert isinstance(revision, Revision)
+        for acp_dict in revision.content.get('responsible_parties', []):
+            if acp_dict.get('pk') == self.pk:
+                acp_dict['pk'] = None
+        revision.save()
+
     @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> Sequence[Role | None]:
         is_contact_person = person is not None and action.contact_persons.filter(
@@ -1233,6 +1244,17 @@ class ActionContactPerson(OrderedModel, ModelWithRole['ActionContactPerson.Role'
 
     def is_moderator(self) -> bool:
         return self.role == self.Role.MODERATOR
+
+    def fix_action_draft_after_deletion(self):
+        # This should only be called after self just got deleted
+        revision = self.action.latest_revision
+        if not revision:
+            return
+        assert isinstance(revision, Revision)
+        for acp_dict in revision.content.get('contact_persons', []):
+            if acp_dict.get('pk') == self.pk:
+                acp_dict['pk'] = None
+        revision.save()
 
     @classmethod
     def get_roles_editable_in_action_by(cls, action: Action, person: Person) -> Sequence[Role]:

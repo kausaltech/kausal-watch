@@ -57,6 +57,28 @@ def invalidate_attribute_type_cache(sender, instance, **kwargs):
     Category.get_attribute_types_for_plan.cache_clear()
 
 
+@receiver(post_delete, sender=ActionContactPerson)
+def fix_deleted_contact_person_in_draft(sender, instance, **kwargs):
+    # When deleting an ActionContactPerson, drafts of that action may reference the deleted instance, which causes an
+    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
+    # draft is published, the ActionContactPerson is created anew instead of trying (and failing) to change the one that
+    # doesn't exist anymore.
+    # TODO: This may need to be done for other models as well; investigate.
+    assert isinstance(instance, ActionContactPerson)
+    instance.fix_action_draft_after_deletion()
+
+
+@receiver(post_delete, sender=ActionResponsibleParty)
+def fix_deleted_responsible_party_in_draft(sender, instance, **kwargs):
+    # When deleting an ActionResponsibleParty, drafts of that action may reference the deleted instance, which causes an
+    # error when trying to publish the action. Here we remove the reference from the revision content so that, when the
+    # draft is published, the ActionResponsibleParty is created anew instead of trying (and failing) to change the one
+    # that doesn't exist anymore.
+    # TODO: This may need to be done for other models as well; investigate.
+    assert isinstance(instance, ActionResponsibleParty)
+    instance.fix_action_draft_after_deletion()
+
+
 action_moderator_approval_task_submission_email_notifier = ActionModeratorApprovalTaskStateSubmissionEmailNotifier()
 action_moderator_cancel_task_submission_email_notifier = ActionModeratorCancelTaskStateSubmissionEmailNotifier()
 workflow_approval_email_notifier = WorkflowStateApprovalWithCommentEmailNotifier()
