@@ -209,7 +209,7 @@ class Report(PlanRelatedModel):
                     'numeric_value_attributes__type', 'category_choice_attributes__type', 'related_indicators',
                     'action_category_through__category',
                 )
-            )
+            ).order_by('plan', 'order')
         else:
             actions_to_snapshot = (
                 self.type.plan.actions.get_queryset().visible_for_user(None)
@@ -219,7 +219,7 @@ class Report(PlanRelatedModel):
                     'numeric_value_attributes__type', 'category_choice_attributes__type', 'related_indicators',
                     'action_category_through__category',
                 )
-            )
+            ).order_by('order')
         result = LiveVersions()
 
         incomplete_actions = []
@@ -260,6 +260,7 @@ class Report(PlanRelatedModel):
                     capture_message("Database consistency error: snapshot has multiple versions")
 
         related_versions: set[Version] = set() # non-Action versions from the same revision as any of our actions
+
         for action in actions_to_snapshot:
             snapshot = action_snapshots_by_action_pk.get(action.pk)
             if snapshot is None:
@@ -282,8 +283,6 @@ class Report(PlanRelatedModel):
 
         result.actions += filter(is_action, fake_revision_versions)
         result.related = [*related_versions, *filter(lambda v: not is_action(v), fake_revision_versions)]
-        # TODO: cleaner way maybe to order by, somehow sort actions
-        result.actions = sorted(result.actions, key=lambda x: x.field_dict['order'])
         return result
 
     def mark_as_complete(self, user: User):
