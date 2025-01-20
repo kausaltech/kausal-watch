@@ -299,8 +299,8 @@ class IndicatorForm(AplansAdminModelForm):
 
             request = ctx_request.get()
             messages.add_message(request, messages.WARNING,
-                                 _("Active plan was changed during the editing of this indicator. "
-                                   "Indicator was saved with the original plan: %s")
+                                 _('While editing this indicator you have switched to a different plan. '
+                                   'This indicator was still saved with the original plan "%s".')
                                  % initial_plan.name)
             self.plan = initial_plan
 

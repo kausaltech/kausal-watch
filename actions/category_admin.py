@@ -266,8 +266,8 @@ class CategoryTypeForm(ActionListPageBlockFormMixin, AplansAdminModelForm):
             initial_plan = Plan.objects.get(pk=initial_plan_id)
             request = ctx_request.get_admin_request()
             messages.add_message(request, messages.WARNING,
-                                 _("Active plan was changed during the editing of this category type. "
-                                   "Category type was saved with the original plan: %s")
+                                 _('While editing this category type you have switched to a different plan. '
+                                   'This category type was still saved with the original plan "%s".')
                                  % initial_plan.name)
             self.plan = initial_plan
             obj.plan = self.plan

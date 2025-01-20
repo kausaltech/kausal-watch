@@ -213,7 +213,6 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
             # Organizations can only have at most one role as a responsible party
 
     def save(self, commit=True):
-
         initial_plan_id = self.initial_plan_id
         # Use initial_plan_id to detect mismatch between the active plan and the initial plan on form load.
         if initial_plan_id and str(initial_plan_id) != str(self.instance.plan.id):
@@ -221,8 +220,8 @@ class ActionAdminForm(WagtailAdminModelForm[Action]):
 
             request = ctx_request.get()
             messages.add_message(request, messages.WARNING,
-                                 _("Active plan was changed during the editing of this action. "
-                                   "Action was saved with the original plan: %s")
+                                 _('While editing this action you have switched to a different plan. '
+                                   'This action was still saved with the original plan "%s".')
                                  % initial_plan.name)
             self.instance.plan = initial_plan
 
