@@ -6,6 +6,8 @@ from django.conf import settings
 from modeltrans.utils import build_localized_fieldname
 from wagtail.admin.panels import FieldPanel, FieldRowPanel, MultiFieldPanel
 
+from kausal_common.i18n.helpers import convert_language_code
+
 if TYPE_CHECKING:
     from aplans.types import WatchAdminRequest
 
@@ -17,7 +19,7 @@ class TranslatedLanguagePanel(FieldPanel):
     def __init__(self, field_name: str, language: str, **kwargs):
         self.main_field_name = field_name
         self.language = language
-        field_name = build_localized_fieldname(field_name, language.lower(), default_language='')
+        field_name = build_localized_fieldname(field_name, convert_language_code(language, 'modeltrans'), default_language='')
         super().__init__(field_name, **kwargs)
 
     def clone_kwargs(self):
