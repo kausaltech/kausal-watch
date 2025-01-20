@@ -329,6 +329,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         FieldPanel('url'),
         FieldPanel('email'),
         FieldPanel('primary_language', read_only=True),  # read-only for now because changes could cause trouble
+        GoogleMapsPanel('location', permission='superuser'),
     ]
 
     permissions_panels = [
@@ -369,13 +370,9 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         request = ctx_request.get()
         instance = ctx_instance.get()
 
-        basic_panels = list(self.basic_panels)
-        if request.user.is_superuser:
-            basic_panels.append(GoogleMapsPanel('location'))
-
         permissions_panels = list(self.permissions_panels)
         tabs = [
-            ObjectList(basic_panels, heading=_('Basic information')),
+            ObjectList(self.basic_panels, heading=_('Basic information')),
             ObjectList(permissions_panels, heading=_('Permissions')),
         ]
 
