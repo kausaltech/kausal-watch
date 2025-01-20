@@ -370,10 +370,9 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
         request = ctx_request.get()
         instance = ctx_instance.get()
 
-        permissions_panels = list(self.permissions_panels)
         tabs = [
             ObjectList(self.basic_panels, heading=_('Basic information')),
-            ObjectList(permissions_panels, heading=_('Permissions')),
+            ObjectList(self.permissions_panels, heading=_('Permissions')),
         ]
 
         i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
