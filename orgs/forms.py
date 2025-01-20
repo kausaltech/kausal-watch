@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
 from django.forms import ModelChoiceField
 from django.utils.translation import gettext_lazy as _
-from wagtail.admin.forms import WagtailAdminModelForm
 
+from admin_site.forms import WatchAdminModelForm
 from users.models import User
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class NodeChoiceField(ModelChoiceField):
         return f'{depth_line} {label}'
 
 
-class NodeForm[N: Node](WagtailAdminModelForm[N, User]):
+class NodeForm[N: Node](WatchAdminModelForm[N, User]):
     parent = NodeChoiceField(required=False, queryset=None)
 
     def __init__(self, *args, **kwargs):

@@ -13,10 +13,11 @@ from wagtail_modeladmin.mixins import ThumbnailMixin
 from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
-from aplans.context_vars import ctx_instance, ctx_request
+from aplans.context_vars import ctx_request
 from aplans.extensions import modeladmin_register
 
-from admin_site.wagtail import CondensedInlinePanel, get_translation_tabs
+from admin_site.panels import TranslatedFieldPanel
+from admin_site.wagtail import CondensedInlinePanel
 from people.chooser import PersonChooser
 
 from .forms import NodeForm
@@ -103,7 +104,7 @@ class NodeAdmin(ModelAdmin):
     list_display = ('get_as_listing_header', 'get_parent')
     button_helper_class = NodeButtonHelper
     panels = [
-        FieldPanel('name', heading=_("Name")),
+        TranslatedFieldPanel('name'),
     ]
 
     def add_child_view(self, request, instance_pk):
@@ -318,7 +319,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
             'parent', heading=pgettext_lazy('organization', 'Parent'),
         ),
         FieldPanel('logo'),
-        FieldPanel('abbreviation'),
+        TranslatedFieldPanel('abbreviation'),
         FieldPanel('internal_abbreviation'),
         # Don't allow editing identifiers at this point
         # CondensedInlinePanel('identifiers', panels=[
@@ -368,15 +369,11 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
 
     def get_edit_handler(self):
         request = ctx_request.get()
-        instance = ctx_instance.get()
 
         tabs = [
             ObjectList(self.basic_panels, heading=_('Basic information')),
             ObjectList(self.permissions_panels, heading=_('Permissions')),
         ]
-
-        i18n_tabs = get_translation_tabs(instance, request, include_all_languages=True)
-        tabs += i18n_tabs
 
         plan = request.user.get_active_admin_plan()
         return OrganizationEditHandler(plan, tabs, base_form_class=OrganizationForm)

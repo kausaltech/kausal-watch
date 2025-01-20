@@ -9,6 +9,7 @@ from modeltrans.utils import build_localized_fieldname
 from wagtail.admin.forms import WagtailAdminModelForm
 
 from actions.models.plan import Plan
+from kausal_common.i18n.helpers import convert_language_code
 
 if TYPE_CHECKING:
     from django.db.models import Model
@@ -45,6 +46,7 @@ class WatchAdminModelForm[ModelT: Model](WagtailAdminModelForm[ModelT]):
         if not i18n_field:
             return
         other_langs = self.plan.other_languages if self.plan is not None else []
+        other_langs = [convert_language_code(lang, 'django') for lang in other_langs]
         for base_field_name in i18n_field.fields:
             langs = list(get_available_languages(include_default=True))
             for lang in langs:

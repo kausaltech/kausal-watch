@@ -11,6 +11,7 @@ from wagtail.admin import messages
 
 from wagtail_modeladmin.views import DeleteView, EditView, WMABaseView
 
+from admin_site.utils import admin_req
 from admin_site.wagtail import AplansCreateView, SetInstanceModelAdminMixin
 from orgs.models import Organization
 
@@ -57,9 +58,20 @@ class OrganizationCreateView(OrganizationViewMixin, AplansCreateView):
         plan.related_organizations.add(org)
         return result
 
+    def get_form_kwargs(self):
+        return {
+            **super().get_form_kwargs(),
+            'plan': admin_req(self.request).user.get_active_admin_plan(),
+        }
+
 
 class OrganizationEditView(OrganizationViewMixin, SetInstanceModelAdminMixin, EditView):
-    pass
+
+    def get_form_kwargs(self):
+        return {
+            **super().get_form_kwargs(),
+            'plan': admin_req(self.request).user.get_active_admin_plan(),
+        }
 
 
 class Rollback(Exception):
