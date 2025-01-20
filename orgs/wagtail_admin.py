@@ -1,16 +1,17 @@
 # Parts adapted from https://posts-by.lb.ee/building-a-configurable-taxonomy-in-wagtail-django-94ca1080fb28
+from __future__ import annotations
+
 from django.contrib.admin.utils import quote
 from django.core.exceptions import ValidationError
 from django.urls import re_path
 from django.utils.translation import gettext_lazy as _, pgettext_lazy
 from modelcluster.forms import ClusterForm
-from wagtail import VERSION as WAGTAIL_VERSION
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
 from wagtail_modeladmin.mixins import ThumbnailMixin
 from wagtail_modeladmin.options import ModelAdmin
-from wagtailgeowidget import __version__ as WAGTAILGEOWIDGET_VERSION
+from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
 from aplans.context_vars import ctx_instance, ctx_request
 from aplans.extensions import modeladmin_register
@@ -28,7 +29,7 @@ from .views import (
     SetOrganizationRelatedToActivePlanView,
 )
 
-if int(WAGTAILGEOWIDGET_VERSION.split('.')[0]) >= 7:
+if int(wagtailgeowidget_version.split('.')[0]) >= 7:
     from wagtailgeowidget.panels import GoogleMapsPanel
 else:
     from wagtailgeowidget.edit_handlers import GoogleMapsPanel
