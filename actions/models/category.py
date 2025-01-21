@@ -254,7 +254,7 @@ class CategoryType(
             with override(root_page.locale.language_code):
                 try:
                     ct_pages = self.category_type_pages.all()  # pages for this category type in any language
-                    ct_page = root_page.get_children().type(CategoryTypePage).get(id__in=ct_pages)
+                    ct_page = root_page.get_descendants().type(CategoryTypePage).get(id__in=ct_pages)
                 except Page.DoesNotExist:
                     ct_page = CategoryTypePage(
                         category_type=self, title=self.name_i18n, show_in_menus=True, show_in_footer=True,
