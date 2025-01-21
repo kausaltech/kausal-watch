@@ -60,20 +60,6 @@ class NodeButtonHelper(ButtonHelper):
             'url': self.url_helper.get_action_url('add_child', quote(pk)),
         }
 
-    def edit_subtree_button(self, pk, **kwargs):
-        classnames = self.prepare_classnames(
-            start=self.edit_button_classnames,
-            add=kwargs.get('classnames_add'),
-            exclude=kwargs.get('classnames_exclude'),
-        )
-        return {
-            'classname': classnames,
-            'label': _("Edit subtree"),
-            'title': _("Edit subtree rooted at this %s") % self.verbose_name,
-            'icon': 'edit',
-            'url': self.url_helper.get_action_url('edit_subtree', quote(pk)),
-        }
-
     def get_buttons_for_obj(self, obj, *args, **kwargs):
         buttons = super().get_buttons_for_obj(obj, *args, **kwargs)
 
@@ -89,13 +75,6 @@ class NodeButtonHelper(ButtonHelper):
             # that iterating org.user_can_edit entails
             return buttons
         buttons.append(add_child_button)
-
-        # TODO: Put this in when we have implemented the subtree editor
-        # edit_subtree_button = self.edit_subtree_button(
-        #     pk=getattr(obj, self.opts.pk.attname),
-        #     **kwargs
-        # )
-        # buttons.append(edit_subtree_button)
 
         return buttons
 
