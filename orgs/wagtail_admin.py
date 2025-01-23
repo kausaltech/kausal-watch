@@ -91,22 +91,6 @@ class NodeAdmin(ModelAdmin):
         # adding a child, we also should check that the user has permissions for the parent of the new instance.
         return CreateChildNodeView.as_view(model_admin=self, parent_pk=instance_pk)(request)
 
-    def include_organization_in_active_plan_view(self, request, instance_pk):
-        # FIXME: This is specific to Organization, but this class should be for generic nodes
-        return SetOrganizationRelatedToActivePlanView.as_view(
-            model_admin=self,
-            org_pk=instance_pk,
-            set_related=True,
-        )(request)
-
-    def exclude_organization_from_active_plan_view(self, request, instance_pk):
-        # FIXME: This is specific to Organization, but this class should be for generic nodes
-        return SetOrganizationRelatedToActivePlanView.as_view(
-            model_admin=self,
-            org_pk=instance_pk,
-            set_related=False,
-        )(request)
-
     def get_admin_urls_for_registration(self):
         """Add the new url for add child page to the registered URLs."""
         urls = super().get_admin_urls_for_registration()
@@ -115,21 +99,8 @@ class NodeAdmin(ModelAdmin):
             self.add_child_view,
             name=self.url_helper.get_action_url_name('add_child'),
         )
-        include_organization_in_active_plan_url = re_path(
-            self.url_helper.get_action_url_pattern('include_organization_in_active_plan'),
-            self.include_organization_in_active_plan_view,
-            name=self.url_helper.get_action_url_name('include_organization_in_active_plan'),
-        )
-        exclude_organization_from_active_plan_url = re_path(
-            self.url_helper.get_action_url_pattern('exclude_organization_from_active_plan'),
-            self.exclude_organization_from_active_plan_view,
-            name=self.url_helper.get_action_url_name('exclude_organization_from_active_plan'),
-        )
-        return urls + (
-            add_child_url,
-            include_organization_in_active_plan_url,
-            exclude_organization_from_active_plan_url,
-        )
+        return urls + (add_child_url,)
+
 
 class OrganizationPermissionHelper(PermissionHelper):
     def user_can_list(self, user):
@@ -328,6 +299,37 @@ class OrganizationAdmin(NodeAdmin):
                         "content"),
         ),
     ]
+
+    def include_organization_in_active_plan_view(self, request, instance_pk):
+        return SetOrganizationRelatedToActivePlanView.as_view(
+            model_admin=self,
+            org_pk=instance_pk,
+            set_related=True,
+        )(request)
+
+    def exclude_organization_from_active_plan_view(self, request, instance_pk):
+        return SetOrganizationRelatedToActivePlanView.as_view(
+            model_admin=self,
+            org_pk=instance_pk,
+            set_related=False,
+        )(request)
+
+    def get_admin_urls_for_registration(self):
+        urls = super().get_admin_urls_for_registration()
+        include_organization_in_active_plan_url = re_path(
+            self.url_helper.get_action_url_pattern('include_organization_in_active_plan'),
+            self.include_organization_in_active_plan_view,
+            name=self.url_helper.get_action_url_name('include_organization_in_active_plan'),
+        )
+        exclude_organization_from_active_plan_url = re_path(
+            self.url_helper.get_action_url_pattern('exclude_organization_from_active_plan'),
+            self.exclude_organization_from_active_plan_view,
+            name=self.url_helper.get_action_url_name('exclude_organization_from_active_plan'),
+        )
+        return urls + (
+            include_organization_in_active_plan_url,
+            exclude_organization_from_active_plan_url,
+        )
 
     def get_edit_handler(self):
         request = ctx_request.get()
