@@ -9,7 +9,6 @@ from modelcluster.forms import ClusterForm
 from wagtail.admin.panels import FieldPanel, ObjectList, TabbedInterface
 
 from wagtail_modeladmin.helpers import ButtonHelper, PermissionHelper
-from wagtail_modeladmin.mixins import ThumbnailMixin
 from wagtail_modeladmin.options import ModelAdmin
 from wagtailgeowidget import __version__ as wagtailgeowidget_version
 
@@ -80,7 +79,6 @@ class NodeButtonHelper(ButtonHelper):
 
 
 class NodeAdmin(ModelAdmin):
-    list_display = ('get_as_listing_header', 'get_parent')
     button_helper_class = NodeButtonHelper
     panels = [
         TranslatedFieldPanel('name'),
@@ -277,7 +275,7 @@ class OrganizationButtonHelper(NodeButtonHelper):
 
 
 @modeladmin_register
-class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
+class OrganizationAdmin(NodeAdmin):
     model = Organization
     menu_label = _("Organizations")
     menu_icon = 'kausal-organization'
@@ -288,9 +286,7 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
     edit_view_class = OrganizationEditView
     delete_view_class = OrganizationDeleteView
     search_fields = ('name', 'abbreviation')
-    list_display = ('admin_thumb',) + NodeAdmin.list_display + ('abbreviation',)
-    list_display_add_buttons = NodeAdmin.list_display[0]
-    thumb_image_field_name = 'logo'
+    list_display = ('name', 'abbreviation')
 
     basic_panels = NodeAdmin.panels + [
         FieldPanel(
@@ -332,19 +328,6 @@ class OrganizationAdmin(ThumbnailMixin, NodeAdmin):
                         "content"),
         ),
     ]
-
-    def get_list_display(self, request):
-        # Display "Is in plan" column only if we don't filter by that anyway
-        if request.GET.get('only_added_to_plan'):
-            return self.list_display
-
-        plan = request.user.get_active_admin_plan()
-
-        def is_in_plan(org):
-            return org.id in (related.id for related in Organization.objects.available_for_plan(plan))
-        is_in_plan.short_description = _("Is in plan")
-        is_in_plan.boolean = True
-        return self.list_display + (is_in_plan,)
 
     def get_edit_handler(self):
         request = ctx_request.get()

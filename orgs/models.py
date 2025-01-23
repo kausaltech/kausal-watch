@@ -55,25 +55,6 @@ class Node[QS: MP_NodeQuerySet](MP_Node[QS], ClusterableModel):
 
     public_fields = ['id', 'name']
 
-    @property
-    @admin.display(
-        description=_('Name'),
-        ordering='name',
-    )
-    def get_as_listing_header(self):
-        """Build HTML representation of node with title & depth indication."""
-        depth = self.get_depth()
-        rendered = render_to_string(
-            'orgs/node_list_header.html',
-            {
-                'depth': depth,
-                'depth_minus_1': depth - 1,
-                'is_root': self.is_root(),
-                'name': self.name,
-            },
-        )
-        return rendered
-
     # Duplicate get_parent from super class just to set short_description below
     @admin.display(
         description=pgettext_lazy('node', 'Parent'),
