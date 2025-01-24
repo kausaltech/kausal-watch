@@ -321,7 +321,7 @@ class IndicatorForm(AplansAdminModelForm):
             if field_data is None:
                 continue
             cat_type = field.category_type
-            obj.set_categories(cat_type, field_data)
+            obj.set_categories(cat_type, field_data, plan=plan)
         return obj
 
     def _save_m2m(self):
