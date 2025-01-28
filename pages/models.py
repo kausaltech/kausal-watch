@@ -182,7 +182,11 @@ class AplansPage(Page):
         if not plan:
             return super().get_url_parts(request)
 
-        return (plan.site_id, plan.site_url, self.url_path)
+        url_path = self.url_path
+        if self.locale.language_code != plan.primary_language:
+            url_path = f'/{self.locale.language_code}{url_path}'
+
+        return (plan.site_id, plan.site_url, url_path)
 
     # Disable Wagtail's previews because our hacks make them break
     @property
