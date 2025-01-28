@@ -26,7 +26,7 @@ from wagtail.snippets.views.snippets import IndexView, SnippetViewSet
 from dal import autocomplete
 from django_filters import filters
 from wagtail_modeladmin.helpers import PermissionHelper
-from wagtail_modeladmin.options import modeladmin_register
+from wagtail_modeladmin.options import ModelAdminMenuItem, modeladmin_register
 
 from aplans.context_vars import ctx_instance, ctx_request
 
@@ -39,6 +39,7 @@ from admin_site.models import Client, ClientPlan
 from admin_site.permissions import PlanSpecificSingletonModelSuperuserPermissionPolicy
 from admin_site.viewsets import WatchEditView, WatchViewSet
 from admin_site.wagtail import (
+    ActivePlanEditView,
     AplansAdminModelForm,
     AplansCreateView,
     AplansEditView,
@@ -67,6 +68,7 @@ if typing.TYPE_CHECKING:
     from django.http import HttpRequest
     from wagtail.admin.menu import MenuItem
 
+    from aplans.types import WatchAdminRequest
 
 class PlanForm(AplansAdminModelForm):
     def clean_primary_language(self):
@@ -617,3 +619,60 @@ def org_autocomplete_label(self):
 
 Organization.autocomplete_search_field = 'distinct_name'
 Organization.autocomplete_label = org_autocomplete_label
+
+
+# FIXME: This is partly duplicated in content/admin.py.
+class ActivePlanModelAdminPermissionHelper(PermissionHelper):
+    def user_can_list(self, user):
+        return user.is_superuser
+    def user_can_create(self, user):
+        return user.is_superuser
+    def user_can_inspect_obj(self, user, obj):
+        return False
+    def user_can_delete_obj(self, user, obj):
+        return False
+    def user_can_edit_obj(self, user, obj):
+        return user.is_general_admin_for_plan(obj)
+
+# TODO: Reimplemented in admin_site/menu.py to make this work without
+# ModelAdmin. Use that when implementing new classes or migrating away from
+# ModelAdmin. Remove this class when ModelAdmin migration is finished.
+class PlanSpecificSingletonModelAdminMenuItem(ModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        # Implement in subclass
+        raise NotImplementedError()
+
+    def render_component(self, request):
+        # When clicking the menu item, use the edit view instead of the index view.
+        link_menu_item = super().render_component(request)
+        plan = request.user.get_active_admin_plan()
+        field = self.get_one_to_one_field(plan)
+        link_menu_item.url = self.model_admin.url_helper.get_action_url('edit', field.pk)
+        return link_menu_item
+
+    def is_shown(self, request: WatchAdminRequest):
+        # The overridden superclass method returns True iff user_can_list from the permission helper returns true. But
+        # this menu item is about editing a plan features instance, not listing.
+        user = request.user
+        if user.is_superuser:
+            return True
+        plan = request.user.get_active_admin_plan(required=False)
+        if plan is None:
+            return False
+        field = self.get_one_to_one_field(plan)
+        return self.model_admin.permission_helper.user_can_edit_obj(request.user, field)
+
+class ActivePlanMenuItem(PlanSpecificSingletonModelAdminMenuItem):
+    def get_one_to_one_field(self, plan):
+        return plan
+
+class ActivePlanAdmin(PlanAdmin):
+    edit_view_class = ActivePlanEditView
+    permission_helper_class = ActivePlanModelAdminPermissionHelper
+    menu_label = _('Plan')
+    menu_icon = 'kausal-plan'
+    add_to_settings_menu = True
+    def get_menu_item(self, order=None):
+        item = ActivePlanMenuItem(self, order or self.get_menu_order())
+        return item
+modeladmin_register(ActivePlanAdmin)
