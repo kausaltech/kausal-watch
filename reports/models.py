@@ -54,7 +54,8 @@ class ReportType(PlanRelatedModel):
     plan: models.ForeignKey[Plan, Plan] = models.ForeignKey('actions.Plan', on_delete=models.CASCADE, related_name='report_types')  # pyright: ignore
     name = models.CharField(max_length=100, verbose_name=_('name'))
     fields = StreamField(block_types=ReportFieldBlock(), null=True, blank=True)
-
+    only_plan_admins_can_mark_actions_as_complete = models.BooleanField(
+        default=False, help_text=_('Only plan admins can mark actions as complete for reports of this type'))
     public_fields = [
         'id', 'plan', 'name', 'reports',
     ]

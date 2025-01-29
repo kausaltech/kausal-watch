@@ -147,6 +147,7 @@ class ReportTypeAdmin(AplansModelAdmin):
 
     panels = [
         FieldPanel('name'),
+        FieldPanel('only_plan_admins_can_mark_actions_as_complete'),
         FieldPanel('fields', heading=_('fields')),
     ]
 
