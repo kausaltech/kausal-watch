@@ -921,6 +921,7 @@ HIJACK_INSERT_BEFORE: str | None = None
 
 register_common_settings(locals())
 # Put type hints for stuff registered in register_common_settings here because mypy doesn't figure it out
+ALLOWED_SENDER_EMAILS: list[str]
 DEFAULT_FROM_NAME: str
 
 if importlib.util.find_spec('kausal_watch_extensions') is not None:
